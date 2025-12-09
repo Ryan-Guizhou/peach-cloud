@@ -1,0 +1,15 @@
+{
+  "properties": [
+    {
+      "name": "multicache.cacheNullValues",
+      "type": "java.lang.Boolean",
+      "description": "是否缓存null值",
+      "defaultValue": false,
+      "deprecation": {
+        "level": "warning",
+        "reason": "默认值为false，建议根据业务场景设置,设置为true值可以防止缓存穿透",
+        "replacement": ""
+      }
+    }
+  ]
+}

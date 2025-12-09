@@ -1,0 +1,15 @@
+{
+  "properties": [
+    {
+      "name": "peach.redis.bloom.defaultNamespace",
+      "type": "java.lang.String",
+      "description": "默认的命名空间",
+      "defaultValue": "default",
+      "deprecation": {
+        "level": "warning",
+        "reason": "必须要填写，不然的话都放在一个命名空间里会有问题",
+        "replacement": ""
+      }
+    }
+  ]
+}

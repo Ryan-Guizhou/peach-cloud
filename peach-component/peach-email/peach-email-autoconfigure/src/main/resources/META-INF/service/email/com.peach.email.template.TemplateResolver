@@ -1,0 +1,4 @@
+com.peach.email.smtp.QqSmtpTransport
+com.peach.email.smtp.Netease163SmtpTransport
+com.peach.email.smtp.GmailSmtpTtransport
+com.peach.email.smtp.AliyunSmtpTransport
