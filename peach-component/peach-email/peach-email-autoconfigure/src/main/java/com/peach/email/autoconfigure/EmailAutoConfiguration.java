@@ -5,11 +5,11 @@ import com.peach.email.Idempotency.IdempotencyStore;
 import com.peach.email.Idempotency.SimpleIdempotencyStore;
 import com.peach.email.constant.EmailConstant;
 import com.peach.email.core.EmailContext;
+import com.peach.email.enums.EmailProviderEnum;
 import com.peach.email.retry.RetryPolicy;
 import com.peach.email.retry.SimpleRetryPolicy;
 import com.peach.email.router.ProviderRouter;
 import com.peach.email.service.EmailSendService;
-import com.peach.email.smtp.SimpleSmtpConnectionProvider;
 import com.peach.email.smtp.SmtpConnectionProvider;
 import com.peach.email.smtp.SmtpConnections;
 import com.peach.email.smtp.ThreadSmtpConnectionProvider;
@@ -109,21 +109,21 @@ public class EmailAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(TemplateManager.class)
-    public TemplateManager templateManager(TemplateRenderer renderer, ObjectProvider<List<TemplateResolver>> resolversProvider) {
-        List<TemplateResolver> resolvers = resolversProvider.getIfAvailable();
-        return new TemplateManager(renderer, resolvers);
-    }
-
-    @Bean
     @ConditionalOnMissingBean(TemplateRenderer.class)
     public TemplateRenderer templateRenderer() {
         return new FreeMarkerTemplateRenderer();
     }
 
+    @Bean
+    @ConditionalOnMissingBean(TemplateManager.class)
+    public TemplateManager templateManager(TemplateRenderer templateRenderer, ObjectProvider<List<TemplateResolver>> resolversProvider) {
+        List<TemplateResolver> resolvers = resolversProvider.getIfAvailable();
+        return new TemplateManager(templateRenderer, resolvers);
+    }
+
     /** 注册内置提供商的默认主机端口与SSL */
     private void registerDefault(ProviderRouter router) {
-        router.setContext("ali", new EmailContext(defaultHost("ali"), defaultPort("ali"), defaultSsl("ali"), null, null, new Properties()));
+        router.setContext("ali", new EmailContext(EmailProviderEnum.ALI.getSmtpServer(), defaultPort("ali"), defaultSsl("ali"), null, null, new Properties()));
         router.setContext("163", new EmailContext(defaultHost("163"), defaultPort("163"), defaultSsl("163"), null, null, new Properties()));
         router.setContext("qq", new EmailContext(defaultHost("qq"), defaultPort("qq"), defaultSsl("qq"), null, null, new Properties()));
         router.setContext("gmail", new EmailContext(defaultHost("gmail"), defaultPort("gmail"), defaultSsl("gmail"), null, null, new Properties()));

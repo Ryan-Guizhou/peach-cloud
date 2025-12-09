@@ -1,6 +1,7 @@
 package com.peach.email.smtp;
 
 import com.peach.email.build.MimeMessageBuilder;
+import com.peach.email.constant.EmailConstant;
 import com.peach.email.core.EmailContext;
 import com.peach.email.core.EmailMessage;
 import com.peach.email.core.EmailTransport;
@@ -31,15 +32,26 @@ public abstract class AbstractTransport implements EmailTransport {
         long start = System.currentTimeMillis();
         try {
             Properties props = new Properties();
-            props.put("mail.smtp.auth", "true");
-            props.put("mail.smtp.host", context.getHost());
-            props.put("mail.smtp.port", Integer.toString(context.getPort()));
-            if (context.isSsl()) props.put("mail.smtp.ssl.enable", "true");
-            else props.put("mail.smtp.starttls.enable", "true");
-            if (!props.containsKey("mail.smtp.connectiontimeout")) props.put("mail.smtp.connectiontimeout", "10000");
-            if (!props.containsKey("mail.smtp.timeout")) props.put("mail.smtp.timeout", "30000");
-            if (!props.containsKey("mail.smtp.writetimeout")) props.put("mail.smtp.writetimeout", "30000");
-            if (context.getExtra() != null) props.putAll(context.getExtra());
+            props.put(EmailConstant.MAIL_STMP_AUTH, EmailConstant.DEFAULT_MAIL_STMP_AUTH);
+            props.put(EmailConstant.MAIL_STMP_HOST, context.getHost());
+            props.put(EmailConstant.MAIL_STMP_PORT, Integer.toString(context.getPort()));
+            if (context.isSsl()){
+                props.put(EmailConstant.MAIL_STMP_SSL_ENABLE,EmailConstant.DEFAULT_MAIL_STMP_SSL_ENABLE);
+            }else {
+                props.put(EmailConstant.MAIL_STMP_STARTTLS_ENABLE, EmailConstant.DEFAULT_MAIL_STMP_STARTTLS_ENABLE);
+            }
+            if (!props.containsKey(EmailConstant.MAIL_STMP_CONNECTIONTIMEOUT)) {
+                props.put(EmailConstant.MAIL_STMP_CONNECTIONTIMEOUT, EmailConstant.DEFAULT_MAIL_STMP_CONNECTIONTIMEOUT);
+            }
+            if (!props.containsKey(EmailConstant.MAIL_STMP_TIMEOUT)) {
+                props.put(EmailConstant.MAIL_STMP_TIMEOUT, EmailConstant.DEFAULT_MAIL_STMP_TIMEOUT);
+            }
+            if (!props.containsKey(EmailConstant.MAIL_STMP_WRITETIMEOUE)) {
+                props.put(EmailConstant.MAIL_STMP_WRITETIMEOUE, EmailConstant.DEFAULT_MAIL_STMP_WRITETIMEOUE);
+            }
+            if (context.getExtra() != null) {
+                props.putAll(context.getExtra());
+            }
             Session session = Session.getInstance(props);
             MimeMessage mime = MimeMessageBuilder.build(session, emailMessage);
             Transport transport = SmtpConnections.getProvider().acquire(session, context);
