@@ -11,7 +11,7 @@ import com.peach.email.core.SendResult;
  */
 public class GenericSmtTransport extends AbstractTransport{
 
-    protected GenericSmtTransport() {
+    public GenericSmtTransport() {
         super("GenericSmtpTransport");
     }
 

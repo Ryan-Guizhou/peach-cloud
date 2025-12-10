@@ -8,7 +8,7 @@ package com.peach.email.smtp;
  */
 public class GmailSmtpTtransport extends AbstractTransport{
 
-    protected GmailSmtpTtransport() {
+    public GmailSmtpTtransport() {
         super("gmail");
     }
 }

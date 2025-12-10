@@ -5,6 +5,7 @@ import com.peach.email.core.EmailContext;
 import com.peach.email.core.EmailMessage;
 import com.peach.email.core.EmailTransport;
 import com.peach.email.core.SendResult;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +25,7 @@ import java.util.Set;
  * 提供商路由器：维护可用的传输实现、上下文与优先级，
  * 提供按优先级排序的候选集合以支持故障转移策略。
  */
+@Slf4j
 public class ProviderRouter {
 
     /**
@@ -78,7 +80,10 @@ public class ProviderRouter {
     public SendResult send(String name, EmailMessage message) {
         EmailTransport t = transports.get(name);
         EmailContext c = contexts.get(name);
-        if (t == null || c == null) throw new IllegalStateException("provider not configured: " + name);
+        if (t == null || c == null) {
+            log.info("provider not configured:[{}] ", name);
+            throw new IllegalStateException("provider not configured: " + name);
+        }
         return t.send(message, c);
     }
 

@@ -10,6 +10,7 @@ import java.util.Map;
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:13
+ * @Description 邮件配置属性
  */
 @ConfigurationProperties(prefix = "peach.email")
 public class EmailProperties {

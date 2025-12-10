@@ -5,7 +5,6 @@ import com.peach.email.Idempotency.IdempotencyStore;
 import com.peach.email.Idempotency.SimpleIdempotencyStore;
 import com.peach.email.constant.EmailConstant;
 import com.peach.email.core.EmailContext;
-import com.peach.email.enums.EmailProviderEnum;
 import com.peach.email.retry.RetryPolicy;
 import com.peach.email.retry.SimpleRetryPolicy;
 import com.peach.email.router.ProviderRouter;
@@ -34,6 +33,7 @@ import java.util.Set;
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:16
+ * @Description 邮件自动配置
  */
 @Configuration
 @EnableConfigurationProperties(EmailProperties.class)
@@ -123,7 +123,7 @@ public class EmailAutoConfiguration {
 
     /** 注册内置提供商的默认主机端口与SSL */
     private void registerDefault(ProviderRouter router) {
-        router.setContext("ali", new EmailContext(EmailProviderEnum.ALI.getSmtpServer(), defaultPort("ali"), defaultSsl("ali"), null, null, new Properties()));
+        router.setContext("ali", new EmailContext(defaultHost("ali"), defaultPort("ali"), defaultSsl("ali"), null, null, new Properties()));
         router.setContext("163", new EmailContext(defaultHost("163"), defaultPort("163"), defaultSsl("163"), null, null, new Properties()));
         router.setContext("qq", new EmailContext(defaultHost("qq"), defaultPort("qq"), defaultSsl("qq"), null, null, new Properties()));
         router.setContext("gmail", new EmailContext(defaultHost("gmail"), defaultPort("gmail"), defaultSsl("gmail"), null, null, new Properties()));
@@ -131,19 +131,35 @@ public class EmailAutoConfiguration {
 
     /** 默认主机名 */
     private String defaultHost(String name) {
-        if ("ali".equals(name)) return "smtpdm.aliyun.com";
-        if ("163".equals(name)) return "smtp.163.com";
-        if ("qq".equals(name)) return "smtp.qq.com";
-        if ("gmail".equals(name)) return "smtp.gmail.com";
+        if ("ali".equals(name)) {
+            return "smtpdm.aliyun.com";
+        }
+        if ("163".equals(name)) {
+            return "smtp.163.com";
+        }
+        if ("qq".equals(name)) {
+            return "smtp.qq.com";
+        }
+        if ("gmail".equals(name)){
+            return "smtp.gmail.com";
+        }
         return "localhost";
     }
 
     /** 默认端口（SSL 465），可按需改为 587/TLS */
     private int defaultPort(String name) {
-        if ("gmail".equals(name)) return 465; // 可切换为587(TLS)
-        if ("ali".equals(name)) return 465;
-        if ("163".equals(name)) return 465;
-        if ("qq".equals(name)) return 465;
+        if ("gmail".equals(name)){
+            return 465; // 可切换为587(TLS)
+        }
+        if ("ali".equals(name)) {
+            return 465;
+        }
+        if ("163".equals(name)) {
+            return 465;
+        }
+        if ("qq".equals(name)) {
+            return 465;
+        }
         return 25;
     }
 
@@ -152,7 +168,10 @@ public class EmailAutoConfiguration {
 
     /** 基础校验：用户名域名匹配常见提供商规则 */
     private void validateCredentials(String name, EmailProperties.Provider p) {
-        if (p.getUsername() == null || p.getPassword() == null) return; // 允许匿名作为占位
+        // 允许匿名作为占位
+        if (p.getUsername() == null || p.getPassword() == null) {
+            return;
+        }
         if ("qq".equals(name)) {
             if (!p.getUsername().endsWith("@qq.com")) throw new IllegalArgumentException("QQ邮箱用户名必须以@qq.com结尾");
         }

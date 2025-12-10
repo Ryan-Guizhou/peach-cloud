@@ -17,6 +17,8 @@ import java.util.List;
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 17:50
+ * @Description 邮件发送服务：负责根据配置的提供商路由发送邮件，
+ * 支持幂等性与重试策略。
  */
 public class EmailSendService {
 

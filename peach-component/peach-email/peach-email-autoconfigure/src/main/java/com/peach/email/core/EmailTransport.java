@@ -9,8 +9,18 @@ package com.peach.email.core;
  */
 public interface EmailTransport {
 
+    /**
+     * 获取邮件发送提供商名称
+     * @return
+     */
     String getName();
 
+    /**
+     * 发送邮件
+     * @param emailMessage 业务邮件模型
+     * @param emailContext 传输上下文
+     * @return
+     */
     SendResult send(EmailMessage emailMessage, EmailContext emailContext);
 
 }

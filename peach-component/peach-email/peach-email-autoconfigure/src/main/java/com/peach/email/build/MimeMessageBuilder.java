@@ -17,6 +17,7 @@ import javax.mail.util.ByteArrayDataSource;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @Author Mr Shu
@@ -33,13 +34,24 @@ public class MimeMessageBuilder {
     public static MimeMessage build(Session session, EmailMessage message) throws Exception {
         MimeMessage mime = new MimeMessage(session);
         mime.setFrom(new InternetAddress(message.getFrom()));
-        for (String t : message.getTo()) mime.addRecipients(Message.RecipientType.TO, InternetAddress.parse(t));
-        for (String t : message.getCc()) mime.addRecipients(Message.RecipientType.CC, InternetAddress.parse(t));
-        for (String t : message.getBcc()) mime.addRecipients(Message.RecipientType.BCC, InternetAddress.parse(t));
-        if (message.getReplyTo() != null) mime.setReplyTo(new InternetAddress[]{new InternetAddress(message.getReplyTo())});
+
+        for (String s : message.getTo()) {
+            mime.addRecipients(Message.RecipientType.TO, InternetAddress.parse(s));
+        }
+        for (String t : message.getCc()) {
+            mime.addRecipients(Message.RecipientType.CC, InternetAddress.parse(t));
+        }
+        for (String t : message.getBcc()) {
+            mime.addRecipients(Message.RecipientType.BCC, InternetAddress.parse(t));
+        }
+        if (message.getReplyTo() != null) {
+            mime.setReplyTo(new InternetAddress[]{new InternetAddress(message.getReplyTo())});
+        }
         mime.setSubject(message.getSubject(), "UTF-8");
         if (message.getHeaders() != null) {
-            for (Map.Entry<String,String> e : message.getHeaders().entrySet()) mime.addHeader(e.getKey(), e.getValue());
+            for (Map.Entry<String,String> e : message.getHeaders().entrySet()) {
+                mime.addHeader(e.getKey(), e.getValue());
+            }
         }
 
         boolean hasAttachments = message.getAttachments() != null && !message.getAttachments().isEmpty();
@@ -98,7 +110,9 @@ public class MimeMessageBuilder {
 
     /** 添加附件到 mixed 部分 */
     private static void addAttachments(MimeMultipart mixed, List<Attachment> attachments) throws Exception {
-        if (attachments == null) return;
+        if (attachments == null) {
+            return;
+        }
         for (Attachment a : attachments) {
             MimeBodyPart part = new MimeBodyPart();
             DataSource ds;
@@ -110,8 +124,12 @@ public class MimeMessageBuilder {
                 continue;
             }
             part.setDataHandler(new DataHandler(ds));
-            if (a.getFilename() != null) part.setFileName(a.getFilename());
-            if (a.getDisposition() != null) part.setDisposition(a.getDisposition());
+            if (a.getFilename() != null) {
+                part.setFileName(a.getFilename());
+            }
+            if (a.getDisposition() != null) {
+                part.setDisposition(a.getDisposition());
+            }
             mixed.addBodyPart(part);
         }
     }
@@ -130,7 +148,9 @@ public class MimeMessageBuilder {
                 continue;
             }
             part.setDataHandler(new DataHandler(ds));
-            if (r.getContentId() != null) part.setHeader("Content-ID", "<" + r.getContentId() + ">");
+            if (r.getContentId() != null) {
+                part.setHeader("Content-ID", "<" + r.getContentId() + ">");
+            }
             related.addBodyPart(part);
         }
     }

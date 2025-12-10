@@ -1,15 +1,59 @@
 {
   "properties": [
     {
-      "name": "multicache.cacheNullValues",
+      "name": "peach.email.default-provider",
+      "type": "java.lang.String",
+      "description": "默认提供商（选填），用于自动发送时的首选路由名称，例如：qq/gmail/ali/163"
+    },
+    {
+      "name": "peach.email.providers",
+      "type": "java.util.Map<java.lang.String,com.peach.email.autoconfigure.EmailProperties.Provider>",
+      "description": "提供商配置（必填至少一个）。key 为提供商名称，value 为账号与连接参数"
+    },
+    {
+      "name": "peach.email.retry",
+      "type": "com.peach.email.autoconfigure.EmailProperties.Retry",
+      "description": "重试策略（选填），不配置则采用默认：最多3次、200ms指数退避"
+    },
+    {
+      "name": "peach.email.providers.*.username",
+      "type": "java.lang.String",
+      "description": "认证用户名（邮箱地址，必填）"
+    },
+    {
+      "name": "peach.email.providers.*.password",
+      "type": "java.lang.String",
+      "description": "邮件服务授权码或密码（必填）"
+    },
+    {
+      "name": "peach.email.providers.*.host",
+      "type": "java.lang.String",
+      "description": "SMTP 主机名（选填，缺省为内置提供商默认 host）"
+    },
+    {
+      "name": "peach.email.providers.*.port",
+      "type": "java.lang.Integer",
+      "description": "SMTP 端口（选填，缺省为 465/SSL 或 25）"
+    },
+    {
+      "name": "peach.email.providers.*.ssl",
       "type": "java.lang.Boolean",
-      "description": "是否缓存null值",
-      "defaultValue": false,
-      "deprecation": {
-        "level": "warning",
-        "reason": "默认值为false，建议根据业务场景设置,设置为true值可以防止缓存穿透",
-        "replacement": ""
-      }
+      "description": "是否启用 SSL（选填，缺省 true；为 false 时启用 STARTTLS）"
+    },
+    {
+      "name": "peach.email.providers.*.priority",
+      "type": "java.lang.Integer",
+      "description": "路由优先级（选填），值越小越优先"
+    },
+    {
+      "name": "peach.email.retry.max-attempts",
+      "type": "java.lang.Integer",
+      "description": "最大尝试次数（选填，默认3）"
+    },
+    {
+      "name": "peach.email.retry.base-delay-millis",
+      "type": "java.lang.Long",
+      "description": "基准延迟毫秒（选填，默认200），指数退避：delay = base * 2^(attempt-1)"
     }
   ]
 }

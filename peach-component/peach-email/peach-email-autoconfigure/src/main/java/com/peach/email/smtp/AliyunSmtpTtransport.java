@@ -8,7 +8,7 @@ package com.peach.email.smtp;
  */
 public class AliyunSmtpTtransport extends AbstractTransport{
 
-    protected AliyunSmtpTtransport() {
+    public AliyunSmtpTtransport() {
         super("ali");
     }
 }

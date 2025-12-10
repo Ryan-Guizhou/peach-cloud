@@ -16,6 +16,7 @@ import java.util.Properties;
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:47
+ * @Description 抽象的SMTP传输实现 子类可重写
  */
 public abstract class AbstractTransport implements EmailTransport {
 

@@ -7,7 +7,7 @@ package com.peach.email.smtp;
  */
 public class QqSmtpTransport extends AbstractTransport{
 
-    protected QqSmtpTransport() {
+    public QqSmtpTransport() {
         super("qq");
     }
 }

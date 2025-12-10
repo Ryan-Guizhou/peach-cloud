@@ -7,7 +7,7 @@ package com.peach.email.smtp;
  */
 public class Netease163SmtpTransport extends AbstractTransport{
 
-    protected Netease163SmtpTransport() {
+    public Netease163SmtpTransport() {
         super("163");
     }
 

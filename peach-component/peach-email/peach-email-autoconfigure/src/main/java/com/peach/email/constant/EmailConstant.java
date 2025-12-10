@@ -43,5 +43,9 @@ public interface EmailConstant {
 
     String DEFAULT_MAIL_STMP_WRITETIMEOUE = "30000";
 
+    String TEMPLATES_PATH = "templates";
+
+    String TEMPLATES_ENCODING = "UTF-8";
+
 
 }
