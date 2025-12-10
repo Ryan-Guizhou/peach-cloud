@@ -15,11 +15,6 @@
 
     <packaging>pom</packaging>
 
-
-    <dependencies>
-
-    </dependencies>
-
     <modules>
         <module>peach-kafka</module>
         <module>peach-rocket</module>

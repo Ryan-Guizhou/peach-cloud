@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,6 +23,16 @@ public class BloomController {
     @Autowired
     private BloomFilterService bloomFilterService;
 
+    @PostConstruct
+    public void init() {
+        for (int i = 10000; i > 0; i--) {
+            bloomFilterService.add("user", i);
+        }
+        for (int i = 100; i > 0; i--) {
+            bloomFilterService.add("order", i);
+        }
+    }
+
 
     @GetMapping("/mightContain")
     public Map demo(Integer id) {
@@ -33,17 +44,6 @@ public class BloomController {
         map.put("b",b);
         map.put("b1",b1);
         return map;
-    }
-
-    @GetMapping("/add")
-    public boolean bloom(){
-        for (int i = 10000; i > 0; i--) {
-            bloomFilterService.add("user", i);
-        }
-        for (int i = 100; i > 0; i--) {
-            bloomFilterService.add("order", i);
-        }
-        return true;
     }
 
     @GetMapping("/status")

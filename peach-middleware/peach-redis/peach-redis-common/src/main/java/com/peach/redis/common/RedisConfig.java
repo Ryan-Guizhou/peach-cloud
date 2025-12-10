@@ -1,6 +1,6 @@
 
 
-package com.peach.redis;
+package com.peach.redis.common;
 
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -19,6 +19,7 @@ import org.redisson.config.SingleServerConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -51,85 +52,85 @@ import java.util.stream.IntStream;
 @Configuration
 public class RedisConfig<K, V> {
 
-    @Value("${spring.redis.mode}")
+    @Value("${peach.redis.mode}")
     private String mode;
 
-    @Value("${spring.redis.host}")
+    @Value("${peach.redis.host}")
     private String host;
 
-    @Value("${spring.redis.password}")
+    @Value("${peach.redis.password}")
     private String password;
 
-    @Value("${spring.redis.sentinelMaster:master}")
+    @Value("${peach.redis.sentinelMaster:master}")
     private String sentinelMaster;
 
-    @Value("#{${spring.redis.database:0}}")
+    @Value("#{${peach.redis.database:0}}")
     private int database;
 
-    @Value("${spring.redis.redisson.enabled:true}")
+    @Value("${peach.redis.redisson.enabled:true}")
     private boolean redissonEnabled;
 
-    @Value("${spring.redis.redisson.threads:16}")
+    @Value("${peach.redis.redisson.threads:16}")
     private int redissonThreads;
 
-    @Value("${spring.redis.redisson.netty-threads:32}")
+    @Value("${peach.redis.redisson.netty-threads:32}")
     private int redissonNettyThreads;
 
-    @Value("${spring.redis.redisson.timeout:3000}")
+    @Value("${peach.redis.redisson.timeout:3000}")
     private int redissonTimeout;
 
-    @Value("${spring.redis.redisson.connection-pool-size:64}")
+    @Value("${peach.redis.redisson.connection-pool-size:64}")
     private int redissonConnectionPoolSize;
 
-    @Value("${spring.redis.redisson.connection-minimum-idle-size:10}")
+    @Value("${peach.redis.redisson.connection-minimum-idle-size:10}")
     private int redissonConnectionMinimumIdleSize;
 
-    @Value("${spring.redis.redisson.subscription-connection-pool-size:50}")
+    @Value("${peach.redis.redisson.subscription-connection-pool-size:50}")
     private int redissonSubscriptionConnectionPoolSize;
 
-    @Value("${spring.redis.redisson.subscription-connection-minimum-idle-size:1}")
+    @Value("${peach.redis.redisson.subscription-connection-minimum-idle-size:1}")
     private int redissonSubscriptionConnectionMinimumIdleSize;
 
-    @Value("${spring.redis.redisson.slave-connection-minimum-idle-size:10}")
+    @Value("${peach.redis.redisson.slave-connection-minimum-idle-size:10}")
     private int slaveConnectionMinimumIdleSize;
 
-    @Value("${spring.redis.redisson.master-connection-minimum-idle-size:10}")
+    @Value("${peach.redis.redisson.master-connection-minimum-idle-size:10}")
     private int masterConnectionMinimumIdleSize;
 
-    @Value("${spring.redis.redisson.slave-connection-pool-size:64}")
+    @Value("${peach.redis.redisson.slave-connection-pool-size:64}")
     private int slaveConnectionPoolSize;
 
-    @Value("${spring.redis.redisson.master-connection-pool-size:64}")
+    @Value("${peach.redis.redisson.master-connection-pool-size:64}")
     private int masterConnectionPoolSize;
 
-    @Value("${spring.redis.redisson.scan-interval:1000}")
+    @Value("${peach.redis.redisson.scan-interval:1000}")
     private int scanInterval;
 
-    @Value("${spring.redis.redisson.idle-connection-timeout:10000}")
+    @Value("${peach.redis.redisson.idle-connection-timeout:10000}")
     private int idleConnectionTimeout;
 
-    @Value("${spring.redis.redisson.ping-timeout:1000}")
+    @Value("${peach.redis.redisson.ping-timeout:1000}")
     private int pingTimeout;
 
-    @Value("${spring.redis.redisson.connect-timeout:10000}")
+    @Value("${peach.redis.redisson.connect-timeout:10000}")
     private int connectTimeout;
 
-    @Value("${spring.redis.redisson.retry-attempts:3}")
+    @Value("${peach.redis.redisson.retry-attempts:3}")
     private int retryAttempts;
 
-    @Value("${spring.redis.redisson.retry-interval:1500}")
+    @Value("${peach.redis.redisson.retry-interval:1500}")
     private int retryInterval;
 
-    @Value("${spring.redis.redisson.subscriptions-per-connection:5}")
+    @Value("${peach.redis.redisson.subscriptions-per-connection:5}")
     private int subscriptionsPerConnection;
 
-    @Value("${spring.redis.redisson.ssl-enable:false}")
+    @Value("${peach.redis.redisson.ssl-enable:false}")
     private boolean sslEnable;
 
 
 
     @Bean(name = "redisPoolConfigs")
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(JedisPoolConfig.class)
     public JedisPoolConfig poolConfig() {
         JedisPoolConfig pool = new JedisPoolConfig();
         pool.setMaxTotal(600);
@@ -145,11 +146,11 @@ public class RedisConfig<K, V> {
     }
 
     @Bean(name = "jedisConnectionFactory")
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(JedisConnectionFactory.class)
     JedisConnectionFactory jedisConnectionFactory(
             @Qualifier("redisPoolConfigs") JedisPoolConfig jedisPoolConfig) {
         JedisConnectionFactory jedisConnectionFactory = null;
-        log.info("=============== redis host:" + host);
+        log.info("redis host:" + host);
         //单机模式
         switch (mode) {
             case MultiCacheConstant.STANDALONE:
@@ -182,7 +183,7 @@ public class RedisConfig<K, V> {
 
 
     @Bean(name = "redisTemplate")
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(RedisTemplate.class)
     public RedisTemplate<String, Object> redisTemplate(JedisConnectionFactory jedisConnectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(jedisConnectionFactory);
@@ -262,12 +263,8 @@ public class RedisConfig<K, V> {
     // 添加 RedissonClient 配置
     @Primary
     @Bean(name = "redissonClient", destroyMethod = "shutdown")
-    @ConditionalOnMissingBean(RedissonClient.class)
+    @ConditionalOnProperty(name = "peach.redis.redisson.enabled", havingValue = "true", matchIfMissing = true)
     public RedissonClient redissonClient() {
-        if (!redissonEnabled) {
-            log.info("Redisson is disabled, skip initialization");
-            return null;
-        }
 
         try {
             Config config = new Config();

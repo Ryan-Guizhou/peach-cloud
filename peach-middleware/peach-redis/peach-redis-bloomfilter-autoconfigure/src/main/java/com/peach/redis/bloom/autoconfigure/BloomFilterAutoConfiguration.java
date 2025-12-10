@@ -1,7 +1,7 @@
 package com.peach.redis.bloom.autoconfigure;
 
 
-import com.peach.redis.RedisConfig;
+import com.peach.redis.common.RedisConfig;
 import com.peach.redis.bloom.config.BloomFilterProperties;
 import com.peach.redis.bloom.constant.SpiConstant;
 import com.peach.redis.bloom.core.BloomFilterService;
@@ -18,6 +18,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Primary;
 
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ public class BloomFilterAutoConfiguration {
 
     @Bean
     @Primary
-    @ConditionalOnBean(RedissonClient.class)
+    @DependsOn("redissonClient")
     @ConditionalOnMissingBean(BloomFilterService.class)
     public BloomFilterService bloomFilterService(RedissonClient redissonClient,
                                                  BloomFilterProperties properties) {

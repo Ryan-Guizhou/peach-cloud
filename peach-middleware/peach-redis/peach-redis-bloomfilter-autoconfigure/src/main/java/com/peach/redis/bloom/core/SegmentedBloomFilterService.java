@@ -54,7 +54,9 @@ public class SegmentedBloomFilterService implements BloomFilterService {
         String ns = resolveNamespace(namespace);
         RBloomFilter<Object> tail = getOrCreateTail(ns);
         boolean added = tail.add(value);
-        if (added) afterAdd(ns);
+        if (added) {
+            afterAdd(ns);
+        }
         return added;
     }
 
@@ -63,7 +65,9 @@ public class SegmentedBloomFilterService implements BloomFilterService {
         String ns = resolveNamespace(namespace);
         List<RBloomFilter<Object>> segments = allSegments(ns);
         for (RBloomFilter<Object> bf : segments) {
-            if (bf.contains(value)) return true;
+            if (bf.contains(value)) {
+                return true;
+            }
         }
         return false;
     }
@@ -87,9 +91,13 @@ public class SegmentedBloomFilterService implements BloomFilterService {
         for (Object v : values) {
             boolean found = false;
             for (RBloomFilter<Object> bf : segments) {
-                if (bf.contains(v)) { found = true; break; }
+                if (bf.contains(v)) {
+                    found = true; break;
+                }
             }
-            if (!found) return false;
+            if (!found) {
+                return false;
+            }
         }
         return true;
     }

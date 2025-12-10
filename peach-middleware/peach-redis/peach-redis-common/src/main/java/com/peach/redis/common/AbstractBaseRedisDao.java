@@ -1,10 +1,5 @@
-/*
- *  Project Name: DataPlus PRO Platform
- *  Copyright (C) 2023 Datatang (Beijing) Technology Co., Ltd. (https://www.datatang.com) All rights reserved.
- *  Notice: This content is intended for internal circulation within Datatang (Beijing) Technology Co., Ltd. only. Unauthorized disclosure,copying, distribution, or use for any other commercial purposes isstrictly prohibited.
- */
 
-package com.peach.redis;
+package com.peach.redis.common;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;

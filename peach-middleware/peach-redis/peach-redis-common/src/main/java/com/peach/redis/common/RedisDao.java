@@ -1,6 +1,6 @@
 
 
-package com.peach.redis;
+package com.peach.redis.common;
 
 
 

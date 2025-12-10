@@ -1,15 +1,52 @@
 {
   "properties": [
     {
-      "name": "peach.redis.bloom.defaultNamespace",
+      "name": "peach.redis.bloom.key-prefix",
       "type": "java.lang.String",
-      "description": "默认的命名空间",
-      "defaultValue": "default",
-      "deprecation": {
-        "level": "warning",
-        "reason": "必须要填写，不然的话都放在一个命名空间里会有问题",
-        "replacement": ""
-      }
+      "description": "Redis key 前缀，用于隔离不同 BloomFilter 命名空间。",
+      "defaultValue": "bloom"
+    },
+    {
+      "name": "peach.redis.bloom.initial-capacity",
+      "type": "java.lang.Long",
+      "description": "BloomFilter 预估初始插入量。",
+      "defaultValue": 1000000
+    },
+    {
+      "name": "peach.redis.bloom.false-positive-probability",
+      "type": "java.lang.Double",
+      "description": "误判率（FPP），建议 0.001。",
+      "defaultValue": 0.001
+    },
+    {
+      "name": "peach.redis.bloom.load-factor",
+      "type": "java.lang.Double",
+      "description": "尾段负载达到该比例时触发扩容，建议在 0.85~0.95。",
+      "defaultValue": 0.9
+    },
+    {
+      "name": "peach.redis.bloom.scale-factor",
+      "type": "java.lang.Double",
+      "description": "扩容倍率，例如 2.0 表示新段容量翻倍。",
+      "defaultValue": 2.0
+    },
+    {
+      "name": "peach.redis.bloom.max-segments",
+      "type": "java.lang.Integer",
+      "description": "单命名空间最大 BloomFilter 段数。",
+      "defaultValue": 32
+    },
+    {
+      "name": "peach.redis.bloom.default-namespace",
+      "type": "java.lang.String",
+      "description": "默认命名空间，当未传递 namespace 时使用该值。",
+      "defaultValue": "default"
+    },
+    {
+      "name": "peach.redis.bloom.enable-local-cache",
+      "type": "java.lang.Boolean",
+      "description": "是否启用本地缓存以提升性能。",
+      "defaultValue": true
     }
   ]
 }

@@ -1,6 +1,6 @@
 
 
-package com.peach.redis;
+package com.peach.redis.common;
 
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
@@ -41,7 +41,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     //最大重试次数
     private static final Integer tryTimes = 3;
 
-    @Value("${spring.redis.mode}")
+    @Value("${peach.redis.mode}")
     private String redisMode;
     private static final int USE_SCAN_COMMAND = 1;
 
