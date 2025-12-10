@@ -1,6 +1,6 @@
 package com.peach.redis.config;
 
-import com.peach.redis.common.MultiCacheConstant;
+import com.peach.redis.constant.MultiCacheConstant;
 import lombok.Data;
 
 import java.time.Duration;

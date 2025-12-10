@@ -6,8 +6,10 @@ import com.peach.email.retry.RetryPolicy;
 import com.peach.redis.common.RedisConfig;
 import com.peach.sample.email.Idempotency.TTLIdempotencyStore;
 import com.peach.sample.email.retry.FixedDelayRetryPolicy;
+import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
@@ -16,8 +18,8 @@ import org.springframework.context.annotation.ComponentScan;
  * @Version 1.0.0
  * @CreateTime 2025/12/8 15:21
  */
+@EnableCaching
 @SpringBootApplication
-@ComponentScan(basePackages = {"com.peach.redis", "com.peach.sample"})
 public class SampleApplication {
 
     /**
@@ -39,6 +41,8 @@ public class SampleApplication {
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(SampleApplication.class, args);
+        SpringApplication app = new SpringApplication(SampleApplication.class);
+        app.setBannerMode(Banner.Mode.CONSOLE);
+        app.run(args);
     }
 }

@@ -1,4 +1,4 @@
-package com.peach.redis.common;
+package com.peach.redis.constant;
 
 /**
  * @Author Mr Shu

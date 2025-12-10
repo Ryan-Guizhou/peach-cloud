@@ -2,17 +2,16 @@ package com.peach.sample.multicache;
 
 import com.peach.redis.manager.MultiCacheManager;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,6 +19,7 @@ import java.util.Map;
  * @Version 1.0.0
  * @CreateTime 2025/12/10 15:16
  */
+@Slf4j
 @Component
 public class MulticacheService {
 
@@ -36,20 +36,41 @@ public class MulticacheService {
             USER_DB_MAP.put(i + "", userDO);
         }
     }
-
+    private int counter = 0;
     @Autowired
     private MultiCacheManager multiCacheManager;
 
-//    @Cacheable(value = "userCache", unless = "#result == null",cacheResolver = "21",key="#id",sync = false)
-//    @Cacheable(value = "userCache", unless = "#result == null",key="#id",sync = false)
-    public UserDO getUser(String id) {
-        Cache userCache = multiCacheManager.getCache("userCache");
-        Cache.ValueWrapper valueWrapper = userCache.get("userCache" + id);
+
+    @Cacheable(value = "userCache", unless = "#result == null",key="#id+'-'+#name",sync = false,cacheResolver = "dynamicCacheResolver")
+    public UserDO getUser(String id,String name) {
+        counter ++;
+        log.info("counter = {}",counter);
+        return USER_DB_MAP.getOrDefault(id, null);
+    }
+
+    public UserDO getManagerUser(String id,String name) {
+        String cacheName = "userCache"+":"+id;
+        Cache userCache = multiCacheManager.getCache(cacheName);
+        Cache.ValueWrapper valueWrapper = userCache.get(cacheName +":"+id+"-"+name);
         if (valueWrapper != null) {
             return (UserDO) valueWrapper.get();
         }
-        userCache.put("userCache" + id, USER_DB_MAP.getOrDefault(id, null));
-        return USER_DB_MAP.getOrDefault(id, null);
+        UserDO userDO = USER_DB_MAP.getOrDefault(id, null);
+        userCache.put(id+"-"+name, userDO);
+        return userDO;
+    }
+
+    @CacheEvict(value = "userCache", key="#id+'-'+#name",cacheResolver = "dynamicCacheResolver")
+    public void evict(String id, String name) {
+
+    }
+
+    public void managerEvict(String id, String name) {
+        String cacheName = "userCache"+":"+id;
+        Cache userCache = multiCacheManager.getCache(cacheName);
+        if (userCache!=null) {
+           userCache.evict(id+"-"+name);
+        }
     }
 
     @Data

@@ -1,17 +1,21 @@
 package com.peach.redis.manager;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.peach.common.util.StringUtil;
-import com.peach.redis.common.MultiCacheConstant;
+import com.peach.redis.constant.MultiCacheConstant;
+import com.peach.redis.common.RedisDao;
 import com.peach.redis.listener.CacheMessage;
 import com.peach.redis.config.MultiCacheConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.support.AbstractValueAdaptingCache;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -146,12 +150,33 @@ public class MultiCache extends AbstractValueAdaptingCache {
         // 先清除redis中缓存数据，然后清除caffeine中的缓存，
         // 避免短时间内如果先清除caffeine缓存后其他请求会再从redis里加载到caffeine中
         redisTemplate.delete(buildCacheKey(key));
+        log.info("clear cache in redis, the key is : {}", buildCacheKey(key));
         push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
         caffeineCache.invalidate(key);
+        log.info("clear cache in caffeine, the key is : {}", key);
     }
 
     @Override
     public void clear() {
+        // 先清除redis中缓存数据，然后清除caffeine中的缓存，
+        // 避免短时间内如果先清除caffeine缓存后其他请求会再从redis里加载到caffeine中
+        RedisDao redisDao = SpringUtil.getBean(RedisDao.class);
+        String pattern;
+        if (StringUtil.isNotBlank(cachePrefix)) {
+            pattern = cachePrefix
+                    + MultiCacheConstant.REDIS_KEY_SEPARATOR
+                    + this.cacheName
+                    + MultiCacheConstant.REDIS_KEY_SEPARATOR
+                    + "*";
+        } else {
+            pattern = this.cacheName
+                    + MultiCacheConstant.REDIS_KEY_SEPARATOR
+                    + "*";
+        }
+        Set<Object> keys = redisDao.keys(pattern);
+        if (!CollectionUtils.isEmpty(keys)) {
+            redisDao.delete(keys);
+        }
         push(new CacheMessage(this.cacheName, null, this.caffeineCache.hashCode()));
         caffeineCache.invalidateAll();
     }
@@ -171,10 +196,17 @@ public class MultiCache extends AbstractValueAdaptingCache {
      * @return
      */
     private Object buildCacheKey(Object key) {
-        return Optional.ofNullable(cachePrefix)
-                .filter(StringUtil::isNotBlank)
-                .map(prefix -> prefix + MultiCacheConstant.REDIS_KEY_SEPARATOR + key)
-                .orElse(String.valueOf(key));
+        String rawKey = String.valueOf(key);
+        if (StringUtil.isNotBlank(cachePrefix)) {
+            return cachePrefix
+                    + MultiCacheConstant.REDIS_KEY_SEPARATOR
+                    + this.cacheName
+                    + MultiCacheConstant.REDIS_KEY_SEPARATOR
+                    + rawKey;
+        }
+        return this.cacheName
+                + MultiCacheConstant.REDIS_KEY_SEPARATOR
+                + rawKey;
     }
 
     /**
