@@ -31,10 +31,10 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>com.peach</groupId>-->
-<!--            <artifactId>peach-redis-multicache-starter</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redis-multicache-starter</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.peach</groupId>

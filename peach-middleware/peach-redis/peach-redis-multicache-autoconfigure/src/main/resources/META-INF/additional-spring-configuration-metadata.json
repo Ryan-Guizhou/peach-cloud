@@ -1,15 +1,106 @@
 {
   "properties": [
     {
-      "name": "multicache.cacheNullValues",
+      "name": "peach.multicache.cache-names",
+      "type": "java.util.Set<java.lang.String>",
+      "description": "启用的缓存名称集合。",
+      "defaultValue": []
+    },
+    {
+      "name": "peach.multicache.cache-null-values",
       "type": "java.lang.Boolean",
-      "description": "是否缓存null值",
-      "defaultValue": false,
-      "deprecation": {
-        "level": "warning",
-        "reason": "默认值为false，建议根据业务场景设置,设置为true值可以防止缓存穿透",
-        "replacement": ""
-      }
+      "description": "是否缓存空值以避免缓存穿透。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.multicache.cache-prefix",
+      "type": "java.lang.String",
+      "description": "缓存 key 前缀。",
+      "defaultValue": ""
+    },
+
+    {
+      "name": "peach.multicache.redis",
+      "type": "com.peach.redis.config.RedisCacheConfig",
+      "description": "Redis 缓存相关配置。"
+    },
+    {
+      "name": "peach.multicache.redis.default-expiration",
+      "type": "java.time.Duration",
+      "description": "Redis 全局过期时间（默认 6 小时）。",
+      "defaultValue": "PT6H"
+    },
+    {
+      "name": "peach.multicache.redis.expires",
+      "type": "java.util.Map<java.lang.String, java.time.Duration>",
+      "description": "针对每个 cacheName 的独立过期时间。"
+    },
+    {
+      "name": "peach.multicache.redis.topic",
+      "type": "java.lang.String",
+      "description": "多节点缓存同步用的 Redis 频道名称。"
+    },
+
+    {
+      "name": "peach.multicache.caffeine",
+      "type": "com.peach.redis.config.CaffeineCacheConfig",
+      "description": "Caffeine 本地缓存配置。"
+    },
+    {
+      "name": "peach.multicache.caffeine.expire-after-access",
+      "type": "java.lang.Long",
+      "description": "访问后过期时间（毫秒）。默认 3 小时。",
+      "defaultValue": 10800000
+    },
+    {
+      "name": "peach.multicache.caffeine.expire-after-write",
+      "type": "java.lang.Long",
+      "description": "写入后过期时间（毫秒）。默认 3 小时。",
+      "defaultValue": 10800000
+    },
+    {
+      "name": "peach.multicache.caffeine.refresh-after-write",
+      "type": "java.lang.Long",
+      "description": "写入后刷新时间（毫秒）。"
+    },
+    {
+      "name": "peach.multicache.caffeine.initial-capacity",
+      "type": "java.lang.Integer",
+      "description": "Caffeine 初始容量。",
+      "defaultValue": 500
+    },
+    {
+      "name": "peach.multicache.caffeine.maximum-size",
+      "type": "java.lang.Long",
+      "description": "Caffeine 最大缓存数量。",
+      "defaultValue": 5000
+    },
+    {
+      "name": "peach.multicache.caffeine.key-strength",
+      "type": "com.peach.redis.config.CaffeineCacheConfig.CaffeineStrength",
+      "description": "Caffeine key 引用强度（WEAK / STRONG）。"
+    },
+    {
+      "name": "peach.multicache.caffeine.value-strength",
+      "type": "com.peach.redis.config.CaffeineCacheConfig.CaffeineStrength",
+      "description": "Caffeine value 引用强度（WEAK / STRONG）。"
+    }
+  ],
+
+  "hints": [
+    {
+      "name": "peach.multicache.caffeine.key-strength",
+      "values": [
+        { "value": "WEAK", "description": "弱引用，适合短生命周期对象。" },
+        { "value": "STRONG", "description": "强引用，默认值。" }
+      ]
+    },
+    {
+      "name": "peach.multicache.caffeine.value-strength",
+      "values": [
+        { "value": "WEAK", "description": "弱引用。" },
+        { "value": "STRONG", "description": "强引用。" }
+      ]
     }
   ]
 }

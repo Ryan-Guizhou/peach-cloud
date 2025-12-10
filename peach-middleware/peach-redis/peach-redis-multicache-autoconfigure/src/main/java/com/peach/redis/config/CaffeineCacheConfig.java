@@ -37,14 +37,14 @@ public class CaffeineCacheConfig {
     private long maximumSize = 5000;
 
     /**
-     * key 对象引用强度
+     * key 对象引用强度  只能弱引用
      */
-    private CaffeineStrength keyStrength;
+    private CaffeineStrength keyStrength = CaffeineStrength.WEAK;
 
     /**
-     * value 对象引用强度
+     * value 对象引用强度 既可以强引用 也可以弱引用
      */
-    private CaffeineStrength valueStrength;
+    private CaffeineStrength valueStrength = CaffeineStrength.STRONG;
 
     public enum CaffeineStrength {
         /**

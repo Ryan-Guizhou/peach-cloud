@@ -72,7 +72,6 @@ public class MultiCacheManager implements CacheManager {
                     Optional.of(config.getExpireAfterWrite()).filter(e -> e > 0)
                             .ifPresent(e -> builder.expireAfterWrite(e, TimeUnit.MILLISECONDS)); // 补充单位
 
-                    // 这两行是正确的
                     Optional.of(config.getInitialCapacity()).filter(c -> c > 0)
                             .ifPresent(builder::initialCapacity);
 

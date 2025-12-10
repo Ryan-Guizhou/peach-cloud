@@ -2,7 +2,7 @@ package com.peach.redis.manager;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.peach.common.util.StringUtil;
-import com.peach.redis.MultiCacheConstant;
+import com.peach.redis.common.MultiCacheConstant;
 import com.peach.redis.listener.CacheMessage;
 import com.peach.redis.config.MultiCacheConfig;
 import lombok.extern.slf4j.Slf4j;
@@ -36,16 +36,6 @@ public class MultiCache extends AbstractValueAdaptingCache {
     private RedisTemplate redisTemplate;
 
     /**
-     * 是否启用一级缓存
-     */
-    private final boolean caffeineEnabled;
-
-    /**
-     * 是否启用二级缓存
-     */
-    private final boolean redisEnabled;
-
-    /**
      * 缓存前缀
      */
     private String cachePrefix;
@@ -67,8 +57,6 @@ public class MultiCache extends AbstractValueAdaptingCache {
         this.cacheName = cacheName;
         this.redisTemplate = redisTemplate;
         this.caffeineCache = caffeineCache;
-        this.redisEnabled = config.isRedisEnabled();
-        this.caffeineEnabled = config.isCaffeineEnabled();
         this.cachePrefix = config.getCachePrefix();
         this.defaultExpiration = config.getRedis().getDefaultExpiration();
         this.expires = config.getRedis().getExpires();
@@ -79,19 +67,15 @@ public class MultiCache extends AbstractValueAdaptingCache {
     protected Object lookup(Object key) {
         Object cacheKey = buildCacheKey(key);
         Object value = null;
-        if (caffeineEnabled){
-            value = caffeineCache.getIfPresent(key);
-            if (value != null) {
-                log.debug("get cache from caffeine, the key is : {}", cacheKey);
-                return value;
-            }
+        value = caffeineCache.getIfPresent(key);
+        if (value != null) {
+            log.debug("get cache from caffeine, the key is : {}", cacheKey);
+            return value;
         }
-        if (redisEnabled){
-            value = this.redisTemplate.opsForValue().get(cacheKey);
-            if (value != null) {
-                log.debug("get cache from redis and put in caffeine, the key is : {}", cacheKey);
-                caffeineCache.put(key, value);
-            }
+        value = this.redisTemplate.opsForValue().get(cacheKey);
+        if (value != null) {
+            log.debug("get cache from redis and put in caffeine, the key is : {}", cacheKey);
+            caffeineCache.put(key, value);
         }
         return value;
     }
@@ -210,17 +194,13 @@ public class MultiCache extends AbstractValueAdaptingCache {
     private void doPut(Object key, Object value) {
         Duration expire = getExpire();
         value = toStoreValue(value);
-        if (redisEnabled){
-            if (!expire.isNegative()) {
-                redisTemplate.opsForValue().set(buildCacheKey(key), value, expire);
-            } else {
-                redisTemplate.opsForValue().set(buildCacheKey(key), value);
-            }
+        if (!expire.isNegative()) {
+            redisTemplate.opsForValue().set(buildCacheKey(key), value, expire);
+        } else {
+            redisTemplate.opsForValue().set(buildCacheKey(key), value);
         }
-        if (caffeineEnabled){
-            push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
-            caffeineCache.put(key, value);
-        }
+        push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
+        caffeineCache.put(key, value);
     }
 
 

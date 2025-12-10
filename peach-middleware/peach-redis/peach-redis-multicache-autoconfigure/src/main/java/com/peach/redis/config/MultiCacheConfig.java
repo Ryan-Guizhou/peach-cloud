@@ -14,7 +14,7 @@ import java.util.Set;
  * @Description 多级缓存配置
  */
 @Data
-@ConfigurationProperties(prefix = "multicache")
+@ConfigurationProperties(prefix = "peach.multicache")
 public class MultiCacheConfig {
 
     private Set<String> cacheNames = new HashSet<>();
@@ -28,16 +28,6 @@ public class MultiCacheConfig {
      * 缓存key的前缀, 默认空字符串
      */
     private String cachePrefix;
-
-    /**
-     * 是否启用redis缓存
-     */
-    private boolean redisEnabled = true;
-
-    /**
-     * 是否启用caffeine缓存
-     */
-    private boolean caffeineEnabled = true;
 
     /**
      * redis 缓存配置

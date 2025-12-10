@@ -1,22 +1,25 @@
 package com.peach.redis.autoconfigure;
 
 
-import com.peach.redis.RedisConfig;
+import com.peach.redis.common.RedisConfig;
 import com.peach.redis.listener.CacheMessageListener;
 import com.peach.redis.config.MultiCacheConfig;
 import com.peach.redis.manager.MultiCacheManager;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 import java.util.Objects;
 
+@Slf4j
 @AutoConfiguration
 @AutoConfigureAfter(RedisConfig.class)
 @EnableConfigurationProperties(MultiCacheConfig.class)
@@ -24,15 +27,19 @@ import java.util.Objects;
 public class MultiCacheAutoConfiguration<K, V>{
 
     @Bean
-    @ConditionalOnBean(RedisTemplate.class)
+    @DependsOn("redisTemplate")
+    @ConditionalOnMissingBean(MultiCacheManager.class)
     public MultiCacheManager cacheManager(RedisTemplate<K, V> redisTemplate, MultiCacheConfig cacheConfig) {
+        log.info("init MultiCacheManager successful");
         return new MultiCacheManager(redisTemplate, cacheConfig);
     }
 
 
     @Bean
-    @ConditionalOnBean(RedisTemplate.class)
+    @DependsOn("redisTemplate")
+    @ConditionalOnMissingBean(RedisMessageListenerContainer.class)
     public RedisMessageListenerContainer cacheListenerContainer(MultiCacheConfig cacheConfig, RedisTemplate<K, V> redisTemplate, MultiCacheManager cacheManager) {
+        log.info("init RedisMessageListenerContainer successful");
         RedisMessageListenerContainer cacheListenerContainer = new RedisMessageListenerContainer();
         cacheListenerContainer.setConnectionFactory(Objects.requireNonNull(redisTemplate.getConnectionFactory()));
         CacheMessageListener<K, V> cacheMessageListener = new CacheMessageListener<>(redisTemplate, cacheManager);
