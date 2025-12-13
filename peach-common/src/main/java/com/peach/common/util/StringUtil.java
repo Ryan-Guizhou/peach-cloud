@@ -2,7 +2,7 @@ package com.peach.common.util;
 
 
 
-import com.peach.common.PubCommonConst;
+import com.peach.common.constant.PubCommonConst;
 import org.springframework.util.ObjectUtils;
 
 import java.io.Serializable;
@@ -28,12 +28,11 @@ import java.util.regex.Pattern;
  * @Description // 字符串工具
  * @CreateTime 2025/10/14 15:51
  */
-public class StringUtil implements Serializable {
+public final class StringUtil implements Serializable {
 
     private static final long serialVersionUID = 2143367839995921470L;
 
     private static final Pattern linePattern = Pattern.compile("_(\\w)");
-
 
     private static final Pattern humpPattern = Pattern.compile("[A-Z]");
 
@@ -48,6 +47,11 @@ public class StringUtil implements Serializable {
     public static final String COMMA = ",";
 
     public static final Integer UN_LIMIT = 0;
+
+    private StringUtil() {
+        throw new IllegalStateException("Utility class");
+    }
+
 
     public static String nullToEmpty(Object value) {
         if (null == value) {

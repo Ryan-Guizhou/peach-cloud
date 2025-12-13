@@ -1,4 +1,4 @@
-package com.peach.common;
+package com.peach.common.constant;
 
 /**
  * @Author Mr Shu

@@ -1,4 +1,4 @@
-package com.peach.common;
+package com.peach.common.util;
 
 import cn.hutool.extra.spring.SpringUtil;
 
@@ -17,7 +17,7 @@ public final class InstanceLazyLoader {
 
 
     private InstanceLazyLoader() {
-        throw new UnsupportedOperationException("InstanceLazyLoader cannot be instantiated");
+        throw new IllegalStateException("Utility class");
     }
 
     /**
