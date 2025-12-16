@@ -1,7 +1,7 @@
 package com.peach.initialize.execute.base;
 
 import com.peach.initialize.base.InitializeHandler;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Comparator;
@@ -13,7 +13,7 @@ import java.util.Map;
  * @CreateTime 2025/12/16 14:55
  * @Description 应用初始化执行顶级抽象类
  */
-@Slf4j
+
 public abstract class AbstractAppExecute {
 
     protected final ConfigurableApplicationContext context;
