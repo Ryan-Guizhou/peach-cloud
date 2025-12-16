@@ -212,6 +212,17 @@
                 <artifactId>peach-email-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-initialize-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-initialize-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

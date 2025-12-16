@@ -30,6 +30,7 @@
         <module>peach-captcha</module>
         <module>peach-email</module>
         <module>peach-file</module>
+        <module>peach-initialize</module>
     </modules>
 
 </project>
