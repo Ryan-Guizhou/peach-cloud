@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-redission</artifactId>
+    <name>peach-redission</name>
+    <description>peach-redission</description>
+
+    <packaging>pom</packaging>
+
+    <parent>
+        <groupId>com.peach</groupId>
+        <artifactId>peach-middleware</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <modules>
+        <module>peach-redission-bloomfilter-autoconfigure</module>
+        <module>peach-redission-bloomfilter-starter</module>
+        <module>peach-redission-delayqueue-autoconfigure</module>
+        <module>peach-redission-delayqueue-starter</module>
+    </modules>
+
+</project>

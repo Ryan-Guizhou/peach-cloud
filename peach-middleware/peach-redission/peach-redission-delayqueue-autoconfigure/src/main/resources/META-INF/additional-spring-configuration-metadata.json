@@ -1,0 +1,253 @@
+{
+  "groups": [
+    {
+      "name": "peach.delay.queue",
+      "type": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "延迟队列属性配置类，用于配置延迟队列的各种参数，包括线程池配置、分区数量和重试机制等"
+    }
+  ],
+  "properties": [
+    {
+      "name": "peach.delay.queue.core-pool-size",
+      "type": "java.lang.Integer",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "从队列拉取数据的线程池中的核心线程数量，如果业务过慢可调大",
+      "defaultValue": 4,
+      "minimum": 1,
+      "maximum": 64
+    },
+    {
+      "name": "peach.delay.queue.maximum-pool-size",
+      "type": "java.lang.Integer",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "从队列拉取数据的线程池中的最大线程数量，如果业务过慢可调大",
+      "defaultValue": 4,
+      "minimum": 1,
+      "maximum": 256
+    },
+    {
+      "name": "peach.delay.queue.keep-alive-time",
+      "type": "java.lang.Long",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "从队列拉取数据的线程池中的最大线程回收时间",
+      "defaultValue": 30,
+      "minimum": 1,
+      "maximum": 3600
+    },
+    {
+      "name": "peach.delay.queue.unit",
+      "type": "java.util.concurrent.TimeUnit",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "从队列拉取数据的线程池中的最大线程回收时间的时间单位",
+      "defaultValue": "SECONDS"
+    },
+    {
+      "name": "peach.delay.queue.work-queue-size",
+      "type": "java.lang.Integer",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "从队列拉取数据的线程池中的队列数量，如果业务过慢可调大",
+      "defaultValue": 256,
+      "minimum": 16,
+      "maximum": 65536
+    },
+    {
+      "name": "peach.delay.queue.isolation-region-count",
+      "type": "java.lang.Integer",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "延时队列的隔离分区数，延时有瓶颈时可调大次数，但会增大redis的cpu消耗 (同一个topic发送者和消费者的隔离分区数必须相同)",
+      "defaultValue": 5,
+      "minimum": 1,
+      "maximum": 100
+    },
+    {
+      "name": "peach.delay.queue.max-retry-attempts",
+      "type": "java.lang.Integer",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "消息处理失败后的最大重试次数",
+      "defaultValue": 3,
+      "minimum": 0,
+      "maximum": 20
+    },
+    {
+      "name": "peach.delay.queue.retry-interval-millis",
+      "type": "java.lang.Long",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "重试间隔时间（毫秒）",
+      "defaultValue": 5000,
+      "minimum": 100,
+      "maximum": 3600000
+    },
+    {
+      "name": "peach.delay.queue.max-dead-letter-queue-size",
+      "type": "java.lang.Integer",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "死信队列最大大小，防止无限增长",
+      "defaultValue": 10000,
+      "minimum": 100,
+      "maximum": 1000000
+    },
+    {
+      "name": "peach.delay.queue.dead-letter-clean-interval-hours",
+      "type": "java.lang.Integer",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "死信队列清理间隔（小时）",
+      "defaultValue": 24,
+      "minimum": 1,
+      "maximum": 720
+    },
+    {
+      "name": "peach.delay.queue.dead-letter-message-retention-hours",
+      "type": "java.lang.Integer",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "死信队列消息保留时间（小时）",
+      "defaultValue": 168,
+      "minimum": 1,
+      "maximum": 8760
+    },
+    {
+      "name": "peach.delay.queue.use-reliable-queue",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "description": "是否使用可靠队列（防止消息丢失）",
+      "defaultValue": true
+    }
+  ],
+  "hints": [
+    {
+      "name": "peach.delay.queue.core-pool-size",
+      "values": [
+        {
+          "value": 2,
+          "description": "低并发场景"
+        },
+        {
+          "value": 4,
+          "description": "默认配置，适合大多数场景"
+        },
+        {
+          "value": 8,
+          "description": "高并发场景"
+        },
+        {
+          "value": 16,
+          "description": "极高并发场景"
+        }
+      ]
+    },
+    {
+      "name": "peach.delay.queue.maximum-pool-size",
+      "values": [
+        {
+          "value": 4,
+          "description": "默认配置"
+        },
+        {
+          "value": 8,
+          "description": "中等并发"
+        },
+        {
+          "value": 16,
+          "description": "高并发"
+        },
+        {
+          "value": 32,
+          "description": "峰值处理"
+        }
+      ]
+    },
+    {
+      "name": "peach.delay.queue.isolation-region-count",
+      "values": [
+        {
+          "value": 1,
+          "description": "单分区，简单场景"
+        },
+        {
+          "value": 3,
+          "description": "中等并发"
+        },
+        {
+          "value": 5,
+          "description": "默认配置"
+        },
+        {
+          "value": 10,
+          "description": "高并发场景"
+        },
+        {
+          "value": 20,
+          "description": "极高并发，注意Redis CPU消耗"
+        }
+      ],
+      "providers": [
+        {
+          "name": "range",
+          "parameters": {
+            "min": 1,
+            "max": 100
+          }
+        }
+      ]
+    },
+    {
+      "name": "peach.delay.queue.max-retry-attempts",
+      "values": [
+        {
+          "value": 0,
+          "description": "不重试，立即失败"
+        },
+        {
+          "value": 3,
+          "description": "默认配置"
+        },
+        {
+          "value": 5,
+          "description": "重要消息，多次重试"
+        },
+        {
+          "value": 10,
+          "description": "关键消息，最大重试"
+        }
+      ]
+    },
+    {
+      "name": "peach.delay.queue.retry-interval-millis",
+      "values": [
+        {
+          "value": 1000,
+          "description": "快速重试"
+        },
+        {
+          "value": 5000,
+          "description": "默认配置"
+        },
+        {
+          "value": 30000,
+          "description": "避免雪崩的重试间隔"
+        },
+        {
+          "value": 60000,
+          "description": "长间隔重试"
+        }
+      ]
+    },
+    {
+      "name": "peach.delay.queue.unit",
+      "values": [
+        {
+          "value": "SECONDS",
+          "description": "秒级回收"
+        },
+        {
+          "value": "MINUTES",
+          "description": "分钟级回收"
+        },
+        {
+          "value": "HOURS",
+          "description": "小时级回收"
+        }
+      ]
+    }
+  ]
+}
