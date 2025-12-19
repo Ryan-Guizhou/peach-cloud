@@ -1,5 +1,5 @@
 
-package com.peach.redis.common;
+package com.peach.redis.common.tool;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;

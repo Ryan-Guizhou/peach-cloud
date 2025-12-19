@@ -4,7 +4,7 @@ import cn.hutool.extra.spring.SpringUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.peach.common.util.StringUtil;
 import com.peach.redis.constant.MultiCacheConstant;
-import com.peach.redis.common.RedisDao;
+import com.peach.redis.common.tool.RedisDao;
 import com.peach.redis.listener.CacheMessage;
 import com.peach.redis.config.MultiCacheConfig;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,6 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;

@@ -2,24 +2,28 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <groupId>com.peach</groupId>
-    <artifactId>peach-middleware</artifactId>
-    <name>peach-middleware</name>
-    <description>peach-middleware</description>
+    <artifactId>peach-redis-tool-starter</artifactId>
+    <name>peach-redis-tool-starter</name>
+    <description>peach-redis-tool-starter</description>
 
     <parent>
         <groupId>com.peach</groupId>
-        <artifactId>peach-cloud</artifactId>
+        <artifactId>peach-redis</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
-    <modules>
-        <module>peach-kafka</module>
-        <module>peach-rocket</module>
-        <module>peach-redis</module>
-        <module>peach-redission</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redis-tool-autoconfigure</artifactId>
+        </dependency>
+    </dependencies>
+
+
+
 
 </project>

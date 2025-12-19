@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.peach.redis.constant.MultiCacheConstant;
+import com.peach.redis.constant.RedisConstant;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -25,7 +25,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
@@ -156,7 +155,7 @@ public class RedisConfig<K, V> {
         log.info("redis host:" + host);
         //单机模式
         switch (mode) {
-            case MultiCacheConstant.STANDALONE:
+            case RedisConstant.STANDALONE:
                 //获得默认的连接池构造
                 //JedisConnectionFactory对于Standalone模式的没有（RedisStandaloneConfiguration，JedisPoolConfig）的构造函数，对此
                 //我们用JedisClientConfiguration接口的builder方法实例化一个构造器，还得类型转换
@@ -168,12 +167,12 @@ public class RedisConfig<K, V> {
                 jedisConnectionFactory = new JedisConnectionFactory(redisStandaloneConfiguration(), jedisClientConfiguration);
                 log.info("redis standalone mode  init success！");
                 break;
-            case MultiCacheConstant.SENTINEL:
+            case RedisConstant.SENTINEL:
                 //哨兵模式
                 jedisConnectionFactory = new JedisConnectionFactory(sentinelConfiguration(), jedisPoolConfig);
                 log.info("redis sentinel mode  init success！");
                 break;
-            case MultiCacheConstant.CLUSTER:
+            case RedisConstant.CLUSTER:
                 //Cluster模式
                 jedisConnectionFactory = new JedisConnectionFactory(redisClusterConfiguration(), jedisPoolConfig);
                 log.info("redis cluster mode  init success！");
@@ -286,15 +285,15 @@ public class RedisConfig<K, V> {
             config.setNettyThreads(redissonNettyThreads);
 
             switch (mode) {
-                case MultiCacheConstant.STANDALONE:
+                case RedisConstant.STANDALONE:
                     config = configureSingleServer(config);
                     log.info("Redisson standalone mode init success!");
                     break;
-                case MultiCacheConstant.SENTINEL:
+                case RedisConstant.SENTINEL:
                     config = configureSentinelServers(config);
                     log.info("Redisson sentinel mode init success!");
                     break;
-                case MultiCacheConstant.CLUSTER:
+                case RedisConstant.CLUSTER:
                     config = configureClusterServers(config);
                     log.info("Redisson cluster mode init success!");
                     break;

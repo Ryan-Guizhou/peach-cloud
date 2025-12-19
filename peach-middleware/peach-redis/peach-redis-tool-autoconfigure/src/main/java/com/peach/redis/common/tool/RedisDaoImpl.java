@@ -1,6 +1,6 @@
 
 
-package com.peach.redis.common;
+package com.peach.redis.common.tool;
 
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;

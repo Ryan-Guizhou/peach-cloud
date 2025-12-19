@@ -1,6 +1,6 @@
 
 
-package com.peach.redis.common;
+package com.peach.redis.common.tool;
 
 
 

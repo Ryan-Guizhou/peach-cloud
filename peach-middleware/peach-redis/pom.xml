@@ -19,10 +19,10 @@
         <module>peach-redis-common</module>
         <module>peach-redis-multicache-autoconfigure</module>
         <module>peach-redis-multicache-starter</module>
-        <module>peach-redis-distributedlock-autoconfigre</module>
-        <module>peach-redis-distributedlock-starter</module>
-        <module>peach-redis-bloomfilter-autoconfigure</module>
-        <module>peach-redis-bloomfilter-starter</module>
+        <module>peach-redis-stream-autoconfigure</module>
+        <module>peach-redis-stream-starter</module>
+        <module>peach-redis-tool-autoconfigure</module>
+        <module>peach-redis-tool-starter</module>
     </modules>
 
 

@@ -55,5 +55,10 @@
             <artifactId>commons-lang3</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redis-tool-starter</artifactId>
+        </dependency>
     </dependencies>
 </project>

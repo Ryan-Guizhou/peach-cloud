@@ -5,11 +5,7 @@ package com.peach.redis.constant;
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:39
  */
-public interface MultiCacheConstant {
-
-    String CACHE_MESSAGE_TOPIC = "cache-message-topic";
-
-    String REDIS_KEY_SEPARATOR = ":";
+public interface RedisConstant {
 
     /**
      * 单机
