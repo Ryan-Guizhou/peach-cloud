@@ -4,10 +4,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.peach</groupId>
-    <artifactId>peach-redis-distributedlock-autoconfigre</artifactId>
-    <name>peach-redis-distributedlock-autoconfigre</name>
-    <description>peach-redis-distributedlock-autoconfigre</description>
-
+    <artifactId>peach-redis-stream-autoconfigure</artifactId>
+    <name>peach-redis-stream-autoconfigure</name>
+    <description>peach-redis-stream-autoconfigure</description>
 
     <parent>
         <groupId>com.peach</groupId>
@@ -15,24 +14,33 @@
         <version>${revision}</version>
     </parent>
 
+    <packaging>jar</packaging>
+
     <dependencies>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
         <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-redis-common</artifactId>
-            <optional>true</optional>
         </dependency>
     </dependencies>
 

@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
@@ -32,6 +33,7 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import redis.clients.jedis.JedisPoolConfig;
@@ -198,6 +200,15 @@ public class RedisConfig<K, V> {
         template.setHashKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(serializer);
         template.setKeySerializer(new StringRedisSerializer());
+        template.afterPropertiesSet();
+        return template;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(StringRedisTemplate.class)
+    public StringRedisTemplate stringRedisTemplate(JedisConnectionFactory jedisConnectionFactory) {
+        StringRedisTemplate template = new StringRedisTemplate();
+        template.setConnectionFactory(jedisConnectionFactory);
         template.afterPropertiesSet();
         return template;
     }
