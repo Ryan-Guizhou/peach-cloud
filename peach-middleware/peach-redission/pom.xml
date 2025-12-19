@@ -20,6 +20,11 @@
         <module>peach-redission-bloomfilter-starter</module>
         <module>peach-redission-delayqueue-autoconfigure</module>
         <module>peach-redission-delayqueue-starter</module>
+        <module>peach-redission-common</module>
+        <module>peach-redission-distrbutedlock-autoconfigure</module>
+        <module>peach-redission-distrbutedlock-starter</module>
+        <module>peach-redission-repeat-autoconfigure</module>
+        <module>peach-redission-repeat-starter</module>
     </modules>
 
 </project>

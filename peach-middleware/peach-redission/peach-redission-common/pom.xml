@@ -4,9 +4,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.peach</groupId>
-    <artifactId>peach-redission-delayqueue-starter</artifactId>
-    <name>peach-redission-delayqueue-starter</name>
-    <description>peach-redission-delayqueue-starter</description>
+    <artifactId>peach-redission-common</artifactId>
+    <name>peach-redission-common</name>
+    <description>peach-redission-common</description>
+
+    <packaging>jar</packaging>
 
     <parent>
         <groupId>com.peach</groupId>
@@ -14,16 +16,9 @@
         <version>${revision}</version>
     </parent>
 
-    <packaging>jar</packaging>
-
     <dependencies>
-        <dependency>
-            <groupId>com.peach</groupId>
-            <artifactId>peach-redission-delayqueue-autoconfigure</artifactId>
-        </dependency>
+
     </dependencies>
 
-
-
-
 </project>
+

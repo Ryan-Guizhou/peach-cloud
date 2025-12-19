@@ -8,7 +8,7 @@
     <name>peach-redission-bloomfilter-starter</name>
     <description>peach-redission-bloomfilter-starter</description>
 
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <parent>
         <groupId>com.peach</groupId>

@@ -72,18 +72,21 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
+            <!-- Jasypt  敏感信息加密-->
             <dependency>
                 <groupId>com.github.ulisesbocchio</groupId>
                 <artifactId>jasypt-spring-boot-starter</artifactId>
                 <version>${jasypt.version}</version>
             </dependency>
 
+            <!-- guava工具类 -->
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
             </dependency>
+
+            <!-- guava重试工具-->
             <dependency>
                 <groupId>com.github.rholder</groupId>
                 <artifactId>guava-retrying</artifactId>
@@ -119,11 +122,13 @@
                 <artifactId>hutool-all</artifactId>
                 <version>${hutool.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>org.redisson</groupId>
                 <artifactId>redisson</artifactId>
                 <version>${redisson.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>com.sun.mail</groupId>
                 <artifactId>javax.mail</artifactId>
@@ -136,67 +141,63 @@
                 <version>${freemarker.version}</version>
             </dependency>
 
-
-            <dependency>
-                <groupId>com.peach</groupId>
-                <artifactId>peach-redis-multicache-starter</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
+            <!-- 多级缓存自动装配 -->
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-redis-multicache-autoconfigure</artifactId>
                 <version>${revision}</version>
             </dependency>
 
+            <!-- 多级缓存starter -->
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-redis-bloomfilter-starter</artifactId>
+                <artifactId>peach-redis-multicache-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
 
+            <!-- 布隆过滤器自动装配 -->
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-redis-bloomfilter-autoconfigure</artifactId>
+                <artifactId>peach-redission-bloomfilter-autoconfigure</artifactId>
                 <version>${revision}</version>
             </dependency>
 
+            <!-- 布隆过滤器satrter -->
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-redis-distributedlock-starter</artifactId>
+                <artifactId>peach-redission-bloomfilter-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
 
-            <dependency>
-                <groupId>com.peach</groupId>
-                <artifactId>peach-redis-distributedlock-autoconfigre</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
+            <!-- redis自动装配 reids redission -->
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-redis-common</artifactId>
                 <version>${revision}</version>
             </dependency>
 
+            <!-- 项目通用模块 -->
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-common</artifactId>
                 <version>${revision}</version>
             </dependency>
 
-
+            <!-- 验证码 -->
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-captcha</artifactId>
                 <version>${revision}</version>
             </dependency>
 
+            <!-- 邮件 -->
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-email</artifactId>
                 <version>${revision}</version>
             </dependency>
+
+            <!-- 文件 -->
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-file</artifactId>
@@ -221,16 +222,85 @@
                 <version>${revision}</version>
             </dependency>
 
+            <!-- 初始化自动装配 -->
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-initialize-autoconfigure</artifactId>
                 <version>${revision}</version>
             </dependency>
+
+            <!-- 初始化starter -->
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-initialize-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-delayqueue-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-delayqueue-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-stream-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-stream-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-tool-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-tool-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-repeat-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-repeat-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-distrbutedlock-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-distributedlock-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

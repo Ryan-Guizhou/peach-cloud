@@ -1,6 +1,6 @@
 package com.peach.sample.multicache;
 
-import com.peach.redis.common.RedisDao;
+import com.peach.redis.common.tool.RedisDao;
 import com.peach.redis.manager.MultiCacheManagerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
