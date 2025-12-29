@@ -126,6 +126,21 @@
             <artifactId>peach-common</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redission-distributedlock-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redission-repeat-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redission-common</artifactId>
+        </dependency>
+
+
     </dependencies>
 
 </project>
