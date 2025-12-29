@@ -4,9 +4,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.peach</groupId>
-    <artifactId>peach-redission-distrbutedlock-starter</artifactId>
-    <name>peach-redission-distrbutedlock-starter</name>
-    <description>peach-redission-distrbutedlock-starter</description>
+    <artifactId>peach-redission-distributedlock-starter</artifactId>
+    <name>peach-redission-distributedlock-starter</name>
+    <description>peach-redission-distributedlock-starter</description>
 
     <packaging>jar</packaging>
 
@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-redission-distrbutedlock-autoconfigure</artifactId>
+            <artifactId>peach-redission-distributedlock-autoconfigure</artifactId>
         </dependency>
     </dependencies>
 

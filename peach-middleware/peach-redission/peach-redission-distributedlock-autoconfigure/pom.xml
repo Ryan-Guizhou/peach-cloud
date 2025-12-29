@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.peach</groupId>
-    <artifactId>peach-redission-distrbutedlock-autoconfigure</artifactId>
+    <artifactId>peach-redission-distributedlock-autoconfigure</artifactId>
     <name>peach-redission-distrbutedlock-autoconfigure</name>
     <description>peach-redission-distrbutedlock-autoconfigure</description>
 
@@ -17,9 +17,10 @@
     </parent>
 
     <dependencies>
+
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-redis-common</artifactId>
+            <artifactId>peach-redission-common</artifactId>
             <optional>true</optional>
         </dependency>
     </dependencies>

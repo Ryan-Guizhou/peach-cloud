@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "peach.localLock.durationTime",
+      "type": "java.lang.Long",
+      "description": "本地缓存锁（LocalCacheLock）中 ReentrantLock 的缓存存活时间，单位：秒。用于控制 JVM 内锁对象的生命周期，防止锁无限增长导致内存浪费。",
+      "defaultValue": 3600
+    }
+  ]
+}

@@ -19,7 +19,12 @@
     <dependencies>
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-redis-common</artifactId>
+            <artifactId>peach-redission-common</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redission-distributedlock-starter</artifactId>
             <optional>true</optional>
         </dependency>
     </dependencies>

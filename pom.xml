@@ -274,7 +274,7 @@
 
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-redission</artifactId>
+                <artifactId>peach-redission-common</artifactId>
                 <version>${revision}</version>
             </dependency>
 
@@ -291,13 +291,13 @@
 
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-redission-distrbutedlock-autoconfigure</artifactId>
+                <artifactId>peach-redission-distributedlock-autoconfigure</artifactId>
                 <version>${revision}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-redis-distributedlock-starter</artifactId>
+                <artifactId>peach-redission-distributedlock-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
 
