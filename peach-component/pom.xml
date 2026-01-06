@@ -31,6 +31,7 @@
         <module>peach-email</module>
         <module>peach-file</module>
         <module>peach-initialize</module>
+        <module>peach-threadpool</module>
     </modules>
 
 </project>

@@ -301,6 +301,16 @@
                 <version>${revision}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-threadpool-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-threadpool-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

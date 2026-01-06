@@ -1,0 +1,214 @@
+{
+  "groups": [
+    {
+      "name": "peach.threadpool",
+      "type": "com.peach.threadpool.config.ThreadPoolProperties",
+      "sourceType": "com.peach.threadpool.config.ThreadPoolProperties"
+    },
+    {
+      "name": "peach.threadpool.global",
+      "type": "com.peach.threadpool.config.GlobalProperties",
+      "sourceType": "com.peach.threadpool.config.ThreadPoolProperties",
+      "sourceMethod": "getGlobal()"
+    },
+    {
+      "name": "peach.threadpool.pools",
+      "type": "com.peach.threadpool.config.PoolProperties",
+      "sourceType": "com.peach.threadpool.config.ThreadPoolProperties",
+      "sourceMethod": "getPools()"
+    }
+  ],
+  "properties": [
+    {
+      "name": "peach.threadpool.global.enable-mdc",
+      "type": "java.lang.Boolean",
+      "description": "是否启用MDC（Mapped Diagnostic Context）日志上下文传递。开启后，异步任务会继承父线程的MDC上下文，便于日志追踪。",
+      "sourceType": "com.peach.threadpool.config.GlobalProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.threadpool.global.enable-security-context",
+      "type": "java.lang.Boolean",
+      "description": "是否启用Spring Security上下文传递。开启后，异步任务会继承父线程的安全上下文，确保权限验证正常。",
+      "sourceType": "com.peach.threadpool.config.GlobalProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.threadpool.pools[].type",
+      "type": "com.peach.threadpool.core.PoolType",
+      "description": "线程池类型。根据任务特性选择合适的线程池类型：\n- CPU: CPU密集型任务，线程数≈CPU核心数\n- IO: IO密集型任务，线程数≈CPU核心数×2~5\n- CACHED: 弹性缓存线程池，适用于短生命周期任务\n- SCHEDULED: 定时任务线程池\n\n默认值：CPU（适用于通用计算场景）",
+      "sourceType": "com.peach.threadpool.config.PoolProperties",
+      "defaultValue": "CPU"
+    },
+    {
+      "name": "peach.threadpool.pools[].core-size",
+      "type": "java.lang.Integer",
+      "description": "核心线程数。线程池中始终保持存活的线程数量，即使它们处于空闲状态。\n\n设置原则：\n- CPU密集型：CPU核心数或+1\n- IO密集型：CPU核心数×2~5\n- 混合型：根据实际负载调整\n\n默认值：CPU核心数和2之间的较大值，保证至少有2个核心线程，避免单点瓶颈。",
+      "sourceType": "com.peach.threadpool.config.PoolProperties",
+      "defaultValue": "CPU核心数和2之间的较大值"
+    },
+    {
+      "name": "peach.threadpool.pools[].max-size",
+      "type": "java.lang.Integer",
+      "description": "最大线程数。线程池允许创建的最大线程数量。当队列满且核心线程都在忙时，会创建新线程直到达到此限制。\n\n设置原则：\n- 一般为核心线程数的2~4倍\n- 需考虑系统资源限制（内存、CPU）\n- 过高会导致频繁上下文切换，降低性能\n\n默认值：CPU核心数×4，且不小于核心线程数，为突发流量提供缓冲能力。",
+      "sourceType": "com.peach.threadpool.config.PoolProperties",
+      "defaultValue": "CPU核心数×4"
+    },
+    {
+      "name": "peach.threadpool.pools[].keep-alive-seconds",
+      "type": "java.lang.Long",
+      "description": "空闲线程存活时间（秒）。非核心线程在空闲状态下的最大存活时间，超过此时间仍未执行任务的非核心线程将被回收。\n\n设置原则：\n- 短时间：适用于任务频繁的场景（10-30秒）\n- 长时间：适用于任务稀疏但需要快速响应的场景（60-300秒）\n- 0：表示立即回收（谨慎使用，可能导致频繁创建线程）\n\n默认值：60秒，平衡资源占用和响应速度。",
+      "sourceType": "com.peach.threadpool.config.PoolProperties",
+      "defaultValue": 60
+    },
+    {
+      "name": "peach.threadpool.pools[].queue-capacity",
+      "type": "java.lang.Integer",
+      "description": "队列容量。工作队列的最大容量，用于缓冲待执行任务。\n\n设置原则：\n- 小队列（<100）：快速响应，拒绝过载\n- 中等队列（100-1000）：平衡响应和吞吐\n- 大队列（>1000）：高吞吐，但可能增加延迟\n- 0或负数：使用同步队列（SynchronousQueue）\n\n默认值：1000，提供合理的缓冲能力。注意：无界队列（Integer.MAX_VALUE）可能导致内存溢出。",
+      "sourceType": "com.peach.threadpool.config.PoolProperties",
+      "defaultValue": 1000
+    },
+    {
+      "name": "peach.threadpool.pools[].allow-core-thread-time-out",
+      "type": "java.lang.Boolean",
+      "description": "是否允许核心线程超时回收。\n为true时，核心线程在空闲超过keepAliveSeconds后也会被回收。\n为false时，核心线程会一直存活（即使空闲）。\n\n使用场景：\n- true：需要动态缩容的场景，节省资源\n- false：需要保持快速响应的场景，避免线程创建开销\n\n默认值：false，保持核心线程常驻以保证响应速度。",
+      "sourceType": "com.peach.threadpool.config.PoolProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.threadpool.pools[].thread-name-prefix",
+      "type": "java.lang.String",
+      "description": "线程名称前缀。线程池创建的线程名称前缀，便于日志追踪和问题排查。\n\n命名规范建议：\n- 包含业务标识：如'order-', 'payment-'\n- 包含环境标识：如'prod-', 'test-'\n- 保持简洁明了\n\n线程名称格式：{prefix}{thread-num}\n示例：'tp-order-1', 'tp-order-2'\n\n默认值：'tp-'（thread-pool的缩写）。",
+      "sourceType": "com.peach.threadpool.config.PoolProperties",
+      "defaultValue": "tp-"
+    },
+    {
+      "name": "peach.threadpool.pools[].rejected-policy",
+      "type": "com.peach.threadpool.core.RejectedPolicy",
+      "description": "拒绝策略。当线程池和队列都满时，对新提交任务的处理策略。\n\n可选策略：\n- ABORT（默认）：抛出RejectedExecutionException\n- CALLER_RUNS：由调用者线程直接执行\n- DISCARD：静默丢弃任务\n- DISCARD_OLDEST：丢弃队列中最旧的任务，然后重试\n\n选择建议：\n- 关键任务：CALLER_RUNS（确保任务被执行）\n- 非关键批量任务：DISCARD_OLDEST\n- 需要快速失败的场景：ABORT\n- 可丢失的数据同步：DISCARD\n\n默认值：CALLER_RUNS，避免数据丢失。",
+      "sourceType": "com.peach.threadpool.config.PoolProperties",
+      "defaultValue": "CALLER_RUNS"
+    },
+    {
+      "name": "peach.threadpool.pools[].prestart-core-threads",
+      "type": "java.lang.Boolean",
+      "description": "是否预启动核心线程。\n为true时，线程池初始化时会立即创建所有核心线程。\n\n优点：\n- 避免第一次请求时的线程创建延迟\n- 提前预热线程池\n\n缺点：\n- 启动时占用更多资源\n- 可能创建了不必要的线程\n\n适用场景：\n- 对响应时间要求极高的系统\n- 已知会有突发流量的场景\n\n默认值：false，按需创建以节省资源。",
+      "sourceType": "com.peach.threadpool.config.PoolProperties",
+      "defaultValue": false
+    }
+  ],
+  "hints": [
+    {
+      "name": "peach.threadpool.pools[].type",
+      "values": [
+        {
+          "value": "CPU",
+          "description": "CPU密集型任务，适合计算密集场景，如算法计算、数据处理等"
+        },
+        {
+          "value": "IO",
+          "description": "IO密集型任务，适合网络请求、数据库操作、文件读写等IO等待场景"
+        },
+        {
+          "value": "CACHED",
+          "description": "弹性缓存线程池，适合短生命周期任务，可根据负载自动调整线程数"
+        },
+        {
+          "value": "SCHEDULED",
+          "description": "定时任务线程池，适合需要延迟执行或周期性执行的任务"
+        }
+      ]
+    },
+    {
+      "name": "peach.threadpool.pools[].rejected-policy",
+      "values": [
+        {
+          "value": "ABORT",
+          "description": "抛出RejectedExecutionException，适用于需要快速失败的场景"
+        },
+        {
+          "value": "CALLER_RUNS",
+          "description": "由调用者线程执行，确保任务不被丢弃，适用于关键任务"
+        },
+        {
+          "value": "DISCARD",
+          "description": "静默丢弃任务，适用于可容忍任务丢失的场景"
+        },
+        {
+          "value": "DISCARD_OLDEST",
+          "description": "丢弃队列中最旧的任务，然后重试提交，适用于实时性要求高的场景"
+        }
+      ]
+    },
+    {
+      "name": "peach.threadpool.pools[].core-size",
+      "providers": [
+        {
+          "name": "any",
+          "parameters": {
+            "target": "大于0的整数"
+          }
+        }
+      ]
+    },
+    {
+      "name": "peach.threadpool.pools[].max-size",
+      "providers": [
+        {
+          "name": "any",
+          "parameters": {
+            "target": "大于等于core-size的整数"
+          }
+        }
+      ]
+    },
+    {
+      "name": "peach.threadpool.pools[].queue-capacity",
+      "providers": [
+        {
+          "name": "any",
+          "parameters": {
+            "target": "大于等于0的整数，0表示使用同步队列"
+          }
+        }
+      ]
+    },
+    {
+      "name": "peach.threadpool.pools[].keep-alive-seconds",
+      "providers": [
+        {
+          "name": "any",
+          "parameters": {
+            "target": "大于等于0的整数，0表示立即回收非核心线程"
+          }
+        }
+      ]
+    },
+    {
+      "name": "peach.threadpool.global.enable-mdc",
+      "values": [
+        {
+          "value": "true",
+          "description": "开启MDC传递，异步任务会继承父线程的日志追踪ID，便于分布式日志追踪"
+        },
+        {
+          "value": "false",
+          "description": "关闭MDC传递，减少上下文传递开销，但会丢失跨线程的日志关联"
+        }
+      ]
+    },
+    {
+      "name": "peach.threadpool.global.enable-security-context",
+      "values": [
+        {
+          "value": "true",
+          "description": "开启SecurityContext传递，确保异步任务拥有正确的权限上下文"
+        },
+        {
+          "value": "false",
+          "description": "关闭SecurityContext传递，减少上下文传递开销，适用于不需要权限验证的场景"
+        }
+      ]
+    }
+  ]
+}
