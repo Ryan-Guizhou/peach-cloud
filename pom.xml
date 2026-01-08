@@ -33,6 +33,7 @@
         <freemarker.version>2.3.31</freemarker.version>
 
         <jasypt.version>3.0.5</jasypt.version>
+        <persistence.version>1.0.2</persistence.version>
     </properties>
 
     <modules>
@@ -133,6 +134,12 @@
                 <groupId>com.sun.mail</groupId>
                 <artifactId>javax.mail</artifactId>
                 <version>${mail.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>javax.persistence</groupId>
+                <artifactId>persistence-api</artifactId>
+                <version>${persistence.version}</version>
             </dependency>
 
             <dependency>
@@ -311,7 +318,77 @@
                 <artifactId>peach-threadpool-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-userservice-api</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-userservice-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-userservice-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-userservice-rest-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-userservice-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-userservice-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-gateway-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-monitor-api</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-monitor-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-monitor-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-monitor-rest-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-monitor-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-monitor-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
         </dependencies>
+
     </dependencyManagement>
 
 </project>

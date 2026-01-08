@@ -13,19 +13,16 @@
         <version>${revision}</version>
     </parent>
 
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
-    <properties>
-        <java.version>1.8</java.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    </properties>
+    <modules>
+        <module>peach-userservice-service</module>
+        <module>peach-userservice-rest</module>
+        <module>peach-userservice-launch</module>
+        <module>peach-userservice-common</module>
+        <module>peach-userservice-entity</module>
+        <module>peach-userservice-rest-external</module>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-        </dependency>
-    </dependencies>
+    </modules>
 
 </project>

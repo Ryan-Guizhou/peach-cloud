@@ -13,42 +13,17 @@
         <version>${revision}</version>
     </parent>
 
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
+    <modules>
+        <module>peach-monitor-entity</module>
+        <module>peach-monitor-common</module>
+        <module>peach-monitor-service</module>
+        <module>peach-monitor-rest</module>
+        <module>peach-monitor-launch</module>
+        <module>peach-monitor-rest-external</module>
+    </modules>
 
-    <dependencies>
-
-        <!-- Spring Boot -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <!-- Nacos 服务发现 -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-        </dependency>
-
-        <!-- Nacos 配置中心 -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-        </dependency>
-
-        <!-- Feign -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-openfeign</artifactId>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-    </dependencies>
 
 
 </project>
