@@ -5,7 +5,7 @@ application.yaml
 application-dev.yml
 application-dev.yaml
 
-applicationprod.yml
+application-prod.yml
 application-prod.yaml
 # Maven ignores
 target/
