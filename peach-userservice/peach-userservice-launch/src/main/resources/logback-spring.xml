@@ -44,10 +44,13 @@
     <logger name="access.log" level="INFO" additivity="false">
         <appender-ref ref="ACCESSLOG"/>
     </logger>
+    <logger name="SQL_LOG" level="DEBUG" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
-        <appender-ref ref="FILE"/>
+<!--        <appender-ref ref="FILE"/>-->
     </root>
 
 </configuration>

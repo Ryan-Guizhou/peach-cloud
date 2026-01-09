@@ -34,6 +34,9 @@
 
         <jasypt.version>3.0.5</jasypt.version>
         <persistence.version>1.0.2</persistence.version>
+
+        <knife4j.version>4.4.0</knife4j.version>
+        <mybatis.version>2.3.1</mybatis.version>
     </properties>
 
     <modules>
@@ -321,6 +324,17 @@
 
             <dependency>
                 <groupId>com.peach</groupId>
+                <artifactId>peach-captcha-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-captcha-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
                 <artifactId>peach-userservice-api</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -385,6 +399,23 @@
                 <groupId>com.peach</groupId>
                 <artifactId>peach-monitor-common</artifactId>
                 <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-gateway-spring-boot-starter</artifactId>
+                <version>${knife4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-openapi3-spring-boot-starter</artifactId>
+                <version>${knife4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${mybatis.version}</version>
             </dependency>
 
         </dependencies>

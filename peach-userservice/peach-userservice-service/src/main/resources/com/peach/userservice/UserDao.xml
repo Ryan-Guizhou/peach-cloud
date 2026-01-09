@@ -1,0 +1,552 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.userservice.dao.UserDao">
+    <sql id="allColumn">
+        ID,                                               USERNAME,                                         NICKNAME,                                         REAL_NAME,                                        
+        EMAIL,                                            PHONE,                                            PHONE_VERIFIED,                                   EMAIL_VERIFIED,                                   
+        AVATAR_URL,                                       PASSWORD_UPDATED_AT,                              LAST_LOGIN_IP,                                    LAST_LOGIN_TIME,                                  
+        LAST_LOGIN_DEVICE,                                LOGIN_FAIL_COUNT,                                 LOGIN_LOCK_UNTIL,                                 ACCOUNT_STATUS,                                   
+        ENABLED,                                          LOCKED,                                           GENDER,                                           BIRTHDAY,                                         
+        COUNTRY,                                          PROVINCE,                                         CITY,                                             ADDRESS,                                          
+        SOURCE_TYPE,                                      SOURCE_CHANNEL,                                   INVITE_CODE,                                      INVITED_BY,                                       
+        REMARK,                                           CREATED_AT,                                       UPDATED_AT,                                       VERSION
+
+    </sql>
+
+    <sql id="allColumnAlias">
+        ID as id,                                         USERNAME as username,                             NICKNAME as nickname,                             REAL_NAME as realName,                            
+        EMAIL as email,                                   PHONE as phone,                                   PHONE_VERIFIED as phoneVerified,                  EMAIL_VERIFIED as emailVerified,                  
+        AVATAR_URL as avatarUrl,                          PASSWORD_UPDATED_AT as passwordUpdatedAt,         LAST_LOGIN_IP as lastLoginIp,                     LAST_LOGIN_TIME as lastLoginTime,                 
+        LAST_LOGIN_DEVICE as lastLoginDevice,             LOGIN_FAIL_COUNT as loginFailCount,               LOGIN_LOCK_UNTIL as loginLockUntil,               ACCOUNT_STATUS as accountStatus,                  
+        ENABLED as enabled,                               LOCKED as locked,                                 GENDER as gender,                                 BIRTHDAY as birthday,                             
+        COUNTRY as country,                               PROVINCE as province,                             CITY as city,                                     ADDRESS as address,                               
+        SOURCE_TYPE as sourceType,                        SOURCE_CHANNEL as sourceChannel,                  INVITE_CODE as inviteCode,                        INVITED_BY as invitedBy,                          
+        REMARK as remark,                                 CREATED_AT as createdAt,                          UPDATED_AT as updatedAt,                          VERSION as version
+
+    </sql>
+
+    <sql id="allColumnValue">
+        #{id,jdbcType=VARCHAR},                 #{username,jdbcType=VARCHAR},           #{nickname,jdbcType=VARCHAR},           #{realName,jdbcType=VARCHAR},
+        #{email,jdbcType=VARCHAR},              #{phone,jdbcType=VARCHAR},              #{phoneVerified,jdbcType=VARCHAR},      #{emailVerified,jdbcType=VARCHAR},
+        #{avatarUrl,jdbcType=VARCHAR},          #{passwordUpdatedAt,jdbcType=VARCHAR},  #{lastLoginIp,jdbcType=VARCHAR},        #{lastLoginTime,jdbcType=VARCHAR},
+        #{lastLoginDevice,jdbcType=VARCHAR},    #{loginFailCount,jdbcType=INTEGER},     #{loginLockUntil,jdbcType=VARCHAR},     #{accountStatus,jdbcType=INTEGER},
+        #{enabled,jdbcType=VARCHAR},            #{locked,jdbcType=VARCHAR},             #{gender,jdbcType=INTEGER},             #{birthday,jdbcType=VARCHAR},
+        #{country,jdbcType=VARCHAR},            #{province,jdbcType=VARCHAR},           #{city,jdbcType=VARCHAR},               #{address,jdbcType=VARCHAR},
+        #{sourceType,jdbcType=INTEGER},         #{sourceChannel,jdbcType=VARCHAR},      #{inviteCode,jdbcType=VARCHAR},         #{invitedBy,jdbcType=VARCHAR},
+        #{remark,jdbcType=VARCHAR},             #{createdAt,jdbcType=VARCHAR},          #{updatedAt,jdbcType=VARCHAR},          #{version,jdbcType=INTEGER}
+
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.id,jdbcType=VARCHAR},            #{item.username,jdbcType=VARCHAR},      #{item.nickname,jdbcType=VARCHAR},      #{item.realName,jdbcType=VARCHAR},
+        #{item.email,jdbcType=VARCHAR},         #{item.phone,jdbcType=VARCHAR},         #{item.phoneVerified,jdbcType=VARCHAR}, #{item.emailVerified,jdbcType=VARCHAR},
+        #{item.avatarUrl,jdbcType=VARCHAR},     #{item.passwordUpdatedAt,jdbcType=VARCHAR},#{item.lastLoginIp,jdbcType=VARCHAR},   #{item.lastLoginTime,jdbcType=VARCHAR},
+        #{item.lastLoginDevice,jdbcType=VARCHAR},#{item.loginFailCount,jdbcType=INTEGER},#{item.loginLockUntil,jdbcType=VARCHAR},#{item.accountStatus,jdbcType=INTEGER},
+        #{item.enabled,jdbcType=VARCHAR},       #{item.locked,jdbcType=VARCHAR},        #{item.gender,jdbcType=INTEGER},        #{item.birthday,jdbcType=VARCHAR},
+        #{item.country,jdbcType=VARCHAR},       #{item.province,jdbcType=VARCHAR},      #{item.city,jdbcType=VARCHAR},          #{item.address,jdbcType=VARCHAR},
+        #{item.sourceType,jdbcType=INTEGER},    #{item.sourceChannel,jdbcType=VARCHAR}, #{item.inviteCode,jdbcType=VARCHAR},    #{item.invitedBy,jdbcType=VARCHAR},
+        #{item.remark,jdbcType=VARCHAR},        #{item.createdAt,jdbcType=VARCHAR},     #{item.updatedAt,jdbcType=VARCHAR},     #{item.version,jdbcType=INTEGER}
+
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="username != null and username != ''">
+                USERNAME = #{username,jdbcType=VARCHAR},
+            </if>
+            <if test="nickname != null and nickname != ''">
+                NICKNAME = #{nickname,jdbcType=VARCHAR},
+            </if>
+            <if test="realName != null and realName != ''">
+                REAL_NAME = #{realName,jdbcType=VARCHAR},
+            </if>
+            <if test="email != null and email != ''">
+                EMAIL = #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="phone != null and phone != ''">
+                PHONE = #{phone,jdbcType=VARCHAR},
+            </if>
+            <if test="phoneVerified != null">
+                PHONE_VERIFIED = #{phoneVerified,jdbcType=VARCHAR},
+            </if>
+            <if test="emailVerified != null">
+                EMAIL_VERIFIED = #{emailVerified,jdbcType=VARCHAR},
+            </if>
+            <if test="avatarUrl != null and avatarUrl != ''">
+                AVATAR_URL = #{avatarUrl,jdbcType=VARCHAR},
+            </if>
+            <if test="passwordUpdatedAt != null and passwordUpdatedAt != ''">
+                PASSWORD_UPDATED_AT = #{passwordUpdatedAt,jdbcType=VARCHAR},
+            </if>
+            <if test="lastLoginIp != null and lastLoginIp != ''">
+                LAST_LOGIN_IP = #{lastLoginIp,jdbcType=VARCHAR},
+            </if>
+            <if test="lastLoginTime != null and lastLoginTime != ''">
+                LAST_LOGIN_TIME = #{lastLoginTime,jdbcType=VARCHAR},
+            </if>
+            <if test="lastLoginDevice != null and lastLoginDevice != ''">
+                LAST_LOGIN_DEVICE = #{lastLoginDevice,jdbcType=VARCHAR},
+            </if>
+            <if test="loginFailCount != null">
+                LOGIN_FAIL_COUNT = #{loginFailCount,jdbcType=INTEGER},
+            </if>
+            <if test="loginLockUntil != null and loginLockUntil != ''">
+                LOGIN_LOCK_UNTIL = #{loginLockUntil,jdbcType=VARCHAR},
+            </if>
+            <if test="accountStatus != null">
+                ACCOUNT_STATUS = #{accountStatus,jdbcType=INTEGER},
+            </if>
+            <if test="enabled != null">
+                ENABLED = #{enabled,jdbcType=VARCHAR},
+            </if>
+            <if test="locked != null">
+                LOCKED = #{locked,jdbcType=VARCHAR},
+            </if>
+            <if test="gender != null">
+                GENDER = #{gender,jdbcType=INTEGER},
+            </if>
+            <if test="birthday != null and birthday != ''">
+                BIRTHDAY = #{birthday,jdbcType=VARCHAR},
+            </if>
+            <if test="country != null and country != ''">
+                COUNTRY = #{country,jdbcType=VARCHAR},
+            </if>
+            <if test="province != null and province != ''">
+                PROVINCE = #{province,jdbcType=VARCHAR},
+            </if>
+            <if test="city != null and city != ''">
+                CITY = #{city,jdbcType=VARCHAR},
+            </if>
+            <if test="address != null and address != ''">
+                ADDRESS = #{address,jdbcType=VARCHAR},
+            </if>
+            <if test="sourceType != null">
+                SOURCE_TYPE = #{sourceType,jdbcType=INTEGER},
+            </if>
+            <if test="sourceChannel != null and sourceChannel != ''">
+                SOURCE_CHANNEL = #{sourceChannel,jdbcType=VARCHAR},
+            </if>
+            <if test="inviteCode != null and inviteCode != ''">
+                INVITE_CODE = #{inviteCode,jdbcType=VARCHAR},
+            </if>
+            <if test="invitedBy != null and invitedBy != ''">
+                INVITED_BY = #{invitedBy,jdbcType=VARCHAR},
+            </if>
+            <if test="remark != null and remark != ''">
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="createdAt != null and createdAt != ''">
+                CREATED_AT = #{createdAt,jdbcType=VARCHAR},
+            </if>
+            <if test="updatedAt != null and updatedAt != ''">
+                UPDATED_AT = #{updatedAt,jdbcType=VARCHAR},
+            </if>
+            <if test="version != null">
+                VERSION = #{version,jdbcType=INTEGER},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="username != null and username != ''">
+                USERNAME,
+            </if>
+            <if test="nickname != null and nickname != ''">
+                NICKNAME,
+            </if>
+            <if test="realName != null and realName != ''">
+                REAL_NAME,
+            </if>
+            <if test="email != null and email != ''">
+                EMAIL,
+            </if>
+            <if test="phone != null and phone != ''">
+                PHONE,
+            </if>
+            <if test="phoneVerified != null">
+                PHONE_VERIFIED,
+            </if>
+            <if test="emailVerified != null">
+                EMAIL_VERIFIED,
+            </if>
+            <if test="avatarUrl != null and avatarUrl != ''">
+                AVATAR_URL,
+            </if>
+            <if test="passwordUpdatedAt != null and passwordUpdatedAt != ''">
+                PASSWORD_UPDATED_AT,
+            </if>
+            <if test="lastLoginIp != null and lastLoginIp != ''">
+                LAST_LOGIN_IP,
+            </if>
+            <if test="lastLoginTime != null and lastLoginTime != ''">
+                LAST_LOGIN_TIME,
+            </if>
+            <if test="lastLoginDevice != null and lastLoginDevice != ''">
+                LAST_LOGIN_DEVICE,
+            </if>
+            <if test="loginFailCount != null">
+                LOGIN_FAIL_COUNT,
+            </if>
+            <if test="loginLockUntil != null and loginLockUntil != ''">
+                LOGIN_LOCK_UNTIL,
+            </if>
+            <if test="accountStatus != null">
+                ACCOUNT_STATUS,
+            </if>
+            <if test="enabled != null">
+                ENABLED,
+            </if>
+            <if test="locked != null">
+                LOCKED,
+            </if>
+            <if test="gender != null">
+                GENDER,
+            </if>
+            <if test="birthday != null and birthday != ''">
+                BIRTHDAY,
+            </if>
+            <if test="country != null and country != ''">
+                COUNTRY,
+            </if>
+            <if test="province != null and province != ''">
+                PROVINCE,
+            </if>
+            <if test="city != null and city != ''">
+                CITY,
+            </if>
+            <if test="address != null and address != ''">
+                ADDRESS,
+            </if>
+            <if test="sourceType != null">
+                SOURCE_TYPE,
+            </if>
+            <if test="sourceChannel != null and sourceChannel != ''">
+                SOURCE_CHANNEL,
+            </if>
+            <if test="inviteCode != null and inviteCode != ''">
+                INVITE_CODE,
+            </if>
+            <if test="invitedBy != null and invitedBy != ''">
+                INVITED_BY,
+            </if>
+            <if test="remark != null and remark != ''">
+                REMARK,
+            </if>
+            <if test="createdAt != null and createdAt != ''">
+                CREATED_AT,
+            </if>
+            <if test="updatedAt != null and updatedAt != ''">
+                UPDATED_AT,
+            </if>
+            <if test="version != null">
+                VERSION,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="username != null and username != ''">
+                #{username,jdbcType=VARCHAR},
+            </if>
+            <if test="nickname != null and nickname != ''">
+                #{nickname,jdbcType=VARCHAR},
+            </if>
+            <if test="realName != null and realName != ''">
+                #{realName,jdbcType=VARCHAR},
+            </if>
+            <if test="email != null and email != ''">
+                #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="phone != null and phone != ''">
+                #{phone,jdbcType=VARCHAR},
+            </if>
+            <if test="phoneVerified != null">
+                #{phoneVerified,jdbcType=VARCHAR},
+            </if>
+            <if test="emailVerified != null">
+                #{emailVerified,jdbcType=VARCHAR},
+            </if>
+            <if test="avatarUrl != null and avatarUrl != ''">
+                #{avatarUrl,jdbcType=VARCHAR},
+            </if>
+            <if test="passwordUpdatedAt != null and passwordUpdatedAt != ''">
+                #{passwordUpdatedAt,jdbcType=VARCHAR},
+            </if>
+            <if test="lastLoginIp != null and lastLoginIp != ''">
+                #{lastLoginIp,jdbcType=VARCHAR},
+            </if>
+            <if test="lastLoginTime != null and lastLoginTime != ''">
+                #{lastLoginTime,jdbcType=VARCHAR},
+            </if>
+            <if test="lastLoginDevice != null and lastLoginDevice != ''">
+                #{lastLoginDevice,jdbcType=VARCHAR},
+            </if>
+            <if test="loginFailCount != null">
+                #{loginFailCount,jdbcType=INTEGER},
+            </if>
+            <if test="loginLockUntil != null and loginLockUntil != ''">
+                #{loginLockUntil,jdbcType=VARCHAR},
+            </if>
+            <if test="accountStatus != null">
+                #{accountStatus,jdbcType=INTEGER},
+            </if>
+            <if test="enabled != null">
+                #{enabled,jdbcType=VARCHAR},
+            </if>
+            <if test="locked != null">
+                #{locked,jdbcType=VARCHAR},
+            </if>
+            <if test="gender != null">
+                #{gender,jdbcType=INTEGER},
+            </if>
+            <if test="birthday != null and birthday != ''">
+                #{birthday,jdbcType=VARCHAR},
+            </if>
+            <if test="country != null and country != ''">
+                #{country,jdbcType=VARCHAR},
+            </if>
+            <if test="province != null and province != ''">
+                #{province,jdbcType=VARCHAR},
+            </if>
+            <if test="city != null and city != ''">
+                #{city,jdbcType=VARCHAR},
+            </if>
+            <if test="address != null and address != ''">
+                #{address,jdbcType=VARCHAR},
+            </if>
+            <if test="sourceType != null">
+                #{sourceType,jdbcType=INTEGER},
+            </if>
+            <if test="sourceChannel != null and sourceChannel != ''">
+                #{sourceChannel,jdbcType=VARCHAR},
+            </if>
+            <if test="inviteCode != null and inviteCode != ''">
+                #{inviteCode,jdbcType=VARCHAR},
+            </if>
+            <if test="invitedBy != null and invitedBy != ''">
+                #{invitedBy,jdbcType=VARCHAR},
+            </if>
+            <if test="remark != null and remark != ''">
+                #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="createdAt != null and createdAt != ''">
+                #{createdAt,jdbcType=VARCHAR},
+            </if>
+            <if test="updatedAt != null and updatedAt != ''">
+                #{updatedAt,jdbcType=VARCHAR},
+            </if>
+            <if test="version != null">
+                #{version,jdbcType=INTEGER},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
+        </if>
+        <if test="username != null and username != ''">
+            AND USERNAME = #{username,jdbcType=VARCHAR}
+        </if>
+        <if test="nickname != null and nickname != ''">
+            AND NICKNAME = #{nickname,jdbcType=VARCHAR}
+        </if>
+        <if test="realName != null and realName != ''">
+            AND REAL_NAME = #{realName,jdbcType=VARCHAR}
+        </if>
+        <if test="email != null and email != ''">
+            AND EMAIL = #{email,jdbcType=VARCHAR}
+        </if>
+        <if test="phone != null and phone != ''">
+            AND PHONE = #{phone,jdbcType=VARCHAR}
+        </if>
+        <if test="phoneVerified != null">
+            AND PHONE_VERIFIED = #{phoneVerified,jdbcType=VARCHAR}
+        </if>
+        <if test="emailVerified != null">
+            AND EMAIL_VERIFIED = #{emailVerified,jdbcType=VARCHAR}
+        </if>
+        <if test="avatarUrl != null and avatarUrl != ''">
+            AND AVATAR_URL = #{avatarUrl,jdbcType=VARCHAR}
+        </if>
+        <if test="passwordUpdatedAt != null and passwordUpdatedAt != ''">
+            AND PASSWORD_UPDATED_AT = #{passwordUpdatedAt,jdbcType=VARCHAR}
+        </if>
+        <if test="lastLoginIp != null and lastLoginIp != ''">
+            AND LAST_LOGIN_IP = #{lastLoginIp,jdbcType=VARCHAR}
+        </if>
+        <if test="lastLoginTime != null and lastLoginTime != ''">
+            AND LAST_LOGIN_TIME = #{lastLoginTime,jdbcType=VARCHAR}
+        </if>
+        <if test="lastLoginDevice != null and lastLoginDevice != ''">
+            AND LAST_LOGIN_DEVICE = #{lastLoginDevice,jdbcType=VARCHAR}
+        </if>
+        <if test="loginFailCount != null">
+            AND LOGIN_FAIL_COUNT = #{loginFailCount,jdbcType=INTEGER}
+        </if>
+        <if test="loginLockUntil != null and loginLockUntil != ''">
+            AND LOGIN_LOCK_UNTIL = #{loginLockUntil,jdbcType=VARCHAR}
+        </if>
+        <if test="accountStatus != null">
+            AND ACCOUNT_STATUS = #{accountStatus,jdbcType=INTEGER}
+        </if>
+        <if test="enabled != null">
+            AND ENABLED = #{enabled,jdbcType=VARCHAR}
+        </if>
+        <if test="locked != null">
+            AND LOCKED = #{locked,jdbcType=VARCHAR}
+        </if>
+        <if test="gender != null">
+            AND GENDER = #{gender,jdbcType=INTEGER}
+        </if>
+        <if test="birthday != null and birthday != ''">
+            AND BIRTHDAY = #{birthday,jdbcType=VARCHAR}
+        </if>
+        <if test="country != null and country != ''">
+            AND COUNTRY = #{country,jdbcType=VARCHAR}
+        </if>
+        <if test="province != null and province != ''">
+            AND PROVINCE = #{province,jdbcType=VARCHAR}
+        </if>
+        <if test="city != null and city != ''">
+            AND CITY = #{city,jdbcType=VARCHAR}
+        </if>
+        <if test="address != null and address != ''">
+            AND ADDRESS = #{address,jdbcType=VARCHAR}
+        </if>
+        <if test="sourceType != null">
+            AND SOURCE_TYPE = #{sourceType,jdbcType=INTEGER}
+        </if>
+        <if test="sourceChannel != null and sourceChannel != ''">
+            AND SOURCE_CHANNEL = #{sourceChannel,jdbcType=VARCHAR}
+        </if>
+        <if test="inviteCode != null and inviteCode != ''">
+            AND INVITE_CODE = #{inviteCode,jdbcType=VARCHAR}
+        </if>
+        <if test="invitedBy != null and invitedBy != ''">
+            AND INVITED_BY = #{invitedBy,jdbcType=VARCHAR}
+        </if>
+        <if test="remark != null and remark != ''">
+            AND REMARK = #{remark,jdbcType=VARCHAR}
+        </if>
+        <if test="createdAt != null and createdAt != ''">
+            AND CREATED_AT = #{createdAt,jdbcType=VARCHAR}
+        </if>
+        <if test="updatedAt != null and updatedAt != ''">
+            AND UPDATED_AT = #{updatedAt,jdbcType=VARCHAR}
+        </if>
+        <if test="version != null">
+            AND VERSION = #{version,jdbcType=INTEGER}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.userservice.entity.UserDO">
+        INSERT INTO PEACH_USER (
+        <include refid="allColumn" />
+        ) VALUES (
+        <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.userservice.entity.UserDO">
+        INSERT INTO PEACH_USER (
+        <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue"/>)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.userservice.entity.UserDO">
+        UPDATE PEACH_USER SET
+        <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM PEACH_USER
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM PEACH_USER
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.userservice.entity.UserDO">
+        DELETE FROM PEACH_USER
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <update id="updateById" parameterType="java.lang.String">
+        UPDATE PEACH_USER SET
+        <include refid="allColumnSet" />
+        WHERE ID =  #{id,jdbcType=VARCHAR}
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.userservice.entity.UserDO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_USER
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.entity.UserDO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_USER
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.userservice.entity.UserDO" resultType="com.peach.userservice.entity.UserDO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_USER
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.userservice.entity.UserDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_USER
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="selectByQO" parameterType="com.peach.userservice.qo.UserQO" resultType="com.peach.userservice.entity.UserDO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_USER
+        <where>
+            <if test="id != null and id != ''">
+                AND ID = #{id,jdbcType=VARCHAR}
+            </if>
+            <if test="phone != null and phone != ''">
+                AND PHONE = #{phone,jdbcType=VARCHAR}
+            </if>
+            <if test="username != null and username != ''">
+                AND USERNAME = #{username,jdbcType=VARCHAR}
+            </if>
+            <if test=" idList != null and idList != ''">
+                AND ID IN
+                <foreach collection="idList" index="index" item="id" open="(" separator="," close=")">
+                    #{id,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+        </where>
+    </select>
+</mapper>
