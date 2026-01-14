@@ -1,0 +1,98 @@
+{
+  "properties": [
+    {
+      "name": "peach.mongo.uri",
+      "type": "java.lang.String",
+      "description": "MongoDB 连接 URI，支持用户名、密码、数据库、副本集等参数配置。"
+    },
+    {
+      "name": "peach.mongo.database",
+      "type": "java.lang.String",
+      "description": "MongoDB 默认数据库名称，当 URI 中未指定 database 时使用。"
+    },
+
+    {
+      "name": "peach.mongo.retry-reads",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "是否开启读操作自动重试（MongoDB Driver 层能力）。"
+    },
+    {
+      "name": "peach.mongo.retry-writes",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "是否开启写操作自动重试（MongoDB Driver 层能力）。"
+    },
+
+    {
+      "name": "peach.mongo.pool.max-size",
+      "type": "java.lang.Integer",
+      "defaultValue": 100,
+      "description": "MongoDB 连接池最大连接数。"
+    },
+    {
+      "name": "peach.mongo.pool.min-size",
+      "type": "java.lang.Integer",
+      "defaultValue": 5,
+      "description": "MongoDB 连接池最小空闲连接数。"
+    },
+    {
+      "name": "peach.mongo.pool.max-connecting",
+      "type": "java.lang.Integer",
+      "defaultValue": 20,
+      "description": "允许并发创建 MongoDB 连接的最大数量。"
+    },
+    {
+      "name": "peach.mongo.pool.max-connection-idle-time-ms",
+      "type": "java.lang.Long",
+      "defaultValue": 10000,
+      "description": "MongoDB 连接在连接池中允许的最大空闲时间（毫秒）。"
+    },
+    {
+      "name": "peach.mongo.pool.maintenance-initial-delay-ms",
+      "type": "java.lang.Long",
+      "defaultValue": 30000,
+      "description": "连接池维护线程的初始延迟时间（毫秒）。"
+    },
+    {
+      "name": "peach.mongo.pool.maintenance-frequency-ms",
+      "type": "java.lang.Long",
+      "defaultValue": 10000,
+      "description": "连接池维护任务执行的时间间隔（毫秒）。"
+    },
+
+    {
+      "name": "peach.mongo.socket.connect-timeout-ms",
+      "type": "java.lang.Integer",
+      "defaultValue": 10000,
+      "description": "建立 MongoDB Socket 连接的超时时间（毫秒）。"
+    },
+    {
+      "name": "peach.mongo.socket.read-timeout-ms",
+      "type": "java.lang.Integer",
+      "defaultValue": 10000,
+      "description": "MongoDB Socket 读取数据的超时时间（毫秒）。"
+    },
+
+    {
+      "name": "peach.mongo.cluster.server-selection-timeout-ms",
+      "type": "java.lang.Long",
+      "defaultValue": 10000,
+      "description": "选择 MongoDB 可用节点的最大等待时间（毫秒）。"
+    },
+
+    {
+      "name": "peach.mongo.template.remove-class-field",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "是否移除 MongoDB 文档中的 _class 字段，减少存储冗余。"
+    },
+
+    {
+      "name": "peach.mongo.transaction.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": false,
+      "description": "是否启用 MongoTransactionManager（要求 MongoDB 副本集或分片集群）。"
+    }
+  ]
+}
