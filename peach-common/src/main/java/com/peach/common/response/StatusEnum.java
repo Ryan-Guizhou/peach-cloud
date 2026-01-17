@@ -34,6 +34,17 @@ public enum StatusEnum {
 
     UNSUPPORTED_MEDIA_TYPE("415", "不支持的媒体类型"),
 
+    API_REQ_LOCK_GET_ERROR("416", "get接口请求次数超限，请稍后再试"),
+
+    API_REQ_LOCK_VERIFY_ERROR("417", "verify接口请求次数超限，请稍后再试"),
+
+    API_REQ_LOCK_CHECK_ERROR("418", "check接口请求次数超限，请稍后再试"),
+
+    API_REQ_PARAM_ERROR("419", "接口验证参数错误"),
+
+    PARAM_ERROR("420", "参数错误"),
+    API_CAPTCHA_INVALID("430", "验证码过期,请重新获取"),
+
     TOO_MANY_REQUESTS("429", "请求过于频繁");
 
     private final String code;

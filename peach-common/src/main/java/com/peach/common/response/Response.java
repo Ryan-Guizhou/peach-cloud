@@ -59,9 +59,29 @@ public class Response implements Serializable {
         return new SuccessResponse();
     }
 
+    public static Response success(Object data) {
+        return new SuccessResponse(data);
+    }
+
     public static Response fail() {
         return new FailResponse();
     }
+    public static Response fail(String msg) {
+        return new FailResponse(msg);
+    }
+
+    public static Response fail(StatusEnum statusEnum) {
+        return new FailResponse(statusEnum);
+    }
+
+    public static Response paramError() {
+        return new FailResponse(StatusEnum.PARAM_ERROR);
+    }
+
+    public static Response paramError(String msg) {
+        return new FailResponse(StatusEnum.PARAM_ERROR.getCode(), msg);
+    }
+
 
     public static Response businessResponse() {
         return new BusinessFailResponse();
@@ -104,6 +124,13 @@ public class Response implements Serializable {
             this.setCode(StatusEnum.SUCCESS.getCode());
             this.setMsg(StatusEnum.SUCCESS.getMessage());
         }
+
+        public SuccessResponse(Object data) {
+            super();
+            this.setCode(StatusEnum.SUCCESS.getCode());
+            this.setMsg(StatusEnum.SUCCESS.getMessage());
+            this.setData(data);
+        }
     }
 
     public static class BusinessFailResponse extends Response implements Serializable{
@@ -138,6 +165,24 @@ public class Response implements Serializable {
             super();
             this.setCode(StatusEnum.FAIL.getCode());
             this.setMsg(StatusEnum.FAIL.getMessage());
+        }
+
+        public FailResponse(String msg) {
+            super();
+            this.setCode(StatusEnum.FAIL.getCode());
+            this.setMsg(msg);
+        }
+
+        public FailResponse(StatusEnum statusEnum) {
+            super();
+            this.setCode(statusEnum.getCode());
+            this.setMsg(statusEnum.getMessage());
+        }
+
+        public FailResponse(String code, String msg) {
+            super();
+            this.setCode(code);
+            this.setMsg(msg);
         }
 
     }
