@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.userservice.dao.AuthFunctionDao">
+    <sql id="allColumn">
+        ID,                                               PARTY_CODE,                                       PARTY_TYPE,                                       FUNC_CODE,
+        FISCAL,                                           STATE,                                            CREATE_USER,                                      CREATE_TIME,
+        APP_ID,                                           LAST_MODIFY_TIME,                                 IS_DELETE
+    </sql>
+
+    <sql id="allColumnAlias">
+        ID as id,                                         PARTY_CODE as partyCode,                          PARTY_TYPE as partyType,                          FUNC_CODE as funcCode,
+        FISCAL as fiscal,                                 STATE as state,                                   CREATE_USER as createUser,                        CREATE_TIME as createTime,
+        APP_ID as appId,                                  LAST_MODIFY_TIME as lastModifyTime,               IS_DELETE as isDelete
+    </sql>
+
+    <sql id="allColumnValue">
+        #{id,jdbcType=VARCHAR},                 #{partyCode,jdbcType=VARCHAR},          #{partyType,jdbcType=VARCHAR},          #{funcCode,jdbcType=VARCHAR},
+        #{fiscal,jdbcType=INTEGER},             #{state,jdbcType=VARCHAR},              #{createUser,jdbcType=VARCHAR},         #{createTime,jdbcType=VARCHAR},
+        #{appId,jdbcType=VARCHAR},              #{lastModifyTime,jdbcType=VARCHAR},     #{isDelete,jdbcType=INTEGER}
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.id,jdbcType=VARCHAR},            #{item.partyCode,jdbcType=VARCHAR},     #{item.partyType,jdbcType=VARCHAR},     #{item.funcCode,jdbcType=VARCHAR},
+        #{item.fiscal,jdbcType=INTEGER},        #{item.state,jdbcType=VARCHAR},         #{item.createUser,jdbcType=VARCHAR},    #{item.createTime,jdbcType=VARCHAR},
+        #{item.appId,jdbcType=VARCHAR},         #{item.lastModifyTime,jdbcType=VARCHAR},#{item.isDelete,jdbcType=INTEGER}
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="partyCode != null and partyCode != ''">
+                PARTY_CODE = #{partyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="partyType != null and partyType != ''">
+                PARTY_TYPE = #{partyType,jdbcType=VARCHAR},
+            </if>
+            <if test="funcCode != null and funcCode != ''">
+                FUNC_CODE = #{funcCode,jdbcType=VARCHAR},
+            </if>
+            <if test="fiscal != null">
+                FISCAL = #{fiscal,jdbcType=INTEGER},
+            </if>
+            <if test="state != null and state != ''">
+                STATE = #{state,jdbcType=VARCHAR},
+            </if>
+            <if test="createUser != null and createUser != ''">
+                CREATE_USER = #{createUser,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                CREATE_TIME = #{createTime,jdbcType=VARCHAR},
+            </if>
+            <if test="appId != null and appId != ''">
+                APP_ID = #{appId,jdbcType=VARCHAR},
+            </if>
+            <if test="lastModifyTime != null and lastModifyTime != ''">
+                LAST_MODIFY_TIME = #{lastModifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE = #{isDelete,jdbcType=INTEGER},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="partyCode != null and partyCode != ''">
+                PARTY_CODE,
+            </if>
+            <if test="partyType != null and partyType != ''">
+                PARTY_TYPE,
+            </if>
+            <if test="funcCode != null and funcCode != ''">
+                FUNC_CODE,
+            </if>
+            <if test="fiscal != null">
+                FISCAL,
+            </if>
+            <if test="state != null and state != ''">
+                STATE,
+            </if>
+            <if test="createUser != null and createUser != ''">
+                CREATE_USER,
+            </if>
+            <if test="createTime != null and createTime != ''">
+                CREATE_TIME,
+            </if>
+            <if test="appId != null and appId != ''">
+                APP_ID,
+            </if>
+            <if test="lastModifyTime != null and lastModifyTime != ''">
+                LAST_MODIFY_TIME,
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="partyCode != null and partyCode != ''">
+                #{partyCode,jdbcType=VARCHAR},
+            </if>
+            <if test="partyType != null and partyType != ''">
+                #{partyType,jdbcType=VARCHAR},
+            </if>
+            <if test="funcCode != null and funcCode != ''">
+                #{funcCode,jdbcType=VARCHAR},
+            </if>
+            <if test="fiscal != null">
+                #{fiscal,jdbcType=INTEGER},
+            </if>
+            <if test="state != null and state != ''">
+                #{state,jdbcType=VARCHAR},
+            </if>
+            <if test="createUser != null and createUser != ''">
+                #{createUser,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                #{createTime,jdbcType=VARCHAR},
+            </if>
+            <if test="appId != null and appId != ''">
+                #{appId,jdbcType=VARCHAR},
+            </if>
+            <if test="lastModifyTime != null and lastModifyTime != ''">
+                #{lastModifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="isDelete != null">
+                #{isDelete,jdbcType=INTEGER},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
+        </if>
+        <if test="partyCode != null and partyCode != ''">
+            AND PARTY_CODE = #{partyCode,jdbcType=VARCHAR}
+        </if>
+        <if test="partyType != null and partyType != ''">
+            AND PARTY_TYPE = #{partyType,jdbcType=VARCHAR}
+        </if>
+        <if test="funcCode != null and funcCode != ''">
+            AND FUNC_CODE = #{funcCode,jdbcType=VARCHAR}
+        </if>
+        <if test="fiscal != null">
+            AND FISCAL = #{fiscal,jdbcType=INTEGER}
+        </if>
+        <if test="state != null and state != ''">
+            AND STATE = #{state,jdbcType=VARCHAR}
+        </if>
+        <if test="createUser != null and createUser != ''">
+            AND CREATE_USER = #{createUser,jdbcType=VARCHAR}
+        </if>
+        <if test="createTime != null and createTime != ''">
+            AND CREATE_TIME = #{createTime,jdbcType=VARCHAR}
+        </if>
+        <if test="appId != null and appId != ''">
+            AND APP_ID = #{appId,jdbcType=VARCHAR}
+        </if>
+        <if test="lastModifyTime != null and lastModifyTime != ''">
+            AND LAST_MODIFY_TIME = #{lastModifyTime,jdbcType=VARCHAR}
+        </if>
+        <if test="isDelete != null">
+            AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.userservice.entity.AuthFunctionDO">
+        INSERT INTO PEACH_AUTH_FUNCTION (
+        <include refid="allColumn" />
+        ) VALUES (
+        <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.userservice.entity.AuthFunctionDO">
+        INSERT INTO PEACH_AUTH_FUNCTION (
+        <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue"/>)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.userservice.entity.AuthFunctionDO">
+        UPDATE PEACH_AUTH_FUNCTION SET
+        <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM PEACH_AUTH_FUNCTION
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM PEACH_AUTH_FUNCTION
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.userservice.entity.AuthFunctionDO">
+        DELETE FROM PEACH_AUTH_FUNCTION
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <update id="updateById" parameterType="java.lang.String">
+        UPDATE PEACH_AUTH_FUNCTION SET
+        <include refid="allColumnSet" />
+        WHERE ID =  #{id,jdbcType=VARCHAR}
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.AuthFunctionVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_AUTH_FUNCTION
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.AuthFunctionVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_AUTH_FUNCTION
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.userservice.entity.AuthFunctionDO" resultType="com.peach.userservice.vo.AuthFunctionVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_AUTH_FUNCTION
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.userservice.entity.AuthFunctionDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_AUTH_FUNCTION
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+</mapper>

@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.userservice.dao.FunctionDao">
+    <sql id="allColumn">
+        FUNC_ID,                                          FUNC_CODE,                                        PARENT_FUNC_CODE,                                 FUNC_NAME,
+        FUNC_DESC,                                        FUNC_URL,                                         FUNC_SEQ,                                         FUNC_TYPE,
+        IS_MENU,                                          IS_AUTHORIZE,                                     APP_ID,                                           CREATE_TIME,
+        IS_DISABLE,                                       LAST_MODIFY_TIME,                                 IS_DELETE
+    </sql>
+
+    <sql id="allColumnAlias">
+        FUNC_ID as funcId,                                FUNC_CODE as funcCode,                            PARENT_FUNC_CODE as parentFuncCode,               FUNC_NAME as funcName,
+        FUNC_DESC as funcDesc,                            FUNC_URL as funcUrl,                              FUNC_SEQ as funcSeq,                              FUNC_TYPE as funcType,
+        IS_MENU as isMenu,                                IS_AUTHORIZE as isAuthorize,                      APP_ID as appId,                                  CREATE_TIME as createTime,
+        IS_DISABLE as isDisable,                          LAST_MODIFY_TIME as lastModifyTime,               IS_DELETE as isDelete
+    </sql>
+
+    <sql id="allColumnValue">
+        #{funcId,jdbcType=VARCHAR},             #{funcCode,jdbcType=VARCHAR},           #{parentFuncCode,jdbcType=VARCHAR},     #{funcName,jdbcType=VARCHAR},
+        #{funcDesc,jdbcType=VARCHAR},           #{funcUrl,jdbcType=VARCHAR},            #{funcSeq,jdbcType=VARCHAR},            #{funcType,jdbcType=VARCHAR},
+        #{isMenu,jdbcType=INTEGER},             #{isAuthorize,jdbcType=INTEGER},        #{appId,jdbcType=VARCHAR},              #{createTime,jdbcType=VARCHAR},
+        #{isDisable,jdbcType=INTEGER},          #{lastModifyTime,jdbcType=VARCHAR},     #{isDelete,jdbcType=INTEGER}
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.funcId,jdbcType=VARCHAR},        #{item.funcCode,jdbcType=VARCHAR},      #{item.parentFuncCode,jdbcType=VARCHAR},#{item.funcName,jdbcType=VARCHAR},
+        #{item.funcDesc,jdbcType=VARCHAR},      #{item.funcUrl,jdbcType=VARCHAR},       #{item.funcSeq,jdbcType=VARCHAR},       #{item.funcType,jdbcType=VARCHAR},
+        #{item.isMenu,jdbcType=INTEGER},        #{item.isAuthorize,jdbcType=INTEGER},   #{item.appId,jdbcType=VARCHAR},         #{item.createTime,jdbcType=VARCHAR},
+        #{item.isDisable,jdbcType=INTEGER},     #{item.lastModifyTime,jdbcType=VARCHAR},#{item.isDelete,jdbcType=INTEGER}
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="funcCode != null and funcCode != ''">
+                FUNC_CODE = #{funcCode,jdbcType=VARCHAR},
+            </if>
+            <if test="parentFuncCode != null and parentFuncCode != ''">
+                PARENT_FUNC_CODE = #{parentFuncCode,jdbcType=VARCHAR},
+            </if>
+            <if test="funcName != null and funcName != ''">
+                FUNC_NAME = #{funcName,jdbcType=VARCHAR},
+            </if>
+            <if test="funcDesc != null and funcDesc != ''">
+                FUNC_DESC = #{funcDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="funcUrl != null and funcUrl != ''">
+                FUNC_URL = #{funcUrl,jdbcType=VARCHAR},
+            </if>
+            <if test="funcSeq != null and funcSeq != ''">
+                FUNC_SEQ = #{funcSeq,jdbcType=VARCHAR},
+            </if>
+            <if test="funcType != null and funcType != ''">
+                FUNC_TYPE = #{funcType,jdbcType=VARCHAR},
+            </if>
+            <if test="isMenu != null">
+                IS_MENU = #{isMenu,jdbcType=INTEGER},
+            </if>
+            <if test="isAuthorize != null">
+                IS_AUTHORIZE = #{isAuthorize,jdbcType=INTEGER},
+            </if>
+            <if test="appId != null and appId != ''">
+                APP_ID = #{appId,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                CREATE_TIME = #{createTime,jdbcType=VARCHAR},
+            </if>
+            <if test="isDisable != null">
+                IS_DISABLE = #{isDisable,jdbcType=INTEGER},
+            </if>
+            <if test="lastModifyTime != null and lastModifyTime != ''">
+                LAST_MODIFY_TIME = #{lastModifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE = #{isDelete,jdbcType=INTEGER},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="funcCode != null and funcCode != ''">
+                FUNC_CODE,
+            </if>
+            <if test="parentFuncCode != null and parentFuncCode != ''">
+                PARENT_FUNC_CODE,
+            </if>
+            <if test="funcName != null and funcName != ''">
+                FUNC_NAME,
+            </if>
+            <if test="funcDesc != null and funcDesc != ''">
+                FUNC_DESC,
+            </if>
+            <if test="funcUrl != null and funcUrl != ''">
+                FUNC_URL,
+            </if>
+            <if test="funcSeq != null and funcSeq != ''">
+                FUNC_SEQ,
+            </if>
+            <if test="funcType != null and funcType != ''">
+                FUNC_TYPE,
+            </if>
+            <if test="isMenu != null">
+                IS_MENU,
+            </if>
+            <if test="isAuthorize != null">
+                IS_AUTHORIZE,
+            </if>
+            <if test="appId != null and appId != ''">
+                APP_ID,
+            </if>
+            <if test="createTime != null and createTime != ''">
+                CREATE_TIME,
+            </if>
+            <if test="isDisable != null">
+                IS_DISABLE,
+            </if>
+            <if test="lastModifyTime != null and lastModifyTime != ''">
+                LAST_MODIFY_TIME,
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="funcCode != null and funcCode != ''">
+                #{funcCode,jdbcType=VARCHAR},
+            </if>
+            <if test="parentFuncCode != null and parentFuncCode != ''">
+                #{parentFuncCode,jdbcType=VARCHAR},
+            </if>
+            <if test="funcName != null and funcName != ''">
+                #{funcName,jdbcType=VARCHAR},
+            </if>
+            <if test="funcDesc != null and funcDesc != ''">
+                #{funcDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="funcUrl != null and funcUrl != ''">
+                #{funcUrl,jdbcType=VARCHAR},
+            </if>
+            <if test="funcSeq != null and funcSeq != ''">
+                #{funcSeq,jdbcType=VARCHAR},
+            </if>
+            <if test="funcType != null and funcType != ''">
+                #{funcType,jdbcType=VARCHAR},
+            </if>
+            <if test="isMenu != null">
+                #{isMenu,jdbcType=INTEGER},
+            </if>
+            <if test="isAuthorize != null">
+                #{isAuthorize,jdbcType=INTEGER},
+            </if>
+            <if test="appId != null and appId != ''">
+                #{appId,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                #{createTime,jdbcType=VARCHAR},
+            </if>
+            <if test="isDisable != null">
+                #{isDisable,jdbcType=INTEGER},
+            </if>
+            <if test="lastModifyTime != null and lastModifyTime != ''">
+                #{lastModifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="isDelete != null">
+                #{isDelete,jdbcType=INTEGER},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="funcId != null and funcId != ''">
+            AND FUNC_ID = #{funcId,jdbcType=VARCHAR}
+        </if>
+        <if test="funcCode != null and funcCode != ''">
+            AND FUNC_CODE = #{funcCode,jdbcType=VARCHAR}
+        </if>
+        <if test="parentFuncCode != null and parentFuncCode != ''">
+            AND PARENT_FUNC_CODE = #{parentFuncCode,jdbcType=VARCHAR}
+        </if>
+        <if test="funcName != null and funcName != ''">
+            AND FUNC_NAME = #{funcName,jdbcType=VARCHAR}
+        </if>
+        <if test="funcDesc != null and funcDesc != ''">
+            AND FUNC_DESC = #{funcDesc,jdbcType=VARCHAR}
+        </if>
+        <if test="funcUrl != null and funcUrl != ''">
+            AND FUNC_URL = #{funcUrl,jdbcType=VARCHAR}
+        </if>
+        <if test="funcSeq != null and funcSeq != ''">
+            AND FUNC_SEQ = #{funcSeq,jdbcType=VARCHAR}
+        </if>
+        <if test="funcType != null and funcType != ''">
+            AND FUNC_TYPE = #{funcType,jdbcType=VARCHAR}
+        </if>
+        <if test="isMenu != null">
+            AND IS_MENU = #{isMenu,jdbcType=INTEGER}
+        </if>
+        <if test="isAuthorize != null">
+            AND IS_AUTHORIZE = #{isAuthorize,jdbcType=INTEGER}
+        </if>
+        <if test="appId != null and appId != ''">
+            AND APP_ID = #{appId,jdbcType=VARCHAR}
+        </if>
+        <if test="createTime != null and createTime != ''">
+            AND CREATE_TIME = #{createTime,jdbcType=VARCHAR}
+        </if>
+        <if test="isDisable != null">
+            AND IS_DISABLE = #{isDisable,jdbcType=INTEGER}
+        </if>
+        <if test="lastModifyTime != null and lastModifyTime != ''">
+            AND LAST_MODIFY_TIME = #{lastModifyTime,jdbcType=VARCHAR}
+        </if>
+        <if test="isDelete != null">
+            AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.userservice.entity.FunctionDO">
+        INSERT INTO PEACH_FUNCTION (
+        <include refid="allColumn" />
+        ) VALUES (
+        <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.userservice.entity.FunctionDO">
+        INSERT INTO PEACH_FUNCTION (
+        <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue"/>)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.userservice.entity.FunctionDO">
+        UPDATE PEACH_FUNCTION SET
+        <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM PEACH_FUNCTION
+        WHERE FUNC_ID = #{value,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM PEACH_FUNCTION
+        WHERE FUNC_ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.userservice.entity.FunctionDO">
+        DELETE FROM PEACH_FUNCTION
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <update id="updateById" parameterType="java.lang.String">
+        UPDATE PEACH_FUNCTION SET
+        <include refid="allColumnSet" />
+        WHERE FUNC_ID =  #{funcId,jdbcType=VARCHAR}
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.FunctionVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_FUNCTION
+        WHERE FUNC_ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.FunctionVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_FUNCTION
+        WHERE FUNC_ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.userservice.entity.FunctionDO" resultType="com.peach.userservice.vo.FunctionVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_FUNCTION
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.userservice.entity.FunctionDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_FUNCTION
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+</mapper>

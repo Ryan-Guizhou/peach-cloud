@@ -13,7 +13,4 @@ import java.util.List;
  */
 public interface IUserservice {
 
-    List<UserVO> list(UserQO qo);
-
-    UserVO getById(String id);
 }

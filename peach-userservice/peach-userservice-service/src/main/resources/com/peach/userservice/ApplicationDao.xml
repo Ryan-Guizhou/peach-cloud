@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.userservice.dao.ApplicationDao">
+    <sql id="allColumn">
+        APP_ID,                                           APP_NAME,                                         APP_TYPE,                                         IS_OPEN,
+        APP_DESC,                                         LOGOUT_URL,                                       SORT_NUM,                                         LAST_MODIFY_TIME,
+        IS_DELETE
+    </sql>
+
+    <sql id="allColumnAlias">
+        APP_ID as appId,                                  APP_NAME as appName,                              APP_TYPE as appType,                              IS_OPEN as isOpen,
+        APP_DESC as appDesc,                              LOGOUT_URL as logoutUrl,                          SORT_NUM as sortNum,                              LAST_MODIFY_TIME as lastModifyTime,
+        IS_DELETE as isDelete
+    </sql>
+
+    <sql id="allColumnValue">
+        #{appId,jdbcType=VARCHAR},              #{appName,jdbcType=VARCHAR},            #{appType,jdbcType=VARCHAR},            #{isOpen,jdbcType=INTEGER},
+        #{appDesc,jdbcType=VARCHAR},            #{logoutUrl,jdbcType=VARCHAR},          #{sortNum,jdbcType=VARCHAR},            #{lastModifyTime,jdbcType=VARCHAR},
+        #{isDelete,jdbcType=INTEGER}
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.appId,jdbcType=VARCHAR},         #{item.appName,jdbcType=VARCHAR},       #{item.appType,jdbcType=VARCHAR},       #{item.isOpen,jdbcType=INTEGER},
+        #{item.appDesc,jdbcType=VARCHAR},       #{item.logoutUrl,jdbcType=VARCHAR},     #{item.sortNum,jdbcType=VARCHAR},       #{item.lastModifyTime,jdbcType=VARCHAR},
+        #{item.isDelete,jdbcType=INTEGER}
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="appName != null and appName != ''">
+                APP_NAME = #{appName,jdbcType=VARCHAR},
+            </if>
+            <if test="appType != null and appType != ''">
+                APP_TYPE = #{appType,jdbcType=VARCHAR},
+            </if>
+            <if test="isOpen != null">
+                IS_OPEN = #{isOpen,jdbcType=INTEGER},
+            </if>
+            <if test="appDesc != null and appDesc != ''">
+                APP_DESC = #{appDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="logoutUrl != null and logoutUrl != ''">
+                LOGOUT_URL = #{logoutUrl,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNum != null and sortNum != ''">
+                SORT_NUM = #{sortNum,jdbcType=VARCHAR},
+            </if>
+            <if test="lastModifyTime != null and lastModifyTime != ''">
+                LAST_MODIFY_TIME = #{lastModifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE = #{isDelete,jdbcType=INTEGER},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="appName != null and appName != ''">
+                APP_NAME,
+            </if>
+            <if test="appType != null and appType != ''">
+                APP_TYPE,
+            </if>
+            <if test="isOpen != null">
+                IS_OPEN,
+            </if>
+            <if test="appDesc != null and appDesc != ''">
+                APP_DESC,
+            </if>
+            <if test="logoutUrl != null and logoutUrl != ''">
+                LOGOUT_URL,
+            </if>
+            <if test="sortNum != null and sortNum != ''">
+                SORT_NUM,
+            </if>
+            <if test="lastModifyTime != null and lastModifyTime != ''">
+                LAST_MODIFY_TIME,
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="appName != null and appName != ''">
+                #{appName,jdbcType=VARCHAR},
+            </if>
+            <if test="appType != null and appType != ''">
+                #{appType,jdbcType=VARCHAR},
+            </if>
+            <if test="isOpen != null">
+                #{isOpen,jdbcType=INTEGER},
+            </if>
+            <if test="appDesc != null and appDesc != ''">
+                #{appDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="logoutUrl != null and logoutUrl != ''">
+                #{logoutUrl,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNum != null and sortNum != ''">
+                #{sortNum,jdbcType=VARCHAR},
+            </if>
+            <if test="lastModifyTime != null and lastModifyTime != ''">
+                #{lastModifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="isDelete != null">
+                #{isDelete,jdbcType=INTEGER},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="appId != null and appId != ''">
+            AND APP_ID = #{appId,jdbcType=VARCHAR}
+        </if>
+        <if test="appName != null and appName != ''">
+            AND APP_NAME = #{appName,jdbcType=VARCHAR}
+        </if>
+        <if test="appType != null and appType != ''">
+            AND APP_TYPE = #{appType,jdbcType=VARCHAR}
+        </if>
+        <if test="isOpen != null">
+            AND IS_OPEN = #{isOpen,jdbcType=INTEGER}
+        </if>
+        <if test="appDesc != null and appDesc != ''">
+            AND APP_DESC = #{appDesc,jdbcType=VARCHAR}
+        </if>
+        <if test="logoutUrl != null and logoutUrl != ''">
+            AND LOGOUT_URL = #{logoutUrl,jdbcType=VARCHAR}
+        </if>
+        <if test="sortNum != null and sortNum != ''">
+            AND SORT_NUM = #{sortNum,jdbcType=VARCHAR}
+        </if>
+        <if test="lastModifyTime != null and lastModifyTime != ''">
+            AND LAST_MODIFY_TIME = #{lastModifyTime,jdbcType=VARCHAR}
+        </if>
+        <if test="isDelete != null">
+            AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.userservice.entity.ApplicationDO">
+        INSERT INTO PEACH_APPLICATION (
+        <include refid="allColumn" />
+        ) VALUES (
+        <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.userservice.entity.ApplicationDO">
+        INSERT INTO PEACH_APPLICATION (
+        <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue"/>)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.userservice.entity.ApplicationDO">
+        UPDATE PEACH_APPLICATION SET
+        <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM PEACH_APPLICATION
+        WHERE APP_ID = #{value,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM PEACH_APPLICATION
+        WHERE APP_ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.userservice.entity.ApplicationDO">
+        DELETE FROM PEACH_APPLICATION
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <update id="updateById" parameterType="java.lang.String">
+        UPDATE PEACH_APPLICATION SET
+        <include refid="allColumnSet" />
+        WHERE APP_ID =  #{appId,jdbcType=VARCHAR}
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.ApplicationVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_APPLICATION
+        WHERE APP_ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.ApplicationVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_APPLICATION
+        WHERE APP_ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.userservice.entity.ApplicationDO" resultType="com.peach.userservice.vo.ApplicationVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_APPLICATION
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.userservice.entity.ApplicationDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_APPLICATION
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+</mapper>

@@ -1,14 +1,7 @@
 package com.peach.userservice.rest;
 
 
-import com.peach.common.response.Response;
-import com.peach.userservice.entity.UserDO;
-import com.peach.userservice.entity.UserDTO;
-import com.peach.userservice.external.UserFeignClient;
-import com.peach.userservice.qo.UserQO;
-import com.peach.userservice.service.IUserservice;
-import com.peach.userservice.vo.UserVO;
-import io.swagger.v3.oas.annotations.Operation;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,11 +22,11 @@ import java.util.Map;
  */
 @Tag(name = "订单服务")
 @RestController
-@RequestMapping()
+@RequestMapping("/user")
 public class UserController {
 
-    @Autowired
-    private UserFeignClient userFeignClient;
+//    @Autowired
+//    private UserFeignClient userFeignClient;
 
     @GetMapping()
     public Map<String,Object> map(){
@@ -43,28 +36,28 @@ public class UserController {
         return map;
     }
 
-    @Operation(summary = "远程调用测试")
-    @GetMapping("/remote/{id}")
-    public UserDTO get(@PathVariable("id") Long id){
-        return userFeignClient.getUser(id);
-    }
+//    @Operation(summary = "远程调用测试")
+//    @GetMapping("/remote/{id}")
+//    public UserDTO get(@PathVariable("id") Long id){
+//        return userFeignClient.getUser(id);
+//    }
+//
+//    @Autowired
+//    private IUserservice iUserservice;
 
-    @Autowired
-    private IUserservice iUserservice;
-
-    @Operation(summary = "查询所有人员信息")
-    @PostMapping("/allUser")
-    public Response allUser(@RequestBody UserQO userQO){
-        List<UserVO> userVOList = iUserservice.list(userQO);
-        return Response.success(userVOList);
-    }
-
-    @Operation(summary = "按ID查询人员信息")
-    @PostMapping("/selectById/{userId}")
-    public Response allUser(@PathVariable("userId") String userId){
-        UserVO userVO  = iUserservice.getById(userId);
-        return Response.success(userVO);
-    }
+//    @Operation(summary = "查询所有人员信息")
+//    @PostMapping("/allUser")
+//    public Response allUser(@RequestBody UserQO userQO){
+//        List<UserVO> userVOList = iUserservice.list(userQO);
+//        return Response.success(userVOList);
+//    }
+//
+//    @Operation(summary = "按ID查询人员信息")
+//    @PostMapping("/selectById/{userId}")
+//    public Response allUser(@PathVariable("userId") String userId){
+//        UserVO userVO  = iUserservice.getById(userId);
+//        return Response.success(userVO);
+//    }
 
 
 }
