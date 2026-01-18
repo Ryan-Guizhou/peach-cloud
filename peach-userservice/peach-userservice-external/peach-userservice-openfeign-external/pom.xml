@@ -5,17 +5,18 @@
 
     <groupId>com.peach</groupId>
 
-    <artifactId>peach-userservice-rest-external</artifactId>
-    <name>peach-userservice-rest-external</name>
-    <description>peach-userservice-rest-external</description>
+    <artifactId>peach-userservice-openfeign-external</artifactId>
+    <name>peach-userservice-openfeign-external</name>
+    <description>peach-userservice-openfeign-external</description>
 
     <packaging>jar</packaging>
 
     <parent>
         <groupId>com.peach</groupId>
-        <artifactId>peach-userservice</artifactId>
+        <artifactId>peach-userservice-external</artifactId>
         <version>${revision}</version>
     </parent>
+
 
     <dependencies>
         <dependency>
@@ -38,5 +39,4 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
     </dependencies>
-
 </project>

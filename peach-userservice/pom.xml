@@ -21,7 +21,7 @@
         <module>peach-userservice-launch</module>
         <module>peach-userservice-common</module>
         <module>peach-userservice-entity</module>
-        <module>peach-userservice-rest-external</module>
+        <module>peach-userservice-external</module>
 
     </modules>
 

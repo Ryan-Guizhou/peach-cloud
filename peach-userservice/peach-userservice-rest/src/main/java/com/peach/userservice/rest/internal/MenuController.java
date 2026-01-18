@@ -1,6 +1,6 @@
-package com.peach.userservice.rest;
+package com.peach.userservice.rest.internal;
 
-import com.peach.userservice.service.IResouceService;
+import com.peach.userservice.service.IMenuService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
@@ -17,10 +17,10 @@ import javax.annotation.Resource;
 @Slf4j
 @Indexed
 @RestController
-@RequestMapping("/user/resource")
-@Tag(name = "ResourceController", description = "资源管理")
-public class ResourceController {
+@RequestMapping("/user/menu")
+@Tag(name = "MenuController", description = "菜单管理")
+public class MenuController {
 
     @Resource
-    private IResouceService resourceService;
+    private IMenuService menuService;
 }

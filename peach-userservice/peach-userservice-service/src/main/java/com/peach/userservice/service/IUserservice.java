@@ -1,10 +1,6 @@
 package com.peach.userservice.service;
 
 
-import com.peach.userservice.qo.UserQO;
-import com.peach.userservice.vo.UserVO;
-
-import java.util.List;
 
 /**
  * @Author Mr Shu

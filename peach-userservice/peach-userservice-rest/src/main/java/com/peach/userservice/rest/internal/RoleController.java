@@ -1,4 +1,4 @@
-package com.peach.userservice.rest;
+package com.peach.userservice.rest.internal;
 
 import com.github.pagehelper.PageInfo;
 import com.peach.common.response.Response;

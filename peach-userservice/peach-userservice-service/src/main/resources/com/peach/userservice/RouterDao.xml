@@ -226,4 +226,27 @@
             <include refid="allColumnCond" />
         </where>
     </select>
+
+    <select id="selectByQO" resultType="com.peach.userservice.vo.RouterVO" parameterType="com.peach.userservice.qo.RouterQO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_ROUTER
+        <where>
+            <if test="routerCode != null and routerCode != ''">
+                AND ROUTER_CODE = #{routerCode,jdbcType=VARCHAR}
+            </if>
+            <if test="routerName != null and routerName != ''">
+                AND ROUTER_NAME = #{routerName,jdbcType=VARCHAR}
+            </if>
+            <if test="moduleCode != null and moduleCode != ''">
+                AND MODULE_CODE = #{moduleCode,jdbcType=VARCHAR}
+            </if>
+
+        </where>
+    </select>
+
+    <select id="countByRouterCode" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM PEACH_ROUTER
+        WHERE ROUTER_CODE = #{routerCode,jdbcType=VARCHAR} AND ROUTER_ID != #{routerId,jdbcType=VARCHAR}
+    </select>
 </mapper>

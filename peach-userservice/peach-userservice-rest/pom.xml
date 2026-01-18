@@ -30,8 +30,9 @@
 
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-userservice-rest-external</artifactId>
+            <artifactId>peach-userservice-log-external</artifactId>
         </dependency>
+
     </dependencies>
 
 </project>

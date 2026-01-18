@@ -12,10 +12,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -32,13 +33,14 @@ import java.util.Properties;
  * @CreateTime 2025-11-25 17:47
  */
 @Slf4j
+@EnableCaching
 @EnableDiscoveryClient
+@EnableAspectJAutoProxy(proxyTargetClass = true)
+@EnableConfigurationProperties(DataSourceProperties.class)
 @ComponentScan("com.peach")
-@EnableFeignClients(basePackages = "com.peach.userservice.external")
 @MapperScan(basePackages = {"com.peach.*.dao"},
         annotationClass = MybatisDao.class,
         sqlSessionFactoryRef = "mybatis-session")
-@EnableConfigurationProperties(DataSourceProperties.class)
 @SpringBootApplication
 public class PeachUserServiceApplication {
 
