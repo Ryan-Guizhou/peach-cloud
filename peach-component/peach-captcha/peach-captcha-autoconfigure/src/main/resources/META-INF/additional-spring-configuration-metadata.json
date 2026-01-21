@@ -1,0 +1,136 @@
+{
+  "properties": [
+    {
+      "name": "peach.captcha.cache-type",
+      "type": "com.peach.captcha.constant.CaptchaEnum$CaptchaCacheType",
+      "defaultValue": "MEMORY",
+      "description": "Captcha cache type. 验证码缓存类型（MEMORY / REDIS 等）"
+    },
+    {
+      "name": "peach.captcha.service-type",
+      "type": "com.peach.captcha.constant.CaptchaEnum$CaptchaServiceType",
+      "defaultValue": "DEFAULT",
+      "description": "Captcha service type. 验证码服务类型"
+    },
+    {
+      "name": "peach.captcha.jigsaw",
+      "type": "java.lang.String",
+      "defaultValue": "",
+      "description": "Sliding jigsaw background image path. 滑动拼图底图路径"
+    },
+    {
+      "name": "peach.captcha.pic-click",
+      "type": "java.lang.String",
+      "defaultValue": "",
+      "description": "Picture click captcha background path. 点选文字验证码底图路径"
+    },
+    {
+      "name": "peach.captcha.rotate",
+      "type": "java.lang.String",
+      "defaultValue": "",
+      "description": "Rotate captcha background path. 旋转验证码底图路径"
+    },
+    {
+      "name": "peach.captcha.water-mark",
+      "type": "java.lang.String",
+      "defaultValue": "我的水印",
+      "description": "Watermark text shown on bottom-right. 右下角水印文字"
+    },
+    {
+      "name": "peach.captcha.water-font",
+      "type": "java.lang.String",
+      "defaultValue": "WenQuanZhengHei.ttf",
+      "description": "Watermark font file name. 水印字体文件"
+    },
+    {
+      "name": "peach.captcha.font-type",
+      "type": "java.lang.String",
+      "defaultValue": "WenQuanZhengHei.ttf",
+      "description": "Font type for click captcha. 点选文字验证码字体"
+    },
+    {
+      "name": "peach.captcha.slip-offset",
+      "type": "java.lang.String",
+      "defaultValue": "5",
+      "description": "Allowed offset for slider captcha (pixels). 滑块验证码允许误差像素"
+    },
+    {
+      "name": "peach.captcha.aes-status",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enable AES encryption for coordinates. 是否启用坐标 AES 加密"
+    },
+    {
+      "name": "peach.captcha.interference-options",
+      "type": "java.lang.String",
+      "defaultValue": "0",
+      "description": "Interference level for slider captcha (0/1/2). 滑块干扰级别"
+    },
+    {
+      "name": "peach.captcha.cache-number",
+      "type": "java.lang.String",
+      "defaultValue": "1000",
+      "description": "Local cache max size. 本地缓存最大数量"
+    },
+    {
+      "name": "peach.captcha.timing-clear",
+      "type": "java.lang.String",
+      "defaultValue": "180",
+      "description": "Local cache cleanup interval (seconds). 本地缓存清理周期（秒）"
+    },
+    {
+      "name": "peach.captcha.req-frequency-limit-enable",
+      "type": "java.lang.Boolean",
+      "defaultValue": false,
+      "description": "Enable request frequency limit. 是否启用接口访问频率限制"
+    },
+    {
+      "name": "peach.captcha.req-get-lock-limit",
+      "type": "java.lang.Integer",
+      "defaultValue": 5,
+      "description": "Max failed check attempts per minute. check 接口一分钟内失败次数"
+    },
+    {
+      "name": "peach.captcha.req-get-lock-seconds",
+      "type": "java.lang.Integer",
+      "defaultValue": 300,
+      "description": "Lock duration after limit reached (seconds). 触发限制后的锁定时间"
+    },
+    {
+      "name": "peach.captcha.req-get-minute-limit",
+      "type": "java.lang.Integer",
+      "defaultValue": 100,
+      "description": "Max get requests per minute. get 接口一分钟内最大访问数"
+    },
+    {
+      "name": "peach.captcha.req-check-minute-limit",
+      "type": "java.lang.Integer",
+      "defaultValue": 100,
+      "description": "Max check requests per minute. check 接口一分钟内最大访问数"
+    },
+    {
+      "name": "peach.captcha.req-verify-minute-limit",
+      "type": "java.lang.Integer",
+      "defaultValue": 100,
+      "description": "Max verify requests per minute. verify 接口一分钟内最大访问数"
+    },
+    {
+      "name": "peach.captcha.font-style",
+      "type": "java.lang.Integer",
+      "defaultValue": 1,
+      "description": "Font style for click captcha (Font.BOLD etc). 点选验证码字体样式"
+    },
+    {
+      "name": "peach.captcha.font-size",
+      "type": "java.lang.Integer",
+      "defaultValue": 25,
+      "description": "Font size for click captcha. 点选验证码字体大小"
+    },
+    {
+      "name": "peach.captcha.click-word-count",
+      "type": "java.lang.Integer",
+      "defaultValue": 4,
+      "description": "Number of click words (not recommended currently). 点选文字个数（暂不建议使用）"
+    }
+  ]
+}

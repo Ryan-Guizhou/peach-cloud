@@ -1,0 +1,2 @@
+com.peach.captcha.provider.impl.DefaultCaptchaServiceProvider
+com.peach.captcha.provider.impl.BlockPuzzleCaptchaServiceProvider

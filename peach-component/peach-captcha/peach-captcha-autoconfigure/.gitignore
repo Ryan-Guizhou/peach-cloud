@@ -8,7 +8,6 @@ application-dev.yaml
 application-prod.yml
 application-prod.yaml
 # Maven ignores
-
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
