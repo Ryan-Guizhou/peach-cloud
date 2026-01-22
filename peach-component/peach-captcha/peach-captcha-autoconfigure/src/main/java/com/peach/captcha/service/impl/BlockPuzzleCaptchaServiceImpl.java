@@ -98,7 +98,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         try {
             cachePoint = JsonUtil.parseObject(pointJson, PointVO.class);
             //aes解密
-            pointJson = decrypt(captchaVO.getPointJson(), cachePoint.getSecretKey());
+            pointJson = decrypt(captchaVO.getAnswer(), cachePoint.getSecretKey());
             frontPoint = JsonUtil.parseObject(pointJson, PointVO.class);
         } catch (Exception e) {
             log.error("captcha point parse error, pointJson: {}", pointJson, e);
@@ -130,7 +130,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         captchaVO.setResult(true);
         captchaVO.resetClientFlag();
         captchaVO.setCaptchaVerification(value);
-        log.info("captcha pointJson:{},token:{}",captchaVO.getPointJson(),captchaVO.getToken());
+        log.info("captcha pointJson:{},token:{}",captchaVO.getAnswer(),captchaVO.getToken());
         return Response.success();
     }
 

@@ -30,7 +30,7 @@ public final class CaptchaImageUtil {
 
     private static final Integer DEFAULT_IMAGE_COUNT = 6;
 
-    private static final String IMAGES_SUFFIX = "png";
+    private static final String IMAGES_SUFFIX = ".png";
 
     private static final String PATH_SEPARATOR = "/";
 
@@ -175,7 +175,7 @@ public final class CaptchaImageUtil {
      */
     public static String getImageToBase64Str(BufferedImage templateImage) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()){
-            ImageIO.write(templateImage, IMAGES_SUFFIX, baos);
+            ImageIO.write(templateImage, "png", baos);
             byte[] bytes = baos.toByteArray();
             return Base64Util.encodeToString(bytes);
         } catch (IOException e) {

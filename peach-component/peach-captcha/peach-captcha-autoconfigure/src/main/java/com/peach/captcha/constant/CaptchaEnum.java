@@ -56,6 +56,16 @@ public interface CaptchaEnum {
         CLICKWORD("CLICKWORD","文字点选"),
 
         /**
+         * 知识验证.
+         */
+        KNOWLEDGE("KNOWLEDGE","知识验证"),
+
+        /**
+         * 文本/运算.
+         */
+        TEXT("TEXT","文本/运算"),
+
+        /**
          * 默认.
          */
         DEFAULT("DEFAULT","默认");

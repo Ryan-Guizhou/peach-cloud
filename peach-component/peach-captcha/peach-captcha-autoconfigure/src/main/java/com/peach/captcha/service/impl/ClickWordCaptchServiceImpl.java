@@ -21,7 +21,6 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 /**
  * 点选文字验证码服务实现类
@@ -128,7 +127,7 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
             // 3. 解析前端提交的坐标数据
             // 前端传来的 pointJson 应该是一个包含多个加密字符串的 JSON 数组
             // 例如：["加密点1", "加密点2", "加密点3"]
-            List<String> encryptedPointList = JSON.parseArray(captchaVO.getPointJson(), String.class);
+            List<String> encryptedPointList = JSON.parseArray(captchaVO.getAnswer(), String.class);
 
             if (cachePoints.size() != encryptedPointList.size()) {
                  return Response.fail("validate fail: point count mismatch");

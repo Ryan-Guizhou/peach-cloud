@@ -1,2 +1,6 @@
 com.peach.captcha.provider.impl.DefaultCaptchaServiceProvider
 com.peach.captcha.provider.impl.BlockPuzzleCaptchaServiceProvider
+com.peach.captcha.provider.impl.RotatePuzzleCaptchaServiceProvider
+com.peach.captcha.provider.impl.ClickWordCaptchServiceProvider
+com.peach.captcha.provider.impl.TextCaptchaServiceProvider
+com.peach.captcha.provider.impl.KnowledgeCaptchaServiceProvider

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * @Author Mr Shu
@@ -62,7 +61,12 @@ public class CaptchaVO implements Serializable {
     /**
      * 点坐标(base64加密传输)
      */
-    private String pointJson;
+    private String answer;
+
+    /**
+     * 旋转图片base64
+     */
+    private String rotateImageBase64;
 
     public void resetClientFlag(){
         this.browserInfo = null;
