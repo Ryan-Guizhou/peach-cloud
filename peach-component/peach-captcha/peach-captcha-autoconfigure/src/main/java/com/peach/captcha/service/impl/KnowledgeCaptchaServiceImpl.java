@@ -1,5 +1,7 @@
 package com.peach.captcha.service.impl;
 
+import com.alibaba.fastjson.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.util.AesUtil;
 import com.peach.captcha.util.CaptchaImageUtil;
@@ -13,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -33,17 +36,20 @@ public class KnowledgeCaptchaServiceImpl extends AbstractCacheService {
     private static final int IMAGE_HEIGHT = 60;
     
     // 简单的内置题库
-    private static final Map<String, String> QUESTION_BANK = new HashMap<>();
+    private static Map<String, String> QUESTION_BANK = new HashMap<>();
 
     static {
-        QUESTION_BANK.put("中国的首都在哪？", "北京");
-        QUESTION_BANK.put("太阳从哪边升起？", "东");
-        QUESTION_BANK.put("一年有几个季节？", "4");
-        QUESTION_BANK.put("冰是水变成的吗？", "是");
-        QUESTION_BANK.put("此时此刻是白天吗？", "是"); // 这种问题不太好，取决于时区
-        QUESTION_BANK.put("地球是圆的吗？", "是");
-        QUESTION_BANK.put("1+1等于几？", "2");
-        QUESTION_BANK.put("红绿灯中哪个颜色表示停止？", "红");
+        ClassLoader classLoader = KnowledgeCaptchaServiceImpl.class.getClassLoader();
+        try (InputStream stream = classLoader.getResourceAsStream("defaultImages/knowledge/knowledge.json")) {
+            if (stream == null) {
+                log.error("knowledge.json not found in classpath");
+            } else {
+                ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+                QUESTION_BANK = OBJECT_MAPPER.readValue(stream, Map.class);
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse knowledge.json", e);
+        }
     }
 
     @Override
@@ -146,14 +152,45 @@ public class KnowledgeCaptchaServiceImpl extends AbstractCacheService {
             return Response.fail(e.getMessage());
         }
     }
+
+    @Override
+    public Response verification(CaptchaVO captchaVO) {
+        Response r = super.verification(captchaVO);
+        if (!validatedReq(r)) {
+            return r;
+        }
+        try {
+            String codeKey = RedisKeyBuild
+                    .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA_SECOND, captchaVO.getCaptchaVerification())
+                    .getRealKey();
+            if (!existCaptchaKey(codeKey)) {
+                log.error("captcha verification not found, key: {}", codeKey);
+                return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
+            }
+            // Secondary validation token invalid immediately after use / 二次校验取值后，即刻失效
+            deleteCaptchKey(codeKey);
+            return Response.success();
+        } catch (Exception e) {
+            log.error("captcha verification error, key: {}", captchaVO.getCaptchaVerification(), e);
+            return Response.fail(e.getMessage());
+        }
+    }
     
     private boolean checkAnswer(String right, String user) {
-        if (user == null) return false;
+        if (user == null) {
+            return false;
+        }
         // 简单相等
-        if (right.equals(user)) return true;
+        if (right.equals(user)) {
+            return true;
+        }
         // 包含关系 (例如 right="北京", user="北京市")
-        if (user.contains(right) && user.length() < right.length() + 2) return true;
-        if (right.contains(user) && right.length() < user.length() + 2) return true;
+        if (user.contains(right) && user.length() < right.length() + 2){
+            return true;
+        }
+        if (right.contains(user) && right.length() < user.length() + 2) {
+            return true;
+        }
         return false;
     }
 

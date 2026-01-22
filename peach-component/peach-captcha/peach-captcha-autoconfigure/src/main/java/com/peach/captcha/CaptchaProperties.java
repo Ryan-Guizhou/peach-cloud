@@ -13,7 +13,7 @@ import java.awt.*;
  * @CreateTime 2025/12/30 17:06
  */
 @Data
-@ConfigurationProperties(prefix = "peach.captcha")
+@ConfigurationProperties(prefix = CaptchaConst.CAPTCHA_SUFFIX)
 public class CaptchaProperties {
 
     /**
@@ -24,7 +24,7 @@ public class CaptchaProperties {
     /**
      * 验证码类型
      */
-    private CaptchaEnum.CaptchaServiceType serviceType = CaptchaEnum.CaptchaServiceType.DEFAULT;
+    private CaptchaEnum.CaptchaServiceType serviceType = CaptchaEnum.CaptchaServiceType.BLOCKPUZZLE;
 
     /**
      * 滑动拼图底图路径.
@@ -115,7 +115,7 @@ public class CaptchaProperties {
     private int fontSize = 25;
 
     /**
-     * 点选文字个数，存在问题，暂不要使用
+     * 点选文字个数
      */
     private int clickWordCount = 4;
 }

@@ -8,7 +8,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-
+/**
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2025/12/30 11:06
+ */
 public class PointVO implements Serializable {
 
     private static final long serialVersionUID = 1L;

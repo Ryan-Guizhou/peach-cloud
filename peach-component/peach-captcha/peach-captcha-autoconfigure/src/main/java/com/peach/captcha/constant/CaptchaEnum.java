@@ -63,12 +63,8 @@ public interface CaptchaEnum {
         /**
          * 文本/运算.
          */
-        TEXT("TEXT","文本/运算"),
+        TEXT("TEXT","文本/运算");
 
-        /**
-         * 默认.
-         */
-        DEFAULT("DEFAULT","默认");
 
         private String code;
 
