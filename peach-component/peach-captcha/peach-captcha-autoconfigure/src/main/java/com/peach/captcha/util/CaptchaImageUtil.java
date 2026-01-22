@@ -30,7 +30,7 @@ public final class CaptchaImageUtil {
 
     private static final Integer DEFAULT_IMAGE_COUNT = 6;
 
-    private static final String IMAGES_SUFFIX = ".png";
+    private static final String IMAGES_SUFFIX = "png";
 
     private static final String PATH_SEPARATOR = "/";
 

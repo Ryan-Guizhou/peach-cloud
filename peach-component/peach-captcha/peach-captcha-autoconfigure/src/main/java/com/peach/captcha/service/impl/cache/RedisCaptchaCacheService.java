@@ -1,4 +1,4 @@
-package com.peach.captcha.service.impl.redis;
+package com.peach.captcha.service.impl.cache;
 
 import com.peach.captcha.service.CaptchaCacheService;
 import org.springframework.data.redis.core.StringRedisTemplate;

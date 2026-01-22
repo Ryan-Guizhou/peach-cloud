@@ -1,6 +1,6 @@
 package com.peach.captcha.service.impl;
 
-import com.peach.captcha.factory.CaptchaServiceFactory;
+
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.model.PointVO;
 import com.peach.captcha.util.AesUtil;
@@ -18,7 +18,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.Properties;
@@ -419,21 +418,6 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         return new PointVO(x, y, key);
     }
 
-    protected static int getEnOrChLength(String s) {
-        int enCount = 0;
-        int chCount = 0;
-        for (int i = 0; i < s.length(); i++) {
-            int length = String.valueOf(s.charAt(i)).getBytes(StandardCharsets.UTF_8).length;
-            if (length > 1) {
-                chCount++;
-            } else {
-                enCount++;
-            }
-        }
-        int chOffset = (HAN_ZI_SIZE / 2) * chCount + 5;
-        int enOffset = enCount * 8;
-        return chOffset + enOffset;
-    }
 
 
 }

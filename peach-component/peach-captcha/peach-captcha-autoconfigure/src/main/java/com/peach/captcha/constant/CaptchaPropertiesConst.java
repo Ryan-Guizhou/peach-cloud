@@ -5,7 +5,7 @@ package com.peach.captcha.constant;
  * @Version 1.0.0
  * @CreateTime 2026/1/20 19:18
  */
-public interface CaptchPropertiesConst {
+public interface CaptchaPropertiesConst {
 
     /**
      *滑块底图路径

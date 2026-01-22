@@ -1,10 +1,10 @@
-package com.peach.captcha.provider.impl;
+package com.peach.captcha.provider.impl.cache;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.peach.captcha.service.CaptchaCacheService;
 import com.peach.captcha.constant.CaptchaEnum;
 import com.peach.captcha.provider.CaptchaCacheProvider;
-import com.peach.captcha.service.impl.redis.RedisCaptchaCacheService;
+import com.peach.captcha.service.impl.cache.RedisCaptchaCacheService;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**

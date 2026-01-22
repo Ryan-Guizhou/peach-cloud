@@ -1,6 +1,6 @@
 package com.peach.captcha.service.impl;
 
-import com.peach.captcha.constant.CaptchPropertiesConst;
+import com.peach.captcha.constant.CaptchaPropertiesConst;
 import com.peach.captcha.constant.CaptchaEnum;
 import com.peach.captcha.limit.DefaultFrequencyLimitHandler;
 import com.peach.captcha.service.CaptchaCacheService;
@@ -19,6 +19,7 @@ import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.awt.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 
@@ -29,16 +30,6 @@ import java.util.Properties;
  */
 @Slf4j
 public abstract class AbstractCacheService implements CaptchaService {
-
-    /**
-     * check校验坐标 / Check and verify coordinates
-     */
-    protected static String REDIS_CAPTCHA_KEY = "RUNNING:CAPTCHA:%s";
-
-    /**
-     * 后台二次校验坐标 / Secondary verification of coordinates in the background
-     */
-    protected static String REDIS_SECOND_CAPTCHA_KEY = "RUNNING:CAPTCHA:SECOND-%s";
 
     /**
      * 频率限制处理器 / Frequency limiting processor
@@ -123,26 +114,26 @@ public abstract class AbstractCacheService implements CaptchaService {
 
         // 如果开启了初始化底图则开始初始化底图
         CaptchaImageUtil.initCaptchaImage(
-                config.getProperty(CaptchPropertiesConst.ORIGINAL_PATH_SILIDER),
-                config.getProperty(CaptchPropertiesConst.ORIGINAL_PATH_PIC_CLICK),
-                config.getProperty(CaptchPropertiesConst.ORIGINAL_PATH_ROTATE));
+                config.getProperty(CaptchaPropertiesConst.ORIGINAL_PATH_SILIDER),
+                config.getProperty(CaptchaPropertiesConst.ORIGINAL_PATH_PIC_CLICK),
+                config.getProperty(CaptchaPropertiesConst.ORIGINAL_PATH_ROTATE));
 
-        WATER_MARK = config.getProperty(CaptchPropertiesConst.CAPTCHA_WATER_MARK, "PEACHSOFT");
-        SLIP_OFFSET = config.getProperty(CaptchPropertiesConst.CAPTCHA_SLIP_OFFSET, "5");
-        WATER_MARK_STR = config.getProperty(CaptchPropertiesConst.CAPTCHA_WATER_FONT, "WenQuanZhengHei.ttf");
-        CAPTCHA_AES_STATUS = Boolean.parseBoolean(config.getProperty(CaptchPropertiesConst.CAPTCHA_AES_STATUS, "true"));
-        CLICK_WORD_FRONT_STR = config.getProperty(CaptchPropertiesConst.CAPTCHA_FONT_TYPE, "WenQuanZhengHei.ttf");
-        CACHE_TYPE = config.getProperty(CaptchPropertiesConst.CAPTCHA_CACHETYPE, "MEMORY");
-        INTERFERENCE_OPTIONS = Integer.parseInt(config.getProperty(CaptchPropertiesConst.CAPTCHA_INTERFERENCE_OPTIONS, "0"));
+        WATER_MARK = config.getProperty(CaptchaPropertiesConst.CAPTCHA_WATER_MARK, "PEACHSOFT");
+        SLIP_OFFSET = config.getProperty(CaptchaPropertiesConst.CAPTCHA_SLIP_OFFSET, "5");
+        WATER_MARK_STR = config.getProperty(CaptchaPropertiesConst.CAPTCHA_WATER_FONT, "WenQuanZhengHei.ttf");
+        CAPTCHA_AES_STATUS = Boolean.parseBoolean(config.getProperty(CaptchaPropertiesConst.CAPTCHA_AES_STATUS, "true"));
+        CLICK_WORD_FRONT_STR = config.getProperty(CaptchaPropertiesConst.CAPTCHA_FONT_TYPE, "WenQuanZhengHei.ttf");
+        CACHE_TYPE = config.getProperty(CaptchaPropertiesConst.CAPTCHA_CACHETYPE, "MEMORY");
+        INTERFERENCE_OPTIONS = Integer.parseInt(config.getProperty(CaptchaPropertiesConst.CAPTCHA_INTERFERENCE_OPTIONS, "0"));
 
         // 部署在linux中，如果没有安装中文字段，水印和点选文字，中文无法显示，
         // 通过加载resources下的font字体解决，无需在linux中安装字体
         loadWaterMarkFont();
         if ("MEMORY".equals(CACHE_TYPE)) {
-            MemoryCacheUtil.init(Integer.parseInt(config.getProperty(CaptchPropertiesConst.CAPTCHA_CACAHE_MAX_NUMBER, "1000")),
-                    Long.parseLong(config.getProperty(CaptchPropertiesConst.CAPTCHA_TIMING_CLEAR_SECOND, "180")));
+            MemoryCacheUtil.init(Integer.parseInt(config.getProperty(CaptchaPropertiesConst.CAPTCHA_CACAHE_MAX_NUMBER, "1000")),
+                    Long.parseLong(config.getProperty(CaptchaPropertiesConst.CAPTCHA_TIMING_CLEAR_SECOND, "180")));
         }
-        if (ONE.equals(config.getProperty(CaptchPropertiesConst.REQ_FREQUENCY_LIMIT_ENABLE, ZERO)) && frequencyLimitHandler == null){
+        if (ONE.equals(config.getProperty(CaptchaPropertiesConst.REQ_FREQUENCY_LIMIT_ENABLE, ZERO)) && frequencyLimitHandler == null){
             synchronized (this){
                 if (frequencyLimitHandler == null){
                     frequencyLimitHandler = new DefaultFrequencyLimitHandler(config, getCacheService(CACHE_TYPE));
@@ -292,6 +283,21 @@ public abstract class AbstractCacheService implements CaptchaService {
         return cacheService.get(captchaKey);
     }
 
+    protected int getEnOrChLength(String s) {
+        int enCount = 0;
+        int chCount = 0;
+        for (int i = 0; i < s.length(); i++) {
+            int length = String.valueOf(s.charAt(i)).getBytes(StandardCharsets.UTF_8).length;
+            if (length > 1) {
+                chCount++;
+            } else {
+                enCount++;
+            }
+        }
+        int chOffset = (HAN_ZI_SIZE / 2) * chCount + 5;
+        int enOffset = enCount * 8;
+        return chOffset + enOffset;
+    }
 
 }
 

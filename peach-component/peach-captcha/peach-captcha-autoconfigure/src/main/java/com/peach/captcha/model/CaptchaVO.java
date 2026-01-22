@@ -1,8 +1,10 @@
 package com.peach.captcha.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @Author Mr Shu
@@ -10,6 +12,7 @@ import java.io.Serializable;
  * @CreateTime 2025/12/30 11:06
  */
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class CaptchaVO implements Serializable {
 
     private static final long serialVersionUID = 4709594363282708784L;
@@ -45,6 +48,16 @@ public class CaptchaVO implements Serializable {
      * 滑块图片base64
      */
     private String newSlidingBlockingImageBase64;
+
+    /**
+     * 点选文字底图
+     */
+    private String picClickBase64;
+
+    /**
+     * 点选文字提示图
+     */
+    private String picClickpromptBase64;
 
     /**
      * 点坐标(base64加密传输)
