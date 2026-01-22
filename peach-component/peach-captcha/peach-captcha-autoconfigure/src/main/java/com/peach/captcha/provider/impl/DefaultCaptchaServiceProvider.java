@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 15:53
+ * @Description 默认验证码服务提供者
  */
 @Slf4j
 public class DefaultCaptchaServiceProvider implements CaptchaServiceProvider {

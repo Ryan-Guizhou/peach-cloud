@@ -28,13 +28,13 @@ public class CaptchaServiceFactory {
         ServiceLoader<CaptchaCacheProvider> cacheProvider = ServiceLoader.load(CaptchaCacheProvider.class);
         for (CaptchaCacheProvider provider : cacheProvider) {
             PROVIDERS.put(provider.type(), provider.createCaptchaCacheService());
-            log.info("Loaded captcha cache provider: [{}]", provider.type());
+            log.info("Captcha autoconfig loaded captcha cache provider: [{}]", provider.type());
         }
 
         ServiceLoader<CaptchaServiceProvider> captchaProvider = ServiceLoader.load(CaptchaServiceProvider.class);
         for (CaptchaServiceProvider provider : captchaProvider) {
             INSTANCES.put(provider.type(), provider.createCaptchaService());
-            log.info("Loaded captcha provider: [{}]", provider.type());
+            log.info("Captcha autoconfig loaded captcha provider: [{}]", provider.type());
         }
     }
 

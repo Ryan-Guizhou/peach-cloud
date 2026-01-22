@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:57
+ * @Description redis缓存服务提供者
  */
 public class RedisCaptchaCacheProvider implements CaptchaCacheProvider {
 

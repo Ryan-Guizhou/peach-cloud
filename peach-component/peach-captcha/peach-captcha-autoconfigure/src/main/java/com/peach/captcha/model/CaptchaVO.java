@@ -51,4 +51,14 @@ public class CaptchaVO implements Serializable {
      */
     private String pointJson;
 
+    public void resetClientFlag(){
+        this.browserInfo = null;
+        this.clientUid = null;
+    }
+
+    /**
+     * 校验结果
+     */
+    private Boolean result;
+
 }

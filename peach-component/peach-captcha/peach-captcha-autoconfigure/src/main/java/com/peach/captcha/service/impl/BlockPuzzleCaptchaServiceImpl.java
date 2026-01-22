@@ -7,6 +7,8 @@ import com.peach.captcha.util.AesUtil;
 import com.peach.captcha.util.CaptchaImageUtil;
 import com.peach.captcha.util.JsonUtil;
 import com.peach.captcha.util.RandomUtils;
+import com.peach.common.keymanager.RedisKeyBuild;
+import com.peach.common.keymanager.RedisKeyManage;
 import com.peach.common.response.Response;
 import com.peach.common.response.StatusEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -54,8 +56,8 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         int height = originalSlidingImage.getHeight();
         int width = originalSlidingImage.getWidth();
         graphics.setColor(Color.white);
-        graphics.setFont(waterMarkFont);
-        graphics.drawString(waterMark, width - getEnOrChLength(waterMark), height - (HAN_ZI_SIZE / 2) + 7);
+        graphics.setFont(WARK_MARK_FRONT);
+        graphics.drawString(WATER_MARK, width - getEnOrChLength(WATER_MARK), height - (HAN_ZI_SIZE / 2) + 7);
 
         String slidingBlockString = CaptchaImageUtil.getSlidingBlockString();
         BufferedImage slidingBlockImage = CaptchaImageUtil.getBase64StrToImage(slidingBlockString);
@@ -82,14 +84,16 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         if (!validatedReq(check)){
             return check;
         }
-        String codeKey = String.format(REDIS_SECOND_CAPTCHA_KEY, captchaVO.getToken());
-        if (!CaptchaServiceFactory.getCaptchaCacheService(cacheType).exists(codeKey)){
+        String codeKey = RedisKeyBuild
+                .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA, captchaVO.getToken())
+                .getRealKey();
+        if (!existCaptchaKey(codeKey)){
             log.error("captcha check not found, key: {}", codeKey);
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
         // 获取point
-        String pointJson = CaptchaServiceFactory.getCaptchaCacheService(cacheType).get(codeKey);
-        CaptchaServiceFactory.getCaptchaCacheService(cacheType).delete(codeKey);
+        String pointJson = getCaptchaByKey(codeKey);
+        deleteCaptchKey(codeKey);
         PointVO cachePoint = null;
         PointVO frontPoint = null;
         try {
@@ -103,12 +107,31 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
             return Response.fail(e.getMessage());
         }
 
-        if (cachePoint.x - Integer.parseInt(slipOffset) > frontPoint.x
-                || frontPoint.x > cachePoint.x + Integer.parseInt(slipOffset)
+        if (cachePoint.x - Integer.parseInt(SLIP_OFFSET) > frontPoint.x
+                || frontPoint.x > cachePoint.x + Integer.parseInt(SLIP_OFFSET)
                 || cachePoint.y != frontPoint.y) {
             afterValidateFail(captchaVO);
             return Response.fail("coordinate error");
         }
+        //校验成功，将信息存入缓存
+        String secretKey = cachePoint.getSecretKey();
+        String value;
+        try {
+            value = AesUtil.aesEncrypt(captchaVO.getToken().concat("@").concat(pointJson), secretKey);
+            log.info("captcha secretKey:{},  value:{}",secretKey,value);
+        } catch (Exception e) {
+            log.error("AES encrypt error ", e);
+            afterValidateFail(captchaVO);
+            return Response.fail(e.getMessage());
+        }
+        String secondKey = RedisKeyBuild
+                .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA_SECOND,value)
+                .getRealKey();
+        setCaptchaCahche(secondKey, captchaVO.getToken());
+        captchaVO.setResult(true);
+        captchaVO.resetClientFlag();
+        captchaVO.setCaptchaVerification(value);
+        log.info("captcha pointJson:{},token:{}",captchaVO.getPointJson(),captchaVO.getToken());
         return Response.success();
     }
 
@@ -118,14 +141,17 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         if(!validatedReq(r)){
             return r;
         }
+
         try {
-            String codeKey = String.format(REDIS_SECOND_CAPTCHA_KEY, captchaVO.getCaptchaVerification());
-            if (!CaptchaServiceFactory.getCaptchaCacheService(cacheType).exists(codeKey)) {
+            String codeKey = RedisKeyBuild
+                    .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA_SECOND,captchaVO.getCaptchaVerification())
+                    .getRealKey();
+            if (!existCaptchaKey(codeKey)) {
                 log.error("captcha verification not found, key: {}", codeKey);
                 return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
             }
             //二次校验取值后，即刻失效
-            CaptchaServiceFactory.getCaptchaCacheService(cacheType).delete(codeKey);
+            deleteCaptchKey(codeKey);
             return Response.success();
         } catch (Exception e) {
             log.error("captcha verification error, key: {}", captchaVO.getCaptchaVerification(), e);
@@ -183,15 +209,19 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
             ImageIO.write(slidingOriginalImage, IMAGE_TYPE_PNG, oriImagesOs);
             byte[] oriCopyImages = oriImagesOs.toByteArray();
             Base64.Encoder encoder = Base64.getEncoder();
+            // 抠图之后的图
             dataVO.setSlidingOriginalImageBase64(encoder.encodeToString(oriCopyImages).replaceAll("\r|\n", ""));
             //point信息不传到前端，只做后端check校验
+            // 滑块
             dataVO.setNewSlidingBlockingImageBase64(encoder.encodeToString(jigsawImages).replaceAll("\r|\n", ""));
             dataVO.setToken(RandomUtils.getUuid());
             dataVO.setSecretKey(point.getSecretKey());
             //将坐标信息存入redis中
-            String codeKey = String.format(REDIS_CAPTCHA_KEY, dataVO.getToken());
-            CaptchaServiceFactory.getCaptchaCacheService(cacheType).set(codeKey, point.toJsonString(), EXPIRE_SIN_SECONDS);
-            log.debug("token：{},point:{}", dataVO.getToken(), point.toJsonString());
+            String codeKey = RedisKeyBuild
+                    .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA, dataVO.getToken())
+                    .getRealKey();
+            setCaptchaCahche(codeKey,point.toJsonString());
+            log.debug("token：{},point:{}", dataVO.getToken(), JsonUtil.toJsonString(point));
             return dataVO;
         } catch (Exception e) {
             log.error("pictureTemplatesCut error:{}", e.getMessage(), e);
@@ -199,8 +229,8 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         }
     }
 
-    private static void extracted(final BufferedImage slidingOriginalImage, final String slidingBlockingBase64, final int slidingOriginalWidth, final int slidingBlockingWidth, final int x) {
-        if (captchaInterferenceOptions > 0) {
+    private void extracted(final BufferedImage slidingOriginalImage, final String slidingBlockingBase64, final int slidingOriginalWidth, final int slidingBlockingWidth, final int x) {
+        if (INTERFERENCE_OPTIONS > 0) {
             int position = 0;
             if (slidingOriginalWidth - x - 5 > slidingBlockingWidth * 2) {
                 //在原扣图右边插入干扰图
@@ -217,7 +247,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
                 }
             }
         }
-        if (captchaInterferenceOptions > 1) {
+        if (INTERFERENCE_OPTIONS > 1) {
             while (true) {
                 String s = CaptchaImageUtil.getSlidingBlockString();
                 if (!slidingBlockingBase64.equals(s)) {
@@ -270,7 +300,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
 
     }
 
-    private static void cutByTemplate(BufferedImage oriImage, BufferedImage templateImage, BufferedImage newImage, int x) {
+    private void cutByTemplate(BufferedImage oriImage, BufferedImage templateImage, BufferedImage newImage, int x) {
         //临时数组遍历用于高斯模糊存周边像素值
         int[][] martrix = new int[3][3];
         int[] values = new int[9];
@@ -383,7 +413,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         int x = widthDifference <= 0 ? 5 : random.nextInt(slidingOriginalWidth - slidingBlockingWidth - 100) + 100;
         int y = heightDifference <= 0 ? 5 : random.nextInt(slidingOriginalHeight - slidingBlockingHeight - 100) + 5;
         String key = null;
-        if (captchaAesStatus) {
+        if (CAPTCHA_AES_STATUS) {
             key = AesUtil.getKey();
         }
         return new PointVO(x, y, key);

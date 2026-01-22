@@ -56,11 +56,11 @@ public class DefaultCaptchaService extends AbstractCacheService{
         }
         try {
             String codeKey = String.format(RedisKeyManage.RUNNING_CAPTCHA_SECOND.getKey(), captchaVO.getCaptchaVerification());
-            if (!CaptchaServiceFactory.getCaptchaCacheService(cacheType).exists(codeKey)) {
+            if (!CaptchaServiceFactory.getCaptchaCacheService(CACHE_TYPE).exists(codeKey)) {
                 return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
             }
             //二次校验取值后，即刻失效
-            CaptchaServiceFactory.getCaptchaCacheService(cacheType).delete(codeKey);
+            CaptchaServiceFactory.getCaptchaCacheService(CACHE_TYPE).delete(codeKey);
         } catch (Exception e) {
             return Response.fail(e.getMessage());
         }

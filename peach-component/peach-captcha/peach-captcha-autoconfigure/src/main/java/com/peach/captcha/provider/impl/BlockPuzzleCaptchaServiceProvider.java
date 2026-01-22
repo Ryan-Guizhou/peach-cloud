@@ -9,6 +9,7 @@ import com.peach.captcha.service.impl.BlockPuzzleCaptchaServiceImpl;
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/21 18:21
+ * @Description 滑块验证码服务提供者
  */
 public class BlockPuzzleCaptchaServiceProvider implements CaptchaServiceProvider {
 
