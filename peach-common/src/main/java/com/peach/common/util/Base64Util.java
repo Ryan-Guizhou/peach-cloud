@@ -33,7 +33,7 @@ public final class Base64Util {
     }
 
     public static byte[] safeDecode(byte[] src) {
-        return src.length == 0 ? src : Base64.getDecoder().decode(src);
+        return src.length == 0 ? src : Base64.getUrlDecoder().decode(src);
     }
 
     public static String encodeToString(byte[] src) throws UnsupportedEncodingException {
