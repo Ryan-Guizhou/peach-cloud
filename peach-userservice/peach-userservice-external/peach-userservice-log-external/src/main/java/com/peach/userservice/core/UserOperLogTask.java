@@ -37,7 +37,7 @@ public class UserOperLogTask {
     public void handleUserOperLog() {
         List<UserOperLogVO> allUserOperLog = userOperLogQueue.getAllUserOperLog();
         if (PeachCollectionUtil.isEmpty(allUserOperLog)) {
-            log.warn("The data to be inserted for this scheduled task execution is empty");
+//            log.warn("The data to be inserted for this scheduled task execution is empty");
             return;
         }
         StopWatch stopWatch = new StopWatch();

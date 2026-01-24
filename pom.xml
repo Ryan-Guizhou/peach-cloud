@@ -39,6 +39,9 @@
         <mybatis.version>2.3.1</mybatis.version>
 
         <pagehelper.version>1.4.7</pagehelper.version>
+
+        <user-agent.version>1.2.3</user-agent.version>
+        <sa-token>1.34.0</sa-token>
     </properties>
 
     <modules>
@@ -352,7 +355,13 @@
             </dependency>
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-userservice-rest-external</artifactId>
+                <artifactId>peach-userservice-log-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-userservice-openfeign-external</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -436,6 +445,24 @@
                 <groupId>com.github.pagehelper</groupId>
                 <artifactId>pagehelper-spring-boot-starter</artifactId>
                 <version>${pagehelper.version}</version>
+            </dependency>
+
+<!--            <dependency>-->
+<!--                <groupId>user-agent-utils</groupId>-->
+<!--                <artifactId>user-agent-utils</artifactId>-->
+<!--                <version>${user-agent.version}</version>-->
+<!--            </dependency>-->
+
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-reactor-spring-boot-starter</artifactId>
+                <version>${sa-token}</version>
+            </dependency>
+            <!-- Sa-Token 整合 Redis （使用 jackson 序列化方式） -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-dao-redis-jackson</artifactId>
+                <version>${sa-token}</version>
             </dependency>
 
         </dependencies>

@@ -1,7 +1,7 @@
 package com.peach.userservice.openfeign;
 
-import com.peach.common.ServiceNameConstant;
-import com.peach.common.ServicePathConstant;
+import com.peach.common.constant.ServiceNameConstant;
+import com.peach.common.constant.ServicePathConstant;
 import com.peach.common.response.Response;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
