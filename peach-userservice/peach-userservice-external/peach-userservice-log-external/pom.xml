@@ -46,9 +46,9 @@
             <optional>true</optional>
         </dependency>
 
-        <dependency>
-            <groupId>user-agent-utils</groupId>
-            <artifactId>user-agent-utils</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>user-agent-utils</groupId>-->
+<!--            <artifactId>user-agent-utils</artifactId>-->
+<!--        </dependency>-->
     </dependencies>
 </project>

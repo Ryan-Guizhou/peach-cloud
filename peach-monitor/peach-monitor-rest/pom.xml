@@ -30,7 +30,7 @@
 
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-monitor-rest-external</artifactId>
+            <artifactId>peach-userservice-openfeign-external</artifactId>
         </dependency>
     </dependencies>
 

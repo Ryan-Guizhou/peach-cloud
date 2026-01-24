@@ -7,7 +7,7 @@ package com.peach.captcha.constant;
  */
 public interface CaptchaConst {
 
-    String CAPTCHA_SUFFIX = "peach.captcah";
+    String CAPTCHA_SUFFIX = "peach.captcha";
 
     /**
      * 获取验证码接口限流属性

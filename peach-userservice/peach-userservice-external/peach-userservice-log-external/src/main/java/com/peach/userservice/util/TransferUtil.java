@@ -14,9 +14,9 @@ import com.peach.userservice.vo.UserOperLogVO;
 import com.peach.userservice.enums.UserLogEnum;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import nl.bitwalker.useragentutils.Browser;
-import nl.bitwalker.useragentutils.OperatingSystem;
-import nl.bitwalker.useragentutils.UserAgent;
+//import nl.bitwalker.useragentutils.Browser;
+//import nl.bitwalker.useragentutils.OperatingSystem;
+//import nl.bitwalker.useragentutils.UserAgent;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -131,14 +131,14 @@ public class TransferUtil {
         String userAgent = request.getHeader(PubCommonConst.USER_AGENT);
 
         // 使用 UserAgentUtils 解析 User-Agent
-        UserAgent agent = UserAgent.parseUserAgentString(userAgent);
-        Browser browser = agent.getBrowser();
-        OperatingSystem os = agent.getOperatingSystem();
+//        UserAgent agent = UserAgent.parseUserAgentString(userAgent);
+//        Browser browser = agent.getBrowser();
+//        OperatingSystem os = agent.getOperatingSystem();
 
         // 组装设备信息
-        diviceInfo.setOs(os.getName());
-        diviceInfo.setDevice(agent.getOperatingSystem().getName()); // 这里可以尝试解析设备名称
-        diviceInfo.setBrowser(browser.getName());
+//        diviceInfo.setOs(os.getName());
+//        diviceInfo.setDevice(agent.getOperatingSystem().getName()); // 这里可以尝试解析设备名称
+//        diviceInfo.setBrowser(browser.getName());
         diviceInfo.setPrivateIp(IpUtil.getIpAddr(request));
         diviceInfo.setPublicIp(IpUtil.getIpAddr(request));
 

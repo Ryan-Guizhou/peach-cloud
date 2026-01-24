@@ -453,6 +453,7 @@
 <!--                <version>${user-agent.version}</version>-->
 <!--            </dependency>-->
 
+
             <dependency>
                 <groupId>cn.dev33</groupId>
                 <artifactId>sa-token-reactor-spring-boot-starter</artifactId>
@@ -465,6 +466,17 @@
                 <version>${sa-token}</version>
             </dependency>
 
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-spring-boot-starter</artifactId>
+                <version>${sa-token}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-core</artifactId>
+                <version>${sa-token}</version>
+            </dependency>
         </dependencies>
 
     </dependencyManagement>
