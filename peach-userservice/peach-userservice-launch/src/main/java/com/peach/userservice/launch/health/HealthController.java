@@ -26,11 +26,6 @@ import java.util.Map;
 @Tag(name = "HealthController", description = "用户服务健康检查")
 public class HealthController {
 
-    private final DataSource dataSource;
-
-    public HealthController(DataSource dataSource) {
-        this.dataSource = dataSource;
-    }
 
     @Operation(summary = "用户服务检查检查")
     @GetMapping("/health")
@@ -40,21 +35,5 @@ public class HealthController {
         map.put("application","peach-userservice");
         return map;
     }
-
-    @GetMapping("/db")
-    public Map<String, Object> dbHealth() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("application", "peach-userservice");
-        try (Connection connection = dataSource.getConnection()) {
-            map.put("status", "ok");
-            map.put("db", connection.isValid(2) ? "ok" : "invalid");
-        } catch (Exception e) {
-            map.put("status", "fail");
-            map.put("db", "fail");
-            map.put("error", e.getMessage());
-        }
-        return map;
-    }
-
 
 }
