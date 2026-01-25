@@ -5,6 +5,7 @@ import cn.dev33.satoken.reactor.filter.SaReactorFilter;
 import cn.dev33.satoken.same.SaSameUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.peach.gateway.core.util.WitheListUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
@@ -12,8 +13,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Indexed;
 
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * @Author Mr Shu
@@ -41,17 +40,7 @@ public class SaTokenConfigure {
                     // 获取当前请求路径
                     String path = SaHolder.getRequest().getRequestPath();
                     log.info("Gateway Service SaInterceptor entering path: " + path);
-                    if (path.contains("/login") ||
-                        path.contains("/register") ||
-                        path.contains("/getCaptcha") ||
-                        path.contains("/checkCaptcha") ||
-                        path.contains("/init") ||
-                        path.contains("/doc.html") ||
-                        path.contains("/swagger-resources") ||
-                        path.contains("/webjars") ||
-                        path.contains("/v3/api-docs") ||
-                        path.contains("/favicon.ico") ||
-                        path.contains("/.well-known/appspecific/com.chrome.devtools.json")) {
+                    if (WitheListUtil.isWitheList(path)) {
                         log.info("Gateway Sa-Token don't need check token, path: {}",path);
                         return;
                     }

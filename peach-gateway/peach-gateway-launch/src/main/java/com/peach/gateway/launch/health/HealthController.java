@@ -29,13 +29,4 @@ public class HealthController {
         return map;
     }
 
-    @PostConstruct
-    public void init() {
-        log.info("gateway starting...");
-        log.debug("gateway started");
-        log.error("gateway error");
-        log.warn("gateway warn");
-    }
-
-
 }
