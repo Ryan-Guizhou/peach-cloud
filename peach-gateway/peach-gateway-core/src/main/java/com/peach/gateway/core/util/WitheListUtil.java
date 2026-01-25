@@ -49,7 +49,7 @@ public class WitheListUtil {
      */
     public static boolean isWitheList(String path) {
         for (String whitePath : SA_TOKEN_WHITE_LIST) {
-            if (path.startsWith(whitePath)) {
+            if (path.contains(whitePath)) {
                 return true;
             }
         }
