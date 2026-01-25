@@ -1,0 +1,20 @@
+server:
+  port: 18083
+
+spring:
+  application:
+    name: peach-fileservice
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: dba0fbb1-fe66-464e-afce-33ba45c43b2b
+        group: PEACH-CLOUD
+      config:
+        server-addr: 127.0.0.1:8848
+        file-extension: yml
+        group: PEACH-CLOUD
+        namespace: dba0fbb1-fe66-464e-afce-33ba45c43b2b
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}

@@ -411,6 +411,40 @@
                 <artifactId>peach-monitor-common</artifactId>
                 <version>${revision}</version>
             </dependency>
+
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-fileservice-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-fileservice-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-fileservice-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-fileservice-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-fileservice-openfeign-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+
+
             <dependency>
                 <groupId>com.github.xiaoymin</groupId>
                 <artifactId>knife4j-gateway-spring-boot-starter</artifactId>

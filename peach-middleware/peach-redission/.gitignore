@@ -1,12 +1,4 @@
-# Custom ignores
-application.yml
-application.yaml
 
-application-dev.yml
-application-dev.yaml
-
-application-prod.yml
-application-prod.yaml
 # Maven ignores
 
 target/

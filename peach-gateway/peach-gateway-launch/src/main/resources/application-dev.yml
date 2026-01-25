@@ -1,0 +1,105 @@
+server:
+  port: 18080
+spring:
+  main:
+    web-application-type: reactive
+  application:
+    name: peach-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: dba0fbb1-fe66-464e-afce-33ba45c43b2b
+        group: PEACH-CLOUD
+      config:
+        server-addr: 127.0.0.1:8848
+        file-extension: yml
+        group: PEACH-CLOUD
+        namespace: dba0fbb1-fe66-464e-afce-33ba45c43b2b
+        enabled: true
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        # 用户服务 Swagger 文档路由 (优先级高，精确匹配)
+        - id: peach-userservice-swagger
+          uri: lb://peach-userservice
+          predicates:
+            - Path=/api/user/v3/api-docs
+          filters:
+            - SetPath=/v3/api-docs
+        # 监控服务 Swagger 文档路由
+        - id: peach-monitor-swagger
+          uri: lb://peach-monitor
+          predicates:
+            - Path=/api/monitor/v3/api-docs
+          filters:
+            - SetPath=/v3/api-docs
+        # 文件服务 Swagger 文档路由
+        - id: peach-fileservice-swagger
+          uri: lb://peach-fileservice
+          predicates:
+            - Path=/api/file/v3/api-docs
+          filters:
+            - SetPath=/v3/api-docs
+        # 通用业务路由
+        - id: peach-userservice
+          uri: lb://peach-userservice
+          predicates:
+              - Path=/api/user/**
+          filters:
+            - StripPrefix=1
+        - id: peach-monitor
+          uri: lb://peach-monitor
+          predicates:
+            - Path=/api/monitor/**
+          filters:
+            - StripPrefix=1
+        - id: peach-fileservice
+          uri: lb://peach-fileservice
+          predicates:
+            - Path=/api/file/**
+          filters:
+            - StripPrefix=1
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password: 123456
+#      - optional:nacos:application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+
+# sa-token 配置
+sa-token:
+  token-name: Authorization
+  timeout: 2592000
+  activity-timeout: -1
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
+  check-same-token: true
+  is-read-cookie: false
+
+# knife4j 配置
+knife4j:
+  gateway:
+    enabled: true
+    strategy: manual
+    routes:
+      - name: 用户服务
+        url: /api/user/v3/api-docs
+        service-name: peach-userservice
+        context-path: /api
+        order: 1
+      - name: 监控服务
+        url: /api/monitor/v3/api-docs
+        service-name: peach-monitor
+        context-path: /api
+        order: 2
+      - name: 文件服务
+        url: /api/file/v3/api-docs
+        service-name: peach-fileservie
+        context-path: /api
+        order: 3
