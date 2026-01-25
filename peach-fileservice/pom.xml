@@ -13,17 +13,16 @@
         <version>${revision}</version>
     </parent>
 
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-    </dependencies>
+
+    <modules>
+        <module>peach-fileservice-service</module>
+        <module>peach-fileservice-launch</module>
+        <module>peach-fileservice-entity</module>
+        <module>peach-fileservice-rest</module>
+        <module>peach-fileservice-common</module>
+        <module>peach-fileservice-openfeign-external</module>
+    </modules>
 
 </project>
