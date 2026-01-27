@@ -95,4 +95,14 @@ public class GoogleFileStoreServiceImpl extends AbstractFileStoreService {
     public void setPublicReadAcl(String path) {
 
     }
+
+    @Override
+    protected String prefix() {
+        return "";
+    }
+
+    @Override
+    protected String proxyHost() {
+        return "";
+    }
 }

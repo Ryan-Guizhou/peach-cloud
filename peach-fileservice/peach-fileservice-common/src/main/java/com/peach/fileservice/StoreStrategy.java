@@ -5,7 +5,7 @@ package com.peach.fileservice;
  * @Version 1.0.0
  * @CreateTime 2026/1/27 10:45
  */
-public enum StoreStrage {
+public enum StoreStrategy {
 
     MINIO("MINIO","minio存储"),
     OSS("OSS","阿里云oss存储"),
@@ -22,7 +22,7 @@ public enum StoreStrage {
     private String value;
 
 
-    StoreStrage(String code, String value) {
+    StoreStrategy(String code, String value) {
         this.code = code;
         this.value = value;
     }

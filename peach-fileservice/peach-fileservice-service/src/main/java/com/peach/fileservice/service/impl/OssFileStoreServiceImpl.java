@@ -27,7 +27,8 @@ import java.util.List;
 @ConditionalOnProperty(
         prefix = StoreConstants.CONDITIONAL_PREFIX,
         name = StoreConstants.CONDITOPNAL_NAME,
-        havingValue = StoreConstants.OSS)
+        havingValue = StoreConstants.OSS,
+        matchIfMissing = true)
 @EnableConfigurationProperties(OssProperties.class)
 public class OssFileStoreServiceImpl extends AbstractFileStoreService {
 
@@ -35,8 +36,14 @@ public class OssFileStoreServiceImpl extends AbstractFileStoreService {
 
     private final OSSClient ossClient;
 
+    private final String proxyHost;
+
+    private boolean isEnableClamav;
+
     public OssFileStoreServiceImpl(OssProperties ossProperties) {
         log.info("OssFileStoreServiceImpl init,ossProperties is : {}", JSON.toJSON(ossProperties));
+        this.proxyHost = ossProperties.getProxyHost();
+        this.isEnableClamav = ossProperties.isEnableClamav();
         this.bucketName = ossProperties.getBucketName();
         this.ossClient = new OSSClient(ossProperties.getEndpoint(),
                 ossProperties.getAccessKey(), ossProperties.getSecretKey());
@@ -113,6 +120,16 @@ public class OssFileStoreServiceImpl extends AbstractFileStoreService {
 
     }
 
+
+    @Override
+    protected String prefix() {
+        return "";
+    }
+
+    @Override
+    protected String proxyHost() {
+        return "";
+    }
 
     protected String uploadInputStream(InputStream inputStream, String targetPath, String fileName){
         ossClient.putObject(bucketName, targetPath + fileName, inputStream);
