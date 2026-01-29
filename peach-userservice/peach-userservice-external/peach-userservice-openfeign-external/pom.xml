@@ -42,7 +42,7 @@
         <!-- Sa-Token 核心包 (用于 SaSameUtil) -->
         <dependency>
             <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-core</artifactId>
+            <artifactId>sa-token-spring-boot-starter</artifactId>
         </dependency>
     </dependencies>
 </project>
