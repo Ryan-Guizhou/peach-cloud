@@ -44,4 +44,9 @@ public class BaseProperties {
      * 代理地址 / Proxy address
      */
     private String proxyHost;
+
+    /**
+     * 所处区域 /  Region
+     */
+    private String region;
 }
