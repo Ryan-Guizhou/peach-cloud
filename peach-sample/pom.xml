@@ -140,6 +140,11 @@
             <artifactId>peach-redission-common</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-captcha-starter</artifactId>
+        </dependency>
+
 
     </dependencies>
 

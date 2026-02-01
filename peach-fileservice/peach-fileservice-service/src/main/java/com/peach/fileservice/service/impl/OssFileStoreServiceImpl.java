@@ -69,8 +69,7 @@ public class OssFileStoreServiceImpl extends AbstractFileStoreService {
         this.bucketName = ossProperties.getBucketName();
         this.ossClient = new OSSClient(ossProperties.getEndpoint(),
                 ossProperties.getAccessKey(), ossProperties.getSecretKey());
-        boolean bucketExist = ossClient.doesBucketExist(bucketName);
-        log.info("OssFileStoreServiceImpl init,bucketName is {},bucketExist is {}", bucketName, bucketExist);
+        checkInitIsSuccess();
     }
 
 
@@ -90,7 +89,7 @@ public class OssFileStoreServiceImpl extends AbstractFileStoreService {
                 ListObjectsRequest request = new ListObjectsRequest(bucketName);
                 request.setPrefix(sourceDir);
                 request.setMarker(marker);
-                request.setMaxKeys(1000);
+                request.setMaxKeys(MAX_KEYS);
 
                 ObjectListing listing = ossClient.listObjects(request);
 
@@ -144,7 +143,7 @@ public class OssFileStoreServiceImpl extends AbstractFileStoreService {
                 ListObjectsRequest request = new ListObjectsRequest(bucketName);
                 request.setPrefix(sourceDir);
                 request.setMarker(marker);
-                request.setMaxKeys(1000);
+                request.setMaxKeys(MAX_KEYS);
 
                 ObjectListing listing = ossClient.listObjects(request);
 
@@ -349,6 +348,7 @@ public class OssFileStoreServiceImpl extends AbstractFileStoreService {
         return isEnableClamav;
     }
 
+    @Override
     protected String uploadInputStream(InputStream inputStream, String targetPath, String fileName){
         String resultUrl = StringUtil.EMPTY;
         if (checkForClamav(inputStream)){
@@ -371,6 +371,7 @@ public class OssFileStoreServiceImpl extends AbstractFileStoreService {
         return  resultUrl;
     }
 
+    @Override
     protected String getOrgUrlByKey(String key,boolean isUrl){
         String keyPath = normalizePath(key);
         String resultUrl = StringUtil.EMPTY;
@@ -387,5 +388,10 @@ public class OssFileStoreServiceImpl extends AbstractFileStoreService {
             log.error("getOrgUrlByKey error,keyPath is {},e is {}",keyPath,e);
         }
         return resultUrl;
+    }
+
+    protected void checkInitIsSuccess(){
+        boolean bucketExist = ossClient.doesBucketExist(bucketName);
+        log.info("OssFileStoreServiceImpl init bean,bucketName is: [{}],bucketName isExist: [{}]", bucketName,bucketExist);
     }
 }

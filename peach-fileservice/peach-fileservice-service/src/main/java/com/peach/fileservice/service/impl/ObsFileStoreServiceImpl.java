@@ -57,21 +57,94 @@ public class ObsFileStoreServiceImpl extends AbstractFileStoreService {
 
     public ObsFileStoreServiceImpl(ObsProperties obsProperties) {
         log.info("ObsFileStoreServiceImpl init bean,ObsProperties is: [{}]", JSON.toJSON(obsProperties));
-        prefix = obsProperties.getPrefix();
-        proxyHost = obsProperties.getProxyHost();
-        bucketName = obsProperties.getBucketName();
-        isEnableClamav = obsProperties.isEnableClamav();
-        obsClient = new ObsClient(obsProperties.getAccessKey(), obsProperties.getSecretKey(), obsProperties.getEndpoint());
+        this.prefix = obsProperties.getPrefix();
+        this.proxyHost = obsProperties.getProxyHost();
+        this.bucketName = obsProperties.getBucketName();
+        this.isEnableClamav = obsProperties.isEnableClamav();
+        this.obsClient = new ObsClient(obsProperties.getAccessKey(), obsProperties.getSecretKey(), obsProperties.getEndpoint());
+        checkInitIsSuccess();
     }
 
     @Override
     public boolean copyDir(String sourceDir, String targetDir) {
-        return false;
+        if (StringUtil.isEmpty(sourceDir) || StringUtil.isEmpty(targetDir)) {
+            log.error("ObsFileStoreServiceImpl copyDir error:sourceDir or targetDir is null");
+            return false;
+        }
+        sourceDir = normalizePath(sourceDir);
+        targetDir = normalizePath(targetDir);
+        String marker = null;
+        try {
+            do {
+                ListObjectsRequest request = new ListObjectsRequest(bucketName);
+                request.setPrefix(sourceDir);
+                request.setMarker(marker);
+                request.setMaxKeys(MAX_KEYS);
+
+                ObjectListing listing = obsClient.listObjects(request);
+
+                for (ObsObject obsObject : listing.getObjects()) {
+                    String sourceKey = obsObject.getObjectKey();
+                    if (sourceKey.endsWith(PATH_SEPARATOR)) {
+                        continue;
+                    }
+                    String relativePath = sourceKey.substring(sourceDir.length());
+                    String targetKey = targetDir + relativePath;
+                    obsClient.copyObject(bucketName, sourceKey, bucketName, targetKey);
+                }
+                marker = listing.getNextMarker();
+            } while (marker != null);
+            return true;
+        } catch (Exception e) {
+            log.error("ObsFileStoreServiceImpl copyDir error:{}", e.getMessage());
+            return false;
+        }
     }
 
     @Override
     public boolean downDir(String sourceDir, String localDir) {
-        return false;
+        if (StringUtil.isEmpty(sourceDir) || StringUtil.isEmpty(localDir)) {
+            log.error("ObsFileStoreServiceImpl downDir error:sourceDir or localDir is null");
+            return false;
+        }
+        sourceDir = normalizePath(sourceDir);
+        localDir = normalizePath(localDir);
+        try {
+            File baseDir = new File(localDir);
+            if (!baseDir.exists() && !baseDir.mkdirs()) {
+                throw new RuntimeException("Cannot create local dir: " + localDir);
+            }
+            String marker = null;
+            do {
+                ListObjectsRequest request = new ListObjectsRequest(bucketName);
+                request.setPrefix(sourceDir);
+                request.setMarker(marker);
+                request.setMaxKeys(MAX_KEYS);
+
+                ObjectListing listing = obsClient.listObjects(request);
+                for (ObsObject obsObject : listing.getObjects()) {
+                    String objectKey = obsObject.getObjectKey();
+                    if (objectKey.endsWith(PATH_SEPARATOR)) {
+                        continue;
+                    }
+                    String relativePath = objectKey.substring(sourceDir.length());
+                    File localFile = new File(baseDir, relativePath);
+                    File parentDir = localFile.getParentFile();
+                    if (!parentDir.exists() && !parentDir.mkdirs()) {
+                        throw new RuntimeException("Cannot create dir: " + parentDir);
+                    }
+                    ObsObject object = obsClient.getObject(bucketName, objectKey);
+                    try (InputStream in = object.getObjectContent()) {
+                        FileUtil.writeFromStream(in, localFile);
+                    }
+                }
+                marker = listing.getNextMarker();
+            } while (marker != null);
+            return true;
+        } catch (Exception e) {
+            log.error("ObsFileStoreServiceImpl downDir error:{}", e.getMessage());
+            return false;
+        }
     }
 
     @Override
@@ -81,22 +154,22 @@ public class ObsFileStoreServiceImpl extends AbstractFileStoreService {
 
     @Override
     public String upload(String content, String targetPath, String fileName) {
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))){
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))) {
             return uploadInputStream(inputStream, targetPath, fileName);
-        }catch (Exception e){
-            log.error("uploadInputStream error:{}",e.getMessage());
+        } catch (Exception e) {
+            log.error("uploadInputStream error:{}", e.getMessage());
             return StringUtil.EMPTY;
         }
     }
 
     @Override
     public List<String> upload(File[] files, String targetPath) {
-        if (files == null){
+        if (files == null) {
             return Collections.emptyList();
         }
         List<String> urlList = Lists.newArrayList();
         for (File file : files) {
-            String url = upload(file,targetPath, FileUtil.getName(file));
+            String url = upload(file, targetPath, FileUtil.getName(file));
             urlList.add(url);
         }
         return urlList;
@@ -110,11 +183,12 @@ public class ObsFileStoreServiceImpl extends AbstractFileStoreService {
     @Override
     public boolean download(String targetPath, String localPath, String fileName) {
         try (InputStream inputStream = this.getInputStreamByKey(targetPath)) {
-            String finalPath = buildPathKey(localPath, fileName);
+            localPath = normalizePath(localPath);
+            String downloadPath = localPath.endsWith(PATH_SEPARATOR) ? localPath + fileName : localPath + PATH_SEPARATOR + fileName;
             if (inputStream != null) {
-                FileUtil.writeFromStream(inputStream, finalPath);
+                FileUtil.writeFromStream(inputStream, downloadPath);
             }
-            return FileUtil.exist(finalPath);
+            return FileUtil.exist(downloadPath);
         } catch (Exception e) {
             log.error("obsStorageImpl download file error！", e);
             return Boolean.FALSE;
@@ -123,40 +197,28 @@ public class ObsFileStoreServiceImpl extends AbstractFileStoreService {
 
     @Override
     public InputStream getInputStream(String targetPath, String fileName) {
-       try {
-           targetPath = normalizePath(targetPath);
-           String fileKeyPath = buildPathKey(targetPath, fileName);
-           return obsClient.getObject(bucketName, fileKeyPath).getObjectContent();
-       }catch (Exception e){
-           log.error("Failed to retrieve the file:[{}]",targetPath,e);
-           return null;
-       }
+        try {
+            String fileKeyPath = buildPathKey(targetPath, fileName);
+            return obsClient.getObject(bucketName, fileKeyPath).getObjectContent();
+        } catch (Exception e) {
+            log.error("Failed to retrieve the file:[{}]", targetPath, e);
+            return null;
+        }
     }
 
     @Override
     public InputStream getInputStreamByKey(String key) {
-        String obsKey = key;
-        InputStream inputStream = null;
         try {
-            inputStream = obsClient.getObject(bucketName, normalizePath(obsKey)).getObjectContent();
-            return inputStream;
+            return obsClient.getObject(bucketName, normalizePath(key)).getObjectContent();
         } catch (Exception e) {
-            log.error("Failed to retrieve the file:[{}]",obsKey);
-            obsKey = obsKey.replace(bucketName + "/", "");
-            try {
-                log.info("bucketName:[{}],replace key:[{}]",bucketName,obsKey);
-                inputStream = obsClient.getObject(bucketName, obsKey).getObjectContent();
-                return inputStream;
-            } catch (Exception ex) {
-                log.error("Failed to retrieve the file after modifying the key:[{}] ",obsKey, e);
-            }
+            log.error("Failed to retrieve the file:[{}]", key, e);
         }
         return null;
     }
 
     @Override
     public boolean delete(String key) {
-        if (!isHasIllegalChar(key)){
+        if (isHasIllegalChar(key)) {
             log.error("delete key contains illegal characters, key: {}", key);
             return Boolean.FALSE;
         }
@@ -165,26 +227,24 @@ public class ObsFileStoreServiceImpl extends AbstractFileStoreService {
         ObjectListing objectListing;
         Boolean isDelete = Boolean.TRUE;
         try {
-            do{
+            do {
                 ListObjectsRequest listObjectsRequest = new ListObjectsRequest();
                 listObjectsRequest.setBucketName(bucketName);
                 listObjectsRequest.setMarker(nextMarker);
                 listObjectsRequest.setPrefix(normalizePath(fileKeyPath));
                 objectListing = obsClient.listObjects(listObjectsRequest);
-                // 遍历删除 / Traverse and delete
                 if (!objectListing.getObjects().isEmpty()) {
                     DeleteObjectsRequest deleteObjectRequest = new DeleteObjectsRequest();
-                    List<ObsObject> objects = objectListing.getObjects();
-                    for (ObsObject object : objects) {
+                    deleteObjectRequest.setBucketName(bucketName);
+                    for (ObsObject object : objectListing.getObjects()) {
                         deleteObjectRequest.addKeyAndVersion(object.getObjectKey());
                     }
-                    deleteObjectRequest.setEncodingType("url");
                     obsClient.deleteObjects(deleteObjectRequest);
                 }
                 nextMarker = objectListing.getNextMarker();
-            }while (objectListing.isTruncated());
-        }catch (Exception e){
-            log.error("Traverse and delete error, path is:[{}]",key);
+            } while (objectListing.isTruncated());
+        } catch (Exception e) {
+            log.error("Traverse and delete error, path is:[{}]", key, e);
             isDelete = Boolean.FALSE;
         }
         return isDelete;
@@ -192,25 +252,41 @@ public class ObsFileStoreServiceImpl extends AbstractFileStoreService {
 
     @Override
     public boolean copyFile(String currentPath, String targetPath) {
-        return false;
+        if (StringUtil.isEmpty(currentPath) || StringUtil.isEmpty(targetPath)) {
+            log.error("currentPath or targetPath is empty");
+            return Boolean.FALSE;
+        }
+        currentPath = normalizePath(currentPath);
+        targetPath = normalizePath(targetPath);
+        if (currentPath.equals(targetPath)) {
+            log.error("currentPath is equal to targetPath");
+            return Boolean.TRUE;
+        }
+        try {
+            obsClient.copyObject(bucketName, currentPath, bucketName, targetPath);
+            return Boolean.TRUE;
+        } catch (Exception e) {
+            log.error("copy file failed,currentPath is [{}] targetPath is [{}]", currentPath, targetPath, e);
+            return Boolean.FALSE;
+        }
     }
 
     @Override
     public String getUrlByKey(String key) {
-        return getOrgUrlByKey(key,Boolean.TRUE);
+        return getOrgUrlByKey(key, Boolean.TRUE);
     }
 
     @Override
     public String getPathByKey(String key) {
-        return getOrgUrlByKey(key,Boolean.FALSE);
+        return getOrgUrlByKey(key, Boolean.FALSE);
     }
 
     @Override
     public void setPublicReadAcl(String path) {
         try {
             obsClient.setObjectAcl(bucketName, normalizePath(path), AccessControlList.REST_CANNED_PUBLIC_READ);
-        }catch (Exception e){
-            log.error("ObsFileStoreServiceImpl setPublicReadAcl field"+e.getMessage(),e);
+        } catch (Exception e) {
+            log.error("ObsFileStoreServiceImpl setPublicReadAcl field" + e.getMessage(), e);
         }
     }
 
@@ -220,7 +296,7 @@ public class ObsFileStoreServiceImpl extends AbstractFileStoreService {
     }
 
     @Override
-    public String proxyHost() {
+    protected String proxyHost() {
         return proxyHost;
     }
 
@@ -229,65 +305,55 @@ public class ObsFileStoreServiceImpl extends AbstractFileStoreService {
         return isEnableClamav;
     }
 
-    protected String uploadInputStream(InputStream inputStream, String targetPath, String fileName){
+    @Override
+    protected String uploadInputStream(InputStream inputStream, String targetPath, String fileName) {
         String resultUrl = StringUtil.EMPTY;
-        if (isEnableClamav){
-            log.info("File virus scanning and compliance verification are in progress ..");
-            boolean flag = checkForClamav(inputStream);
-            log.info("File virus scanning and compliance verification completed, flag is :[{}]",flag);
-            if (flag){
-                log.info("File is safe, continue uploading");
-            }else {
-                log.info("File is not safe, please check");
+        if (isEnableClamav) {
+            if (!checkForClamav(inputStream)) {
                 return resultUrl;
             }
         }
         try {
             String pathKey = buildPathKey(targetPath, fileName);
-            PutObjectResult result = obsClient.putObject(bucketName, pathKey, inputStream);
-            if (result == null) {
-                log.error("uploadInputStream result is null");
-                return  "";
-            }
+            obsClient.putObject(bucketName, pathKey, inputStream);
             obsClient.setObjectAcl(bucketName, pathKey, AccessControlList.REST_CANNED_PUBLIC_READ);
-            // 设置URL过期时间为2年
             long expiration = System.currentTimeMillis() + EXPIRATION;
             TemporarySignatureRequest request = new TemporarySignatureRequest(HttpMethodEnum.GET, expiration);
-            //设置桶名,一般都是写在配置里，这里直接赋值即可
             request.setBucketName(bucketName);
-            //这里相当于设置你上传到obs的文件路
             request.setObjectKey(pathKey);
             TemporarySignatureResponse response = obsClient.createTemporarySignature(request);
-            String signedUrl = response.getSignedUrl();
-            resultUrl = removeUrlHost(signedUrl);
-        }catch (Exception e){
-            log.debug("uploadInputStream error:{}",e.getMessage());
+            resultUrl = removeUrlHost(response.getSignedUrl());
+        } catch (Exception e) {
+            log.error("uploadInputStream error:{}", e.getMessage(), e);
         }
         return resultUrl;
     }
 
-
+    @Override
     protected String getOrgUrlByKey(String key, boolean isUrl) {
         String keyPath = normalizePath(key);
         String url = StringUtil.EMPTY;
         try {
             boolean flag = obsClient.doesObjectExist(bucketName, keyPath);
             if (!flag) {
-                log.error("文件不存在!");
+                log.error("The file does not exist!");
                 return url;
             }
             long expiration = System.currentTimeMillis() + EXPIRATION;
             TemporarySignatureRequest request = new TemporarySignatureRequest(HttpMethodEnum.GET, expiration);
-            //设置桶名,一般都是写在配置里，这里直接赋值即可
             request.setBucketName(bucketName);
-            //这里相当于设置你上传到obs的文件路
             request.setObjectKey(keyPath);
             TemporarySignatureResponse response = obsClient.createTemporarySignature(request);
-            String obsUrl = response.getSignedUrl();
-            url = replaceUrlHost(obsUrl,isUrl);
+            url = replaceUrlHost(response.getSignedUrl(), isUrl);
         } catch (Exception e) {
-            log.error("obsStorageImpl getUrlByKey failed"+e.getMessage(), e);
+            log.error("obsStorageImpl getUrlByKey failed" + e.getMessage(), e);
         }
         return url;
+    }
+
+    @Override
+    protected void checkInitIsSuccess() {
+        boolean bucketExist = obsClient.headBucket(bucketName);
+        log.info("ObsFileStoreServiceImpl init bean,bucketName is: [{}],bucketName isExist: [{}]", bucketName,bucketExist);
     }
 }
