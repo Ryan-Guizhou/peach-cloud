@@ -105,4 +105,9 @@ public class CephFileStoreServiceImpl extends AbstractFileStoreService {
     protected String proxyHost() {
         return "";
     }
+
+    @Override
+    protected boolean isClamavEnable() {
+        return false;
+    }
 }

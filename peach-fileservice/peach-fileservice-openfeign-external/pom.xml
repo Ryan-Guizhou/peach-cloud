@@ -21,7 +21,7 @@
     <dependencies>
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-monitor-entity</artifactId>
+            <artifactId>peach-fileservice-entity</artifactId>
         </dependency>
 
         <dependency>
@@ -37,6 +37,11 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-spring-boot-starter</artifactId>
         </dependency>
     </dependencies>
 

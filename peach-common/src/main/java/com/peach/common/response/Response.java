@@ -42,12 +42,14 @@ public class Response implements Serializable {
         super();
     }
 
-    public void setCode(String code) {
+    public Response setCode(String code) {
         this.code = code;
+        return this;
     }
 
-    public void setMsg(String msg) {
+    public Response setMsg(String msg) {
         this.msg = msg;
+        return this;
     }
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)

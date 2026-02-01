@@ -1,6 +1,8 @@
-package com.peach.userservice.config;
+package com.peach.fileservice.config;
 
+import cn.dev33.satoken.dao.SaSessionForJacksonCustomized;
 import cn.dev33.satoken.dao.SaTokenDao;
+import cn.dev33.satoken.strategy.SaStrategy;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -38,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Component
-public class ConstumSaTokenDao implements SaTokenDao {
+public class CustomSaTokenDao implements SaTokenDao {
     public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -107,6 +109,9 @@ public class ConstumSaTokenDao implements SaTokenDao {
             timeModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer(TIME_FORMATTER));
 
             this.objectMapper.registerModule(timeModule);
+
+            // 重写sasession
+            SaStrategy.instance.createSession = SaSessionForJacksonCustomized::new;
 
         } catch (Exception e) {
             log.error("CustomSaTokenDao init failed."+e.getMessage(),e);

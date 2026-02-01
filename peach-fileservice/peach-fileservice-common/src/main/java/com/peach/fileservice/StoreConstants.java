@@ -41,4 +41,7 @@ public interface StoreConstants {
     String GOOGLE = "GOOGLE";
     String GOOGLE_CONDITIONAL_PREFIX = "peach.file-store.google";
 
+    String BOS = "bos";
+    String BOS_CONDITIONAL_PREFIX = "peach.file-store.bos";
+
 }

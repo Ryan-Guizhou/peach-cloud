@@ -66,6 +66,8 @@ public abstract class AbstractFileStoreService implements IFileStoreService {
      */
     protected abstract String proxyHost();
 
+    protected abstract boolean isClamavEnable();
+
 
     /**
      * 上传文件流 / Upload file stream
@@ -141,6 +143,10 @@ public abstract class AbstractFileStoreService implements IFileStoreService {
             path = path.substring(1);
         }
 
+        if (!path.contains(".") && !path.endsWith(PATH_SEPARATOR)){
+            path = path + PATH_SEPARATOR;
+        }
+
         return path;
     }
 
@@ -167,7 +173,7 @@ public abstract class AbstractFileStoreService implements IFileStoreService {
             return null;
         }
         path = URL_PATTERN.matcher(path).replaceAll(PATH_SEPARATOR);
-        return QUERY_PATTERN.matcher(path).replaceAll(path);
+        return QUERY_PATTERN.matcher(path).replaceAll("");
     }
 
     /**
@@ -179,9 +185,14 @@ public abstract class AbstractFileStoreService implements IFileStoreService {
         if (url == null) {
             return null;
         }
-        url = URL_PATTERN.matcher(url).replaceAll(PATH_SEPARATOR);
-        String replacePath = isUrl ? "" : proxyHost();
-        return QUERY_PATTERN.matcher(url).replaceAll(replacePath);
+        if (isUrl) {
+            url = URL_PATTERN.matcher(url).replaceAll("");
+            return QUERY_PATTERN.matcher(url).replaceAll("");
+        }
+        String proxyHost = proxyHost();
+        String replacePath = proxyHost.endsWith(PATH_SEPARATOR) ? proxyHost : proxyHost + PATH_SEPARATOR;
+        url = URL_PATTERN.matcher(url).replaceAll(replacePath);
+        return url;
     }
 
 

@@ -1,12 +1,12 @@
 package com.peach.fileservice.service.impl;
 
 import com.peach.fileservice.StoreConstants;
-import com.peach.fileservice.config.store.AmazonProperties;
+import com.peach.fileservice.config.store.BosProperties;
+import com.peach.fileservice.config.store.CosProperties;
 import com.peach.fileservice.service.AbstractFileStoreService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
 
 import java.io.File;
@@ -17,17 +17,35 @@ import java.util.List;
 /**
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2026/1/27 10:44
+ * @CreateTime 2026/1/29 21:13
  */
 @Slf4j
 @Indexed
-@Component
 @ConditionalOnProperty(
         prefix = StoreConstants.CONDITIONAL_PREFIX,
         name = StoreConstants.CONDITOPNAL_NAME,
-        havingValue = StoreConstants.AMAZON)
-@EnableConfigurationProperties(AmazonProperties.class)
-public class AmazonFileStoreServiceImpl extends AbstractFileStoreService {
+        havingValue = StoreConstants.BOS)
+@EnableConfigurationProperties(BosProperties.class)
+public class BosFileStoreServiceImpl extends AbstractFileStoreService {
+
+
+
+
+    @Override
+    protected String prefix() {
+        return "";
+    }
+
+    @Override
+    protected String proxyHost() {
+        return "";
+    }
+
+    @Override
+    protected boolean isClamavEnable() {
+        return false;
+    }
+
     @Override
     public boolean copyDir(String sourceDir, String targetDir) {
         return false;
@@ -96,20 +114,5 @@ public class AmazonFileStoreServiceImpl extends AbstractFileStoreService {
     @Override
     public void setPublicReadAcl(String path) {
 
-    }
-
-    @Override
-    protected String prefix() {
-        return "";
-    }
-
-    @Override
-    protected String proxyHost() {
-        return "";
-    }
-
-    @Override
-    protected boolean isClamavEnable() {
-        return false;
     }
 }

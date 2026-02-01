@@ -224,6 +224,11 @@ public class ObsFileStoreServiceImpl extends AbstractFileStoreService {
         return proxyHost;
     }
 
+    @Override
+    protected boolean isClamavEnable() {
+        return isEnableClamav;
+    }
+
     protected String uploadInputStream(InputStream inputStream, String targetPath, String fileName){
         String resultUrl = StringUtil.EMPTY;
         if (isEnableClamav){

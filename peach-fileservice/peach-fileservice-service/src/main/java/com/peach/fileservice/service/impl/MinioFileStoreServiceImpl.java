@@ -108,4 +108,9 @@ public class MinioFileStoreServiceImpl extends AbstractFileStoreService {
     protected String proxyHost() {
         return "";
     }
+
+    @Override
+    protected boolean isClamavEnable() {
+        return false;
+    }
 }
