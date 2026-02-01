@@ -23,9 +23,6 @@ public interface StoreConstants {
     String CEPH = "CEPH";
     String CEPH_CONDITIONAL_PREFIX = "peach.file-store.ceph";
 
-    String MONGO = "MONGO";
-    String MONGO_CONDITIONAL_PREFIX = "peach.file-store.mongo";
-
     String AMAZON = "AMAZON";
     String AMAZON_CONDITIONAL_PREFIX = "peach.file-store.amazon";
 
@@ -38,10 +35,7 @@ public interface StoreConstants {
     String OBS = "OBS";
     String OBS_CONDITIONAL_PREFIX = "peach.file-store.obs";
 
-    String GOOGLE = "GOOGLE";
-    String GOOGLE_CONDITIONAL_PREFIX = "peach.file-store.google";
-
-    String BOS = "bos";
+    String BOS = "BOS";
     String BOS_CONDITIONAL_PREFIX = "peach.file-store.bos";
 
 }

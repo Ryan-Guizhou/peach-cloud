@@ -4,10 +4,11 @@ import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
 /**
@@ -48,6 +49,8 @@ public abstract class AbstractFileStoreService implements IFileStoreService {
      * 路径分隔符正则 / Path separator regular
      */
     protected static final Pattern PATH_SEPARATOR_PATTERN = Pattern.compile("\\\\");
+
+    protected static final Integer MAX_KEYS = 1000;
 
 
     @Autowired(required = false)
@@ -108,11 +111,104 @@ public abstract class AbstractFileStoreService implements IFileStoreService {
     }
 
     /**
-     * 检查文件是否被clamav 检测到
+     * 检查文件是否被检测到风险 (安全策略链实现)
      * @param inputStream
-     * @return
+     * @return true 表示发现风险，false 表示安全
      */
     protected boolean checkForClamav(InputStream inputStream){
+
+        if (!isClamavEnable()) {
+            log.warn("ClamAV is not enabled.");
+            return false;
+        }
+
+        // 确保流支持 mark/reset，防止读取后导致后续上传失败
+        if (!inputStream.markSupported()) {
+            log.warn("InputStream does not support mark/reset, security checks might be skipped or cause errors.");
+        }
+
+        // --- 策略 1: 极速魔数与文本特征校验 (Magic Number & Script Header Check) ---
+        try {
+            // 增加读取长度至 32 字节，以支持检测 @echo off 或 import 等关键词
+            int checkLimit = 32;
+            inputStream.mark(checkLimit);
+            byte[] header = new byte[checkLimit];
+            int read = inputStream.read(header);
+            inputStream.reset(); 
+
+            if (read >= 2) {
+                // 1.1 拦截 Windows 可执行文件 (MZ)
+                if (header[0] == 0x4D && header[1] == 0x5A) {
+                    log.error("Security Check Failed: Windows executable (EXE/DLL/MZ) detected.");
+                    return true;
+                }
+
+                // 1.2 拦截常见的脚本起始标识
+                String headStr = new String(header, 0, read, StandardCharsets.UTF_8).toLowerCase();
+                
+                // Unix Shell, Python, Perl 等 (Shebang)
+                if (headStr.startsWith("#!")) {
+                    log.error("Security Check Failed: Unix Script (Shebang) detected.");
+                    return true;
+                }
+                
+                // PHP 脚本
+                if (headStr.contains("<?php")) {
+                    log.error("Security Check Failed: PHP Script detected.");
+                    return true;
+                }
+
+                // JSP 脚本
+                if (headStr.contains("<%@") || headStr.contains("<%")) {
+                    log.error("Security Check Failed: JSP Script detected.");
+                    return true;
+                }
+
+                // Windows Batch 脚本
+                if (headStr.startsWith("@echo off") || headStr.startsWith("rem ")) {
+                    log.error("Security Check Failed: Windows Batch/CMD Script detected.");
+                    return true;
+                }
+
+                // Python 脚本常用开头
+                if (headStr.startsWith("import ") || headStr.startsWith("from ")) {
+                    log.error("Security Check Failed: Python Script detected.");
+                    return true;
+                }
+
+                // JavaScript / Node.js 脚本常用开头
+                if (headStr.startsWith("var ") || headStr.startsWith("const ") || headStr.startsWith("let ") || headStr.startsWith("function ")) {
+                    log.error("Security Check Failed: JavaScript/Node.js Script detected.");
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Magic number and script header check error", e);
+        }
+
+        // --- 策略 2: 深度 ClamAV 病毒扫描 ---
+        if (fileStoreSecurityService != null){
+            try {
+                // 标记流位置，设置较大的读取限制（例如 100MB）
+                inputStream.mark(100 * 1024 * 1024);
+                
+                // 注意：scanStream 返回 true 表示安全(clean)
+                boolean isSafe = fileStoreSecurityService.scanStream(inputStream);
+
+                // 扫描完成后务必重置流，供后续真正的上传逻辑使用
+                inputStream.reset();
+
+                if (!isSafe) {
+                    log.error("Security Check Failed: ClamAV detected virus/risk.");
+                    return true;
+                }
+            } catch (Exception e) {
+                log.error("ClamAV scan execution error", e);
+                return true; // 扫描异常，出于“安全第一”原则视为发现风险
+            }
+        }
+
+        // 所有策略均通过，文件安全
         return false;
     }
 
@@ -190,6 +286,9 @@ public abstract class AbstractFileStoreService implements IFileStoreService {
             return QUERY_PATTERN.matcher(url).replaceAll("");
         }
         String proxyHost = proxyHost();
+        if (StringUtil.isBlank(proxyHost)){
+            return url;
+        }
         String replacePath = proxyHost.endsWith(PATH_SEPARATOR) ? proxyHost : proxyHost + PATH_SEPARATOR;
         url = URL_PATTERN.matcher(url).replaceAll(replacePath);
         return url;
@@ -231,4 +330,9 @@ public abstract class AbstractFileStoreService implements IFileStoreService {
         return Boolean.FALSE;
     }
 
+    /**
+     * 初始化检查 / Initialization check
+     */
+    protected void checkInitIsSuccess(){
+    }
 }

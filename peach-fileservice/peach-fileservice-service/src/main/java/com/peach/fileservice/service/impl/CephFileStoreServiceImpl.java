@@ -1,16 +1,21 @@
 package com.peach.fileservice.service.impl;
 
+import com.alibaba.fastjson2.JSON;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.peach.common.util.StringUtil;
 import com.peach.fileservice.StoreConstants;
-import com.peach.fileservice.service.AbstractFileStoreService;
+import com.peach.fileservice.config.store.AmazonProperties;
+import com.peach.fileservice.config.store.CephProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
-
-import java.io.File;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @Author Mr Shu
@@ -24,90 +29,25 @@ import java.util.List;
         prefix = StoreConstants.CONDITIONAL_PREFIX,
         name = StoreConstants.CONDITOPNAL_NAME,
         havingValue = StoreConstants.CEPH)
-public class CephFileStoreServiceImpl extends AbstractFileStoreService {
+@EnableConfigurationProperties(CephProperties.class)
+public class CephFileStoreServiceImpl extends AmazonFileStoreServiceImpl {
 
-    @Override
-    public boolean copyDir(String sourceDir, String targetDir) {
-        return false;
+    public CephFileStoreServiceImpl(CephProperties properties) {
+        // Reuse Amazon implementation but with Ceph properties
+        super(convertToAmazonProperties(properties));
+        log.info("CephFileStoreServiceImpl init, properties: {}", JSON.toJSONString(properties));
     }
 
-    @Override
-    public boolean downDir(String sourceDir, String localDir) {
-        return false;
-    }
-
-    @Override
-    public String upload(InputStream inputStream, String targetPath, String fileName) {
-        return "";
-    }
-
-    @Override
-    public String upload(String content, String targetPath, String fileName) {
-        return "";
-    }
-
-    @Override
-    public List<String> upload(File[] file, String targetPath) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public String upload(File file, String targetPath, String fileName) {
-        return "";
-    }
-
-    @Override
-    public boolean download(String targetPath, String localPath, String fileName) {
-        return false;
-    }
-
-    @Override
-    public InputStream getInputStream(String targetPath, String fileName) {
-        return null;
-    }
-
-    @Override
-    public InputStream getInputStreamByKey(String key) {
-        return null;
-    }
-
-    @Override
-    public boolean delete(String key) {
-        return false;
-    }
-
-    @Override
-    public boolean copyFile(String currentPath, String targetPath) {
-        return false;
-    }
-
-    @Override
-    public String getUrlByKey(String key) {
-        return "";
-    }
-
-    @Override
-    public String getPathByKey(String key) {
-        return "";
-    }
-
-    @Override
-    public void setPublicReadAcl(String path) {
-
-    }
-
-    @Override
-    protected String prefix() {
-        return "";
-    }
-
-    @Override
-    protected String proxyHost() {
-        return "";
-    }
-
-    @Override
-    protected boolean isClamavEnable() {
-        return false;
+    private static AmazonProperties convertToAmazonProperties(CephProperties properties) {
+        AmazonProperties amazonProperties = new AmazonProperties();
+        amazonProperties.setAccessKey(properties.getAccessKey());
+        amazonProperties.setSecretKey(properties.getSecretKey());
+        amazonProperties.setEndpoint(properties.getEndpoint());
+        amazonProperties.setBucketName(properties.getBucketName());
+        amazonProperties.setRegion(properties.getRegion());
+        amazonProperties.setPrefix(properties.getPrefix());
+        amazonProperties.setProxyHost(properties.getProxyHost());
+        amazonProperties.setEnableClamav(properties.isEnableClamav());
+        return amazonProperties;
     }
 }

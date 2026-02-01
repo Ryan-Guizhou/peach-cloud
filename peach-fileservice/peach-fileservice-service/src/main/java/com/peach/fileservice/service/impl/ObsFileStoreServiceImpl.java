@@ -308,10 +308,8 @@ public class ObsFileStoreServiceImpl extends AbstractFileStoreService {
     @Override
     protected String uploadInputStream(InputStream inputStream, String targetPath, String fileName) {
         String resultUrl = StringUtil.EMPTY;
-        if (isEnableClamav) {
-            if (!checkForClamav(inputStream)) {
-                return resultUrl;
-            }
+        if (checkForClamav(inputStream)) {
+            return resultUrl;
         }
         try {
             String pathKey = buildPathKey(targetPath, fileName);

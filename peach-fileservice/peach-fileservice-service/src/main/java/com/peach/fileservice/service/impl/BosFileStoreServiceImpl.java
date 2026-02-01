@@ -147,7 +147,7 @@ public class BosFileStoreServiceImpl extends AbstractFileStoreService {
             return uploadInputStream(inputStream, targetPath, fileName);
         } catch (Exception e) {
             log.error("BosFileStoreServiceImpl upload content error", e);
-            return "";
+            return StringUtil.EMPTY;
         }
     }
 
@@ -250,7 +250,9 @@ public class BosFileStoreServiceImpl extends AbstractFileStoreService {
 
     @Override
     protected String uploadInputStream(InputStream inputStream, String targetPath, String fileName) {
-        if (isEnableClamav && !checkForClamav(inputStream)) return "";
+        if (checkForClamav(inputStream)){
+            return StringUtil.EMPTY;
+        }
         try {
             String key = buildPathKey(targetPath, fileName);
             bosClient.putObject(bucketName, key, inputStream);
@@ -259,7 +261,7 @@ public class BosFileStoreServiceImpl extends AbstractFileStoreService {
             return removeUrlHost(url.toString());
         } catch (Exception e) {
             log.error("BosFileStoreServiceImpl uploadInputStream error", e);
-            return "";
+            return StringUtil.EMPTY;
         }
     }
 
@@ -267,12 +269,12 @@ public class BosFileStoreServiceImpl extends AbstractFileStoreService {
     protected String getOrgUrlByKey(String key, boolean isUrl) {
         String keyPath = normalizePath(key);
         try {
-            if (!bosClient.doesObjectExist(bucketName, keyPath)) return "";
+            if (!bosClient.doesObjectExist(bucketName, keyPath)) return StringUtil.EMPTY;
             URL url = bosClient.generatePresignedUrl(bucketName, keyPath, (int) (EXPIRATION / MAX_KEYS));
             return replaceUrlHost(url.toString(), isUrl);
         } catch (Exception e) {
             log.error("BosFileStoreServiceImpl getOrgUrlByKey error", e);
-            return "";
+            return StringUtil.EMPTY;
         }
     }
 

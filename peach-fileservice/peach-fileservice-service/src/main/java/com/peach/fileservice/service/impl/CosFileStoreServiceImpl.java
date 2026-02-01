@@ -141,7 +141,7 @@ public class CosFileStoreServiceImpl extends AbstractFileStoreService {
             return uploadInputStream(inputStream, targetPath, fileName);
         } catch (Exception e) {
             log.error("CosFileStoreServiceImpl upload content error", e);
-            return "";
+            return StringUtil.EMPTY;
         }
     }
 
@@ -250,7 +250,9 @@ public class CosFileStoreServiceImpl extends AbstractFileStoreService {
 
     @Override
     protected String uploadInputStream(InputStream inputStream, String targetPath, String fileName) {
-        if (isEnableClamav && !checkForClamav(inputStream)) return "";
+        if (checkForClamav(inputStream)){
+            return StringUtil.EMPTY;
+        }
         try {
             String key = buildPathKey(targetPath, fileName);
             cosClient.putObject(bucketName, key, inputStream, null);
@@ -258,7 +260,7 @@ public class CosFileStoreServiceImpl extends AbstractFileStoreService {
             return removeUrlHost(cosClient.generatePresignedUrl(bucketName, key, expiration, HttpMethodName.GET).toString());
         } catch (Exception e) {
             log.error("CosFileStoreServiceImpl uploadInputStream error", e);
-            return "";
+            return StringUtil.EMPTY;
         }
     }
 
@@ -266,13 +268,13 @@ public class CosFileStoreServiceImpl extends AbstractFileStoreService {
     protected String getOrgUrlByKey(String key, boolean isUrl) {
         String keyPath = normalizePath(key);
         try {
-            if (!cosClient.doesObjectExist(bucketName, keyPath)) return "";
+            if (!cosClient.doesObjectExist(bucketName, keyPath)) return StringUtil.EMPTY;
             Date expiration = new Date(System.currentTimeMillis() + EXPIRATION);
             String url = cosClient.generatePresignedUrl(bucketName, keyPath, expiration, HttpMethodName.GET).toString();
             return replaceUrlHost(url, isUrl);
         } catch (Exception e) {
             log.error("CosFileStoreServiceImpl getOrgUrlByKey error", e);
-            return "";
+            return StringUtil.EMPTY;
         }
     }
 
