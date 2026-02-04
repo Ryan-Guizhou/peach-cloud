@@ -1,6 +1,5 @@
 package com.peach.email.smtp;
 
-import com.peach.common.util.StringUtil;
 import com.peach.email.core.EmailContext;
 import lombok.extern.slf4j.Slf4j;
 import javax.mail.Session;
@@ -16,6 +15,8 @@ import javax.mail.Transport;
 public class ThreadSmtpConnectionProvider implements SmtpConnectionProvider{
 
     private final ThreadLocal<Holder> threadLocal = new ThreadLocal<Holder>();
+
+    private static final String SEPARATOR_COLON = ":";
 
     @Override
     public Transport acquire(Session session, EmailContext context) throws Exception {
@@ -65,9 +66,9 @@ public class ThreadSmtpConnectionProvider implements SmtpConnectionProvider{
     private String buildKey(EmailContext context) {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(context.getHost())
-                .append(StringUtil.SEPARATOR_COLON)
+                .append(SEPARATOR_COLON)
                 .append(context.getPort())
-                .append(StringUtil.SEPARATOR_COLON)
+                .append(SEPARATOR_COLON)
                 .append(context.getUsername());
         return String.valueOf(stringBuilder);
     }

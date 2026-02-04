@@ -2,9 +2,7 @@ package com.peach.redission.delayqueue.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-
 import java.util.concurrent.TimeUnit;
-
 import static com.peach.redission.delayqueue.config.DelayQueueProperties.PREFIX;
 
 /**

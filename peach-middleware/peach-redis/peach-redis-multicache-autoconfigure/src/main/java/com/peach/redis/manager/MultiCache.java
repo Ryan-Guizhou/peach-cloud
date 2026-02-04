@@ -2,12 +2,12 @@ package com.peach.redis.manager;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.github.benmanes.caffeine.cache.Cache;
-import com.peach.common.util.StringUtil;
 import com.peach.redis.constant.MultiCacheConstant;
 import com.peach.redis.common.tool.RedisDao;
 import com.peach.redis.listener.CacheMessage;
 import com.peach.redis.config.MultiCacheConfig;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.support.AbstractValueAdaptingCache;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.util.CollectionUtils;
@@ -161,7 +161,7 @@ public class MultiCache extends AbstractValueAdaptingCache {
         // 避免短时间内如果先清除caffeine缓存后其他请求会再从redis里加载到caffeine中
         RedisDao redisDao = SpringUtil.getBean(RedisDao.class);
         String pattern;
-        if (StringUtil.isNotBlank(cachePrefix)) {
+        if (StringUtils.isNotBlank(cachePrefix)) {
             pattern = cachePrefix
                     + MultiCacheConstant.REDIS_KEY_SEPARATOR
                     + this.cacheName
@@ -196,7 +196,7 @@ public class MultiCache extends AbstractValueAdaptingCache {
      */
     private Object buildCacheKey(Object key) {
         String rawKey = String.valueOf(key);
-        if (StringUtil.isNotBlank(cachePrefix)) {
+        if (StringUtils.isNotBlank(cachePrefix)) {
             return cachePrefix
                     + MultiCacheConstant.REDIS_KEY_SEPARATOR
                     + this.cacheName

@@ -1,7 +1,6 @@
 package com.peach.threadpool.manager;
 
 
-import com.peach.common.util.PeachCollectionUtil;
 import com.peach.threadpool.config.GlobalProperties;
 import com.peach.threadpool.config.PoolProperties;
 import com.peach.threadpool.config.PoolTemplate;
@@ -9,6 +8,7 @@ import com.peach.threadpool.config.ThreadPoolProperties;
 import com.peach.threadpool.core.NamedThreadFactory;
 import com.peach.threadpool.core.PoolType;
 import com.peach.threadpool.core.TaskWrapper;
+import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +41,7 @@ public class ThreadPoolManager {
         this.global = properties.getGlobal();
         this.wrapper = new TaskWrapper(global.isEnableMdc(), global.isEnableSecurityContext());
         List<PoolProperties> list = properties.getPools();
-        if (PeachCollectionUtil.isEmpty(list)) {
+        if (CollectionUtils.isEmpty(list)) {
             list = new ArrayList<>();
             list.add(PoolTemplate.cpuTemplate());
             list.add(PoolTemplate.ioTemplate());

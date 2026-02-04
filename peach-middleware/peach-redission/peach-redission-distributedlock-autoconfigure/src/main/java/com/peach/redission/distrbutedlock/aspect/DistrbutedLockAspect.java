@@ -1,6 +1,5 @@
 package com.peach.redission.distrbutedlock.aspect;
 
-import com.peach.common.util.StringUtil;
 import com.peach.redission.common.LockInfoHandle;
 import com.peach.redission.common.LockInfoHandleFactory;
 import com.peach.redission.common.LockInfoType;
@@ -8,7 +7,10 @@ import com.peach.redission.distrbutedlock.manage.DistrbutedLockerFactory;
 import com.peach.redission.distrbutedlock.locker.DistributedLocker;
 import com.peach.redission.distrbutedlock.locker.LockType;
 import com.peach.redission.distrbutedlock.annoation.DistrbutedLock;
+
+
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -89,7 +91,7 @@ public class DistrbutedLockAspect implements ApplicationContextAware {
 
         // 如果加锁失败
         String customLockTimeoutStrategy = distrbutedLock.customLockTimeoutStrategy();
-        if (StringUtil.isNotBlank(customLockTimeoutStrategy)) {
+        if (StringUtils.isNotBlank(customLockTimeoutStrategy)) {
             return handleCustomLockTimeoutStrategy(customLockTimeoutStrategy, joinPoint);
         }
 

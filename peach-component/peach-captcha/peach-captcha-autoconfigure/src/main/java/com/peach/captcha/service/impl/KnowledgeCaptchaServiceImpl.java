@@ -1,6 +1,5 @@
 package com.peach.captcha.service.impl;
 
-import com.alibaba.fastjson.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.util.AesUtil;

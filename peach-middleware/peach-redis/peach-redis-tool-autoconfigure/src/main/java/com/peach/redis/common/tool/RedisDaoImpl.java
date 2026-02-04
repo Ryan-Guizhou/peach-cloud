@@ -41,7 +41,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     //最大重试次数
     private static final Integer tryTimes = 3;
 
-    @Value("${peach.redis.mode}")
+    @Value("${peach.redis.mode:standalone}")
     private String redisMode;
     private static final int USE_SCAN_COMMAND = 1;
 

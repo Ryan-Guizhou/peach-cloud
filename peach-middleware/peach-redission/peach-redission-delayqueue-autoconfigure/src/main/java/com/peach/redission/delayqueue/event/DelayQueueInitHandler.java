@@ -1,7 +1,6 @@
 package com.peach.redission.delayqueue.event;
 
 
-import com.peach.common.util.PeachCollectionUtil;
 import com.peach.initialize.base.AbstractAppStartedEventHandler;
 import com.peach.redission.delayqueue.context.DelayQueueBasePart;
 import com.peach.redission.delayqueue.context.DelayQueuePart;
@@ -10,6 +9,7 @@ import com.peach.redission.delayqueue.core.DelayConsumerQueue;
 import com.peach.redission.delayqueue.core.ReliableDelayConsumerQueue;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Map;
 
@@ -38,7 +38,7 @@ public class DelayQueueInitHandler extends AbstractAppStartedEventHandler {
     @Override
     public void executeInitialize(ConfigurableApplicationContext context) {
         Map<String, ConsumerTask> consumerTaskMap = context.getBeansOfType(ConsumerTask.class);
-        if (PeachCollectionUtil.isEmpty(consumerTaskMap)){
+        if (CollectionUtils.isEmpty(consumerTaskMap)){
             log.info("No ConsumerTask beans found, skipping delay queue initialization");
             return;
         }

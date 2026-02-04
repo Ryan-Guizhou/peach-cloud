@@ -1,6 +1,5 @@
 package com.peach.email.service;
 
-import com.peach.common.util.StringUtil;
 import com.peach.email.Idempotency.IdempotencyStore;
 import com.peach.email.constant.EmailConstant;
 import com.peach.email.core.EmailContext;
@@ -29,6 +28,8 @@ public class EmailSendService {
     private final RetryPolicy retryPolicy;
 
     private final String defaultProvider;
+
+    private static final String SEPARATOR_COLON = ":";
 
     public EmailSendService(ProviderRouter router, IdempotencyStore idempotencyStore, RetryPolicy retryPolicy, String defaultProvider) {
         this.router = router;
@@ -74,7 +75,7 @@ public class EmailSendService {
                 }
                 return new SendResult(name, r.getMessageId(), System.currentTimeMillis() - start, true, null);
             } else if (r != null) {
-                errors.add(name + StringUtil.SEPARATOR_COLON + r.getError());
+                errors.add(name + SEPARATOR_COLON + r.getError());
             }
         }
         return new SendResult(defaultProvider, null, System.currentTimeMillis() - start, false, errors.toString());

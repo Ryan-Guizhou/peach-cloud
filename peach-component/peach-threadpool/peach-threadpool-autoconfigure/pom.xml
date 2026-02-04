@@ -35,11 +35,6 @@
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>com.peach</groupId>
-            <artifactId>peach-common</artifactId>
-            <optional>true</optional>
-        </dependency>
     </dependencies>
 
 </project>

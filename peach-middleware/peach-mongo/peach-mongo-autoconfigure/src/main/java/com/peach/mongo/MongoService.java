@@ -2,15 +2,12 @@ package com.peach.mongo;
 
 import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageInfo;
-import com.mongodb.BasicDBObject;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertOneResult;
-import com.peach.common.util.PeachCollectionUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,7 +38,7 @@ public class MongoService<T> implements IMongoService<T>{
     @Override
     public Set<String> collectionNames() {
         Set<String> collectionNames = mongoTemplate.getCollectionNames();
-        return PeachCollectionUtil.isEmpty(collectionNames) ? Collections.emptySet() : collectionNames;
+        return CollectionUtils.isEmpty(collectionNames) ? Collections.emptySet() : collectionNames;
     }
 
     @Override

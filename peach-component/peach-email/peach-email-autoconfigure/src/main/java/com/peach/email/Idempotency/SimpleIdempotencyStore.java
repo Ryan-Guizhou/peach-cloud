@@ -1,8 +1,8 @@
 package com.peach.email.Idempotency;
 
-import com.peach.common.util.StringUtil;
 import com.peach.email.core.SendResult;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,7 +25,7 @@ public class SimpleIdempotencyStore implements IdempotencyStore{
     @Override
     public boolean exists(String key) {
         return Optional.ofNullable(key)
-                .filter(StringUtil::isNotBlank)
+                .filter(StringUtils::isNotBlank)
                 .map(store::containsKey)
                 .orElse(false);
     }

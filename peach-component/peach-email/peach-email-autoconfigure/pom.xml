@@ -22,8 +22,13 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.peach</groupId>
-            <artifactId>peach-common</artifactId>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>

@@ -10,7 +10,6 @@ import com.peach.redission.distrbutedlock.locker.DistributedLocker;
 import com.peach.redission.distrbutedlock.locker.LockType;
 import com.peach.redission.distrbutedlock.manage.DistrbutedLockerFactory;
 import com.peach.redission.repeat.annoation.RepeatLimit;
-import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -18,12 +17,7 @@ import org.aspectj.lang.annotation.Aspect;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2025/12/22 11:07
- */
-@Slf4j
+
 @Aspect
 public class RepeatExecuteLimitAspect {
 
@@ -84,7 +78,7 @@ public class RepeatExecuteLimitAspect {
                         try {
                             redissionDataHandle.set(repeatFlagName,SUCCESS_FLAG,durationTime,TimeUnit.SECONDS);
                         }catch (Exception e) {
-                            log.error("getBucket error",e);
+
                         }
                     }
                     return obj;

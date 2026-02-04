@@ -1,7 +1,7 @@
 package com.peach.email.template;
 
-import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -49,7 +49,7 @@ public class TemplateManager {
     private String resolve(String templateId) {
         for (TemplateResolver r : resolvers) {
             String p = r.resolve(templateId);
-            if (StringUtil.isNotBlank(p)) {
+            if (StringUtils.isBlank(p)) {
                 return p;
             }
         }
