@@ -55,12 +55,13 @@
         <module>peach-monitor</module>
         <module>peach-gateway</module>
         <module>peach-fileservice</module>
-        <module>peach-userservice</module>
+        <module>peach-auth</module>
         <module>peach-common</module>
         <module>peach-component</module>
         <module>peach-middleware</module>
         <module>peach-sample</module>
         <module>peach-message</module>
+        <module>peach-setting</module>
     </modules>
 
     <dependencyManagement>
@@ -439,38 +440,33 @@
 
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-userservice-api</artifactId>
+                <artifactId>peach-auth-service</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-userservice-service</artifactId>
+                <artifactId>peach-auth-rest</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-userservice-rest</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.peach</groupId>
-                <artifactId>peach-userservice-log-external</artifactId>
+                <artifactId>peach-auth-log-external</artifactId>
                 <version>${revision}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-userservice-openfeign-external</artifactId>
+                <artifactId>peach-auth-openfeign-external</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-userservice-entity</artifactId>
+                <artifactId>peach-auth-entity</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-userservice-common</artifactId>
+                <artifactId>peach-auth-common</artifactId>
                 <version>${revision}</version>
             </dependency>
 
@@ -488,9 +484,34 @@
 
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-monitor-api</artifactId>
+                <artifactId>peach-setting-entity</artifactId>
                 <version>${revision}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-setting-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-setting-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-setting-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-setting-openfeign-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-monitor-service</artifactId>

@@ -1,9 +1,9 @@
 package com.peach.monitor.rest;
 
 
+import com.peach.auth.openfeign.UserFeignClient;
 import com.peach.common.response.Response;
 import com.peach.monitor.entity.UserDTO;
-import com.peach.userservice.openfeign.UserFeignClient;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

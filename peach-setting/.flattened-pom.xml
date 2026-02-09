@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-cloud</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+  <groupId>com.peach</groupId>
+  <artifactId>peach-setting</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>peach-setting</name>
+  <description>peach-setting</description>
+  <modules>
+    <module>peach-setting-service</module>
+    <module>peach-setting-rest</module>
+    <module>peach-setting-launch</module>
+    <module>peach-setting-common</module>
+    <module>peach-setting-entity</module>
+    <module>peach-setting-openfeign-external</module>
+  </modules>
+</project>
