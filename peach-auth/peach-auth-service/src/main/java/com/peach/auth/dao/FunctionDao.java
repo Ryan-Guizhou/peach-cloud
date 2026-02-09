@@ -2,8 +2,8 @@ package com.peach.auth.dao;
 
 import com.peach.common.PeachDao;
 import com.peach.common.annoation.MybatisDao;
-import com.peach.userservice.entity.FunctionDO;
-import com.peach.userservice.vo.FunctionVO;
+import com.peach.auth.entity.FunctionDO;
+import com.peach.auth.vo.FunctionVO;
 import org.springframework.stereotype.Indexed;
 
 /**

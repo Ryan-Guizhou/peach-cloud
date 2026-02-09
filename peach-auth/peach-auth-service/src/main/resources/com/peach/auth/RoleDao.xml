@@ -182,7 +182,7 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.userservice.entity.RoleDO">
+    <insert id="insert" parameterType="com.peach.auth.entity.RoleDO">
         INSERT INTO PEACH_ROLE (
         <include refid="allColumn" />
         ) VALUES (
@@ -190,7 +190,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.userservice.entity.RoleDO">
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.RoleDO">
         INSERT INTO PEACH_ROLE (
         <include refid="allColumn" />
         ) VALUES
@@ -199,7 +199,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.userservice.entity.RoleDO">
+    <update id="update" parameterType="com.peach.auth.entity.RoleDO">
         UPDATE PEACH_ROLE SET
         <include refid="allColumnSet" />
         <where>
@@ -220,7 +220,7 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.userservice.entity.RoleDO">
+    <delete id="del" parameterType="com.peach.auth.entity.RoleDO">
         DELETE FROM PEACH_ROLE
         <where>
             <include refid="allColumnCond" />
@@ -233,14 +233,14 @@
         WHERE ROLE_ID =  #{roleId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.RoleVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.RoleVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_ROLE
         WHERE ROLE_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.RoleVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.RoleVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_ROLE
@@ -250,7 +250,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.userservice.entity.RoleDO" resultType="com.peach.userservice.vo.RoleVO">
+    <select id="select" parameterType="com.peach.auth.entity.RoleDO" resultType="com.peach.auth.vo.RoleVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_ROLE
@@ -259,7 +259,7 @@
         </where>
     </select>
 
-    <select id="count" parameterType="com.peach.userservice.entity.RoleDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.auth.entity.RoleDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_ROLE
         <where>

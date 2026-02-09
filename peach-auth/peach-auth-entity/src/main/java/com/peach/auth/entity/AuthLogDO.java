@@ -1,4 +1,4 @@
-package com.peach.userservice.entity;
+package com.peach.auth.entity;
 
 import com.peach.common.MapperGenerator;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -8,7 +8,6 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.io.Serializable;
-import java.util.Map;
 
 /**
  * @Author Mr Shu

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.peach.userservice.dao.UserOperLogDao">
+<mapper namespace="com.peach.auth.dao.UserOperLogDao">
     <sql id="allColumn">
         ID,                                               OPT_TYPE_CODE,                                    MODULE_CODE,                                      CREATOR_CODE,
         CREATOR_NAME,                                     OPT_CONTENT,                                      CREATE_TIME,                                      OPT_LEVEL,
@@ -286,7 +286,7 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.userservice.entity.UserOperLogDO">
+    <insert id="insert" parameterType="com.peach.auth.entity.UserOperLogDO">
         INSERT INTO USER_OPER_LOG (
         <include refid="allColumn" />
         ) VALUES (
@@ -294,7 +294,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.userservice.entity.UserOperLogDO">
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.UserOperLogDO">
         INSERT INTO USER_OPER_LOG (
         <include refid="allColumn" />
         ) VALUES
@@ -303,7 +303,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.userservice.entity.UserOperLogDO">
+    <update id="update" parameterType="com.peach.auth.entity.UserOperLogDO">
         UPDATE USER_OPER_LOG SET
         <include refid="allColumnSet" />
         <where>
@@ -324,7 +324,7 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.userservice.entity.UserOperLogDO">
+    <delete id="del" parameterType="com.peach.auth.entity.UserOperLogDO">
         DELETE FROM USER_OPER_LOG
         <where>
             <include refid="allColumnCond" />
@@ -337,14 +337,14 @@
         WHERE ID =  #{id,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.userservice.entity.UserOperLogDO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.UserOperLogDO">
         SELECT
         <include refid="allColumnAlias" />
         FROM USER_OPER_LOG
         WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.entity.UserOperLogDO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.UserOperLogDO">
         SELECT
         <include refid="allColumnAlias" />
         FROM USER_OPER_LOG
@@ -354,7 +354,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.userservice.entity.UserOperLogDO" resultType="com.peach.userservice.entity.UserOperLogDO">
+    <select id="select" parameterType="com.peach.auth.entity.UserOperLogDO" resultType="com.peach.auth.entity.UserOperLogDO">
         SELECT
         <include refid="allColumnAlias" />
         FROM USER_OPER_LOG
@@ -363,7 +363,7 @@
         </where>
     </select>
 
-    <select id="count" parameterType="com.peach.userservice.entity.UserOperLogDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.auth.entity.UserOperLogDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM USER_OPER_LOG
         <where>

@@ -154,7 +154,7 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.userservice.entity.AuthResourceDO">
+    <insert id="insert" parameterType="com.peach.auth.entity.AuthResourceDO">
         INSERT INTO PEACH_AUTH_RESOURCE (
         <include refid="allColumn" />
         ) VALUES (
@@ -162,7 +162,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.userservice.entity.AuthResourceDO">
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.AuthResourceDO">
         INSERT INTO PEACH_AUTH_RESOURCE (
         <include refid="allColumn" />
         ) VALUES
@@ -171,7 +171,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.userservice.entity.AuthResourceDO">
+    <update id="update" parameterType="com.peach.auth.entity.AuthResourceDO">
         UPDATE PEACH_AUTH_RESOURCE SET
         <include refid="allColumnSet" />
         <where>
@@ -192,7 +192,7 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.userservice.entity.AuthResourceDO">
+    <delete id="del" parameterType="com.peach.auth.entity.AuthResourceDO">
         DELETE FROM PEACH_AUTH_RESOURCE
         <where>
             <include refid="allColumnCond" />
@@ -205,14 +205,14 @@
         WHERE RESOURCE_ID =  #{resourceId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.AuthResourceVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.AuthResourceVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_RESOURCE
         WHERE RESOURCE_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.AuthResourceVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.AuthResourceVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_RESOURCE
@@ -222,7 +222,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.userservice.entity.AuthResourceDO" resultType="com.peach.userservice.vo.AuthResourceVO">
+    <select id="select" parameterType="com.peach.auth.entity.AuthResourceDO" resultType="com.peach.auth.vo.AuthResourceVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_RESOURCE
@@ -231,7 +231,7 @@
         </where>
     </select>
 
-    <select id="count" parameterType="com.peach.userservice.entity.AuthResourceDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.auth.entity.AuthResourceDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_AUTH_RESOURCE
         <where>

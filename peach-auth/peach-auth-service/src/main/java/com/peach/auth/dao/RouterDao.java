@@ -2,9 +2,9 @@ package com.peach.auth.dao;
 
 import com.peach.common.PeachDao;
 import com.peach.common.annoation.MybatisDao;
-import com.peach.userservice.entity.RouterDO;
-import com.peach.userservice.qo.RouterQO;
-import com.peach.userservice.vo.RouterVO;
+import com.peach.auth.entity.RouterDO;
+import com.peach.auth.qo.RouterQO;
+import com.peach.auth.vo.RouterVO;
 import org.springframework.stereotype.Indexed;
 
 import java.util.List;

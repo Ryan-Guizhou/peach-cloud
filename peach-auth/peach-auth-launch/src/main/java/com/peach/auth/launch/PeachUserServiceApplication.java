@@ -1,7 +1,7 @@
-package com.peach.userservice.launch;
+package com.peach.auth.launch;
 
 import com.peach.common.annoation.MybatisDao;
-import com.peach.userservice.launch.datasource.DataSourceProperties;
+import com.peach.auth.launch.datasource.DataSourceProperties;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.mapping.DatabaseIdProvider;

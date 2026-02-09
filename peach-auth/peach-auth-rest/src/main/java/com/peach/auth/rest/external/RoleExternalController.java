@@ -2,7 +2,7 @@ package com.peach.auth.rest.external;
 
 import com.peach.auth.service.IRoleService;
 import com.peach.common.response.Response;
-import com.peach.userservice.vo.RoleVO;
+import com.peach.auth.vo.RoleVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;

@@ -1,6 +1,6 @@
-package com.peach.userservice.vo;
+package com.peach.auth.vo;
 
-import com.peach.userservice.entity.RouterDO;
+import com.peach.auth.entity.RouterDO;
 import lombok.Data;
 
 import java.io.Serializable;

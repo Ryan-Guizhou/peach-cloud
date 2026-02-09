@@ -1,7 +1,7 @@
-package com.peach.userservice.vo;
+package com.peach.auth.vo;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.peach.userservice.entity.RoleDO;
+import com.peach.auth.entity.RoleDO;
 import lombok.Data;
 
 import java.io.Serializable;

@@ -1,4 +1,4 @@
-package com.peach.userservice.dto;
+package com.peach.auth.dto;
 
 import lombok.Data;
 

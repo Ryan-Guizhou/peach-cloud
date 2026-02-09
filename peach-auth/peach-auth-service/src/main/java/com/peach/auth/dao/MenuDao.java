@@ -2,8 +2,8 @@ package com.peach.auth.dao;
 
 import com.peach.common.PeachDao;
 import com.peach.common.annoation.MybatisDao;
-import com.peach.userservice.entity.MenuDO;
-import com.peach.userservice.vo.MenuVO;
+import com.peach.auth.entity.MenuDO;
+import com.peach.auth.vo.MenuVO;
 import org.springframework.stereotype.Indexed;
 
 /**

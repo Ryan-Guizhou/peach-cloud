@@ -338,7 +338,7 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.userservice.entity.MenuDO">
+    <insert id="insert" parameterType="com.peach.auth.entity.MenuDO">
         INSERT INTO PEACH_MENU (
         <include refid="allColumn" />
         ) VALUES (
@@ -346,7 +346,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.userservice.entity.MenuDO">
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.MenuDO">
         INSERT INTO PEACH_MENU (
         <include refid="allColumn" />
         ) VALUES
@@ -355,7 +355,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.userservice.entity.MenuDO">
+    <update id="update" parameterType="com.peach.auth.entity.MenuDO">
         UPDATE PEACH_MENU SET
         <include refid="allColumnSet" />
         <where>
@@ -376,7 +376,7 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.userservice.entity.MenuDO">
+    <delete id="del" parameterType="com.peach.auth.entity.MenuDO">
         DELETE FROM PEACH_MENU
         <where>
             <include refid="allColumnCond" />
@@ -389,14 +389,14 @@
         WHERE MENU_ID =  #{menuId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.MenuVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.MenuVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_MENU
         WHERE MENU_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.MenuVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.MenuVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_MENU
@@ -406,7 +406,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.userservice.entity.MenuDO" resultType="com.peach.userservice.vo.MenuVO">
+    <select id="select" parameterType="com.peach.auth.entity.MenuDO" resultType="com.peach.auth.vo.MenuVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_MENU
@@ -415,7 +415,7 @@
         </where>
     </select>
 
-    <select id="count" parameterType="com.peach.userservice.entity.MenuDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.auth.entity.MenuDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_MENU
         <where>

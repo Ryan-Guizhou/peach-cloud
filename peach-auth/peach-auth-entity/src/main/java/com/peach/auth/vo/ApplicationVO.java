@@ -1,4 +1,4 @@
-package com.peach.userservice.vo;
+package com.peach.auth.vo;
 
 
 import lombok.Data;

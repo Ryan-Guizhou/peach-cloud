@@ -154,7 +154,7 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.userservice.entity.AuthPartyDO">
+    <insert id="insert" parameterType="com.peach.auth.entity.AuthPartyDO">
         INSERT INTO PEACH_AUTH_PARTY (
         <include refid="allColumn" />
         ) VALUES (
@@ -162,7 +162,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.userservice.entity.AuthPartyDO">
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.AuthPartyDO">
         INSERT INTO PEACH_AUTH_PARTY (
         <include refid="allColumn" />
         ) VALUES
@@ -171,7 +171,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.userservice.entity.AuthPartyDO">
+    <update id="update" parameterType="com.peach.auth.entity.AuthPartyDO">
         UPDATE PEACH_AUTH_PARTY SET
         <include refid="allColumnSet" />
         <where>
@@ -192,7 +192,7 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.userservice.entity.AuthPartyDO">
+    <delete id="del" parameterType="com.peach.auth.entity.AuthPartyDO">
         DELETE FROM PEACH_AUTH_PARTY
         <where>
             <include refid="allColumnCond" />
@@ -205,14 +205,14 @@
         WHERE ID =  #{id,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.AuthPartyVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.AuthPartyVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_PARTY
         WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.AuthPartyVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.AuthPartyVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_PARTY
@@ -222,7 +222,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.userservice.entity.AuthPartyDO" resultType="com.peach.userservice.vo.AuthPartyVO">
+    <select id="select" parameterType="com.peach.auth.entity.AuthPartyDO" resultType="com.peach.auth.vo.AuthPartyVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_PARTY
@@ -231,7 +231,7 @@
         </where>
     </select>
 
-    <select id="count" parameterType="com.peach.userservice.entity.AuthPartyDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.auth.entity.AuthPartyDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_AUTH_PARTY
         <where>

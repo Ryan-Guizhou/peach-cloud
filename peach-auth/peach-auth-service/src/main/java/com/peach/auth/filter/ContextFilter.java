@@ -9,7 +9,7 @@ import com.peach.common.CurrentContextEntity;
 import com.peach.common.CurrentUserDO;
 import com.peach.common.util.StringUtil;
 import com.peach.auth.service.IUserService;
-import com.peach.userservice.vo.UserVO;
+import com.peach.auth.vo.UserVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.web.filter.OncePerRequestFilter;

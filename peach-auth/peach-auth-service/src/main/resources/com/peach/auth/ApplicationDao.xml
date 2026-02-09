@@ -142,7 +142,7 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.userservice.entity.ApplicationDO">
+    <insert id="insert" parameterType="com.peach.auth.entity.ApplicationDO">
         INSERT INTO PEACH_APPLICATION (
         <include refid="allColumn" />
         ) VALUES (
@@ -150,7 +150,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.userservice.entity.ApplicationDO">
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.ApplicationDO">
         INSERT INTO PEACH_APPLICATION (
         <include refid="allColumn" />
         ) VALUES
@@ -159,7 +159,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.userservice.entity.ApplicationDO">
+    <update id="update" parameterType="com.peach.auth.entity.ApplicationDO">
         UPDATE PEACH_APPLICATION SET
         <include refid="allColumnSet" />
         <where>
@@ -180,7 +180,7 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.userservice.entity.ApplicationDO">
+    <delete id="del" parameterType="com.peach.auth.entity.ApplicationDO">
         DELETE FROM PEACH_APPLICATION
         <where>
             <include refid="allColumnCond" />
@@ -193,14 +193,14 @@
         WHERE APP_ID =  #{appId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.ApplicationVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.ApplicationVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_APPLICATION
         WHERE APP_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.ApplicationVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.ApplicationVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_APPLICATION
@@ -210,7 +210,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.userservice.entity.ApplicationDO" resultType="com.peach.userservice.vo.ApplicationVO">
+    <select id="select" parameterType="com.peach.auth.entity.ApplicationDO" resultType="com.peach.auth.vo.ApplicationVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_APPLICATION
@@ -219,7 +219,7 @@
         </where>
     </select>
 
-    <select id="count" parameterType="com.peach.userservice.entity.ApplicationDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.auth.entity.ApplicationDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_APPLICATION
         <where>

@@ -3,7 +3,7 @@ package com.peach.auth.rest.internal;
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.auth.service.IUserService;
 import com.peach.common.response.Response;
-import com.peach.userservice.dto.LoginDTO;
+import com.peach.auth.dto.LoginDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;

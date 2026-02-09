@@ -142,7 +142,7 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.userservice.entity.RouterDO">
+    <insert id="insert" parameterType="com.peach.auth.entity.RouterDO">
         INSERT INTO PEACH_ROUTER (
         <include refid="allColumn" />
         ) VALUES (
@@ -150,7 +150,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.userservice.entity.RouterDO">
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.RouterDO">
         INSERT INTO PEACH_ROUTER (
         <include refid="allColumn" />
         ) VALUES
@@ -159,7 +159,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.userservice.entity.RouterDO">
+    <update id="update" parameterType="com.peach.auth.entity.RouterDO">
         UPDATE PEACH_ROUTER SET
         <include refid="allColumnSet" />
         <where>
@@ -180,7 +180,7 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.userservice.entity.RouterDO">
+    <delete id="del" parameterType="com.peach.auth.entity.RouterDO">
         DELETE FROM PEACH_ROUTER
         <where>
             <include refid="allColumnCond" />
@@ -193,14 +193,14 @@
         WHERE ROUTER_ID =  #{routerId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.RouterVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.RouterVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
         WHERE ROUTER_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.RouterVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.RouterVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
@@ -210,7 +210,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.userservice.entity.RouterDO" resultType="com.peach.userservice.vo.RouterVO">
+    <select id="select" parameterType="com.peach.auth.entity.RouterDO" resultType="com.peach.auth.vo.RouterVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
@@ -219,7 +219,7 @@
         </where>
     </select>
 
-    <select id="count" parameterType="com.peach.userservice.entity.RouterDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.auth.entity.RouterDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_ROUTER
         <where>
@@ -227,7 +227,7 @@
         </where>
     </select>
 
-    <select id="selectByQO" resultType="com.peach.userservice.vo.RouterVO" parameterType="com.peach.userservice.qo.RouterQO">
+    <select id="selectByQO" resultType="com.peach.auth.vo.RouterVO" parameterType="com.peach.auth.qo.RouterQO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_ROUTER

@@ -322,7 +322,7 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.userservice.entity.UserDO">
+    <insert id="insert" parameterType="com.peach.auth.entity.UserDO">
         INSERT INTO PEACH_USER (
         <include refid="allColumn" />
         ) VALUES (
@@ -330,7 +330,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.userservice.entity.UserDO">
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.UserDO">
         INSERT INTO PEACH_USER (
         <include refid="allColumn" />
         ) VALUES
@@ -339,7 +339,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.userservice.entity.UserDO">
+    <update id="update" parameterType="com.peach.auth.entity.UserDO">
         UPDATE PEACH_USER SET
         <include refid="allColumnSet" />
         <where>
@@ -360,7 +360,7 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.userservice.entity.UserDO">
+    <delete id="del" parameterType="com.peach.auth.entity.UserDO">
         DELETE FROM PEACH_USER
         <where>
             <include refid="allColumnCond" />
@@ -373,14 +373,14 @@
         WHERE USER_ID =  #{userId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.UserVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.UserVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_USER
         WHERE USER_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.UserVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.UserVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_USER
@@ -390,7 +390,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.userservice.entity.UserDO" resultType="com.peach.userservice.vo.UserVO">
+    <select id="select" parameterType="com.peach.auth.entity.UserDO" resultType="com.peach.auth.vo.UserVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_USER
@@ -399,7 +399,7 @@
         </where>
     </select>
 
-    <select id="count" parameterType="com.peach.userservice.entity.UserDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.auth.entity.UserDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_USER
         <where>

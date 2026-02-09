@@ -1,4 +1,4 @@
-package com.peach.userservice.dto;
+package com.peach.auth.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

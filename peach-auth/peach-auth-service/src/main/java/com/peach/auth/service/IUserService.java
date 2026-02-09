@@ -2,8 +2,8 @@ package com.peach.auth.service;
 
 
 import com.peach.common.response.Response;
-import com.peach.userservice.dto.LoginDTO;
-import com.peach.userservice.vo.UserVO;
+import com.peach.auth.dto.LoginDTO;
+import com.peach.auth.vo.UserVO;
 
 /**
  * @Author Mr Shu

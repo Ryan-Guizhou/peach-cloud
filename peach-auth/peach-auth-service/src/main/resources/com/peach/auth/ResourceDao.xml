@@ -130,7 +130,7 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.userservice.entity.ResourceDO">
+    <insert id="insert" parameterType="com.peach.auth.entity.ResourceDO">
         INSERT INTO PEACH_RESOURCE (
         <include refid="allColumn" />
         ) VALUES (
@@ -138,7 +138,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.userservice.entity.ResourceDO">
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.ResourceDO">
         INSERT INTO PEACH_RESOURCE (
         <include refid="allColumn" />
         ) VALUES
@@ -147,7 +147,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.userservice.entity.ResourceDO">
+    <update id="update" parameterType="com.peach.auth.entity.ResourceDO">
         UPDATE PEACH_RESOURCE SET
         <include refid="allColumnSet" />
         <where>
@@ -168,7 +168,7 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.userservice.entity.ResourceDO">
+    <delete id="del" parameterType="com.peach.auth.entity.ResourceDO">
         DELETE FROM PEACH_RESOURCE
         <where>
             <include refid="allColumnCond" />
@@ -181,14 +181,14 @@
         WHERE RESOURCE_ID =  #{resourceId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.ResourceVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.ResourceVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_RESOURCE
         WHERE RESOURCE_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.ResourceVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.ResourceVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_RESOURCE
@@ -198,7 +198,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.userservice.entity.ResourceDO" resultType="com.peach.userservice.vo.ResourceVO">
+    <select id="select" parameterType="com.peach.auth.entity.ResourceDO" resultType="com.peach.auth.vo.ResourceVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_RESOURCE
@@ -207,7 +207,7 @@
         </where>
     </select>
 
-    <select id="count" parameterType="com.peach.userservice.entity.ResourceDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.auth.entity.ResourceDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_RESOURCE
         <where>

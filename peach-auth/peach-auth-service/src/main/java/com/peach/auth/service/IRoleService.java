@@ -1,8 +1,8 @@
 package com.peach.auth.service;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.userservice.qo.RoleQO;
-import com.peach.userservice.vo.RoleVO;
+import com.peach.auth.qo.RoleQO;
+import com.peach.auth.vo.RoleVO;
 
 import java.util.List;
 

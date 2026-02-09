@@ -1,4 +1,4 @@
-package com.peach.userservice.launch.datasource;
+package com.peach.auth.launch.datasource;
 
 import com.zaxxer.hikari.HikariConfig;
 import lombok.Data;

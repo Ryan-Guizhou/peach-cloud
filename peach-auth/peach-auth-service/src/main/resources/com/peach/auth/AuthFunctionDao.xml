@@ -166,7 +166,7 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.userservice.entity.AuthFunctionDO">
+    <insert id="insert" parameterType="com.peach.auth.entity.AuthFunctionDO">
         INSERT INTO PEACH_AUTH_FUNCTION (
         <include refid="allColumn" />
         ) VALUES (
@@ -174,7 +174,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.userservice.entity.AuthFunctionDO">
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.AuthFunctionDO">
         INSERT INTO PEACH_AUTH_FUNCTION (
         <include refid="allColumn" />
         ) VALUES
@@ -183,7 +183,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.userservice.entity.AuthFunctionDO">
+    <update id="update" parameterType="com.peach.auth.entity.AuthFunctionDO">
         UPDATE PEACH_AUTH_FUNCTION SET
         <include refid="allColumnSet" />
         <where>
@@ -204,7 +204,7 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.userservice.entity.AuthFunctionDO">
+    <delete id="del" parameterType="com.peach.auth.entity.AuthFunctionDO">
         DELETE FROM PEACH_AUTH_FUNCTION
         <where>
             <include refid="allColumnCond" />
@@ -217,14 +217,14 @@
         WHERE ID =  #{id,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.AuthFunctionVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.AuthFunctionVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_FUNCTION
         WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.AuthFunctionVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.AuthFunctionVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_FUNCTION
@@ -234,7 +234,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.userservice.entity.AuthFunctionDO" resultType="com.peach.userservice.vo.AuthFunctionVO">
+    <select id="select" parameterType="com.peach.auth.entity.AuthFunctionDO" resultType="com.peach.auth.vo.AuthFunctionVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_FUNCTION
@@ -243,7 +243,7 @@
         </where>
     </select>
 
-    <select id="count" parameterType="com.peach.userservice.entity.AuthFunctionDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.auth.entity.AuthFunctionDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_AUTH_FUNCTION
         <where>

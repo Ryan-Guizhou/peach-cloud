@@ -114,7 +114,7 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.userservice.entity.AuthLogDO">
+    <insert id="insert" parameterType="com.peach.auth.entity.AuthLogDO">
         INSERT INTO PEACH_AUTH_LOG (
         <include refid="allColumn" />
         ) VALUES (
@@ -122,7 +122,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.userservice.entity.AuthLogDO">
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.AuthLogDO">
         INSERT INTO PEACH_AUTH_LOG (
         <include refid="allColumn" />
         ) VALUES
@@ -131,7 +131,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.userservice.entity.AuthLogDO">
+    <update id="update" parameterType="com.peach.auth.entity.AuthLogDO">
         UPDATE PEACH_AUTH_LOG SET
         <include refid="allColumnSet" />
         <where>
@@ -152,7 +152,7 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.userservice.entity.AuthLogDO">
+    <delete id="del" parameterType="com.peach.auth.entity.AuthLogDO">
         DELETE FROM PEACH_AUTH_LOG
         <where>
             <include refid="allColumnCond" />
@@ -165,14 +165,14 @@
         WHERE LOG_ID =  #{logId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.AuthLogVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.AuthLogVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_LOG
         WHERE LOG_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.AuthLogVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.AuthLogVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_LOG
@@ -182,7 +182,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.userservice.entity.AuthLogDO" resultType="com.peach.userservice.vo.AuthLogVO">
+    <select id="select" parameterType="com.peach.auth.entity.AuthLogDO" resultType="com.peach.auth.vo.AuthLogVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_LOG
@@ -191,7 +191,7 @@
         </where>
     </select>
 
-    <select id="count" parameterType="com.peach.userservice.entity.AuthLogDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.auth.entity.AuthLogDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_AUTH_LOG
         <where>

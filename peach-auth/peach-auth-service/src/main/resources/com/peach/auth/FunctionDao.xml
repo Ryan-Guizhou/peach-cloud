@@ -218,7 +218,7 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.userservice.entity.FunctionDO">
+    <insert id="insert" parameterType="com.peach.auth.entity.FunctionDO">
         INSERT INTO PEACH_FUNCTION (
         <include refid="allColumn" />
         ) VALUES (
@@ -226,7 +226,7 @@
         )
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.userservice.entity.FunctionDO">
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.FunctionDO">
         INSERT INTO PEACH_FUNCTION (
         <include refid="allColumn" />
         ) VALUES
@@ -235,7 +235,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.userservice.entity.FunctionDO">
+    <update id="update" parameterType="com.peach.auth.entity.FunctionDO">
         UPDATE PEACH_FUNCTION SET
         <include refid="allColumnSet" />
         <where>
@@ -256,7 +256,7 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.userservice.entity.FunctionDO">
+    <delete id="del" parameterType="com.peach.auth.entity.FunctionDO">
         DELETE FROM PEACH_FUNCTION
         <where>
             <include refid="allColumnCond" />
@@ -269,14 +269,14 @@
         WHERE FUNC_ID =  #{funcId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.FunctionVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.FunctionVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_FUNCTION
         WHERE FUNC_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.FunctionVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.FunctionVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_FUNCTION
@@ -286,7 +286,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.userservice.entity.FunctionDO" resultType="com.peach.userservice.vo.FunctionVO">
+    <select id="select" parameterType="com.peach.auth.entity.FunctionDO" resultType="com.peach.auth.vo.FunctionVO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_FUNCTION
@@ -295,7 +295,7 @@
         </where>
     </select>
 
-    <select id="count" parameterType="com.peach.userservice.entity.FunctionDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.auth.entity.FunctionDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_FUNCTION
         <where>

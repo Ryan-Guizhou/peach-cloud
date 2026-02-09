@@ -2,7 +2,7 @@ package com.peach.auth.rest.external;
 
 import com.peach.auth.service.IRouterService;
 import com.peach.common.response.Response;
-import com.peach.userservice.vo.RouterVO;
+import com.peach.auth.vo.RouterVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

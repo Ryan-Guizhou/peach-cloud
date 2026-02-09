@@ -1,10 +1,10 @@
-//package com.peach.userservice.service.impl;
+//package com.peach.auth.service.impl;
 //
 //import cn.dev33.satoken.stp.StpUtil;
-//import com.peach.userservice.dao.RoleDao;
-//import com.peach.userservice.entity.RoleDO;
-//import com.peach.userservice.service.IPermissionCacheService;
-//import com.peach.userservice.vo.RoleVO;
+//import com.peach.auth.dao.RoleDao;
+//import com.peach.auth.entity.RoleDO;
+//import com.peach.auth.service.IPermissionCacheService;
+//import com.peach.auth.vo.RoleVO;
 //import lombok.extern.slf4j.Slf4j;
 //import org.springframework.data.redis.core.StringRedisTemplate;
 //import org.springframework.stereotype.Service;

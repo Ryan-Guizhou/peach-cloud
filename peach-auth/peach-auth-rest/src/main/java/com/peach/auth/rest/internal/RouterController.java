@@ -5,10 +5,10 @@ import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.auth.service.IRouterService;
 import com.peach.common.response.Response;
-import com.peach.userservice.dto.RouterDTO;
+import com.peach.auth.dto.RouterDTO;
 
-import com.peach.userservice.qo.RouterQO;
-import com.peach.userservice.vo.RouterVO;
+import com.peach.auth.qo.RouterQO;
+import com.peach.auth.vo.RouterVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.peach.userservice.qo;
+package com.peach.auth.qo;
 
 import lombok.Data;
 
