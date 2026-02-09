@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.setting.dao.MultiMessageDao">
+    <sql id="allColumn">
+        ID,                                               LANG,                                             BIZ_TYPE,                                         BIZ_CODE,
+        MSG_VALUE,                                        STATUS,                                           CREATOR_CODE,                                     CREATOR_NAME,
+        CREATED_TIME,                                     UPDATED_TIME,                                     UPDATER_CODE,                                     UPDATER_NAME
+
+    </sql>
+
+    <sql id="allColumnAlias">
+        ID as id,                                         LANG as lang,                                     BIZ_TYPE as bizType,                              BIZ_CODE as bizCode,
+        MSG_VALUE as msgValue,                            STATUS as status,                                 CREATOR_CODE as creatorCode,                      CREATOR_NAME as creatorName,
+        CREATED_TIME as createdTime,                      UPDATED_TIME as updatedTime,                      UPDATER_CODE as updaterCode,                      UPDATER_NAME as updaterName
+
+    </sql>
+
+    <sql id="allColumnValue">
+        #{id,jdbcType=BIGINT},                  #{lang,jdbcType=VARCHAR},               #{bizType,jdbcType=VARCHAR},            #{bizCode,jdbcType=VARCHAR},
+        #{msgValue,jdbcType=VARCHAR},           #{status,jdbcType=INTEGER},             #{creatorCode,jdbcType=VARCHAR},        #{creatorName,jdbcType=VARCHAR},
+        #{createdTime,jdbcType=VARCHAR},        #{updatedTime,jdbcType=VARCHAR},        #{updaterCode,jdbcType=VARCHAR},        #{updaterName,jdbcType=VARCHAR}
+
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.id,jdbcType=BIGINT},             #{item.lang,jdbcType=VARCHAR},          #{item.bizType,jdbcType=VARCHAR},       #{item.bizCode,jdbcType=VARCHAR},
+        #{item.msgValue,jdbcType=VARCHAR},      #{item.status,jdbcType=INTEGER},        #{item.creatorCode,jdbcType=VARCHAR},   #{item.creatorName,jdbcType=VARCHAR},
+        #{item.createdTime,jdbcType=VARCHAR},   #{item.updatedTime,jdbcType=VARCHAR},   #{item.updaterCode,jdbcType=VARCHAR},   #{item.updaterName,jdbcType=VARCHAR}
+
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="lang != null and lang != ''">
+                LANG = #{lang,jdbcType=VARCHAR},
+            </if>
+            <if test="bizType != null and bizType != ''">
+                BIZ_TYPE = #{bizType,jdbcType=VARCHAR},
+            </if>
+            <if test="bizCode != null and bizCode != ''">
+                BIZ_CODE = #{bizCode,jdbcType=VARCHAR},
+            </if>
+            <if test="msgValue != null and msgValue != ''">
+                MSG_VALUE = #{msgValue,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                STATUS = #{status,jdbcType=INTEGER},
+            </if>
+            <if test="creatorCode != null and creatorCode != ''">
+                CREATOR_CODE = #{creatorCode,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorName != null and creatorName != ''">
+                CREATOR_NAME = #{creatorName,jdbcType=VARCHAR},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="updatedTime != null and updatedTime != ''">
+                UPDATED_TIME = #{updatedTime,jdbcType=VARCHAR},
+            </if>
+            <if test="updaterCode != null and updaterCode != ''">
+                UPDATER_CODE = #{updaterCode,jdbcType=VARCHAR},
+            </if>
+            <if test="updaterName != null and updaterName != ''">
+                UPDATER_NAME = #{updaterName,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="lang != null and lang != ''">
+                LANG,
+            </if>
+            <if test="bizType != null and bizType != ''">
+                BIZ_TYPE,
+            </if>
+            <if test="bizCode != null and bizCode != ''">
+                BIZ_CODE,
+            </if>
+            <if test="msgValue != null and msgValue != ''">
+                MSG_VALUE,
+            </if>
+            <if test="status != null">
+                STATUS,
+            </if>
+            <if test="creatorCode != null and creatorCode != ''">
+                CREATOR_CODE,
+            </if>
+            <if test="creatorName != null and creatorName != ''">
+                CREATOR_NAME,
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME,
+            </if>
+            <if test="updatedTime != null and updatedTime != ''">
+                UPDATED_TIME,
+            </if>
+            <if test="updaterCode != null and updaterCode != ''">
+                UPDATER_CODE,
+            </if>
+            <if test="updaterName != null and updaterName != ''">
+                UPDATER_NAME,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="lang != null and lang != ''">
+                #{lang,jdbcType=VARCHAR},
+            </if>
+            <if test="bizType != null and bizType != ''">
+                #{bizType,jdbcType=VARCHAR},
+            </if>
+            <if test="bizCode != null and bizCode != ''">
+                #{bizCode,jdbcType=VARCHAR},
+            </if>
+            <if test="msgValue != null and msgValue != ''">
+                #{msgValue,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                #{status,jdbcType=INTEGER},
+            </if>
+            <if test="creatorCode != null and creatorCode != ''">
+                #{creatorCode,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorName != null and creatorName != ''">
+                #{creatorName,jdbcType=VARCHAR},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="updatedTime != null and updatedTime != ''">
+                #{updatedTime,jdbcType=VARCHAR},
+            </if>
+            <if test="updaterCode != null and updaterCode != ''">
+                #{updaterCode,jdbcType=VARCHAR},
+            </if>
+            <if test="updaterName != null and updaterName != ''">
+                #{updaterName,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="id != null">
+            AND ID = #{id,jdbcType=BIGINT}
+        </if>
+        <if test="lang != null and lang != ''">
+            AND LANG = #{lang,jdbcType=VARCHAR}
+        </if>
+        <if test="bizType != null and bizType != ''">
+            AND BIZ_TYPE = #{bizType,jdbcType=VARCHAR}
+        </if>
+        <if test="bizCode != null and bizCode != ''">
+            AND BIZ_CODE = #{bizCode,jdbcType=VARCHAR}
+        </if>
+        <if test="msgValue != null and msgValue != ''">
+            AND MSG_VALUE = #{msgValue,jdbcType=VARCHAR}
+        </if>
+        <if test="status != null">
+            AND STATUS = #{status,jdbcType=INTEGER}
+        </if>
+        <if test="creatorCode != null and creatorCode != ''">
+            AND CREATOR_CODE = #{creatorCode,jdbcType=VARCHAR}
+        </if>
+        <if test="creatorName != null and creatorName != ''">
+            AND CREATOR_NAME = #{creatorName,jdbcType=VARCHAR}
+        </if>
+        <if test="createdTime != null and createdTime != ''">
+            AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
+        </if>
+        <if test="updatedTime != null and updatedTime != ''">
+            AND UPDATED_TIME = #{updatedTime,jdbcType=VARCHAR}
+        </if>
+        <if test="updaterCode != null and updaterCode != ''">
+            AND UPDATER_CODE = #{updaterCode,jdbcType=VARCHAR}
+        </if>
+        <if test="updaterName != null and updaterName != ''">
+            AND UPDATER_NAME = #{updaterName,jdbcType=VARCHAR}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.setting.entity.MultiMessageDO">
+        INSERT INTO MULTI_MESSAGE (
+        <include refid="allColumn" />
+        ) VALUES (
+        <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.setting.entity.MultiMessageDO">
+        INSERT INTO MULTI_MESSAGE (
+        <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue"/>)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.setting.entity.MultiMessageDO">
+        UPDATE MULTI_MESSAGE SET
+        <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM MULTI_MESSAGE
+        WHERE ID = #{value,jdbcType=BIGINT}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM MULTI_MESSAGE
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=BIGINT}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.setting.entity.MultiMessageDO">
+        DELETE FROM MULTI_MESSAGE
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <update id="updateById" parameterType="java.lang.String">
+        UPDATE MULTI_MESSAGE SET
+        <include refid="allColumnSet" />
+        WHERE ID =  #{id,jdbcType=BIGINT}
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.setting.entity.MultiMessageDO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM MULTI_MESSAGE
+        WHERE ID = #{value,jdbcType=BIGINT}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.entity.MultiMessageDO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM MULTI_MESSAGE
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=BIGINT}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.setting.entity.MultiMessageDO" resultType="com.peach.setting.entity.MultiMessageDO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM MULTI_MESSAGE
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.setting.entity.MultiMessageDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM MULTI_MESSAGE
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+</mapper>
