@@ -4,7 +4,7 @@
     <springProperty scope="context"
                     name="LOG_DIR"
                     source="logging.logback.dir"
-                    defaultValue="D://Coding/peach-cloud/logs"/>
+                    defaultValue="C://coding/mine/peach-cloud/logs"/>
 
     <property name="LOG_PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"/>

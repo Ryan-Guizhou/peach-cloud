@@ -6,12 +6,12 @@
 #    nacos:
 #      discovery:
 #        server-addr: 127.0.0.1:8848
-#        namespace: 4e7af3ed-7a49-4e3f-bdfc-67c20b1bfd05
+#        namespace: dba0fbb1-fe66-464e-afce-33ba45c43b2b
 #      config:
 #        server-addr: 127.0.0.1:8848
 #        file-extension: yml
 #        group: PEACH-CLOUD
-#        namespace: 4e7af3ed-7a49-4e3f-bdfc-67c20b1bfd05
+#        namespace: dba0fbb1-fe66-464e-afce-33ba45c43b2b
 #        enabled: true
 #  config:
 #    import:
