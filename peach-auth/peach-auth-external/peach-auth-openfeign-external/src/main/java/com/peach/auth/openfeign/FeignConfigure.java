@@ -1,4 +1,4 @@
-package com.peach.userservice.openfeign;
+package com.peach.auth.openfeign;
 
 import cn.dev33.satoken.same.SaSameUtil;
 import feign.RequestInterceptor;

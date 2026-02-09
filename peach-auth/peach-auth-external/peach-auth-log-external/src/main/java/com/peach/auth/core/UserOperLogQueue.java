@@ -1,8 +1,8 @@
-package com.peach.userservice.core;
+package com.peach.auth.core;
 
 import com.google.common.collect.Lists;
+import com.peach.auth.vo.UserOperLogVO;
 import com.peach.common.util.PeachCollectionUtil;
-import com.peach.userservice.vo.UserOperLogVO;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;

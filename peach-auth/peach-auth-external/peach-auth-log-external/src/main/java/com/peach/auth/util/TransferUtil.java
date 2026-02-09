@@ -1,22 +1,19 @@
-package com.peach.userservice.util;
+package com.peach.auth.util;
 
 
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
+import com.peach.auth.annoation.UserOperLog;
+import com.peach.auth.enums.UserLogEnum;
+import com.peach.auth.vo.UserOperLogVO;
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.constant.PubCommonConst;
 import com.peach.common.response.Response;
 import com.peach.common.util.DateUtil;
 import com.peach.common.util.IpUtil;
 import com.peach.common.util.StringUtil;
-import com.peach.userservice.annoation.UserOperLog;
-import com.peach.userservice.vo.UserOperLogVO;
-import com.peach.userservice.enums.UserLogEnum;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-//import nl.bitwalker.useragentutils.Browser;
-//import nl.bitwalker.useragentutils.OperatingSystem;
-//import nl.bitwalker.useragentutils.UserAgent;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;

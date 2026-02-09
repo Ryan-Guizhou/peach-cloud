@@ -1,6 +1,6 @@
-package com.peach.userservice.core;
+package com.peach.auth.core;
 
-import com.peach.userservice.vo.UserOperLogVO;
+import com.peach.auth.vo.UserOperLogVO;
 
 import java.util.List;
 

@@ -1,10 +1,10 @@
-package com.peach.userservice.interceptor;
+package com.peach.auth.interceptor;
 
+import com.peach.auth.annoation.UserOperLog;
+import com.peach.auth.core.UserOperLogQueue;
+import com.peach.auth.util.TransferUtil;
+import com.peach.auth.vo.UserOperLogVO;
 import com.peach.common.response.Response;
-import com.peach.userservice.util.TransferUtil;
-import com.peach.userservice.core.UserOperLogQueue;
-import com.peach.userservice.vo.UserOperLogVO;
-import com.peach.userservice.annoation.UserOperLog;
 import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;

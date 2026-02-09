@@ -1,4 +1,4 @@
-package com.peach.userservice.openfeign;
+package com.peach.auth.openfeign;
 
 import com.peach.common.constant.ServiceNameConstant;
 import com.peach.common.constant.ServicePathConstant;

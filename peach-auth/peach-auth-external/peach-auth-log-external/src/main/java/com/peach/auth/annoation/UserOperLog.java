@@ -1,8 +1,7 @@
-package com.peach.userservice.annoation;
+package com.peach.auth.annoation;
 
+import com.peach.auth.enums.UserLogEnum;
 import com.peach.common.util.StringUtil;
-import com.peach.userservice.enums.UserLogEnum;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -1,7 +1,8 @@
-package com.peach.userservice;
+package com.peach.auth;
 
-import com.peach.userservice.annoation.UserOperLog;
-import com.peach.userservice.interceptor.UserOperLogInterceptor;
+
+import com.peach.auth.annoation.UserOperLog;
+import com.peach.auth.interceptor.UserOperLogInterceptor;
 import org.aopalliance.aop.Advice;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.Pointcut;

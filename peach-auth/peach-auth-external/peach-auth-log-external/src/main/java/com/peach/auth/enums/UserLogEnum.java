@@ -1,4 +1,4 @@
-package com.peach.userservice.enums;
+package com.peach.auth.enums;
 
 /**
  * @Author Mr Shu

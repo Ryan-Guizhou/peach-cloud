@@ -1,6 +1,6 @@
-package com.peach.userservice.vo;
+package com.peach.auth.vo;
 
-import com.peach.userservice.entity.UserOperLogDO;
+import com.peach.auth.entity.UserOperLogDO;
 import lombok.Data;
 
 import java.io.Serializable;
