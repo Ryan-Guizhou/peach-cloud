@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.RouterDao">
+    <sql id="allColumn">
+        ROUTER_ID,                                        ROUTER_CODE,                                      ROUTER_NAME,                                      ROUTER_URL,
+        FILE_PATH,                                        IS_AUTH,                                          IS_CACHE,                                         MODULE_CODE,
+        ROUTER_LEVEL
+    </sql>
+
+    <sql id="allColumnAlias">
+        ROUTER_ID as routerId,                            ROUTER_CODE as routerCode,                        ROUTER_NAME as routerName,                        ROUTER_URL as routerUrl,
+        FILE_PATH as filePath,                            IS_AUTH as isAuth,                                IS_CACHE as isCache,                              MODULE_CODE as moduleCode,
+        ROUTER_LEVEL as routerLevel
+    </sql>
+
+    <sql id="allColumnValue">
+        #{routerId,jdbcType=VARCHAR},           #{routerCode,jdbcType=VARCHAR},         #{routerName,jdbcType=VARCHAR},         #{routerUrl,jdbcType=VARCHAR},
+        #{filePath,jdbcType=VARCHAR},           #{isAuth,jdbcType=INTEGER},             #{isCache,jdbcType=INTEGER},            #{moduleCode,jdbcType=VARCHAR},
+        #{routerLevel,jdbcType=INTEGER}
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.routerId,jdbcType=VARCHAR},      #{item.routerCode,jdbcType=VARCHAR},    #{item.routerName,jdbcType=VARCHAR},    #{item.routerUrl,jdbcType=VARCHAR},
+        #{item.filePath,jdbcType=VARCHAR},      #{item.isAuth,jdbcType=INTEGER},        #{item.isCache,jdbcType=INTEGER},       #{item.moduleCode,jdbcType=VARCHAR},
+        #{item.routerLevel,jdbcType=INTEGER}
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="routerCode != null and routerCode != ''">
+                ROUTER_CODE = #{routerCode,jdbcType=VARCHAR},
+            </if>
+            <if test="routerName != null and routerName != ''">
+                ROUTER_NAME = #{routerName,jdbcType=VARCHAR},
+            </if>
+            <if test="routerUrl != null and routerUrl != ''">
+                ROUTER_URL = #{routerUrl,jdbcType=VARCHAR},
+            </if>
+            <if test="filePath != null and filePath != ''">
+                FILE_PATH = #{filePath,jdbcType=VARCHAR},
+            </if>
+            <if test="isAuth != null">
+                IS_AUTH = #{isAuth,jdbcType=INTEGER},
+            </if>
+            <if test="isCache != null">
+                IS_CACHE = #{isCache,jdbcType=INTEGER},
+            </if>
+            <if test="moduleCode != null and moduleCode != ''">
+                MODULE_CODE = #{moduleCode,jdbcType=VARCHAR},
+            </if>
+            <if test="routerLevel != null">
+                ROUTER_LEVEL = #{routerLevel,jdbcType=INTEGER},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="routerCode != null and routerCode != ''">
+                ROUTER_CODE,
+            </if>
+            <if test="routerName != null and routerName != ''">
+                ROUTER_NAME,
+            </if>
+            <if test="routerUrl != null and routerUrl != ''">
+                ROUTER_URL,
+            </if>
+            <if test="filePath != null and filePath != ''">
+                FILE_PATH,
+            </if>
+            <if test="isAuth != null">
+                IS_AUTH,
+            </if>
+            <if test="isCache != null">
+                IS_CACHE,
+            </if>
+            <if test="moduleCode != null and moduleCode != ''">
+                MODULE_CODE,
+            </if>
+            <if test="routerLevel != null">
+                ROUTER_LEVEL,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="routerCode != null and routerCode != ''">
+                #{routerCode,jdbcType=VARCHAR},
+            </if>
+            <if test="routerName != null and routerName != ''">
+                #{routerName,jdbcType=VARCHAR},
+            </if>
+            <if test="routerUrl != null and routerUrl != ''">
+                #{routerUrl,jdbcType=VARCHAR},
+            </if>
+            <if test="filePath != null and filePath != ''">
+                #{filePath,jdbcType=VARCHAR},
+            </if>
+            <if test="isAuth != null">
+                #{isAuth,jdbcType=INTEGER},
+            </if>
+            <if test="isCache != null">
+                #{isCache,jdbcType=INTEGER},
+            </if>
+            <if test="moduleCode != null and moduleCode != ''">
+                #{moduleCode,jdbcType=VARCHAR},
+            </if>
+            <if test="routerLevel != null">
+                #{routerLevel,jdbcType=INTEGER},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="routerId != null and routerId != ''">
+            AND ROUTER_ID = #{routerId,jdbcType=VARCHAR}
+        </if>
+        <if test="routerCode != null and routerCode != ''">
+            AND ROUTER_CODE = #{routerCode,jdbcType=VARCHAR}
+        </if>
+        <if test="routerName != null and routerName != ''">
+            AND ROUTER_NAME = #{routerName,jdbcType=VARCHAR}
+        </if>
+        <if test="routerUrl != null and routerUrl != ''">
+            AND ROUTER_URL = #{routerUrl,jdbcType=VARCHAR}
+        </if>
+        <if test="filePath != null and filePath != ''">
+            AND FILE_PATH = #{filePath,jdbcType=VARCHAR}
+        </if>
+        <if test="isAuth != null">
+            AND IS_AUTH = #{isAuth,jdbcType=INTEGER}
+        </if>
+        <if test="isCache != null">
+            AND IS_CACHE = #{isCache,jdbcType=INTEGER}
+        </if>
+        <if test="moduleCode != null and moduleCode != ''">
+            AND MODULE_CODE = #{moduleCode,jdbcType=VARCHAR}
+        </if>
+        <if test="routerLevel != null">
+            AND ROUTER_LEVEL = #{routerLevel,jdbcType=INTEGER}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.userservice.entity.RouterDO">
+        INSERT INTO PEACH_ROUTER (
+        <include refid="allColumn" />
+        ) VALUES (
+        <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.userservice.entity.RouterDO">
+        INSERT INTO PEACH_ROUTER (
+        <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue"/>)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.userservice.entity.RouterDO">
+        UPDATE PEACH_ROUTER SET
+        <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM PEACH_ROUTER
+        WHERE ROUTER_ID = #{value,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM PEACH_ROUTER
+        WHERE ROUTER_ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.userservice.entity.RouterDO">
+        DELETE FROM PEACH_ROUTER
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <update id="updateById" parameterType="java.lang.String">
+        UPDATE PEACH_ROUTER SET
+        <include refid="allColumnSet" />
+        WHERE ROUTER_ID =  #{routerId,jdbcType=VARCHAR}
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.userservice.vo.RouterVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_ROUTER
+        WHERE ROUTER_ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.userservice.vo.RouterVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_ROUTER
+        WHERE ROUTER_ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.userservice.entity.RouterDO" resultType="com.peach.userservice.vo.RouterVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_ROUTER
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.userservice.entity.RouterDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_ROUTER
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="selectByQO" resultType="com.peach.userservice.vo.RouterVO" parameterType="com.peach.userservice.qo.RouterQO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_ROUTER
+        <where>
+            <if test="routerCode != null and routerCode != ''">
+                AND ROUTER_CODE = #{routerCode,jdbcType=VARCHAR}
+            </if>
+            <if test="routerName != null and routerName != ''">
+                AND ROUTER_NAME = #{routerName,jdbcType=VARCHAR}
+            </if>
+            <if test="moduleCode != null and moduleCode != ''">
+                AND MODULE_CODE = #{moduleCode,jdbcType=VARCHAR}
+            </if>
+
+        </where>
+    </select>
+
+    <select id="countByRouterCode" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM PEACH_ROUTER
+        WHERE ROUTER_CODE = #{routerCode,jdbcType=VARCHAR} AND ROUTER_ID != #{routerId,jdbcType=VARCHAR}
+    </select>
+</mapper>
