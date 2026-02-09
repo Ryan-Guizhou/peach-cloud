@@ -60,6 +60,7 @@
         <module>peach-component</module>
         <module>peach-middleware</module>
         <module>peach-sample</module>
+        <module>peach-message</module>
     </modules>
 
     <dependencyManagement>
@@ -481,6 +482,12 @@
 
             <dependency>
                 <groupId>com.peach</groupId>
+                <artifactId>peach-message-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
                 <artifactId>peach-monitor-api</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -556,5 +563,97 @@
         </dependencies>
 
     </dependencyManagement>
+
+
+
+    <build>
+        <!-- 1. 插件版本与全局配置管理 -->
+        <pluginManagement>
+            <plugins>
+                <!-- 核心：Spring Boot 打包插件 -->
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring.boot}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- 核心：编译插件 (解决编码和参数名问题) -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                        <!-- 关键：保留方法参数名，Spring需用到 -->
+                        <parameters>true</parameters>
+                    </configuration>
+                </plugin>
+
+                <!-- 单元测试插件 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.1.2</version>
+                </plugin>
+
+                <!-- 源码打包插件 (建议加上，方便调试) -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.3.0</version>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals>
+                                <goal>jar-no-fork</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <!-- 2. 全局生效的插件 (所有模块都会自动继承) -->
+        <plugins>
+            <!-- 编译插件：所有模块都需要编译 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+
+            <!-- 版本扁平化：解决 ${revision} 问题 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <configuration>
+                    <!-- 只在必要时更新（推荐） -->
+                    <updatePomFile>true</updatePomFile>
+                    <!-- clean 时不删除 -->
+                    <clean>false</clean>
+                    <!-- 选择合适的模式 -->
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
