@@ -17,7 +17,7 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableDiscoveryClient
 @ComponentScan("com.peach")
 @SpringBootApplication
-@EnableFeignClients({"com.peach.userservice.openfeign"})
+@EnableFeignClients({"com.peach.auth.openfeign"})
 public class PeachMonitorApplication {
 
     public static void main(String[] args) {

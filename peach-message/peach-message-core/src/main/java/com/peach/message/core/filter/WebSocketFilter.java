@@ -69,10 +69,8 @@ public class WebSocketFilter implements Filter, Ordered {
                         .userHost(servletRequest.getRemoteHost())
                         .build();
                 WebSocketContext.setContext(context);
-                filterChain.doFilter(servletRequest, servletResponse);
-            } else {
-                response.setStatus(403);
             }
+            filterChain.doFilter(servletRequest, servletResponse);
         } catch (Exception e) {
             response.setStatus(500);
             log.error("WebSocketFilter error", e);
@@ -96,7 +94,7 @@ public class WebSocketFilter implements Filter, Ordered {
         String connection = request.getHeader("Connection");
         String upgrade = request.getHeader("Upgrade");
         return "Upgrade".equalsIgnoreCase(connection)
-                && "websocket".equalsIgnoreCase(upgrade);
+                && "webSocket".equalsIgnoreCase(upgrade);
     }
 
     private boolean isWebSocketProtocolRequest(HttpServletRequest request) {
@@ -106,6 +104,6 @@ public class WebSocketFilter implements Filter, Ordered {
 
     private boolean isWebSocketPath(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.contains("/ws/") || path.contains("/websocket/");
+        return path.contains("/ws/") || path.contains("/webSocket/");
     }
 }

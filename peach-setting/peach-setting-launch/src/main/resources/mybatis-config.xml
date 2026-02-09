@@ -16,7 +16,7 @@
             <property name="supportMethodsArguments" value="false" />
             <property name="closeConn" value="false" />
         </plugin>
-        <plugin interceptor="com.peach.auth.config.SqlCostInterceptor">
+        <plugin interceptor="com.peach.setting.config.SqlCostInterceptor">
             <property name="longQueryTime" value="3000" />
         </plugin>
     </plugins>
