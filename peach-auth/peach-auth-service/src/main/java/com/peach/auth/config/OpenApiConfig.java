@@ -61,8 +61,8 @@ public class OpenApiConfig {
 
         // 构建 Info 对象
         return new Info()
-                .title("用户服务 API")
-                .description("PEACH-CLOUD管理系统用户模块 API 接口")
+                .title("认证服务 API")
+                .description("PEACH-CLOUD管理系统认证模块 API 接口")
                 .version("V1.0.0")
                 .contact(contact);
     }
