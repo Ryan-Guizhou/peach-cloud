@@ -43,6 +43,26 @@
         </dependency>
 
         <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redis-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-openapi3-spring-boot-starter</artifactId>
         </dependency>
@@ -66,18 +86,34 @@
 
     <build>
         <plugins>
+            <!-- 1. Spring Boot 打包 (版本已在父 POM 管理) -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>2.7.13</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
+
+            <!-- 2. (可选) Jib 容器化构建 -->
+<!--            <plugin>-->
+<!--                <groupId>com.google.cloud.tools</groupId>-->
+<!--                <artifactId>jib-maven-plugin</artifactId>-->
+<!--                <version>3.4.0</version>-->
+<!--                <configuration>-->
+<!--                    <from>-->
+<!--                        <image>openjdk:8-jre-alpine</image> &lt;!&ndash; 基础镜像 &ndash;&gt;-->
+<!--                    </from>-->
+<!--                    <to>-->
+<!--                        <image>registry.your-company.com/peach-userservice</image> &lt;!&ndash; 目标镜像 &ndash;&gt;-->
+<!--                        <tags>-->
+<!--                            <tag>latest</tag>-->
+<!--                            <tag>${project.version}</tag>-->
+<!--                        </tags>-->
+<!--                    </to>-->
+<!--                    <container>-->
+<!--                        <mainClass>com.peach.gateway.launch.PeachGatewayApplication</mainClass>-->
+<!--                        <creationTime>USE_CURRENT_TIMESTAMP</creationTime>-->
+<!--                    </container>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 

@@ -1,6 +1,6 @@
 package com.peach.userservice.config;
 
-import cn.dev33.satoken.dao.SaSessionForJacksonCustomized;
+import com.peach.userservice.sasession.SaSessionForJacksonCustomized;
 import cn.dev33.satoken.dao.SaTokenDao;
 import cn.dev33.satoken.strategy.SaStrategy;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -110,8 +110,6 @@ public class CustomSaTokenDao implements SaTokenDao {
 
             this.objectMapper.registerModule(timeModule);
 
-            // 重写sasession
-//            SaStrategy.instance.createSession = SaSessionForJacksonCustomized::new;
         } catch (Exception e) {
             log.error("CustomSaTokenDao init failed."+e.getMessage(),e);
         }

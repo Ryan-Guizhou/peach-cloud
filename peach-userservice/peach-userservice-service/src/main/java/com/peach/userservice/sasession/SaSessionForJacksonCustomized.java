@@ -1,4 +1,4 @@
-package cn.dev33.satoken.dao;
+package com.peach.userservice.sasession;
 
 import cn.dev33.satoken.session.SaSession;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

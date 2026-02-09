@@ -52,8 +52,17 @@
             <artifactId>peach-redis-multicache-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redis-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-common</artifactId>
         </dependency>
 
 
