@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-middleware</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+  <groupId>com.peach</groupId>
+  <artifactId>peach-redis</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>peach-redis</name>
+  <description>peach-redis</description>
+  <modules>
+    <module>peach-redis-common</module>
+    <module>peach-redis-multicache-autoconfigure</module>
+    <module>peach-redis-multicache-starter</module>
+    <module>peach-redis-stream-autoconfigure</module>
+    <module>peach-redis-stream-starter</module>
+    <module>peach-redis-tool-autoconfigure</module>
+    <module>peach-redis-tool-starter</module>
+  </modules>
+</project>

@@ -9,13 +9,13 @@ spring:
     nacos:
       discovery:
         server-addr: 127.0.0.1:8848
-        namespace: dba0fbb1-fe66-464e-afce-33ba45c43b2b
+        namespace: 4e7af3ed-7a49-4e3f-bdfc-67c20b1bfd05
         group: PEACH-CLOUD
       config:
         server-addr: 127.0.0.1:8848
         file-extension: yml
         group: PEACH-CLOUD
-        namespace: dba0fbb1-fe66-464e-afce-33ba45c43b2b
+        namespace: 4e7af3ed-7a49-4e3f-bdfc-67c20b1bfd05
         enabled: true
     gateway:
       discovery:
@@ -62,25 +62,45 @@ spring:
             - Path=/api/file/**
           filters:
             - StripPrefix=1
+        # 1. 路由 HTTP 请求 (给内部服务 Feign 调用，或者前端偶尔调用的 HTTP 接口)
+        - id: peach-message
+          uri: lb://peach-message  # 负载均衡转发到消息服务
+          predicates:
+          - Path=/api/message/**                # 匹配 Controller 中的路径
+          filters:
+            - StripPrefix=1
+        # 2. 路由 WebSocket 请求 (给前端浏览器建立长连接)
+        - id: peach-message-ws
+          uri: lb:ws://peach-message # 注意这里协议是 lb:ws://
+          predicates:
+            - Path=/webSocket/**               # 匹配 @ServerEndpoint 的路径
   config:
     import:
       - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
-  redis:
-    host: 127.0.0.1
-    port: 6379
-    password: 123456
 #      - optional:nacos:application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
 
 # sa-token 配置
 sa-token:
   token-name: Authorization
-  timeout: 2592000
-  activity-timeout: -1
+  timeout: 2592000 # token 最大声明周期 30 天
+  active-timeout: 1800 # token 默认声明周期 30 分钟
   is-concurrent: true
   is-share: true
-  token-style: uuid
-  check-same-token: true
   is-read-cookie: false
+  is-log: true
+  check-same-token: true # 是否检查same-token
+  same-token-timeout: 30 #same-token 超时时间
+
+
+
+peach.redis:
+  # ============================
+  # 基础配置
+  # ============================
+  mode: standalone
+  host: 127.0.0.1:6379       # Redis 主机
+  password: 123456               # 密码（可空）
+  database: 0
 
 # knife4j 配置
 knife4j:

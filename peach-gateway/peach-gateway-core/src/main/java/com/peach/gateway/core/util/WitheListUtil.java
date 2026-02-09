@@ -36,6 +36,7 @@ public class WitheListUtil {
             "/ws",
             "/socket",
             "/sse",
+            "/webSocket"
     };
 
     private WitheListUtil() {
