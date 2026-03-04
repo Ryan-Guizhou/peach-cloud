@@ -1,4 +1,4 @@
-package com.peach.userservice.service.config;
+package com.peach.monitor.service.config;
 
 import cn.dev33.satoken.context.SaHolder;
 import cn.dev33.satoken.interceptor.SaInterceptor;

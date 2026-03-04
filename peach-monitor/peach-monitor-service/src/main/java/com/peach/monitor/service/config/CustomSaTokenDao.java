@@ -1,4 +1,4 @@
-package com.peach.userservice.service.config;
+package com.peach.monitor.service.config;
 
 import cn.dev33.satoken.dao.SaSessionForJacksonCustomized;
 import cn.dev33.satoken.dao.SaTokenDao;
