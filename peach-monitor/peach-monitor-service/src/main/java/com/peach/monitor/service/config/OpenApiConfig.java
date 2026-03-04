@@ -1,26 +1,15 @@
-package com.peach.userservice.service.config;
+package com.peach.monitor.service.config;
 
 import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.servers.Server;
-import io.swagger.v3.oas.models.servers.ServerVariable;
-import io.swagger.v3.oas.models.servers.ServerVariables;
-import io.swagger.v3.oas.models.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Indexed;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 
 /**
  * @Author Mr Shu
@@ -36,9 +25,7 @@ public class OpenApiConfig {
     public OpenAPI completeOpenApi() {
         return new OpenAPI()
                 .info(createApiInfo())
-                // 全局安全要求（所有接口默认需要 Token）
                 .addSecurityItem(new SecurityRequirement().addList("Authorization"))
-                // 安全方案定义
                 .components(new Components()
                         .addSecuritySchemes("Authorization",
                                 new SecurityScheme()
@@ -46,12 +33,12 @@ public class OpenApiConfig {
                                         .type(SecurityScheme.Type.APIKEY)
                                         .in(SecurityScheme.In.HEADER)
                                         .description("Sa-Token 登录凭证")
-                        ).addSecuritySchemes("User-Agent",new SecurityScheme()
+                        ).addSecuritySchemes("User-Agent", new SecurityScheme()
                                 .name("全局请求User-Agent")
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
                                 .description("User-Agent 用户代理"))
-                        .addSecuritySchemes("Referer",new SecurityScheme()
+                        .addSecuritySchemes("Referer", new SecurityScheme()
                                 .name("全局请求Referer")
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
@@ -59,23 +46,16 @@ public class OpenApiConfig {
                 );
     }
 
-    /**
-     * 创建 API 基本信息
-     * 包含所有 info 可配置字段
-     */
     private Info createApiInfo() {
-
         Contact contact = new Contact()
                 .name("Ryan_GuiZhou")
                 .url("https://peachsoft.com")
                 .email("huanhuanshu48@gmail.com");
 
-        // 构建 Info 对象
         return new Info()
                 .title("监控服务 API")
                 .description("PEACH-CLOUD管理系统监控模块 API 接口")
                 .version("V1.0.0")
                 .contact(contact);
     }
-
 }
