@@ -1,0 +1,170 @@
+﻿name: peach-cloud
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: peach-mysql
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: peach_cloud
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - peach-mysql-data:/var/lib/mysql
+      - ./logs/mysql:/var/log/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p123456" ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks:
+      - peach-net
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: peach-redis
+    command: [ "redis-server", "--requirepass", "123456" ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - peach-redis-data:/data
+      - ./logs/redis:/var/log/redis
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "123456", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks:
+      - peach-net
+
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: peach-nacos
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+      JVM_XMS: 256m
+      JVM_XMX: 256m
+      JVM_XMN: 128m
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    volumes:
+      - ./logs/nacos:/home/nacos/logs
+    networks:
+      - peach-net
+
+  peach-gateway:
+    image: peach-cloud/peach-gateway:latest
+    container_name: peach-gateway
+    build:
+      context: .
+      dockerfile: peach-gateway/peach-gateway-launch/Dockerfile
+    ports:
+      - "18080:18080"
+    volumes:
+      - ./logs/peach-gateway:/app/logs
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+    networks:
+      - peach-net
+
+  peach-auth:
+    image: peach-cloud/peach-auth:latest
+    container_name: peach-auth
+    build:
+      context: .
+      dockerfile: peach-auth/peach-auth-launch/Dockerfile
+    ports:
+      - "18081:18081"
+    volumes:
+      - ./logs/peach-auth:/app/logs
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+    networks:
+      - peach-net
+
+  peach-monitor:
+    image: peach-cloud/peach-monitor:latest
+    container_name: peach-monitor
+    build:
+      context: .
+      dockerfile: peach-monitor/peach-monitor-launch/Dockerfile
+    ports:
+      - "18082:18082"
+    volumes:
+      - ./logs/peach-monitor:/app/logs
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+    networks:
+      - peach-net
+
+  peach-fileservice:
+    image: peach-cloud/peach-fileservice:latest
+    container_name: peach-fileservice
+    build:
+      context: .
+      dockerfile: peach-fileservice/peach-fileservice-launch/Dockerfile
+    ports:
+      - "18083:18083"
+    volumes:
+      - ./logs/peach-fileservice:/app/logs
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+    networks:
+      - peach-net
+
+  peach-message:
+    image: peach-cloud/peach-message:latest
+    container_name: peach-message
+    build:
+      context: .
+      dockerfile: peach-message/peach-message-launch/Dockerfile
+    ports:
+      - "18084:18084"
+    volumes:
+      - ./logs/peach-message:/app/logs
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+    networks:
+      - peach-net
+
+  peach-setting:
+    image: peach-cloud/peach-setting:latest
+    container_name: peach-setting
+    build:
+      context: .
+      dockerfile: peach-setting/peach-setting-launch/Dockerfile
+    ports:
+      - "18085:18085"
+    volumes:
+      - ./logs/peach-setting:/app/logs
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+    networks:
+      - peach-net
+
+networks:
+  peach-net:
+    driver: bridge
+
+volumes:
+  peach-mysql-data:
+  peach-redis-data:

@@ -1,0 +1,13 @@
+.git
+.idea
+.codex
+.claude
+.cursor
+.trae
+**/target
+**/.flattened-pom.xml
+peach-cloud-front
+doc
+sql
+bin
+README.md
