@@ -33,3 +33,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Flatten Maven plugin output
+.flattened-pom.xml
