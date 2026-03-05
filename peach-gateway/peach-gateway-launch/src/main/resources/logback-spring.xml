@@ -1,132 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration scan="false" debug="true">
+<configuration scan="true" scanPeriod="60 seconds">
 
-    <springProperty scope="context"
-                    name="LOG_DIR"
-                    source="logging.logback.dir"
-                    defaultValue="C://coding/mine/peach-cloud/logs"/>
+    <springProperty scope="context" name="LOG_DIR" source="logging.logback.dir" defaultValue="${user.dir}/logs"/>
 
-    <property name="LOG_PATTERN"
-              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"/>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"/>
+    <property name="CONSOLE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger{36} - %msg%n"/>
 
-    <property name="CONSOLE_LOG_PATTERN"
-              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger{36} - %msg%n"/>
-
-    <!-- 1. 控制台输出 -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
+        <encoder><pattern>${CONSOLE_LOG_PATTERN}</pattern></encoder>
     </appender>
 
-    <!-- 2. 所有级别日志（完整日志） - 格式: all-日期-分片.log, 200MB分割 -->
     <appender name="ALL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_DIR}/peach/all.log</file>
-        <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- 文件名格式: all-日期-分片号.log -->
-            <fileNamePattern>${LOG_DIR}/peach/all-%d{yyyy-MM-dd}-%i.log</fileNamePattern>
-            <!-- 每个分片最大200MB -->
-            <maxFileSize>200MB</maxFileSize>
-            <!-- 保留10天历史 -->
+            <fileNamePattern>${LOG_DIR}/all-gateway.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
             <maxHistory>10</maxHistory>
-            <!-- 总大小限制2GB -->
-            <totalSizeCap>2GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
+        <encoder><pattern>${LOG_PATTERN}</pattern></encoder>
     </appender>
 
-    <!-- 3. INFO级别日志 - 格式: info-日期-分片.log, 50MB分割 -->
     <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_DIR}/peach/info.log</file>
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>INFO</level>
             <onMatch>ACCEPT</onMatch>
             <onMismatch>DENY</onMismatch>
         </filter>
-        <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- 文件名格式: info-日期-分片号.log -->
-            <fileNamePattern>${LOG_DIR}/peach/info-%d{yyyy-MM-dd}-%i.log</fileNamePattern>
-            <!-- 每个分片最大50MB -->
-            <maxFileSize>50MB</maxFileSize>
-            <!-- 保留15天历史 -->
-            <maxHistory>15</maxHistory>
-            <!-- 总大小限制1.5GB -->
-            <totalSizeCap>1536MB</totalSizeCap>
+            <fileNamePattern>${LOG_DIR}/info/info-gateway.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>5MB</maxFileSize>
+            <maxHistory>30</maxHistory>
         </rollingPolicy>
+        <encoder><pattern>${LOG_PATTERN}</pattern></encoder>
     </appender>
 
-    <!-- 4. WARN级别日志 - 格式: warn-日期-分片.log, 50MB分割 -->
     <appender name="WARN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_DIR}/peach/warn.log</file>
-        <filter class="ch.qos.logback.classic.filter.LevelFilter">
-            <level>WARN</level>
-            <onMatch>ACCEPT</onMatch>
-            <onMismatch>DENY</onMismatch>
-        </filter>
-        <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter"><level>WARN</level><onMatch>ACCEPT</onMatch><onMismatch>DENY</onMismatch></filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- 文件名格式: warn-日期-分片号.log -->
-            <fileNamePattern>${LOG_DIR}/peach/warn-%d{yyyy-MM-dd}-%i.log</fileNamePattern>
-            <!-- 每个分片最大50MB -->
-            <maxFileSize>50MB</maxFileSize>
-            <!-- 保留7天历史 -->
-            <maxHistory>7</maxHistory>
-            <!-- 总大小限制500MB -->
-            <totalSizeCap>500MB</totalSizeCap>
+            <fileNamePattern>${LOG_DIR}/warn/warn-gateway.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>5MB</maxFileSize><maxHistory>30</maxHistory>
         </rollingPolicy>
+        <encoder><pattern>${LOG_PATTERN}</pattern></encoder>
     </appender>
 
-    <!-- 5. ERROR级别日志 - 格式: error-日期-分片.log, 50MB分割 -->
     <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_DIR}/peach/error.log</file>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>ERROR</level>
-        </filter>
-        <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter"><level>ERROR</level><onMatch>ACCEPT</onMatch><onMismatch>DENY</onMismatch></filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- 文件名格式: error-日期-分片号.log -->
-            <fileNamePattern>${LOG_DIR}/peach/error-%d{yyyy-MM-dd}-%i.log</fileNamePattern>
-            <!-- 每个分片最大50MB -->
-            <maxFileSize>50MB</maxFileSize>
-            <!-- 保留30天历史 -->
-            <maxHistory>30</maxHistory>
-            <!-- 总大小限制3GB -->
-            <totalSizeCap>3072MB</totalSizeCap>
+            <fileNamePattern>${LOG_DIR}/error/error-gateway.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>5MB</maxFileSize><maxHistory>30</maxHistory>
         </rollingPolicy>
+        <encoder><pattern>${LOG_PATTERN}</pattern></encoder>
     </appender>
 
-    <!-- 6. 访问日志 - 格式: access-日期.log, 不分割 -->
-    <appender name="ACCESSLOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- 文件名格式: access-日期.log -->
-            <fileNamePattern>${LOG_DIR}/access/access-%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %msg%n</pattern>
-        </encoder>
-    </appender>
+    <logger name="SQL_LOG" level="DEBUG" additivity="false">
+        <appender-ref ref="STDOUT" />   <appender-ref ref="ALL_FILE" /> </logger>
 
-    <!-- 访问日志记录器 -->
-    <logger name="access.log" level="INFO" additivity="false">
-        <appender-ref ref="ACCESSLOG"/>
-    </logger>
-
-    <!-- 根配置 -->
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="ALL_FILE"/>

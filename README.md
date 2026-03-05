@@ -13,3 +13,11 @@
 | **配置热更新**   | 50-100ms           | 10-20ms    | 原生快80%  |
 | **内存占用**     | 基础+50MB          | 基础+30MB  | 原生省20MB |
 | **CPU使用率**    | 中等               | 较低       | 原生更优   |
+
+
+
+### 2、项目构建方式
+
+- mvn clean package -Ptest
+- mvn clean package -Pdevelopment
+- mvn clean package -Pproduction

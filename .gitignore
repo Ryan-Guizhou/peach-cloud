@@ -36,3 +36,6 @@ build/
 
 # Flatten Maven plugin output
 .flattened-pom.xml
+
+# Logs
+.logs

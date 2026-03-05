@@ -1,21 +1,22 @@
 server:
-  port: 18084
+  port: 18085
 
 spring:
   application:
-    name: peach-message
+    name: peach-setting
   cloud:
     nacos:
       discovery:
         server-addr: 127.0.0.1:8848
-        namespace: 4e7af3ed-7a49-4e3f-bdfc-67c20b1bfd05
+        namespace: dba0fbb1-fe66-464e-afce-33ba45c43b2b
         group: PEACH-CLOUD
       config:
         server-addr: 127.0.0.1:8848
         file-extension: yml
         group: PEACH-CLOUD
-        namespace: 4e7af3ed-7a49-4e3f-bdfc-67c20b1bfd05
+        namespace: dba0fbb1-fe66-464e-afce-33ba45c43b2b
+        enabled: true
   config:
     import:
       - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
-  
+#      - optional:nacos:application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}

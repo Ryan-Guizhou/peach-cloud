@@ -12,6 +12,7 @@
     <properties>
         <java.version>1.8</java.version>
         <revision>1.0.0-SNAPSHOT</revision>
+        <project.profile>dev</project.profile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -585,9 +586,62 @@
 
     </dependencyManagement>
 
-
+    <profiles>
+        <profile>
+            <id>development</id>
+            <properties>
+                <project.profile>dev</project.profile>
+            </properties>
+        </profile>
+        <profile>
+            <id>production</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <project.profile>prod</project.profile>
+            </properties>
+        </profile>
+        <profile>
+            <id>test</id>
+            <properties>
+                <project.profile>test</project.profile>
+            </properties>
+        </profile>
+    </profiles>
 
     <build>
+        <resources>
+            <!-- 处理非字体文件，启用过滤 -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <excludes>
+                    <exclude>**/*.ttf</exclude>
+                    <exclude>**/*.woff</exclude>
+                    <exclude>**/*.woff2</exclude>
+                    <exclude>**/*.eot</exclude>
+                    <exclude>**/*.otf</exclude>
+                    <exclude>**/*.png</exclude>
+                    <exclude>**/*.jpg</exclude>
+                    <exclude>**/*.jpeg</exclude>
+                    <exclude>**/*.gif</exclude>
+                    <exclude>**/*.ico</exclude>
+                </excludes>
+            </resource>
+            <!-- 处理字体文件，不启用过滤 -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*.ttf</include>
+                    <include>**/*.woff</include>
+                    <include>**/*.woff2</include>
+                    <include>**/*.eot</include>
+                    <include>**/*.otf</include>
+                </includes>
+            </resource>
+        </resources>
         <!-- 1. 插件版本与全局配置管理 -->
         <pluginManagement>
             <plugins>
@@ -640,6 +694,18 @@
                         </execution>
                     </executions>
                 </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.3.1</version>
+                    <configuration>
+                        <useDefaultDelimiters>false</useDefaultDelimiters>
+                        <delimiters>
+                            <delimiter>@</delimiter>
+                        </delimiters>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -649,6 +715,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
             </plugin>
 
             <!-- 版本扁平化：解决 ${revision} 问题 -->
