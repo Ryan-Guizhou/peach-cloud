@@ -1,53 +1,42 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.peach</groupId>
     <artifactId>peach-sample</artifactId>
     <name>peach-sample</name>
     <description>peach-sample</description>
-
     <parent>
         <groupId>com.peach</groupId>
         <artifactId>peach-cloud</artifactId>
         <version>${revision}</version>
     </parent>
-
     <packaging>jar</packaging>
-
     <properties>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
-
     <dependencies>
-
         <dependency>
             <groupId>com.github.ulisesbocchio</groupId>
             <artifactId>jasypt-spring-boot-starter</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-redission-delayqueue-starter</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.sun.mail</groupId>
             <artifactId>javax.mail</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
@@ -56,28 +45,22 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-redis-multicache-starter</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-redission-bloomfilter-starter</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>com.peach</groupId>
-            <artifactId>peach-redission-delayqueue-starter</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-redis-stream-starter</artifactId>
         </dependency>
-
-
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redis-tool-starter</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
@@ -88,20 +71,13 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-email-starter</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-initialize-starter</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
         <dependency>
             <groupId>com.peach</groupId>
@@ -112,20 +88,13 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.redisson</groupId>
-            <artifactId>redisson</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-common</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-redission-distributedlock-starter</artifactId>
@@ -134,18 +103,13 @@
             <groupId>com.peach</groupId>
             <artifactId>peach-redission-repeat-starter</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-redission-common</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-captcha-starter</artifactId>
         </dependency>
-
-
     </dependencies>
-
 </project>

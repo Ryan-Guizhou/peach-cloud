@@ -660,7 +660,7 @@
                     <!-- 只在必要时更新（推荐） -->
                     <updatePomFile>true</updatePomFile>
                     <!-- clean 时不删除 -->
-                    <clean>false</clean>
+                    <clean>true</clean>
                     <!-- 选择合适的模式 -->
                     <flattenMode>resolveCiFriendliesOnly</flattenMode>
                 </configuration>
@@ -673,6 +673,20 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${basedir}</directory>
+                            <includes>
+                                <include>.flattened-pom.xml</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
             </plugin>
         </plugins>
     </build>

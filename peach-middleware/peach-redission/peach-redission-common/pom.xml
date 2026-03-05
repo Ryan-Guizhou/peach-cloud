@@ -51,6 +51,11 @@
             <artifactId>aspectjweaver</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-common</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
