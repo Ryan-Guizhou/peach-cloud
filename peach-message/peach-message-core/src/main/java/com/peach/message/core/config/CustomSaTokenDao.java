@@ -20,6 +20,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Indexed;
 
 import javax.annotation.PostConstruct;
 import java.lang.reflect.Field;
@@ -37,8 +38,10 @@ import java.util.concurrent.TimeUnit;
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/29 20:51
+ * @Description 自定义 SaTokenDao 实现类
  */
 @Slf4j
+@Indexed
 @Component
 public class CustomSaTokenDao implements SaTokenDao {
 

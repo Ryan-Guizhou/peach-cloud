@@ -7,8 +7,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Indexed;
 
+import java.nio.charset.StandardCharsets;
+
+/**
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/2/4 18:09
+ */
 @Slf4j
+@Indexed
 @Component
 public class RedisMessageSubscriber implements MessageListener {
 
@@ -19,9 +28,9 @@ public class RedisMessageSubscriber implements MessageListener {
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {
-            String msgBody = new String(message.getBody());
+            String msgBody = new String(message.getBody(), StandardCharsets.UTF_8);
              log.info("Received Redis Message: " + msgBody);
-            WebSocketMessage webSocketMessage = JSON.parseObject(msgBody, WebSocketMessage.class);
+            WebSocketMessage webSocketMessage = parseMessage(msgBody);
             
             if (webSocketMessage == null) return;
 
@@ -43,6 +52,25 @@ public class RedisMessageSubscriber implements MessageListener {
             }
         } catch (Exception e) {
             log.error("Error handling Redis message", e);
+        }
+    }
+
+    public WebSocketMessage parseMessage(String jsonStr) {
+        try {
+            // 使用正则表达式移除非打印字符
+            String cleanStr = jsonStr.replaceAll("[\\x00-\\x1F\\x7F]", "");
+
+            // 处理可能的双重JSON字符串
+            if (cleanStr.startsWith("\"") && cleanStr.endsWith("\"")) {
+                // 如果是双重JSON，先解析外层
+                String innerJson = JSON.parseObject(cleanStr, String.class);
+                return JSON.parseObject(innerJson, WebSocketMessage.class);
+            } else {
+                return JSON.parseObject(cleanStr, WebSocketMessage.class);
+            }
+        } catch (Exception e) {
+            log.error("Error parsing Redis message", e);
+            return null;
         }
     }
 }

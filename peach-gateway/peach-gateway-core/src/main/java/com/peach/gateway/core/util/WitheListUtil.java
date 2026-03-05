@@ -33,11 +33,8 @@ public class WitheListUtil {
             "health",
 
             // ===== WebSocket / SSE =====
-            "/ws",
-            "/socket",
             "/sse",
             "/favicon.ico",
-            "/webSocket"
     };
 
     private WitheListUtil() {

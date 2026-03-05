@@ -23,7 +23,7 @@ import javax.annotation.Resource;
 @Slf4j
 @Indexed
 @RestController
-@RequestMapping("/user/external")
+@RequestMapping("/auth/external")
 @Tag(name = "路由管理外部接口")
 public class RouterExternalController {
 

@@ -24,7 +24,7 @@ import javax.annotation.Resource;
 @Slf4j
 @Indexed
 @RestController
-@RequestMapping("/user/file")
+@RequestMapping("/auth/file")
 @Tag(name = "FileController", description = "资源管理")
 public class FileController {
 

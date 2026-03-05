@@ -30,7 +30,7 @@ import javax.annotation.Resource;
 @Slf4j
 @Indexed
 @RestController
-@RequestMapping("/user/router")
+@RequestMapping("/auth/router")
 @Tag(name = "RouterController", description = "路由管理管理")
 public class RouterController {
 

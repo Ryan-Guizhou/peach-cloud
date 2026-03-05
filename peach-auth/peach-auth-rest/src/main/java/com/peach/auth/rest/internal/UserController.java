@@ -17,7 +17,7 @@ import java.util.Map;
  */
 @Tag(name = "UserController",description = "用户管理")
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/auth")
 public class UserController {
 
 

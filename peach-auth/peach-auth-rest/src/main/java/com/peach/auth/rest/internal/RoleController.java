@@ -25,7 +25,7 @@ import javax.annotation.Resource;
 @Slf4j
 @Indexed
 @RestController
-@RequestMapping("/user/role")
+@RequestMapping("/auth/role")
 @Tag(name = "RoleController", description = "角色管理")
 public class RoleController {
 

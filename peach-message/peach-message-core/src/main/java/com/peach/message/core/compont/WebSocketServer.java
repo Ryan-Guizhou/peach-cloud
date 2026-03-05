@@ -7,8 +7,10 @@ import com.alibaba.fastjson.JSONObject;
 import com.peach.message.core.context.WebSocketContext;
 import com.peach.message.core.context.WebSocketMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Indexed;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -20,13 +22,23 @@ import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/2/4 18:09
+ */
 @Slf4j
-@ServerEndpoint(value = "/webSocket/msg/{type}")
+@Indexed
 @Component
+@ServerEndpoint(value = "/webSocket/msg/{type}")
 public class WebSocketServer {
-    
+
     public static final String WEBSOCKET_TOPIC = "WEBSOCKET_MSG_TOPIC";
+    private static final int MAX_MESSAGES_PER_SECOND = 60;
+    private static final ConcurrentHashMap<String, MsgRateCounter> MSG_RATE = new ConcurrentHashMap<>();
 
     /**
      * 与某个客户端的连接会话，需要通过它来给客户端发送数据
@@ -45,20 +57,30 @@ public class WebSocketServer {
     public void onOpen(Session session, @PathParam(value = "type") String type) {
         try {
             this.session = session;
-            this.sid = WebSocketContext.getContext().getUserId();
-            this.type = type;
-            TimedCache<String, WebSocketServer> webSocketSet = Context.CACHE.get(type);
+            this.type = StringUtils.defaultIfBlank(type, "default");
+            if (WebSocketContext.getContext() != null && StringUtils.isNotBlank(WebSocketContext.getContext().getUserId())) {
+                this.sid = WebSocketContext.getContext().getUserId();
+            } else {
+                this.sid = session.getId();
+            }
+
+            this.session.getUserProperties().put("userId", this.sid);
+            this.session.getUserProperties().put("type", this.type);
+            this.session.setMaxIdleTimeout(60_000L);
+
+            TimedCache<String, WebSocketServer> webSocketSet = Context.CACHE.get(this.type);
             if (webSocketSet == null) {
                 webSocketSet = new TimedCache<>(12 * 1000 * 60 * 60);
             } else {
                 webSocketSet.remove(session.getId());
             }
             webSocketSet.put(session.getId(), this);
-            Context.CACHE.put(type, webSocketSet);
+            Context.CACHE.put(this.type, webSocketSet);
+
             this.session.getAsyncRemote().sendText("{\"message\":\"connected!\"}");
-            log.error(this + " connected: " + sid + " " + type);
+            log.info("WebSocket connected, sid={}, type={}, sessionId={}", sid, this.type, session.getId());
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("WebSocket onOpen failed, type={}, sessionId={}", type, session == null ? "null" : session.getId(), e);
         } finally {
             WebSocketContext.removeContext();
         }
@@ -67,56 +89,60 @@ public class WebSocketServer {
     @OnClose
     public void onClose(Session session) {
         WebSocketContext.removeContext();
+        MSG_RATE.remove(session.getId());
         TimedCache<String, WebSocketServer> webSocketSet = Context.CACHE.get(type);
         if (webSocketSet != null) {
             webSocketSet.remove(session.getId());
-            log.error(this + ",closed: " + session.getId() + " " + type);
+            log.info("WebSocket closed, sid={}, type={}, sessionId={}", sid, type, session.getId());
         }
         try {
             session.close();
         } catch (IOException e) {
-            log.error(this + " onClose error: " + e.getMessage());
+            log.error("WebSocket close session failed, sid={}, type={}, sessionId={}", sid, type, session.getId(), e);
         }
     }
 
     @OnMessage
     public void onMessage(String message, Session session) {
-        log.info(this + ",message: " + message);
-        // 收到客户端消息，目前是直接回显，也可以扩展为处理业务
+        if (isRateLimited(session.getId())) {
+            log.warn("WebSocket message dropped by rate limit, sid={}, type={}, sessionId={}", sid, type, session.getId());
+            return;
+        }
+        log.info("WebSocket message received, sid={}, type={}, sessionId={}, size={}", sid, type, session.getId(),
+                message == null ? 0 : message.length());
         session.getAsyncRemote().sendText(message);
     }
 
     @OnError
     public void onError(Session session, Throwable error) {
         WebSocketContext.removeContext();
+        if (session != null) {
+            MSG_RATE.remove(session.getId());
+        }
         TimedCache<String, WebSocketServer> webSocketSet = Context.CACHE.get(this.type);
-        if (webSocketSet != null) {
+        if (webSocketSet != null && session != null) {
             webSocketSet.remove(session.getId());
         }
         try {
-            session.close();
+            if (session != null) {
+                session.close();
+            }
         } catch (IOException e) {
-            log.error("onError error: " + e.getMessage());
+            log.error("WebSocket close onError failed, sid={}, type={}, sessionId={}", sid, type, session == null ? "null" : session.getId(), e);
         }
-        log.info(this + " onError: " + error.getMessage());
+        log.error("WebSocket onError, sid={}, type={}, sessionId={}", sid, type, session == null ? "null" : session.getId(), error);
     }
 
-    // ================== 分布式发送逻辑 (Publish) ==================
-
-    /**
-     * 发布消息到 Redis
-     */
     private void publishMessage(WebSocketMessage message) {
         try {
-            // 获取 RedisTemplate (懒加载，因为 WebSocketServer 实例可能不是由 Spring 创建)
             RedisTemplate<String, Object> redisTemplate = SpringUtil.getBean("redisTemplate");
             if (redisTemplate != null) {
                 redisTemplate.convertAndSend(WEBSOCKET_TOPIC, JSON.toJSONString(message));
             } else {
-                log.error("RedisTemplate not found!");
+                log.error("RedisTemplate not found");
             }
         } catch (Exception e) {
-            log.error("Publish message error: " + e.getMessage());
+            log.error("Publish message error, type={}, sid={}", message == null ? "null" : message.getType(), message == null ? "null" : message.getSid(), e);
         }
     }
 
@@ -131,63 +157,57 @@ public class WebSocketServer {
     public void sendMessage(String message, String type, String sid) {
         publishMessage(WebSocketMessage.unicast(type, sid, message));
     }
-    
+
     public void closeSession(String type, String sid) {
         publishMessage(WebSocketMessage.close(type, sid));
     }
-    
+
     public void sendMessage(Map<String, JSONObject> jsonMap, String type) {
-         // 这种批量发送比较特殊，jsonMap key是sid，value是消息
-         // 为了简单，我们这里可以循环发送单播，或者定义一个新的批量消息类型
-         // 这里简化处理：循环发送单播 (虽然效率略低，但兼容性好)
-         if (jsonMap != null) {
-             jsonMap.forEach((sid, json) -> {
-                 sendMessage(json.toJSONString(), type, sid);
-             });
-         }
+        if (jsonMap != null) {
+            jsonMap.forEach((sid, json) -> sendMessage(json.toJSONString(), type, sid));
+        }
     }
 
-    // ================== 本地发送逻辑 (由 Redis Subscriber 调用) ==================
-
     public void sendLocalMessage(String message, String type, String sid) {
-        log.info("Local send unicast: sid=" + sid + ", type=" + type);
         TimedCache<String, WebSocketServer> webSocketSet = Context.CACHE.get(type);
         if (webSocketSet != null) {
             for (WebSocketServer item : webSocketSet) {
                 try {
-                    if (item.sid.equals(sid)) {
+                    if (item.sid.equals(sid) && item.isOpen()) {
                         item.session.getAsyncRemote().sendText(message);
                     }
                 } catch (Exception e) {
-                    log.error("send message error:" + e);
+                    log.error("send message error, type={}, sid={}", type, sid, e);
                 }
             }
         }
     }
 
     public void sendLocalMessage(String message, String type) {
-        log.info("Local send broadcast type: type=" + type);
         TimedCache<String, WebSocketServer> webSocketSet = Context.CACHE.get(type);
         if (webSocketSet != null) {
             for (WebSocketServer item : webSocketSet) {
                 try {
-                    item.session.getAsyncRemote().sendText(message);
+                    if (item.isOpen()) {
+                        item.session.getAsyncRemote().sendText(message);
+                    }
                 } catch (Exception e) {
-                    log.error("send message error:" + e);
+                    log.error("send message error, type={}", type, e);
                 }
             }
         }
     }
 
     public void sendLocalMessage(String message) {
-        log.info("Local send broadcast all");
         Context.CACHE.forEach((k, socketServers) -> {
             if (socketServers != null) {
                 for (WebSocketServer item : socketServers) {
                     try {
-                        item.session.getAsyncRemote().sendText(message);
+                        if (item.isOpen()) {
+                            item.session.getAsyncRemote().sendText(message);
+                        }
                     } catch (Exception e) {
-                        log.error("send message error:" + e);
+                        log.error("send broadcast all message error", e);
                     }
                 }
             }
@@ -205,9 +225,29 @@ public class WebSocketServer {
                         break;
                     }
                 } catch (Exception e) {
-                    log.error("close error: " + e);
+                    log.error("close session error, type={}, sid={}", type, sid, e);
                 }
             }
+        }
+    }
+
+    public String getSessionId() {
+        return session == null ? null : session.getId();
+    }
+
+    public boolean isOpen() {
+        return session != null && session.isOpen();
+    }
+
+    private boolean isRateLimited(String sessionId) {
+        long second = System.currentTimeMillis() / 1000L;
+        MsgRateCounter counter = MSG_RATE.computeIfAbsent(sessionId, k -> new MsgRateCounter(second));
+        synchronized (counter) {
+            if (counter.windowSecond != second) {
+                counter.windowSecond = second;
+                counter.count.set(0);
+            }
+            return counter.count.incrementAndGet() > MAX_MESSAGES_PER_SECOND;
         }
     }
 
@@ -222,5 +262,14 @@ public class WebSocketServer {
     @Override
     public int hashCode() {
         return Objects.hash(session, sid);
+    }
+
+    private static final class MsgRateCounter {
+        private long windowSecond;
+        private final AtomicInteger count = new AtomicInteger(0);
+
+        private MsgRateCounter(long windowSecond) {
+            this.windowSecond = windowSecond;
+        }
     }
 }

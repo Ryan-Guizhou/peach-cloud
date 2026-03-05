@@ -1,5 +1,6 @@
 package com.peach.message.core.filter;
 
+import cn.dev33.satoken.same.SaSameUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.message.core.context.ContextDTO;
 import com.peach.message.core.context.WebSocketContext;
@@ -69,6 +70,10 @@ public class WebSocketFilter implements Filter, Ordered {
                         .userHost(servletRequest.getRemoteHost())
                         .build();
                 WebSocketContext.setContext(context);
+            } else {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                log.error("WebSocket user token check failed");
+                return;
             }
             filterChain.doFilter(servletRequest, servletResponse);
         } catch (Exception e) {

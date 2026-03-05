@@ -17,7 +17,7 @@ import javax.annotation.Resource;
 @Slf4j
 @Indexed
 @RestController
-@RequestMapping("/user/menu")
+@RequestMapping("/auth/menu")
 @Tag(name = "MenuController", description = "菜单管理")
 public class MenuController {
 

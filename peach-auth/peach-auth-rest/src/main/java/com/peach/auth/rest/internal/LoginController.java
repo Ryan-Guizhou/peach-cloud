@@ -23,7 +23,7 @@ import javax.annotation.Resource;
 @Slf4j
 @Indexed
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/auth")
 @Tag(name = "LoginController", description = "用户登录")
 public class LoginController {
 

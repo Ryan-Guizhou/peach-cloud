@@ -8,7 +8,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.listener.PatternTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.stereotype.Indexed;
 
+/**
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/1/24 15:17
+ * @Description redis 配置类
+ */
+@Indexed
 @Configuration
 public class RedisConfiguration {
 

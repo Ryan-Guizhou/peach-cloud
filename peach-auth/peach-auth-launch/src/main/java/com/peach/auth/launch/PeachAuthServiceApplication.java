@@ -44,10 +44,10 @@ import java.util.Properties;
         annotationClass = MybatisDao.class,
         sqlSessionFactoryRef = "mybatis-session")
 @SpringBootApplication
-public class PeachUserServiceApplication {
+public class PeachAuthServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(PeachUserServiceApplication.class, args);
+        SpringApplication.run(PeachAuthServiceApplication.class, args);
     }
 
 

@@ -17,7 +17,7 @@ import javax.annotation.Resource;
 @Slf4j
 @Indexed
 @RestController
-@RequestMapping("/user/resource")
+@RequestMapping("/auth/resource")
 @Tag(name = "ResourceController", description = "资源管理")
 public class ResourceController {
 
