@@ -28,8 +28,8 @@ services:
     networks:
       - peach-net
     # 资源限制
-    cpus: '0.5'  # MySQL 给 0.5 核
-    mem_limit: 512m  # MySQL 给 512MB 内存
+    cpus: '1'  # MySQL 给 0.5 核
+    mem_limit: 1024m  # MySQL 给 512MB 内存
 
   redis:
     image: redis:7.2-alpine
@@ -48,8 +48,8 @@ services:
     networks:
       - peach-net
     # 资源限制
-    cpus: '0.3'  # Redis 给 0.3 核（Redis 是内存型，CPU 需求低）
-    mem_limit: 256m  # Redis 给 256MB 内存
+    cpus: '1'  # Redis 给 0.3 核（Redis 是内存型，CPU 需求低）
+    mem_limit: 1024m  # Redis 给 256MB 内存
 
   nacos:
     image: nacos/nacos-server:v2.3.2
@@ -69,8 +69,8 @@ services:
     networks:
       - peach-net
     # 资源限制
-    cpus: '0.5'  # Nacos 给 0.5 核
-    mem_limit: 512m  # Nacos 给 512MB 内存
+    cpus: '1'  # Nacos 给 0.5 核
+    mem_limit: 1024m  # Nacos 给 512MB 内存
 
   peach-gateway:
     image: peach-cloud/peach-gateway:latest
