@@ -595,11 +595,17 @@
         </profile>
         <profile>
             <id>production</id>
+            <properties>
+                <project.profile>prod</project.profile>
+            </properties>
+        </profile>
+        <profile>
+            <id>docker</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <project.profile>prod</project.profile>
+                <project.profile>docker</project.profile>
             </properties>
         </profile>
         <profile>
@@ -668,8 +674,11 @@
                         <source>${java.version}</source>
                         <target>${java.version}</target>
                         <encoding>${project.build.sourceEncoding}</encoding>
-                        <!-- 关键：保留方法参数名，Spring需用到 -->
                         <parameters>true</parameters>
+                        <compilerArgs>
+                            <arg>-J-Dfile.encoding=UTF-8</arg>
+                            <arg>-J-Dsun.jnu.encoding=UTF-8</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
 
@@ -719,6 +728,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
             </plugin>
 
             <!-- 版本扁平化：解决 ${revision} 问题 -->
@@ -729,8 +741,6 @@
                 <configuration>
                     <!-- 只在必要时更新（推荐） -->
                     <updatePomFile>true</updatePomFile>
-                    <!-- clean 时不删除 -->
-                    <clean>true</clean>
                     <!-- 选择合适的模式 -->
                     <flattenMode>resolveCiFriendliesOnly</flattenMode>
                 </configuration>
@@ -740,6 +750,14 @@
                         <phase>process-resources</phase>
                         <goals>
                             <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <!-- clean 时删除 -->
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
                         </goals>
                     </execution>
                 </executions>

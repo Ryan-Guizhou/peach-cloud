@@ -90,9 +90,24 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <jvmArguments>-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8</jvmArguments>
+                </configuration>
             </plugin>
 
-            <!-- 2. (可选) Jib 容器化构建 -->
+            <!-- 2. 编译插件配置 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <parameters>true</parameters>
+                </configuration>
+            </plugin>
+
+            <!-- 3. (可选) Jib 容器化构建 -->
 <!--            <plugin>-->
 <!--                <groupId>com.google.cloud.tools</groupId>-->
 <!--                <artifactId>jib-maven-plugin</artifactId>-->

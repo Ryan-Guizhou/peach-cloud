@@ -1,13 +1,114 @@
-.git
-.idea
+# =========================
+# Git 相关文件
+# =========================
+.git/
+.gitignore
+.gitmodules
+.gitattributes
+
+# =========================
+# IDE 相关文件
+# =========================
+# IntelliJ IDEA
+.idea/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# VS Code
+.vscode/
+
+# NetBeans
+.nbproject/
+
+# =========================
+# 构建产物和依赖
+# =========================
+# Maven
+target/
+.mvn/
+mvnw.cmd
+mvnwDebug.cmd
+
+# Gradle
+.gradle/
+build/
+
+# Node.js (如果前端也在同一项目中)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# 日志和临时文件
+# =========================
+*.log
+logs/
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# =========================
+# 测试和覆盖率报告
+# =========================
+*.jar.original
+test-results/
+coverage/
+
+# =========================
+# 配置文件备份
+# =========================
+*~
+*.bak
+*.backup
+
+# =========================
+# 本地配置文件
+# =========================
+config/local.properties
+application-local.yml
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# =========================
+# 编译和构建缓存
+# =========================
+**/bin/
+**/obj/
+*.swp
+*.swo
+
+# =========================
+# 数据库相关
+# =========================
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+
+# =========================
+# Docker 相关忽略
+# =========================
+.dockerignore
+!Dockerfile
+!docker-compose.yml
+!docker-compose.prod.yml
+
+# =========================
+# 原有忽略规则
+# =========================
 .codex
 .claude
 .cursor
 .trae
-**/target
 **/.flattened-pom.xml
 peach-cloud-front
 doc
 sql
-bin
 README.md
