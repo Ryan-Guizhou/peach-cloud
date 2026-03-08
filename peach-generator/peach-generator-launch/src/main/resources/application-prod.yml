@@ -1,0 +1,21 @@
+server:
+  port: 18086
+spring:
+  application:
+    name: peach-generator
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: 4e7af3ed-7a49-4e3f-bdfc-67c20b1bfd05
+        group: PEACH-CLOUD
+      config:
+        server-addr: 127.0.0.1:8848
+        file-extension: yml
+        group: PEACH-CLOUD
+        namespace: 4e7af3ed-7a49-4e3f-bdfc-67c20b1bfd05
+        enabled: true
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+#      - optional:nacos:application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}

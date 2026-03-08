@@ -1,0 +1,24 @@
+server:
+  port: ${SERVER_PORT:18086}
+
+spring:
+  application:
+    name: ${SPRING_APPLICATION_NAME:peach-generator}
+
+  cloud:
+    nacos:
+      discovery:
+        # 关键修改：Docker 中用 nacos:8848，本地用 127.0.0.1:8849
+        server-addr: ${SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR:${NACOS_SERVER_ADDR:127.0.0.1:884}}
+        namespace: ${SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE:bb1fa0d2-f008-4ea0-8d2c-0d4f22bb3375}
+        group: ${SPRING_CLOUD_NACOS_DISCOVERY_GROUP:PEACH-CLOUD}
+      config:
+        server-addr: ${SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR:${NACOS_SERVER_ADDR:127.0.0.1:8849}}
+        file-extension: ${SPRING_CLOUD_NACOS_CONFIG_FILE_EXTENSION:yml}
+        group: ${SPRING_CLOUD_NACOS_CONFIG_GROUP:PEACH-CLOUD}
+        namespace: ${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:bb1fa0d2-f008-4ea0-8d2c-0d4f22bb3375}
+        encode: ${SPRING_CLOUD_NACOS_CONFIG_ENCODE:UTF-8}  # 添加编码配置
+
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
