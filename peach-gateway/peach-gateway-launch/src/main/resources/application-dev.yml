@@ -57,6 +57,13 @@ spring:
             - Path=/api/message/v3/api-docs
           filters:
             - SetPath=/v3/api-docs
+        # 代码生成服务 Swagger 文档路由
+        - id: peach-generator-swagger
+          uri: lb://peach-generator
+          predicates:
+            - Path=/api/generator/v3/api-docs
+          filters:
+            - SetPath=/v3/api-docs
         # 通用业务路由
         - id: peach-auth
           uri: lb://peach-auth
@@ -86,6 +93,12 @@ spring:
           uri: lb://peach-message  # 负载均衡转发到消息服务
           predicates:
             - Path=/api/message/**                # 匹配 Controller 中的路径
+          filters:
+            - StripPrefix=1
+        - id: peach-generator
+          uri: lb://peach-generator  # 负载均衡转发到消息服务
+          predicates:
+            - Path=/api/generator/**                # 匹配 Controller 中的路径
           filters:
             - StripPrefix=1
 

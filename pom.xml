@@ -63,6 +63,7 @@
         <module>peach-sample</module>
         <module>peach-message</module>
         <module>peach-setting</module>
+        <module>peach-generator</module>
     </modules>
 
     <dependencyManagement>
@@ -567,6 +568,27 @@
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-fileservice-openfeign-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-generator-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-generator-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-generator-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-generator-common</artifactId>
                 <version>${revision}</version>
             </dependency>
 
