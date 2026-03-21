@@ -24,4 +24,6 @@ public interface IRoleService {
     void delById(String id);
 
     void update(RoleQO roleQO);
+
+    List<RoleVO> selectByUserCode(RoleQO roleQO);
 }

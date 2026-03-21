@@ -65,9 +65,4 @@ public class UserOperLogServiceImpl implements IUserOperLogService {
             throw e; // 让上层感知失败
         }
     }
-
-    public static void main(String[] args) {
-        String s = "sdasd";
-        System.out.println(JSON.toJSON(s));
-    }
 }

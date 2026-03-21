@@ -1,6 +1,7 @@
 package com.peach.auth.entity;
 
 import com.peach.common.MapperGenerator;
+import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import javax.persistence.Column;
@@ -18,7 +19,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "PEACH_ROUTER")
 @Schema(description = "Router实体")
-public class RouterDO implements Serializable {
+public class RouterDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id

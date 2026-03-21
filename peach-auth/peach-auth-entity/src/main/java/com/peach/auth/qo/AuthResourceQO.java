@@ -1,5 +1,7 @@
 package com.peach.auth.qo;
 
+import com.peach.common.PeachEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -10,6 +12,7 @@ import java.io.Serializable;
  * @CreateTime 2026/1/17 18:09
  */
 @Data
-public class AuthResourceQO implements Serializable {
+@Schema(description = "AuthResource查询参数")
+public class AuthResourceQO extends PeachEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 }

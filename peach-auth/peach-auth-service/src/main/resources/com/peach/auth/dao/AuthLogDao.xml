@@ -165,14 +165,14 @@
         WHERE LOG_ID =  #{logId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.AuthLogVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.AuthLogDO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_LOG
         WHERE LOG_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.AuthLogVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.AuthLogDO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_LOG
@@ -182,7 +182,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.auth.entity.AuthLogDO" resultType="com.peach.auth.vo.AuthLogVO">
+    <select id="select" parameterType="com.peach.auth.entity.AuthLogDO" resultType="com.peach.auth.entity.AuthLogDO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_LOG

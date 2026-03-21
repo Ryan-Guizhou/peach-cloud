@@ -27,6 +27,10 @@
             <groupId>com.peach</groupId>
             <artifactId>peach-setting-service</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-auth-log-external</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

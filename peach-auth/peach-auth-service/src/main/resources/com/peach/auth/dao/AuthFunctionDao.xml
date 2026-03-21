@@ -3,26 +3,34 @@
 <mapper namespace="com.peach.auth.dao.AuthFunctionDao">
     <sql id="allColumn">
         ID,                                               PARTY_CODE,                                       PARTY_TYPE,                                       FUNC_CODE,
-        FISCAL,                                           STATE,                                            CREATE_USER,                                      CREATE_TIME,
-        APP_ID,                                           LAST_MODIFY_TIME,                                 IS_DELETE
+        FISCAL,                                           STATE,                                            APP_ID,                                           IS_DELETE,
+        CREATE_TIME,                                      CREATE_USER_ID,                                   CREATE_USER_CODE,                                 CREATE_USER_NAME,
+        MODIFY_TIME,                                      MODIFY_USER_ID,                                   MODIFY_USER_CODE,                                 UPDATE_USER_NAME
+
     </sql>
 
     <sql id="allColumnAlias">
         ID as id,                                         PARTY_CODE as partyCode,                          PARTY_TYPE as partyType,                          FUNC_CODE as funcCode,
-        FISCAL as fiscal,                                 STATE as state,                                   CREATE_USER as createUser,                        CREATE_TIME as createTime,
-        APP_ID as appId,                                  LAST_MODIFY_TIME as lastModifyTime,               IS_DELETE as isDelete
+        FISCAL as fiscal,                                 STATE as state,                                   APP_ID as appId,                                  IS_DELETE as isDelete,
+        CREATE_TIME as createTime,                        CREATE_USER_ID as createUserId,                   CREATE_USER_CODE as createUserCode,               CREATE_USER_NAME as createUserName,
+        MODIFY_TIME as modifyTime,                        MODIFY_USER_ID as modifyUserId,                   MODIFY_USER_CODE as modifyUserCode,               UPDATE_USER_NAME as modifyUserName
+
     </sql>
 
     <sql id="allColumnValue">
         #{id,jdbcType=VARCHAR},                 #{partyCode,jdbcType=VARCHAR},          #{partyType,jdbcType=VARCHAR},          #{funcCode,jdbcType=VARCHAR},
-        #{fiscal,jdbcType=INTEGER},             #{state,jdbcType=VARCHAR},              #{createUser,jdbcType=VARCHAR},         #{createTime,jdbcType=VARCHAR},
-        #{appId,jdbcType=VARCHAR},              #{lastModifyTime,jdbcType=VARCHAR},     #{isDelete,jdbcType=INTEGER}
+        #{fiscal,jdbcType=INTEGER},             #{state,jdbcType=VARCHAR},              #{appId,jdbcType=VARCHAR},              #{isDelete,jdbcType=INTEGER},
+        #{createTime,jdbcType=VARCHAR},         #{createUserId,jdbcType=VARCHAR},       #{createUserCode,jdbcType=VARCHAR},     #{createUserName,jdbcType=VARCHAR},
+        #{modifyTime,jdbcType=VARCHAR},         #{modifyUserId,jdbcType=VARCHAR},       #{modifyUserCode,jdbcType=VARCHAR},     #{modifyUserName,jdbcType=VARCHAR}
+
     </sql>
 
     <sql id="itemAllColumnValue">
         #{item.id,jdbcType=VARCHAR},            #{item.partyCode,jdbcType=VARCHAR},     #{item.partyType,jdbcType=VARCHAR},     #{item.funcCode,jdbcType=VARCHAR},
-        #{item.fiscal,jdbcType=INTEGER},        #{item.state,jdbcType=VARCHAR},         #{item.createUser,jdbcType=VARCHAR},    #{item.createTime,jdbcType=VARCHAR},
-        #{item.appId,jdbcType=VARCHAR},         #{item.lastModifyTime,jdbcType=VARCHAR},#{item.isDelete,jdbcType=INTEGER}
+        #{item.fiscal,jdbcType=INTEGER},        #{item.state,jdbcType=VARCHAR},         #{item.appId,jdbcType=VARCHAR},         #{item.isDelete,jdbcType=INTEGER},
+        #{item.createTime,jdbcType=VARCHAR},    #{item.createUserId,jdbcType=VARCHAR},  #{item.createUserCode,jdbcType=VARCHAR},#{item.createUserName,jdbcType=VARCHAR},
+        #{item.modifyTime,jdbcType=VARCHAR},    #{item.modifyUserId,jdbcType=VARCHAR},  #{item.modifyUserCode,jdbcType=VARCHAR},#{item.modifyUserName,jdbcType=VARCHAR}
+
     </sql>
 
     <sql id="allColumnSet">
@@ -42,20 +50,35 @@
             <if test="state != null and state != ''">
                 STATE = #{state,jdbcType=VARCHAR},
             </if>
-            <if test="createUser != null and createUser != ''">
-                CREATE_USER = #{createUser,jdbcType=VARCHAR},
+            <if test="appId != null and appId != ''">
+                APP_ID = #{appId,jdbcType=VARCHAR},
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE = #{isDelete,jdbcType=INTEGER},
             </if>
             <if test="createTime != null and createTime != ''">
                 CREATE_TIME = #{createTime,jdbcType=VARCHAR},
             </if>
-            <if test="appId != null and appId != ''">
-                APP_ID = #{appId,jdbcType=VARCHAR},
+            <if test="createUserId != null and createUserId != ''">
+                CREATE_USER_ID = #{createUserId,jdbcType=VARCHAR},
             </if>
-            <if test="lastModifyTime != null and lastModifyTime != ''">
-                LAST_MODIFY_TIME = #{lastModifyTime,jdbcType=VARCHAR},
+            <if test="createUserCode != null and createUserCode != ''">
+                CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
             </if>
-            <if test="isDelete != null">
-                IS_DELETE = #{isDelete,jdbcType=INTEGER},
+            <if test="createUserName != null and createUserName != ''">
+                CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyUserId != null and modifyUserId != ''">
+                MODIFY_USER_ID = #{modifyUserId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyUserCode != null and modifyUserCode != ''">
+                MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyUserName != null and modifyUserName != ''">
+                UPDATE_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -77,20 +100,35 @@
             <if test="state != null and state != ''">
                 STATE,
             </if>
-            <if test="createUser != null and createUser != ''">
-                CREATE_USER,
+            <if test="appId != null and appId != ''">
+                APP_ID,
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE,
             </if>
             <if test="createTime != null and createTime != ''">
                 CREATE_TIME,
             </if>
-            <if test="appId != null and appId != ''">
-                APP_ID,
+            <if test="createUserId != null and createUserId != ''">
+                CREATE_USER_ID,
             </if>
-            <if test="lastModifyTime != null and lastModifyTime != ''">
-                LAST_MODIFY_TIME,
+            <if test="createUserCode != null and createUserCode != ''">
+                CREATE_USER_CODE,
             </if>
-            <if test="isDelete != null">
-                IS_DELETE,
+            <if test="createUserName != null and createUserName != ''">
+                CREATE_USER_NAME,
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME,
+            </if>
+            <if test="modifyUserId != null and modifyUserId != ''">
+                MODIFY_USER_ID,
+            </if>
+            <if test="modifyUserCode != null and modifyUserCode != ''">
+                MODIFY_USER_CODE,
+            </if>
+            <if test="modifyUserName != null and modifyUserName != ''">
+                UPDATE_USER_NAME,
             </if>
         </trim>
     </sql>
@@ -112,20 +150,35 @@
             <if test="state != null and state != ''">
                 #{state,jdbcType=VARCHAR},
             </if>
-            <if test="createUser != null and createUser != ''">
-                #{createUser,jdbcType=VARCHAR},
+            <if test="appId != null and appId != ''">
+                #{appId,jdbcType=VARCHAR},
+            </if>
+            <if test="isDelete != null">
+                #{isDelete,jdbcType=INTEGER},
             </if>
             <if test="createTime != null and createTime != ''">
                 #{createTime,jdbcType=VARCHAR},
             </if>
-            <if test="appId != null and appId != ''">
-                #{appId,jdbcType=VARCHAR},
+            <if test="createUserId != null and createUserId != ''">
+                #{createUserId,jdbcType=VARCHAR},
             </if>
-            <if test="lastModifyTime != null and lastModifyTime != ''">
-                #{lastModifyTime,jdbcType=VARCHAR},
+            <if test="createUserCode != null and createUserCode != ''">
+                #{createUserCode,jdbcType=VARCHAR},
             </if>
-            <if test="isDelete != null">
-                #{isDelete,jdbcType=INTEGER},
+            <if test="createUserName != null and createUserName != ''">
+                #{createUserName,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyUserId != null and modifyUserId != ''">
+                #{modifyUserId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyUserCode != null and modifyUserCode != ''">
+                #{modifyUserCode,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyUserName != null and modifyUserName != ''">
+                #{modifyUserName,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -149,20 +202,35 @@
         <if test="state != null and state != ''">
             AND STATE = #{state,jdbcType=VARCHAR}
         </if>
-        <if test="createUser != null and createUser != ''">
-            AND CREATE_USER = #{createUser,jdbcType=VARCHAR}
+        <if test="appId != null and appId != ''">
+            AND APP_ID = #{appId,jdbcType=VARCHAR}
+        </if>
+        <if test="isDelete != null">
+            AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
         </if>
         <if test="createTime != null and createTime != ''">
             AND CREATE_TIME = #{createTime,jdbcType=VARCHAR}
         </if>
-        <if test="appId != null and appId != ''">
-            AND APP_ID = #{appId,jdbcType=VARCHAR}
+        <if test="createUserId != null and createUserId != ''">
+            AND CREATE_USER_ID = #{createUserId,jdbcType=VARCHAR}
         </if>
-        <if test="lastModifyTime != null and lastModifyTime != ''">
-            AND LAST_MODIFY_TIME = #{lastModifyTime,jdbcType=VARCHAR}
+        <if test="createUserCode != null and createUserCode != ''">
+            AND CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR}
         </if>
-        <if test="isDelete != null">
-            AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
+        <if test="createUserName != null and createUserName != ''">
+            AND CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyTime != null and modifyTime != ''">
+            AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyUserId != null and modifyUserId != ''">
+            AND MODIFY_USER_ID = #{modifyUserId,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyUserCode != null and modifyUserCode != ''">
+            AND MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyUserName != null and modifyUserName != ''">
+            AND UPDATE_USER_NAME = #{modifyUserName,jdbcType=VARCHAR}
         </if>
     </sql>
 
@@ -217,14 +285,14 @@
         WHERE ID =  #{id,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.AuthFunctionVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.AuthFunctionDO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_FUNCTION
         WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.AuthFunctionVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.AuthFunctionDO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_FUNCTION
@@ -234,7 +302,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.auth.entity.AuthFunctionDO" resultType="com.peach.auth.vo.AuthFunctionVO">
+    <select id="select" parameterType="com.peach.auth.entity.AuthFunctionDO" resultType="com.peach.auth.entity.AuthFunctionDO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_AUTH_FUNCTION

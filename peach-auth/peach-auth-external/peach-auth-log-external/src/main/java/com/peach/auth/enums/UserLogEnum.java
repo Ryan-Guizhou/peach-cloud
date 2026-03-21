@@ -19,6 +19,8 @@ public interface UserLogEnum {
 
         SCHEDULESERVICE("SCHEDULESERVICE","定时任务模块"),
 
+        SYSCONFIG("SYSCONFIG","系统配置"),
+
         DEFAULT("UNKNOWN","未知"),
         ;
 

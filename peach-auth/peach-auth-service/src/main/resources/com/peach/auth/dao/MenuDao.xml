@@ -6,9 +6,10 @@
         MENU_URL,                                         MENU_PARAM,                                       PARENT_MENU_ID,                                   MENU_LEVEL,
         SORT_NO,                                          COLLAPSE_ICON,                                    EXPAND_ICON,                                      MENU_SEQ,
         OPEN_MODE,                                        SUBCOUNT,                                         FUNC_CODE,                                        MENU_APP_ID,
-        APP_ID,                                           CREATE_TIME,                                      LAST_MODIFY_TIME,                                 IS_DELETE,
-        IS_DISABLE,                                       IS_SHOW,                                          SF_BLANK,                                         MENU_ICON
-
+        APP_ID,                                           IS_DELETE,                                        IS_DISABLE,                                       IS_SHOW,
+        SF_BLANK,                                         MENU_ICON,                                        CREATE_TIME,                                      CREATE_USER_ID,
+        CREATE_USER_CODE,                                 CREATE_USER_NAME,                                 MODIFY_TIME,                                      MODIFY_USER_ID,
+        MODIFY_USER_CODE,                                 UPDATE_USER_NAME
     </sql>
 
     <sql id="allColumnAlias">
@@ -16,9 +17,10 @@
         MENU_URL as menuUrl,                              MENU_PARAM as menuParam,                          PARENT_MENU_ID as parentMenuId,                   MENU_LEVEL as menuLevel,
         SORT_NO as sortNo,                                COLLAPSE_ICON as collapseIcon,                    EXPAND_ICON as expandIcon,                        MENU_SEQ as menuSeq,
         OPEN_MODE as openMode,                            SUBCOUNT as subcount,                             FUNC_CODE as funcCode,                            MENU_APP_ID as menuAppId,
-        APP_ID as appId,                                  CREATE_TIME as createTime,                        LAST_MODIFY_TIME as lastModifyTime,               IS_DELETE as isDelete,
-        IS_DISABLE as isDisable,                          IS_SHOW as isShow,                                SF_BLANK as sfBlank,                              MENU_ICON as menuIcon
-
+        APP_ID as appId,                                  IS_DELETE as isDelete,                            IS_DISABLE as isDisable,                          IS_SHOW as isShow,
+        SF_BLANK as sfBlank,                              MENU_ICON as menuIcon,                            CREATE_TIME as createTime,                        CREATE_USER_ID as createUserId,
+        CREATE_USER_CODE as createUserCode,               CREATE_USER_NAME as createUserName,               MODIFY_TIME as modifyTime,                        MODIFY_USER_ID as modifyUserId,
+        MODIFY_USER_CODE as modifyUserCode,               UPDATE_USER_NAME as modifyUserName
     </sql>
 
     <sql id="allColumnValue">
@@ -26,9 +28,10 @@
         #{menuUrl,jdbcType=VARCHAR},            #{menuParam,jdbcType=VARCHAR},          #{parentMenuId,jdbcType=VARCHAR},       #{menuLevel,jdbcType=VARCHAR},
         #{sortNo,jdbcType=INTEGER},             #{collapseIcon,jdbcType=VARCHAR},       #{expandIcon,jdbcType=VARCHAR},         #{menuSeq,jdbcType=VARCHAR},
         #{openMode,jdbcType=VARCHAR},           #{subcount,jdbcType=VARCHAR},           #{funcCode,jdbcType=VARCHAR},           #{menuAppId,jdbcType=VARCHAR},
-        #{appId,jdbcType=VARCHAR},              #{createTime,jdbcType=VARCHAR},         #{lastModifyTime,jdbcType=VARCHAR},     #{isDelete,jdbcType=INTEGER},
-        #{isDisable,jdbcType=INTEGER},          #{isShow,jdbcType=INTEGER},             #{sfBlank,jdbcType=INTEGER},            #{menuIcon,jdbcType=VARCHAR}
-
+        #{appId,jdbcType=VARCHAR},              #{isDelete,jdbcType=INTEGER},           #{isDisable,jdbcType=INTEGER},          #{isShow,jdbcType=INTEGER},
+        #{sfBlank,jdbcType=INTEGER},            #{menuIcon,jdbcType=VARCHAR},           #{createTime,jdbcType=VARCHAR},         #{createUserId,jdbcType=VARCHAR},
+        #{createUserCode,jdbcType=VARCHAR},     #{createUserName,jdbcType=VARCHAR},     #{modifyTime,jdbcType=VARCHAR},         #{modifyUserId,jdbcType=VARCHAR},
+        #{modifyUserCode,jdbcType=VARCHAR},     #{modifyUserName,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
@@ -36,9 +39,10 @@
         #{item.menuUrl,jdbcType=VARCHAR},       #{item.menuParam,jdbcType=VARCHAR},     #{item.parentMenuId,jdbcType=VARCHAR},  #{item.menuLevel,jdbcType=VARCHAR},
         #{item.sortNo,jdbcType=INTEGER},        #{item.collapseIcon,jdbcType=VARCHAR},  #{item.expandIcon,jdbcType=VARCHAR},    #{item.menuSeq,jdbcType=VARCHAR},
         #{item.openMode,jdbcType=VARCHAR},      #{item.subcount,jdbcType=VARCHAR},      #{item.funcCode,jdbcType=VARCHAR},      #{item.menuAppId,jdbcType=VARCHAR},
-        #{item.appId,jdbcType=VARCHAR},         #{item.createTime,jdbcType=VARCHAR},    #{item.lastModifyTime,jdbcType=VARCHAR},#{item.isDelete,jdbcType=INTEGER},
-        #{item.isDisable,jdbcType=INTEGER},     #{item.isShow,jdbcType=INTEGER},        #{item.sfBlank,jdbcType=INTEGER},       #{item.menuIcon,jdbcType=VARCHAR}
-
+        #{item.appId,jdbcType=VARCHAR},         #{item.isDelete,jdbcType=INTEGER},      #{item.isDisable,jdbcType=INTEGER},     #{item.isShow,jdbcType=INTEGER},
+        #{item.sfBlank,jdbcType=INTEGER},       #{item.menuIcon,jdbcType=VARCHAR},      #{item.createTime,jdbcType=VARCHAR},    #{item.createUserId,jdbcType=VARCHAR},
+        #{item.createUserCode,jdbcType=VARCHAR},#{item.createUserName,jdbcType=VARCHAR},#{item.modifyTime,jdbcType=VARCHAR},    #{item.modifyUserId,jdbcType=VARCHAR},
+        #{item.modifyUserCode,jdbcType=VARCHAR},#{item.modifyUserName,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
@@ -91,12 +95,6 @@
             <if test="appId != null and appId != ''">
                 APP_ID = #{appId,jdbcType=VARCHAR},
             </if>
-            <if test="createTime != null and createTime != ''">
-                CREATE_TIME = #{createTime,jdbcType=VARCHAR},
-            </if>
-            <if test="lastModifyTime != null and lastModifyTime != ''">
-                LAST_MODIFY_TIME = #{lastModifyTime,jdbcType=VARCHAR},
-            </if>
             <if test="isDelete != null">
                 IS_DELETE = #{isDelete,jdbcType=INTEGER},
             </if>
@@ -111,6 +109,30 @@
             </if>
             <if test="menuIcon != null and menuIcon != ''">
                 MENU_ICON = #{menuIcon,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                CREATE_TIME = #{createTime,jdbcType=VARCHAR},
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                CREATE_USER_ID = #{createUserId,jdbcType=VARCHAR},
+            </if>
+            <if test="createUserCode != null and createUserCode != ''">
+                CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
+            </if>
+            <if test="createUserName != null and createUserName != ''">
+                CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyUserId != null and modifyUserId != ''">
+                MODIFY_USER_ID = #{modifyUserId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyUserCode != null and modifyUserCode != ''">
+                MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyUserName != null and modifyUserName != ''">
+                UPDATE_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -165,12 +187,6 @@
             <if test="appId != null and appId != ''">
                 APP_ID,
             </if>
-            <if test="createTime != null and createTime != ''">
-                CREATE_TIME,
-            </if>
-            <if test="lastModifyTime != null and lastModifyTime != ''">
-                LAST_MODIFY_TIME,
-            </if>
             <if test="isDelete != null">
                 IS_DELETE,
             </if>
@@ -185,6 +201,30 @@
             </if>
             <if test="menuIcon != null and menuIcon != ''">
                 MENU_ICON,
+            </if>
+            <if test="createTime != null and createTime != ''">
+                CREATE_TIME,
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                CREATE_USER_ID,
+            </if>
+            <if test="createUserCode != null and createUserCode != ''">
+                CREATE_USER_CODE,
+            </if>
+            <if test="createUserName != null and createUserName != ''">
+                CREATE_USER_NAME,
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME,
+            </if>
+            <if test="modifyUserId != null and modifyUserId != ''">
+                MODIFY_USER_ID,
+            </if>
+            <if test="modifyUserCode != null and modifyUserCode != ''">
+                MODIFY_USER_CODE,
+            </if>
+            <if test="modifyUserName != null and modifyUserName != ''">
+                UPDATE_USER_NAME,
             </if>
         </trim>
     </sql>
@@ -239,12 +279,6 @@
             <if test="appId != null and appId != ''">
                 #{appId,jdbcType=VARCHAR},
             </if>
-            <if test="createTime != null and createTime != ''">
-                #{createTime,jdbcType=VARCHAR},
-            </if>
-            <if test="lastModifyTime != null and lastModifyTime != ''">
-                #{lastModifyTime,jdbcType=VARCHAR},
-            </if>
             <if test="isDelete != null">
                 #{isDelete,jdbcType=INTEGER},
             </if>
@@ -259,6 +293,30 @@
             </if>
             <if test="menuIcon != null and menuIcon != ''">
                 #{menuIcon,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                #{createTime,jdbcType=VARCHAR},
+            </if>
+            <if test="createUserId != null and createUserId != ''">
+                #{createUserId,jdbcType=VARCHAR},
+            </if>
+            <if test="createUserCode != null and createUserCode != ''">
+                #{createUserCode,jdbcType=VARCHAR},
+            </if>
+            <if test="createUserName != null and createUserName != ''">
+                #{createUserName,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyUserId != null and modifyUserId != ''">
+                #{modifyUserId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyUserCode != null and modifyUserCode != ''">
+                #{modifyUserCode,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyUserName != null and modifyUserName != ''">
+                #{modifyUserName,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -315,12 +373,6 @@
         <if test="appId != null and appId != ''">
             AND APP_ID = #{appId,jdbcType=VARCHAR}
         </if>
-        <if test="createTime != null and createTime != ''">
-            AND CREATE_TIME = #{createTime,jdbcType=VARCHAR}
-        </if>
-        <if test="lastModifyTime != null and lastModifyTime != ''">
-            AND LAST_MODIFY_TIME = #{lastModifyTime,jdbcType=VARCHAR}
-        </if>
         <if test="isDelete != null">
             AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
         </if>
@@ -335,6 +387,30 @@
         </if>
         <if test="menuIcon != null and menuIcon != ''">
             AND MENU_ICON = #{menuIcon,jdbcType=VARCHAR}
+        </if>
+        <if test="createTime != null and createTime != ''">
+            AND CREATE_TIME = #{createTime,jdbcType=VARCHAR}
+        </if>
+        <if test="createUserId != null and createUserId != ''">
+            AND CREATE_USER_ID = #{createUserId,jdbcType=VARCHAR}
+        </if>
+        <if test="createUserCode != null and createUserCode != ''">
+            AND CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR}
+        </if>
+        <if test="createUserName != null and createUserName != ''">
+            AND CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyTime != null and modifyTime != ''">
+            AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyUserId != null and modifyUserId != ''">
+            AND MODIFY_USER_ID = #{modifyUserId,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyUserCode != null and modifyUserCode != ''">
+            AND MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyUserName != null and modifyUserName != ''">
+            AND UPDATE_USER_NAME = #{modifyUserName,jdbcType=VARCHAR}
         </if>
     </sql>
 
@@ -389,14 +465,14 @@
         WHERE MENU_ID =  #{menuId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.MenuVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.MenuDO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_MENU
         WHERE MENU_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.MenuVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.MenuDO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_MENU
@@ -406,7 +482,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.auth.entity.MenuDO" resultType="com.peach.auth.vo.MenuVO">
+    <select id="select" parameterType="com.peach.auth.entity.MenuDO" resultType="com.peach.auth.entity.MenuDO">
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_MENU

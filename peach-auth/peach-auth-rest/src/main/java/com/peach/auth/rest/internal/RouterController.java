@@ -10,6 +10,7 @@ import com.peach.auth.dto.RouterDTO;
 import com.peach.auth.qo.RouterQO;
 import com.peach.auth.vo.RouterVO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
@@ -64,7 +65,7 @@ public class RouterController {
     @DeleteMapping("/delById")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.DELETE,
                  optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除路由信息,路由ID:['+#p0+']'")
-    public Response delById(String routerId) {
+    public Response delById( String routerId) {
         routerService.delById(routerId);
         return Response.success();
     }

@@ -1,6 +1,7 @@
 package com.peach.auth.entity;
 
 import com.peach.common.MapperGenerator;
+import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import javax.persistence.Column;
@@ -18,7 +19,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "PEACH_USER")
 @Schema(description = "User实体")
-public class UserDO implements Serializable {
+public class UserDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -89,18 +90,6 @@ public class UserDO implements Serializable {
     @Column(name = "EMAIL")
     @Schema(description = "邮箱")
     private String email;
-
-    @Column(name = "CREATE_USER")
-    @Schema(description = "创建人")
-    private String createUser;
-
-    @Column(name = "CREATE_TIME")
-    @Schema(description = "创建时间")
-    private String createTime;
-
-    @Column(name = "LAST_MODIFY_TIME")
-    @Schema(description = "最新修改时间")
-    private String lastModifyTime;
 
     @Column(name = "IS_DELETE")
     @Schema(description = "是否删除")

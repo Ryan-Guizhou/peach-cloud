@@ -15,4 +15,11 @@ import java.io.Serializable;
 @Schema(description = "角色查询参数")
 public class RoleQO extends PeachEntity implements Serializable {
     private static final long serialVersionUID = 1L;
+
+    @Schema(description = "年度")
+    private Integer fiscal;
+
+    @Schema(description = "用户账号")
+    private String userCode;
+
 }

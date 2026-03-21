@@ -22,7 +22,7 @@ import java.util.Map;
 @Slf4j
 @Indexed
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/auth")
 @Tag(name = "HealthController", description = "用户服务健康检查")
 public class HealthController {
 

@@ -1,6 +1,7 @@
 package com.peach.auth.entity;
 
 import com.peach.common.MapperGenerator;
+import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import javax.persistence.Column;
@@ -19,7 +20,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "PEACH_APPLICATION")
 @Schema(description = "PeachApplication实体")
-public class ApplicationDO implements Serializable {
+public class ApplicationDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -50,10 +51,6 @@ public class ApplicationDO implements Serializable {
     @Column(name = "SORT_NUM")
     @Schema(description = "显示顺序")
     private String sortNum;
-
-    @Column(name = "LAST_MODIFY_TIME")
-    @Schema(description = "最新修改时间")
-    private String lastModifyTime;
 
     @Column(name = "IS_DELETE")
     @Schema(description = "是否删除")

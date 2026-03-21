@@ -69,4 +69,9 @@ public class RoleServiceImpl implements IRoleService {
     public void update(RoleQO roleQO) {
 
     }
+
+    @Override
+    public List<RoleVO> selectByUserCode(RoleQO roleQO) {
+        return roleDao.selectByUser(roleQO);
+    }
 }

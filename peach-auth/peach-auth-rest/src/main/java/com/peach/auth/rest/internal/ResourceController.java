@@ -1,9 +1,12 @@
 package com.peach.auth.rest.internal;
 
 import com.peach.auth.service.IResouceService;
+import com.peach.common.response.Response;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,4 +26,10 @@ public class ResourceController {
 
     @Resource
     private IResouceService resourceService;
+
+    @Operation(summary = "查询资源列表")
+    @PostMapping("/query")
+    public Response query() {
+        return Response.success();
+    }
 }

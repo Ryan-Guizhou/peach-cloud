@@ -104,9 +104,4 @@ public class UserOperLogDO implements Serializable {
     private String requestMethod;
 
 
-    public static void main(String[] args) {
-        System.out.print( MapperGenerator.genMapper(UserOperLogDO.class));
-    }
-
-
 }

@@ -18,7 +18,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "PEACH_AUTH_LOG")
 @Schema(description = "AuthLog实体")
-public class AuthLogDO implements Serializable {
+public class AuthLogDO  implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
