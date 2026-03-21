@@ -1,5 +1,7 @@
 package com.peach.common;
 
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.apache.commons.beanutils.BeanUtils;
 
@@ -14,8 +16,10 @@ import java.util.Map;
 @Data
 public class PeachEntity implements Serializable {
 
+    @Schema(description = "分页页码")
     private Integer pageNum = 1;
 
+    @Schema(description = "分页大小")
     private Integer pageSize = 20;
 
     public <T extends PeachEntity> T clone(Map source) {

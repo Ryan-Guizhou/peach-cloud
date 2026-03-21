@@ -50,7 +50,7 @@
         <asw.version>1.12.170</asw.version>
         <cos.version>5.6.227</cos.version>
         <bos.version>0.10.228</bos.version>
-        <bos.version>2.2.9</bos.version>
+        <swagger-anno>2.2.9</swagger-anno>
     </properties>
 
     <modules>
@@ -605,11 +605,6 @@
                 <version>${revision}</version>
             </dependency>
 
-            <dependency>
-                <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations</artifactId>
-                <version>{swagger.version}</version>
-            </dependency>
 
         </dependencies>
 

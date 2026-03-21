@@ -3,6 +3,8 @@ package com.peach.common.response;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.peach.common.util.StringUtil;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 
 import java.io.Serializable;
 
@@ -15,11 +17,14 @@ public class Response implements Serializable {
 
     private static final long serialVersionUID = 2402460635136759519L;
 
+    @Schema(description = "状态码")
     private String code;
 
+    @Schema(description = "操作信息")
     private String msg;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Schema(description = "返回数据")
     private Object data;
 
     public String getCode() {
