@@ -7,6 +7,7 @@ import com.peach.redis.config.MultiCacheConfig;
 import com.peach.redis.manager.MultiCacheManager;
 import com.peach.redis.manager.MultiCacheManagerService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,6 +21,7 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import java.util.Objects;
 
 @Slf4j
+@AutoConfiguration
 @AutoConfigureAfter(RedisConfig.class)
 @EnableConfigurationProperties(MultiCacheConfig.class)
 @ConditionalOnProperty(prefix = "peach.multicache", name = "enabled", matchIfMissing = true)

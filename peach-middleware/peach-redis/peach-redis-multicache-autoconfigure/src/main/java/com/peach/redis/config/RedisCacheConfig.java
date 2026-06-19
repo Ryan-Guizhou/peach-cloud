@@ -27,6 +27,12 @@ public class RedisCacheConfig {
     private Map<String, Duration> expires = new HashMap<>();
 
     /**
+     * 过期时间随机抖动范围，默认0表示不启用。
+     * 实际过期时间 = 基础TTL + [0, randomJitter]
+     */
+    private Duration randomJitter = Duration.ZERO;
+
+    /**
      * 缓存更新时通知其他节点的topic名称
      */
     private String topic = MultiCacheConstant.CACHE_MESSAGE_TOPIC;

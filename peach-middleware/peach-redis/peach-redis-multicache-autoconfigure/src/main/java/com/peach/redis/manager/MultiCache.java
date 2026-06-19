@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @Author Mr Shu
@@ -54,6 +55,7 @@ public class MultiCache extends AbstractValueAdaptingCache {
 
     private final Map<String, Duration> expires;
 
+    private final Duration randomJitter;
 
     protected MultiCache(String cacheName, RedisTemplate redisTemplate, Cache<Object, Object> caffeineCache, MultiCacheConfig config) {
         super(config.isCacheNullValues());
@@ -63,6 +65,7 @@ public class MultiCache extends AbstractValueAdaptingCache {
         this.cachePrefix = config.getCachePrefix();
         this.defaultExpiration = config.getRedis().getDefaultExpiration();
         this.expires = config.getRedis().getExpires();
+        this.randomJitter = config.getRedis().getRandomJitter();
         this.ecivtCacheTopic = config.getRedis().getTopic();
     }
 
@@ -214,7 +217,23 @@ public class MultiCache extends AbstractValueAdaptingCache {
      */
     private Duration getExpire() {
         Duration cacheNameExpire = expires.get(this.cacheName);
-        return cacheNameExpire == null ? defaultExpiration : cacheNameExpire;
+        Duration baseExpire = cacheNameExpire == null ? defaultExpiration : cacheNameExpire;
+        return applyRandomJitter(baseExpire);
+    }
+
+    /**
+     * 给基础过期时间增加随机抖动，避免同一时刻批量过期导致雪崩。
+     *
+     * @param baseExpire 基础过期时间
+     * @return 叠加随机抖动后的过期时间
+     */
+    private Duration applyRandomJitter(Duration baseExpire) {
+        if (baseExpire == null || baseExpire.isNegative() || randomJitter == null || randomJitter.isZero() || randomJitter.isNegative()) {
+            return baseExpire;
+        }
+        long jitterMillis = randomJitter.toMillis();
+        long randomMillis = ThreadLocalRandom.current().nextLong(jitterMillis + 1);
+        return baseExpire.plusMillis(randomMillis);
     }
 
     /**
