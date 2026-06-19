@@ -44,13 +44,15 @@
         <user-agent.version>1.2.3</user-agent.version>
         <sa-token.version>1.37.0</sa-token.version>
 
-        <oss.version>2.8.3</oss.version>
+        <oss.version>3.18.5</oss.version>
         <obs.version>3.24.9</obs.version>
+        <esdk-obs.version>3.25.10</esdk-obs.version>
         <minio.version>8.5.12</minio.version>
         <asw.version>1.12.170</asw.version>
         <cos.version>5.6.227</cos.version>
         <bos.version>0.10.228</bos.version>
-        <swagger-anno>2.2.9</swagger-anno>
+        <swagger-anno.version>2.2.9</swagger-anno.version>
+        <jsch.version>0.1.55</jsch.version>
     </properties>
 
     <modules>
@@ -259,6 +261,12 @@
                 <version>${cos.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.huaweicloud</groupId>
+                <artifactId>esdk-obs-java</artifactId>
+                <version>${esdk-obs.version}</version>
+            </dependency>
+
             <!-- 多级缓存自动装配 -->
             <dependency>
                 <groupId>com.peach</groupId>
@@ -318,7 +326,7 @@
             <!-- 文件 -->
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-file</artifactId>
+                <artifactId>peach-storage</artifactId>
                 <version>${revision}</version>
             </dependency>
 
@@ -603,6 +611,25 @@
                 <groupId>com.peach</groupId>
                 <artifactId>peach-mongo-starter</artifactId>
                 <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-store-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-store-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.jcraft</groupId>
+                <artifactId>jsch</artifactId>
+                <version>${jsch.version}</version>
             </dependency>
 
 

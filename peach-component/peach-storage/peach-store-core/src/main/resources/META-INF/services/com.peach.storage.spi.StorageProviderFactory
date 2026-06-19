@@ -1,0 +1,8 @@
+com.peach.storage.factory.LocalFileStorageProviderFactory
+com.peach.storage.factory.OssStorageProviderFactory
+com.peach.storage.factory.ObsStorageProviderFactory
+com.peach.storage.factory.S3StorageProviderFactory
+com.peach.storage.factory.MinioStorageProviderFactory
+com.peach.storage.factory.CosStorageProviderFactory
+com.peach.storage.factory.BosStorageProviderFactory
+com.peach.storage.factory.CephStorageProviderFactory
