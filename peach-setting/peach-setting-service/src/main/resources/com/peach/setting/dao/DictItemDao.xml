@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.setting.dao.DictItemDao">
+    <sql id="allColumn">
+        ID,                                               DICT_CODE,                                        ITEM_CODE,                                        ITEM_VALUE,
+        SORT_ORDER,                                       MESSAGE_KEY,                                      EXTRA_JSON,                                       STATUS,
+        CREATED_TIME,                                     CREATOR_ID,                                     MODIFY_TIME,                                     MODIFIER
+    </sql>
+
+    <sql id="allColumnAlias">
+        ID as id,                                         DICT_CODE as dictCode,                            ITEM_CODE as itemCode,                            ITEM_VALUE as itemValue,
+        SORT_ORDER as sortOrder,                          MESSAGE_KEY as messageKey,                        EXTRA_JSON as extraJson,                          STATUS as status,
+        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,                      MODIFIER as modifierId
+    </sql>
+
+    <sql id="allColumnValue">
+        #{id,jdbcType=VARCHAR},                 #{dictCode,jdbcType=VARCHAR},           #{itemCode,jdbcType=VARCHAR},           #{itemValue,jdbcType=VARCHAR},
+        #{sortOrder,jdbcType=INTEGER},          #{messageKey,jdbcType=VARCHAR},         #{extraJson,jdbcType=VARCHAR},          #{status,jdbcType=INTEGER},
+        #{createdTime,jdbcType=VARCHAR},        #{creatorId,jdbcType=VARCHAR},        #{modifyTime,jdbcType=VARCHAR},        #{modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.id,jdbcType=VARCHAR},            #{item.dictCode,jdbcType=VARCHAR},      #{item.itemCode,jdbcType=VARCHAR},      #{item.itemValue,jdbcType=VARCHAR},
+        #{item.sortOrder,jdbcType=INTEGER},     #{item.messageKey,jdbcType=VARCHAR},    #{item.extraJson,jdbcType=VARCHAR},     #{item.status,jdbcType=INTEGER},
+        #{item.createdTime,jdbcType=VARCHAR},   #{item.creatorId,jdbcType=VARCHAR},   #{item.modifyTime,jdbcType=VARCHAR},   #{item.modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="dictCode != null and dictCode != ''">
+                DICT_CODE = #{dictCode,jdbcType=VARCHAR},
+            </if>
+            <if test="itemCode != null and itemCode != ''">
+                ITEM_CODE = #{itemCode,jdbcType=VARCHAR},
+            </if>
+            <if test="itemValue != null and itemValue != ''">
+                ITEM_VALUE = #{itemValue,jdbcType=VARCHAR},
+            </if>
+            <if test="sortOrder != null">
+                SORT_ORDER = #{sortOrder,jdbcType=INTEGER},
+            </if>
+            <if test="messageKey != null and messageKey != ''">
+                MESSAGE_KEY = #{messageKey,jdbcType=VARCHAR},
+            </if>
+            <if test="extraJson != null and extraJson != ''">
+                EXTRA_JSON = #{extraJson,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                STATUS = #{status,jdbcType=INTEGER},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER = #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="dictCode != null and dictCode != ''">
+                DICT_CODE,
+            </if>
+            <if test="itemCode != null and itemCode != ''">
+                ITEM_CODE,
+            </if>
+            <if test="itemValue != null and itemValue != ''">
+                ITEM_VALUE,
+            </if>
+            <if test="sortOrder != null">
+                SORT_ORDER,
+            </if>
+            <if test="messageKey != null and messageKey != ''">
+                MESSAGE_KEY,
+            </if>
+            <if test="extraJson != null and extraJson != ''">
+                EXTRA_JSON,
+            </if>
+            <if test="status != null">
+                STATUS,
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME,
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID,
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME,
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="dictCode != null and dictCode != ''">
+                #{dictCode,jdbcType=VARCHAR},
+            </if>
+            <if test="itemCode != null and itemCode != ''">
+                #{itemCode,jdbcType=VARCHAR},
+            </if>
+            <if test="itemValue != null and itemValue != ''">
+                #{itemValue,jdbcType=VARCHAR},
+            </if>
+            <if test="sortOrder != null">
+                #{sortOrder,jdbcType=INTEGER},
+            </if>
+            <if test="messageKey != null and messageKey != ''">
+                #{messageKey,jdbcType=VARCHAR},
+            </if>
+            <if test="extraJson != null and extraJson != ''">
+                #{extraJson,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                #{status,jdbcType=INTEGER},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
+        </if>
+        <if test="dictCode != null and dictCode != ''">
+            AND DICT_CODE = #{dictCode,jdbcType=VARCHAR}
+        </if>
+        <if test="itemCode != null and itemCode != ''">
+            AND ITEM_CODE = #{itemCode,jdbcType=VARCHAR}
+        </if>
+        <if test="itemValue != null and itemValue != ''">
+            AND ITEM_VALUE = #{itemValue,jdbcType=VARCHAR}
+        </if>
+        <if test="messageKey != null and messageKey != ''">
+            AND MESSAGE_KEY = #{messageKey,jdbcType=VARCHAR}
+        </if>
+        <if test="status != null">
+            AND STATUS = #{status,jdbcType=INTEGER}
+        </if>
+        <if test="createdTime != null and createdTime != ''">
+            AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
+        </if>
+        <if test="creatorId != null and creatorId != ''">
+            AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyTime != null and modifyTime != ''">
+            AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
+        </if>
+        <if test="modifierId != null and modifierId != ''">
+            AND MODIFIER = #{modifierId,jdbcType=VARCHAR}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.setting.entity.DictItemDO">
+        INSERT INTO PEACH_DICT_ITEM (
+        <include refid="allColumn" />
+        ) VALUES (
+        <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.setting.entity.DictItemDO">
+        INSERT INTO PEACH_DICT_ITEM (
+        <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue" />)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.setting.entity.DictItemDO">
+        UPDATE PEACH_DICT_ITEM SET
+        <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM PEACH_DICT_ITEM
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM PEACH_DICT_ITEM
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.setting.entity.DictItemDO">
+        DELETE FROM PEACH_DICT_ITEM
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <delete id="delByDictCode" parameterType="java.lang.String">
+        DELETE FROM PEACH_DICT_ITEM
+        WHERE DICT_CODE = #{dictCode,jdbcType=VARCHAR}
+    </delete>
+
+    <update id="updateById" parameterType="com.peach.setting.entity.DictItemDO">
+        UPDATE PEACH_DICT_ITEM SET
+        <include refid="allColumnSet" />
+        WHERE ID = #{id,jdbcType=VARCHAR}
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.setting.vo.DictItemVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_DICT_ITEM
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.vo.DictItemVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_DICT_ITEM
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.setting.entity.DictItemDO" resultType="com.peach.setting.vo.DictItemVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_DICT_ITEM
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.setting.entity.DictItemDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_DICT_ITEM
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="selectByQO" parameterType="com.peach.setting.qo.DictItemQO" resultType="com.peach.setting.vo.DictItemVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_DICT_ITEM
+        <where>
+            <if test="dictCode != null and dictCode != ''">
+                AND DICT_CODE = #{dictCode,jdbcType=VARCHAR}
+            </if>
+        </where>
+        ORDER BY SORT_ORDER ASC, MODIFY_TIME DESC
+    </select>
+
+    <select id="selectByDictCode" parameterType="java.lang.String" resultType="com.peach.setting.vo.DictItemVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_DICT_ITEM
+        WHERE DICT_CODE = #{dictCode,jdbcType=VARCHAR}
+        ORDER BY SORT_ORDER ASC, MODIFY_TIME DESC
+    </select>
+</mapper>
+

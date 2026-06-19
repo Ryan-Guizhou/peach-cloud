@@ -9,9 +9,10 @@ import java.io.Serializable;
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/31 20:44
+ * @Description Jackson 序列化兼容的 SaSession
  */
 @JsonIgnoreProperties({"timeout"})
-public class SaSessionForJacksonCustomized extends SaSession implements Serializable{
+public class SaSessionForJacksonCustomized extends SaSession implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -22,5 +23,5 @@ public class SaSessionForJacksonCustomized extends SaSession implements Serializ
     public SaSessionForJacksonCustomized(String id) {
         super(id);
     }
-
 }
+

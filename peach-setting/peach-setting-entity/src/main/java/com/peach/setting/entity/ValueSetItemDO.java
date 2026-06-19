@@ -1,8 +1,9 @@
 package com.peach.setting.entity;
 
-import com.peach.common.MapperGenerator;
+import com.peach.common.BaseDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -10,65 +11,59 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import java.io.Serializable;
 
+/**
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/6 20:30
+ * @Description 值集项
+ */
 @Data
 @Entity
-@Table(name = "VALUE_SET_ITEM")
-@Schema(description = "值集明细实体")
-public class ValueSetItemDO implements Serializable {
+@Table(name = "PEACH_VALUE_SET_ITEM")
+@Schema(description = "值集项")
+@EqualsAndHashCode(callSuper = true)
+public class ValueSetItemDO extends BaseDO implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     @Id
     @Column(name = "ID")
     @Schema(description = "主键ID")
-    private Long id;
+    private String id;
 
     @Column(name = "VALUE_SET_CODE")
-    @Schema(description = "所属值集编码")
+    @Schema(description = "值集编码")
     private String valueSetCode;
 
     @Column(name = "ITEM_CODE")
-    @Schema(description = "值项编码")
+    @Schema(description = "项编码")
     private String itemCode;
 
-    @Column(name = "NAME")
-    @Schema(description = "默认展示名称")
-    private String name;
+    @Column(name = "ITEM_VALUE")
+    @Schema(description = "项值")
+    private String itemValue;
+
+    @Column(name = "MESSAGE_KEY")
+    @Schema(description = "国际化Key")
+    private String messageKey;
+
+    @Column(name = "SOURCE_TYPE")
+    @Schema(description = "来源类型")
+    private String sourceType;
 
     @Column(name = "SORT_ORDER")
-    @Schema(description = "排序值")
+    @Schema(description = "排序号")
     private Integer sortOrder;
 
     @Column(name = "STATUS")
-    @Schema(description = "状态：1-启用 0-停用")
+    @Schema(description = "状态")
     private Integer status;
 
-    // --- 审计字段 ---
+    @Column(name = "VISIBLE_FLAG")
+    @Schema(description = "是否可见")
+    private Integer visibleFlag;
 
-    @Column(name = "CREATOR_CODE")
-    @Schema(description = "创建人编码")
-    private String creatorCode;
-
-    @Column(name = "CREATOR_NAME")
-    @Schema(description = "创建人名称")
-    private String creatorName;
-
-    @Column(name = "CREATED_TIME")
-    @Schema(description = "创建时间")
-    private String createdTime;
-
-    @Column(name = "UPDATED_TIME")
-    @Schema(description = "更新时间")
-    private String updatedTime;
-
-    @Column(name = "UPDATER_CODE")
-    @Schema(description = "更新人编码")
-    private String updaterCode;
-
-    @Column(name = "UPDATER_NAME")
-    @Schema(description = "更新人名称")
-    private String updaterName;
-
-    public static void main(String[] args) {
-        System.out.println(MapperGenerator.genMapper(ValueSetItemDO.class));
-    }
+    @Column(name = "EXTRA_JSON")
+    @Schema(description = "扩展JSON")
+    private String extraJson;
 }

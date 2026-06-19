@@ -2,188 +2,194 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.MultiMessageDao">
     <sql id="allColumn">
-        ID,                                               LANG,                                             BIZ_TYPE,                                         BIZ_CODE,
-        MSG_VALUE,                                        STATUS,                                           CREATOR_CODE,                                     CREATOR_NAME,
-        CREATED_TIME,                                     UPDATED_TIME,                                     UPDATER_CODE,                                     UPDATER_NAME
-
+        ID,                                               MESSAGE_KEY,                                      LOCALE,                                           MODULE_CODE,
+        MESSAGE_TYPE,                                     USAGE_SCOPE,                                      MESSAGE_CONTENT,                                  DESCRIPTION,
+        STATUS,                                           CREATED_TIME,                                     CREATOR_ID,                                     MODIFY_TIME,
+        MODIFIER
     </sql>
 
     <sql id="allColumnAlias">
-        ID as id,                                         LANG as lang,                                     BIZ_TYPE as bizType,                              BIZ_CODE as bizCode,
-        MSG_VALUE as msgValue,                            STATUS as status,                                 CREATOR_CODE as creatorCode,                      CREATOR_NAME as creatorName,
-        CREATED_TIME as createdTime,                      UPDATED_TIME as updatedTime,                      UPDATER_CODE as updaterCode,                      UPDATER_NAME as updaterName
-
+        ID as id,                                         MESSAGE_KEY as messageKey,                        LOCALE as locale,                                 MODULE_CODE as moduleCode,
+        MESSAGE_TYPE as messageType,                      USAGE_SCOPE as usageScope,                        MESSAGE_CONTENT as messageContent,                DESCRIPTION as description,
+        STATUS as status,                                 CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,
+        MODIFIER as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=BIGINT},                  #{lang,jdbcType=VARCHAR},               #{bizType,jdbcType=VARCHAR},            #{bizCode,jdbcType=VARCHAR},
-        #{msgValue,jdbcType=VARCHAR},           #{status,jdbcType=INTEGER},             #{creatorCode,jdbcType=VARCHAR},        #{creatorName,jdbcType=VARCHAR},
-        #{createdTime,jdbcType=VARCHAR},        #{updatedTime,jdbcType=VARCHAR},        #{updaterCode,jdbcType=VARCHAR},        #{updaterName,jdbcType=VARCHAR}
-
+        #{id,jdbcType=VARCHAR},                 #{messageKey,jdbcType=VARCHAR},         #{locale,jdbcType=VARCHAR},             #{moduleCode,jdbcType=VARCHAR},
+        #{messageType,jdbcType=VARCHAR},        #{usageScope,jdbcType=VARCHAR},         #{messageContent,jdbcType=VARCHAR},     #{description,jdbcType=VARCHAR},
+        #{status,jdbcType=INTEGER},             #{createdTime,jdbcType=VARCHAR},        #{creatorId,jdbcType=VARCHAR},        #{modifyTime,jdbcType=VARCHAR},
+        #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=BIGINT},             #{item.lang,jdbcType=VARCHAR},          #{item.bizType,jdbcType=VARCHAR},       #{item.bizCode,jdbcType=VARCHAR},
-        #{item.msgValue,jdbcType=VARCHAR},      #{item.status,jdbcType=INTEGER},        #{item.creatorCode,jdbcType=VARCHAR},   #{item.creatorName,jdbcType=VARCHAR},
-        #{item.createdTime,jdbcType=VARCHAR},   #{item.updatedTime,jdbcType=VARCHAR},   #{item.updaterCode,jdbcType=VARCHAR},   #{item.updaterName,jdbcType=VARCHAR}
-
+        #{item.id,jdbcType=VARCHAR},            #{item.messageKey,jdbcType=VARCHAR},    #{item.locale,jdbcType=VARCHAR},        #{item.moduleCode,jdbcType=VARCHAR},
+        #{item.messageType,jdbcType=VARCHAR},   #{item.usageScope,jdbcType=VARCHAR},    #{item.messageContent,jdbcType=VARCHAR},#{item.description,jdbcType=VARCHAR},
+        #{item.status,jdbcType=INTEGER},        #{item.createdTime,jdbcType=VARCHAR},   #{item.creatorId,jdbcType=VARCHAR},   #{item.modifyTime,jdbcType=VARCHAR},
+        #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
-            <if test="lang != null and lang != ''">
-                LANG = #{lang,jdbcType=VARCHAR},
+            <if test="messageKey != null and messageKey != ''">
+                MESSAGE_KEY = #{messageKey,jdbcType=VARCHAR},
             </if>
-            <if test="bizType != null and bizType != ''">
-                BIZ_TYPE = #{bizType,jdbcType=VARCHAR},
+            <if test="locale != null and locale != ''">
+                LOCALE = #{locale,jdbcType=VARCHAR},
             </if>
-            <if test="bizCode != null and bizCode != ''">
-                BIZ_CODE = #{bizCode,jdbcType=VARCHAR},
+            <if test="moduleCode != null and moduleCode != ''">
+                MODULE_CODE = #{moduleCode,jdbcType=VARCHAR},
             </if>
-            <if test="msgValue != null and msgValue != ''">
-                MSG_VALUE = #{msgValue,jdbcType=VARCHAR},
+            <if test="messageType != null and messageType != ''">
+                MESSAGE_TYPE = #{messageType,jdbcType=VARCHAR},
+            </if>
+            <if test="usageScope != null and usageScope != ''">
+                USAGE_SCOPE = #{usageScope,jdbcType=VARCHAR},
+            </if>
+            <if test="messageContent != null and messageContent != ''">
+                MESSAGE_CONTENT = #{messageContent,jdbcType=VARCHAR},
+            </if>
+            <if test="description != null and description != ''">
+                DESCRIPTION = #{description,jdbcType=VARCHAR},
             </if>
             <if test="status != null">
                 STATUS = #{status,jdbcType=INTEGER},
             </if>
-            <if test="creatorCode != null and creatorCode != ''">
-                CREATOR_CODE = #{creatorCode,jdbcType=VARCHAR},
-            </if>
-            <if test="creatorName != null and creatorName != ''">
-                CREATOR_NAME = #{creatorName,jdbcType=VARCHAR},
-            </if>
             <if test="createdTime != null and createdTime != ''">
                 CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
             </if>
-            <if test="updatedTime != null and updatedTime != ''">
-                UPDATED_TIME = #{updatedTime,jdbcType=VARCHAR},
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
             </if>
-            <if test="updaterCode != null and updaterCode != ''">
-                UPDATER_CODE = #{updaterCode,jdbcType=VARCHAR},
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             </if>
-            <if test="updaterName != null and updaterName != ''">
-                UPDATER_NAME = #{updaterName,jdbcType=VARCHAR},
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER = #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
 
     <sql id="updateSelectiveColumn">
         <trim suffixOverrides=",">
-            <if test="lang != null and lang != ''">
-                LANG,
+            <if test="messageKey != null and messageKey != ''">
+                MESSAGE_KEY,
             </if>
-            <if test="bizType != null and bizType != ''">
-                BIZ_TYPE,
+            <if test="locale != null and locale != ''">
+                LOCALE,
             </if>
-            <if test="bizCode != null and bizCode != ''">
-                BIZ_CODE,
+            <if test="moduleCode != null and moduleCode != ''">
+                MODULE_CODE,
             </if>
-            <if test="msgValue != null and msgValue != ''">
-                MSG_VALUE,
+            <if test="messageType != null and messageType != ''">
+                MESSAGE_TYPE,
+            </if>
+            <if test="usageScope != null and usageScope != ''">
+                USAGE_SCOPE,
+            </if>
+            <if test="messageContent != null and messageContent != ''">
+                MESSAGE_CONTENT,
+            </if>
+            <if test="description != null and description != ''">
+                DESCRIPTION,
             </if>
             <if test="status != null">
                 STATUS,
             </if>
-            <if test="creatorCode != null and creatorCode != ''">
-                CREATOR_CODE,
-            </if>
-            <if test="creatorName != null and creatorName != ''">
-                CREATOR_NAME,
-            </if>
             <if test="createdTime != null and createdTime != ''">
                 CREATED_TIME,
             </if>
-            <if test="updatedTime != null and updatedTime != ''">
-                UPDATED_TIME,
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID,
             </if>
-            <if test="updaterCode != null and updaterCode != ''">
-                UPDATER_CODE,
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME,
             </if>
-            <if test="updaterName != null and updaterName != ''">
-                UPDATER_NAME,
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER,
             </if>
         </trim>
     </sql>
 
     <sql id="updateSelectiveValue">
         <trim suffixOverrides=",">
-            <if test="lang != null and lang != ''">
-                #{lang,jdbcType=VARCHAR},
+            <if test="messageKey != null and messageKey != ''">
+                #{messageKey,jdbcType=VARCHAR},
             </if>
-            <if test="bizType != null and bizType != ''">
-                #{bizType,jdbcType=VARCHAR},
+            <if test="locale != null and locale != ''">
+                #{locale,jdbcType=VARCHAR},
             </if>
-            <if test="bizCode != null and bizCode != ''">
-                #{bizCode,jdbcType=VARCHAR},
+            <if test="moduleCode != null and moduleCode != ''">
+                #{moduleCode,jdbcType=VARCHAR},
             </if>
-            <if test="msgValue != null and msgValue != ''">
-                #{msgValue,jdbcType=VARCHAR},
+            <if test="messageType != null and messageType != ''">
+                #{messageType,jdbcType=VARCHAR},
+            </if>
+            <if test="usageScope != null and usageScope != ''">
+                #{usageScope,jdbcType=VARCHAR},
+            </if>
+            <if test="messageContent != null and messageContent != ''">
+                #{messageContent,jdbcType=VARCHAR},
+            </if>
+            <if test="description != null and description != ''">
+                #{description,jdbcType=VARCHAR},
             </if>
             <if test="status != null">
                 #{status,jdbcType=INTEGER},
             </if>
-            <if test="creatorCode != null and creatorCode != ''">
-                #{creatorCode,jdbcType=VARCHAR},
-            </if>
-            <if test="creatorName != null and creatorName != ''">
-                #{creatorName,jdbcType=VARCHAR},
-            </if>
             <if test="createdTime != null and createdTime != ''">
                 #{createdTime,jdbcType=VARCHAR},
             </if>
-            <if test="updatedTime != null and updatedTime != ''">
-                #{updatedTime,jdbcType=VARCHAR},
+            <if test="creatorId != null and creatorId != ''">
+                #{creatorId,jdbcType=VARCHAR},
             </if>
-            <if test="updaterCode != null and updaterCode != ''">
-                #{updaterCode,jdbcType=VARCHAR},
+            <if test="modifyTime != null and modifyTime != ''">
+                #{modifyTime,jdbcType=VARCHAR},
             </if>
-            <if test="updaterName != null and updaterName != ''">
-                #{updaterName,jdbcType=VARCHAR},
+            <if test="modifierId != null and modifierId != ''">
+                #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
 
     <sql id="allColumnCond">
-        <if test="id != null">
-            AND ID = #{id,jdbcType=BIGINT}
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
         </if>
-        <if test="lang != null and lang != ''">
-            AND LANG = #{lang,jdbcType=VARCHAR}
+        <if test="messageKey != null and messageKey != ''">
+            AND MESSAGE_KEY = #{messageKey,jdbcType=VARCHAR}
         </if>
-        <if test="bizType != null and bizType != ''">
-            AND BIZ_TYPE = #{bizType,jdbcType=VARCHAR}
+        <if test="locale != null and locale != ''">
+            AND LOCALE = #{locale,jdbcType=VARCHAR}
         </if>
-        <if test="bizCode != null and bizCode != ''">
-            AND BIZ_CODE = #{bizCode,jdbcType=VARCHAR}
+        <if test="moduleCode != null and moduleCode != ''">
+            AND MODULE_CODE = #{moduleCode,jdbcType=VARCHAR}
         </if>
-        <if test="msgValue != null and msgValue != ''">
-            AND MSG_VALUE = #{msgValue,jdbcType=VARCHAR}
+        <if test="messageType != null and messageType != ''">
+            AND MESSAGE_TYPE = #{messageType,jdbcType=VARCHAR}
+        </if>
+        <if test="usageScope != null and usageScope != ''">
+            AND USAGE_SCOPE = #{usageScope,jdbcType=VARCHAR}
         </if>
         <if test="status != null">
             AND STATUS = #{status,jdbcType=INTEGER}
         </if>
-        <if test="creatorCode != null and creatorCode != ''">
-            AND CREATOR_CODE = #{creatorCode,jdbcType=VARCHAR}
-        </if>
-        <if test="creatorName != null and creatorName != ''">
-            AND CREATOR_NAME = #{creatorName,jdbcType=VARCHAR}
-        </if>
         <if test="createdTime != null and createdTime != ''">
             AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
         </if>
-        <if test="updatedTime != null and updatedTime != ''">
-            AND UPDATED_TIME = #{updatedTime,jdbcType=VARCHAR}
+        <if test="creatorId != null and creatorId != ''">
+            AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
         </if>
-        <if test="updaterCode != null and updaterCode != ''">
-            AND UPDATER_CODE = #{updaterCode,jdbcType=VARCHAR}
+        <if test="modifyTime != null and modifyTime != ''">
+            AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
         </if>
-        <if test="updaterName != null and updaterName != ''">
-            AND UPDATER_NAME = #{updaterName,jdbcType=VARCHAR}
+        <if test="modifierId != null and modifierId != ''">
+            AND MODIFIER = #{modifierId,jdbcType=VARCHAR}
         </if>
     </sql>
 
     <insert id="insert" parameterType="com.peach.setting.entity.MultiMessageDO">
-        INSERT INTO MULTI_MESSAGE (
+        INSERT INTO PEACH_MULTI_MESSAGE (
         <include refid="allColumn" />
         ) VALUES (
         <include refid="allColumnValue" />
@@ -191,16 +197,16 @@
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.setting.entity.MultiMessageDO">
-        INSERT INTO MULTI_MESSAGE (
+        INSERT INTO PEACH_MULTI_MESSAGE (
         <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
-            (<include refid="itemAllColumnValue"/>)
+            (<include refid="itemAllColumnValue" />)
         </foreach>
     </insert>
 
     <update id="update" parameterType="com.peach.setting.entity.MultiMessageDO">
-        UPDATE MULTI_MESSAGE SET
+        UPDATE PEACH_MULTI_MESSAGE SET
         <include refid="allColumnSet" />
         <where>
             <include refid="allColumnCond" />
@@ -208,52 +214,52 @@
     </update>
 
     <delete id="delById" parameterType="string">
-        DELETE FROM MULTI_MESSAGE
-        WHERE ID = #{value,jdbcType=BIGINT}
+        DELETE FROM PEACH_MULTI_MESSAGE
+        WHERE ID = #{value,jdbcType=VARCHAR}
     </delete>
 
     <delete id="delByIds" parameterType="java.util.List">
-        DELETE FROM MULTI_MESSAGE
+        DELETE FROM PEACH_MULTI_MESSAGE
         WHERE ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
-            #{id,jdbcType=BIGINT}
+            #{id,jdbcType=VARCHAR}
         </foreach>
     </delete>
 
     <delete id="del" parameterType="com.peach.setting.entity.MultiMessageDO">
-        DELETE FROM MULTI_MESSAGE
+        DELETE FROM PEACH_MULTI_MESSAGE
         <where>
             <include refid="allColumnCond" />
         </where>
     </delete>
 
-    <update id="updateById" parameterType="java.lang.String">
-        UPDATE MULTI_MESSAGE SET
+    <update id="updateById" parameterType="com.peach.setting.entity.MultiMessageDO">
+        UPDATE PEACH_MULTI_MESSAGE SET
         <include refid="allColumnSet" />
-        WHERE ID =  #{id,jdbcType=BIGINT}
+        WHERE ID = #{id,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.setting.entity.MultiMessageDO">
+    <select id="selectById" parameterType="string" resultType="com.peach.setting.vo.MulitMessageVO">
         SELECT
         <include refid="allColumnAlias" />
-        FROM MULTI_MESSAGE
-        WHERE ID = #{value,jdbcType=BIGINT}
+        FROM PEACH_MULTI_MESSAGE
+        WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.entity.MultiMessageDO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.vo.MulitMessageVO">
         SELECT
         <include refid="allColumnAlias" />
-        FROM MULTI_MESSAGE
+        FROM PEACH_MULTI_MESSAGE
         WHERE ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
-            #{id,jdbcType=BIGINT}
+            #{id,jdbcType=VARCHAR}
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.setting.entity.MultiMessageDO" resultType="com.peach.setting.entity.MultiMessageDO">
+    <select id="select" parameterType="com.peach.setting.entity.MultiMessageDO" resultType="com.peach.setting.vo.MulitMessageVO">
         SELECT
         <include refid="allColumnAlias" />
-        FROM MULTI_MESSAGE
+        FROM PEACH_MULTI_MESSAGE
         <where>
             <include refid="allColumnCond" />
         </where>
@@ -261,9 +267,33 @@
 
     <select id="count" parameterType="com.peach.setting.entity.MultiMessageDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
-        FROM MULTI_MESSAGE
+        FROM PEACH_MULTI_MESSAGE
         <where>
             <include refid="allColumnCond" />
         </where>
     </select>
+
+    <select id="selectByQO" parameterType="com.peach.setting.qo.MulitMessageQO" resultType="com.peach.setting.vo.MulitMessageVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_MULTI_MESSAGE
+        <where>
+            <if test="messageKey != null and messageKey != ''">
+                AND MESSAGE_KEY = #{messageKey,jdbcType=VARCHAR}
+            </if>
+            <if test="moduleCode != null and moduleCode">
+                AND MODULE_CODE = #{moduleCode,jdbcType=VARCHAR}
+            </if>
+        </where>
+        ORDER BY MODIFY_TIME DESC
+    </select>
+
+    <select id="selectByMessageKey" parameterType="java.lang.String" resultType="com.peach.setting.vo.MulitMessageVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_MULTI_MESSAGE
+        WHERE MESSAGE_KEY = #{messageKey,jdbcType=VARCHAR}
+        ORDER BY LOCALE ASC
+    </select>
 </mapper>
+

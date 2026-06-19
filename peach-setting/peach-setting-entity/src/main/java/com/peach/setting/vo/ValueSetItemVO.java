@@ -1,15 +1,25 @@
 package com.peach.setting.vo;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.peach.setting.entity.ValueSetItemDO;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 
 /**
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2026/2/9 18:01
+ * @CreateTime 2026/6/6 20:35
+ * @Description 值集项VO
  */
 @Data
-public class ValueSetItemVO implements Serializable {
-    private static final long serialVersionUID = 3608726262381820209L;
+@EqualsAndHashCode(callSuper = true)
+@Schema(description = "值集项视图对象")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ValueSetItemVO extends ValueSetItemDO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 }
+

@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.setting.dao.NoticeDao">
+    <sql id="allColumn">
+        ID,                                               NOTICE_CODE,                                      TITLE_MESSAGE_KEY,                                CONTENT_MESSAGE_KEY,
+        NOTICE_TYPE,                                      PRIORITY,                                         PUBLISH_STATUS,                                   EFFECTIVE_FROM,
+        EFFECTIVE_TO,                                     READ_COUNT,                                       INBOX_ENABLED,                                    STATUS,
+        CREATED_TIME,                                     CREATOR_ID,                                     MODIFY_TIME,                                     MODIFIER
+    </sql>
+
+    <sql id="allColumnAlias">
+        ID as id,                                         NOTICE_CODE as noticeCode,                        TITLE_MESSAGE_KEY as titleMessageKey,             CONTENT_MESSAGE_KEY as contentMessageKey,
+        NOTICE_TYPE as noticeType,                        PRIORITY as priority,                             PUBLISH_STATUS as publishStatus,                  EFFECTIVE_FROM as effectiveFrom,
+        EFFECTIVE_TO as effectiveTo,                      READ_COUNT as readCount,                          INBOX_ENABLED as inboxEnabled,                    STATUS as status,
+        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,                      MODIFIER as modifierId
+    </sql>
+
+    <sql id="allColumnValue">
+        #{id,jdbcType=VARCHAR},                 #{noticeCode,jdbcType=VARCHAR},         #{titleMessageKey,jdbcType=VARCHAR},    #{contentMessageKey,jdbcType=VARCHAR},
+        #{noticeType,jdbcType=VARCHAR},         #{priority,jdbcType=INTEGER},           #{publishStatus,jdbcType=VARCHAR},      #{effectiveFrom,jdbcType=VARCHAR},
+        #{effectiveTo,jdbcType=VARCHAR},        #{readCount,jdbcType=INTEGER},          #{inboxEnabled,jdbcType=INTEGER},       #{status,jdbcType=INTEGER},
+        #{createdTime,jdbcType=VARCHAR},        #{creatorId,jdbcType=VARCHAR},        #{modifyTime,jdbcType=VARCHAR},        #{modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.id,jdbcType=VARCHAR},            #{item.noticeCode,jdbcType=VARCHAR},    #{item.titleMessageKey,jdbcType=VARCHAR}, #{item.contentMessageKey,jdbcType=VARCHAR},
+        #{item.noticeType,jdbcType=VARCHAR},    #{item.priority,jdbcType=INTEGER},      #{item.publishStatus,jdbcType=VARCHAR},   #{item.effectiveFrom,jdbcType=VARCHAR},
+        #{item.effectiveTo,jdbcType=VARCHAR},   #{item.readCount,jdbcType=INTEGER},     #{item.inboxEnabled,jdbcType=INTEGER},    #{item.status,jdbcType=INTEGER},
+        #{item.createdTime,jdbcType=VARCHAR},   #{item.creatorId,jdbcType=VARCHAR},   #{item.modifyTime,jdbcType=VARCHAR},     #{item.modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="noticeCode != null and noticeCode != ''">
+                NOTICE_CODE = #{noticeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="titleMessageKey != null and titleMessageKey != ''">
+                TITLE_MESSAGE_KEY = #{titleMessageKey,jdbcType=VARCHAR},
+            </if>
+            <if test="contentMessageKey != null and contentMessageKey != ''">
+                CONTENT_MESSAGE_KEY = #{contentMessageKey,jdbcType=VARCHAR},
+            </if>
+            <if test="noticeType != null and noticeType != ''">
+                NOTICE_TYPE = #{noticeType,jdbcType=VARCHAR},
+            </if>
+            <if test="priority != null">
+                PRIORITY = #{priority,jdbcType=INTEGER},
+            </if>
+            <if test="publishStatus != null and publishStatus != ''">
+                PUBLISH_STATUS = #{publishStatus,jdbcType=VARCHAR},
+            </if>
+            <if test="effectiveFrom != null and effectiveFrom != ''">
+                EFFECTIVE_FROM = #{effectiveFrom,jdbcType=VARCHAR},
+            </if>
+            <if test="effectiveTo != null and effectiveTo != ''">
+                EFFECTIVE_TO = #{effectiveTo,jdbcType=VARCHAR},
+            </if>
+            <if test="readCount != null">
+                READ_COUNT = #{readCount,jdbcType=INTEGER},
+            </if>
+            <if test="inboxEnabled != null">
+                INBOX_ENABLED = #{inboxEnabled,jdbcType=INTEGER},
+            </if>
+            <if test="status != null">
+                STATUS = #{status,jdbcType=INTEGER},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER = #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="noticeCode != null and noticeCode != ''">
+                NOTICE_CODE,
+            </if>
+            <if test="titleMessageKey != null and titleMessageKey != ''">
+                TITLE_MESSAGE_KEY,
+            </if>
+            <if test="contentMessageKey != null and contentMessageKey != ''">
+                CONTENT_MESSAGE_KEY,
+            </if>
+            <if test="noticeType != null and noticeType != ''">
+                NOTICE_TYPE,
+            </if>
+            <if test="priority != null">
+                PRIORITY,
+            </if>
+            <if test="publishStatus != null and publishStatus != ''">
+                PUBLISH_STATUS,
+            </if>
+            <if test="effectiveFrom != null and effectiveFrom != ''">
+                EFFECTIVE_FROM,
+            </if>
+            <if test="effectiveTo != null and effectiveTo != ''">
+                EFFECTIVE_TO,
+            </if>
+            <if test="readCount != null">
+                READ_COUNT,
+            </if>
+            <if test="inboxEnabled != null">
+                INBOX_ENABLED,
+            </if>
+            <if test="status != null">
+                STATUS,
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME,
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID,
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME,
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="noticeCode != null and noticeCode != ''">
+                #{noticeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="titleMessageKey != null and titleMessageKey != ''">
+                #{titleMessageKey,jdbcType=VARCHAR},
+            </if>
+            <if test="contentMessageKey != null and contentMessageKey != ''">
+                #{contentMessageKey,jdbcType=VARCHAR},
+            </if>
+            <if test="noticeType != null and noticeType != ''">
+                #{noticeType,jdbcType=VARCHAR},
+            </if>
+            <if test="priority != null">
+                #{priority,jdbcType=INTEGER},
+            </if>
+            <if test="publishStatus != null and publishStatus != ''">
+                #{publishStatus,jdbcType=VARCHAR},
+            </if>
+            <if test="effectiveFrom != null and effectiveFrom != ''">
+                #{effectiveFrom,jdbcType=VARCHAR},
+            </if>
+            <if test="effectiveTo != null and effectiveTo != ''">
+                #{effectiveTo,jdbcType=VARCHAR},
+            </if>
+            <if test="readCount != null">
+                #{readCount,jdbcType=INTEGER},
+            </if>
+            <if test="inboxEnabled != null">
+                #{inboxEnabled,jdbcType=INTEGER},
+            </if>
+            <if test="status != null">
+                #{status,jdbcType=INTEGER},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
+        </if>
+        <if test="noticeCode != null and noticeCode != ''">
+            AND NOTICE_CODE = #{noticeCode,jdbcType=VARCHAR}
+        </if>
+        <if test="titleMessageKey != null and titleMessageKey != ''">
+            AND TITLE_MESSAGE_KEY = #{titleMessageKey,jdbcType=VARCHAR}
+        </if>
+        <if test="contentMessageKey != null and contentMessageKey != ''">
+            AND CONTENT_MESSAGE_KEY = #{contentMessageKey,jdbcType=VARCHAR}
+        </if>
+        <if test="noticeType != null and noticeType != ''">
+            AND NOTICE_TYPE = #{noticeType,jdbcType=VARCHAR}
+        </if>
+        <if test="priority != null">
+            AND PRIORITY = #{priority,jdbcType=INTEGER}
+        </if>
+        <if test="publishStatus != null and publishStatus != ''">
+            AND PUBLISH_STATUS = #{publishStatus,jdbcType=VARCHAR}
+        </if>
+        <if test="effectiveFrom != null and effectiveFrom != ''">
+            AND EFFECTIVE_FROM = #{effectiveFrom,jdbcType=VARCHAR}
+        </if>
+        <if test="effectiveTo != null and effectiveTo != ''">
+            AND EFFECTIVE_TO = #{effectiveTo,jdbcType=VARCHAR}
+        </if>
+        <if test="readCount != null">
+            AND READ_COUNT = #{readCount,jdbcType=INTEGER}
+        </if>
+        <if test="inboxEnabled != null">
+            AND INBOX_ENABLED = #{inboxEnabled,jdbcType=INTEGER}
+        </if>
+        <if test="status != null">
+            AND STATUS = #{status,jdbcType=INTEGER}
+        </if>
+        <if test="createdTime != null and createdTime != ''">
+            AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
+        </if>
+        <if test="creatorId != null and creatorId != ''">
+            AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyTime != null and modifyTime != ''">
+            AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
+        </if>
+        <if test="modifierId != null and modifierId != ''">
+            AND MODIFIER = #{modifierId,jdbcType=VARCHAR}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.setting.entity.NoticeDO">
+        INSERT INTO PEACH_NOTICE (
+        <include refid="allColumn" />
+        ) VALUES (
+        <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.setting.entity.NoticeDO">
+        INSERT INTO PEACH_NOTICE (
+        <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue" />)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.setting.entity.NoticeDO">
+        UPDATE PEACH_NOTICE SET
+        <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM PEACH_NOTICE
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM PEACH_NOTICE
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.setting.entity.NoticeDO">
+        DELETE FROM PEACH_NOTICE
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <update id="updateById" parameterType="com.peach.setting.entity.NoticeDO">
+        UPDATE PEACH_NOTICE SET
+        <include refid="allColumnSet" />
+        WHERE ID = #{id,jdbcType=VARCHAR}
+    </update>
+
+    <update id="increaseReadCount">
+        UPDATE PEACH_NOTICE
+        SET READ_COUNT = COALESCE(READ_COUNT, 0) + #{count,jdbcType=INTEGER}
+        WHERE NOTICE_CODE = #{noticeCode,jdbcType=VARCHAR}
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.setting.vo.NoticeVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_NOTICE
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.vo.NoticeVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_NOTICE
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.setting.entity.NoticeDO" resultType="com.peach.setting.vo.NoticeVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_NOTICE
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.setting.entity.NoticeDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_NOTICE
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="selectByQO" parameterType="com.peach.setting.qo.NoticeQO" resultType="com.peach.setting.vo.NoticeVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_NOTICE
+<!--        <where>-->
+<!--            <include refid="allColumnCond" />-->
+<!--        </where>-->
+        ORDER BY PRIORITY DESC, MODIFY_TIME DESC
+    </select>
+</mapper>
+

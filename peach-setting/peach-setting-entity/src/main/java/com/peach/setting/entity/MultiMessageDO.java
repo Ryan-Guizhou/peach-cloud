@@ -1,8 +1,10 @@
 package com.peach.setting.entity;
 
-import com.peach.common.MapperGenerator;
+import com.peach.common.BaseDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -10,67 +12,55 @@ import javax.persistence.Table;
 import java.io.Serializable;
 
 /**
- * @Author Trae AI
+ * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2026/02/09
- */
+ * @CreateTime 2026/6/6 20:30
+ * @Description 多语言消息 */
+
 @Data
 @Entity
-@Table(name = "MULTI_MESSAGE")
-@Schema(description = "多语言消息实体")
-public class MultiMessageDO implements Serializable {
+@Table(name = "PEACH_MULTI_MESSAGE")
+@Schema(description = "多语言消息")
+@EqualsAndHashCode(callSuper = true)
+public class MultiMessageDO extends BaseDO implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     @Id
     @Column(name = "ID")
     @Schema(description = "主键ID")
-    private Long id;
+    private String id;
 
-    @Column(name = "LANG")
-    @Schema(description = "语言编码")
-    private String lang;
+    @Column(name = "MESSAGE_KEY")
+    @Schema(description = "消息键")
+    private String messageKey;
 
-    @Column(name = "BIZ_TYPE")
-    @Schema(description = "业务类型")
-    private String bizType;
+    @Column(name = "LOCALE")
+    @Schema(description = "语言区域")
+    private String locale;
 
-    @Column(name = "BIZ_CODE")
-    @Schema(description = "业务编码")
-    private String bizCode;
+    @Column(name = "MODULE_CODE")
+    @Schema(description = "模块编码")
+    private String moduleCode;
 
-    @Column(name = "MSG_VALUE")
-    @Schema(description = "翻译文本")
-    private String msgValue;
+    @Column(name = "MESSAGE_TYPE")
+    @Schema(description = "消息类型")
+    private String messageType;
+
+    @Column(name = "USAGE_SCOPE")
+    @Schema(description = "使用范围：COMMON通用、BACKEND后端、FRONTEND前端、BOTH全部")
+    private String usageScope;
+
+    @Column(name = "MESSAGE_CONTENT")
+    @Schema(description = "消息内容")
+    private String messageContent;
+
+    @Column(name = "DESCRIPTION")
+    @Schema(description = "描述")
+    private String description;
 
     @Column(name = "STATUS")
-    @Schema(description = "状态：1-启用 0-停用")
+    @Schema(description = "状态")
     private Integer status;
-
-    @Column(name = "CREATOR_CODE")
-    @Schema(description = "创建人编码")
-    private String creatorCode;
-
-    @Column(name = "CREATOR_NAME")
-    @Schema(description = "创建人名称")
-    private String creatorName;
-
-    @Column(name = "CREATED_TIME")
-    @Schema(description = "创建时间")
-    private String createdTime;
-
-    @Column(name = "UPDATED_TIME")
-    @Schema(description = "更新时间")
-    private String updatedTime;
-
-    @Column(name = "UPDATER_CODE")
-    @Schema(description = "更新人编码")
-    private String updaterCode;
-
-    @Column(name = "UPDATER_NAME")
-    @Schema(description = "更新人名称")
-    private String updaterName;
-
-    public static void main(String[] args) {
-        System.out.println(MapperGenerator.genMapper(MultiMessageDO.class));
-    }
 }
+

@@ -14,7 +14,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -22,26 +21,26 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.util.Properties;
 
-
 /**
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2025-11-25 17:47
+ * @CreateTime 2026/1/24 15:17
+ * @Description setting 服务启动类
  */
 @Slf4j
 @EnableCaching
 @EnableDiscoveryClient
+@EnableScheduling
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @EnableConfigurationProperties(DataSourceProperties.class)
 @ComponentScan("com.peach")
-@MapperScan(basePackages = {"com.peach.*.dao"},
-        annotationClass = MybatisDao.class,
-        sqlSessionFactoryRef = "mybatis-session")
+@MapperScan(basePackages = {"com.peach.*.dao"}, annotationClass = MybatisDao.class, sqlSessionFactoryRef = "mybatis-session")
 @SpringBootApplication
 public class PeachSettingApplication {
 

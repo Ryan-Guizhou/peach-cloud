@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.setting.dao.NoticeReadRecordDao">
+    <sql id="allColumn">
+        ID,                                               NOTICE_CODE,                                      READ_USER_ID,                                     READ_TIME,
+        CREATED_TIME,                                     CREATOR_ID,                                     MODIFY_TIME,                                     MODIFIER
+    </sql>
+
+    <sql id="allColumnAlias">
+        ID as id,                                         NOTICE_CODE as noticeCode,                        READ_USER_ID as readUserId,                       READ_TIME as readTime,
+        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,                      MODIFIER as modifierId
+    </sql>
+
+    <sql id="allColumnValue">
+        #{id,jdbcType=VARCHAR},                 #{noticeCode,jdbcType=VARCHAR},         #{readUserId,jdbcType=VARCHAR},        #{readTime,jdbcType=VARCHAR},
+        #{createdTime,jdbcType=VARCHAR},        #{creatorId,jdbcType=VARCHAR},        #{modifyTime,jdbcType=VARCHAR},       #{modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.id,jdbcType=VARCHAR},            #{item.noticeCode,jdbcType=VARCHAR},    #{item.readUserId,jdbcType=VARCHAR},   #{item.readTime,jdbcType=VARCHAR},
+        #{item.createdTime,jdbcType=VARCHAR},   #{item.creatorId,jdbcType=VARCHAR},   #{item.modifyTime,jdbcType=VARCHAR},  #{item.modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="noticeCode != null and noticeCode != ''">
+                NOTICE_CODE = #{noticeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="readUserId != null and readUserId != ''">
+                READ_USER_ID = #{readUserId,jdbcType=VARCHAR},
+            </if>
+            <if test="readTime != null and readTime != ''">
+                READ_TIME = #{readTime,jdbcType=VARCHAR},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER = #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="noticeCode != null and noticeCode != ''">
+                NOTICE_CODE,
+            </if>
+            <if test="readUserId != null and readUserId != ''">
+                READ_USER_ID,
+            </if>
+            <if test="readTime != null and readTime != ''">
+                READ_TIME,
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME,
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID,
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME,
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="noticeCode != null and noticeCode != ''">
+                #{noticeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="readUserId != null and readUserId != ''">
+                #{readUserId,jdbcType=VARCHAR},
+            </if>
+            <if test="readTime != null and readTime != ''">
+                #{readTime,jdbcType=VARCHAR},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
+        </if>
+        <if test="noticeCode != null and noticeCode != ''">
+            AND NOTICE_CODE = #{noticeCode,jdbcType=VARCHAR}
+        </if>
+        <if test="readUserId != null and readUserId != ''">
+            AND READ_USER_ID = #{readUserId,jdbcType=VARCHAR}
+        </if>
+        <if test="readTime != null and readTime != ''">
+            AND READ_TIME = #{readTime,jdbcType=VARCHAR}
+        </if>
+        <if test="createdTime != null and createdTime != ''">
+            AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
+        </if>
+        <if test="creatorId != null and creatorId != ''">
+            AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyTime != null and modifyTime != ''">
+            AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
+        </if>
+        <if test="modifierId != null and modifierId != ''">
+            AND MODIFIER = #{modifierId,jdbcType=VARCHAR}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.setting.entity.NoticeReadRecordDO">
+        INSERT INTO PEACH_NOTICE_READ_RECORD (
+        <include refid="allColumn" />
+        ) VALUES (
+        <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.setting.entity.NoticeReadRecordDO">
+        INSERT INTO PEACH_NOTICE_READ_RECORD (
+        <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue" />)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.setting.entity.NoticeReadRecordDO">
+        UPDATE PEACH_NOTICE_READ_RECORD SET
+        <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM PEACH_NOTICE_READ_RECORD
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM PEACH_NOTICE_READ_RECORD
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.setting.entity.NoticeReadRecordDO">
+        DELETE FROM PEACH_NOTICE_READ_RECORD
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <update id="updateById" parameterType="com.peach.setting.entity.NoticeReadRecordDO">
+        UPDATE PEACH_NOTICE_READ_RECORD SET
+        <include refid="allColumnSet" />
+        WHERE ID = #{id,jdbcType=VARCHAR}
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.setting.vo.NoticeReadRecordVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_NOTICE_READ_RECORD
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.vo.NoticeReadRecordVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_NOTICE_READ_RECORD
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.setting.entity.NoticeReadRecordDO" resultType="com.peach.setting.vo.NoticeReadRecordVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_NOTICE_READ_RECORD
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.setting.entity.NoticeReadRecordDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_NOTICE_READ_RECORD
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="selectByQO" parameterType="com.peach.setting.qo.NoticeReadRecordQO" resultType="com.peach.setting.vo.NoticeReadRecordVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_NOTICE_READ_RECORD
+<!--        <where>-->
+<!--            <include refid="allColumnCond" />-->
+<!--        </where>-->
+        ORDER BY READ_TIME DESC
+    </select>
+
+    <select id="selectByNoticeCodeAndUserId" resultType="com.peach.setting.vo.NoticeReadRecordVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_NOTICE_READ_RECORD
+        WHERE NOTICE_CODE = #{noticeCode,jdbcType=VARCHAR}
+        AND READ_USER_ID = #{readUserId,jdbcType=VARCHAR}
+        LIMIT 1
+    </select>
+</mapper>
+

@@ -11,27 +11,25 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.Map;
 
-
 /**
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2025-11-25 17:47
+ * @CreateTime 2026/1/24 15:17
+ * @Description 健康检查接口
  */
 @Slf4j
 @Indexed
 @RestController
 @RequestMapping("/setting")
-@Tag(name = "HealthController", description = "设置服务健康检查")
+@Tag(name = "系统设置健康管理接口", description = "健康检查接口")
 public class HealthController {
 
-
-    @Operation(summary = "设置服务检查检查")
+    @Operation(summary = "健康检查")
     @GetMapping("/health")
-    public Map<String,Object> health() {
-        Map<String,Object> map = new HashMap<>();
-        map.put("status","ok");
-        map.put("application","peach-setting");
+    public Map<String, Object> health() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("status", "ok");
+        map.put("application", "peach-setting");
         return map;
     }
-
 }

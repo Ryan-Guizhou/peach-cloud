@@ -24,19 +24,19 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
-        <!-- Nacos 服务发现 -->
+        <!-- Nacos 鏈嶅姟鍙戠幇 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
 
-        <!-- Nacos 配置中心 -->
+        <!-- Nacos 閰嶇疆涓績 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
         </dependency>
 
-        <!-- 必须有 loadbalancer -->
+        <!-- 蹇呴』鏈?loadbalancer -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
@@ -91,23 +91,23 @@
 
     <build>
         <plugins>
-            <!-- 1. Spring Boot 打包 (版本已在父 POM 管理) -->
+            <!-- 1. Spring Boot 鎵撳寘 (鐗堟湰宸插湪鐖?POM 绠＄悊) -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- 2. (可选) Jib 容器化构建 -->
+            <!-- 2. (鍙€? Jib 瀹瑰櫒鍖栨瀯寤?-->
 <!--            <plugin>-->
 <!--                <groupId>com.google.cloud.tools</groupId>-->
 <!--                <artifactId>jib-maven-plugin</artifactId>-->
 <!--                <version>3.4.0</version>-->
 <!--                <configuration>-->
 <!--                    <from>-->
-<!--                        <image>openjdk:8-jre-alpine</image> &lt;!&ndash; 基础镜像 &ndash;&gt;-->
+<!--                        <image>openjdk:8-jre-alpine</image> &lt;!&ndash; 鍩虹闀滃儚 &ndash;&gt;-->
 <!--                    </from>-->
 <!--                    <to>-->
-<!--                        <image>registry.your-company.com/peach-setting</image> &lt;!&ndash; 目标镜像 &ndash;&gt;-->
+<!--                        <image>registry.your-company.com/peach-setting</image> &lt;!&ndash; 鐩爣闀滃儚 &ndash;&gt;-->
 <!--                        <tags>-->
 <!--                            <tag>latest</tag>-->
 <!--                            <tag>${project.version}</tag>-->
@@ -122,7 +122,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>
-                <!-- 可以覆盖特定配置 -->
+                <!-- 鍙互瑕嗙洊鐗瑰畾閰嶇疆 -->
                 <configuration>
                     <flattenMode>defaults</flattenMode>
                 </configuration>

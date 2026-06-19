@@ -1,11 +1,5 @@
 package com.peach.setting.config;
 
-import java.lang.reflect.Field;
-import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
 import org.apache.ibatis.executor.statement.BaseStatementHandler;
 import org.apache.ibatis.executor.statement.RoutingStatementHandler;
 import org.apache.ibatis.executor.statement.StatementHandler;
@@ -20,22 +14,37 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StopWatch;
 
+import java.lang.reflect.Field;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 
-
+/**
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/1/24 15:17
+ * @Description SQL 耗时拦截器
+ */
 @Intercepts({
-        @Signature(type = StatementHandler.class, method = "query", args = { Statement.class, ResultHandler.class }),
-        @Signature(type = StatementHandler.class, method = "update", args = { Statement.class }),
-        @Signature(type = StatementHandler.class, method = "batch", args = { Statement.class }) })
+        @Signature(type = StatementHandler.class, method = "query", args = {Statement.class, ResultHandler.class}),
+        @Signature(type = StatementHandler.class, method = "update", args = {Statement.class}),
+        @Signature(type = StatementHandler.class, method = "batch", args = {Statement.class})
+})
 public class SqlCostInterceptor implements Interceptor {
+
     private static Logger log = LoggerFactory.getLogger("SQL_LOG");
 
-    // 慢查时间, 默认3秒， 单位毫秒
+    /**
+     * 慢查询阈值，单位毫秒。
+     */
     private int longQueryTime;
 
     private static Field DELEGATE_FIELD;
 
     private static Field MAPPEDSTATEMENTD_FIELD;
-    
+
     private String lineSeparator = System.getProperty("line.separator");
 
     static {
@@ -61,18 +70,18 @@ public class SqlCostInterceptor implements Interceptor {
             watch.stop();
             return value;
         } finally {
-            if (watch.isRunning()) {
+            if (watch != null && watch.isRunning()) {
                 watch.stop();
             }
-            if (log.isDebugEnabled()) {
-                log.debug("==>" + (String)info.get("id"));
+            if (watch != null && log.isDebugEnabled()) {
+                log.debug("==>" + info.get("id"));
                 log.debug("==>  Preparing: " + lineSeparator + info.get("sql"));
                 log.debug("==> Parameters: " + info.get("parameter"));
                 log.debug(watch.prettyPrint());
             }
-            if (watch.getTotalTimeMillis() > longQueryTime) {
-                log.warn("!!!slow query->" + info.get("id") + "!!!");
-                log.warn("==>" + info.get("id"));
+            if (watch != null && watch.getTotalTimeMillis() > longQueryTime) {
+                log.warn("!!!slow query->{}!!!", info.get("id"));
+                log.warn("==>{}", info.get("id"));
                 log.warn("==>  Preparing: " + lineSeparator + info.get("sql"));
                 log.warn("==> Parameters: " + info.get("parameter"));
                 log.warn(watch.prettyPrint());
@@ -91,7 +100,7 @@ public class SqlCostInterceptor implements Interceptor {
     }
 
     private Optional<Map<String, Object>> genSqlInfo(Object statementHandler) {
-        Map<String, Object> result = new HashMap();
+        Map<String, Object> result = new HashMap<>();
         try {
             if (statementHandler instanceof StatementHandler) {
                 StatementHandler delegateHandler = (StatementHandler) DELEGATE_FIELD.get(statementHandler);
@@ -105,5 +114,4 @@ public class SqlCostInterceptor implements Interceptor {
             return Optional.of(result);
         }
     }
-
 }

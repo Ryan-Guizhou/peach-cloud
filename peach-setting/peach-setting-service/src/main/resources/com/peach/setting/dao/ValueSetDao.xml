@@ -2,36 +2,42 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.ValueSetDao">
     <sql id="allColumn">
-        ID,                                               CODE,                                             NAME,                                             DESCRIPTION,
-        STATUS,                                           CREATOR_CODE,                                     CREATOR_NAME,                                     CREATED_TIME,
-        UPDATED_TIME,                                     UPDATER_CODE,                                     UPDATER_NAME
+        ID,                                               VALUE_SET_CODE,                                   VALUE_SET_NAME,                                   MODULE_CODE,
+        SOURCE_TYPE,                                      DESCRIPTION,                                      STATUS,                                           CREATED_TIME,
+        CREATOR_ID,                                     MODIFY_TIME,                                     MODIFIER
     </sql>
 
     <sql id="allColumnAlias">
-        ID as id,                                         CODE as code,                                     NAME as name,                                     DESCRIPTION as description,
-        STATUS as status,                                 CREATOR_CODE as creatorCode,                      CREATOR_NAME as creatorName,                      CREATED_TIME as createdTime,
-        UPDATED_TIME as updatedTime,                      UPDATER_CODE as updaterCode,                      UPDATER_NAME as updaterName
+        ID as id,                                         VALUE_SET_CODE as valueSetCode,                   VALUE_SET_NAME as valueSetName,                   MODULE_CODE as moduleCode,
+        SOURCE_TYPE as sourceType,                        DESCRIPTION as description,                       STATUS as status,                                 CREATED_TIME as createdTime,
+        CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,                      MODIFIER as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=BIGINT},                  #{code,jdbcType=VARCHAR},               #{name,jdbcType=VARCHAR},               #{description,jdbcType=VARCHAR},
-        #{status,jdbcType=INTEGER},             #{creatorCode,jdbcType=VARCHAR},        #{creatorName,jdbcType=VARCHAR},        #{createdTime,jdbcType=VARCHAR},
-        #{updatedTime,jdbcType=VARCHAR},        #{updaterCode,jdbcType=VARCHAR},        #{updaterName,jdbcType=VARCHAR}
+        #{id,jdbcType=VARCHAR},                 #{valueSetCode,jdbcType=VARCHAR},       #{valueSetName,jdbcType=VARCHAR},      #{moduleCode,jdbcType=VARCHAR},
+        #{sourceType,jdbcType=VARCHAR},         #{description,jdbcType=VARCHAR},        #{status,jdbcType=INTEGER},            #{createdTime,jdbcType=VARCHAR},
+        #{creatorId,jdbcType=VARCHAR},        #{modifyTime,jdbcType=VARCHAR},        #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=BIGINT},             #{item.code,jdbcType=VARCHAR},          #{item.name,jdbcType=VARCHAR},          #{item.description,jdbcType=VARCHAR},
-        #{item.status,jdbcType=INTEGER},        #{item.creatorCode,jdbcType=VARCHAR},   #{item.creatorName,jdbcType=VARCHAR},   #{item.createdTime,jdbcType=VARCHAR},
-        #{item.updatedTime,jdbcType=VARCHAR},   #{item.updaterCode,jdbcType=VARCHAR},   #{item.updaterName,jdbcType=VARCHAR}
+        #{item.id,jdbcType=VARCHAR},            #{item.valueSetCode,jdbcType=VARCHAR},  #{item.valueSetName,jdbcType=VARCHAR}, #{item.moduleCode,jdbcType=VARCHAR},
+        #{item.sourceType,jdbcType=VARCHAR},    #{item.description,jdbcType=VARCHAR},   #{item.status,jdbcType=INTEGER},       #{item.createdTime,jdbcType=VARCHAR},
+        #{item.creatorId,jdbcType=VARCHAR},   #{item.modifyTime,jdbcType=VARCHAR},   #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
-            <if test="code != null and code != ''">
-                CODE = #{code,jdbcType=VARCHAR},
+            <if test="valueSetCode != null and valueSetCode != ''">
+                VALUE_SET_CODE = #{valueSetCode,jdbcType=VARCHAR},
             </if>
-            <if test="name != null and name != ''">
-                NAME = #{name,jdbcType=VARCHAR},
+            <if test="valueSetName != null and valueSetName != ''">
+                VALUE_SET_NAME = #{valueSetName,jdbcType=VARCHAR},
+            </if>
+            <if test="moduleCode != null and moduleCode != ''">
+                MODULE_CODE = #{moduleCode,jdbcType=VARCHAR},
+            </if>
+            <if test="sourceType != null and sourceType != ''">
+                SOURCE_TYPE = #{sourceType,jdbcType=VARCHAR},
             </if>
             <if test="description != null and description != ''">
                 DESCRIPTION = #{description,jdbcType=VARCHAR},
@@ -39,34 +45,34 @@
             <if test="status != null">
                 STATUS = #{status,jdbcType=INTEGER},
             </if>
-            <if test="creatorCode != null and creatorCode != ''">
-                CREATOR_CODE = #{creatorCode,jdbcType=VARCHAR},
-            </if>
-            <if test="creatorName != null and creatorName != ''">
-                CREATOR_NAME = #{creatorName,jdbcType=VARCHAR},
-            </if>
             <if test="createdTime != null and createdTime != ''">
                 CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
             </if>
-            <if test="updatedTime != null and updatedTime != ''">
-                UPDATED_TIME = #{updatedTime,jdbcType=VARCHAR},
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
             </if>
-            <if test="updaterCode != null and updaterCode != ''">
-                UPDATER_CODE = #{updaterCode,jdbcType=VARCHAR},
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             </if>
-            <if test="updaterName != null and updaterName != ''">
-                UPDATER_NAME = #{updaterName,jdbcType=VARCHAR},
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER = #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
 
     <sql id="updateSelectiveColumn">
         <trim suffixOverrides=",">
-            <if test="code != null and code != ''">
-                CODE,
+            <if test="valueSetCode != null and valueSetCode != ''">
+                VALUE_SET_CODE,
             </if>
-            <if test="name != null and name != ''">
-                NAME,
+            <if test="valueSetName != null and valueSetName != ''">
+                VALUE_SET_NAME,
+            </if>
+            <if test="moduleCode != null and moduleCode != ''">
+                MODULE_CODE,
+            </if>
+            <if test="sourceType != null and sourceType != ''">
+                SOURCE_TYPE,
             </if>
             <if test="description != null and description != ''">
                 DESCRIPTION,
@@ -74,34 +80,34 @@
             <if test="status != null">
                 STATUS,
             </if>
-            <if test="creatorCode != null and creatorCode != ''">
-                CREATOR_CODE,
-            </if>
-            <if test="creatorName != null and creatorName != ''">
-                CREATOR_NAME,
-            </if>
             <if test="createdTime != null and createdTime != ''">
                 CREATED_TIME,
             </if>
-            <if test="updatedTime != null and updatedTime != ''">
-                UPDATED_TIME,
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID,
             </if>
-            <if test="updaterCode != null and updaterCode != ''">
-                UPDATER_CODE,
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME,
             </if>
-            <if test="updaterName != null and updaterName != ''">
-                UPDATER_NAME,
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER,
             </if>
         </trim>
     </sql>
 
     <sql id="updateSelectiveValue">
         <trim suffixOverrides=",">
-            <if test="code != null and code != ''">
-                #{code,jdbcType=VARCHAR},
+            <if test="valueSetCode != null and valueSetCode != ''">
+                #{valueSetCode,jdbcType=VARCHAR},
             </if>
-            <if test="name != null and name != ''">
-                #{name,jdbcType=VARCHAR},
+            <if test="valueSetName != null and valueSetName != ''">
+                #{valueSetName,jdbcType=VARCHAR},
+            </if>
+            <if test="moduleCode != null and moduleCode != ''">
+                #{moduleCode,jdbcType=VARCHAR},
+            </if>
+            <if test="sourceType != null and sourceType != ''">
+                #{sourceType,jdbcType=VARCHAR},
             </if>
             <if test="description != null and description != ''">
                 #{description,jdbcType=VARCHAR},
@@ -109,36 +115,36 @@
             <if test="status != null">
                 #{status,jdbcType=INTEGER},
             </if>
-            <if test="creatorCode != null and creatorCode != ''">
-                #{creatorCode,jdbcType=VARCHAR},
-            </if>
-            <if test="creatorName != null and creatorName != ''">
-                #{creatorName,jdbcType=VARCHAR},
-            </if>
             <if test="createdTime != null and createdTime != ''">
                 #{createdTime,jdbcType=VARCHAR},
             </if>
-            <if test="updatedTime != null and updatedTime != ''">
-                #{updatedTime,jdbcType=VARCHAR},
+            <if test="creatorId != null and creatorId != ''">
+                #{creatorId,jdbcType=VARCHAR},
             </if>
-            <if test="updaterCode != null and updaterCode != ''">
-                #{updaterCode,jdbcType=VARCHAR},
+            <if test="modifyTime != null and modifyTime != ''">
+                #{modifyTime,jdbcType=VARCHAR},
             </if>
-            <if test="updaterName != null and updaterName != ''">
-                #{updaterName,jdbcType=VARCHAR},
+            <if test="modifierId != null and modifierId != ''">
+                #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
 
     <sql id="allColumnCond">
-        <if test="id != null">
-            AND ID = #{id,jdbcType=BIGINT}
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
         </if>
-        <if test="code != null and code != ''">
-            AND CODE = #{code,jdbcType=VARCHAR}
+        <if test="valueSetCode != null and valueSetCode != ''">
+            AND VALUE_SET_CODE = #{valueSetCode,jdbcType=VARCHAR}
         </if>
-        <if test="name != null and name != ''">
-            AND NAME = #{name,jdbcType=VARCHAR}
+        <if test="valueSetName != null and valueSetName != ''">
+            AND VALUE_SET_NAME = #{valueSetName,jdbcType=VARCHAR}
+        </if>
+        <if test="moduleCode != null and moduleCode != ''">
+            AND MODULE_CODE = #{moduleCode,jdbcType=VARCHAR}
+        </if>
+        <if test="sourceType != null and sourceType != ''">
+            AND SOURCE_TYPE = #{sourceType,jdbcType=VARCHAR}
         </if>
         <if test="description != null and description != ''">
             AND DESCRIPTION = #{description,jdbcType=VARCHAR}
@@ -146,28 +152,22 @@
         <if test="status != null">
             AND STATUS = #{status,jdbcType=INTEGER}
         </if>
-        <if test="creatorCode != null and creatorCode != ''">
-            AND CREATOR_CODE = #{creatorCode,jdbcType=VARCHAR}
-        </if>
-        <if test="creatorName != null and creatorName != ''">
-            AND CREATOR_NAME = #{creatorName,jdbcType=VARCHAR}
-        </if>
         <if test="createdTime != null and createdTime != ''">
             AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
         </if>
-        <if test="updatedTime != null and updatedTime != ''">
-            AND UPDATED_TIME = #{updatedTime,jdbcType=VARCHAR}
+        <if test="creatorId != null and creatorId != ''">
+            AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
         </if>
-        <if test="updaterCode != null and updaterCode != ''">
-            AND UPDATER_CODE = #{updaterCode,jdbcType=VARCHAR}
+        <if test="modifyTime != null and modifyTime != ''">
+            AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
         </if>
-        <if test="updaterName != null and updaterName != ''">
-            AND UPDATER_NAME = #{updaterName,jdbcType=VARCHAR}
+        <if test="modifierId != null and modifierId != ''">
+            AND MODIFIER = #{modifierId,jdbcType=VARCHAR}
         </if>
     </sql>
 
     <insert id="insert" parameterType="com.peach.setting.entity.ValueSetDO">
-        INSERT INTO VALUE_SET (
+        INSERT INTO PEACH_VALUE_SET (
         <include refid="allColumn" />
         ) VALUES (
         <include refid="allColumnValue" />
@@ -175,16 +175,16 @@
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.setting.entity.ValueSetDO">
-        INSERT INTO VALUE_SET (
+        INSERT INTO PEACH_VALUE_SET (
         <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
-            (<include refid="itemAllColumnValue"/>)
+            (<include refid="itemAllColumnValue" />)
         </foreach>
     </insert>
 
     <update id="update" parameterType="com.peach.setting.entity.ValueSetDO">
-        UPDATE VALUE_SET SET
+        UPDATE PEACH_VALUE_SET SET
         <include refid="allColumnSet" />
         <where>
             <include refid="allColumnCond" />
@@ -192,52 +192,52 @@
     </update>
 
     <delete id="delById" parameterType="string">
-        DELETE FROM VALUE_SET
-        WHERE ID = #{value,jdbcType=BIGINT}
+        DELETE FROM PEACH_VALUE_SET
+        WHERE ID = #{value,jdbcType=VARCHAR}
     </delete>
 
     <delete id="delByIds" parameterType="java.util.List">
-        DELETE FROM VALUE_SET
+        DELETE FROM PEACH_VALUE_SET
         WHERE ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
-            #{id,jdbcType=BIGINT}
+            #{id,jdbcType=VARCHAR}
         </foreach>
     </delete>
 
     <delete id="del" parameterType="com.peach.setting.entity.ValueSetDO">
-        DELETE FROM VALUE_SET
+        DELETE FROM PEACH_VALUE_SET
         <where>
             <include refid="allColumnCond" />
         </where>
     </delete>
 
-    <update id="updateById" parameterType="java.lang.String">
-        UPDATE VALUE_SET SET
+    <update id="updateById" parameterType="com.peach.setting.entity.ValueSetDO">
+        UPDATE PEACH_VALUE_SET SET
         <include refid="allColumnSet" />
-        WHERE ID =  #{id,jdbcType=BIGINT}
+        WHERE ID = #{id,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.setting.entity.ValueSetDO">
+    <select id="selectById" parameterType="string" resultType="com.peach.setting.vo.ValueSetVO">
         SELECT
         <include refid="allColumnAlias" />
-        FROM VALUE_SET
-        WHERE ID = #{value,jdbcType=BIGINT}
+        FROM PEACH_VALUE_SET
+        WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.entity.ValueSetDO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.vo.ValueSetVO">
         SELECT
         <include refid="allColumnAlias" />
-        FROM VALUE_SET
+        FROM PEACH_VALUE_SET
         WHERE ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
-            #{id,jdbcType=BIGINT}
+            #{id,jdbcType=VARCHAR}
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.setting.entity.ValueSetDO" resultType="com.peach.setting.entity.ValueSetDO">
+    <select id="select" parameterType="com.peach.setting.entity.ValueSetDO" resultType="com.peach.setting.vo.ValueSetVO">
         SELECT
         <include refid="allColumnAlias" />
-        FROM VALUE_SET
+        FROM PEACH_VALUE_SET
         <where>
             <include refid="allColumnCond" />
         </where>
@@ -245,9 +245,20 @@
 
     <select id="count" parameterType="com.peach.setting.entity.ValueSetDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
-        FROM VALUE_SET
+        FROM PEACH_VALUE_SET
         <where>
             <include refid="allColumnCond" />
         </where>
     </select>
+
+    <select id="selectByQO" parameterType="com.peach.setting.qo.ValueSetQO" resultType="com.peach.setting.vo.ValueSetVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_VALUE_SET
+<!--        <where>-->
+<!--            <include refid="allColumnCond" />-->
+<!--        </where>-->
+        ORDER BY MODIFY_TIME DESC
+    </select>
 </mapper>
+
