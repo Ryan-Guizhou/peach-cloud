@@ -24,3 +24,4 @@ public class SaSessionForJacksonCustomized extends SaSession implements Serializ
     }
 
 }
+

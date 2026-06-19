@@ -32,17 +32,17 @@ public class OpenApiConfig {
                 .components(new Components()
                         .addSecuritySchemes("Authorization",
                                 new SecurityScheme()
-                                        .name("全局请求token")
+                                        .name("Authorization")
                                         .type(SecurityScheme.Type.APIKEY)
                                         .in(SecurityScheme.In.HEADER)
                                         .description("Sa-Token 登录凭证")
                         ).addSecuritySchemes("User-Agent",new SecurityScheme()
-                                .name("全局请求User-Agent")
+                                .name("User-Agent")
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
                                 .description("User-Agent 用户代理"))
                         .addSecuritySchemes("Referer",new SecurityScheme()
-                                .name("全局请求Referer")
+                                .name("Referer")
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
                                 .description("Referer 引用来源"))
@@ -52,6 +52,8 @@ public class OpenApiConfig {
     /**
      * 创建 API 基本信息
      * 包含所有 info 可配置字段
+     *
+     * @return Info 对象
      */
     private Info createApiInfo() {
         Contact contact = new Contact()

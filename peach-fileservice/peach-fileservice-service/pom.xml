@@ -84,6 +84,11 @@
             <artifactId>bce-java-sdk</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-store-starter</artifactId>
+        </dependency>
+
 
     </dependencies>
 

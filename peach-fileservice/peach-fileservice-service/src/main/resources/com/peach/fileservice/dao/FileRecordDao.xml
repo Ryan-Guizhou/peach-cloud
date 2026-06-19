@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.fileservice.dao.FileRecordDao">
+    <sql id="allColumn">
+        FILE_ID,                                          OBJECT_ID,                                       BIZ_TYPE,                                         BIZ_ID,
+        BIZ_TAG,                                          FILE_NAME,                                       DISPLAY_NAME,                                     CONTENT_TYPE,
+        FILE_SIZE,                                        FILE_EXT,                                        FILE_STATUS,                                      DELETE_TIME,
+        EXPIRE_DELETE_TIME,                               REMARK,                                          IS_DELETE,                                        CREATED_TIME,
+        CREATOR_ID,                                       MODIFY_TIME,                                     MODIFIER
+    </sql>
+
+    <sql id="allColumnAlias">
+        FILE_ID as fileId,                                OBJECT_ID as objectId,                           BIZ_TYPE as bizType,                              BIZ_ID as bizId,
+        BIZ_TAG as bizTag,                                FILE_NAME as fileName,                           DISPLAY_NAME as displayName,                      CONTENT_TYPE as contentType,
+        FILE_SIZE as fileSize,                            FILE_EXT as fileExt,                             FILE_STATUS as fileStatus,                        DELETE_TIME as deleteTime,
+        EXPIRE_DELETE_TIME as expireDeleteTime,           REMARK as remark,                                IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
+        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                       MODIFIER as modifierId
+    </sql>
+
+    <sql id="allColumnValue">
+        #{fileId,jdbcType=VARCHAR},             #{objectId,jdbcType=VARCHAR},          #{bizType,jdbcType=VARCHAR},            #{bizId,jdbcType=VARCHAR},
+        #{bizTag,jdbcType=VARCHAR},             #{fileName,jdbcType=VARCHAR},          #{displayName,jdbcType=VARCHAR},        #{contentType,jdbcType=VARCHAR},
+        #{fileSize,jdbcType=BIGINT},            #{fileExt,jdbcType=VARCHAR},           #{fileStatus,jdbcType=VARCHAR},         #{deleteTime,jdbcType=VARCHAR},
+        #{expireDeleteTime,jdbcType=VARCHAR},   #{remark,jdbcType=VARCHAR},            #{isDelete,jdbcType=INTEGER},           #{createdTime,jdbcType=VARCHAR},
+        #{creatorId,jdbcType=VARCHAR},          #{modifyTime,jdbcType=VARCHAR},        #{modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.fileId,jdbcType=VARCHAR},        #{item.objectId,jdbcType=VARCHAR},     #{item.bizType,jdbcType=VARCHAR},       #{item.bizId,jdbcType=VARCHAR},
+        #{item.bizTag,jdbcType=VARCHAR},        #{item.fileName,jdbcType=VARCHAR},     #{item.displayName,jdbcType=VARCHAR},   #{item.contentType,jdbcType=VARCHAR},
+        #{item.fileSize,jdbcType=BIGINT},       #{item.fileExt,jdbcType=VARCHAR},      #{item.fileStatus,jdbcType=VARCHAR},    #{item.deleteTime,jdbcType=VARCHAR},
+        #{item.expireDeleteTime,jdbcType=VARCHAR}, #{item.remark,jdbcType=VARCHAR},    #{item.isDelete,jdbcType=INTEGER},      #{item.createdTime,jdbcType=VARCHAR},
+        #{item.creatorId,jdbcType=VARCHAR},     #{item.modifyTime,jdbcType=VARCHAR},   #{item.modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="objectId != null and objectId != ''">
+                OBJECT_ID = #{objectId,jdbcType=VARCHAR},
+            </if>
+            <if test="bizType != null and bizType != ''">
+                BIZ_TYPE = #{bizType,jdbcType=VARCHAR},
+            </if>
+            <if test="bizId != null and bizId != ''">
+                BIZ_ID = #{bizId,jdbcType=VARCHAR},
+            </if>
+            <if test="bizTag != null and bizTag != ''">
+                BIZ_TAG = #{bizTag,jdbcType=VARCHAR},
+            </if>
+            <if test="fileName != null and fileName != ''">
+                FILE_NAME = #{fileName,jdbcType=VARCHAR},
+            </if>
+            <if test="displayName != null and displayName != ''">
+                DISPLAY_NAME = #{displayName,jdbcType=VARCHAR},
+            </if>
+            <if test="contentType != null and contentType != ''">
+                CONTENT_TYPE = #{contentType,jdbcType=VARCHAR},
+            </if>
+            <if test="fileSize != null">
+                FILE_SIZE = #{fileSize,jdbcType=BIGINT},
+            </if>
+            <if test="fileExt != null and fileExt != ''">
+                FILE_EXT = #{fileExt,jdbcType=VARCHAR},
+            </if>
+            <if test="fileStatus != null and fileStatus != ''">
+                FILE_STATUS = #{fileStatus,jdbcType=VARCHAR},
+            </if>
+            <if test="deleteTime != null and deleteTime != ''">
+                DELETE_TIME = #{deleteTime,jdbcType=VARCHAR},
+            </if>
+            <if test="expireDeleteTime != null and expireDeleteTime != ''">
+                EXPIRE_DELETE_TIME = #{expireDeleteTime,jdbcType=VARCHAR},
+            </if>
+            <if test="remark != null and remark != ''">
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE = #{isDelete,jdbcType=INTEGER},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER = #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="fileId != null and fileId != ''">
+            AND FILE_ID = #{fileId,jdbcType=VARCHAR}
+        </if>
+        <if test="objectId != null and objectId != ''">
+            AND OBJECT_ID = #{objectId,jdbcType=VARCHAR}
+        </if>
+        <if test="bizType != null and bizType != ''">
+            AND BIZ_TYPE = #{bizType,jdbcType=VARCHAR}
+        </if>
+        <if test="bizId != null and bizId != ''">
+            AND BIZ_ID = #{bizId,jdbcType=VARCHAR}
+        </if>
+        <if test="bizTag != null and bizTag != ''">
+            AND BIZ_TAG = #{bizTag,jdbcType=VARCHAR}
+        </if>
+        <if test="fileName != null and fileName != ''">
+            AND FILE_NAME = #{fileName,jdbcType=VARCHAR}
+        </if>
+        <if test="displayName != null and displayName != ''">
+            AND DISPLAY_NAME = #{displayName,jdbcType=VARCHAR}
+        </if>
+        <if test="contentType != null and contentType != ''">
+            AND CONTENT_TYPE = #{contentType,jdbcType=VARCHAR}
+        </if>
+        <if test="fileSize != null">
+            AND FILE_SIZE = #{fileSize,jdbcType=BIGINT}
+        </if>
+        <if test="fileExt != null and fileExt != ''">
+            AND FILE_EXT = #{fileExt,jdbcType=VARCHAR}
+        </if>
+        <if test="fileStatus != null and fileStatus != ''">
+            AND FILE_STATUS = #{fileStatus,jdbcType=VARCHAR}
+        </if>
+        <if test="deleteTime != null and deleteTime != ''">
+            AND DELETE_TIME = #{deleteTime,jdbcType=VARCHAR}
+        </if>
+        <if test="expireDeleteTime != null and expireDeleteTime != ''">
+            AND EXPIRE_DELETE_TIME = #{expireDeleteTime,jdbcType=VARCHAR}
+        </if>
+        <if test="remark != null and remark != ''">
+            AND REMARK = #{remark,jdbcType=VARCHAR}
+        </if>
+        <if test="isDelete != null">
+            AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
+        </if>
+        <if test="createdTime != null and createdTime != ''">
+            AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
+        </if>
+        <if test="creatorId != null and creatorId != ''">
+            AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyTime != null and modifyTime != ''">
+            AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
+        </if>
+        <if test="modifierId != null and modifierId != ''">
+            AND MODIFIER = #{modifierId,jdbcType=VARCHAR}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.fileservice.entity.FileRecordDO">
+        INSERT INTO PEACH_FILE_RECORD (
+        <include refid="allColumn" />
+        ) VALUES (
+        <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.fileservice.entity.FileRecordDO">
+        INSERT INTO PEACH_FILE_RECORD (
+        <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue" />)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.fileservice.entity.FileRecordDO">
+        UPDATE PEACH_FILE_RECORD SET
+        <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <update id="updateById" parameterType="com.peach.fileservice.entity.FileRecordDO">
+        UPDATE PEACH_FILE_RECORD SET
+        <include refid="allColumnSet" />
+        WHERE FILE_ID = #{fileId,jdbcType=VARCHAR}
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM PEACH_FILE_RECORD
+        WHERE FILE_ID = #{value,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM PEACH_FILE_RECORD
+        WHERE FILE_ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.fileservice.entity.FileRecordDO">
+        DELETE FROM PEACH_FILE_RECORD
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.fileservice.vo.FileRecordVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_FILE_RECORD
+        WHERE FILE_ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.fileservice.vo.FileRecordVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_FILE_RECORD
+        WHERE FILE_ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.fileservice.entity.FileRecordDO" resultType="com.peach.fileservice.vo.FileRecordVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_FILE_RECORD
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.fileservice.entity.FileRecordDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_FILE_RECORD
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="selectByQO" parameterType="com.peach.fileservice.qo.FileQueryQO" resultType="com.peach.fileservice.vo.FileRecordVO">
+        SELECT
+            r.FILE_ID as fileId, r.OBJECT_ID as objectId, r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
+            r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
+            r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
+            r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete, r.CREATED_TIME as createdTime,
+            r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER as modifierId,
+            o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey, o.STORAGE_STATUS as storageStatus
+        FROM PEACH_FILE_RECORD r
+        LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
+        <where>
+            <if test="bizType != null and bizType != ''">
+                AND r.BIZ_TYPE = #{bizType,jdbcType=VARCHAR}
+            </if>
+            <if test="bizId != null and bizId != ''">
+                AND r.BIZ_ID = #{bizId,jdbcType=VARCHAR}
+            </if>
+            <if test="bizTag != null and bizTag != ''">
+                AND r.BIZ_TAG = #{bizTag,jdbcType=VARCHAR}
+            </if>
+            <if test="fileStatus != null and fileStatus != ''">
+                AND r.FILE_STATUS = #{fileStatus,jdbcType=VARCHAR}
+            </if>
+            <if test="isDelete != null">
+                AND r.IS_DELETE = #{isDelete,jdbcType=INTEGER}
+            </if>
+        </where>
+        ORDER BY r.CREATED_TIME DESC
+    </select>
+
+    <select id="selectDetailByFileId" resultType="com.peach.fileservice.vo.FileRecordVO">
+        SELECT
+            r.FILE_ID as fileId, r.OBJECT_ID as objectId, r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
+            r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
+            r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
+            r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete, r.CREATED_TIME as createdTime,
+            r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER as modifierId,
+            o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey, o.STORAGE_STATUS as storageStatus
+        FROM PEACH_FILE_RECORD r
+        LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
+        WHERE r.FILE_ID = #{fileId,jdbcType=VARCHAR}
+        LIMIT 1
+    </select>
+
+    <select id="countActiveByObjectId" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_FILE_RECORD
+        WHERE OBJECT_ID = #{objectId,jdbcType=VARCHAR}
+          AND IS_DELETE = 0
+          AND FILE_STATUS = 'ACTIVE'
+    </select>
+
+    <update id="logicalDelete">
+        UPDATE PEACH_FILE_RECORD
+        SET FILE_STATUS = #{fileStatus,jdbcType=VARCHAR},
+            DELETE_TIME = #{deleteTime,jdbcType=VARCHAR},
+            EXPIRE_DELETE_TIME = #{expireDeleteTime,jdbcType=VARCHAR},
+            IS_DELETE = #{isDelete,jdbcType=INTEGER},
+            MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            MODIFIER = #{modifierId,jdbcType=VARCHAR}
+        WHERE FILE_ID = #{fileId,jdbcType=VARCHAR}
+    </update>
+
+    <update id="restoreByFileId">
+        UPDATE PEACH_FILE_RECORD
+        SET FILE_STATUS = #{fileStatus,jdbcType=VARCHAR},
+            DELETE_TIME = NULL,
+            EXPIRE_DELETE_TIME = NULL,
+            IS_DELETE = #{isDelete,jdbcType=INTEGER},
+            MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            MODIFIER = #{modifierId,jdbcType=VARCHAR}
+        WHERE FILE_ID = #{fileId,jdbcType=VARCHAR}
+    </update>
+
+    <select id="selectExpiredDeletedRecords" resultType="com.peach.fileservice.vo.FileRecordVO">
+        SELECT
+            r.FILE_ID as fileId, r.OBJECT_ID as objectId, r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
+            r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
+            r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
+            r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete, r.CREATED_TIME as createdTime,
+            r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER as modifierId,
+            o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey, o.STORAGE_STATUS as storageStatus
+        FROM PEACH_FILE_RECORD r
+        LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
+        WHERE r.IS_DELETE = 1
+          AND r.EXPIRE_DELETE_TIME IS NOT NULL
+          AND r.EXPIRE_DELETE_TIME &lt;= #{nowTime,jdbcType=VARCHAR}
+        ORDER BY r.EXPIRE_DELETE_TIME ASC
+    </select>
+</mapper>
