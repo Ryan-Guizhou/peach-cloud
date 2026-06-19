@@ -386,8 +386,8 @@ public class DateUtil {
     public static boolean isValidDate(String dateStr) {
         boolean b = false;
         try {
-            DATA_LOCAL.get().setLenient(false);
-            DATA_LOCAL.get().parse(dateStr);
+            TIME_LOCAL.get().setLenient(false);
+            TIME_LOCAL.get().parse(dateStr);
             b = true;
         } catch (ParseException e) {
             e.printStackTrace();
