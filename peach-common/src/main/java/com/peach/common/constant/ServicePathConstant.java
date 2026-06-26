@@ -13,4 +13,6 @@ public interface ServicePathConstant {
     String MONITOR_PATH_SERVICE = "/monitor/external";
 
     String FILE_PATH_SERVICE = "/file/external";
+
+    String MESSAGE_PATH_SERVICE = "/message/external";
 }

@@ -539,7 +539,31 @@
 
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-message-core</artifactId>
+                <artifactId>peach-message-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-message-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-message-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-message-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-message-openfeign-external</artifactId>
                 <version>${revision}</version>
             </dependency>
 

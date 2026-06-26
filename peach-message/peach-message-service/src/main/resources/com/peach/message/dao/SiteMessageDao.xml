@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.message.dao.SiteMessageDao">
+    <sql id="allColumn">
+        ID,                                               MESSAGE_CODE,                                     RECEIVER_ID,                                      TITLE_MESSAGE_KEY,
+        CONTENT_MESSAGE_KEY,                              MESSAGE_TYPE,                                     SOURCE_TYPE,                                      SOURCE_CODE,
+        READ_FLAG,                                        SEND_STATUS,                                      CREATED_TIME,                                     CREATOR_ID,
+        MODIFY_TIME,                                      MODIFIER_ID
+    </sql>
+
+    <sql id="allColumnAlias">
+        ID as id,                                         MESSAGE_CODE as messageCode,                      RECEIVER_ID as receiverId,                        TITLE_MESSAGE_KEY as titleMessageKey,
+        CONTENT_MESSAGE_KEY as contentMessageKey,         MESSAGE_TYPE as messageType,                      SOURCE_TYPE as sourceType,                        SOURCE_CODE as sourceCode,
+        READ_FLAG as readFlag,                            SEND_STATUS as sendStatus,                        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,
+        MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
+    </sql>
+
+    <sql id="allColumnValue">
+        #{id,jdbcType=VARCHAR},                           #{messageCode,jdbcType=VARCHAR},                  #{receiverId,jdbcType=VARCHAR},                    #{titleMessageKey,jdbcType=VARCHAR},
+        #{contentMessageKey,jdbcType=VARCHAR},            #{messageType,jdbcType=VARCHAR},                  #{sourceType,jdbcType=VARCHAR},                    #{sourceCode,jdbcType=VARCHAR},
+        #{readFlag,jdbcType=INTEGER},                     #{sendStatus,jdbcType=VARCHAR},                   #{createdTime,jdbcType=VARCHAR},                   #{creatorId,jdbcType=VARCHAR},
+        #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.id,jdbcType=VARCHAR},                      #{item.messageCode,jdbcType=VARCHAR},             #{item.receiverId,jdbcType=VARCHAR},               #{item.titleMessageKey,jdbcType=VARCHAR},
+        #{item.contentMessageKey,jdbcType=VARCHAR},       #{item.messageType,jdbcType=VARCHAR},             #{item.sourceType,jdbcType=VARCHAR},               #{item.sourceCode,jdbcType=VARCHAR},
+        #{item.readFlag,jdbcType=INTEGER},                #{item.sendStatus,jdbcType=VARCHAR},              #{item.createdTime,jdbcType=VARCHAR},              #{item.creatorId,jdbcType=VARCHAR},
+        #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="messageCode != null and messageCode != ''">MESSAGE_CODE = #{messageCode,jdbcType=VARCHAR},</if>
+            <if test="receiverId != null and receiverId != ''">RECEIVER_ID = #{receiverId,jdbcType=VARCHAR},</if>
+            <if test="titleMessageKey != null and titleMessageKey != ''">TITLE_MESSAGE_KEY = #{titleMessageKey,jdbcType=VARCHAR},</if>
+            <if test="contentMessageKey != null and contentMessageKey != ''">CONTENT_MESSAGE_KEY = #{contentMessageKey,jdbcType=VARCHAR},</if>
+            <if test="messageType != null and messageType != ''">MESSAGE_TYPE = #{messageType,jdbcType=VARCHAR},</if>
+            <if test="sourceType != null and sourceType != ''">SOURCE_TYPE = #{sourceType,jdbcType=VARCHAR},</if>
+            <if test="sourceCode != null and sourceCode != ''">SOURCE_CODE = #{sourceCode,jdbcType=VARCHAR},</if>
+            <if test="readFlag != null">READ_FLAG = #{readFlag,jdbcType=INTEGER},</if>
+            <if test="sendStatus != null and sendStatus != ''">SEND_STATUS = #{sendStatus,jdbcType=VARCHAR},</if>
+            <if test="createdTime != null and createdTime != ''">CREATED_TIME = #{createdTime,jdbcType=VARCHAR},</if>
+            <if test="creatorId != null and creatorId != ''">CREATOR_ID = #{creatorId,jdbcType=VARCHAR},</if>
+            <if test="modifyTime != null and modifyTime != ''">MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},</if>
+            <if test="modifierId != null and modifierId != ''">MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},</if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="id != null and id != ''">AND ID = #{id,jdbcType=VARCHAR}</if>
+        <if test="messageCode != null and messageCode != ''">AND MESSAGE_CODE = #{messageCode,jdbcType=VARCHAR}</if>
+        <if test="receiverId != null and receiverId != ''">AND RECEIVER_ID = #{receiverId,jdbcType=VARCHAR}</if>
+        <if test="titleMessageKey != null and titleMessageKey != ''">AND TITLE_MESSAGE_KEY = #{titleMessageKey,jdbcType=VARCHAR}</if>
+        <if test="contentMessageKey != null and contentMessageKey != ''">AND CONTENT_MESSAGE_KEY = #{contentMessageKey,jdbcType=VARCHAR}</if>
+        <if test="messageType != null and messageType != ''">AND MESSAGE_TYPE = #{messageType,jdbcType=VARCHAR}</if>
+        <if test="messageTypeList != null and messageTypeList.size() > 0">
+            AND MESSAGE_TYPE IN
+            <foreach collection="messageTypeList" index="index" item="messageTypeItem" open="(" separator="," close=")">
+                #{messageTypeItem,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        <if test="sourceType != null and sourceType != ''">AND SOURCE_TYPE = #{sourceType,jdbcType=VARCHAR}</if>
+        <if test="sourceCode != null and sourceCode != ''">AND SOURCE_CODE = #{sourceCode,jdbcType=VARCHAR}</if>
+        <if test="readFlag != null">AND READ_FLAG = #{readFlag,jdbcType=INTEGER}</if>
+        <if test="sendStatus != null and sendStatus != ''">AND SEND_STATUS = #{sendStatus,jdbcType=VARCHAR}</if>
+        <if test="createdTime != null and createdTime != ''">AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}</if>
+        <if test="creatorId != null and creatorId != ''">AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}</if>
+        <if test="modifyTime != null and modifyTime != ''">AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}</if>
+        <if test="modifierId != null and modifierId != ''">AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}</if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.message.entity.SiteMessageDO">
+        INSERT INTO PEACH_SITE_MESSAGE (
+        <include refid="allColumn" />
+        ) VALUES (
+        <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.message.entity.SiteMessageDO">
+        INSERT INTO PEACH_SITE_MESSAGE (
+        <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue" />)
+        </foreach>
+    </insert>
+
+    <update id="updateById" parameterType="com.peach.message.entity.SiteMessageDO">
+        UPDATE PEACH_SITE_MESSAGE SET
+        <include refid="allColumnSet" />
+        WHERE ID = #{id,jdbcType=VARCHAR}
+    </update>
+
+    <update id="revokeBySource">
+        UPDATE PEACH_SITE_MESSAGE
+        SET SEND_STATUS = 'REVOKED'
+        WHERE SOURCE_CODE = #{sourceCode,jdbcType=VARCHAR}
+        <if test="sourceType != null and sourceType != ''">
+            AND SOURCE_TYPE = #{sourceType,jdbcType=VARCHAR}
+        </if>
+    </update>
+
+    <update id="readAllByReceiver">
+        UPDATE PEACH_SITE_MESSAGE
+        SET READ_FLAG = 1,
+            MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
+        WHERE RECEIVER_ID = #{receiverId,jdbcType=VARCHAR}
+          AND READ_FLAG = 0
+          AND SEND_STATUS = 'SENT'
+        <if test="messageType != null and messageType != ''">
+          AND MESSAGE_TYPE = #{messageType,jdbcType=VARCHAR}
+        </if>
+        <if test="messageTypeList != null and messageTypeList.size() > 0">
+          AND MESSAGE_TYPE IN
+          <foreach collection="messageTypeList" index="index" item="messageTypeItem" open="(" separator="," close=")">
+            #{messageTypeItem,jdbcType=VARCHAR}
+          </foreach>
+        </if>
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.message.vo.SiteMessageVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_SITE_MESSAGE
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByQO" parameterType="com.peach.message.qo.SiteMessageQO" resultType="com.peach.message.vo.SiteMessageVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_SITE_MESSAGE
+<!--        <where>-->
+<!--            <include refid="allColumnCond" />-->
+<!--        </where>-->
+        ORDER BY READ_FLAG ASC, CREATED_TIME DESC
+    </select>
+
+    <select id="countUnread" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM PEACH_SITE_MESSAGE
+        WHERE RECEIVER_ID = #{receiverId,jdbcType=VARCHAR}
+          AND READ_FLAG = 0
+          AND SEND_STATUS = 'SENT'
+        <if test="messageType != null and messageType != ''">
+          AND MESSAGE_TYPE = #{messageType,jdbcType=VARCHAR}
+        </if>
+        <if test="messageTypeList != null and messageTypeList.size() > 0">
+          AND MESSAGE_TYPE IN
+          <foreach collection="messageTypeList" index="index" item="messageTypeItem" open="(" separator="," close=")">
+            #{messageTypeItem,jdbcType=VARCHAR}
+          </foreach>
+        </if>
+    </select>
+</mapper>
+

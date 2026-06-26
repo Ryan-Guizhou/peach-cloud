@@ -14,4 +14,6 @@ public interface ServiceNameConstant {
 
     String FILE_SERVICE = "peach-fileservice";
 
+    String MESSAGE_SERVICE = "peach-message";
+
 }
