@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.fileservice.dao.FileRecordDao">
     <sql id="allColumn">
@@ -6,7 +6,7 @@
         BIZ_TAG,                                          FILE_NAME,                                       DISPLAY_NAME,                                     CONTENT_TYPE,
         FILE_SIZE,                                        FILE_EXT,                                        FILE_STATUS,                                      DELETE_TIME,
         EXPIRE_DELETE_TIME,                               REMARK,                                          IS_DELETE,                                        CREATED_TIME,
-        CREATOR_ID,                                       MODIFY_TIME,                                     MODIFIER
+        CREATOR_ID,                                       MODIFY_TIME,                                     MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
@@ -14,7 +14,7 @@
         BIZ_TAG as bizTag,                                FILE_NAME as fileName,                           DISPLAY_NAME as displayName,                      CONTENT_TYPE as contentType,
         FILE_SIZE as fileSize,                            FILE_EXT as fileExt,                             FILE_STATUS as fileStatus,                        DELETE_TIME as deleteTime,
         EXPIRE_DELETE_TIME as expireDeleteTime,           REMARK as remark,                                IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
-        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                       MODIFIER as modifierId
+        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                       MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
@@ -87,7 +87,7 @@
                 MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             </if>
             <if test="modifierId != null and modifierId != ''">
-                MODIFIER = #{modifierId,jdbcType=VARCHAR},
+                MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -148,7 +148,7 @@
             AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
         </if>
         <if test="modifierId != null and modifierId != ''">
-            AND MODIFIER = #{modifierId,jdbcType=VARCHAR}
+            AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         </if>
     </sql>
 
@@ -243,7 +243,7 @@
             r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
             r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
             r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete, r.CREATED_TIME as createdTime,
-            r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER as modifierId,
+            r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER_ID as modifierId,
             o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey, o.STORAGE_STATUS as storageStatus
         FROM PEACH_FILE_RECORD r
         LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
@@ -273,7 +273,7 @@
             r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
             r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
             r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete, r.CREATED_TIME as createdTime,
-            r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER as modifierId,
+            r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER_ID as modifierId,
             o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey, o.STORAGE_STATUS as storageStatus
         FROM PEACH_FILE_RECORD r
         LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
@@ -296,7 +296,7 @@
             EXPIRE_DELETE_TIME = #{expireDeleteTime,jdbcType=VARCHAR},
             IS_DELETE = #{isDelete,jdbcType=INTEGER},
             MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
-            MODIFIER = #{modifierId,jdbcType=VARCHAR}
+            MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         WHERE FILE_ID = #{fileId,jdbcType=VARCHAR}
     </update>
 
@@ -307,7 +307,7 @@
             EXPIRE_DELETE_TIME = NULL,
             IS_DELETE = #{isDelete,jdbcType=INTEGER},
             MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
-            MODIFIER = #{modifierId,jdbcType=VARCHAR}
+            MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         WHERE FILE_ID = #{fileId,jdbcType=VARCHAR}
     </update>
 
@@ -317,7 +317,7 @@
             r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
             r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
             r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete, r.CREATED_TIME as createdTime,
-            r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER as modifierId,
+            r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER_ID as modifierId,
             o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey, o.STORAGE_STATUS as storageStatus
         FROM PEACH_FILE_RECORD r
         LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
@@ -327,3 +327,4 @@
         ORDER BY r.EXPIRE_DELETE_TIME ASC
     </select>
 </mapper>
+

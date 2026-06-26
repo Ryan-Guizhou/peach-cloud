@@ -75,7 +75,7 @@ public class BaseDO implements Serializable {
     /**
      * Modifier id.
      */
-    @Column(name = "MODIFIER")
+    @Column(name = "MODIFIER_ID")
     @Schema(description = "修改人ID")
     private String modifierId;
 

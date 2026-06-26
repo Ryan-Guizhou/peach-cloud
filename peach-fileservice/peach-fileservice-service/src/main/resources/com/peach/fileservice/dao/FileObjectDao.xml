@@ -6,7 +6,7 @@
         STORAGE_PROVIDER,                                 BUCKET_NAME,                                     OBJECT_KEY,                                       ORIGIN_FILE_NAME,
         CONTENT_TYPE,                                     EXTENSION,                                       STORAGE_STATUS,                                   REF_COUNT,
         UPLOAD_TIME,                                      LAST_ACCESS_TIME,                                IS_DELETE,                                        CREATED_TIME,
-        CREATOR_ID,                                       MODIFY_TIME,                                     MODIFIER
+        CREATOR_ID,                                       MODIFY_TIME,                                     MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
@@ -14,7 +14,7 @@
         STORAGE_PROVIDER as storageProvider,              BUCKET_NAME as bucketName,                       OBJECT_KEY as objectKey,                          ORIGIN_FILE_NAME as originFileName,
         CONTENT_TYPE as contentType,                      EXTENSION as extension,                          STORAGE_STATUS as storageStatus,                  REF_COUNT as refCount,
         UPLOAD_TIME as uploadTime,                        LAST_ACCESS_TIME as lastAccessTime,              IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
-        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                       MODIFIER as modifierId
+        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                       MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
@@ -87,7 +87,7 @@
                 MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             </if>
             <if test="modifierId != null and modifierId != ''">
-                MODIFIER = #{modifierId,jdbcType=VARCHAR},
+                MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -148,7 +148,7 @@
             AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
         </if>
         <if test="modifierId != null and modifierId != ''">
-            AND MODIFIER = #{modifierId,jdbcType=VARCHAR}
+            AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         </if>
     </sql>
 
@@ -252,7 +252,7 @@
         UPDATE PEACH_FILE_OBJECT
         SET REF_COUNT = COALESCE(REF_COUNT, 0) + #{count,jdbcType=INTEGER},
             MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
-            MODIFIER = #{modifierId,jdbcType=VARCHAR}
+            MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         WHERE OBJECT_ID = #{objectId,jdbcType=VARCHAR}
     </update>
 
@@ -263,7 +263,7 @@
                             ELSE COALESCE(REF_COUNT, 0) - #{count,jdbcType=INTEGER}
                         END,
             MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
-            MODIFIER = #{modifierId,jdbcType=VARCHAR}
+            MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         WHERE OBJECT_ID = #{objectId,jdbcType=VARCHAR}
     </update>
 
@@ -272,7 +272,7 @@
         SET STORAGE_STATUS = #{storageStatus,jdbcType=VARCHAR},
             IS_DELETE = #{isDelete,jdbcType=INTEGER},
             MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
-            MODIFIER = #{modifierId,jdbcType=VARCHAR}
+            MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         WHERE OBJECT_ID = #{objectId,jdbcType=VARCHAR}
     </update>
 
@@ -286,3 +286,4 @@
         </foreach>
     </select>
 </mapper>
+

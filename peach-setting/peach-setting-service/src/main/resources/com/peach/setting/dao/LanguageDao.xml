@@ -1,16 +1,16 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.LanguageDao">
     <sql id="allColumn">
         ID,                                               LANGUAGE_CODE,                                    LANGUAGE_NAME,                                    NATIVE_NAME,
         ICON,                                             STATUS,                                           DEFAULT_FLAG,                                     SORT_ORDER,
-        CREATED_TIME,                                     CREATOR_ID,                                     MODIFY_TIME,                                     MODIFIER
+        CREATED_TIME,                                     CREATOR_ID,                                     MODIFY_TIME,                                     MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
         ID as id,                                         LANGUAGE_CODE as languageCode,                    LANGUAGE_NAME as languageName,                    NATIVE_NAME as nativeName,
         ICON as icon,                                     STATUS as status,                                 DEFAULT_FLAG as defaultFlag,                      SORT_ORDER as sortOrder,
-        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,                      MODIFIER as modifierId
+        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,                      MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
@@ -58,7 +58,7 @@
                 MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             </if>
             <if test="modifierId != null and modifierId != ''">
-                MODIFIER = #{modifierId,jdbcType=VARCHAR},
+                MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -96,7 +96,7 @@
                 MODIFY_TIME,
             </if>
             <if test="modifierId != null and modifierId != ''">
-                MODIFIER,
+                MODIFIER_ID,
             </if>
         </trim>
     </sql>
@@ -168,7 +168,7 @@
             AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
         </if>
         <if test="modifierId != null and modifierId != ''">
-            AND MODIFIER = #{modifierId,jdbcType=VARCHAR}
+            AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         </if>
     </sql>
 
@@ -272,4 +272,5 @@
         ORDER BY DEFAULT_FLAG DESC, SORT_ORDER ASC, MODIFY_TIME DESC
     </select>
 </mapper>
+
 

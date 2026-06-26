@@ -1,18 +1,18 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.NoticeDao">
     <sql id="allColumn">
         ID,                                               NOTICE_CODE,                                      TITLE_MESSAGE_KEY,                                CONTENT_MESSAGE_KEY,
         NOTICE_TYPE,                                      PRIORITY,                                         PUBLISH_STATUS,                                   EFFECTIVE_FROM,
         EFFECTIVE_TO,                                     READ_COUNT,                                       INBOX_ENABLED,                                    STATUS,
-        CREATED_TIME,                                     CREATOR_ID,                                     MODIFY_TIME,                                     MODIFIER
+        CREATED_TIME,                                     CREATOR_ID,                                     MODIFY_TIME,                                     MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
         ID as id,                                         NOTICE_CODE as noticeCode,                        TITLE_MESSAGE_KEY as titleMessageKey,             CONTENT_MESSAGE_KEY as contentMessageKey,
         NOTICE_TYPE as noticeType,                        PRIORITY as priority,                             PUBLISH_STATUS as publishStatus,                  EFFECTIVE_FROM as effectiveFrom,
         EFFECTIVE_TO as effectiveTo,                      READ_COUNT as readCount,                          INBOX_ENABLED as inboxEnabled,                    STATUS as status,
-        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,                      MODIFIER as modifierId
+        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,                      MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
@@ -74,7 +74,7 @@
                 MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             </if>
             <if test="modifierId != null and modifierId != ''">
-                MODIFIER = #{modifierId,jdbcType=VARCHAR},
+                MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -124,7 +124,7 @@
                 MODIFY_TIME,
             </if>
             <if test="modifierId != null and modifierId != ''">
-                MODIFIER,
+                MODIFIER_ID,
             </if>
         </trim>
     </sql>
@@ -226,7 +226,7 @@
             AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
         </if>
         <if test="modifierId != null and modifierId != ''">
-            AND MODIFIER = #{modifierId,jdbcType=VARCHAR}
+            AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         </if>
     </sql>
 
@@ -331,4 +331,5 @@
         ORDER BY PRIORITY DESC, MODIFY_TIME DESC
     </select>
 </mapper>
+
 
