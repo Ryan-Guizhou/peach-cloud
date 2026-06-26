@@ -15,21 +15,10 @@
 
     <packaging>pom</packaging>
 
-
-    <dependencies>
-
-        <!-- Spring Boot -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-    </dependencies>
-
     <modules>
         <module>peach-captcha</module>
         <module>peach-email</module>
-        <module>peach-file</module>
+        <module>peach-storage</module>
         <module>peach-initialize</module>
         <module>peach-threadpool</module>
     </modules>

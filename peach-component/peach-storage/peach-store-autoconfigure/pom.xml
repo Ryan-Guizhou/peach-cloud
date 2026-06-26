@@ -12,9 +12,9 @@
 
     <packaging>jar</packaging>
 
-    <artifactId>peach-store-core</artifactId>
-    <name>peach-store-core</name>
-    <description>Peach storage core implementation and auto configuration.</description>
+    <artifactId>peach-store-autoconfigure</artifactId>
+    <name>peach-store-autoconfigure</name>
+    <description>Peach storage autoconfigure implementation and auto configuration.</description>
 
     <dependencies>
         <dependency>

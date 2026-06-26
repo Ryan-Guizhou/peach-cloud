@@ -17,7 +17,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>peach-store-core</module>
+        <module>peach-store-autoconfigure</module>
         <module>peach-store-starter</module>
         <module>peach-store-example</module>
     </modules>

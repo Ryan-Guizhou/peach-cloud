@@ -615,7 +615,7 @@
 
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-store-core</artifactId>
+                <artifactId>peach-store-autoconfigure</artifactId>
                 <version>${revision}</version>
             </dependency>
 
