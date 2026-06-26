@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: peach-rocket-example
+
+rocketmq:
+  name-server: 127.0.0.1:9876
+  producer:
+    group: peach-rocket-example-producer
+
+peach:
+  rocket:
+    namespace: dev
+    app-name: peach-rocket-example
+    naming:
+      topic-prefix: biz
+      topic-separator: '-'
+    consumer:
+      dynamic-register: true
+    topic:
+      auto-create: false
+    outbox:
+      enabled: false
+
+example:
+  rocket:
+    demo:
+      enabled: true
+server:
+  port: 8081
+

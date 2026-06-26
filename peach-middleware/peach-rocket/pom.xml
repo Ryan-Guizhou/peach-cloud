@@ -6,11 +6,18 @@
     <artifactId>peach-rocket</artifactId>
     <name>peach-rocket</name>
     <description>peach-rocket</description>
+    <packaging>pom</packaging>
 
     <parent>
         <groupId>com.peach</groupId>
         <artifactId>peach-middleware</artifactId>
         <version>${revision}</version>
     </parent>
+
+    <modules>
+        <module>peach-rocket-autoconfigure</module>
+        <module>peach-rocket-starter</module>
+        <module>peach-rocket-example</module>
+    </modules>
 
 </project>

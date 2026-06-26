@@ -1,0 +1,2 @@
+com.peach.rocket.autoconfigure.PeachRocketAutoConfigure
+com.peach.rocket.autoconfigure.PeachRocketOutboxAutoConfigure
