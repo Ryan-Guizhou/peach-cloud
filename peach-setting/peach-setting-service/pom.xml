@@ -30,8 +30,8 @@
         </dependency>
         <!-- Sa-Token 鏉冮檺璁よ瘉 -->
         <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-spring-boot-starter</artifactId>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-satoken-web-starter</artifactId>
         </dependency>
         <!-- Redis -->
         <dependency>

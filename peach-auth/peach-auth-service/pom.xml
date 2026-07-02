@@ -42,8 +42,8 @@
 
         <!-- Sa-Token 权限认证 -->
         <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-spring-boot-starter</artifactId>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-satoken-web-starter</artifactId>
         </dependency>
 
         <!-- Redis -->
@@ -69,6 +69,11 @@
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-fileservice-openfeign-external</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-message-openfeign-external</artifactId>
         </dependency>
     </dependencies>
 </project>

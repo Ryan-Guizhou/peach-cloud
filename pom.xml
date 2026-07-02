@@ -717,6 +717,36 @@
                 <artifactId>peach-openfeign-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-satoken-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-satoken-gateway-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-satoken-gateway-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-satoken-web-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-satoken-web-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
 
     </dependencyManagement>

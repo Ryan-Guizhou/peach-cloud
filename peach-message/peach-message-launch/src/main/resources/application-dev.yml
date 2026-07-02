@@ -21,4 +21,7 @@ spring:
     import:
       - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-openfeign.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-satoken.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-datasource.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-store.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
 

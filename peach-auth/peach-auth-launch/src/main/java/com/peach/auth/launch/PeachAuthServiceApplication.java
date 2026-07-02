@@ -14,7 +14,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
@@ -39,7 +38,6 @@ import java.util.Properties;
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @EnableConfigurationProperties(DataSourceProperties.class)
 @ComponentScan("com.peach")
-@EnableFeignClients(basePackages = "com.peach.fileservice.openfeign")
 @MapperScan(basePackages = {"com.peach.*.dao"},
         annotationClass = MybatisDao.class,
         sqlSessionFactoryRef = "mybatis-session")

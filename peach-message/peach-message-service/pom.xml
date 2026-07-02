@@ -48,8 +48,8 @@
             <artifactId>pagehelper-spring-boot-starter</artifactId>
         </dependency>
         <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-reactor-spring-boot-starter</artifactId>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-satoken-web-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>com.peach</groupId>

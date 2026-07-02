@@ -21,6 +21,8 @@
         <module>peach-redis</module>
         <module>peach-redission</module>
         <module>peach-mongo</module>
+        <module>peach-satoken</module>
+        <module>peach-openfeign</module>
     </modules>
 
 </project>
