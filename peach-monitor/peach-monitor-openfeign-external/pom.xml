@@ -5,9 +5,9 @@
 
     <groupId>com.peach</groupId>
 
-    <artifactId>peach-monitor-rest-external</artifactId>
-    <name>peach-monitor-rest-external</name>
-    <description>peach-monitor-rest-external</description>
+    <artifactId>peach-monitor-openfeign-external</artifactId>
+    <name>peach-monitor-openfeign-external</name>
+    <description>peach-monitor-openfeign-external</description>
 
     <packaging>jar</packaging>
 
@@ -21,6 +21,10 @@
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-monitor-entity</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-openfeign-starter</artifactId>
         </dependency>
 
         <dependency>

@@ -3,7 +3,6 @@ package com.peach.fileservice.openfeign;
 import com.peach.common.constant.ServiceNameConstant;
 import com.peach.common.constant.ServicePathConstant;
 import com.peach.common.response.Response;
-import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,10 +20,9 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @FeignClient(
         name = ServiceNameConstant.FILE_SERVICE,
-        path = ServicePathConstant.FILE_PATH_SERVICE,
-        configuration = FeignConfigure.class
+        path = ServicePathConstant.FILE_PATH_SERVICE
 )
-public interface FileFeignClients {
+public interface FileFeignClient {
 
     /**
      * 文件上传接口

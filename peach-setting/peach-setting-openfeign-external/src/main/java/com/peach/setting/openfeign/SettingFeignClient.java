@@ -14,6 +14,6 @@ import org.springframework.cloud.openfeign.FeignClient;
         name = ServiceNameConstant.FILE_SERVICE,
         path = ServicePathConstant.FILE_PATH_SERVICE
 )
-public interface SettingFeignClients {
+public interface SettingFeignClient {
 
 }

@@ -609,7 +609,7 @@
             </dependency>
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-monitor-rest-external</artifactId>
+                <artifactId>peach-monitor-openfeign-external</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -706,7 +706,17 @@
                 <version>${jsch.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-openfeign-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
 
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-openfeign-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
 
     </dependencyManagement>
