@@ -21,7 +21,7 @@
         <module>peach-monitor-service</module>
         <module>peach-monitor-rest</module>
         <module>peach-monitor-launch</module>
-        <module>peach-monitor-rest-external</module>
+        <module>peach-monitor-openfeign-external</module>
     </modules>
 
 

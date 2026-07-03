@@ -1,0 +1,6 @@
+interface:
+  display_name: "Peach Storage Starter"
+  short_description: "规范 peach-store-starter 存储接入、Provider 与安全边界"
+  default_prompt: "Use $peach-storage-starter to implement or review storage usage in peach-cloud."
+policy:
+  allow_implicit_invocation: true

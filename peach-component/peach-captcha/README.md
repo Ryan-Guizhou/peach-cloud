@@ -1,110 +1,71 @@
-# Peach Captcha 验证码组件
+# peach-captcha
 
-## 简介 / Introduction
-Peach Captcha 是一款轻量级、高扩展性的 Java 验证码组件，旨在为 Web 应用提供安全、易用的行为验证码服务。项目采用 JDK 1.8+ 开发，支持多种主流验证码类型，内置缓存支持（Redis/Local），并提供灵活的配置选项。
+[English](README.en-US.md) | 中文
 
-## 核心功能 / Features
+最后更新时间：2026-07-03  
+artifactId：`peach-captcha`  
+类型：验证码组件聚合模块
 
-本项目目前支持以下四种核心验证码类型：
+## 模块定位
 
-### 1. 滑动拼图验证码 (Block Puzzle Captcha)
-用户需要拖动滑块将拼图块对准缺口。
-- **特点**：交互自然，用户体验好，是目前最主流的验证码形式。
-- **安全性**：通过校验坐标偏差、滑动轨迹（可选扩展）等方式防止机器爆破。
+`peach-captcha` 提供验证码生成、缓存、校验、频控和扩展点。业务模块通过 `peach-captcha-starter` 接入，避免在业务代码中重复实现验证码缓存和校验流程。
 
-### 2. 点选文字验证码 (Click Word Captcha)
-用户需要按照提示顺序点击图片中的汉字。
-- **特点**：安全性极高，难以被 OCR 破解。
-- **安全性**：校验点击坐标的顺序和位置偏差。
+## 子模块
 
-### 3. 旋转拼图验证码 (Rotate Puzzle Captcha)
-用户需要拖动滑块将旋转的图片还原到正向（0度）。
-- **特点**：趣味性强，无需背景图缺口，只需一张图即可生成。
-- **安全性**：校验旋转角度的偏差值（允许一定误差范围）。
+| 子模块 | 职责 |
+| --- | --- |
+| `peach-captcha-autoconfigure` | 核心 API、配置绑定、自动配置、默认实现 |
+| `peach-captcha-starter` | 对业务模块暴露的 starter |
 
-### 4. 文字/算术验证码 (Text/Arithmetic Captcha)
-用户输入图片显示的字符或计算结果。
-- **特点**：传统、简单、兼容性好。
-- **安全性**：包含干扰线和噪点，支持动态字体大小。
+## 核心对象
 
-## 优劣势分析 / Pros & Cons
+| 对象 | 说明 |
+| --- | --- |
+| `CaptchaProperties` | 绑定验证码配置，配置前缀由 `CaptchaConst.CAPTCHA_SUFFIX` 声明 |
+| `CaptchaService` | 验证码生成和校验服务 |
+| `CaptchaCacheService` | 验证码缓存服务 |
+| `CaptchaServiceProvider` | 验证码服务 provider |
+| `CaptchaCacheProvider` | 缓存 provider |
+| `FrequencyLimitHandler` | 频控扩展点 |
 
-| 验证码类型 | 优势 (Pros) | 劣势 (Cons) | 适用场景 |
-| :--- | :--- | :--- | :--- |
-| **滑动拼图** | 用户体验极佳，交互简单 | 需要图库支持，高级 AI 可能识别缺口 | 登录、注册、一般风控 |
-| **点选文字** | 安全性高，OCR 识别难度大 | 用户交互成本稍高（需点击多次） | 高安全级操作（支付、改密） |
-| **旋转拼图** | 新颖有趣，无需复杂图库处理 | 图片若无方向性（如抽象图）则难以识别 | 创意交互、移动端 |
-| **文字/算术** | 实现简单，无客户端依赖 | 用户体验一般（需键盘输入），易被 OCR 破解 | 兜底方案、老旧系统 |
+## 接入方式
 
-## 实现原理 / Implementation Principles
-
-### 1. 滑动拼图 (Block Puzzle)
-1.  **初始化**：随机选择一张背景图。
-2.  **抠图**：根据预设模板（拼图形状）在背景图随机位置抠出一块图片。
-3.  **生成**：
-    -   `originalImage`：带有缺口的背景图（Base64）。
-    -   `slidingImage`：被抠出的拼图块（Base64）。
-    -   `token`：唯一标识。
-4.  **缓存**：将抠图的 `X, Y` 坐标存入 Redis，Key 为 `token`。
-5.  **校验**：前端提交用户拖动的 `X` 坐标，后端比对缓存中的 `X` 坐标，允许误差（如 ±5px）。
-
-### 2. 点选文字 (Click Word)
-1.  **生成**：
-    -   随机选取 4-5 个汉字，随机颜色、角度绘制在背景图上。
-    -   随机选择其中 3 个字作为“答案”，并在顶部生成提示栏图片。
-2.  **缓存**：将所有文字的中心坐标（PointVO）序列化后存入 Redis。
-3.  **校验**：
-    -   前端提交用户点击的坐标序列（经过 AES 加密）。
-    -   后端解密后，依次计算用户点击坐标与缓存真实坐标的欧氏距离。
-    -   若所有点的距离均在阈值（如 25px）内，则通过。
-
-### 3. 旋转拼图 (Rotate Puzzle)
-1.  **生成**：
-    -   选取一张图片，随机生成旋转角度（0-360度）。
-    -   使用 `AffineTransform` 对图片进行旋转处理。
-    -   **关键点**：同时返回旋转后的图片 Base64 和 **原图 Base64**（用于前端展示目标或参考）。
-2.  **缓存**：计算还原需要的角度（360 - 随机角度），存入 Redis。
-3.  **校验**：前端提交用户旋转的角度，后端校验与缓存角度的差值，允许误差（如 ±5度）。
-
-### 4. 文字/算术 (Text/Arithmetic)
-1.  **生成**：
-    -   随机决定生成算术题（1+1=?）还是随机字符（ABCD）。
-    -   **动态排版**：计算文字宽度，若超出图片宽度则自动缩小字体，若仍超出则重试生成，确保文字不被截断。
-    -   绘制干扰线和噪点。
-2.  **缓存**：将正确答案（计算结果或字符）存入 Redis。
-3.  **校验**：比对用户输入的字符串与缓存答案（忽略大小写）。
-
-## 快速开始 / Quick Start
-
-### 引入依赖
 ```xml
 <dependency>
     <groupId>com.peach</groupId>
-    <artifactId>peach-captcha-autoconfigure</artifactId>
-    <version>1.0.0</version>
+    <artifactId>peach-captcha-starter</artifactId>
 </dependency>
 ```
 
-### 配置 (application.properties)
-```properties
-# 验证码类型: blockPuzzle, clickWord, text, rotate
-peach.captcha.type=blockPuzzle
-# 缓存类型: local, redis
-peach.captcha.cache-type=redis
+业务侧优先注入 `CaptchaService` 使用验证码能力。需要替换缓存、生成器或频控策略时，通过自定义 Bean 或 provider 覆盖默认实现。
+
+## 运行机制
+
+1. starter 引入 autoconfigure。
+2. 自动配置读取 `CaptchaProperties`。
+3. 根据配置装配验证码生成服务和缓存服务。
+4. 生成验证码时写入缓存，校验时读取并比对。
+5. 频控处理器可限制同一用户、IP 或业务 key 的调用频率。
+
+## 边界与限制
+
+- 验证码不能替代登录风控、账号锁定和设备识别。
+- 缓存实现决定验证码是否支持多实例共享；生产环境不应依赖单机内存缓存。
+- 校验成功后是否删除验证码、失败次数如何限制，需要结合当前实现和业务策略确认。
+- 不应在日志中输出验证码明文。
+
+## 构建与验证
+
+```bash
+mvn -f "peach-component/peach-captcha/pom.xml" clean package -DskipTests -Pdevelopment
+mvn -pl peach-component/peach-captcha -am clean package -DskipTests -Pdevelopment
 ```
 
-### 接口调用
-1.  **获取验证码**: `POST /captcha/get`
-2.  **校验验证码**: `POST /captcha/check`
-3.  **二次校验验证码**: `POST /captcha/verification`
+## 排障指南
 
-## 目录结构
-- `com.peach.captcha.service.impl`: 核心实现类
-    - `BlockPuzzleCaptchaServiceImpl`: 滑动拼图
-    - `ClickWordCaptchServiceImpl`: 点选文字
-    - `RotatePuzzleCaptchaServiceImpl`: 旋转拼图
-    - `TextCaptchaServiceImpl`: 文字/算术
-
----
-**Author**: Mr Shu
-**License**: Apache 2.0
+| 现象 | 检查点 | 处理方式 |
+| --- | --- | --- |
+| `CaptchaService` 未注入 | 是否引入 `peach-captcha-starter`；自动配置条件是否满足 | 检查依赖树和 Spring 条件报告 |
+| 多实例校验失败 | 缓存是否跨实例共享 | 使用 Redis 等共享缓存实现 |
+| 验证码频繁失效 | 过期时间、缓存 key、系统时间是否正确 | 检查配置和缓存记录 |
+| 频控不生效 | `FrequencyLimitHandler` 是否注册 | 检查自定义 Bean 和默认实现 |

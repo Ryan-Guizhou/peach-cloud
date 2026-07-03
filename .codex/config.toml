@@ -1,0 +1,57 @@
+[mcp_servers.mysql]
+command = "cmd"
+args = [
+    "/c",
+    "npx",
+    "-y",
+    "mcp-server-mysql@latest"
+]
+env_vars = [
+    "MYSQL_HOST",
+    "MYSQL_PORT",
+    "MYSQL_USER",
+    "MYSQL_PASS",
+    "MYSQL_DB"
+]
+startup_timeout_sec = 30
+tool_timeout_sec = 60
+
+[mcp_servers.github]
+command = "cmd"
+args = [
+    "/c",
+    "npx",
+    "-y",
+    "@modelcontextprotocol/server-github"
+]
+env_vars = [
+    "GITHUB_PERSONAL_ACCESS_TOKEN"
+]
+startup_timeout_sec = 30
+tool_timeout_sec = 60
+
+[mcp_servers.context7]
+command = "cmd"
+args = [
+    "/c",
+    "npx",
+    "-y",
+    "@upstash/context7-mcp@latest"
+]
+env_vars = [
+    "CONTEXT7_API_KEY"
+]
+startup_timeout_sec = 30
+tool_timeout_sec = 60
+
+[mcp_servers.codegraph]
+command = "cmd"
+args = [
+    "/c",
+    "npx",
+    "@colbymchenry/codegraph",
+    "serve",
+    "--mcp"
+]
+startup_timeout_sec = 30
+tool_timeout_sec = 120

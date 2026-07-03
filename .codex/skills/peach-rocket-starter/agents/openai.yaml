@@ -1,0 +1,6 @@
+interface:
+  display_name: "Peach Rocket Starter"
+  short_description: "规范 peach-rocket-starter 接入、扩展与排障"
+  default_prompt: "Use $peach-rocket-starter to implement or review RocketMQ usage in peach-cloud."
+policy:
+  allow_implicit_invocation: true

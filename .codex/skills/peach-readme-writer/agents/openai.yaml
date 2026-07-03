@@ -1,0 +1,6 @@
+interface:
+  display_name: "Peach README Writer"
+  short_description: "为 starter 或模块生成结构稳定、内容可验证的 README"
+  default_prompt: "Use $peach-readme-writer to write or refresh a module README for peach-cloud."
+policy:
+  allow_implicit_invocation: true
