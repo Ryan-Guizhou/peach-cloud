@@ -22,21 +22,20 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
 
-        <!-- Nacos 鏈嶅姟鍙戠幇 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
 
-        <!-- Nacos 閰嶇疆涓績 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
         </dependency>
 
-        <!-- 蹇呴』鏈?loadbalancer -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
@@ -91,13 +90,13 @@
 
     <build>
         <plugins>
-            <!-- 1. Spring Boot 鎵撳寘 (鐗堟湰宸插湪鐖?POM 绠＄悊) -->
+            <!-- 1. Spring Boot 打包插件（版本由父 POM 管理） -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- 2. (鍙€? Jib 瀹瑰櫒鍖栨瀯寤?-->
+            <!-- 2. 可选：Jib 容器化构建 -->
 <!--            <plugin>-->
 <!--                <groupId>com.google.cloud.tools</groupId>-->
 <!--                <artifactId>jib-maven-plugin</artifactId>-->
@@ -122,7 +121,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>
-                <!-- 鍙互瑕嗙洊鐗瑰畾閰嶇疆 -->
+                <!-- 可覆盖特定配置 -->
                 <configuration>
                     <flattenMode>defaults</flattenMode>
                 </configuration>

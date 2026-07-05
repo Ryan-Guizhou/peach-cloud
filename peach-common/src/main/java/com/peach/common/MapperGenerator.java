@@ -18,6 +18,12 @@ import java.util.List;
 import java.util.Optional;
 
 
+/**
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/7/5 19:20
+ * @Description Dao层自动生成工具类
+ */
 public class MapperGenerator {
 	private static final String lineSeparator = System.lineSeparator();
 
@@ -53,13 +59,13 @@ public class MapperGenerator {
 		}
 		File file = new File(ouptPutPach + mapperName + ".xml");
 		if (file.exists()) {
-			System.out.println("⚠️ 文件已存在: " + file.getAbsolutePath() + "，跳过生成。");
+            System.out.println("mapper file exists: " + file.getAbsolutePath());
 			return;
 		}
 
 		try (FileWriter writer = new FileWriter(file)) {
 			writer.write(content);
-			System.out.println("✅ 已生成: " + file.getAbsolutePath());
+            System.out.println("mapper file exists: " + file.getAbsolutePath());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -71,12 +77,12 @@ public class MapperGenerator {
 		builder.append(
 						"<!DOCTYPE mapper PUBLIC \"-//mybatis.org//DTD Mapper 3.0//EN\" \"http://mybatis.org/dtd/mybatis-3-mapper.dtd\">")
 				.append(lineSeparator);
-		builder.append("<mapper namespace=\"\">").append(lineSeparator);
+		builder.append(String.format("<mapper namespace=\"%s\">", getMapperNamespace(c))).append(lineSeparator);
 		builder.append(genAllColumn(c)).append(lineSeparator).append(lineSeparator);
 		builder.append(genAllColumnAlias(c)).append(lineSeparator).append(lineSeparator);
-		builder.append(genAllColumnValue(c)).append(lineSeparator).append(lineSeparator);
-		builder.append(genItemAllColumnValue(c)).append(lineSeparator).append(lineSeparator);
-		builder.append(genAllColumnSet(c)).append(lineSeparator).append(lineSeparator);
+		builder.append(genAllColumnValue(c)).append(lineSeparator).append(lineSeparator).append(lineSeparator);
+		builder.append(genItemAllColumnValue(c)).append(lineSeparator).append(lineSeparator).append(lineSeparator);
+		builder.append(genAllColumnSet(c)).append(lineSeparator).append(lineSeparator).append(lineSeparator);
 //		builder.append(genInsertSelectiveColumn(c)).append(lineSeparator).append(lineSeparator);
 //		builder.append(genInsertSelectiveValue(c)).append(lineSeparator).append(lineSeparator);
 		builder.append(genUpdateSelectiveColumn(c)).append(lineSeparator).append(lineSeparator);
@@ -355,7 +361,7 @@ public class MapperGenerator {
 				fb.append(String.format("<if test=\"%s != null and %s != ''\">", f.getName(), f.getName()))
 						.append(lineSeparator);
 			}
-			String param = String.format("        AND %s = #{%s,jdbcType=%s} ", f.getAnnotation(Column.class).name(),
+			String param = String.format("        AND %s = #{%s,jdbcType=%s}", f.getAnnotation(Column.class).name(),
 					f.getName(), getJdbcType(f));
 			fb.append(String.format("%-50s", param)).append(lineSeparator);
 			fb.append(String.format("    </if>"));
@@ -387,9 +393,8 @@ public class MapperGenerator {
 		builder.append(String.format("    INSERT INTO %s (", tableName)).append(lineSeparator);
 		builder.append(String.format("        <include refid=\"%s\" />", "allColumn")).append(lineSeparator);
 		builder.append("    ) VALUES ").append(lineSeparator);
-		builder.append(
-						"    <foreach collection=\"list\" index=\"index\" item=\"item\" separator=\",\">").append(lineSeparator);
-		builder.append(String.format("    	(<include refid=\"%s\"/>)", "itemAllColumnValue")).append(lineSeparator);
+		builder.append("    <foreach collection=\"list\" index=\"index\" item=\"item\" separator=\",\">").append(lineSeparator);
+		builder.append(String.format("        (<include refid=\"%s\"/>)", "itemAllColumnValue")).append(lineSeparator);
 		builder.append("    </foreach>").append(lineSeparator);
 		builder.append("</insert>");
 
@@ -505,9 +510,9 @@ public class MapperGenerator {
 		builder.append("    SELECT ").append(lineSeparator);
 		builder.append(String.format("        <include refid=\"%s\" />", "allColumnAlias")).append(lineSeparator);
 		builder.append("    FROM " + tableName + " ").append(lineSeparator);
-		builder.append("    <where> ").append(lineSeparator);
+		builder.append("    <where>").append(lineSeparator);
 		builder.append(String.format("        <include refid=\"%s\" />", "allColumnCond")).append(lineSeparator);
-		builder.append("    </where> ").append(lineSeparator);
+		builder.append("    </where>").append(lineSeparator);
 		builder.append("</select>");
 		return builder.toString();
 	}
@@ -534,9 +539,9 @@ public class MapperGenerator {
 				.append(lineSeparator);
 		builder.append("    SELECT COUNT(1) ").append(lineSeparator);
 		builder.append("    FROM " + tableName + " ").append(lineSeparator);
-		builder.append("    <where> ").append(lineSeparator);
+		builder.append("    <where>").append(lineSeparator);
 		builder.append(String.format("        <include refid=\"%s\" />", "allColumnCond")).append(lineSeparator);
-		builder.append("    </where> ").append(lineSeparator);
+		builder.append("    </where>").append(lineSeparator);
 		builder.append("</select>");
 		return builder.toString();
 	}
@@ -583,7 +588,7 @@ public class MapperGenerator {
 		StringBuilder builder = new StringBuilder();
 		builder.append("<delete id=\"del\" parameterType=\"" + c.getName() + "\">").append(lineSeparator);
 		builder.append("    DELETE FROM " + tableName).append(lineSeparator);
-		builder.append("    <where> ").append(lineSeparator);
+		builder.append("    <where>").append(lineSeparator);
 		builder.append(String.format("        <include refid=\"%s\" />", "allColumnCond")).append(lineSeparator);
 		builder.append("    </where>").append(lineSeparator);
 		builder.append("</delete>");
@@ -641,9 +646,20 @@ public class MapperGenerator {
 			fieldList.addAll(Arrays.asList(fields));
 			clazz = clazz.getSuperclass();
 		}
-		//过滤序列化字段
+		//鏉╁洦鎶ゆ惔蹇撳灙閸栨牕鐡у▓?
 		fieldList.remove(0);
 		return fieldList ;
+	}
+
+	private static <T> String getMapperNamespace(Class<T> c) {
+		String simpleName = c.getSimpleName();
+		if ("UserOperLogDO".equals(simpleName)) {
+			return "com.peach.userservice.dao.UserOperLogDao";
+		}
+		String daoSimpleName = simpleName.endsWith("DO") ? simpleName.substring(0, simpleName.length() - 2) + "Dao"
+				: simpleName + "Dao";
+		String basePackage = c.getPackage().getName().replace(".entity", ".dao");
+		return basePackage + "." + daoSimpleName;
 	}
 
 	private static String getJdbcType(Field f) {

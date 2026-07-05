@@ -1,0 +1,28 @@
+CREATE TABLE PEACH_FILE_UPLOAD_SESSION
+(
+    SESSION_ID        VARCHAR(64)  NOT  NULL COMMENT '上传会话ID',
+    FILE_ID           VARCHAR(64)       NULL COMMENT '预生成文件ID',
+    OBJECT_ID         VARCHAR(64)       NULL COMMENT '预生成物理对象ID',
+    HASH_SHA256       VARCHAR(128)      NULL COMMENT 'SHA-256摘要',
+    HASH_MD5          VARCHAR(128)      NULL COMMENT 'MD5摘要',
+    FILE_SIZE         BIGINT            NULL COMMENT '文件大小',
+    FILE_NAME         VARCHAR(255)      NULL COMMENT '文件名',
+    DISPLAY_NAME      VARCHAR(255)      NULL COMMENT '显示文件名',
+    CONTENT_TYPE      VARCHAR(128)      NULL COMMENT '内容类型',
+    BIZ_TYPE          VARCHAR(32)       NULL COMMENT '业务类型',
+    BIZ_ID            VARCHAR(64)       NULL COMMENT '业务ID',
+    BIZ_TAG           VARCHAR(64)       NULL COMMENT '业务标签',
+    REMARK            VARCHAR(500)      NULL COMMENT '备注',
+    STORAGE_PROVIDER  VARCHAR(32)       NULL COMMENT '存储提供方',
+    BUCKET_NAME       VARCHAR(128)      NULL COMMENT 'bucket名称',
+    OBJECT_KEY        VARCHAR(255)      NULL COMMENT '对象key',
+    UPLOAD_ID         VARCHAR(128)      NULL COMMENT '底层上传会话ID',
+    SESSION_STATUS    VARCHAR(32)       NULL COMMENT '会话状态',
+    EXPIRE_TIME       VARCHAR(20)       NULL COMMENT '过期时间',
+    IS_DELETE         TINYINT(1)   DEFAULT 0 COMMENT '逻辑删除标记',
+    CREATED_TIME      VARCHAR(20)       NULL COMMENT '创建时间',
+    CREATOR_ID        VARCHAR(32)       NULL COMMENT '创建人ID',
+    MODIFY_TIME       VARCHAR(20)       NULL COMMENT '修改时间',
+    MODIFIER_ID       VARCHAR(32)       NULL COMMENT '修改人ID',
+    PRIMARY KEY (SESSION_ID)
+) COMMENT='文件上传会话表';

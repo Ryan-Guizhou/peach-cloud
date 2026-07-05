@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.RedisTemplate;
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:29
+ * @Description 缓存失效监听器
  */
 public class CacheMessageListener<K,V> implements MessageListener {
 

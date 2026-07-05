@@ -1,5 +1,6 @@
 
 # Maven ignores
+.codegraph
 
 target/
 !.mvn/wrapper/maven-wrapper.jar

@@ -4,34 +4,32 @@
     <sql id="allColumn">
         RESOURCE_ID,                                      PARTY_CODE,                                       FUNC_CODE,                                        OP_TYPE,
         RESOURCE_CODE,                                    RESOURCE_NAME,                                    APP_ID,                                           IS_DELETE,
-        FISCAL,                                           CREATE_TIME,                                      CREATE_USER_ID,                                   CREATE_USER_CODE,
-        CREATE_USER_NAME,                                 MODIFY_TIME,                                      MODIFY_USER_ID,                                   MODIFY_USER_CODE,
-        UPDATE_USER_NAME
+        FISCAL,                                           CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,
+        MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
         RESOURCE_ID as resourceId,                        PARTY_CODE as partyCode,                          FUNC_CODE as funcCode,                            OP_TYPE as opType,
         RESOURCE_CODE as resourceCode,                    RESOURCE_NAME as resourceName,                    APP_ID as appId,                                  IS_DELETE as isDelete,
-        FISCAL as fiscal,                                 CREATE_TIME as createTime,                        CREATE_USER_ID as createUserId,                   CREATE_USER_CODE as createUserCode,
-        CREATE_USER_NAME as createUserName,               MODIFY_TIME as modifyTime,                        MODIFY_USER_ID as modifyUserId,                   MODIFY_USER_CODE as modifyUserCode,
-        UPDATE_USER_NAME as modifyUserName
+        FISCAL as fiscal,                                 CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,
+        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{resourceId,jdbcType=VARCHAR},         #{partyCode,jdbcType=VARCHAR},          #{funcCode,jdbcType=VARCHAR},           #{opType,jdbcType=VARCHAR},
-        #{resourceCode,jdbcType=VARCHAR},       #{resourceName,jdbcType=VARCHAR},       #{appId,jdbcType=VARCHAR},              #{isDelete,jdbcType=INTEGER},
-        #{fiscal,jdbcType=INTEGER},             #{createTime,jdbcType=VARCHAR},         #{createUserId,jdbcType=VARCHAR},       #{createUserCode,jdbcType=VARCHAR},
-        #{createUserName,jdbcType=VARCHAR},     #{modifyTime,jdbcType=VARCHAR},         #{modifyUserId,jdbcType=VARCHAR},       #{modifyUserCode,jdbcType=VARCHAR},
-        #{modifyUserName,jdbcType=VARCHAR}
+        #{resourceId,jdbcType=VARCHAR},                   #{partyCode,jdbcType=VARCHAR},                    #{funcCode,jdbcType=VARCHAR},                     #{opType,jdbcType=VARCHAR},
+        #{resourceCode,jdbcType=VARCHAR},                 #{resourceName,jdbcType=VARCHAR},                 #{appId,jdbcType=VARCHAR},                        #{isDelete,jdbcType=INTEGER},
+        #{fiscal,jdbcType=INTEGER},                       #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},
+        #{modifierId,jdbcType=VARCHAR}
     </sql>
 
+
     <sql id="itemAllColumnValue">
-        #{item.resourceId,jdbcType=VARCHAR},    #{item.partyCode,jdbcType=VARCHAR},     #{item.funcCode,jdbcType=VARCHAR},      #{item.opType,jdbcType=VARCHAR},
-        #{item.resourceCode,jdbcType=VARCHAR},  #{item.resourceName,jdbcType=VARCHAR},  #{item.appId,jdbcType=VARCHAR},         #{item.isDelete,jdbcType=INTEGER},
-        #{item.fiscal,jdbcType=INTEGER},        #{item.createTime,jdbcType=VARCHAR},    #{item.createUserId,jdbcType=VARCHAR},  #{item.createUserCode,jdbcType=VARCHAR},
-        #{item.createUserName,jdbcType=VARCHAR},#{item.modifyTime,jdbcType=VARCHAR},    #{item.modifyUserId,jdbcType=VARCHAR},  #{item.modifyUserCode,jdbcType=VARCHAR},
-        #{item.modifyUserName,jdbcType=VARCHAR}
+        #{item.resourceId,jdbcType=VARCHAR},              #{item.partyCode,jdbcType=VARCHAR},               #{item.funcCode,jdbcType=VARCHAR},                #{item.opType,jdbcType=VARCHAR},
+        #{item.resourceCode,jdbcType=VARCHAR},            #{item.resourceName,jdbcType=VARCHAR},            #{item.appId,jdbcType=VARCHAR},                   #{item.isDelete,jdbcType=INTEGER},
+        #{item.fiscal,jdbcType=INTEGER},                  #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},
+        #{item.modifierId,jdbcType=VARCHAR}
     </sql>
+
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
@@ -59,32 +57,21 @@
             <if test="fiscal != null">
                 FISCAL = #{fiscal,jdbcType=INTEGER},
             </if>
-            <if test="createTime != null and createTime != ''">
-                CREATE_TIME = #{createTime,jdbcType=VARCHAR},
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
             </if>
-            <if test="createUserId != null and createUserId != ''">
-                CREATE_USER_ID = #{createUserId,jdbcType=VARCHAR},
-            </if>
-            <if test="createUserCode != null and createUserCode != ''">
-                CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
-            </if>
-            <if test="createUserName != null and createUserName != ''">
-                CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
             </if>
             <if test="modifyTime != null and modifyTime != ''">
                 MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             </if>
-            <if test="modifyUserId != null and modifyUserId != ''">
-                MODIFY_USER_ID = #{modifyUserId,jdbcType=VARCHAR},
-            </if>
-            <if test="modifyUserCode != null and modifyUserCode != ''">
-                MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
-            </if>
-            <if test="modifyUserName != null and modifyUserName != ''">
-                UPDATE_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
+
 
     <sql id="updateSelectiveColumn">
         <trim suffixOverrides=",">
@@ -112,29 +99,17 @@
             <if test="fiscal != null">
                 FISCAL,
             </if>
-            <if test="createTime != null and createTime != ''">
-                CREATE_TIME,
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME,
             </if>
-            <if test="createUserId != null and createUserId != ''">
-                CREATE_USER_ID,
-            </if>
-            <if test="createUserCode != null and createUserCode != ''">
-                CREATE_USER_CODE,
-            </if>
-            <if test="createUserName != null and createUserName != ''">
-                CREATE_USER_NAME,
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID,
             </if>
             <if test="modifyTime != null and modifyTime != ''">
                 MODIFY_TIME,
             </if>
-            <if test="modifyUserId != null and modifyUserId != ''">
-                MODIFY_USER_ID,
-            </if>
-            <if test="modifyUserCode != null and modifyUserCode != ''">
-                MODIFY_USER_CODE,
-            </if>
-            <if test="modifyUserName != null and modifyUserName != ''">
-                UPDATE_USER_NAME,
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER_ID,
             </if>
         </trim>
     </sql>
@@ -165,29 +140,17 @@
             <if test="fiscal != null">
                 #{fiscal,jdbcType=INTEGER},
             </if>
-            <if test="createTime != null and createTime != ''">
-                #{createTime,jdbcType=VARCHAR},
+            <if test="createdTime != null and createdTime != ''">
+                #{createdTime,jdbcType=VARCHAR},
             </if>
-            <if test="createUserId != null and createUserId != ''">
-                #{createUserId,jdbcType=VARCHAR},
-            </if>
-            <if test="createUserCode != null and createUserCode != ''">
-                #{createUserCode,jdbcType=VARCHAR},
-            </if>
-            <if test="createUserName != null and createUserName != ''">
-                #{createUserName,jdbcType=VARCHAR},
+            <if test="creatorId != null and creatorId != ''">
+                #{creatorId,jdbcType=VARCHAR},
             </if>
             <if test="modifyTime != null and modifyTime != ''">
                 #{modifyTime,jdbcType=VARCHAR},
             </if>
-            <if test="modifyUserId != null and modifyUserId != ''">
-                #{modifyUserId,jdbcType=VARCHAR},
-            </if>
-            <if test="modifyUserCode != null and modifyUserCode != ''">
-                #{modifyUserCode,jdbcType=VARCHAR},
-            </if>
-            <if test="modifyUserName != null and modifyUserName != ''">
-                #{modifyUserName,jdbcType=VARCHAR},
+            <if test="modifierId != null and modifierId != ''">
+                #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -220,43 +183,31 @@
         <if test="fiscal != null">
             AND FISCAL = #{fiscal,jdbcType=INTEGER}
         </if>
-        <if test="createTime != null and createTime != ''">
-            AND CREATE_TIME = #{createTime,jdbcType=VARCHAR}
+        <if test="createdTime != null and createdTime != ''">
+            AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
         </if>
-        <if test="createUserId != null and createUserId != ''">
-            AND CREATE_USER_ID = #{createUserId,jdbcType=VARCHAR}
-        </if>
-        <if test="createUserCode != null and createUserCode != ''">
-            AND CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR}
-        </if>
-        <if test="createUserName != null and createUserName != ''">
-            AND CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR}
+        <if test="creatorId != null and creatorId != ''">
+            AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
         </if>
         <if test="modifyTime != null and modifyTime != ''">
             AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
         </if>
-        <if test="modifyUserId != null and modifyUserId != ''">
-            AND MODIFY_USER_ID = #{modifyUserId,jdbcType=VARCHAR}
-        </if>
-        <if test="modifyUserCode != null and modifyUserCode != ''">
-            AND MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR}
-        </if>
-        <if test="modifyUserName != null and modifyUserName != ''">
-            AND UPDATE_USER_NAME = #{modifyUserName,jdbcType=VARCHAR}
+        <if test="modifierId != null and modifierId != ''">
+            AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         </if>
     </sql>
 
     <insert id="insert" parameterType="com.peach.auth.entity.AuthResourceDO">
         INSERT INTO PEACH_AUTH_RESOURCE (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES (
-        <include refid="allColumnValue" />
+            <include refid="allColumnValue" />
         )
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.auth.entity.AuthResourceDO">
         INSERT INTO PEACH_AUTH_RESOURCE (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
             (<include refid="itemAllColumnValue"/>)
@@ -265,7 +216,7 @@
 
     <update id="update" parameterType="com.peach.auth.entity.AuthResourceDO">
         UPDATE PEACH_AUTH_RESOURCE SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         <where>
             <include refid="allColumnCond" />
         </where>
@@ -291,22 +242,22 @@
         </where>
     </delete>
 
-    <update id="updateById" parameterType="java.lang.String">
+    <update id="updateById" parameterType="com.peach.auth.entity.AuthResourceDO">
         UPDATE PEACH_AUTH_RESOURCE SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         WHERE RESOURCE_ID =  #{resourceId,jdbcType=VARCHAR}
     </update>
 
     <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.AuthResourceDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_AUTH_RESOURCE
         WHERE RESOURCE_ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.AuthResourceDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_AUTH_RESOURCE
         WHERE RESOURCE_ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
@@ -316,7 +267,7 @@
 
     <select id="select" parameterType="com.peach.auth.entity.AuthResourceDO" resultType="com.peach.auth.entity.AuthResourceDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_AUTH_RESOURCE
         <where>
             <include refid="allColumnCond" />

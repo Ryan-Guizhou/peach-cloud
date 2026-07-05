@@ -20,6 +20,13 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 import java.util.Objects;
 
+
+/**
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2025/12/4 17:29
+ * @Description 多级缓存自动注入
+ */
 @Slf4j
 @AutoConfiguration
 @AutoConfigureAfter(RedisConfig.class)

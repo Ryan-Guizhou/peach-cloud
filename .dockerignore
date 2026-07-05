@@ -109,6 +109,6 @@ application-local.yml
 .trae
 **/.flattened-pom.xml
 peach-cloud-front
-doc
+docs
 sql
 README.md

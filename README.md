@@ -230,7 +230,7 @@ SQL 脚本位于 `sql/`：
 
 | 文件 | 用途 |
 | --- | --- |
-| `init.sql` | 初始化入口脚本 |
+| `INIT.sql` | 初始化入口脚本 |
 | `PEACH_USER.sql`，`PEACH_ROLE.sql`，`PEACH_MENU.sql`，`PEACH_RESOURCE.sql` | 用户、角色、菜单和资源相关表 |
 | `PEACH_AUTH_*.sql`，`USER_OPER_LOG.sql` | 认证、权限和操作日志相关表 |
 | `PEACH_APPLICATION.sql`，`PEACH_ROUTER.sql`，`PEACH_FUNCTION.sql` | 应用、路由和功能配置 |

@@ -230,7 +230,7 @@ SQL scripts are under `sql/`:
 
 | File | Purpose |
 | --- | --- |
-| `init.sql` | Initialization entry script |
+| `INIT.sql` | Initialization entry script |
 | `PEACH_USER.sql`, `PEACH_ROLE.sql`, `PEACH_MENU.sql`, `PEACH_RESOURCE.sql` | User, role, menu, and resource tables |
 | `PEACH_AUTH_*.sql`, `USER_OPER_LOG.sql` | Authentication, authorization, and operation log tables |
 | `PEACH_APPLICATION.sql`, `PEACH_ROUTER.sql`, `PEACH_FUNCTION.sql` | Application, route, and function configuration |

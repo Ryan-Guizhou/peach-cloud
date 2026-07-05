@@ -1,0 +1,23 @@
+CREATE TABLE PEACH_FILE_OBJECT
+(
+    OBJECT_ID         VARCHAR(64)  NOT  NULL COMMENT '物理对象ID',
+    HASH_SHA256       VARCHAR(128)      NULL COMMENT 'SHA-256摘要',
+    HASH_MD5          VARCHAR(128)      NULL COMMENT 'MD5摘要',
+    FILE_SIZE         BIGINT            NULL COMMENT '文件大小',
+    STORAGE_PROVIDER  VARCHAR(32)       NULL COMMENT '存储提供方',
+    BUCKET_NAME       VARCHAR(128)      NULL COMMENT 'bucket名称',
+    OBJECT_KEY        VARCHAR(255)      NULL COMMENT '对象key',
+    ORIGIN_FILE_NAME  VARCHAR(255)      NULL COMMENT '原始文件名',
+    CONTENT_TYPE      VARCHAR(128)      NULL COMMENT '内容类型',
+    EXTENSION         VARCHAR(32)       NULL COMMENT '扩展名',
+    STORAGE_STATUS    VARCHAR(32)       NULL COMMENT '存储状态',
+    REF_COUNT         INT               NULL COMMENT '引用数量',
+    UPLOAD_TIME       VARCHAR(20)       NULL COMMENT '上传完成时间',
+    LAST_ACCESS_TIME  VARCHAR(20)       NULL COMMENT '最后访问时间',
+    IS_DELETE         TINYINT(1)   DEFAULT 0 COMMENT '逻辑删除标记',
+    CREATED_TIME      VARCHAR(20)       NULL COMMENT '创建时间',
+    CREATOR_ID        VARCHAR(32)       NULL COMMENT '创建人ID',
+    MODIFY_TIME       VARCHAR(20)       NULL COMMENT '修改时间',
+    MODIFIER_ID       VARCHAR(32)       NULL COMMENT '修改人ID',
+    PRIMARY KEY (OBJECT_ID)
+) COMMENT='文件物理对象表';

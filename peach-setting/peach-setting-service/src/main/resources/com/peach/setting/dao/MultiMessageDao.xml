@@ -1,31 +1,31 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.MultiMessageDao">
     <sql id="allColumn">
         ID,                                               MESSAGE_KEY,                                      LOCALE,                                           MODULE_CODE,
         MESSAGE_TYPE,                                     USAGE_SCOPE,                                      MESSAGE_CONTENT,                                  DESCRIPTION,
-        STATUS,                                           CREATED_TIME,                                     CREATOR_ID,                                     MODIFY_TIME,
+        STATUS,                                           CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,
         MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
         ID as id,                                         MESSAGE_KEY as messageKey,                        LOCALE as locale,                                 MODULE_CODE as moduleCode,
         MESSAGE_TYPE as messageType,                      USAGE_SCOPE as usageScope,                        MESSAGE_CONTENT as messageContent,                DESCRIPTION as description,
-        STATUS as status,                                 CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,
+        STATUS as status,                                 CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,
         MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                 #{messageKey,jdbcType=VARCHAR},         #{locale,jdbcType=VARCHAR},             #{moduleCode,jdbcType=VARCHAR},
-        #{messageType,jdbcType=VARCHAR},        #{usageScope,jdbcType=VARCHAR},         #{messageContent,jdbcType=VARCHAR},     #{description,jdbcType=VARCHAR},
-        #{status,jdbcType=INTEGER},             #{createdTime,jdbcType=VARCHAR},        #{creatorId,jdbcType=VARCHAR},        #{modifyTime,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR},                           #{messageKey,jdbcType=VARCHAR},                   #{locale,jdbcType=VARCHAR},                       #{moduleCode,jdbcType=VARCHAR},
+        #{messageType,jdbcType=VARCHAR},                  #{usageScope,jdbcType=VARCHAR},                   #{messageContent,jdbcType=VARCHAR},               #{description,jdbcType=VARCHAR},
+        #{status,jdbcType=INTEGER},                       #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},
         #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},            #{item.messageKey,jdbcType=VARCHAR},    #{item.locale,jdbcType=VARCHAR},        #{item.moduleCode,jdbcType=VARCHAR},
-        #{item.messageType,jdbcType=VARCHAR},   #{item.usageScope,jdbcType=VARCHAR},    #{item.messageContent,jdbcType=VARCHAR},#{item.description,jdbcType=VARCHAR},
-        #{item.status,jdbcType=INTEGER},        #{item.createdTime,jdbcType=VARCHAR},   #{item.creatorId,jdbcType=VARCHAR},   #{item.modifyTime,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR},                      #{item.messageKey,jdbcType=VARCHAR},              #{item.locale,jdbcType=VARCHAR},                  #{item.moduleCode,jdbcType=VARCHAR},
+        #{item.messageType,jdbcType=VARCHAR},             #{item.usageScope,jdbcType=VARCHAR},              #{item.messageContent,jdbcType=VARCHAR},          #{item.description,jdbcType=VARCHAR},
+        #{item.status,jdbcType=INTEGER},                  #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},
         #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
@@ -69,6 +69,7 @@
             </if>
         </trim>
     </sql>
+
 
     <sql id="updateSelectiveColumn">
         <trim suffixOverrides=",">
@@ -171,6 +172,12 @@
         <if test="usageScope != null and usageScope != ''">
             AND USAGE_SCOPE = #{usageScope,jdbcType=VARCHAR}
         </if>
+        <if test="messageContent != null and messageContent != ''">
+            AND MESSAGE_CONTENT = #{messageContent,jdbcType=VARCHAR}
+        </if>
+        <if test="description != null and description != ''">
+            AND DESCRIPTION = #{description,jdbcType=VARCHAR}
+        </if>
         <if test="status != null">
             AND STATUS = #{status,jdbcType=INTEGER}
         </if>
@@ -190,24 +197,24 @@
 
     <insert id="insert" parameterType="com.peach.setting.entity.MultiMessageDO">
         INSERT INTO PEACH_MULTI_MESSAGE (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES (
-        <include refid="allColumnValue" />
+            <include refid="allColumnValue" />
         )
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.setting.entity.MultiMessageDO">
         INSERT INTO PEACH_MULTI_MESSAGE (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
-            (<include refid="itemAllColumnValue" />)
+            (<include refid="itemAllColumnValue"/>)
         </foreach>
     </insert>
 
     <update id="update" parameterType="com.peach.setting.entity.MultiMessageDO">
         UPDATE PEACH_MULTI_MESSAGE SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         <where>
             <include refid="allColumnCond" />
         </where>
@@ -235,20 +242,20 @@
 
     <update id="updateById" parameterType="com.peach.setting.entity.MultiMessageDO">
         UPDATE PEACH_MULTI_MESSAGE SET
-        <include refid="allColumnSet" />
-        WHERE ID = #{id,jdbcType=VARCHAR}
+            <include refid="allColumnSet" />
+        WHERE ID =  #{id,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.setting.vo.MulitMessageVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.setting.entity.MultiMessageDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_MULTI_MESSAGE
         WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.vo.MulitMessageVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.entity.MultiMessageDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_MULTI_MESSAGE
         WHERE ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
@@ -256,9 +263,9 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.setting.entity.MultiMessageDO" resultType="com.peach.setting.vo.MulitMessageVO">
+    <select id="select" parameterType="com.peach.setting.entity.MultiMessageDO" resultType="com.peach.setting.entity.MultiMessageDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_MULTI_MESSAGE
         <where>
             <include refid="allColumnCond" />

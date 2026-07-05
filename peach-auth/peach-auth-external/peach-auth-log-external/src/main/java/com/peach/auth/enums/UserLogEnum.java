@@ -21,6 +21,8 @@ public interface UserLogEnum {
 
         SYSCONFIG("SYSCONFIG","系统配置"),
 
+        SETTING("SETTING","系统设置"),
+
         DEFAULT("UNKNOWN","未知"),
         ;
 

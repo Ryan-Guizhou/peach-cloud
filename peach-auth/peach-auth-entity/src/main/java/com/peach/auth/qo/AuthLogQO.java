@@ -1,6 +1,5 @@
 package com.peach.auth.qo;
 
-import com.peach.common.PeachDO;
 import com.peach.common.PeachEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

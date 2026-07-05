@@ -2,39 +2,40 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.fileservice.dao.FileUploadSessionDao">
     <sql id="allColumn">
-        SESSION_ID,                                       FILE_ID,                                         OBJECT_ID,                                        HASH_SHA256,
-        HASH_MD5,                                         FILE_SIZE,                                       FILE_NAME,                                        DISPLAY_NAME,
-        CONTENT_TYPE,                                     BIZ_TYPE,                                        BIZ_ID,                                           BIZ_TAG,
-        REMARK,                                           STORAGE_PROVIDER,                                BUCKET_NAME,                                      OBJECT_KEY,
-        UPLOAD_ID,                                        SESSION_STATUS,                                  EXPIRE_TIME,                                      IS_DELETE,
-        CREATED_TIME,                                     CREATOR_ID,                                      MODIFY_TIME,                                      MODIFIER_ID
+        SESSION_ID,                                       FILE_ID,                                          OBJECT_ID,                                        HASH_SHA256,
+        HASH_MD5,                                         FILE_SIZE,                                        FILE_NAME,                                        DISPLAY_NAME,
+        CONTENT_TYPE,                                     BIZ_TYPE,                                         BIZ_ID,                                           BIZ_TAG,
+        REMARK,                                           STORAGE_PROVIDER,                                 BUCKET_NAME,                                      OBJECT_KEY,
+        UPLOAD_ID,                                        SESSION_STATUS,                                   EXPIRE_TIME,                                      IS_DELETE,
+        CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        SESSION_ID as sessionId,                          FILE_ID as fileId,                               OBJECT_ID as objectId,                            HASH_SHA256 as hashSha256,
-        HASH_MD5 as hashMd5,                              FILE_SIZE as fileSize,                           FILE_NAME as fileName,                            DISPLAY_NAME as displayName,
-        CONTENT_TYPE as contentType,                      BIZ_TYPE as bizType,                             BIZ_ID as bizId,                                  BIZ_TAG as bizTag,
-        REMARK as remark,                                 STORAGE_PROVIDER as storageProvider,             BUCKET_NAME as bucketName,                        OBJECT_KEY as objectKey,
-        UPLOAD_ID as uploadId,                            SESSION_STATUS as sessionStatus,                 EXPIRE_TIME as expireTime,                        IS_DELETE as isDelete,
-        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                         MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
+        SESSION_ID as sessionId,                          FILE_ID as fileId,                                OBJECT_ID as objectId,                            HASH_SHA256 as hashSha256,
+        HASH_MD5 as hashMd5,                              FILE_SIZE as fileSize,                            FILE_NAME as fileName,                            DISPLAY_NAME as displayName,
+        CONTENT_TYPE as contentType,                      BIZ_TYPE as bizType,                              BIZ_ID as bizId,                                  BIZ_TAG as bizTag,
+        REMARK as remark,                                 STORAGE_PROVIDER as storageProvider,              BUCKET_NAME as bucketName,                        OBJECT_KEY as objectKey,
+        UPLOAD_ID as uploadId,                            SESSION_STATUS as sessionStatus,                  EXPIRE_TIME as expireTime,                        IS_DELETE as isDelete,
+        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{sessionId,jdbcType=VARCHAR},          #{fileId,jdbcType=VARCHAR},            #{objectId,jdbcType=VARCHAR},          #{hashSha256,jdbcType=VARCHAR},
-        #{hashMd5,jdbcType=VARCHAR},            #{fileSize,jdbcType=BIGINT},           #{fileName,jdbcType=VARCHAR},          #{displayName,jdbcType=VARCHAR},
-        #{contentType,jdbcType=VARCHAR},        #{bizType,jdbcType=VARCHAR},           #{bizId,jdbcType=VARCHAR},             #{bizTag,jdbcType=VARCHAR},
-        #{remark,jdbcType=VARCHAR},             #{storageProvider,jdbcType=VARCHAR},   #{bucketName,jdbcType=VARCHAR},        #{objectKey,jdbcType=VARCHAR},
-        #{uploadId,jdbcType=VARCHAR},           #{sessionStatus,jdbcType=VARCHAR},     #{expireTime,jdbcType=VARCHAR},        #{isDelete,jdbcType=INTEGER},
-        #{createdTime,jdbcType=VARCHAR},        #{creatorId,jdbcType=VARCHAR},         #{modifyTime,jdbcType=VARCHAR},        #{modifierId,jdbcType=VARCHAR}
+        #{sessionId,jdbcType=VARCHAR},                    #{fileId,jdbcType=VARCHAR},                       #{objectId,jdbcType=VARCHAR},                     #{hashSha256,jdbcType=VARCHAR},
+        #{hashMd5,jdbcType=VARCHAR},                      #{fileSize,jdbcType=BIGINT},                      #{fileName,jdbcType=VARCHAR},                     #{displayName,jdbcType=VARCHAR},
+        #{contentType,jdbcType=VARCHAR},                  #{bizType,jdbcType=VARCHAR},                      #{bizId,jdbcType=VARCHAR},                        #{bizTag,jdbcType=VARCHAR},
+        #{remark,jdbcType=VARCHAR},                       #{storageProvider,jdbcType=VARCHAR},              #{bucketName,jdbcType=VARCHAR},                   #{objectKey,jdbcType=VARCHAR},
+        #{uploadId,jdbcType=VARCHAR},                     #{sessionStatus,jdbcType=VARCHAR},                #{expireTime,jdbcType=VARCHAR},                   #{isDelete,jdbcType=INTEGER},
+        #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
+
     <sql id="itemAllColumnValue">
-        #{item.sessionId,jdbcType=VARCHAR},     #{item.fileId,jdbcType=VARCHAR},       #{item.objectId,jdbcType=VARCHAR},     #{item.hashSha256,jdbcType=VARCHAR},
-        #{item.hashMd5,jdbcType=VARCHAR},       #{item.fileSize,jdbcType=BIGINT},      #{item.fileName,jdbcType=VARCHAR},     #{item.displayName,jdbcType=VARCHAR},
-        #{item.contentType,jdbcType=VARCHAR},   #{item.bizType,jdbcType=VARCHAR},      #{item.bizId,jdbcType=VARCHAR},        #{item.bizTag,jdbcType=VARCHAR},
-        #{item.remark,jdbcType=VARCHAR},        #{item.storageProvider,jdbcType=VARCHAR}, #{item.bucketName,jdbcType=VARCHAR}, #{item.objectKey,jdbcType=VARCHAR},
-        #{item.uploadId,jdbcType=VARCHAR},      #{item.sessionStatus,jdbcType=VARCHAR}, #{item.expireTime,jdbcType=VARCHAR},  #{item.isDelete,jdbcType=INTEGER},
-        #{item.createdTime,jdbcType=VARCHAR},   #{item.creatorId,jdbcType=VARCHAR},    #{item.modifyTime,jdbcType=VARCHAR},   #{item.modifierId,jdbcType=VARCHAR}
+        #{item.sessionId,jdbcType=VARCHAR},               #{item.fileId,jdbcType=VARCHAR},                  #{item.objectId,jdbcType=VARCHAR},                #{item.hashSha256,jdbcType=VARCHAR},
+        #{item.hashMd5,jdbcType=VARCHAR},                 #{item.fileSize,jdbcType=BIGINT},                 #{item.fileName,jdbcType=VARCHAR},                #{item.displayName,jdbcType=VARCHAR},
+        #{item.contentType,jdbcType=VARCHAR},             #{item.bizType,jdbcType=VARCHAR},                 #{item.bizId,jdbcType=VARCHAR},                   #{item.bizTag,jdbcType=VARCHAR},
+        #{item.remark,jdbcType=VARCHAR},                  #{item.storageProvider,jdbcType=VARCHAR},         #{item.bucketName,jdbcType=VARCHAR},              #{item.objectKey,jdbcType=VARCHAR},
+        #{item.uploadId,jdbcType=VARCHAR},                #{item.sessionStatus,jdbcType=VARCHAR},           #{item.expireTime,jdbcType=VARCHAR},              #{item.isDelete,jdbcType=INTEGER},
+        #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
@@ -107,6 +108,155 @@
             </if>
             <if test="modifierId != null and modifierId != ''">
                 MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="fileId != null and fileId != ''">
+                FILE_ID,
+            </if>
+            <if test="objectId != null and objectId != ''">
+                OBJECT_ID,
+            </if>
+            <if test="hashSha256 != null and hashSha256 != ''">
+                HASH_SHA256,
+            </if>
+            <if test="hashMd5 != null and hashMd5 != ''">
+                HASH_MD5,
+            </if>
+            <if test="fileSize != null">
+                FILE_SIZE,
+            </if>
+            <if test="fileName != null and fileName != ''">
+                FILE_NAME,
+            </if>
+            <if test="displayName != null and displayName != ''">
+                DISPLAY_NAME,
+            </if>
+            <if test="contentType != null and contentType != ''">
+                CONTENT_TYPE,
+            </if>
+            <if test="bizType != null and bizType != ''">
+                BIZ_TYPE,
+            </if>
+            <if test="bizId != null and bizId != ''">
+                BIZ_ID,
+            </if>
+            <if test="bizTag != null and bizTag != ''">
+                BIZ_TAG,
+            </if>
+            <if test="remark != null and remark != ''">
+                REMARK,
+            </if>
+            <if test="storageProvider != null and storageProvider != ''">
+                STORAGE_PROVIDER,
+            </if>
+            <if test="bucketName != null and bucketName != ''">
+                BUCKET_NAME,
+            </if>
+            <if test="objectKey != null and objectKey != ''">
+                OBJECT_KEY,
+            </if>
+            <if test="uploadId != null and uploadId != ''">
+                UPLOAD_ID,
+            </if>
+            <if test="sessionStatus != null and sessionStatus != ''">
+                SESSION_STATUS,
+            </if>
+            <if test="expireTime != null and expireTime != ''">
+                EXPIRE_TIME,
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE,
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME,
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID,
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME,
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER_ID,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="fileId != null and fileId != ''">
+                #{fileId,jdbcType=VARCHAR},
+            </if>
+            <if test="objectId != null and objectId != ''">
+                #{objectId,jdbcType=VARCHAR},
+            </if>
+            <if test="hashSha256 != null and hashSha256 != ''">
+                #{hashSha256,jdbcType=VARCHAR},
+            </if>
+            <if test="hashMd5 != null and hashMd5 != ''">
+                #{hashMd5,jdbcType=VARCHAR},
+            </if>
+            <if test="fileSize != null">
+                #{fileSize,jdbcType=BIGINT},
+            </if>
+            <if test="fileName != null and fileName != ''">
+                #{fileName,jdbcType=VARCHAR},
+            </if>
+            <if test="displayName != null and displayName != ''">
+                #{displayName,jdbcType=VARCHAR},
+            </if>
+            <if test="contentType != null and contentType != ''">
+                #{contentType,jdbcType=VARCHAR},
+            </if>
+            <if test="bizType != null and bizType != ''">
+                #{bizType,jdbcType=VARCHAR},
+            </if>
+            <if test="bizId != null and bizId != ''">
+                #{bizId,jdbcType=VARCHAR},
+            </if>
+            <if test="bizTag != null and bizTag != ''">
+                #{bizTag,jdbcType=VARCHAR},
+            </if>
+            <if test="remark != null and remark != ''">
+                #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="storageProvider != null and storageProvider != ''">
+                #{storageProvider,jdbcType=VARCHAR},
+            </if>
+            <if test="bucketName != null and bucketName != ''">
+                #{bucketName,jdbcType=VARCHAR},
+            </if>
+            <if test="objectKey != null and objectKey != ''">
+                #{objectKey,jdbcType=VARCHAR},
+            </if>
+            <if test="uploadId != null and uploadId != ''">
+                #{uploadId,jdbcType=VARCHAR},
+            </if>
+            <if test="sessionStatus != null and sessionStatus != ''">
+                #{sessionStatus,jdbcType=VARCHAR},
+            </if>
+            <if test="expireTime != null and expireTime != ''">
+                #{expireTime,jdbcType=VARCHAR},
+            </if>
+            <if test="isDelete != null">
+                #{isDelete,jdbcType=INTEGER},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -188,33 +338,27 @@
 
     <insert id="insert" parameterType="com.peach.fileservice.entity.FileUploadSessionDO">
         INSERT INTO PEACH_FILE_UPLOAD_SESSION (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES (
-        <include refid="allColumnValue" />
+            <include refid="allColumnValue" />
         )
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.fileservice.entity.FileUploadSessionDO">
         INSERT INTO PEACH_FILE_UPLOAD_SESSION (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
-            (<include refid="itemAllColumnValue" />)
+            (<include refid="itemAllColumnValue"/>)
         </foreach>
     </insert>
 
     <update id="update" parameterType="com.peach.fileservice.entity.FileUploadSessionDO">
         UPDATE PEACH_FILE_UPLOAD_SESSION SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         <where>
             <include refid="allColumnCond" />
         </where>
-    </update>
-
-    <update id="updateById" parameterType="com.peach.fileservice.entity.FileUploadSessionDO">
-        UPDATE PEACH_FILE_UPLOAD_SESSION SET
-        <include refid="allColumnSet" />
-        WHERE SESSION_ID = #{sessionId,jdbcType=VARCHAR}
     </update>
 
     <delete id="delById" parameterType="string">
@@ -237,16 +381,22 @@
         </where>
     </delete>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.fileservice.vo.FileUploadSessionVO">
+    <update id="updateById" parameterType="com.peach.fileservice.entity.FileUploadSessionDO">
+        UPDATE PEACH_FILE_UPLOAD_SESSION SET
+            <include refid="allColumnSet" />
+        WHERE SESSION_ID =  #{sessionId,jdbcType=VARCHAR}
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.fileservice.entity.FileUploadSessionDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_FILE_UPLOAD_SESSION
         WHERE SESSION_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.fileservice.vo.FileUploadSessionVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.fileservice.entity.FileUploadSessionDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_FILE_UPLOAD_SESSION
         WHERE SESSION_ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
@@ -254,9 +404,9 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.fileservice.entity.FileUploadSessionDO" resultType="com.peach.fileservice.vo.FileUploadSessionVO">
+    <select id="select" parameterType="com.peach.fileservice.entity.FileUploadSessionDO" resultType="com.peach.fileservice.entity.FileUploadSessionDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_FILE_UPLOAD_SESSION
         <where>
             <include refid="allColumnCond" />
@@ -270,24 +420,4 @@
             <include refid="allColumnCond" />
         </where>
     </select>
-
-    <update id="updateSessionStatus">
-        UPDATE PEACH_FILE_UPLOAD_SESSION
-        SET SESSION_STATUS = #{sessionStatus,jdbcType=VARCHAR},
-            MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
-            MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
-        WHERE SESSION_ID = #{sessionId,jdbcType=VARCHAR}
-    </update>
-
-    <select id="selectExpiredSessions" resultType="com.peach.fileservice.vo.FileUploadSessionVO">
-        SELECT
-        <include refid="allColumnAlias" />
-        FROM PEACH_FILE_UPLOAD_SESSION
-        WHERE IS_DELETE = 0
-          AND SESSION_STATUS IN ('INITIATED', 'UPLOADING')
-          AND EXPIRE_TIME IS NOT NULL
-          AND EXPIRE_TIME &lt;= #{nowTime,jdbcType=VARCHAR}
-        ORDER BY EXPIRE_TIME ASC
-    </select>
 </mapper>
-

@@ -1,7 +1,7 @@
 package com.peach.auth.rest.internal;
 
 import com.peach.common.response.Response;
-import com.peach.fileservice.openfeign.FileFeignClients;
+import com.peach.fileservice.openfeign.FileFeignClient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -29,12 +29,12 @@ import javax.annotation.Resource;
 public class FileController {
 
     @Resource
-    private FileFeignClients fileFeignClients;
+    private FileFeignClient fileFeignClient;
 
     @PostMapping("/upload")
     public Response upload(@RequestPart("file") MultipartFile file,
                            @RequestParam("targetPath") String targetPath) {
-        return fileFeignClients.upload(file, targetPath);
+        return fileFeignClient.upload(file, targetPath);
     }
 
     @PostMapping("/download/local")
@@ -43,7 +43,7 @@ public class FileController {
             @RequestParam("targetPath") String targetPath,
             @RequestParam("localPath") String localPath,
             @RequestParam("fileName") String fileName) {
-        return fileFeignClients.download(targetPath, localPath, fileName);
+        return fileFeignClient.download(targetPath, localPath, fileName);
     }
 
 
@@ -51,18 +51,18 @@ public class FileController {
     @Operation(summary = "下载文件夹")
     public Response downloadDir(@RequestParam("sourceDir") String sourceDir,
                                 @RequestParam("localDir") String localDir){
-        return fileFeignClients.downloadDir(sourceDir, localDir);
+        return fileFeignClient.downloadDir(sourceDir, localDir);
     }
 
     @DeleteMapping("/delete")
     @Operation(summary = "删除文件")
     public Response delete(@RequestParam("key") String key) {
-        return fileFeignClients.delete(key);
+        return fileFeignClient.delete(key);
     }
 
     @PostMapping("/url")
     @Operation(summary = "获取文件url")
     public Response getUrl(@RequestParam("key") String key) {
-        return fileFeignClients.getUrl(key);
+        return fileFeignClient.getUrl(key);
     }
 }

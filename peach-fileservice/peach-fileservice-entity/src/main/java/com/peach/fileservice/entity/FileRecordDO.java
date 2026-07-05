@@ -1,6 +1,6 @@
 package com.peach.fileservice.entity;
 
-import com.peach.common.BaseDO;
+import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,7 +27,7 @@ import java.io.Serializable;
 @Table(name = "PEACH_FILE_RECORD")
 @Schema(description = "业务文件记录实体")
 @EqualsAndHashCode(callSuper = true)
-public class FileRecordDO extends BaseDO implements Serializable {
+public class FileRecordDO extends PeachDO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

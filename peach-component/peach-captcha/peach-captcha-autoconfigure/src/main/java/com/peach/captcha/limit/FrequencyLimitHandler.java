@@ -1,11 +1,7 @@
 package com.peach.captcha.limit;
 
-
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.common.response.Response;
-
-
-
 
 /**
  * @Author Mr Shu

@@ -6,8 +6,8 @@
     <groupId>com.peach</groupId>
 
     <artifactId>peach-setting-common</artifactId>
-    <name>peach-setting-comon</name>
-    <description>peach-setting-comon</description>
+    <name>peach-setting-common</name>
+    <description>peach-setting-common</description>
 
     <packaging>jar</packaging>
 

@@ -1,6 +1,6 @@
 package com.peach.setting.entity;
 
-import com.peach.common.BaseDO;
+import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,7 +22,7 @@ import java.io.Serializable;
 @Table(name = "PEACH_NOTICE")
 @Schema(description = "通知公告")
 @EqualsAndHashCode(callSuper = true)
-public class NoticeDO extends BaseDO implements Serializable {
+public class NoticeDO extends PeachDO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

@@ -3,9 +3,6 @@ package com.peach.mongo;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * peach.mongo 可配置项，控制连接池、超时、重试、模板行为与事务。
- */
 
 /**
  * @Author Mr Shu

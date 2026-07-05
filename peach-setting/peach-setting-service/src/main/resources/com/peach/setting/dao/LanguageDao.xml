@@ -1,28 +1,28 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.LanguageDao">
     <sql id="allColumn">
         ID,                                               LANGUAGE_CODE,                                    LANGUAGE_NAME,                                    NATIVE_NAME,
         ICON,                                             STATUS,                                           DEFAULT_FLAG,                                     SORT_ORDER,
-        CREATED_TIME,                                     CREATOR_ID,                                     MODIFY_TIME,                                     MODIFIER_ID
+        CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
         ID as id,                                         LANGUAGE_CODE as languageCode,                    LANGUAGE_NAME as languageName,                    NATIVE_NAME as nativeName,
         ICON as icon,                                     STATUS as status,                                 DEFAULT_FLAG as defaultFlag,                      SORT_ORDER as sortOrder,
-        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,                      MODIFIER_ID as modifierId
+        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                 #{languageCode,jdbcType=VARCHAR},       #{languageName,jdbcType=VARCHAR},       #{nativeName,jdbcType=VARCHAR},
-        #{icon,jdbcType=VARCHAR},               #{status,jdbcType=INTEGER},             #{defaultFlag,jdbcType=INTEGER},        #{sortOrder,jdbcType=INTEGER},
-        #{createdTime,jdbcType=VARCHAR},        #{creatorId,jdbcType=VARCHAR},        #{modifyTime,jdbcType=VARCHAR},        #{modifierId,jdbcType=VARCHAR}
+        #{id,jdbcType=VARCHAR},                           #{languageCode,jdbcType=VARCHAR},                 #{languageName,jdbcType=VARCHAR},                 #{nativeName,jdbcType=VARCHAR},
+        #{icon,jdbcType=VARCHAR},                         #{status,jdbcType=INTEGER},                       #{defaultFlag,jdbcType=INTEGER},                  #{sortOrder,jdbcType=INTEGER},
+        #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},            #{item.languageCode,jdbcType=VARCHAR},  #{item.languageName,jdbcType=VARCHAR},  #{item.nativeName,jdbcType=VARCHAR},
-        #{item.icon,jdbcType=VARCHAR},          #{item.status,jdbcType=INTEGER},        #{item.defaultFlag,jdbcType=INTEGER},   #{item.sortOrder,jdbcType=INTEGER},
-        #{item.createdTime,jdbcType=VARCHAR},   #{item.creatorId,jdbcType=VARCHAR},   #{item.modifyTime,jdbcType=VARCHAR},   #{item.modifierId,jdbcType=VARCHAR}
+        #{item.id,jdbcType=VARCHAR},                      #{item.languageCode,jdbcType=VARCHAR},            #{item.languageName,jdbcType=VARCHAR},            #{item.nativeName,jdbcType=VARCHAR},
+        #{item.icon,jdbcType=VARCHAR},                    #{item.status,jdbcType=INTEGER},                  #{item.defaultFlag,jdbcType=INTEGER},             #{item.sortOrder,jdbcType=INTEGER},
+        #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
@@ -152,11 +152,17 @@
         <if test="nativeName != null and nativeName != ''">
             AND NATIVE_NAME = #{nativeName,jdbcType=VARCHAR}
         </if>
+        <if test="icon != null and icon != ''">
+            AND ICON = #{icon,jdbcType=VARCHAR}
+        </if>
         <if test="status != null">
             AND STATUS = #{status,jdbcType=INTEGER}
         </if>
         <if test="defaultFlag != null">
             AND DEFAULT_FLAG = #{defaultFlag,jdbcType=INTEGER}
+        </if>
+        <if test="sortOrder != null">
+            AND SORT_ORDER = #{sortOrder,jdbcType=INTEGER}
         </if>
         <if test="createdTime != null and createdTime != ''">
             AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
@@ -174,24 +180,24 @@
 
     <insert id="insert" parameterType="com.peach.setting.entity.LanguageDO">
         INSERT INTO PEACH_LANGUAGE (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES (
-        <include refid="allColumnValue" />
+            <include refid="allColumnValue" />
         )
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.setting.entity.LanguageDO">
         INSERT INTO PEACH_LANGUAGE (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
-            (<include refid="itemAllColumnValue" />)
+            (<include refid="itemAllColumnValue"/>)
         </foreach>
     </insert>
 
     <update id="update" parameterType="com.peach.setting.entity.LanguageDO">
         UPDATE PEACH_LANGUAGE SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         <where>
             <include refid="allColumnCond" />
         </where>
@@ -219,8 +225,8 @@
 
     <update id="updateById" parameterType="com.peach.setting.entity.LanguageDO">
         UPDATE PEACH_LANGUAGE SET
-        <include refid="allColumnSet" />
-        WHERE ID = #{id,jdbcType=VARCHAR}
+            <include refid="allColumnSet" />
+        WHERE ID =  #{id,jdbcType=VARCHAR}
     </update>
 
     <update id="clearDefaultFlag">
@@ -230,14 +236,14 @@
 
     <select id="selectById" parameterType="string" resultType="com.peach.setting.vo.LanguageVO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_LANGUAGE
         WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.vo.LanguageVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.entity.LanguageDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_LANGUAGE
         WHERE ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
@@ -245,9 +251,9 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.setting.entity.LanguageDO" resultType="com.peach.setting.vo.LanguageVO">
+    <select id="select" parameterType="com.peach.setting.entity.LanguageDO" resultType="com.peach.setting.entity.LanguageDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_LANGUAGE
         <where>
             <include refid="allColumnCond" />

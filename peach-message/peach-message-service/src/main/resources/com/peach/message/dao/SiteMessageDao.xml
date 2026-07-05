@@ -16,80 +16,217 @@
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                           #{messageCode,jdbcType=VARCHAR},                  #{receiverId,jdbcType=VARCHAR},                    #{titleMessageKey,jdbcType=VARCHAR},
-        #{contentMessageKey,jdbcType=VARCHAR},            #{messageType,jdbcType=VARCHAR},                  #{sourceType,jdbcType=VARCHAR},                    #{sourceCode,jdbcType=VARCHAR},
-        #{readFlag,jdbcType=INTEGER},                     #{sendStatus,jdbcType=VARCHAR},                   #{createdTime,jdbcType=VARCHAR},                   #{creatorId,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR},                           #{messageCode,jdbcType=VARCHAR},                  #{receiverId,jdbcType=VARCHAR},                   #{titleMessageKey,jdbcType=VARCHAR},
+        #{contentMessageKey,jdbcType=VARCHAR},            #{messageType,jdbcType=VARCHAR},                  #{sourceType,jdbcType=VARCHAR},                   #{sourceCode,jdbcType=VARCHAR},
+        #{readFlag,jdbcType=INTEGER},                     #{sendStatus,jdbcType=VARCHAR},                   #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},
         #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},                      #{item.messageCode,jdbcType=VARCHAR},             #{item.receiverId,jdbcType=VARCHAR},               #{item.titleMessageKey,jdbcType=VARCHAR},
-        #{item.contentMessageKey,jdbcType=VARCHAR},       #{item.messageType,jdbcType=VARCHAR},             #{item.sourceType,jdbcType=VARCHAR},               #{item.sourceCode,jdbcType=VARCHAR},
-        #{item.readFlag,jdbcType=INTEGER},                #{item.sendStatus,jdbcType=VARCHAR},              #{item.createdTime,jdbcType=VARCHAR},              #{item.creatorId,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR},                      #{item.messageCode,jdbcType=VARCHAR},             #{item.receiverId,jdbcType=VARCHAR},              #{item.titleMessageKey,jdbcType=VARCHAR},
+        #{item.contentMessageKey,jdbcType=VARCHAR},       #{item.messageType,jdbcType=VARCHAR},             #{item.sourceType,jdbcType=VARCHAR},              #{item.sourceCode,jdbcType=VARCHAR},
+        #{item.readFlag,jdbcType=INTEGER},                #{item.sendStatus,jdbcType=VARCHAR},              #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},
         #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
-            <if test="messageCode != null and messageCode != ''">MESSAGE_CODE = #{messageCode,jdbcType=VARCHAR},</if>
-            <if test="receiverId != null and receiverId != ''">RECEIVER_ID = #{receiverId,jdbcType=VARCHAR},</if>
-            <if test="titleMessageKey != null and titleMessageKey != ''">TITLE_MESSAGE_KEY = #{titleMessageKey,jdbcType=VARCHAR},</if>
-            <if test="contentMessageKey != null and contentMessageKey != ''">CONTENT_MESSAGE_KEY = #{contentMessageKey,jdbcType=VARCHAR},</if>
-            <if test="messageType != null and messageType != ''">MESSAGE_TYPE = #{messageType,jdbcType=VARCHAR},</if>
-            <if test="sourceType != null and sourceType != ''">SOURCE_TYPE = #{sourceType,jdbcType=VARCHAR},</if>
-            <if test="sourceCode != null and sourceCode != ''">SOURCE_CODE = #{sourceCode,jdbcType=VARCHAR},</if>
-            <if test="readFlag != null">READ_FLAG = #{readFlag,jdbcType=INTEGER},</if>
-            <if test="sendStatus != null and sendStatus != ''">SEND_STATUS = #{sendStatus,jdbcType=VARCHAR},</if>
-            <if test="createdTime != null and createdTime != ''">CREATED_TIME = #{createdTime,jdbcType=VARCHAR},</if>
-            <if test="creatorId != null and creatorId != ''">CREATOR_ID = #{creatorId,jdbcType=VARCHAR},</if>
-            <if test="modifyTime != null and modifyTime != ''">MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},</if>
-            <if test="modifierId != null and modifierId != ''">MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},</if>
+            <if test="messageCode != null and messageCode != ''">
+                MESSAGE_CODE = #{messageCode,jdbcType=VARCHAR},
+            </if>
+            <if test="receiverId != null and receiverId != ''">
+                RECEIVER_ID = #{receiverId,jdbcType=VARCHAR},
+            </if>
+            <if test="titleMessageKey != null and titleMessageKey != ''">
+                TITLE_MESSAGE_KEY = #{titleMessageKey,jdbcType=VARCHAR},
+            </if>
+            <if test="contentMessageKey != null and contentMessageKey != ''">
+                CONTENT_MESSAGE_KEY = #{contentMessageKey,jdbcType=VARCHAR},
+            </if>
+            <if test="messageType != null and messageType != ''">
+                MESSAGE_TYPE = #{messageType,jdbcType=VARCHAR},
+            </if>
+            <if test="sourceType != null and sourceType != ''">
+                SOURCE_TYPE = #{sourceType,jdbcType=VARCHAR},
+            </if>
+            <if test="sourceCode != null and sourceCode != ''">
+                SOURCE_CODE = #{sourceCode,jdbcType=VARCHAR},
+            </if>
+            <if test="readFlag != null">
+                READ_FLAG = #{readFlag,jdbcType=INTEGER},
+            </if>
+            <if test="sendStatus != null and sendStatus != ''">
+                SEND_STATUS = #{sendStatus,jdbcType=VARCHAR},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="messageCode != null and messageCode != ''">
+                MESSAGE_CODE,
+            </if>
+            <if test="receiverId != null and receiverId != ''">
+                RECEIVER_ID,
+            </if>
+            <if test="titleMessageKey != null and titleMessageKey != ''">
+                TITLE_MESSAGE_KEY,
+            </if>
+            <if test="contentMessageKey != null and contentMessageKey != ''">
+                CONTENT_MESSAGE_KEY,
+            </if>
+            <if test="messageType != null and messageType != ''">
+                MESSAGE_TYPE,
+            </if>
+            <if test="sourceType != null and sourceType != ''">
+                SOURCE_TYPE,
+            </if>
+            <if test="sourceCode != null and sourceCode != ''">
+                SOURCE_CODE,
+            </if>
+            <if test="readFlag != null">
+                READ_FLAG,
+            </if>
+            <if test="sendStatus != null and sendStatus != ''">
+                SEND_STATUS,
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME,
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID,
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME,
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER_ID,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="messageCode != null and messageCode != ''">
+                #{messageCode,jdbcType=VARCHAR},
+            </if>
+            <if test="receiverId != null and receiverId != ''">
+                #{receiverId,jdbcType=VARCHAR},
+            </if>
+            <if test="titleMessageKey != null and titleMessageKey != ''">
+                #{titleMessageKey,jdbcType=VARCHAR},
+            </if>
+            <if test="contentMessageKey != null and contentMessageKey != ''">
+                #{contentMessageKey,jdbcType=VARCHAR},
+            </if>
+            <if test="messageType != null and messageType != ''">
+                #{messageType,jdbcType=VARCHAR},
+            </if>
+            <if test="sourceType != null and sourceType != ''">
+                #{sourceType,jdbcType=VARCHAR},
+            </if>
+            <if test="sourceCode != null and sourceCode != ''">
+                #{sourceCode,jdbcType=VARCHAR},
+            </if>
+            <if test="readFlag != null">
+                #{readFlag,jdbcType=INTEGER},
+            </if>
+            <if test="sendStatus != null and sendStatus != ''">
+                #{sendStatus,jdbcType=VARCHAR},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                #{modifierId,jdbcType=VARCHAR},
+            </if>
         </trim>
     </sql>
 
     <sql id="allColumnCond">
-        <if test="id != null and id != ''">AND ID = #{id,jdbcType=VARCHAR}</if>
-        <if test="messageCode != null and messageCode != ''">AND MESSAGE_CODE = #{messageCode,jdbcType=VARCHAR}</if>
-        <if test="receiverId != null and receiverId != ''">AND RECEIVER_ID = #{receiverId,jdbcType=VARCHAR}</if>
-        <if test="titleMessageKey != null and titleMessageKey != ''">AND TITLE_MESSAGE_KEY = #{titleMessageKey,jdbcType=VARCHAR}</if>
-        <if test="contentMessageKey != null and contentMessageKey != ''">AND CONTENT_MESSAGE_KEY = #{contentMessageKey,jdbcType=VARCHAR}</if>
-        <if test="messageType != null and messageType != ''">AND MESSAGE_TYPE = #{messageType,jdbcType=VARCHAR}</if>
-        <if test="messageTypeList != null and messageTypeList.size() > 0">
-            AND MESSAGE_TYPE IN
-            <foreach collection="messageTypeList" index="index" item="messageTypeItem" open="(" separator="," close=")">
-                #{messageTypeItem,jdbcType=VARCHAR}
-            </foreach>
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
         </if>
-        <if test="sourceType != null and sourceType != ''">AND SOURCE_TYPE = #{sourceType,jdbcType=VARCHAR}</if>
-        <if test="sourceCode != null and sourceCode != ''">AND SOURCE_CODE = #{sourceCode,jdbcType=VARCHAR}</if>
-        <if test="readFlag != null">AND READ_FLAG = #{readFlag,jdbcType=INTEGER}</if>
-        <if test="sendStatus != null and sendStatus != ''">AND SEND_STATUS = #{sendStatus,jdbcType=VARCHAR}</if>
-        <if test="createdTime != null and createdTime != ''">AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}</if>
-        <if test="creatorId != null and creatorId != ''">AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}</if>
-        <if test="modifyTime != null and modifyTime != ''">AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}</if>
-        <if test="modifierId != null and modifierId != ''">AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}</if>
+        <if test="messageCode != null and messageCode != ''">
+            AND MESSAGE_CODE = #{messageCode,jdbcType=VARCHAR}
+        </if>
+        <if test="receiverId != null and receiverId != ''">
+            AND RECEIVER_ID = #{receiverId,jdbcType=VARCHAR}
+        </if>
+        <if test="titleMessageKey != null and titleMessageKey != ''">
+            AND TITLE_MESSAGE_KEY = #{titleMessageKey,jdbcType=VARCHAR}
+        </if>
+        <if test="contentMessageKey != null and contentMessageKey != ''">
+            AND CONTENT_MESSAGE_KEY = #{contentMessageKey,jdbcType=VARCHAR}
+        </if>
+        <if test="messageType != null and messageType != ''">
+            AND MESSAGE_TYPE = #{messageType,jdbcType=VARCHAR}
+        </if>
+        <if test="sourceType != null and sourceType != ''">
+            AND SOURCE_TYPE = #{sourceType,jdbcType=VARCHAR}
+        </if>
+        <if test="sourceCode != null and sourceCode != ''">
+            AND SOURCE_CODE = #{sourceCode,jdbcType=VARCHAR}
+        </if>
+        <if test="readFlag != null">
+            AND READ_FLAG = #{readFlag,jdbcType=INTEGER}
+        </if>
+        <if test="sendStatus != null and sendStatus != ''">
+            AND SEND_STATUS = #{sendStatus,jdbcType=VARCHAR}
+        </if>
+        <if test="createdTime != null and createdTime != ''">
+            AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
+        </if>
+        <if test="creatorId != null and creatorId != ''">
+            AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyTime != null and modifyTime != ''">
+            AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
+        </if>
+        <if test="modifierId != null and modifierId != ''">
+            AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
+        </if>
     </sql>
 
     <insert id="insert" parameterType="com.peach.message.entity.SiteMessageDO">
         INSERT INTO PEACH_SITE_MESSAGE (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES (
-        <include refid="allColumnValue" />
+            <include refid="allColumnValue" />
         )
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.message.entity.SiteMessageDO">
         INSERT INTO PEACH_SITE_MESSAGE (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
-            (<include refid="itemAllColumnValue" />)
+            (<include refid="itemAllColumnValue"/>)
         </foreach>
     </insert>
 
     <update id="updateById" parameterType="com.peach.message.entity.SiteMessageDO">
         UPDATE PEACH_SITE_MESSAGE SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         WHERE ID = #{id,jdbcType=VARCHAR}
     </update>
 
@@ -122,14 +259,14 @@
 
     <select id="selectById" parameterType="string" resultType="com.peach.message.vo.SiteMessageVO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_SITE_MESSAGE
         WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByQO" parameterType="com.peach.message.qo.SiteMessageQO" resultType="com.peach.message.vo.SiteMessageVO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_SITE_MESSAGE
 <!--        <where>-->
 <!--            <include refid="allColumnCond" />-->

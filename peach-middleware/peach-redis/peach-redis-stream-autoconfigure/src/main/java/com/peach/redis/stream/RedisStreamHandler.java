@@ -9,6 +9,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2025/12/4 17:29
+ * @Description RedisStream 处理器
+ */
 @Slf4j
 public class RedisStreamHandler {
     

@@ -16,10 +16,12 @@
     </parent>
 
     <dependencies>
+
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-captcha-autoconfigure</artifactId>
         </dependency>
+
     </dependencies>
 
 </project>

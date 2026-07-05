@@ -2,35 +2,35 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.fileservice.dao.FileObjectDao">
     <sql id="allColumn">
-        OBJECT_ID,                                        HASH_SHA256,                                     HASH_MD5,                                         FILE_SIZE,
-        STORAGE_PROVIDER,                                 BUCKET_NAME,                                     OBJECT_KEY,                                       ORIGIN_FILE_NAME,
-        CONTENT_TYPE,                                     EXTENSION,                                       STORAGE_STATUS,                                   REF_COUNT,
-        UPLOAD_TIME,                                      LAST_ACCESS_TIME,                                IS_DELETE,                                        CREATED_TIME,
-        CREATOR_ID,                                       MODIFY_TIME,                                     MODIFIER_ID
+        OBJECT_ID,                                        HASH_SHA256,                                      HASH_MD5,                                         FILE_SIZE,
+        STORAGE_PROVIDER,                                 BUCKET_NAME,                                      OBJECT_KEY,                                       ORIGIN_FILE_NAME,
+        CONTENT_TYPE,                                     EXTENSION,                                        STORAGE_STATUS,                                   REF_COUNT,
+        UPLOAD_TIME,                                      LAST_ACCESS_TIME,                                 IS_DELETE,                                        CREATED_TIME,
+        CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        OBJECT_ID as objectId,                            HASH_SHA256 as hashSha256,                       HASH_MD5 as hashMd5,                              FILE_SIZE as fileSize,
-        STORAGE_PROVIDER as storageProvider,              BUCKET_NAME as bucketName,                       OBJECT_KEY as objectKey,                          ORIGIN_FILE_NAME as originFileName,
-        CONTENT_TYPE as contentType,                      EXTENSION as extension,                          STORAGE_STATUS as storageStatus,                  REF_COUNT as refCount,
-        UPLOAD_TIME as uploadTime,                        LAST_ACCESS_TIME as lastAccessTime,              IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
-        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                       MODIFIER_ID as modifierId
+        OBJECT_ID as objectId,                            HASH_SHA256 as hashSha256,                        HASH_MD5 as hashMd5,                              FILE_SIZE as fileSize,
+        STORAGE_PROVIDER as storageProvider,              BUCKET_NAME as bucketName,                        OBJECT_KEY as objectKey,                          ORIGIN_FILE_NAME as originFileName,
+        CONTENT_TYPE as contentType,                      EXTENSION as extension,                           STORAGE_STATUS as storageStatus,                  REF_COUNT as refCount,
+        UPLOAD_TIME as uploadTime,                        LAST_ACCESS_TIME as lastAccessTime,               IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
+        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{objectId,jdbcType=VARCHAR},           #{hashSha256,jdbcType=VARCHAR},         #{hashMd5,jdbcType=VARCHAR},            #{fileSize,jdbcType=BIGINT},
-        #{storageProvider,jdbcType=VARCHAR},    #{bucketName,jdbcType=VARCHAR},         #{objectKey,jdbcType=VARCHAR},          #{originFileName,jdbcType=VARCHAR},
-        #{contentType,jdbcType=VARCHAR},        #{extension,jdbcType=VARCHAR},          #{storageStatus,jdbcType=VARCHAR},      #{refCount,jdbcType=INTEGER},
-        #{uploadTime,jdbcType=VARCHAR},         #{lastAccessTime,jdbcType=VARCHAR},     #{isDelete,jdbcType=INTEGER},           #{createdTime,jdbcType=VARCHAR},
-        #{creatorId,jdbcType=VARCHAR},          #{modifyTime,jdbcType=VARCHAR},         #{modifierId,jdbcType=VARCHAR}
+        #{objectId,jdbcType=VARCHAR},                     #{hashSha256,jdbcType=VARCHAR},                   #{hashMd5,jdbcType=VARCHAR},                      #{fileSize,jdbcType=BIGINT},
+        #{storageProvider,jdbcType=VARCHAR},              #{bucketName,jdbcType=VARCHAR},                   #{objectKey,jdbcType=VARCHAR},                    #{originFileName,jdbcType=VARCHAR},
+        #{contentType,jdbcType=VARCHAR},                  #{extension,jdbcType=VARCHAR},                    #{storageStatus,jdbcType=VARCHAR},                #{refCount,jdbcType=INTEGER},
+        #{uploadTime,jdbcType=VARCHAR},                   #{lastAccessTime,jdbcType=VARCHAR},               #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},
+        #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.objectId,jdbcType=VARCHAR},      #{item.hashSha256,jdbcType=VARCHAR},    #{item.hashMd5,jdbcType=VARCHAR},       #{item.fileSize,jdbcType=BIGINT},
-        #{item.storageProvider,jdbcType=VARCHAR}, #{item.bucketName,jdbcType=VARCHAR},  #{item.objectKey,jdbcType=VARCHAR},     #{item.originFileName,jdbcType=VARCHAR},
-        #{item.contentType,jdbcType=VARCHAR},   #{item.extension,jdbcType=VARCHAR},     #{item.storageStatus,jdbcType=VARCHAR}, #{item.refCount,jdbcType=INTEGER},
-        #{item.uploadTime,jdbcType=VARCHAR},    #{item.lastAccessTime,jdbcType=VARCHAR}, #{item.isDelete,jdbcType=INTEGER},     #{item.createdTime,jdbcType=VARCHAR},
-        #{item.creatorId,jdbcType=VARCHAR},     #{item.modifyTime,jdbcType=VARCHAR},    #{item.modifierId,jdbcType=VARCHAR}
+        #{item.objectId,jdbcType=VARCHAR},                #{item.hashSha256,jdbcType=VARCHAR},              #{item.hashMd5,jdbcType=VARCHAR},                 #{item.fileSize,jdbcType=BIGINT},
+        #{item.storageProvider,jdbcType=VARCHAR},         #{item.bucketName,jdbcType=VARCHAR},              #{item.objectKey,jdbcType=VARCHAR},               #{item.originFileName,jdbcType=VARCHAR},
+        #{item.contentType,jdbcType=VARCHAR},             #{item.extension,jdbcType=VARCHAR},               #{item.storageStatus,jdbcType=VARCHAR},           #{item.refCount,jdbcType=INTEGER},
+        #{item.uploadTime,jdbcType=VARCHAR},              #{item.lastAccessTime,jdbcType=VARCHAR},          #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},
+        #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
@@ -154,24 +154,24 @@
 
     <insert id="insert" parameterType="com.peach.fileservice.entity.FileObjectDO">
         INSERT INTO PEACH_FILE_OBJECT (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES (
-        <include refid="allColumnValue" />
+            <include refid="allColumnValue" />
         )
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.fileservice.entity.FileObjectDO">
         INSERT INTO PEACH_FILE_OBJECT (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
-            (<include refid="itemAllColumnValue" />)
+            (<include refid="itemAllColumnValue"/>)
         </foreach>
     </insert>
 
     <update id="update" parameterType="com.peach.fileservice.entity.FileObjectDO">
         UPDATE PEACH_FILE_OBJECT SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         <where>
             <include refid="allColumnCond" />
         </where>
@@ -205,14 +205,14 @@
 
     <select id="selectById" parameterType="string" resultType="com.peach.fileservice.vo.FileObjectVO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_FILE_OBJECT
         WHERE OBJECT_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.fileservice.vo.FileObjectVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.fileservice.entity.FileObjectDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_FILE_OBJECT
         WHERE OBJECT_ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
@@ -220,9 +220,9 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.fileservice.entity.FileObjectDO" resultType="com.peach.fileservice.vo.FileObjectVO">
+    <select id="select" parameterType="com.peach.fileservice.entity.FileObjectDO" resultType="com.peach.fileservice.entity.FileObjectDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_FILE_OBJECT
         <where>
             <include refid="allColumnCond" />

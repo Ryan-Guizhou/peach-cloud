@@ -14,6 +14,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * Web 端 Sa-Token 自动配置。
+ *
+ * <p>在 Servlet Web 环境下注册同 token 校验拦截器。</p>
+ *
+ * @author Mr Shu
+ * @version 1.0.0
+ * @since 2026/6/26
+ */
 @Slf4j
 @AutoConfiguration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -22,6 +31,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableConfigurationProperties(PeachSaTokenProperties.class)
 public class PeachSaTokenWebAutoConfiguration {
 
+    /**
+     * 创建 Web MVC 配置器。
+     *
+     * @param properties Sa-Token 配置
+     * @return Web MVC 配置器
+     */
     @Bean
     public WebMvcConfigurer peachSaTokenWebMvcConfigurer(PeachSaTokenProperties properties) {
         return new WebMvcConfigurer() {

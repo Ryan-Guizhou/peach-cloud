@@ -12,14 +12,16 @@
     </sql>
 
     <sql id="allColumnValue">
-        #{logId,jdbcType=VARCHAR},              #{operatorCode,jdbcType=VARCHAR},       #{operatorName,jdbcType=VARCHAR},       #{userCode,jdbcType=VARCHAR},
-        #{userName,jdbcType=VARCHAR},           #{authDescribe,jdbcType=VARCHAR},       #{operatTime,jdbcType=VARCHAR}
+        #{logId,jdbcType=VARCHAR},                        #{operatorCode,jdbcType=VARCHAR},                 #{operatorName,jdbcType=VARCHAR},                 #{userCode,jdbcType=VARCHAR},
+        #{userName,jdbcType=VARCHAR},                     #{authDescribe,jdbcType=VARCHAR},                 #{operatTime,jdbcType=VARCHAR}
     </sql>
 
+
     <sql id="itemAllColumnValue">
-        #{item.logId,jdbcType=VARCHAR},         #{item.operatorCode,jdbcType=VARCHAR},  #{item.operatorName,jdbcType=VARCHAR},  #{item.userCode,jdbcType=VARCHAR},
-        #{item.userName,jdbcType=VARCHAR},      #{item.authDescribe,jdbcType=VARCHAR},  #{item.operatTime,jdbcType=VARCHAR}
+        #{item.logId,jdbcType=VARCHAR},                   #{item.operatorCode,jdbcType=VARCHAR},            #{item.operatorName,jdbcType=VARCHAR},            #{item.userCode,jdbcType=VARCHAR},
+        #{item.userName,jdbcType=VARCHAR},                #{item.authDescribe,jdbcType=VARCHAR},            #{item.operatTime,jdbcType=VARCHAR}
     </sql>
+
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
@@ -43,6 +45,7 @@
             </if>
         </trim>
     </sql>
+
 
     <sql id="updateSelectiveColumn">
         <trim suffixOverrides=",">
@@ -116,15 +119,15 @@
 
     <insert id="insert" parameterType="com.peach.auth.entity.AuthLogDO">
         INSERT INTO PEACH_AUTH_LOG (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES (
-        <include refid="allColumnValue" />
+            <include refid="allColumnValue" />
         )
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.auth.entity.AuthLogDO">
         INSERT INTO PEACH_AUTH_LOG (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
             (<include refid="itemAllColumnValue"/>)
@@ -133,7 +136,7 @@
 
     <update id="update" parameterType="com.peach.auth.entity.AuthLogDO">
         UPDATE PEACH_AUTH_LOG SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         <where>
             <include refid="allColumnCond" />
         </where>
@@ -159,22 +162,22 @@
         </where>
     </delete>
 
-    <update id="updateById" parameterType="java.lang.String">
+    <update id="updateById" parameterType="com.peach.auth.entity.AuthLogDO">
         UPDATE PEACH_AUTH_LOG SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         WHERE LOG_ID =  #{logId,jdbcType=VARCHAR}
     </update>
 
     <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.AuthLogDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_AUTH_LOG
         WHERE LOG_ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.AuthLogDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_AUTH_LOG
         WHERE LOG_ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
@@ -184,7 +187,7 @@
 
     <select id="select" parameterType="com.peach.auth.entity.AuthLogDO" resultType="com.peach.auth.entity.AuthLogDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_AUTH_LOG
         <where>
             <include refid="allColumnCond" />

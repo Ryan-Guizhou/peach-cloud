@@ -1,24 +1,24 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.NoticeReadRecordDao">
     <sql id="allColumn">
         ID,                                               NOTICE_CODE,                                      READ_USER_ID,                                     READ_TIME,
-        CREATED_TIME,                                     CREATOR_ID,                                     MODIFY_TIME,                                     MODIFIER_ID
+        CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
         ID as id,                                         NOTICE_CODE as noticeCode,                        READ_USER_ID as readUserId,                       READ_TIME as readTime,
-        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,                      MODIFIER_ID as modifierId
+        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                 #{noticeCode,jdbcType=VARCHAR},         #{readUserId,jdbcType=VARCHAR},        #{readTime,jdbcType=VARCHAR},
-        #{createdTime,jdbcType=VARCHAR},        #{creatorId,jdbcType=VARCHAR},        #{modifyTime,jdbcType=VARCHAR},       #{modifierId,jdbcType=VARCHAR}
+        #{id,jdbcType=VARCHAR},                           #{noticeCode,jdbcType=VARCHAR},                   #{readUserId,jdbcType=VARCHAR},                   #{readTime,jdbcType=VARCHAR},
+        #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},            #{item.noticeCode,jdbcType=VARCHAR},    #{item.readUserId,jdbcType=VARCHAR},   #{item.readTime,jdbcType=VARCHAR},
-        #{item.createdTime,jdbcType=VARCHAR},   #{item.creatorId,jdbcType=VARCHAR},   #{item.modifyTime,jdbcType=VARCHAR},  #{item.modifierId,jdbcType=VARCHAR}
+        #{item.id,jdbcType=VARCHAR},                      #{item.noticeCode,jdbcType=VARCHAR},              #{item.readUserId,jdbcType=VARCHAR},              #{item.readTime,jdbcType=VARCHAR},
+        #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
@@ -128,24 +128,24 @@
 
     <insert id="insert" parameterType="com.peach.setting.entity.NoticeReadRecordDO">
         INSERT INTO PEACH_NOTICE_READ_RECORD (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES (
-        <include refid="allColumnValue" />
+            <include refid="allColumnValue" />
         )
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.setting.entity.NoticeReadRecordDO">
         INSERT INTO PEACH_NOTICE_READ_RECORD (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
-            (<include refid="itemAllColumnValue" />)
+            (<include refid="itemAllColumnValue"/>)
         </foreach>
     </insert>
 
     <update id="update" parameterType="com.peach.setting.entity.NoticeReadRecordDO">
         UPDATE PEACH_NOTICE_READ_RECORD SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         <where>
             <include refid="allColumnCond" />
         </where>
@@ -173,20 +173,20 @@
 
     <update id="updateById" parameterType="com.peach.setting.entity.NoticeReadRecordDO">
         UPDATE PEACH_NOTICE_READ_RECORD SET
-        <include refid="allColumnSet" />
-        WHERE ID = #{id,jdbcType=VARCHAR}
+            <include refid="allColumnSet" />
+        WHERE ID =  #{id,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.setting.vo.NoticeReadRecordVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.setting.entity.NoticeReadRecordDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_NOTICE_READ_RECORD
         WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.vo.NoticeReadRecordVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.entity.NoticeReadRecordDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_NOTICE_READ_RECORD
         WHERE ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
@@ -194,9 +194,9 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.setting.entity.NoticeReadRecordDO" resultType="com.peach.setting.vo.NoticeReadRecordVO">
+    <select id="select" parameterType="com.peach.setting.entity.NoticeReadRecordDO" resultType="com.peach.setting.entity.NoticeReadRecordDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_NOTICE_READ_RECORD
         <where>
             <include refid="allColumnCond" />

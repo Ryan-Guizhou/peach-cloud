@@ -5,37 +5,35 @@
         FUNC_ID,                                          FUNC_CODE,                                        PARENT_FUNC_CODE,                                 FUNC_NAME,
         FUNC_DESC,                                        FUNC_URL,                                         FUNC_SEQ,                                         FUNC_TYPE,
         IS_MENU,                                          IS_AUTHORIZE,                                     APP_ID,                                           IS_DISABLE,
-        IS_DELETE,                                        CREATE_TIME,                                      CREATE_USER_ID,                                   CREATE_USER_CODE,
-        CREATE_USER_NAME,                                 MODIFY_TIME,                                      MODIFY_USER_ID,                                   MODIFY_USER_CODE,
-        UPDATE_USER_NAME
+        IS_DELETE,                                        CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,
+        MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
         FUNC_ID as funcId,                                FUNC_CODE as funcCode,                            PARENT_FUNC_CODE as parentFuncCode,               FUNC_NAME as funcName,
         FUNC_DESC as funcDesc,                            FUNC_URL as funcUrl,                              FUNC_SEQ as funcSeq,                              FUNC_TYPE as funcType,
         IS_MENU as isMenu,                                IS_AUTHORIZE as isAuthorize,                      APP_ID as appId,                                  IS_DISABLE as isDisable,
-        IS_DELETE as isDelete,                            CREATE_TIME as createTime,                        CREATE_USER_ID as createUserId,                   CREATE_USER_CODE as createUserCode,
-        CREATE_USER_NAME as createUserName,               MODIFY_TIME as modifyTime,                        MODIFY_USER_ID as modifyUserId,                   MODIFY_USER_CODE as modifyUserCode,
-        UPDATE_USER_NAME as modifyUserName
+        IS_DELETE as isDelete,                            CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,
+        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{funcId,jdbcType=VARCHAR},             #{funcCode,jdbcType=VARCHAR},           #{parentFuncCode,jdbcType=VARCHAR},     #{funcName,jdbcType=VARCHAR},
-        #{funcDesc,jdbcType=VARCHAR},           #{funcUrl,jdbcType=VARCHAR},            #{funcSeq,jdbcType=VARCHAR},            #{funcType,jdbcType=VARCHAR},
-        #{isMenu,jdbcType=INTEGER},             #{isAuthorize,jdbcType=INTEGER},        #{appId,jdbcType=VARCHAR},              #{isDisable,jdbcType=INTEGER},
-        #{isDelete,jdbcType=INTEGER},           #{createTime,jdbcType=VARCHAR},         #{createUserId,jdbcType=VARCHAR},       #{createUserCode,jdbcType=VARCHAR},
-        #{createUserName,jdbcType=VARCHAR},     #{modifyTime,jdbcType=VARCHAR},         #{modifyUserId,jdbcType=VARCHAR},       #{modifyUserCode,jdbcType=VARCHAR},
-        #{modifyUserName,jdbcType=VARCHAR}
+        #{funcId,jdbcType=VARCHAR},                       #{funcCode,jdbcType=VARCHAR},                     #{parentFuncCode,jdbcType=VARCHAR},               #{funcName,jdbcType=VARCHAR},
+        #{funcDesc,jdbcType=VARCHAR},                     #{funcUrl,jdbcType=VARCHAR},                      #{funcSeq,jdbcType=VARCHAR},                      #{funcType,jdbcType=VARCHAR},
+        #{isMenu,jdbcType=INTEGER},                       #{isAuthorize,jdbcType=INTEGER},                  #{appId,jdbcType=VARCHAR},                        #{isDisable,jdbcType=INTEGER},
+        #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},
+        #{modifierId,jdbcType=VARCHAR}
     </sql>
 
+
     <sql id="itemAllColumnValue">
-        #{item.funcId,jdbcType=VARCHAR},        #{item.funcCode,jdbcType=VARCHAR},      #{item.parentFuncCode,jdbcType=VARCHAR},#{item.funcName,jdbcType=VARCHAR},
-        #{item.funcDesc,jdbcType=VARCHAR},      #{item.funcUrl,jdbcType=VARCHAR},       #{item.funcSeq,jdbcType=VARCHAR},       #{item.funcType,jdbcType=VARCHAR},
-        #{item.isMenu,jdbcType=INTEGER},        #{item.isAuthorize,jdbcType=INTEGER},   #{item.appId,jdbcType=VARCHAR},         #{item.isDisable,jdbcType=INTEGER},
-        #{item.isDelete,jdbcType=INTEGER},      #{item.createTime,jdbcType=VARCHAR},    #{item.createUserId,jdbcType=VARCHAR},  #{item.createUserCode,jdbcType=VARCHAR},
-        #{item.createUserName,jdbcType=VARCHAR},#{item.modifyTime,jdbcType=VARCHAR},    #{item.modifyUserId,jdbcType=VARCHAR},  #{item.modifyUserCode,jdbcType=VARCHAR},
-        #{item.modifyUserName,jdbcType=VARCHAR}
+        #{item.funcId,jdbcType=VARCHAR},                  #{item.funcCode,jdbcType=VARCHAR},                #{item.parentFuncCode,jdbcType=VARCHAR},          #{item.funcName,jdbcType=VARCHAR},
+        #{item.funcDesc,jdbcType=VARCHAR},                #{item.funcUrl,jdbcType=VARCHAR},                 #{item.funcSeq,jdbcType=VARCHAR},                 #{item.funcType,jdbcType=VARCHAR},
+        #{item.isMenu,jdbcType=INTEGER},                  #{item.isAuthorize,jdbcType=INTEGER},             #{item.appId,jdbcType=VARCHAR},                   #{item.isDisable,jdbcType=INTEGER},
+        #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},
+        #{item.modifierId,jdbcType=VARCHAR}
     </sql>
+
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
@@ -75,32 +73,21 @@
             <if test="isDelete != null">
                 IS_DELETE = #{isDelete,jdbcType=INTEGER},
             </if>
-            <if test="createTime != null and createTime != ''">
-                CREATE_TIME = #{createTime,jdbcType=VARCHAR},
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
             </if>
-            <if test="createUserId != null and createUserId != ''">
-                CREATE_USER_ID = #{createUserId,jdbcType=VARCHAR},
-            </if>
-            <if test="createUserCode != null and createUserCode != ''">
-                CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR},
-            </if>
-            <if test="createUserName != null and createUserName != ''">
-                CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR},
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
             </if>
             <if test="modifyTime != null and modifyTime != ''">
                 MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             </if>
-            <if test="modifyUserId != null and modifyUserId != ''">
-                MODIFY_USER_ID = #{modifyUserId,jdbcType=VARCHAR},
-            </if>
-            <if test="modifyUserCode != null and modifyUserCode != ''">
-                MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR},
-            </if>
-            <if test="modifyUserName != null and modifyUserName != ''">
-                UPDATE_USER_NAME = #{modifyUserName,jdbcType=VARCHAR},
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
+
 
     <sql id="updateSelectiveColumn">
         <trim suffixOverrides=",">
@@ -140,29 +127,17 @@
             <if test="isDelete != null">
                 IS_DELETE,
             </if>
-            <if test="createTime != null and createTime != ''">
-                CREATE_TIME,
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME,
             </if>
-            <if test="createUserId != null and createUserId != ''">
-                CREATE_USER_ID,
-            </if>
-            <if test="createUserCode != null and createUserCode != ''">
-                CREATE_USER_CODE,
-            </if>
-            <if test="createUserName != null and createUserName != ''">
-                CREATE_USER_NAME,
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID,
             </if>
             <if test="modifyTime != null and modifyTime != ''">
                 MODIFY_TIME,
             </if>
-            <if test="modifyUserId != null and modifyUserId != ''">
-                MODIFY_USER_ID,
-            </if>
-            <if test="modifyUserCode != null and modifyUserCode != ''">
-                MODIFY_USER_CODE,
-            </if>
-            <if test="modifyUserName != null and modifyUserName != ''">
-                UPDATE_USER_NAME,
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER_ID,
             </if>
         </trim>
     </sql>
@@ -205,29 +180,17 @@
             <if test="isDelete != null">
                 #{isDelete,jdbcType=INTEGER},
             </if>
-            <if test="createTime != null and createTime != ''">
-                #{createTime,jdbcType=VARCHAR},
+            <if test="createdTime != null and createdTime != ''">
+                #{createdTime,jdbcType=VARCHAR},
             </if>
-            <if test="createUserId != null and createUserId != ''">
-                #{createUserId,jdbcType=VARCHAR},
-            </if>
-            <if test="createUserCode != null and createUserCode != ''">
-                #{createUserCode,jdbcType=VARCHAR},
-            </if>
-            <if test="createUserName != null and createUserName != ''">
-                #{createUserName,jdbcType=VARCHAR},
+            <if test="creatorId != null and creatorId != ''">
+                #{creatorId,jdbcType=VARCHAR},
             </if>
             <if test="modifyTime != null and modifyTime != ''">
                 #{modifyTime,jdbcType=VARCHAR},
             </if>
-            <if test="modifyUserId != null and modifyUserId != ''">
-                #{modifyUserId,jdbcType=VARCHAR},
-            </if>
-            <if test="modifyUserCode != null and modifyUserCode != ''">
-                #{modifyUserCode,jdbcType=VARCHAR},
-            </if>
-            <if test="modifyUserName != null and modifyUserName != ''">
-                #{modifyUserName,jdbcType=VARCHAR},
+            <if test="modifierId != null and modifierId != ''">
+                #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -272,43 +235,31 @@
         <if test="isDelete != null">
             AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
         </if>
-        <if test="createTime != null and createTime != ''">
-            AND CREATE_TIME = #{createTime,jdbcType=VARCHAR}
+        <if test="createdTime != null and createdTime != ''">
+            AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
         </if>
-        <if test="createUserId != null and createUserId != ''">
-            AND CREATE_USER_ID = #{createUserId,jdbcType=VARCHAR}
-        </if>
-        <if test="createUserCode != null and createUserCode != ''">
-            AND CREATE_USER_CODE = #{createUserCode,jdbcType=VARCHAR}
-        </if>
-        <if test="createUserName != null and createUserName != ''">
-            AND CREATE_USER_NAME = #{createUserName,jdbcType=VARCHAR}
+        <if test="creatorId != null and creatorId != ''">
+            AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
         </if>
         <if test="modifyTime != null and modifyTime != ''">
             AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
         </if>
-        <if test="modifyUserId != null and modifyUserId != ''">
-            AND MODIFY_USER_ID = #{modifyUserId,jdbcType=VARCHAR}
-        </if>
-        <if test="modifyUserCode != null and modifyUserCode != ''">
-            AND MODIFY_USER_CODE = #{modifyUserCode,jdbcType=VARCHAR}
-        </if>
-        <if test="modifyUserName != null and modifyUserName != ''">
-            AND UPDATE_USER_NAME = #{modifyUserName,jdbcType=VARCHAR}
+        <if test="modifierId != null and modifierId != ''">
+            AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         </if>
     </sql>
 
     <insert id="insert" parameterType="com.peach.auth.entity.FunctionDO">
         INSERT INTO PEACH_FUNCTION (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES (
-        <include refid="allColumnValue" />
+            <include refid="allColumnValue" />
         )
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.auth.entity.FunctionDO">
         INSERT INTO PEACH_FUNCTION (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
             (<include refid="itemAllColumnValue"/>)
@@ -317,7 +268,7 @@
 
     <update id="update" parameterType="com.peach.auth.entity.FunctionDO">
         UPDATE PEACH_FUNCTION SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         <where>
             <include refid="allColumnCond" />
         </where>
@@ -345,20 +296,20 @@
 
     <update id="updateById" parameterType="java.lang.String">
         UPDATE PEACH_FUNCTION SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         WHERE FUNC_ID =  #{funcId,jdbcType=VARCHAR}
     </update>
 
     <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.FunctionDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_FUNCTION
         WHERE FUNC_ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.FunctionDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_FUNCTION
         WHERE FUNC_ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
@@ -368,7 +319,7 @@
 
     <select id="select" parameterType="com.peach.auth.entity.FunctionDO" resultType="com.peach.auth.entity.FunctionDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_FUNCTION
         <where>
             <include refid="allColumnCond" />

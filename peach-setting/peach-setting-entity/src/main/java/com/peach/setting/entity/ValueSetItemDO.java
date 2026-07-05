@@ -1,6 +1,6 @@
 package com.peach.setting.entity;
 
-import com.peach.common.BaseDO;
+import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,7 +22,7 @@ import java.io.Serializable;
 @Table(name = "PEACH_VALUE_SET_ITEM")
 @Schema(description = "值集项")
 @EqualsAndHashCode(callSuper = true)
-public class ValueSetItemDO extends BaseDO implements Serializable {
+public class ValueSetItemDO extends PeachDO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

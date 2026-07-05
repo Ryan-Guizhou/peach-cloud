@@ -8,11 +8,6 @@ import java.util.List;
  * @CreateTime 2026/1/17 16:21
  */
 public interface PeachDao<T,E> {
-    
-    /**
-     * 更新
-     */
-    void updateById(String id);
 
     /**
      * 批量更新

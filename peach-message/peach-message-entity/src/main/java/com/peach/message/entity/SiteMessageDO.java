@@ -1,6 +1,6 @@
 package com.peach.message.entity;
 
-import com.peach.common.BaseDO;
+import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,7 +22,7 @@ import java.io.Serializable;
 @Table(name = "PEACH_SITE_MESSAGE")
 @Schema(description = "站内信消息")
 @EqualsAndHashCode(callSuper = true)
-public class SiteMessageDO extends BaseDO implements Serializable {
+public class SiteMessageDO extends PeachDO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

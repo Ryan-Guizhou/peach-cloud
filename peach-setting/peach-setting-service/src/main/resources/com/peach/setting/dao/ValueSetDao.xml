@@ -1,28 +1,28 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.ValueSetDao">
     <sql id="allColumn">
         ID,                                               VALUE_SET_CODE,                                   VALUE_SET_NAME,                                   MODULE_CODE,
         SOURCE_TYPE,                                      DESCRIPTION,                                      STATUS,                                           CREATED_TIME,
-        CREATOR_ID,                                     MODIFY_TIME,                                     MODIFIER_ID
+        CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
         ID as id,                                         VALUE_SET_CODE as valueSetCode,                   VALUE_SET_NAME as valueSetName,                   MODULE_CODE as moduleCode,
         SOURCE_TYPE as sourceType,                        DESCRIPTION as description,                       STATUS as status,                                 CREATED_TIME as createdTime,
-        CREATOR_ID as creatorId,                      MODIFY_TIME as modifyTime,                      MODIFIER_ID as modifierId
+        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                 #{valueSetCode,jdbcType=VARCHAR},       #{valueSetName,jdbcType=VARCHAR},      #{moduleCode,jdbcType=VARCHAR},
-        #{sourceType,jdbcType=VARCHAR},         #{description,jdbcType=VARCHAR},        #{status,jdbcType=INTEGER},            #{createdTime,jdbcType=VARCHAR},
-        #{creatorId,jdbcType=VARCHAR},        #{modifyTime,jdbcType=VARCHAR},        #{modifierId,jdbcType=VARCHAR}
+        #{id,jdbcType=VARCHAR},                           #{valueSetCode,jdbcType=VARCHAR},                 #{valueSetName,jdbcType=VARCHAR},                 #{moduleCode,jdbcType=VARCHAR},
+        #{sourceType,jdbcType=VARCHAR},                   #{description,jdbcType=VARCHAR},                  #{status,jdbcType=INTEGER},                       #{createdTime,jdbcType=VARCHAR},
+        #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},            #{item.valueSetCode,jdbcType=VARCHAR},  #{item.valueSetName,jdbcType=VARCHAR}, #{item.moduleCode,jdbcType=VARCHAR},
-        #{item.sourceType,jdbcType=VARCHAR},    #{item.description,jdbcType=VARCHAR},   #{item.status,jdbcType=INTEGER},       #{item.createdTime,jdbcType=VARCHAR},
-        #{item.creatorId,jdbcType=VARCHAR},   #{item.modifyTime,jdbcType=VARCHAR},   #{item.modifierId,jdbcType=VARCHAR}
+        #{item.id,jdbcType=VARCHAR},                      #{item.valueSetCode,jdbcType=VARCHAR},            #{item.valueSetName,jdbcType=VARCHAR},            #{item.moduleCode,jdbcType=VARCHAR},
+        #{item.sourceType,jdbcType=VARCHAR},              #{item.description,jdbcType=VARCHAR},             #{item.status,jdbcType=INTEGER},                  #{item.createdTime,jdbcType=VARCHAR},
+        #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
@@ -59,6 +59,7 @@
             </if>
         </trim>
     </sql>
+
 
     <sql id="updateSelectiveColumn">
         <trim suffixOverrides=",">
@@ -168,24 +169,24 @@
 
     <insert id="insert" parameterType="com.peach.setting.entity.ValueSetDO">
         INSERT INTO PEACH_VALUE_SET (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES (
-        <include refid="allColumnValue" />
+            <include refid="allColumnValue" />
         )
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.setting.entity.ValueSetDO">
         INSERT INTO PEACH_VALUE_SET (
-        <include refid="allColumn" />
+            <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
-            (<include refid="itemAllColumnValue" />)
+            (<include refid="itemAllColumnValue"/>)
         </foreach>
     </insert>
 
     <update id="update" parameterType="com.peach.setting.entity.ValueSetDO">
         UPDATE PEACH_VALUE_SET SET
-        <include refid="allColumnSet" />
+            <include refid="allColumnSet" />
         <where>
             <include refid="allColumnCond" />
         </where>
@@ -213,20 +214,20 @@
 
     <update id="updateById" parameterType="com.peach.setting.entity.ValueSetDO">
         UPDATE PEACH_VALUE_SET SET
-        <include refid="allColumnSet" />
-        WHERE ID = #{id,jdbcType=VARCHAR}
+            <include refid="allColumnSet" />
+        WHERE ID =  #{id,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.setting.vo.ValueSetVO">
+    <select id="selectById" parameterType="string" resultType="com.peach.setting.entity.ValueSetDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_VALUE_SET
         WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.vo.ValueSetVO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.setting.entity.ValueSetDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_VALUE_SET
         WHERE ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
@@ -234,9 +235,9 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.setting.entity.ValueSetDO" resultType="com.peach.setting.vo.ValueSetVO">
+    <select id="select" parameterType="com.peach.setting.entity.ValueSetDO" resultType="com.peach.setting.entity.ValueSetDO">
         SELECT
-        <include refid="allColumnAlias" />
+            <include refid="allColumnAlias" />
         FROM PEACH_VALUE_SET
         <where>
             <include refid="allColumnCond" />
