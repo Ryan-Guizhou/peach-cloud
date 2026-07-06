@@ -22,7 +22,7 @@ public class DesEncryptService extends AbstractEncrypt {
     /**
      * 私钥
      */
-    private final static String PRIVATE_KEY = "PEACH/COMMON/20250313/Ryan_Guizou";
+    private static final String PRIVATE_KEY = "PEACH/COMMON/20250313/Ryan_Guizou";
 
 
     /**
@@ -31,7 +31,7 @@ public class DesEncryptService extends AbstractEncrypt {
     private static final String CBC_MODEL = "DES/CBC/PKCS5Padding";
 
     /**
-     * 偏移量 必须是8位
+     * 偏移量，必须为 8 位
      */
     private static final String IV_STRING = "SHA1PRNG";
 
@@ -42,24 +42,23 @@ public class DesEncryptService extends AbstractEncrypt {
     }
 
     @Override
-    public String encrypt(String plaintext) throws Exception{
+    public String encrypt(String plaintext) throws Exception {
         Cipher cipher = initCipher(Cipher.ENCRYPT_MODE);
-        byte[] bytes = cipher.doFinal(plaintext.getBytes());
+        byte[] bytes = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
         return byteToHex(bytes);
     }
 
     /**
      * 解密
-     * @param plaintext
-     * @return
-     * @throws Exception
+     * @param plaintext 密文
+     * @return 明文
+     * @throws Exception 解密异常
      */
     @Override
-    public String decrypt(String plaintext) throws Exception{
+    public String decrypt(String plaintext) throws Exception {
         Cipher cipher = initCipher(Cipher.DECRYPT_MODE);
         byte[] bytes = hexToByte(plaintext);
-        return new String(cipher.doFinal(bytes));
-
+        return new String(cipher.doFinal(bytes), StandardCharsets.UTF_8);
     }
 
     @Override
@@ -68,12 +67,12 @@ public class DesEncryptService extends AbstractEncrypt {
     }
 
     /**
-     * 初始化Cipher
-     * @param mode
-     * @return
-     * @throws Exception
+     * 初始化 Cipher
+     * @param mode 模式
+     * @return Cipher
+     * @throws Exception 初始化异常
      */
-    private Cipher initCipher(int mode) throws Exception{
+    private Cipher initCipher(int mode) throws Exception {
         SecureRandom secureRandom = new SecureRandom();
         DESKeySpec desKeySpec = new DESKeySpec(PRIVATE_KEY.getBytes(StandardCharsets.UTF_8));
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(type);

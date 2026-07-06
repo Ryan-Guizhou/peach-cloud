@@ -1,376 +1,376 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.peach.userservice.dao.UserOperLogDao">
-<sql id="allColumn">
-    ID,                                               OPT_TYPE_CODE,                                    MODULE_CODE,                                      CREATOR_CODE,
-    CREATOR_NAME,                                     OPT_CONTENT,                                      CREATE_TIME,                                      OPT_LEVEL,
-    PRIVATE_IP,                                       PUBLIC_IP,                                        DEVICE,                                           BROWSER,
-    OS,                                               EXECUTION_TIME,                                   IS_SUCCESS,                                       ERROR_MSG,
-    RESPONSE_DATA,                                    ROLE_CODE,                                        REQUEST_URI,                                      REQUEST_METHOD
+<mapper namespace="com.peach.auth.dao.UserOperLogDao">
+    <sql id="allColumn">
+        ID,                                               OPT_TYPE_CODE,                                    MODULE_CODE,                                      CREATOR_CODE,
+        CREATOR_NAME,                                     OPT_CONTENT,                                      CREATE_TIME,                                      OPT_LEVEL,
+        PRIVATE_IP,                                       PUBLIC_IP,                                        DEVICE,                                           BROWSER,
+        OS,                                               EXECUTION_TIME,                                   IS_SUCCESS,                                       ERROR_MSG,
+        RESPONSE_DATA,                                    ROLE_CODE,                                        REQUEST_URI,                                      REQUEST_METHOD
 
-</sql>
+    </sql>
 
-<sql id="allColumnAlias">
-    ID as id,                                         OPT_TYPE_CODE as optTypeCode,                     MODULE_CODE as moduleCode,                        CREATOR_CODE as creatorCode,
-    CREATOR_NAME as creatorName,                      OPT_CONTENT as optContent,                        CREATE_TIME as createTime,                        OPT_LEVEL as optLevel,
-    PRIVATE_IP as privateIp,                          PUBLIC_IP as publicIp,                            DEVICE as device,                                 BROWSER as browser,
-    OS as os,                                         EXECUTION_TIME as executionTime,                  IS_SUCCESS as isSuccess,                          ERROR_MSG as errorMsg,
-    RESPONSE_DATA as responseData,                    ROLE_CODE as roleCode,                            REQUEST_URI as requestUri,                        REQUEST_METHOD as requestMethod
+    <sql id="allColumnAlias">
+        ID as id,                                         OPT_TYPE_CODE as optTypeCode,                     MODULE_CODE as moduleCode,                        CREATOR_CODE as creatorCode,
+        CREATOR_NAME as creatorName,                      OPT_CONTENT as optContent,                        CREATE_TIME as createTime,                        OPT_LEVEL as optLevel,
+        PRIVATE_IP as privateIp,                          PUBLIC_IP as publicIp,                            DEVICE as device,                                 BROWSER as browser,
+        OS as os,                                         EXECUTION_TIME as executionTime,                  IS_SUCCESS as isSuccess,                          ERROR_MSG as errorMsg,
+        RESPONSE_DATA as responseData,                    ROLE_CODE as roleCode,                            REQUEST_URI as requestUri,                        REQUEST_METHOD as requestMethod
 
-</sql>
+    </sql>
 
-<sql id="allColumnValue">
-    #{id,jdbcType=VARCHAR},                 #{optTypeCode,jdbcType=VARCHAR},        #{moduleCode,jdbcType=VARCHAR},         #{creatorCode,jdbcType=VARCHAR},
-    #{creatorName,jdbcType=VARCHAR},        #{optContent,jdbcType=VARCHAR},         #{createTime,jdbcType=VARCHAR},         #{optLevel,jdbcType=VARCHAR},
-    #{privateIp,jdbcType=VARCHAR},          #{publicIp,jdbcType=VARCHAR},           #{device,jdbcType=VARCHAR},             #{browser,jdbcType=VARCHAR},
-    #{os,jdbcType=VARCHAR},                 #{executionTime,jdbcType=BIGINT},       #{isSuccess,jdbcType=VARCHAR},          #{errorMsg,jdbcType=VARCHAR},
-    #{responseData,jdbcType=VARCHAR},       #{roleCode,jdbcType=VARCHAR},           #{requestUri,jdbcType=VARCHAR},         #{requestMethod,jdbcType=VARCHAR}
+    <sql id="allColumnValue">
+        #{id,jdbcType=VARCHAR},                           #{optTypeCode,jdbcType=VARCHAR},                  #{moduleCode,jdbcType=VARCHAR},                   #{creatorCode,jdbcType=VARCHAR},
+        #{creatorName,jdbcType=VARCHAR},                  #{optContent,jdbcType=VARCHAR},                   #{createTime,jdbcType=VARCHAR},                   #{optLevel,jdbcType=VARCHAR},
+        #{privateIp,jdbcType=VARCHAR},                    #{publicIp,jdbcType=VARCHAR},                     #{device,jdbcType=VARCHAR},                       #{browser,jdbcType=VARCHAR},
+        #{os,jdbcType=VARCHAR},                           #{executionTime,jdbcType=BIGINT},                 #{isSuccess,jdbcType=VARCHAR},                    #{errorMsg,jdbcType=VARCHAR},
+        #{responseData,jdbcType=VARCHAR},                 #{roleCode,jdbcType=VARCHAR},                     #{requestUri,jdbcType=VARCHAR},                   #{requestMethod,jdbcType=VARCHAR}
 
-</sql>
-
-
-<sql id="itemAllColumnValue">
-    #{item.id,jdbcType=VARCHAR},            #{item.optTypeCode,jdbcType=VARCHAR},   #{item.moduleCode,jdbcType=VARCHAR},    #{item.creatorCode,jdbcType=VARCHAR},
-    #{item.creatorName,jdbcType=VARCHAR},   #{item.optContent,jdbcType=VARCHAR},    #{item.createTime,jdbcType=VARCHAR},    #{item.optLevel,jdbcType=VARCHAR},
-    #{item.privateIp,jdbcType=VARCHAR},     #{item.publicIp,jdbcType=VARCHAR},      #{item.device,jdbcType=VARCHAR},        #{item.browser,jdbcType=VARCHAR},
-    #{item.os,jdbcType=VARCHAR},            #{item.executionTime,jdbcType=BIGINT},  #{item.isSuccess,jdbcType=VARCHAR},     #{item.errorMsg,jdbcType=VARCHAR},
-    #{item.responseData,jdbcType=VARCHAR},  #{item.roleCode,jdbcType=VARCHAR},      #{item.requestUri,jdbcType=VARCHAR},    #{item.requestMethod,jdbcType=VARCHAR}
-
-</sql>
+    </sql>
 
 
-<sql id="allColumnSet">
-    <trim suffixOverrides=",">
+    <sql id="itemAllColumnValue">
+        #{item.id,jdbcType=VARCHAR},                      #{item.optTypeCode,jdbcType=VARCHAR},             #{item.moduleCode,jdbcType=VARCHAR},              #{item.creatorCode,jdbcType=VARCHAR},
+        #{item.creatorName,jdbcType=VARCHAR},             #{item.optContent,jdbcType=VARCHAR},              #{item.createTime,jdbcType=VARCHAR},              #{item.optLevel,jdbcType=VARCHAR},
+        #{item.privateIp,jdbcType=VARCHAR},               #{item.publicIp,jdbcType=VARCHAR},                #{item.device,jdbcType=VARCHAR},                  #{item.browser,jdbcType=VARCHAR},
+        #{item.os,jdbcType=VARCHAR},                      #{item.executionTime,jdbcType=BIGINT},            #{item.isSuccess,jdbcType=VARCHAR},               #{item.errorMsg,jdbcType=VARCHAR},
+        #{item.responseData,jdbcType=VARCHAR},            #{item.roleCode,jdbcType=VARCHAR},                #{item.requestUri,jdbcType=VARCHAR},              #{item.requestMethod,jdbcType=VARCHAR}
+
+    </sql>
+
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="optTypeCode != null and optTypeCode != ''">
+                OPT_TYPE_CODE = #{optTypeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="moduleCode != null and moduleCode != ''">
+                MODULE_CODE = #{moduleCode,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorCode != null and creatorCode != ''">
+                CREATOR_CODE = #{creatorCode,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorName != null and creatorName != ''">
+                CREATOR_NAME = #{creatorName,jdbcType=VARCHAR},
+            </if>
+            <if test="optContent != null and optContent != ''">
+                OPT_CONTENT = #{optContent,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                CREATE_TIME = #{createTime,jdbcType=VARCHAR},
+            </if>
+            <if test="optLevel != null and optLevel != ''">
+                OPT_LEVEL = #{optLevel,jdbcType=VARCHAR},
+            </if>
+            <if test="privateIp != null and privateIp != ''">
+                PRIVATE_IP = #{privateIp,jdbcType=VARCHAR},
+            </if>
+            <if test="publicIp != null and publicIp != ''">
+                PUBLIC_IP = #{publicIp,jdbcType=VARCHAR},
+            </if>
+            <if test="device != null and device != ''">
+                DEVICE = #{device,jdbcType=VARCHAR},
+            </if>
+            <if test="browser != null and browser != ''">
+                BROWSER = #{browser,jdbcType=VARCHAR},
+            </if>
+            <if test="os != null and os != ''">
+                OS = #{os,jdbcType=VARCHAR},
+            </if>
+            <if test="executionTime != null">
+                EXECUTION_TIME = #{executionTime,jdbcType=BIGINT},
+            </if>
+            <if test="isSuccess != null and isSuccess != ''">
+                IS_SUCCESS = #{isSuccess,jdbcType=VARCHAR},
+            </if>
+            <if test="errorMsg != null and errorMsg != ''">
+                ERROR_MSG = #{errorMsg,jdbcType=VARCHAR},
+            </if>
+            <if test="responseData != null and responseData != ''">
+                RESPONSE_DATA = #{responseData,jdbcType=VARCHAR},
+            </if>
+            <if test="roleCode != null and roleCode != ''">
+                ROLE_CODE = #{roleCode,jdbcType=VARCHAR},
+            </if>
+            <if test="requestUri != null and requestUri != ''">
+                REQUEST_URI = #{requestUri,jdbcType=VARCHAR},
+            </if>
+            <if test="requestMethod != null and requestMethod != ''">
+                REQUEST_METHOD = #{requestMethod,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="optTypeCode != null and optTypeCode != ''">
+                OPT_TYPE_CODE,
+            </if>
+            <if test="moduleCode != null and moduleCode != ''">
+                MODULE_CODE,
+            </if>
+            <if test="creatorCode != null and creatorCode != ''">
+                CREATOR_CODE,
+            </if>
+            <if test="creatorName != null and creatorName != ''">
+                CREATOR_NAME,
+            </if>
+            <if test="optContent != null and optContent != ''">
+                OPT_CONTENT,
+            </if>
+            <if test="createTime != null and createTime != ''">
+                CREATE_TIME,
+            </if>
+            <if test="optLevel != null and optLevel != ''">
+                OPT_LEVEL,
+            </if>
+            <if test="privateIp != null and privateIp != ''">
+                PRIVATE_IP,
+            </if>
+            <if test="publicIp != null and publicIp != ''">
+                PUBLIC_IP,
+            </if>
+            <if test="device != null and device != ''">
+                DEVICE,
+            </if>
+            <if test="browser != null and browser != ''">
+                BROWSER,
+            </if>
+            <if test="os != null and os != ''">
+                OS,
+            </if>
+            <if test="executionTime != null">
+                EXECUTION_TIME,
+            </if>
+            <if test="isSuccess != null and isSuccess != ''">
+                IS_SUCCESS,
+            </if>
+            <if test="errorMsg != null and errorMsg != ''">
+                ERROR_MSG,
+            </if>
+            <if test="responseData != null and responseData != ''">
+                RESPONSE_DATA,
+            </if>
+            <if test="roleCode != null and roleCode != ''">
+                ROLE_CODE,
+            </if>
+            <if test="requestUri != null and requestUri != ''">
+                REQUEST_URI,
+            </if>
+            <if test="requestMethod != null and requestMethod != ''">
+                REQUEST_METHOD,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="optTypeCode != null and optTypeCode != ''">
+                #{optTypeCode,jdbcType=VARCHAR},
+            </if>
+            <if test="moduleCode != null and moduleCode != ''">
+                #{moduleCode,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorCode != null and creatorCode != ''">
+                #{creatorCode,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorName != null and creatorName != ''">
+                #{creatorName,jdbcType=VARCHAR},
+            </if>
+            <if test="optContent != null and optContent != ''">
+                #{optContent,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                #{createTime,jdbcType=VARCHAR},
+            </if>
+            <if test="optLevel != null and optLevel != ''">
+                #{optLevel,jdbcType=VARCHAR},
+            </if>
+            <if test="privateIp != null and privateIp != ''">
+                #{privateIp,jdbcType=VARCHAR},
+            </if>
+            <if test="publicIp != null and publicIp != ''">
+                #{publicIp,jdbcType=VARCHAR},
+            </if>
+            <if test="device != null and device != ''">
+                #{device,jdbcType=VARCHAR},
+            </if>
+            <if test="browser != null and browser != ''">
+                #{browser,jdbcType=VARCHAR},
+            </if>
+            <if test="os != null and os != ''">
+                #{os,jdbcType=VARCHAR},
+            </if>
+            <if test="executionTime != null">
+                #{executionTime,jdbcType=BIGINT},
+            </if>
+            <if test="isSuccess != null and isSuccess != ''">
+                #{isSuccess,jdbcType=VARCHAR},
+            </if>
+            <if test="errorMsg != null and errorMsg != ''">
+                #{errorMsg,jdbcType=VARCHAR},
+            </if>
+            <if test="responseData != null and responseData != ''">
+                #{responseData,jdbcType=VARCHAR},
+            </if>
+            <if test="roleCode != null and roleCode != ''">
+                #{roleCode,jdbcType=VARCHAR},
+            </if>
+            <if test="requestUri != null and requestUri != ''">
+                #{requestUri,jdbcType=VARCHAR},
+            </if>
+            <if test="requestMethod != null and requestMethod != ''">
+                #{requestMethod,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
+        </if>
         <if test="optTypeCode != null and optTypeCode != ''">
-            OPT_TYPE_CODE = #{optTypeCode,jdbcType=VARCHAR},
+            AND OPT_TYPE_CODE = #{optTypeCode,jdbcType=VARCHAR}
         </if>
         <if test="moduleCode != null and moduleCode != ''">
-            MODULE_CODE = #{moduleCode,jdbcType=VARCHAR},
+            AND MODULE_CODE = #{moduleCode,jdbcType=VARCHAR}
         </if>
         <if test="creatorCode != null and creatorCode != ''">
-            CREATOR_CODE = #{creatorCode,jdbcType=VARCHAR},
+            AND CREATOR_CODE = #{creatorCode,jdbcType=VARCHAR}
         </if>
         <if test="creatorName != null and creatorName != ''">
-            CREATOR_NAME = #{creatorName,jdbcType=VARCHAR},
+            AND CREATOR_NAME = #{creatorName,jdbcType=VARCHAR}
         </if>
         <if test="optContent != null and optContent != ''">
-            OPT_CONTENT = #{optContent,jdbcType=VARCHAR},
+            AND OPT_CONTENT = #{optContent,jdbcType=VARCHAR}
         </if>
         <if test="createTime != null and createTime != ''">
-            CREATE_TIME = #{createTime,jdbcType=VARCHAR},
+            AND CREATE_TIME = #{createTime,jdbcType=VARCHAR}
         </if>
         <if test="optLevel != null and optLevel != ''">
-            OPT_LEVEL = #{optLevel,jdbcType=VARCHAR},
+            AND OPT_LEVEL = #{optLevel,jdbcType=VARCHAR}
         </if>
         <if test="privateIp != null and privateIp != ''">
-            PRIVATE_IP = #{privateIp,jdbcType=VARCHAR},
+            AND PRIVATE_IP = #{privateIp,jdbcType=VARCHAR}
         </if>
         <if test="publicIp != null and publicIp != ''">
-            PUBLIC_IP = #{publicIp,jdbcType=VARCHAR},
+            AND PUBLIC_IP = #{publicIp,jdbcType=VARCHAR}
         </if>
         <if test="device != null and device != ''">
-            DEVICE = #{device,jdbcType=VARCHAR},
+            AND DEVICE = #{device,jdbcType=VARCHAR}
         </if>
         <if test="browser != null and browser != ''">
-            BROWSER = #{browser,jdbcType=VARCHAR},
+            AND BROWSER = #{browser,jdbcType=VARCHAR}
         </if>
         <if test="os != null and os != ''">
-            OS = #{os,jdbcType=VARCHAR},
+            AND OS = #{os,jdbcType=VARCHAR}
         </if>
         <if test="executionTime != null">
-            EXECUTION_TIME = #{executionTime,jdbcType=BIGINT},
+            AND EXECUTION_TIME = #{executionTime,jdbcType=BIGINT}
         </if>
         <if test="isSuccess != null and isSuccess != ''">
-            IS_SUCCESS = #{isSuccess,jdbcType=VARCHAR},
+            AND IS_SUCCESS = #{isSuccess,jdbcType=VARCHAR}
         </if>
         <if test="errorMsg != null and errorMsg != ''">
-            ERROR_MSG = #{errorMsg,jdbcType=VARCHAR},
+            AND ERROR_MSG = #{errorMsg,jdbcType=VARCHAR}
         </if>
         <if test="responseData != null and responseData != ''">
-            RESPONSE_DATA = #{responseData,jdbcType=VARCHAR},
+            AND RESPONSE_DATA = #{responseData,jdbcType=VARCHAR}
         </if>
         <if test="roleCode != null and roleCode != ''">
-            ROLE_CODE = #{roleCode,jdbcType=VARCHAR},
+            AND ROLE_CODE = #{roleCode,jdbcType=VARCHAR}
         </if>
         <if test="requestUri != null and requestUri != ''">
-            REQUEST_URI = #{requestUri,jdbcType=VARCHAR},
+            AND REQUEST_URI = #{requestUri,jdbcType=VARCHAR}
         </if>
         <if test="requestMethod != null and requestMethod != ''">
-            REQUEST_METHOD = #{requestMethod,jdbcType=VARCHAR},
+            AND REQUEST_METHOD = #{requestMethod,jdbcType=VARCHAR}
         </if>
-    </trim>
-</sql>
+    </sql>
 
+    <insert id="insert" parameterType="com.peach.auth.entity.UserOperLogDO">
+        INSERT INTO USER_OPER_LOG (
+            <include refid="allColumn" />
+        ) VALUES (
+            <include refid="allColumnValue" />
+        )
+    </insert>
 
-<sql id="updateSelectiveColumn">
-    <trim suffixOverrides=",">
-        <if test="optTypeCode != null and optTypeCode != ''">
-            OPT_TYPE_CODE,
-        </if>
-        <if test="moduleCode != null and moduleCode != ''">
-            MODULE_CODE,
-        </if>
-        <if test="creatorCode != null and creatorCode != ''">
-            CREATOR_CODE,
-        </if>
-        <if test="creatorName != null and creatorName != ''">
-            CREATOR_NAME,
-        </if>
-        <if test="optContent != null and optContent != ''">
-            OPT_CONTENT,
-        </if>
-        <if test="createTime != null and createTime != ''">
-            CREATE_TIME,
-        </if>
-        <if test="optLevel != null and optLevel != ''">
-            OPT_LEVEL,
-        </if>
-        <if test="privateIp != null and privateIp != ''">
-            PRIVATE_IP,
-        </if>
-        <if test="publicIp != null and publicIp != ''">
-            PUBLIC_IP,
-        </if>
-        <if test="device != null and device != ''">
-            DEVICE,
-        </if>
-        <if test="browser != null and browser != ''">
-            BROWSER,
-        </if>
-        <if test="os != null and os != ''">
-            OS,
-        </if>
-        <if test="executionTime != null">
-            EXECUTION_TIME,
-        </if>
-        <if test="isSuccess != null and isSuccess != ''">
-            IS_SUCCESS,
-        </if>
-        <if test="errorMsg != null and errorMsg != ''">
-            ERROR_MSG,
-        </if>
-        <if test="responseData != null and responseData != ''">
-            RESPONSE_DATA,
-        </if>
-        <if test="roleCode != null and roleCode != ''">
-            ROLE_CODE,
-        </if>
-        <if test="requestUri != null and requestUri != ''">
-            REQUEST_URI,
-        </if>
-        <if test="requestMethod != null and requestMethod != ''">
-            REQUEST_METHOD,
-        </if>
-    </trim>
-</sql>
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.UserOperLogDO">
+        INSERT INTO USER_OPER_LOG (
+            <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue"/>)
+        </foreach>
+    </insert>
 
-<sql id="updateSelectiveValue">
-    <trim suffixOverrides=",">
-        <if test="optTypeCode != null and optTypeCode != ''">
-            #{optTypeCode,jdbcType=VARCHAR},
-        </if>
-        <if test="moduleCode != null and moduleCode != ''">
-            #{moduleCode,jdbcType=VARCHAR},
-        </if>
-        <if test="creatorCode != null and creatorCode != ''">
-            #{creatorCode,jdbcType=VARCHAR},
-        </if>
-        <if test="creatorName != null and creatorName != ''">
-            #{creatorName,jdbcType=VARCHAR},
-        </if>
-        <if test="optContent != null and optContent != ''">
-            #{optContent,jdbcType=VARCHAR},
-        </if>
-        <if test="createTime != null and createTime != ''">
-            #{createTime,jdbcType=VARCHAR},
-        </if>
-        <if test="optLevel != null and optLevel != ''">
-            #{optLevel,jdbcType=VARCHAR},
-        </if>
-        <if test="privateIp != null and privateIp != ''">
-            #{privateIp,jdbcType=VARCHAR},
-        </if>
-        <if test="publicIp != null and publicIp != ''">
-            #{publicIp,jdbcType=VARCHAR},
-        </if>
-        <if test="device != null and device != ''">
-            #{device,jdbcType=VARCHAR},
-        </if>
-        <if test="browser != null and browser != ''">
-            #{browser,jdbcType=VARCHAR},
-        </if>
-        <if test="os != null and os != ''">
-            #{os,jdbcType=VARCHAR},
-        </if>
-        <if test="executionTime != null">
-            #{executionTime,jdbcType=BIGINT},
-        </if>
-        <if test="isSuccess != null and isSuccess != ''">
-            #{isSuccess,jdbcType=VARCHAR},
-        </if>
-        <if test="errorMsg != null and errorMsg != ''">
-            #{errorMsg,jdbcType=VARCHAR},
-        </if>
-        <if test="responseData != null and responseData != ''">
-            #{responseData,jdbcType=VARCHAR},
-        </if>
-        <if test="roleCode != null and roleCode != ''">
-            #{roleCode,jdbcType=VARCHAR},
-        </if>
-        <if test="requestUri != null and requestUri != ''">
-            #{requestUri,jdbcType=VARCHAR},
-        </if>
-        <if test="requestMethod != null and requestMethod != ''">
-            #{requestMethod,jdbcType=VARCHAR},
-        </if>
-    </trim>
-</sql>
+    <update id="update" parameterType="com.peach.auth.entity.UserOperLogDO">
+        UPDATE USER_OPER_LOG SET
+            <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
 
-<sql id="allColumnCond">
-    <if test="id != null and id != ''">
-        AND ID = #{id,jdbcType=VARCHAR}
-    </if>
-    <if test="optTypeCode != null and optTypeCode != ''">
-        AND OPT_TYPE_CODE = #{optTypeCode,jdbcType=VARCHAR}
-    </if>
-    <if test="moduleCode != null and moduleCode != ''">
-        AND MODULE_CODE = #{moduleCode,jdbcType=VARCHAR}
-    </if>
-    <if test="creatorCode != null and creatorCode != ''">
-        AND CREATOR_CODE = #{creatorCode,jdbcType=VARCHAR}
-    </if>
-    <if test="creatorName != null and creatorName != ''">
-        AND CREATOR_NAME = #{creatorName,jdbcType=VARCHAR}
-    </if>
-    <if test="optContent != null and optContent != ''">
-        AND OPT_CONTENT = #{optContent,jdbcType=VARCHAR}
-    </if>
-    <if test="createTime != null and createTime != ''">
-        AND CREATE_TIME = #{createTime,jdbcType=VARCHAR}
-    </if>
-    <if test="optLevel != null and optLevel != ''">
-        AND OPT_LEVEL = #{optLevel,jdbcType=VARCHAR}
-    </if>
-    <if test="privateIp != null and privateIp != ''">
-        AND PRIVATE_IP = #{privateIp,jdbcType=VARCHAR}
-    </if>
-    <if test="publicIp != null and publicIp != ''">
-        AND PUBLIC_IP = #{publicIp,jdbcType=VARCHAR}
-    </if>
-    <if test="device != null and device != ''">
-        AND DEVICE = #{device,jdbcType=VARCHAR}
-    </if>
-    <if test="browser != null and browser != ''">
-        AND BROWSER = #{browser,jdbcType=VARCHAR}
-    </if>
-    <if test="os != null and os != ''">
-        AND OS = #{os,jdbcType=VARCHAR}
-    </if>
-    <if test="executionTime != null">
-        AND EXECUTION_TIME = #{executionTime,jdbcType=BIGINT}
-    </if>
-    <if test="isSuccess != null and isSuccess != ''">
-        AND IS_SUCCESS = #{isSuccess,jdbcType=VARCHAR}
-    </if>
-    <if test="errorMsg != null and errorMsg != ''">
-        AND ERROR_MSG = #{errorMsg,jdbcType=VARCHAR}
-    </if>
-    <if test="responseData != null and responseData != ''">
-        AND RESPONSE_DATA = #{responseData,jdbcType=VARCHAR}
-    </if>
-    <if test="roleCode != null and roleCode != ''">
-        AND ROLE_CODE = #{roleCode,jdbcType=VARCHAR}
-    </if>
-    <if test="requestUri != null and requestUri != ''">
-        AND REQUEST_URI = #{requestUri,jdbcType=VARCHAR}
-    </if>
-    <if test="requestMethod != null and requestMethod != ''">
-        AND REQUEST_METHOD = #{requestMethod,jdbcType=VARCHAR}
-    </if>
-</sql>
+    <delete id="delById" parameterType="string">
+        DELETE FROM USER_OPER_LOG
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </delete>
 
-<insert id="insert" parameterType="com.peach.auth.entity.UserOperLogDO">
-    INSERT INTO USER_OPER_LOG (
-        <include refid="allColumn" />
-    ) VALUES (
-        <include refid="allColumnValue" />
-    )
-</insert>
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM USER_OPER_LOG
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
 
-<insert id="batchInsert" parameterType="com.peach.auth.entity.UserOperLogDO">
-    INSERT INTO USER_OPER_LOG (
-        <include refid="allColumn" />
-    ) VALUES
-    <foreach collection="list" index="index" item="item" separator=",">
-        (<include refid="itemAllColumnValue"/>)
-    </foreach>
-</insert>
+    <delete id="del" parameterType="com.peach.auth.entity.UserOperLogDO">
+        DELETE FROM USER_OPER_LOG
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
 
-<update id="update" parameterType="com.peach.auth.entity.UserOperLogDO">
-    UPDATE USER_OPER_LOG SET
-        <include refid="allColumnSet" />
-    <where>
-        <include refid="allColumnCond" />
-    </where>
-</update>
+    <update id="updateById" parameterType="com.peach.auth.entity.UserOperLogDO">
+        UPDATE USER_OPER_LOG SET
+            <include refid="allColumnSet" />
+        WHERE ID =  #{id,jdbcType=VARCHAR}
+    </update>
 
-<delete id="delById" parameterType="string">
-    DELETE FROM USER_OPER_LOG
-    WHERE ID = #{value,jdbcType=VARCHAR}
-</delete>
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.UserOperLogDO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM USER_OPER_LOG
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </select>
 
-<delete id="delByIds" parameterType="java.util.List">
-    DELETE FROM USER_OPER_LOG
-    WHERE ID IN
-    <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
-        #{id,jdbcType=VARCHAR}
-    </foreach>
-</delete>
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.UserOperLogDO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM USER_OPER_LOG
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
 
-<delete id="del" parameterType="com.peach.auth.entity.UserOperLogDO">
-    DELETE FROM USER_OPER_LOG
-    <where>
-        <include refid="allColumnCond" />
-    </where>
-</delete>
+    <select id="select" parameterType="com.peach.auth.entity.UserOperLogDO" resultType="com.peach.auth.entity.UserOperLogDO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM USER_OPER_LOG
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
 
-<update id="updateById" parameterType="java.lang.String">
-    UPDATE USER_OPER_LOG SET
-        <include refid="allColumnSet" />
-    WHERE ID =  #{id,jdbcType=VARCHAR}
-</update>
-
-<select id="selectById" parameterType="string" resultType="com.peach.auth.entity.UserOperLogDO">
-    SELECT
-        <include refid="allColumnAlias" />
-    FROM USER_OPER_LOG
-    WHERE ID = #{value,jdbcType=VARCHAR}
-</select>
-
-<select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.UserOperLogDO">
-    SELECT
-        <include refid="allColumnAlias" />
-    FROM USER_OPER_LOG
-    WHERE ID IN
-    <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
-        #{id,jdbcType=VARCHAR}
-    </foreach>
-</select>
-
-<select id="select" parameterType="com.peach.auth.entity.UserOperLogDO" resultType="com.peach.auth.entity.UserOperLogDO">
-    SELECT
-        <include refid="allColumnAlias" />
-    FROM USER_OPER_LOG
-    <where>
-        <include refid="allColumnCond" />
-    </where>
-</select>
-
-<select id="count" parameterType="com.peach.auth.entity.UserOperLogDO" resultType="java.lang.Integer">
-    SELECT COUNT(1)
-    FROM USER_OPER_LOG
-    <where>
-        <include refid="allColumnCond" />
-    </where>
-</select>
+    <select id="count" parameterType="com.peach.auth.entity.UserOperLogDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM USER_OPER_LOG
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
 </mapper>
