@@ -15,4 +15,16 @@ import java.io.Serializable;
 @Schema(description = "资源查询参数")
 public class ResourceQO extends PeachEntity implements Serializable {
     private static final long serialVersionUID = 1L;
+
+    @Schema(description = "资源ID")
+    private String resourceId;
+
+    @Schema(description = "功能编码")
+    private String funcCode;
+
+    @Schema(description = "资源类型")
+    private String resourceType;
+
+    @Schema(description = "资源编码")
+    private String resourceCode;
 }

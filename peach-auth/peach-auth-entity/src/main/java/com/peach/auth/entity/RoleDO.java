@@ -1,6 +1,5 @@
 package com.peach.auth.entity;
 
-import com.peach.common.MapperGenerator;
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -58,9 +57,5 @@ public class RoleDO extends PeachDO implements Serializable {
     @Column(name = "SKIP_URL")
     @Schema(description = "角色登陆跳转")
     private String skipUrl;
-
-    public static void main(String[] args) {
-        System.out.println(MapperGenerator.genMapper(RoleDO.class));
-    }
 
 }

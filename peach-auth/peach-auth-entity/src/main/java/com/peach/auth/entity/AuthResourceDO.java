@@ -1,6 +1,5 @@
 package com.peach.auth.entity;
 
-import com.peach.common.MapperGenerator;
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -59,7 +58,4 @@ public class AuthResourceDO extends PeachDO implements Serializable {
     @Schema(description = "年度")
     private Integer fiscal;
 
-    public static void main(String[] args) {
-        System.out.println(MapperGenerator.genMapper(AuthResourceDO.class));
-    }
 }

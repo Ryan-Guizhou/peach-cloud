@@ -1,10 +1,14 @@
 package com.peach.auth.dao;
 
+import com.peach.auth.qo.ResourceQO;
+import com.peach.auth.qo.RouterQO;
 import com.peach.common.PeachDao;
 import com.peach.common.annoation.MybatisDao;
 import com.peach.auth.entity.ResourceDO;
 import com.peach.auth.vo.ResourceVO;
 import org.springframework.stereotype.Indexed;
+
+import java.util.List;
 
 /**
  * @Author Mr Shu
@@ -14,4 +18,6 @@ import org.springframework.stereotype.Indexed;
 @Indexed
 @MybatisDao
 public interface ResourceDao extends PeachDao<ResourceDO, ResourceVO> {
+
+    List<ResourceVO> selectByQO(ResourceQO resourceQO);
 }

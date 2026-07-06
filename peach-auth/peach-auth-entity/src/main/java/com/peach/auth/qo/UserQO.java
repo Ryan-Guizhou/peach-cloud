@@ -18,11 +18,15 @@ public class UserQO extends PeachEntity implements Serializable {
 
     private static final long serialVersionUID = 3457123480263246325L;
 
-    private String id;
+    @Schema(description = "用户ID")
+    private String userId;
 
+    @Schema(description = "用户名")
     private String username;
 
+    @Schema(description = "手机号")
     private String phone;
 
-    private List<String> idList;
+    @Schema(description = "用户ID集合")
+    private List<String> userIdList;
 }

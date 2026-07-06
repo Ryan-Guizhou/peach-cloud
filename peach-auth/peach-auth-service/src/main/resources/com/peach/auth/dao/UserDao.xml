@@ -433,4 +433,26 @@
           AND password = #{password,jdbcType=VARCHAR}
           AND status = 1
     </select>
+
+    <select id="selectByQO" parameterType="com.peach.auth.qo.UserQO" resultType="com.peach.auth.vo.UserVO">
+        SELECT <include refid="allColumnAlias" />
+        FROM PEACH_USER
+        <where>
+            <if test="userId != null and userId != ''">
+                AND USER_ID = #{userId,jdbcType=VARCHAR}
+            </if>
+            <if test="userIdList != null and userIdList.size() > 0">
+                AND USER_ID IN
+                <foreach collection="userIdList" index="index" item="userId" open="(" separator="," close=")">
+                    #{userId,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+            <if test="phone != null and phone != ''">
+                AND PHONE = #{phone,jdbcType=VARCHAR}
+            </if>
+            <if test="username != null and username != ''">
+                AND USER_NAME = #{username,jdbcType=VARCHAR}
+            </if>
+        </where>
+    </select>
 </mapper>

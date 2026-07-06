@@ -19,4 +19,6 @@ import java.util.List;
 public interface RoleDao extends PeachDao<RoleDO, RoleVO> {
 
     List<RoleVO> selectByUser(RoleQO roleQO);
+
+    List<RoleVO> selectByQO(RoleQO roleQO);
 }

@@ -21,4 +21,6 @@ import java.util.List;
 public interface UserDao extends PeachDao<UserDO, UserVO> {
 
     UserVO login(@Param("username") String username,@Param("password") String password);
+
+    List<UserVO> selectByQO(UserQO userQO);
 }

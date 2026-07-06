@@ -24,6 +24,7 @@ public interface UserLogEnum {
         SETTING("SETTING","系统设置"),
 
         DEFAULT("UNKNOWN","未知"),
+        GENERATOR("GENERATOR","未知"),
         ;
 
         private final String moduleCode;

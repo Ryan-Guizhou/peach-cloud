@@ -1,6 +1,5 @@
 package com.peach.auth.entity;
 
-import com.peach.common.MapperGenerator;
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -102,9 +101,5 @@ public class UserDO extends PeachDO implements Serializable {
     @Column(name = "PASSWD_MODIFY_TIME")
     @Schema(description = "密码修改时间")
     private String passwdModifyTime;
-
-    public static void main(String[] args) {
-        System.out.println(MapperGenerator.genMapper(UserDO.class));
-    }
 
 }

@@ -1,6 +1,5 @@
 package com.peach.auth.entity;
 
-import com.peach.common.MapperGenerator;
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -58,9 +57,5 @@ public class RouterDO extends PeachDO implements Serializable {
     @Column(name = "ROUTER_LEVEL")
     @Schema(description = "路由级次")
     private Integer routerLevel;
-
-    public static void main(String[] args) {
-        System.out.println(MapperGenerator.genMapper(RouterDO.class));
-    }
 
 }

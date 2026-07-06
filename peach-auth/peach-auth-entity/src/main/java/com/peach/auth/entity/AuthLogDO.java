@@ -1,6 +1,5 @@
 package com.peach.auth.entity;
 
-import com.peach.common.MapperGenerator;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import javax.persistence.Column;
@@ -50,8 +49,5 @@ public class AuthLogDO  implements Serializable {
     @Schema(description = "操作时间")
     private String operatTime;
 
-    public static void main(String[] args) {
-        System.out.println(MapperGenerator.genMapper(AuthLogDO.class));
-    }
 
 }

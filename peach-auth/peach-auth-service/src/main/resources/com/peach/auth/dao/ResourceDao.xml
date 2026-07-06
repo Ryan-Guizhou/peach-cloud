@@ -252,4 +252,24 @@
             <include refid="allColumnCond" />
         </where>
     </select>
+
+    <select id="selectByQO" parameterType="com.peach.auth.qo.ResourceQO" resultType="com.peach.auth.vo.ResourceVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_RESOURCE
+        <where>
+            <if test="resourceId != null and resourceId != ''">
+                AND RESOURCE_ID = #{resourceId,jdbcType=VARCHAR}
+            </if>
+            <if test="funcCode != null and funcCode != ''">
+                AND FUNC_CODE = #{funcCode,jdbcType=VARCHAR}
+            </if>
+            <if test="resourceType != null and resourceType != ''">
+                AND RESOURCE_TYPE = #{resourceType,jdbcType=VARCHAR}
+            </if>
+            <if test="resourceCode != null and resourceCode != ''">
+                AND RESOURCE_CODE = #{resourceCode,jdbcType=VARCHAR}
+            </if>
+        </where>
+    </select>
 </mapper>

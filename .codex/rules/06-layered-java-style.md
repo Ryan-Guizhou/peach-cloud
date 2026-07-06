@@ -16,6 +16,8 @@
 - DTO、QO、ID 等前端传入参数必须使用 JSR-303 校验
 - 需要区分场景时必须使用分组校验，按 `PeachGroup.insertGroup`、`updateGroup`、`deleteGroup`、`queryGroup` 组织
 - REST 入参不能跳过校验直接透传 service
+- 同一实体的新增、更新场景优先复用一个 DTO，通过校验分组区分语义；不要在没有明确需求时主动拆成两个 DTO
+- 如果任务同时涉及 controller、service、DTO、group 和日志注解，必须把这一组改动视为一个整体完成，不能只补其中一层
 
 ## DAO Contract
 

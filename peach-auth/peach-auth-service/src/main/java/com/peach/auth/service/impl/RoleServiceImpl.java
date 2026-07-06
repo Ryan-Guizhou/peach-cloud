@@ -3,19 +3,20 @@ package com.peach.auth.service.impl;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.peach.common.util.StringUtil;
-import com.peach.common.validate.CommonValidator;
 import com.peach.auth.dao.RoleDao;
+import com.peach.auth.dto.RoleDTO;
 import com.peach.auth.entity.RoleDO;
 import com.peach.auth.qo.RoleQO;
 import com.peach.auth.service.IRoleService;
 import com.peach.auth.vo.RoleVO;
+import com.peach.common.constant.PubCommonConst;
+import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -31,19 +32,16 @@ public class RoleServiceImpl implements IRoleService {
     @Resource
     private RoleDao roleDao;
 
-    @Resource
-    private CommonValidator commonValidator;
-
     @Override
     public PageInfo<RoleVO> pageList(RoleQO roleQO) {
         PageInfo<RoleVO> pageInfo = PageHelper.startPage(roleQO.getPageNum(), roleQO.getPageSize())
-                .doSelectPageInfo(() -> roleDao.select(new RoleDO()));
+                .doSelectPageInfo(() -> roleDao.selectByQO(roleQO));
         return pageInfo;
     }
 
     @Override
     public List<RoleVO> list(RoleQO roleQO) {
-        return Collections.emptyList();
+        return roleDao.selectByUser(roleQO);
     }
 
     @Override
@@ -56,18 +54,31 @@ public class RoleServiceImpl implements IRoleService {
     }
 
     @Override
-    public void add(RoleQO roleQO) {
-
+    public void add(RoleDTO roleDTO) {
+        RoleDO roleDO = new RoleDO();
+        BeanUtils.copyProperties(roleDTO, roleDO);
+        roleDO.fillCreateTime(null);
+        if (roleDO.getIsDelete() == null) {
+            roleDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
+        }
+        roleDao.insert(roleDO);
     }
 
     @Override
     public void delById(String id) {
-
+        if (StringUtil.isBlank(id)) {
+            log.info("id is blank");
+            return;
+        }
+        roleDao.delById(id);
     }
 
     @Override
-    public void update(RoleQO roleQO) {
-
+    public void update(RoleDTO roleDTO) {
+        RoleDO roleDO = new RoleDO();
+        BeanUtils.copyProperties(roleDTO, roleDO);
+        roleDO.fillModifyTime(null);
+        roleDao.updateById(roleDO);
     }
 
     @Override

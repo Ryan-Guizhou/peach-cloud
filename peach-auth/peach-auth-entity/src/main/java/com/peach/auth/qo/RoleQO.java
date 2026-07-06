@@ -22,4 +22,10 @@ public class RoleQO extends PeachEntity implements Serializable {
     @Schema(description = "用户账号")
     private String userCode;
 
+    @Schema(description = "角色ID")
+    private String roleId;
+
+    @Schema(description = "角色编码")
+    private String roleCode;
+
 }

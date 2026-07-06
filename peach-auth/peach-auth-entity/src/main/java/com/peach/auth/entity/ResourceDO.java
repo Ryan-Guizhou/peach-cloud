@@ -1,6 +1,5 @@
 package com.peach.auth.entity;
 
-import com.peach.common.MapperGenerator;
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -50,9 +49,5 @@ public class ResourceDO extends PeachDO implements Serializable {
     @Column(name = "IS_DELETE")
     @Schema(description = "是否删除")
     private Integer isDelete;
-
-    public static void main(String[] args) {
-        System.out.println(MapperGenerator.genMapper(ResourceDO.class));
-    }
 
 }
