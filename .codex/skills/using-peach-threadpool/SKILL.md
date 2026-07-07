@@ -1,5 +1,5 @@
 ---
-name: peach-threadpool
+name: using-peach-threadpool
 description: 规范 peach-cloud 项目中 peach-threadpool / peach-threadpool-starter / peach-threadpool-autoconfigure 的线程池配置、PoolType 选择、@AsyncExecuted 使用、ThreadPoolManager 调用、MDC/SecurityContext 传递、拒绝策略、队列容量、超时和 README 编写。Use when editing thread pool code, adding async execution, configuring peach.threadpool, or writing README for peach-component/peach-threadpool.
 ---
 
@@ -41,4 +41,4 @@ description: 规范 peach-cloud 项目中 peach-threadpool / peach-threadpool-st
 
 ## README 提醒
 
-编辑 `peach-component/peach-threadpool` 或子模块后，使用 `$peach-readme-writer` 刷新 README。README 必须写明当前注解真实语义、配置字段、默认池、拒绝策略、MDC/SecurityContext 传递和已知限制。
+编辑 `peach-component/peach-threadpool` 或子模块后，使用 `$using-peach-readme-writer` 刷新 README。README 必须写明当前注解真实语义、配置字段、默认池、拒绝策略、MDC/SecurityContext 传递和已知限制。

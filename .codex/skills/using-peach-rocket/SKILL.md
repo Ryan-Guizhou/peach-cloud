@@ -1,5 +1,5 @@
 ---
-name: peach-rocket-starter
+name: using-peach-rocket
 description: 规范 peach-cloud 项目中 peach-rocket-starter / peach-rocket-autoconfigure / peach-rocket-example 的 RocketMQ 接入、事件建模、生产消费、事务消息、Outbox、幂等、加密、Topic 治理和排障。Use when editing or reviewing RocketMQ code, adding @MqEvent/@MqConsumer/MqPublisher usage, extending peach-rocket SPI, or writing README for peach-middleware/peach-rocket.
 ---
 
@@ -35,4 +35,4 @@ description: 规范 peach-cloud 项目中 peach-rocket-starter / peach-rocket-au
 
 ## README 提醒
 
-编辑 `peach-middleware/peach-rocket` 或子模块后，使用 `$peach-readme-writer` 刷新 README。README 必须写清楚能力边界、接入示例、有效配置、SPI 覆盖方式、构建验证和排障表。
+编辑 `peach-middleware/peach-rocket` 或子模块后，使用 `$using-peach-readme-writer` 刷新 README。README 必须写清楚能力边界、接入示例、有效配置、SPI 覆盖方式、构建验证和排障表。

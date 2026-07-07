@@ -1,6 +1,6 @@
 interface:
   display_name: "Peach Threadpool"
   short_description: "规范 peach-threadpool 配置、注解使用与线程池治理"
-  default_prompt: "Use $peach-threadpool to implement or review thread pool usage in peach-cloud."
+  default_prompt: "Use $using-peach-threadpool to implement or review thread pool usage in peach-cloud."
 policy:
   allow_implicit_invocation: true

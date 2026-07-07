@@ -39,12 +39,9 @@
 - 查目录：`codegraph_files`
 - 查符号：`codegraph_search`
 - 理解功能、架构、bug 背景：`codegraph_context`
-- 看相关源码集合：`codegraph_explore`
-- 查调用方：`codegraph_callers`
-- 查被调用方：`codegraph_callees`
-- 评估改动影响：`codegraph_impact`
-- 追踪链路：`codegraph_trace`
+- 评估公共符号改动影响：`codegraph_impact`
 - 检查索引状态：`codegraph_status`
+- 当前会话可能只暴露部分 codegraph 工具；未暴露的调用方、被调用方、追踪类能力，用已暴露工具结合源码读取补足。
 
 不要先用全仓库 grep 重建 codegraph 已经能回答的问题。若 codegraph 提示索引滞后，针对提示中的 pending 文件直接读取文件确认。
 
@@ -80,29 +77,22 @@ MCP 调用规范：
 
 ## Skills
 
-本仓库内置本地 skills，路径在 `.codex/skills/`：
+本仓库内置本地 skills，路径在 `.codex/skills/`。目录名、`SKILL.md` 的 `name` 和 `$skill` 调用名保持一致：
 
-| Skill | 适用场景 |
-| --- | --- |
-| `peach-readme-writer` | 编写或刷新根 README、模块 README、starter 文档 |
-| `peach-rocket-starter` | RocketMQ、`peach-rocket-*`、`@MqEvent`、`@MqConsumer`、Outbox、幂等、事务消息 |
-| `peach-storage-starter` | `peach-storage`、`peach-store-*`、`StorageTemplate`、provider、路径安全、分片、前端直传 |
-| `peach-threadpool` | `peach-threadpool`、`@AsyncExecuted`、`ThreadPoolManager`、线程池配置、上下文传递 |
+| 目录 | Skill 调用名 | 适用场景 |
+| --- | --- | --- |
+| `using-peach-code-skeleton` | `using-peach-code-skeleton` | `peach-cloud` 代码编写/审查的第一准则；约束 REST、Entity、DAO/DAO XML、Service、common/peach-common 的骨架与分层 |
+| `using-peach-readme-writer` | `using-peach-readme-writer` | 编写或刷新根 README、模块 README、starter 文档 |
+| `using-peach-rocket` | `using-peach-rocket` | RocketMQ、`peach-rocket-*`、`@MqEvent`、`@MqConsumer`、Outbox、幂等、事务消息 |
+| `using-peach-storage` | `using-peach-storage` | `peach-storage`、`peach-store-*`、`StorageTemplate`、provider、路径安全、分片、前端直传 |
+| `using-peach-threadpool` | `using-peach-threadpool` | `peach-threadpool`、`@AsyncExecuted`、`ThreadPoolManager`、线程池配置、上下文传递 |
 
 Skill 使用规范：
 
-- 用户显式提到 `$skill-name` 时，必须先完整读取对应 `SKILL.md`。
-- 涉及 README、模块说明、starter 接入文档时，优先使用 `peach-readme-writer`。
-- 涉及 RocketMQ、Storage、Threadpool 模块时，即使用户只说“改文档/改代码”，也要读取对应 skill。
-- 如果 `SKILL.md` 指向 `references/module-guide.md`，并且任务涉及配置、边界、SPI、示例或 README，必须读取对应参考文件。
+- 命中 skill 场景或用户显式提到 `$skill-name` 时，先完整读取对应 `SKILL.md`。
+- 编写、生成、重构或审查 Java 分层代码时，先用 `using-peach-code-skeleton`；涉及 README、RocketMQ、Storage、Threadpool 时再叠加对应 skill。
+- `SKILL.md` 指向 `references/module-guide.md` 时，涉及配置、边界、SPI、示例或 README，必须继续读取参考文件。
 - 不要编造 skill 中没有确认过的配置项、默认值、注解语义或 SPI。
-
-场景映射：
-
-- 写模块 README、梳理 starter 文档：`peach-readme-writer`
-- 改或审查 `peach-middleware/peach-rocket`：`peach-rocket-starter`
-- 改或审查 `peach-component/peach-storage`：`peach-storage-starter`
-- 改或审查 `peach-component/peach-threadpool`：`peach-threadpool`
 
 ## Module Boundaries
 
@@ -126,59 +116,16 @@ Skill 使用规范：
 - Threadpool 异步任务优先使用 `ThreadPoolManager` 或方法级 `@AsyncExecuted`，不要随手 `new Thread` 或创建游离线程池。
 - `peach-common` 只承载公共基础能力，不承载具体业务域逻辑。
 
-## Coding Rules
+## Rule Responsibilities
 
-- 保持 Java 8 兼容，不使用 Java 9+ API 或语法。
-- 禁止使用 Java 9+ 语法或 API，例如 `var`、`record`、`sealed`、text block、switch expression、pattern matching、`List.of`、`Map.of`、`Set.of`、`Stream.toList`、`Optional.isEmpty`、`Files.readString`、`Path.of`。
-- 遵循当前模块已有包结构、命名和分层，不做无关重构。
-- 注释和日志风格遵循 `.codex/rules/07-comments-and-logging.md`，涉及类注释、方法注释、属性注释、`@Slf4j` 和日志级别时按该规则执行。
-- 不把业务域逻辑放进 `peach-common`。
-- 不把具体业务逻辑放进 `starter`。
-- 新增配置项时同步更新配置类、README、示例配置和必要测试。
-- 新增 starter 能力时明确默认实现、覆盖方式、生产边界和排障信息。
-- 修改公共 API 前先用 codegraph 查调用方和影响范围。
-- 涉及生成器、开放接口、公共响应对象等高影响区域时，先确认影响面再落代码。
-- 外部库、框架、starter、注解、配置项用法不确定时，优先查 `context7` 或项目已有实现，不凭记忆编写不兼容代码。
+详细规则拆分在 `.codex/rules/` 和 `.codex/skills/` 中，避免在入口文件重复维护：
 
-## Layered Model Rules
-
-- DO：完全适配数据库表结构和字段命名，承载持久化字段；公共审计字段统一继承 `PeachDO`。
-- VO：默认继承对应 DO；仅在展示层需要补充额外字段时新增属性，不重复定义 DO 已有字段。
-- QO：只用于查询条件封装；存在分页需求时继承 `PeachEntity`。
-- DTO：只用于新增和修改入参，不承担查询职责。
-- ID、DTO、QO 等前端传入参数必须配合 JSR-303 分组校验，按 `PeachGroup` 中的场景区分新增、更新、删除、查询。
-- REST 层只做参数接收、校验、调用 service 和响应转换，不承载复杂业务逻辑。
-- Service 层负责业务编排、校验补充、事务和领域逻辑。
-- DAO 接口统一继承 `PeachDao<T, E>` 并实现其约定的基础方法；额外方法可以新增，但必须声明明确的入参和出参类型。
-- MyBatis XML 风格以 `peach-auth/peach-auth-service/src/main/resources/com/peach/auth/dao/UserDao.xml` 为基准，保持缩进、SQL 片段组织、`jdbcType` 显式声明和参数写法一致。
-- DAO 自定义方法不得使用模糊入参或无类型返回，禁止省略 `parameterType`、`resultType` 或让调用方猜测结构。
-
-## Documentation Rules
-
-README 修改必须遵守：
-
-- 中文文档使用 `README.md`，英文文档使用 `README.en-US.md`。
-- 写 README 前先读取模块 `pom.xml`、源码入口、配置类、自动配置、示例代码和已有 README。
-- 不复制乱码、过期段落或构建产物说明。
-- 不把 `target/`、`.flattened-pom.xml`、日志目录、IDE 目录写成源码结构。
-- 类名、配置项、路径、命令必须能在仓库中确认。
-- 不承诺源码未实现的能力。
-- 对默认值谨慎：只能从配置类或明确文档确认；不确定时说明“当前未在配置类中声明默认值”。
-- starter README 必须讲清楚提供什么、不提供什么、业务如何接入、如何覆盖默认实现、如何验证。
-
-README 建议结构：
-
-1. 标题、简介、适用版本、维护信息。
-2. 模块定位：解决什么，不解决什么。
-3. 目录结构或子模块职责。
-4. 快速接入：Maven 依赖、最小配置、最小代码示例。
-5. 核心概念：入口类、注解、配置类、SPI、请求/响应模型。
-6. 配置说明：真实配置项、默认值来源、适用场景。
-7. 扩展方式：覆盖 Bean、实现 SPI、注册 provider 或 handler。
-8. 运行机制：关键链路步骤。
-9. 边界与限制：生产注意事项和已知限制。
-10. 构建与验证：可执行 Maven/npm 命令。
-11. 排障指南：现象、检查点、处理方式。
+- Java 版本、框架版本、编码：见 `.codex/rules/05-language-and-encoding.md`。
+- 分层模型、REST、Service、DAO/XML、common 归属：见 `using-peach-code-skeleton` 及其 `references/`。
+- 注释、Javadoc、日志：见 `.codex/rules/07-comments-and-logging.md`。
+- README 和模块文档：见 `.codex/rules/04-documentation-and-readme.md` 与 `using-peach-readme-writer`。
+- RocketMQ、Storage、Threadpool 专项边界：先读对应 module skill，再按需读 `references/module-guide.md`。
+- 公共 API、生成器、开放接口、公共响应对象等高影响区域：改动前先确认影响面。
 
 ## Verification
 

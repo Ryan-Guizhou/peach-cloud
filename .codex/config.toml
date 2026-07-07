@@ -55,3 +55,24 @@ args = [
 ]
 startup_timeout_sec = 30
 tool_timeout_sec = 120
+
+[mcp_servers.codegraph.tools.codegraph_context]
+approval_mode = "approve"
+
+[mcp_servers.codegraph.tools.codegraph_files]
+approval_mode = "approve"
+
+[mcp_servers.codegraph.tools.codegraph_explore]
+approval_mode = "approve"
+
+[mcp_servers.codegraph.tools.codegraph_node]
+approval_mode = "approve"
+
+[mcp_servers.codegraph.tools.codegraph_status]
+approval_mode = "approve"
+
+[mcp_servers.codegraph.tools.codegraph_search]
+approval_mode = "approve"
+
+[mcp_servers.codegraph.tools.codegraph_impact]
+approval_mode = "approve"

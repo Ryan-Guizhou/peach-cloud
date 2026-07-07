@@ -5,6 +5,7 @@
 ## MCP Selection
 
 - 代码结构、模块职责、调用链、影响面：先用 `codegraph`
+- 当前会话可能只暴露 `codegraph_files`、`codegraph_search`、`codegraph_context`、`codegraph_impact`、`codegraph_status` 等部分工具；只按实际可用工具执行，不假设所有 codegraph 能力都存在
 - README、SQL、脚本、配置、纯文本：`codegraph` 不适合时再用 `rg` / 直接读文件
 - 第三方库、框架、SDK、CLI 当前文档：用 `context7`
 - GitHub 仓库、PR、issue、CI：只有用户明确要求时用 `github`
@@ -21,10 +22,12 @@
 
 ## Skills Selection
 
-- 写或刷新 README、模块说明、starter 接入文档：使用 `peach-readme-writer`
-- 涉及 `peach-middleware/peach-rocket`、RocketMQ、`@MqEvent`、`@MqConsumer`：使用 `peach-rocket-starter`
-- 涉及 `peach-component/peach-storage`、`StorageTemplate`、provider：使用 `peach-storage-starter`
-- 涉及 `peach-component/peach-threadpool`、`ThreadPoolManager`、`@AsyncExecuted`：使用 `peach-threadpool`
+- `.codex/skills/` 下的目录名、`SKILL.md` 的 `name` 和 `$skill` 调用名必须保持一致，当前统一使用 `using-peach-*`
+- 写或刷新 README、模块说明、starter 接入文档：使用 `using-peach-readme-writer`
+- 涉及 `peach-middleware/peach-rocket`、RocketMQ、`@MqEvent`、`@MqConsumer`：使用 `using-peach-rocket`
+- 涉及 `peach-component/peach-storage`、`StorageTemplate`、provider：使用 `using-peach-storage`
+- 涉及 `peach-component/peach-threadpool`、`ThreadPoolManager`、`@AsyncExecuted`：使用 `using-peach-threadpool`
+- 编写、生成、重构或审查 REST、Entity、DAO/XML、Service、common 归属：使用 `using-peach-code-skeleton`
 
 ## Skill Constraints
 

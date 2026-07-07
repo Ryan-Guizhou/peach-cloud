@@ -19,6 +19,8 @@
 - RocketMQ 接入优先走 `MqPublisher`、`@MqEvent`、`@MqConsumer`、`MqMessageHandler<T>`
 - Storage 接入统一走 `StorageTemplate`，不直接耦合厂商 SDK
 - Threadpool 异步统一走 `ThreadPoolManager` 或 `@AsyncExecuted`，不要新建游离线程池
+- `peach-cloud-front` 是独立 Vue 3 + Vite + TypeScript 工程，不加入 Maven reactor；前端改动使用 npm 脚本验证
+- `peach-generator` 属于高影响代码生成模块，改模板、生成规则或 SQL 元数据处理前先确认生成产物影响范围
 
 ## Change Scope
 

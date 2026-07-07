@@ -1,5 +1,5 @@
 ---
-name: peach-readme-writer
+name: using-peach-readme-writer
 description: 为 peach-cloud 的 starter、autoconfigure、example、业务模块生成或刷新高质量 README.md，重点解决每次编辑完模块后 README 输出不稳定、结构混乱、缺少边界说明、缺少验证命令和排障信息的问题。Use when asked to write README.md/readme.md, after editing a starter or module, or when documenting peach-rocket, peach-storage, peach-threadpool and other peach-cloud modules.
 ---
 
@@ -50,6 +50,6 @@ description: 为 peach-cloud 的 starter、autoconfigure、example、业务模�
 
 ## 与其他 Peach 技能配合
 
-- 写 rocket README 时先使用 `$peach-rocket-starter` 理清 MQ 边界。
-- 写 storage README 时先使用 `$peach-storage-starter` 理清 provider、路径和能力边界。
-- 写 threadpool README 时先使用 `$peach-threadpool` 理清注解真实语义和配置参数。
+- 写 rocket README 时先使用 `$using-peach-rocket` 理清 MQ 边界。
+- 写 storage README 时先使用 `$using-peach-storage` 理清 provider、路径和能力边界。
+- 写 threadpool README 时先使用 `$using-peach-threadpool` 理清注解真实语义和配置参数。

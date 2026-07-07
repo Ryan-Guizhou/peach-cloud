@@ -1,5 +1,5 @@
 ---
-name: peach-storage-starter
+name: using-peach-storage
 description: 规范 peach-cloud 项目中 peach-store-starter / peach-store-autoconfigure 的统一存储接入、StorageTemplate 调用、provider 配置、请求响应对象、路径安全、日志脱敏、分片上传、前端直传、多 provider 路由和新存储 Provider 扩展。Use when editing storage code, configuring peach.storage, adding StorageProvider/StorageProviderFactory, or writing README for peach-component/peach-storage.
 ---
 
@@ -42,4 +42,4 @@ description: 规范 peach-cloud 项目中 peach-store-starter / peach-store-auto
 
 ## README 提醒
 
-编辑 `peach-component/peach-storage` 或子模块后，使用 `$peach-readme-writer` 刷新 README。README 必须明确支持的 provider、能力矩阵、配置示例、路径安全边界、前端直传/分片限制和扩展方式。
+编辑 `peach-component/peach-storage` 或子模块后，使用 `$using-peach-readme-writer` 刷新 README。README 必须明确支持的 provider、能力矩阵、配置示例、路径安全边界、前端直传/分片限制和扩展方式。
