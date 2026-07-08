@@ -5,6 +5,8 @@ import com.peach.auth.entity.UserDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import lombok.EqualsAndHashCode;
+
 import java.io.Serializable;
 
 /**
@@ -13,6 +15,7 @@ import java.io.Serializable;
  * @CreateTime 2026/1/9 16:44
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "用户返回视图")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserVO extends UserDO implements Serializable {

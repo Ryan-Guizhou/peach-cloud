@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.peach.auth.entity.UserOrgDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 
@@ -16,6 +17,7 @@ import java.io.Serializable;
  * @CreateTime 2026/7/8 14:10
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "用户机构关系统一返回视图")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserOrgVO extends UserOrgDO implements Serializable {

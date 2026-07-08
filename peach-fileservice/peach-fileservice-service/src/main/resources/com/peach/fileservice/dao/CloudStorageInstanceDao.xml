@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.fileservice.dao.CloudStorageInstanceDao">
+    <sql id="allColumn">
+        INSTANCE_ID,                                      INSTANCE_NAME,                                    STORE_TYPE,                                       ENDPOINT,
+        REGION,                                           BUCKET_NAME,                                      PREFIX,                                           ACCESS_KEY,
+        SECRET_KEY,                                       ROOT_PATH,                                        DOMAIN,                                           PATH_STYLE_ACCESS,
+        PUBLIC_READ,                                      EXTRA_JSON,                                       ENABLED,                                          BUILT_IN,
+        REMARK,                                           CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,
+        MODIFIER_ID
+    </sql>
+
+    <sql id="allColumnAlias">
+        INSTANCE_ID as instanceId,                        INSTANCE_NAME as instanceName,                    STORE_TYPE as storeType,                          ENDPOINT as endpoint,
+        REGION as region,                                 BUCKET_NAME as bucketName,                        PREFIX as prefix,                                 ACCESS_KEY as accessKey,
+        SECRET_KEY as secretKey,                          ROOT_PATH as rootPath,                            DOMAIN as domain,                                 PATH_STYLE_ACCESS as pathStyleAccess,
+        PUBLIC_READ as publicRead,                        EXTRA_JSON as extraJson,                          ENABLED as enabled,                               BUILT_IN as builtIn,
+        REMARK as remark,                                 CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,
+        MODIFIER_ID as modifierId
+    </sql>
+
+    <sql id="allColumnValue">
+        #{instanceId,jdbcType=VARCHAR},                   #{instanceName,jdbcType=VARCHAR},                 #{storeType,jdbcType=VARCHAR},                   #{endpoint,jdbcType=VARCHAR},
+        #{region,jdbcType=VARCHAR},                      #{bucketName,jdbcType=VARCHAR},                  #{prefix,jdbcType=VARCHAR},                     #{accessKey,jdbcType=VARCHAR},
+        #{secretKey,jdbcType=VARCHAR},                   #{rootPath,jdbcType=VARCHAR},                    #{domain,jdbcType=VARCHAR},                      #{pathStyleAccess,jdbcType=INTEGER},
+        #{publicRead,jdbcType=INTEGER},                  #{extraJson,jdbcType=VARCHAR},                   #{enabled,jdbcType=INTEGER},                    #{builtIn,jdbcType=INTEGER},
+        #{remark,jdbcType=VARCHAR},                      #{createdTime,jdbcType=VARCHAR},                 #{creatorId,jdbcType=VARCHAR},                  #{modifyTime,jdbcType=VARCHAR},
+        #{modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.instanceId,jdbcType=VARCHAR},              #{item.instanceName,jdbcType=VARCHAR},           #{item.storeType,jdbcType=VARCHAR},             #{item.endpoint,jdbcType=VARCHAR},
+        #{item.region,jdbcType=VARCHAR},                 #{item.bucketName,jdbcType=VARCHAR},             #{item.prefix,jdbcType=VARCHAR},                #{item.accessKey,jdbcType=VARCHAR},
+        #{item.secretKey,jdbcType=VARCHAR},              #{item.rootPath,jdbcType=VARCHAR},               #{item.domain,jdbcType=VARCHAR},                #{item.pathStyleAccess,jdbcType=INTEGER},
+        #{item.publicRead,jdbcType=INTEGER},             #{item.extraJson,jdbcType=VARCHAR},              #{item.enabled,jdbcType=INTEGER},               #{item.builtIn,jdbcType=INTEGER},
+        #{item.remark,jdbcType=VARCHAR},                 #{item.createdTime,jdbcType=VARCHAR},           #{item.creatorId,jdbcType=VARCHAR},             #{item.modifyTime,jdbcType=VARCHAR},
+        #{item.modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="instanceName != null and instanceName != ''">
+                INSTANCE_NAME = #{instanceName,jdbcType=VARCHAR},
+            </if>
+            <if test="storeType != null and storeType != ''">
+                STORE_TYPE = #{storeType,jdbcType=VARCHAR},
+            </if>
+            <if test="endpoint != null and endpoint != ''">
+                ENDPOINT = #{endpoint,jdbcType=VARCHAR},
+            </if>
+            <if test="region != null and region != ''">
+                REGION = #{region,jdbcType=VARCHAR},
+            </if>
+            <if test="bucketName != null and bucketName != ''">
+                BUCKET_NAME = #{bucketName,jdbcType=VARCHAR},
+            </if>
+            <if test="prefix != null and prefix != ''">
+                PREFIX = #{prefix,jdbcType=VARCHAR},
+            </if>
+            <if test="accessKey != null and accessKey != ''">
+                ACCESS_KEY = #{accessKey,jdbcType=VARCHAR},
+            </if>
+            <if test="secretKey != null and secretKey != ''">
+                SECRET_KEY = #{secretKey,jdbcType=VARCHAR},
+            </if>
+            <if test="rootPath != null and rootPath != ''">
+                ROOT_PATH = #{rootPath,jdbcType=VARCHAR},
+            </if>
+            <if test="domain != null and domain != ''">
+                DOMAIN = #{domain,jdbcType=VARCHAR},
+            </if>
+            <if test="pathStyleAccess != null">
+                PATH_STYLE_ACCESS = #{pathStyleAccess,jdbcType=INTEGER},
+            </if>
+            <if test="publicRead != null">
+                PUBLIC_READ = #{publicRead,jdbcType=INTEGER},
+            </if>
+            <if test="extraJson != null">
+                EXTRA_JSON = #{extraJson,jdbcType=VARCHAR},
+            </if>
+            <if test="enabled != null">
+                ENABLED = #{enabled,jdbcType=INTEGER},
+            </if>
+            <if test="builtIn != null">
+                BUILT_IN = #{builtIn,jdbcType=INTEGER},
+            </if>
+            <if test="remark != null and remark != ''">
+                REMARK = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="instanceId != null and instanceId != ''">
+            AND INSTANCE_ID = #{instanceId,jdbcType=VARCHAR}
+        </if>
+        <if test="instanceName != null and instanceName != ''">
+            AND INSTANCE_NAME = #{instanceName,jdbcType=VARCHAR}
+        </if>
+        <if test="storeType != null and storeType != ''">
+            AND STORE_TYPE = #{storeType,jdbcType=VARCHAR}
+        </if>
+        <if test="enabled != null">
+            AND ENABLED = #{enabled,jdbcType=INTEGER}
+        </if>
+        <if test="builtIn != null">
+            AND BUILT_IN = #{builtIn,jdbcType=INTEGER}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.fileservice.entity.CloudStorageInstanceDO">
+        INSERT INTO PEACH_STORAGE_INSTANCE (
+            <include refid="allColumn" />
+        ) VALUES (
+            <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.fileservice.entity.CloudStorageInstanceDO">
+        INSERT INTO PEACH_STORAGE_INSTANCE (
+            <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue"/>)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.fileservice.entity.CloudStorageInstanceDO">
+        UPDATE PEACH_STORAGE_INSTANCE SET
+            <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <update id="updateById" parameterType="com.peach.fileservice.entity.CloudStorageInstanceDO">
+        UPDATE PEACH_STORAGE_INSTANCE SET
+            <include refid="allColumnSet" />
+        WHERE INSTANCE_ID = #{instanceId,jdbcType=VARCHAR}
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM PEACH_STORAGE_INSTANCE
+        WHERE INSTANCE_ID = #{value,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM PEACH_STORAGE_INSTANCE
+        WHERE INSTANCE_ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.fileservice.entity.CloudStorageInstanceDO">
+        DELETE FROM PEACH_STORAGE_INSTANCE
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.fileservice.vo.CloudStorageInstanceVO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_STORAGE_INSTANCE
+        WHERE INSTANCE_ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.fileservice.vo.CloudStorageInstanceVO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_STORAGE_INSTANCE
+        WHERE INSTANCE_ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.fileservice.entity.CloudStorageInstanceDO" resultType="com.peach.fileservice.vo.CloudStorageInstanceVO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_STORAGE_INSTANCE
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.fileservice.entity.CloudStorageInstanceDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_STORAGE_INSTANCE
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="selectByQO" parameterType="com.peach.fileservice.qo.CloudStorageInstanceQO" resultType="com.peach.fileservice.vo.CloudStorageInstanceVO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_STORAGE_INSTANCE
+        <where>
+            <if test="instanceId != null and instanceId != ''">
+                AND INSTANCE_ID = #{instanceId,jdbcType=VARCHAR}
+            </if>
+            <if test="instanceName != null and instanceName != ''">
+                AND INSTANCE_NAME = #{instanceName,jdbcType=VARCHAR}
+            </if>
+            <if test="storeType != null and storeType != ''">
+                AND STORE_TYPE = #{storeType,jdbcType=VARCHAR}
+            </if>
+            <if test="enabled != null">
+                AND ENABLED = #{enabled,jdbcType=INTEGER}
+            </if>
+            <if test="builtIn != null">
+                AND BUILT_IN = #{builtIn,jdbcType=INTEGER}
+            </if>
+        </where>
+        ORDER BY CREATED_TIME DESC
+    </select>
+</mapper>

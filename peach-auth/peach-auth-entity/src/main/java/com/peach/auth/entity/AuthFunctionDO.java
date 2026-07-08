@@ -3,6 +3,7 @@ package com.peach.auth.entity;
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -19,6 +20,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "PEACH_AUTH_FUNCTION")
 @Schema(description = "AuthFunction实体")
+@EqualsAndHashCode(callSuper = true)
 public class AuthFunctionDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = 1L;
 

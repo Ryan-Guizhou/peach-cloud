@@ -3,6 +3,7 @@ package com.peach.auth.qo;
 import com.peach.common.PeachEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 
@@ -12,6 +13,7 @@ import java.io.Serializable;
  * @CreateTime 2026/1/17 18:10
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "路由查询参数")
 public class RouterQO extends PeachEntity implements Serializable {
 

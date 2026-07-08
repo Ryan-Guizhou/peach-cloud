@@ -3,6 +3,7 @@ package com.peach.auth.entity;
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -18,6 +19,7 @@ import java.io.Serializable;
 @Entity
 @Table(name = "PEACH_ROLE")
 @Schema(description = "Role实体")
+@EqualsAndHashCode(callSuper = true)
 public class RoleDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = 1L;
 

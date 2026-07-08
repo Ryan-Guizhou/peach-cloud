@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.peach.auth.entity.MenuDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.List;
  * @CreateTime 2026/1/17 17:05
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "菜单返回视图")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class MenuVO extends MenuDO implements Serializable {

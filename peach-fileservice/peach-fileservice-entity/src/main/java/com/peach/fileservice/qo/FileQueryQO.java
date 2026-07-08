@@ -3,6 +3,7 @@ package com.peach.fileservice.qo;
 import com.peach.common.PeachEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 
@@ -17,6 +18,7 @@ import java.io.Serializable;
  * @since 2026/6/19
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "文件查询参数")
 public class FileQueryQO extends PeachEntity implements Serializable {
 

@@ -1,5 +1,6 @@
 package com.peach.fileservice.vo;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -18,6 +19,7 @@ import java.io.Serializable;
  */
 @Data
 @Schema(description = "分片上传地址结果")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class FileMultipartPartVO implements Serializable {
 
     private static final long serialVersionUID = 1L;

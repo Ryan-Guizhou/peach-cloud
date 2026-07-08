@@ -25,6 +25,10 @@
         </dependency>
         <dependency>
             <groupId>com.peach</groupId>
+            <artifactId>peach-auth-log-external</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
             <artifactId>peach-fileservice-service</artifactId>
         </dependency>
     </dependencies>

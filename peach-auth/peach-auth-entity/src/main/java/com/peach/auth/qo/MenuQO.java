@@ -3,6 +3,7 @@ package com.peach.auth.qo;
 import com.peach.common.PeachEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.List;
  * @CreateTime 2026/1/17 17:14
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "菜单查询参数")
 public class MenuQO extends PeachEntity implements Serializable {
 

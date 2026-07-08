@@ -2,6 +2,7 @@ package com.peach.fileservice.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
 
@@ -17,6 +18,7 @@ import java.io.Serializable;
  */
 @Data
 @Schema(description = "文件下载地址结果")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class FileDownloadUrlVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
