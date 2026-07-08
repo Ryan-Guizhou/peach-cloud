@@ -11,8 +11,9 @@ import org.springframework.cloud.openfeign.FeignClient;
  * @Description setting 服务 Feign 客户端定义
  */
 @FeignClient(
-        name = ServiceNameConstant.FILE_SERVICE,
-        path = ServicePathConstant.FILE_PATH_SERVICE
+   contextId = "settingFeginClient",
+   name = ServiceNameConstant.SETTING_SERVICE,
+   path = ServicePathConstant.SETTING_PATH_SERVICE
 )
 public interface SettingFeignClient {
 

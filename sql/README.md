@@ -6,6 +6,8 @@
 
 - `PEACH_*.sql`：单表建表脚本，每个文件只维护一张表的 `CREATE TABLE` 定义。
 - `USER_OPER_LOG.sql`：独立日志表建表脚本。
+- `PEACH_TENANT.sql`：租户主数据建表脚本。
+- `PEACH_USER_ORG.sql`：用户与机构关系表建表脚本。
 - `ALL_TABLE_CREATE.sql`：由各个单表脚本聚合生成的总建表脚本。
 - `init.sql`：初始化脚本，用于清库、初始化基础数据或应用种子数据，不作为单表定义源文件。
 
@@ -43,11 +45,14 @@
 - `PEACH_MULTI_MESSAGE.sql`
 - `PEACH_NOTICE.sql`
 - `PEACH_NOTICE_READ_RECORD.sql`
+- `PEACH_ORGANIZATION.sql`
 - `PEACH_RESOURCE.sql`
 - `PEACH_ROLE.sql`
 - `PEACH_ROUTER.sql`
 - `PEACH_SITE_MESSAGE.sql`
+- `PEACH_TENANT.sql`
 - `PEACH_USER.sql`
+- `PEACH_USER_ORG.sql`
 - `PEACH_VALUE_SET.sql`
 - `PEACH_VALUE_SET_ITEM.sql`
 - `USER_OPER_LOG.sql`
@@ -74,11 +79,14 @@ $order = @(
   'PEACH_MULTI_MESSAGE.sql',
   'PEACH_NOTICE.sql',
   'PEACH_NOTICE_READ_RECORD.sql',
+  'PEACH_ORGANIZATION.sql',
   'PEACH_RESOURCE.sql',
   'PEACH_ROLE.sql',
   'PEACH_ROUTER.sql',
   'PEACH_SITE_MESSAGE.sql',
+  'PEACH_TENANT.sql',
   'PEACH_USER.sql',
+  'PEACH_USER_ORG.sql',
   'PEACH_VALUE_SET.sql',
   'PEACH_VALUE_SET_ITEM.sql',
   'USER_OPER_LOG.sql'

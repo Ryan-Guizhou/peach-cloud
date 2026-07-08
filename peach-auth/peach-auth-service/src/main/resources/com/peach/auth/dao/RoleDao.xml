@@ -2,37 +2,43 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.RoleDao">
     <sql id="allColumn">
-        ROLE_ID,                                          ROLE_CODE,                                        FISCAL,                                           ROLE_NAME,
-        ROLE_DESC,                                        ROLE_SCOPE,                                       ROLE_TYPE,                                        IS_DELETE,
-        SKIP_URL,                                         CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,
-        MODIFIER_ID
+        ROLE_ID,                                          TENANT_ID,                                        ORG_ID,                                           ROLE_CODE,
+        FISCAL,                                           ROLE_NAME,                                        ROLE_DESC,                                        ROLE_SCOPE,
+        ROLE_TYPE,                                        IS_DELETE,                                        SKIP_URL,                                         CREATED_TIME,
+        CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        ROLE_ID as roleId,                                ROLE_CODE as roleCode,                            FISCAL as fiscal,                                 ROLE_NAME as roleName,
-        ROLE_DESC as roleDesc,                            ROLE_SCOPE as roleScope,                          ROLE_TYPE as roleType,                            IS_DELETE as isDelete,
-        SKIP_URL as skipUrl,                              CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,
-        MODIFIER_ID as modifierId
+        ROLE_ID as roleId,                                TENANT_ID as tenantId,                            ORG_ID as orgId,                                  ROLE_CODE as roleCode,
+        FISCAL as fiscal,                                 ROLE_NAME as roleName,                            ROLE_DESC as roleDesc,                            ROLE_SCOPE as roleScope,
+        ROLE_TYPE as roleType,                            IS_DELETE as isDelete,                            SKIP_URL as skipUrl,                              CREATED_TIME as createdTime,
+        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{roleId,jdbcType=VARCHAR},                       #{roleCode,jdbcType=VARCHAR},                     #{fiscal,jdbcType=INTEGER},                       #{roleName,jdbcType=VARCHAR},
-        #{roleDesc,jdbcType=VARCHAR},                     #{roleScope,jdbcType=VARCHAR},                    #{roleType,jdbcType=VARCHAR},                     #{isDelete,jdbcType=INTEGER},
-        #{skipUrl,jdbcType=VARCHAR},                      #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},
-        #{modifierId,jdbcType=VARCHAR}
+        #{roleId,jdbcType=VARCHAR},                       #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                        #{roleCode,jdbcType=VARCHAR},
+        #{fiscal,jdbcType=INTEGER},                       #{roleName,jdbcType=VARCHAR},                     #{roleDesc,jdbcType=VARCHAR},                     #{roleScope,jdbcType=VARCHAR},
+        #{roleType,jdbcType=VARCHAR},                     #{isDelete,jdbcType=INTEGER},                     #{skipUrl,jdbcType=VARCHAR},                      #{createdTime,jdbcType=VARCHAR},
+        #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
 
     <sql id="itemAllColumnValue">
-        #{item.roleId,jdbcType=VARCHAR},                  #{item.roleCode,jdbcType=VARCHAR},                #{item.fiscal,jdbcType=INTEGER},                  #{item.roleName,jdbcType=VARCHAR},
-        #{item.roleDesc,jdbcType=VARCHAR},                #{item.roleScope,jdbcType=VARCHAR},               #{item.roleType,jdbcType=VARCHAR},                #{item.isDelete,jdbcType=INTEGER},
-        #{item.skipUrl,jdbcType=VARCHAR},                 #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},
-        #{item.modifierId,jdbcType=VARCHAR}
+        #{item.roleId,jdbcType=VARCHAR},                  #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                   #{item.roleCode,jdbcType=VARCHAR},
+        #{item.fiscal,jdbcType=INTEGER},                  #{item.roleName,jdbcType=VARCHAR},                #{item.roleDesc,jdbcType=VARCHAR},                #{item.roleScope,jdbcType=VARCHAR},
+        #{item.roleType,jdbcType=VARCHAR},                #{item.isDelete,jdbcType=INTEGER},                #{item.skipUrl,jdbcType=VARCHAR},                 #{item.createdTime,jdbcType=VARCHAR},
+        #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="roleCode != null and roleCode != ''">
                 ROLE_CODE = #{roleCode,jdbcType=VARCHAR},
             </if>
@@ -75,6 +81,12 @@
 
     <sql id="updateSelectiveColumn">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID,
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID,
+            </if>
             <if test="roleCode != null and roleCode != ''">
                 ROLE_CODE,
             </if>
@@ -116,6 +128,12 @@
 
     <sql id="updateSelectiveValue">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="roleCode != null and roleCode != ''">
                 #{roleCode,jdbcType=VARCHAR},
             </if>
@@ -158,6 +176,12 @@
     <sql id="allColumnCond">
         <if test="roleId != null and roleId != ''">
             AND ROLE_ID = #{roleId,jdbcType=VARCHAR}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
         </if>
         <if test="roleCode != null and roleCode != ''">
             AND ROLE_CODE = #{roleCode,jdbcType=VARCHAR}
@@ -288,10 +312,23 @@
             r.role_name as roleName,
             r.role_id as roleId,
             p.party_code as userCode,
+            r.tenant_id as tenantId,
+            r.org_id as orgId,
             r.fiscal as fiscal
-        FROM PEACH_ROLE r LEFT JOIN PEACH_AUTH_PARTY p ON r.role_code = p.role_code
+        FROM PEACH_ROLE r INNER JOIN PEACH_AUTH_PARTY p
+            ON r.tenant_id = p.tenant_id
+           AND r.org_id = p.org_id
+           AND r.role_code = p.role_code
+           AND r.fiscal = p.fiscal
         <where>
             (r.is_delete is null OR r.is_delete != 1)
+            AND (p.is_delete is null OR p.is_delete != 1)
+            <if test="tenantId != null and tenantId != ''">
+                AND r.tenant_id = #{tenantId,jdbcType=VARCHAR}
+            </if>
+            <if test="orgId != null and orgId != ''">
+                AND r.org_id = #{orgId,jdbcType=VARCHAR}
+            </if>
             <if test="fiscal != null">
                 AND r.fiscal = #{fiscal,jdbcType=INTEGER}
             </if>
@@ -307,6 +344,12 @@
         <include refid="allColumnAlias" />
         FROM PEACH_ROLE
         <where>
+            <if test="tenantId != null and tenantId != ''">
+                AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+            </if>
+            <if test="orgId != null and orgId != ''">
+                AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+            </if>
             <if test="fiscal != null">
                 AND FISCAL = #{fiscal,jdbcType=INTEGER}
             </if>
@@ -317,7 +360,11 @@
                 AND ROLE_CODE = #{roleCode,jdbcType=VARCHAR}
             </if>
             <if test="userCode != null and userCode != ''">
-                AND USER_CODE = #{userCode,jdbcType=VARCHAR}
+                AND ROLE_CODE IN (
+                    SELECT ROLE_CODE
+                    FROM PEACH_AUTH_PARTY
+                    WHERE PARTY_CODE = #{userCode,jdbcType=VARCHAR}
+                )
             </if>
         </where>
     </select>

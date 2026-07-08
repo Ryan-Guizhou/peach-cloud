@@ -19,6 +19,12 @@ public class RoleQO extends PeachEntity implements Serializable {
     @Schema(description = "年度")
     private Integer fiscal;
 
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Schema(description = "用户账号")
     private String userCode;
 

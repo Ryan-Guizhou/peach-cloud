@@ -76,3 +76,6 @@ approval_mode = "approve"
 
 [mcp_servers.codegraph.tools.codegraph_impact]
 approval_mode = "approve"
+
+[mcp_servers.codegraph.tools.codegraph_callers]
+approval_mode = "approve"

@@ -9,10 +9,12 @@ import javax.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
+ * 用户维护请求参数。
+ * <p>用于用户基础信息维护和机构关系绑定，不包含登录态和权限结果。</p>
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/9 16:45
- * @Description 用户DTO
  */
 @Data
 @Schema(description = "用户DTO")
@@ -90,6 +92,14 @@ public class UserDTO implements Serializable {
     @Schema(description = "邮箱")
     @Size(max = 100, message = "邮箱长度不能超过100", groups = {UserGroup.insertGroup.class, UserGroup.updateGroup.class})
     private String email;
+
+    @Schema(description = "默认租户ID")
+    @Size(max = 32, message = "默认租户ID长度不能超过32", groups = {UserGroup.insertGroup.class, UserGroup.updateGroup.class})
+    private String defaultTenantId;
+
+    @Schema(description = "默认机构ID")
+    @Size(max = 32, message = "默认机构ID长度不能超过32", groups = {UserGroup.insertGroup.class, UserGroup.updateGroup.class})
+    private String defaultOrgId;
 
     @Schema(description = "是否删除")
     private Integer isDelete;

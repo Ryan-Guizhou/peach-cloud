@@ -2,33 +2,43 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.AuthPartyDao">
     <sql id="allColumn">
-        ID,                                               ROLE_CODE,                                        ROLE_TYPE,                                        FISCAL,
-        PARTY_CODE,                                       PARTY_TYPE,                                       IS_DELETE,                                        CREATED_TIME,
-        CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
+        ID,                                               TENANT_ID,                                        ORG_ID,                                           ROLE_CODE,
+        ROLE_TYPE,                                        FISCAL,                                           PARTY_CODE,                                       PARTY_TYPE,
+        IS_DELETE,                                        CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,
+        MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        ID as id,                                         ROLE_CODE as roleCode,                            ROLE_TYPE as roleType,                            FISCAL as fiscal,
-        PARTY_CODE as partyCode,                          PARTY_TYPE as partyType,                          IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
-        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
+        ID as id,                                         TENANT_ID as tenantId,                            ORG_ID as orgId,                                  ROLE_CODE as roleCode,
+        ROLE_TYPE as roleType,                            FISCAL as fiscal,                                 PARTY_CODE as partyCode,                          PARTY_TYPE as partyType,
+        IS_DELETE as isDelete,                            CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,
+        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                          #{roleCode,jdbcType=VARCHAR},                      #{roleType,jdbcType=VARCHAR},                     #{fiscal,jdbcType=INTEGER},
-        #{partyCode,jdbcType=VARCHAR},                   #{partyType,jdbcType=VARCHAR},                     #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},
-        #{creatorId,jdbcType=VARCHAR},                   #{modifyTime,jdbcType=VARCHAR},                    #{modifierId,jdbcType=VARCHAR}
+        #{id,jdbcType=VARCHAR},                          #{tenantId,jdbcType=VARCHAR},                      #{orgId,jdbcType=VARCHAR},                       #{roleCode,jdbcType=VARCHAR},
+        #{roleType,jdbcType=VARCHAR},                    #{fiscal,jdbcType=INTEGER},                       #{partyCode,jdbcType=VARCHAR},                    #{partyType,jdbcType=VARCHAR},
+        #{isDelete,jdbcType=INTEGER},                    #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},
+        #{modifierId,jdbcType=VARCHAR}
     </sql>
 
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},                     #{item.roleCode,jdbcType=VARCHAR},                 #{item.roleType,jdbcType=VARCHAR},               #{item.fiscal,jdbcType=INTEGER},
-        #{item.partyCode,jdbcType=VARCHAR},              #{item.partyType,jdbcType=VARCHAR},                #{item.isDelete,jdbcType=INTEGER},               #{item.createdTime,jdbcType=VARCHAR},
-        #{item.creatorId,jdbcType=VARCHAR},              #{item.modifyTime,jdbcType=VARCHAR},               #{item.modifierId,jdbcType=VARCHAR}
+        #{item.id,jdbcType=VARCHAR},                     #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                  #{item.roleCode,jdbcType=VARCHAR},
+        #{item.roleType,jdbcType=VARCHAR},               #{item.fiscal,jdbcType=INTEGER},                  #{item.partyCode,jdbcType=VARCHAR},              #{item.partyType,jdbcType=VARCHAR},
+        #{item.isDelete,jdbcType=INTEGER},               #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},              #{item.modifyTime,jdbcType=VARCHAR},
+        #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="roleCode != null and roleCode != ''">
                 ROLE_CODE = #{roleCode,jdbcType=VARCHAR},
             </if>
@@ -65,6 +75,12 @@
 
     <sql id="updateSelectiveColumn">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID,
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID,
+            </if>
             <if test="roleCode != null and roleCode != ''">
                 ROLE_CODE,
             </if>
@@ -100,6 +116,12 @@
 
     <sql id="updateSelectiveValue">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="roleCode != null and roleCode != ''">
                 #{roleCode,jdbcType=VARCHAR},
             </if>
@@ -136,6 +158,12 @@
     <sql id="allColumnCond">
         <if test="id != null and id != ''">
             AND ID = #{id,jdbcType=VARCHAR}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
         </if>
         <if test="roleCode != null and roleCode != ''">
             AND ROLE_CODE = #{roleCode,jdbcType=VARCHAR}

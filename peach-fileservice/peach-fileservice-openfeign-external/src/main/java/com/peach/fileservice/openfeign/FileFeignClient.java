@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @Description 文件服务Feign客户端
  */
 @FeignClient(
+        contextId = "fileFeignClient",
         name = ServiceNameConstant.FILE_SERVICE,
         path = ServicePathConstant.FILE_PATH_SERVICE
 )

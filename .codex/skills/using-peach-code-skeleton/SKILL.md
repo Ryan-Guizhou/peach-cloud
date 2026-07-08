@@ -32,3 +32,10 @@ description: 约束 peach-cloud 项目代码骨架与分层写法。Use when wri
 
 - 涉及 README 时，同时使用 `$using-peach-readme-writer`。
 - 涉及 RocketMQ、Storage、ThreadPool 时，在本 skill 之上叠加对应模块 skill。
+
+补充约束：
+
+- 新建或大改 Java 类时，类注释必须补齐 `@Author`、`@Version`、`@CreateTime`，并且与仓库现有时间格式保持一致。
+- `rest`、`service`、`dao`、`entity` 这些层的注释不能只写功能名，必须说明业务边界、数据归属和模块职责。
+- Service 接口的每个公开方法必须补齐 Javadoc；实现类若只继承接口语义，可以不重复写同一套说明。
+- 如果新增代码里出现乱码、半截注释、明显口语化占位注释，本次修改要一起清理掉，不允许留下“以后再补”。

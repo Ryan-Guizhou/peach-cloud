@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.UserOrgDao">
+    <sql id="allColumn">
+        ID,                                               USER_ID,                                          TENANT_ID,                                        ORG_ID,
+        IS_DEFAULT,                                       STATUS,                                           IS_DELETE,                                        CREATED_TIME,
+        CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
+    </sql>
+
+    <sql id="allColumnAlias">
+        ID as id,                                         USER_ID as userId,                                TENANT_ID as tenantId,                            ORG_ID as orgId,
+        IS_DEFAULT as isDefault,                          STATUS as status,                                 IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
+        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
+    </sql>
+
+    <sql id="allColumnValue">
+        #{id,jdbcType=VARCHAR},                           #{userId,jdbcType=VARCHAR},                       #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},
+        #{isDefault,jdbcType=INTEGER},                    #{status,jdbcType=VARCHAR},                       #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},
+        #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.id,jdbcType=VARCHAR},                      #{item.userId,jdbcType=VARCHAR},                  #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},
+        #{item.isDefault,jdbcType=INTEGER},               #{item.status,jdbcType=VARCHAR},                  #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},
+        #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="userId != null and userId != ''">
+                USER_ID = #{userId,jdbcType=VARCHAR},
+            </if>
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
+            <if test="isDefault != null">
+                IS_DEFAULT = #{isDefault,jdbcType=INTEGER},
+            </if>
+            <if test="status != null and status != ''">
+                STATUS = #{status,jdbcType=VARCHAR},
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE = #{isDelete,jdbcType=INTEGER},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="userId != null and userId != ''">
+                USER_ID,
+            </if>
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID,
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID,
+            </if>
+            <if test="isDefault != null">
+                IS_DEFAULT,
+            </if>
+            <if test="status != null and status != ''">
+                STATUS,
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE,
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME,
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID,
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME,
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER_ID,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="userId != null and userId != ''">
+                #{userId,jdbcType=VARCHAR},
+            </if>
+            <if test="tenantId != null and tenantId != ''">
+                #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                #{orgId,jdbcType=VARCHAR},
+            </if>
+            <if test="isDefault != null">
+                #{isDefault,jdbcType=INTEGER},
+            </if>
+            <if test="status != null and status != ''">
+                #{status,jdbcType=VARCHAR},
+            </if>
+            <if test="isDelete != null">
+                #{isDelete,jdbcType=INTEGER},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
+        </if>
+        <if test="userId != null and userId != ''">
+            AND USER_ID = #{userId,jdbcType=VARCHAR}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
+        <if test="isDefault != null">
+            AND IS_DEFAULT = #{isDefault,jdbcType=INTEGER}
+        </if>
+        <if test="status != null and status != ''">
+            AND STATUS = #{status,jdbcType=VARCHAR}
+        </if>
+        <if test="isDelete != null">
+            AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
+        </if>
+        <if test="createdTime != null and createdTime != ''">
+            AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
+        </if>
+        <if test="creatorId != null and creatorId != ''">
+            AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyTime != null and modifyTime != ''">
+            AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
+        </if>
+        <if test="modifierId != null and modifierId != ''">
+            AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.auth.entity.UserOrgDO">
+        INSERT INTO PEACH_USER_ORG (
+            <include refid="allColumn" />
+        ) VALUES (
+            <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.UserOrgDO">
+        INSERT INTO PEACH_USER_ORG (
+            <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue"/>)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.auth.entity.UserOrgDO">
+        UPDATE PEACH_USER_ORG SET
+            <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM PEACH_USER_ORG
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM PEACH_USER_ORG
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.auth.entity.UserOrgDO">
+        DELETE FROM PEACH_USER_ORG
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <update id="updateById" parameterType="com.peach.auth.entity.UserOrgDO">
+        UPDATE PEACH_USER_ORG SET
+            <include refid="allColumnSet" />
+        WHERE ID = #{id,jdbcType=VARCHAR}
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.UserOrgVO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_USER_ORG
+        WHERE ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.UserOrgVO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_USER_ORG
+        WHERE ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.auth.entity.UserOrgDO" resultType="com.peach.auth.vo.UserOrgVO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_USER_ORG
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.auth.entity.UserOrgDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_USER_ORG
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="selectByUserId" resultType="com.peach.auth.vo.UserOrgVO" parameterType="string">
+        SELECT
+            uo.ID as id,
+            uo.USER_ID as userId,
+            uo.TENANT_ID as tenantId,
+            t.TENANT_CODE as tenantCode,
+            t.TENANT_NAME as tenantName,
+            uo.ORG_ID as orgId,
+            o.ORG_CODE as orgCode,
+            o.ORG_NAME as orgName,
+            uo.IS_DEFAULT as isDefault,
+            uo.STATUS as status,
+            uo.IS_DELETE as isDelete,
+            uo.CREATED_TIME as createdTime,
+            uo.CREATOR_ID as creatorId,
+            uo.MODIFY_TIME as modifyTime,
+            uo.MODIFIER_ID as modifierId
+        FROM PEACH_USER_ORG uo
+        LEFT JOIN PEACH_TENANT t ON uo.TENANT_ID = t.TENANT_ID
+        LEFT JOIN PEACH_ORGANIZATION o ON uo.ORG_ID = o.ORG_ID
+        WHERE uo.USER_ID = #{value,jdbcType=VARCHAR}
+          AND (uo.IS_DELETE IS NULL OR uo.IS_DELETE != 1)
+          AND (t.IS_DELETE IS NULL OR t.IS_DELETE != 1)
+          AND (o.IS_DELETE IS NULL OR o.IS_DELETE != 1)
+        ORDER BY uo.IS_DEFAULT DESC, t.SORT_NUM ASC, o.SORT_NUM ASC
+    </select>
+
+    <select id="selectByUserIdAndTenantId" resultType="com.peach.auth.vo.UserOrgVO">
+        SELECT
+            uo.ID as id,
+            uo.USER_ID as userId,
+            uo.TENANT_ID as tenantId,
+            t.TENANT_CODE as tenantCode,
+            t.TENANT_NAME as tenantName,
+            uo.ORG_ID as orgId,
+            o.ORG_CODE as orgCode,
+            o.ORG_NAME as orgName,
+            uo.IS_DEFAULT as isDefault,
+            uo.STATUS as status,
+            uo.IS_DELETE as isDelete,
+            uo.CREATED_TIME as createdTime,
+            uo.CREATOR_ID as creatorId,
+            uo.MODIFY_TIME as modifyTime,
+            uo.MODIFIER_ID as modifierId
+        FROM PEACH_USER_ORG uo
+        LEFT JOIN PEACH_TENANT t ON uo.TENANT_ID = t.TENANT_ID
+        LEFT JOIN PEACH_ORGANIZATION o ON uo.ORG_ID = o.ORG_ID
+        WHERE uo.USER_ID = #{userId,jdbcType=VARCHAR}
+          AND uo.TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+          AND (uo.IS_DELETE IS NULL OR uo.IS_DELETE != 1)
+          AND (t.IS_DELETE IS NULL OR t.IS_DELETE != 1)
+          AND (o.IS_DELETE IS NULL OR o.IS_DELETE != 1)
+        ORDER BY uo.IS_DEFAULT DESC, t.SORT_NUM ASC, o.SORT_NUM ASC
+    </select>
+</mapper>

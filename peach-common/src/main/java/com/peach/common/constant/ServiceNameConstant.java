@@ -8,12 +8,15 @@ package com.peach.common.constant;
  */
 public interface ServiceNameConstant {
 
-    String USER_SERVICE = "peach-userservice";
+    String AUTH_SERVICE = "peach-auth";
 
     String MONITOR_SERVICE = "peach-monitor";
 
     String FILE_SERVICE = "peach-fileservice";
 
     String MESSAGE_SERVICE = "peach-message";
+
+    String SETTING_SERVICE = "peach-setting";
+
 
 }

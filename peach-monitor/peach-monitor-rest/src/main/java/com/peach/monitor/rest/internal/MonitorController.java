@@ -1,4 +1,4 @@
-package com.peach.monitor.rest;
+package com.peach.monitor.rest.internal;
 
 import com.peach.auth.openfeign.UserFeignClient;
 import com.peach.common.response.Response;
@@ -7,6 +7,8 @@ import com.peach.monitor.entity.monitor.MonitorSnapshotDTO;
 import com.peach.monitor.service.IMonitorRuntimeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Indexed;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +21,8 @@ import javax.annotation.Resource;
  * @Version 1.0.0
  * @CreateTime 2026/1/8 14:08
  */
+@Slf4j
+@Indexed
 @RestController
 @RequestMapping("/monitor")
 @Tag(name = "MonitorController", description = "监控服务接口")

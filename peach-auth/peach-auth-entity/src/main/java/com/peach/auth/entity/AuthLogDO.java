@@ -25,6 +25,18 @@ public class AuthLogDO  implements Serializable {
     @Schema(description = "日志ID")
     private String logId;
 
+    @Column(name = "TENANT_ID")
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Column(name = "ORG_ID")
+    @Schema(description = "机构ID")
+    private String orgId;
+
+    @Column(name = "OPERATOR_USER_ID")
+    @Schema(description = "操作人用户ID")
+    private String operatorUserId;
+
     @Column(name = "OPERATOR_CODE")
     @Schema(description = "操作人账号")
     private String operatorCode;
@@ -36,6 +48,10 @@ public class AuthLogDO  implements Serializable {
     @Column(name = "USER_CODE")
     @Schema(description = "被授权用户账号")
     private String userCode;
+
+    @Column(name = "USER_ID")
+    @Schema(description = "被授权用户ID")
+    private String userId;
 
     @Column(name = "USER_NAME")
     @Schema(description = "被授权用户名称")

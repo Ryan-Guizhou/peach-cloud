@@ -83,7 +83,7 @@ MCP 调用规范：
 | --- | --- | --- |
 | `using-peach-code-skeleton` | `using-peach-code-skeleton` | `peach-cloud` 代码编写/审查的第一准则；约束 REST、Entity、DAO/DAO XML、Service、common/peach-common 的骨架与分层 |
 | `using-peach-readme-writer` | `using-peach-readme-writer` | 编写或刷新根 README、模块 README、starter 文档 |
-| `using-peach-rocket` | `using-peach-rocket` | RocketMQ、`peach-rocket-*`、`@MqEvent`、`@MqConsumer`、Outbox、幂等、事务消息 |
+| `using-peach-rocket` | `using-peach-rocket` | `RocketMQ`、`peach-rocket-*`、`@MqEvent`、`@MqConsumer`、Outbox、幂等、事务消息 |
 | `using-peach-storage` | `using-peach-storage` | `peach-storage`、`peach-store-*`、`StorageTemplate`、provider、路径安全、分片、前端直传 |
 | `using-peach-threadpool` | `using-peach-threadpool` | `peach-threadpool`、`@AsyncExecuted`、`ThreadPoolManager`、线程池配置、上下文传递 |
 

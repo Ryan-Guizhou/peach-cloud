@@ -8,8 +8,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @FeignClient(
-    name = ServiceNameConstant.USER_SERVICE,
-    path = ServicePathConstant.USER_PATH_SERVICE
+    contextId = "userFeignClient",
+    name = ServiceNameConstant.AUTH_SERVICE,
+    path = ServicePathConstant.AUTH_PATH_SERVICE
 )
 public interface UserFeignClient {
 

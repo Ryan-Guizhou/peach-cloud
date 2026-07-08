@@ -27,6 +27,14 @@ public class AuthPartyDO extends PeachDO implements Serializable {
     @Schema(description = "主键ID")
     private String id;
 
+    @Column(name = "TENANT_ID")
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Column(name = "ORG_ID")
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Column(name = "ROLE_CODE")
     @Schema(description = "角色代码")
     private String roleCode;

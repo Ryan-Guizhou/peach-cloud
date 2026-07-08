@@ -9,10 +9,12 @@ import javax.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
+ * 角色维护请求参数。
+ * <p>用于角色的新增、修改和授权场景，按租户和机构维度隔离数据。</p>
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/9 16:45
- * @Description 角色DTO
  */
 @Data
 @Schema(description = "角色DTO")
@@ -23,6 +25,14 @@ public class RoleDTO implements Serializable {
     @Schema(description = "角色ID")
     @NotBlank(message = "角色ID不能为空", groups = {RoleGroup.insertGroup.class, RoleGroup.updateGroup.class})
     private String roleId;
+
+    @Schema(description = "租户ID")
+    @NotBlank(message = "租户ID不能为空", groups = {RoleGroup.insertGroup.class})
+    private String tenantId;
+
+    @Schema(description = "机构ID")
+    @NotBlank(message = "机构ID不能为空", groups = {RoleGroup.insertGroup.class})
+    private String orgId;
 
     @Schema(description = "角色编码")
     @NotBlank(message = "角色编码不能为空", groups = {RoleGroup.insertGroup.class})

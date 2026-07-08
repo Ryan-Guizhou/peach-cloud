@@ -2,34 +2,50 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.AuthLogDao">
     <sql id="allColumn">
-        LOG_ID,                                           OPERATOR_CODE,                                    OPERATOR_NAME,                                    USER_CODE,
+        LOG_ID,                                           TENANT_ID,                                        ORG_ID,                                           OPERATOR_USER_ID,
+        OPERATOR_CODE,                                    OPERATOR_NAME,                                    USER_ID,                                          USER_CODE,
         USER_NAME,                                        AUTH_DESCRIBE,                                    OPERAT_TIME
     </sql>
 
     <sql id="allColumnAlias">
-        LOG_ID as logId,                                  OPERATOR_CODE as operatorCode,                    OPERATOR_NAME as operatorName,                    USER_CODE as userCode,
+        LOG_ID as logId,                                  TENANT_ID as tenantId,                            ORG_ID as orgId,                                  OPERATOR_USER_ID as operatorUserId,
+        OPERATOR_CODE as operatorCode,                    OPERATOR_NAME as operatorName,                    USER_ID as userId,                                USER_CODE as userCode,
         USER_NAME as userName,                            AUTH_DESCRIBE as authDescribe,                    OPERAT_TIME as operatTime
     </sql>
 
     <sql id="allColumnValue">
-        #{logId,jdbcType=VARCHAR},                        #{operatorCode,jdbcType=VARCHAR},                 #{operatorName,jdbcType=VARCHAR},                 #{userCode,jdbcType=VARCHAR},
+        #{logId,jdbcType=VARCHAR},                        #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                        #{operatorUserId,jdbcType=VARCHAR},
+        #{operatorCode,jdbcType=VARCHAR},                 #{operatorName,jdbcType=VARCHAR},                 #{userId,jdbcType=VARCHAR},                       #{userCode,jdbcType=VARCHAR},
         #{userName,jdbcType=VARCHAR},                     #{authDescribe,jdbcType=VARCHAR},                 #{operatTime,jdbcType=VARCHAR}
     </sql>
 
 
     <sql id="itemAllColumnValue">
-        #{item.logId,jdbcType=VARCHAR},                   #{item.operatorCode,jdbcType=VARCHAR},            #{item.operatorName,jdbcType=VARCHAR},            #{item.userCode,jdbcType=VARCHAR},
+        #{item.logId,jdbcType=VARCHAR},                   #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                   #{item.operatorUserId,jdbcType=VARCHAR},
+        #{item.operatorCode,jdbcType=VARCHAR},            #{item.operatorName,jdbcType=VARCHAR},            #{item.userId,jdbcType=VARCHAR},                  #{item.userCode,jdbcType=VARCHAR},
         #{item.userName,jdbcType=VARCHAR},                #{item.authDescribe,jdbcType=VARCHAR},            #{item.operatTime,jdbcType=VARCHAR}
     </sql>
 
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
+            <if test="operatorUserId != null and operatorUserId != ''">
+                OPERATOR_USER_ID = #{operatorUserId,jdbcType=VARCHAR},
+            </if>
             <if test="operatorCode != null and operatorCode != ''">
                 OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR},
             </if>
             <if test="operatorName != null and operatorName != ''">
                 OPERATOR_NAME = #{operatorName,jdbcType=VARCHAR},
+            </if>
+            <if test="userId != null and userId != ''">
+                USER_ID = #{userId,jdbcType=VARCHAR},
             </if>
             <if test="userCode != null and userCode != ''">
                 USER_CODE = #{userCode,jdbcType=VARCHAR},
@@ -49,11 +65,23 @@
 
     <sql id="updateSelectiveColumn">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID,
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID,
+            </if>
+            <if test="operatorUserId != null and operatorUserId != ''">
+                OPERATOR_USER_ID,
+            </if>
             <if test="operatorCode != null and operatorCode != ''">
                 OPERATOR_CODE,
             </if>
             <if test="operatorName != null and operatorName != ''">
                 OPERATOR_NAME,
+            </if>
+            <if test="userId != null and userId != ''">
+                USER_ID,
             </if>
             <if test="userCode != null and userCode != ''">
                 USER_CODE,
@@ -72,11 +100,23 @@
 
     <sql id="updateSelectiveValue">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                #{orgId,jdbcType=VARCHAR},
+            </if>
+            <if test="operatorUserId != null and operatorUserId != ''">
+                #{operatorUserId,jdbcType=VARCHAR},
+            </if>
             <if test="operatorCode != null and operatorCode != ''">
                 #{operatorCode,jdbcType=VARCHAR},
             </if>
             <if test="operatorName != null and operatorName != ''">
                 #{operatorName,jdbcType=VARCHAR},
+            </if>
+            <if test="userId != null and userId != ''">
+                #{userId,jdbcType=VARCHAR},
             </if>
             <if test="userCode != null and userCode != ''">
                 #{userCode,jdbcType=VARCHAR},
@@ -97,6 +137,15 @@
         <if test="logId != null and logId != ''">
             AND LOG_ID = #{logId,jdbcType=VARCHAR}
         </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
+        <if test="operatorUserId != null and operatorUserId != ''">
+            AND OPERATOR_USER_ID = #{operatorUserId,jdbcType=VARCHAR}
+        </if>
         <if test="operatorCode != null and operatorCode != ''">
             AND OPERATOR_CODE = #{operatorCode,jdbcType=VARCHAR}
         </if>
@@ -105,6 +154,9 @@
         </if>
         <if test="userCode != null and userCode != ''">
             AND USER_CODE = #{userCode,jdbcType=VARCHAR}
+        </if>
+        <if test="userId != null and userId != ''">
+            AND USER_ID = #{userId,jdbcType=VARCHAR}
         </if>
         <if test="userName != null and userName != ''">
             AND USER_NAME = #{userName,jdbcType=VARCHAR}

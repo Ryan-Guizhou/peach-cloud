@@ -8,11 +8,13 @@ package com.peach.common.constant;
  */
 public interface ServicePathConstant {
 
-    String USER_PATH_SERVICE = "/user/external";
+    String AUTH_PATH_SERVICE = "/auth/external";
 
     String MONITOR_PATH_SERVICE = "/monitor/external";
 
     String FILE_PATH_SERVICE = "/file/external";
 
     String MESSAGE_PATH_SERVICE = "/message/external";
+
+    String SETTING_PATH_SERVICE = "/setting/external";
 }

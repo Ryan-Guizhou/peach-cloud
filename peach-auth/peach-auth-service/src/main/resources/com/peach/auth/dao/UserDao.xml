@@ -6,8 +6,9 @@
         IDENTITY_CODE,                                    INVLIDATE,                                        AUTH_MODE,                                        STATUS,
         UNLOCK_TIME,                                      MENU_STYLE,                                       MENU_ROLE,                                        LASTEST_LOGIN,
         ERROR_COUNT,                                      START_DATE,                                       END_DATE,                                         MOBILE_PHONE,
-        EMAIL,                                            IS_DELETE,                                        IS_MODIFY,                                        PASSWD_MODIFY_TIME,
-        CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
+        EMAIL,                                            DEFAULT_TENANT_ID,                                DEFAULT_ORG_ID,                                   IS_DELETE,
+        IS_MODIFY,                                        PASSWD_MODIFY_TIME,                               CREATED_TIME,                                     CREATOR_ID,
+        MODIFY_TIME,                                      MODIFIER_ID
 
     </sql>
 
@@ -16,8 +17,9 @@
         IDENTITY_CODE as identityCode,                    INVLIDATE as invlidate,                           AUTH_MODE as authMode,                            STATUS as status,
         UNLOCK_TIME as unlockTime,                        MENU_STYLE as menuStyle,                          MENU_ROLE as menuRole,                            LASTEST_LOGIN as lastestLogin,
         ERROR_COUNT as errorCount,                        START_DATE as startDate,                          END_DATE as endDate,                              MOBILE_PHONE as mobilePhone,
-        EMAIL as email,                                   IS_DELETE as isDelete,                            IS_MODIFY as isModify,                            PASSWD_MODIFY_TIME as passwdModifyTime,
-        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
+        EMAIL as email,                                   DEFAULT_TENANT_ID as defaultTenantId,             DEFAULT_ORG_ID as defaultOrgId,                   IS_DELETE as isDelete,
+        IS_MODIFY as isModify,                            PASSWD_MODIFY_TIME as passwdModifyTime,           CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,
+        MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
 
     </sql>
 
@@ -26,8 +28,9 @@
         #{identityCode,jdbcType=VARCHAR},                 #{invlidate,jdbcType=VARCHAR},                    #{authMode,jdbcType=VARCHAR},                     #{status,jdbcType=VARCHAR},
         #{unlockTime,jdbcType=VARCHAR},                   #{menuStyle,jdbcType=VARCHAR},                    #{menuRole,jdbcType=VARCHAR},                     #{lastestLogin,jdbcType=VARCHAR},
         #{errorCount,jdbcType=VARCHAR},                   #{startDate,jdbcType=VARCHAR},                    #{endDate,jdbcType=VARCHAR},                      #{mobilePhone,jdbcType=VARCHAR},
-        #{email,jdbcType=VARCHAR},                        #{isDelete,jdbcType=INTEGER},                     #{isModify,jdbcType=INTEGER},                     #{passwdModifyTime,jdbcType=VARCHAR},
-        #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
+        #{email,jdbcType=VARCHAR},                        #{defaultTenantId,jdbcType=VARCHAR},              #{defaultOrgId,jdbcType=VARCHAR},                 #{isDelete,jdbcType=INTEGER},
+        #{isModify,jdbcType=INTEGER},                     #{passwdModifyTime,jdbcType=VARCHAR},             #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},
+        #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
 
     </sql>
 
@@ -37,8 +40,9 @@
         #{item.identityCode,jdbcType=VARCHAR},            #{item.invlidate,jdbcType=VARCHAR},               #{item.authMode,jdbcType=VARCHAR},                #{item.status,jdbcType=VARCHAR},
         #{item.unlockTime,jdbcType=VARCHAR},              #{item.menuStyle,jdbcType=VARCHAR},               #{item.menuRole,jdbcType=VARCHAR},                #{item.lastestLogin,jdbcType=VARCHAR},
         #{item.errorCount,jdbcType=VARCHAR},              #{item.startDate,jdbcType=VARCHAR},               #{item.endDate,jdbcType=VARCHAR},                 #{item.mobilePhone,jdbcType=VARCHAR},
-        #{item.email,jdbcType=VARCHAR},                   #{item.isDelete,jdbcType=INTEGER},                #{item.isModify,jdbcType=INTEGER},                #{item.passwdModifyTime,jdbcType=VARCHAR},
-        #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
+        #{item.email,jdbcType=VARCHAR},                   #{item.defaultTenantId,jdbcType=VARCHAR},         #{item.defaultOrgId,jdbcType=VARCHAR},            #{item.isDelete,jdbcType=INTEGER},
+        #{item.isModify,jdbcType=INTEGER},                #{item.passwdModifyTime,jdbcType=VARCHAR},        #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},
+        #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
 
     </sql>
 
@@ -92,6 +96,12 @@
             </if>
             <if test="email != null and email != ''">
                 EMAIL = #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="defaultTenantId != null and defaultTenantId != ''">
+                DEFAULT_TENANT_ID = #{defaultTenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="defaultOrgId != null and defaultOrgId != ''">
+                DEFAULT_ORG_ID = #{defaultOrgId,jdbcType=VARCHAR},
             </if>
             <if test="isDelete != null">
                 IS_DELETE = #{isDelete,jdbcType=INTEGER},
@@ -168,6 +178,12 @@
             <if test="email != null and email != ''">
                 EMAIL,
             </if>
+            <if test="defaultTenantId != null and defaultTenantId != ''">
+                DEFAULT_TENANT_ID,
+            </if>
+            <if test="defaultOrgId != null and defaultOrgId != ''">
+                DEFAULT_ORG_ID,
+            </if>
             <if test="isDelete != null">
                 IS_DELETE,
             </if>
@@ -241,6 +257,12 @@
             </if>
             <if test="email != null and email != ''">
                 #{email,jdbcType=VARCHAR},
+            </if>
+            <if test="defaultTenantId != null and defaultTenantId != ''">
+                #{defaultTenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="defaultOrgId != null and defaultOrgId != ''">
+                #{defaultOrgId,jdbcType=VARCHAR},
             </if>
             <if test="isDelete != null">
                 #{isDelete,jdbcType=INTEGER},
@@ -317,6 +339,12 @@
         </if>
         <if test="email != null and email != ''">
             AND EMAIL = #{email,jdbcType=VARCHAR}
+        </if>
+        <if test="defaultTenantId != null and defaultTenantId != ''">
+            AND DEFAULT_TENANT_ID = #{defaultTenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="defaultOrgId != null and defaultOrgId != ''">
+            AND DEFAULT_ORG_ID = #{defaultOrgId,jdbcType=VARCHAR}
         </if>
         <if test="isDelete != null">
             AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
@@ -429,9 +457,11 @@
     <select id="login" resultType="com.peach.auth.vo.UserVO">
         SELECT <include refid="allColumnAlias" />
         FROM PEACH_USER
-        WHERE username = #{username,jdbcType=VARCHAR}
-          AND password = #{password,jdbcType=VARCHAR}
-          AND status = 1
+        WHERE (USER_CODE = #{username,jdbcType=VARCHAR}
+            OR MOBILE_PHONE = #{username,jdbcType=VARCHAR}
+            OR EMAIL = #{username,jdbcType=VARCHAR})
+          AND PASSWORD = #{password,jdbcType=VARCHAR}
+          AND (STATUS IS NULL OR STATUS = 'ENABLE' OR STATUS = '1')
     </select>
 
     <select id="selectByQO" parameterType="com.peach.auth.qo.UserQO" resultType="com.peach.auth.vo.UserVO">
@@ -448,10 +478,16 @@
                 </foreach>
             </if>
             <if test="phone != null and phone != ''">
-                AND PHONE = #{phone,jdbcType=VARCHAR}
+                AND MOBILE_PHONE = #{phone,jdbcType=VARCHAR}
             </if>
             <if test="username != null and username != ''">
                 AND USER_NAME = #{username,jdbcType=VARCHAR}
+            </if>
+            <if test="defaultTenantId != null and defaultTenantId != ''">
+                AND DEFAULT_TENANT_ID = #{defaultTenantId,jdbcType=VARCHAR}
+            </if>
+            <if test="defaultOrgId != null and defaultOrgId != ''">
+                AND DEFAULT_ORG_ID = #{defaultOrgId,jdbcType=VARCHAR}
             </if>
         </where>
     </select>

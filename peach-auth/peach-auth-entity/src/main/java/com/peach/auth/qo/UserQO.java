@@ -27,6 +27,12 @@ public class UserQO extends PeachEntity implements Serializable {
     @Schema(description = "手机号")
     private String phone;
 
+    @Schema(description = "默认租户ID")
+    private String defaultTenantId;
+
+    @Schema(description = "默认机构ID")
+    private String defaultOrgId;
+
     @Schema(description = "用户ID集合")
     private List<String> userIdList;
 }
