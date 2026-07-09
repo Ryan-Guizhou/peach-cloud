@@ -1,6 +1,8 @@
 package com.peach;
 
 import com.peach.config.StorageProperties;
+import com.peach.manager.impl.DefaultCloudStorageManagerService;
+import com.peach.manager.support.RuntimeStorageProviderFactory;
 import com.peach.service.MultiZoneStorage;
 import com.peach.service.impl.DefaultMultiZoneStorage;
 import com.peach.storage.StorageProviderRegistry;
@@ -120,6 +122,52 @@ public class PeachStorageAutoConfiguration {
     public MultiZoneStorage multiZoneStorage(StorageTemplate storageTemplate, StorageProperties properties) {
         return new DefaultMultiZoneStorage(storageTemplate, properties);
     }
+
+
+    /**
+     * 配置运行时存储提供者工厂
+     * <p>
+     * 该Bean负责管理和创建各类存储提供者实例（如：本地存储、NAS、阿里云OSS、腾讯云COS、AWS S3等）。
+     * 通过注入所有可用的 StorageProviderFactory 实现，实现存储类型的动态路由和实例化。
+     *
+     * @ConditionalOnMissingBean 注解确保在未自定义该Bean时，才使用此默认配置，
+     * 便于业务方根据需要进行覆盖或扩展。
+     *
+     * @param storageProviderFactories 所有已注册的存储提供者工厂列表
+     *                                 由Spring容器自动注入所有实现 StorageProviderFactory 接口的Bean
+     * @return 运行时存储提供者工厂实例，用于后续创建具体的存储提供者
+     */
+    @Bean
+    @ConditionalOnMissingBean(RuntimeStorageProviderFactory.class)
+    public RuntimeStorageProviderFactory runtimeStorageProviderFactory(List<StorageProviderFactory> storageProviderFactories) {
+        return new RuntimeStorageProviderFactory(storageProviderFactories);
+    }
+
+    /**
+     * 配置默认的云存储管理器服务
+     * <p>
+     * 该Bean是云存储操作的核心服务类，提供了统一的存储访问接口，
+     * 包括：连接测试、对象列表、上传下载、目录管理等核心功能。
+     *
+     * 依赖关系说明：
+     * <ul>
+     *   <li>依赖 RuntimeStorageProviderFactory 来获取具体的存储提供者</li>
+     *   <li>通过构造方法注入，保证依赖的显式性和不可变性</li>
+     * </ul>
+     *
+     * @ConditionalOnMissingBean 注解允许业务方自定义 CloudStorageManagerService 的实现，
+     * 覆盖默认行为，实现定制化的存储管理逻辑。
+     *
+     * @param runtimeStorageProviderFactory 运行时存储提供者工厂
+     *                                      （由上面的 runtimeStorageProviderFactory() 方法创建）
+     * @return 默认云存储管理器服务实例
+     */
+    @Bean
+    @ConditionalOnMissingBean(DefaultCloudStorageManagerService.class)
+    public DefaultCloudStorageManagerService defaultCloudStorageManagerService(RuntimeStorageProviderFactory runtimeStorageProviderFactory) {
+        return new DefaultCloudStorageManagerService(runtimeStorageProviderFactory);
+    }
+
 
     private Map<String, StorageProvider> createProviders(StorageProperties properties,
                                                          List<StorageProviderFactory> factories) {

@@ -21,4 +21,7 @@ import java.io.Serializable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CloudStorageInstanceVO extends CloudStorageInstanceDO implements Serializable {
     private static final long serialVersionUID = 1L;
+
+    @Schema(description = "Masked secret key")
+    private String secretKeyMasked;
 }

@@ -228,4 +228,12 @@
         </where>
         ORDER BY CREATED_TIME DESC
     </select>
+
+    <select id="selectAllEnabled" resultType="com.peach.fileservice.vo.CloudStorageInstanceVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_STORAGE_INSTANCE
+        WHERE ENABLED = 1
+        ORDER BY CREATED_TIME DESC
+    </select>
 </mapper>

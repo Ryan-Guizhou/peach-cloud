@@ -60,27 +60,30 @@ public class OrganizationController {
 
     @PostMapping("/add")
     @Operation(summary = "新增机构")
-    @UserOperLog(moduleCode = UserLogEnum.Module.ORGSERVICE, optType = UserLogEnum.OptType.INSERT,
+    @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增机构信息,机构信息:['+#p0+']'")
     public Response add(@Validated({OrganizationGroup.insertGroup.class}) @RequestBody OrganizationDTO organizationDTO) {
+        log.info("新增机构,机构编码={}", organizationDTO.getOrgCode());
         organizationService.add(organizationDTO);
         return Response.success();
     }
 
     @DeleteMapping("/delById")
     @Operation(summary = "根据机构ID删除机构")
-    @UserOperLog(moduleCode = UserLogEnum.Module.ORGSERVICE, optType = UserLogEnum.OptType.DELETE,
+    @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.DELETE,
             optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除机构信息,机构ID:['+#p0+']'")
     public Response delById(@NotBlank(message = "机构ID不能为空") String orgId) {
+        log.info("删除机构,机构ID={}", orgId);
         organizationService.delById(orgId);
         return Response.success();
     }
 
     @PostMapping("/update")
     @Operation(summary = "更新机构")
-    @UserOperLog(moduleCode = UserLogEnum.Module.ORGSERVICE, optType = UserLogEnum.OptType.UPDATE,
+    @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'更新机构信息,机构信息:['+#p0+']'")
     public Response update(@Validated({OrganizationGroup.updateGroup.class}) @RequestBody OrganizationDTO organizationDTO) {
+        log.info("更新机构,机构ID={}", organizationDTO.getOrgId());
         organizationService.update(organizationDTO);
         return Response.success();
     }

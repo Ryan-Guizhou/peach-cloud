@@ -1,8 +1,9 @@
 package com.peach.fileservice.service.impl;
 
+import com.peach.common.util.DateUtil;
 import com.peach.common.util.StringUtil;
 import com.peach.config.StorageProperties;
-import com.peach.enums.StorageType;
+import com.peach.content.UploadContent;
 import com.peach.fileservice.dao.CloudStorageInstanceDao;
 import com.peach.fileservice.dto.CloudStorageListDTO;
 import com.peach.fileservice.service.ICloudStorageBrowserService;
@@ -11,30 +12,24 @@ import com.peach.fileservice.vo.CloudStorageObjectNodeVO;
 import com.peach.fileservice.vo.CloudStorageObjectPageVO;
 import com.peach.fileservice.vo.CloudStorageUploadVO;
 import com.peach.manager.CloudStorageManagerService;
+import com.peach.request.DeleteObjectRequest;
+import com.peach.request.DownloadObjectRequest;
+import com.peach.request.ListObjectsRequest;
+import com.peach.request.UploadObjectRequest;
 import com.peach.response.ListObjectsResult;
 import com.peach.response.ObjectInfo;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
-import org.springframework.stereotype.Indexed;
+import com.peach.response.UploadResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
 
 /**
- * 云存储浏览服务实现。
- *
- * <p>负责云存储对象浏览、上传以及目录和对象删除等操作。</p>
- *
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2026/7/9 00:01
+ * Default browser service for persisted storage instances.
  */
-@Slf4j
-@Indexed
 @Service
 public class CloudStorageBrowserServiceImpl implements ICloudStorageBrowserService {
 
@@ -42,202 +37,180 @@ public class CloudStorageBrowserServiceImpl implements ICloudStorageBrowserServi
     private CloudStorageInstanceDao cloudStorageInstanceDao;
 
     @Resource
+    private CloudStorageInstanceSupport cloudStorageInstanceSupport;
+
+    @Resource
     private CloudStorageManagerService cloudStorageManagerService;
 
     @Override
     public boolean bucketExists(String instanceId) {
-        StorageProperties.StorageProvider providerConfig = buildProviderConfig(requireInstance(instanceId));
-        return cloudStorageManagerService.bucketExists(providerConfig);
+        return cloudStorageManagerService.bucketExists(providerConfig(instanceId));
     }
 
     @Override
     public boolean objectExists(String instanceId, String objectKey) {
-        StorageProperties.StorageProvider providerConfig = buildProviderConfig(requireInstance(instanceId));
-        return cloudStorageManagerService.objectExists(providerConfig, objectKey);
+        return cloudStorageManagerService.objectExists(providerConfig(instanceId), objectKey);
     }
 
     @Override
     public CloudStorageObjectPageVO list(String instanceId, CloudStorageListDTO data) {
-        CloudStorageInstanceVO instance = requireInstance(instanceId);
-        StorageProperties.StorageProvider providerConfig = buildProviderConfig(instance);
-        ListObjectsResult result = cloudStorageManagerService.list(providerConfig, buildListRequest(data));
-        return toPageVO(result, data);
+        CloudStorageInstanceVO instanceVO = requireEnabledInstance(instanceId);
+        StorageProperties.StorageProvider providerConfig = cloudStorageInstanceSupport.toProviderConfig(toInstanceDO(instanceVO));
+        ListObjectsRequest.Builder builder = ListObjectsRequest.builder()
+                .maxKeys(data == null || data.getMaxKeys() == null ? 200 : data.getMaxKeys())
+                .recursive(data != null && Boolean.TRUE.equals(data.getRecursive()));
+        if (data != null && StringUtil.isNotBlank(data.getPath())) {
+            builder.prefix(data.getPath());
+        }
+        if (data != null && StringUtil.isNotBlank(data.getContinuationToken())) {
+            builder.continuationToken(data.getContinuationToken());
+        }
+        ListObjectsResult result = cloudStorageManagerService.list(providerConfig, builder.build());
+        CloudStorageObjectPageVO pageVO = new CloudStorageObjectPageVO();
+        pageVO.setInstanceId(instanceId);
+        pageVO.setBucketName(instanceVO.getBucketName());
+        pageVO.setPrefix(instanceVO.getPrefix());
+        pageVO.setPath(data == null ? null : data.getPath());
+        pageVO.setTruncated(result.isTruncated());
+        pageVO.setNextContinuationToken(result.getNextContinuationToken());
+        pageVO.setCommonPrefixes(result.getCommonPrefixes());
+        List<CloudStorageObjectNodeVO> items = new ArrayList<CloudStorageObjectNodeVO>();
+        for (ObjectInfo item : result.getItems()) {
+            items.add(toNode(item, Boolean.FALSE));
+        }
+        for (String commonPrefix : result.getCommonPrefixes()) {
+            items.add(toDirectoryNode(commonPrefix));
+        }
+        pageVO.setItems(items);
+        return pageVO;
     }
 
     @Override
     public CloudStorageObjectNodeVO stat(String instanceId, String objectKey) {
-        StorageProperties.StorageProvider providerConfig = buildProviderConfig(requireInstance(instanceId));
-        ObjectInfo objectInfo = cloudStorageManagerService.stat(providerConfig, buildDownloadRequest(objectKey));
-        return toNodeVO(objectInfo, false);
+        StorageProperties.StorageProvider providerConfig = providerConfig(instanceId);
+        ObjectInfo objectInfo = cloudStorageManagerService.stat(providerConfig,
+                DownloadObjectRequest.builder().objectKey(objectKey).build());
+        return toNode(objectInfo, Boolean.FALSE);
     }
 
     @Override
     public CloudStorageUploadVO upload(String instanceId, String targetPath, MultipartFile file) {
-        CloudStorageInstanceVO instance = requireInstance(instanceId);
-        StorageProperties.StorageProvider providerConfig = buildProviderConfig(instance);
-        String objectKey = buildObjectKey(targetPath, file);
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("upload file is empty");
+        }
+        StorageProperties.StorageProvider providerConfig = providerConfig(instanceId);
+        String objectKey = buildTargetObjectKey(targetPath, file.getOriginalFilename());
         try {
-            com.peach.response.UploadResult result = cloudStorageManagerService.upload(providerConfig,
-                    com.peach.request.UploadObjectRequest.builder()
-                            .bucketName(providerConfig.getBucketName())
-                            .objectKey(objectKey)
-                            .content(com.peach.content.UploadContent.of(file.getInputStream(), file.getSize()))
-                            .contentType(file.getContentType())
-                            .build());
-            return toUploadVO(instanceId, result);
+            UploadObjectRequest request = UploadObjectRequest.builder()
+                    .objectKey(objectKey)
+                    .content(UploadContent.of(file.getInputStream(), file.getSize()))
+                    .contentType(file.getContentType())
+                    .build();
+            UploadResult result = cloudStorageManagerService.upload(providerConfig, request);
+            CloudStorageUploadVO uploadVO = new CloudStorageUploadVO();
+            uploadVO.setProviderName(result.getProviderName());
+            uploadVO.setBucketName(result.getBucketName());
+            uploadVO.setObjectKey(result.getObjectKey());
+            uploadVO.setSize(result.getSize());
+            uploadVO.setUrl(result.getUrl());
+            return uploadVO;
         } catch (Exception ex) {
-            throw new RuntimeException("?????????", ex);
+            throw new RuntimeException("Failed to upload file", ex);
         }
     }
 
     @Override
     public void createDirectory(String instanceId, String path) {
-        StorageProperties.StorageProvider providerConfig = buildProviderConfig(requireInstance(instanceId));
-        cloudStorageManagerService.createDirectory(providerConfig, path);
+        cloudStorageManagerService.createDirectory(providerConfig(instanceId), path);
     }
 
     @Override
     public void deleteObject(String instanceId, String objectKey) {
-        StorageProperties.StorageProvider providerConfig = buildProviderConfig(requireInstance(instanceId));
-        cloudStorageManagerService.deleteObject(providerConfig, buildDeleteRequest(objectKey));
+        cloudStorageManagerService.deleteObject(providerConfig(instanceId),
+                DeleteObjectRequest.builder().objectKey(objectKey).build());
     }
 
     @Override
     public void deleteDirectory(String instanceId, String path) {
-        StorageProperties.StorageProvider providerConfig = buildProviderConfig(requireInstance(instanceId));
-        cloudStorageManagerService.deleteDirectory(providerConfig, path);
+        cloudStorageManagerService.deleteDirectory(providerConfig(instanceId), path);
     }
 
-    private CloudStorageInstanceVO requireInstance(String instanceId) {
-        if (StringUtil.isBlank(instanceId)) {
-            throw new RuntimeException("??ID????");
+    private StorageProperties.StorageProvider providerConfig(String instanceId) {
+        CloudStorageInstanceVO instanceVO = requireEnabledInstance(instanceId);
+        return cloudStorageInstanceSupport.toProviderConfig(toInstanceDO(instanceVO));
+    }
+
+    private CloudStorageInstanceVO requireEnabledInstance(String instanceId) {
+        CloudStorageInstanceVO instanceVO = cloudStorageInstanceDao.selectById(instanceId);
+        if (instanceVO == null) {
+            throw new RuntimeException("cloud storage instance not found");
         }
-        CloudStorageInstanceVO instance = cloudStorageInstanceDao.selectById(instanceId);
-        if (instance == null) {
-            throw new RuntimeException("????????:" + instanceId);
+        if (!Integer.valueOf(1).equals(instanceVO.getEnabled())) {
+            throw new RuntimeException("cloud storage instance is disabled");
         }
-        return instance;
+        return instanceVO;
     }
 
-    private StorageProperties.StorageProvider buildProviderConfig(CloudStorageInstanceVO instance) {
-        StorageProperties.StorageProvider provider = new StorageProperties.StorageProvider();
-        BeanUtils.copyProperties(instance, provider);
-        provider.setName(instance.getInstanceName());
-        provider.setType(StorageType.parse(instance.getStoreType()));
-        return provider;
+    private CloudStorageObjectNodeVO toNode(ObjectInfo item, Boolean directory) {
+        CloudStorageObjectNodeVO nodeVO = new CloudStorageObjectNodeVO();
+        nodeVO.setDirectory(directory);
+        nodeVO.setObjectKey(item.getObjectKey());
+        nodeVO.setPath(item.getObjectKey());
+        nodeVO.setName(extractName(item.getObjectKey()));
+        nodeVO.setSize(item.getSize());
+        nodeVO.setEtag(item.getEtag());
+        nodeVO.setContentType(item.getContentType());
+        nodeVO.setLastModified(item.getLastModified() == null ? null
+                : DateUtil.formatLocalDateTime(item.getLastModified().atZone(ZoneId.systemDefault()).toLocalDateTime()));
+        return nodeVO;
     }
 
-    private com.peach.request.ListObjectsRequest buildListRequest(CloudStorageListDTO data) {
-        CloudStorageListDTO query = data == null ? new CloudStorageListDTO() : data;
-        return com.peach.request.ListObjectsRequest.builder()
-                .prefix(query.getPath())
-                .recursive(query.getRecursive() == null || query.getRecursive())
-                .build();
+    private CloudStorageObjectNodeVO toDirectoryNode(String commonPrefix) {
+        CloudStorageObjectNodeVO nodeVO = new CloudStorageObjectNodeVO();
+        nodeVO.setDirectory(Boolean.TRUE);
+        nodeVO.setPath(commonPrefix);
+        nodeVO.setObjectKey(commonPrefix);
+        nodeVO.setName(extractName(commonPrefix));
+        nodeVO.setSize(0L);
+        return nodeVO;
     }
 
-    private com.peach.request.DownloadObjectRequest buildDownloadRequest(String objectKey) {
-        return com.peach.request.DownloadObjectRequest.builder()
-                .objectKey(objectKey)
-                .build();
-    }
-
-    private com.peach.request.DeleteObjectRequest buildDeleteRequest(String objectKey) {
-        return com.peach.request.DeleteObjectRequest.builder()
-                .objectKey(objectKey)
-                .build();
-    }
-
-    private CloudStorageObjectPageVO toPageVO(ListObjectsResult result, CloudStorageListDTO data) {
-        CloudStorageObjectPageVO vo = new CloudStorageObjectPageVO();
-        vo.setPath(result == null ? null : result.getPrefix());
-        vo.setTruncated(result != null && result.isTruncated());
-        if (result == null) {
-            return vo;
-        }
-        boolean includeFiles = data == null || data.getIncludeFiles() == null || data.getIncludeFiles();
-        boolean includeDirectories = data == null || data.getIncludeDirectories() == null || data.getIncludeDirectories();
-        Map<String, CloudStorageObjectNodeVO> nodes = new LinkedHashMap<String, CloudStorageObjectNodeVO>();
-        if (includeFiles) {
-            for (ObjectInfo item : result.getItems()) {
-                if (item == null || StringUtil.isBlank(item.getObjectKey())) {
-                    continue;
-                }
-                CloudStorageObjectNodeVO node = toNodeVO(item, false);
-                nodes.put(node.getPath(), node);
-            }
-        }
-        if (includeDirectories) {
-            for (String prefix : result.getCommonPrefixes()) {
-                if (StringUtil.isBlank(prefix)) {
-                    continue;
-                }
-                CloudStorageObjectNodeVO node = toDirectoryNode(prefix, result.getProviderName(), result.getBucketName());
-                nodes.put(node.getPath(), node);
-            }
-        }
-        vo.setItems(new ArrayList<CloudStorageObjectNodeVO>(nodes.values()));
-        return vo;
-    }
-
-    private CloudStorageObjectNodeVO toNodeVO(ObjectInfo item, boolean directory) {
-        CloudStorageObjectNodeVO vo = new CloudStorageObjectNodeVO();
-        vo.setPath(item.getObjectKey());
-        vo.setName(resolveName(item.getObjectKey()));
-        vo.setDirectory(directory);
-        vo.setSize(item.getSize());
-        vo.setContentType(item.getContentType());
-        vo.setLastModified(item.getLastModified() == null ? null : item.getLastModified().toString());
-        vo.setStorageProvider(item.getProviderName());
-        vo.setBucketName(item.getBucketName());
-        vo.setObjectKey(item.getObjectKey());
-        return vo;
-    }
-
-    private CloudStorageObjectNodeVO toDirectoryNode(String path, String providerName, String bucketName) {
-        CloudStorageObjectNodeVO vo = new CloudStorageObjectNodeVO();
-        vo.setPath(path);
-        vo.setName(resolveName(path));
-        vo.setDirectory(Boolean.TRUE);
-        vo.setSize(0L);
-        vo.setStorageProvider(providerName);
-        vo.setBucketName(bucketName);
-        vo.setObjectKey(path);
-        return vo;
-    }
-
-    private CloudStorageUploadVO toUploadVO(String instanceId, com.peach.response.UploadResult result) {
-        CloudStorageUploadVO vo = new CloudStorageUploadVO();
-        vo.setInstanceId(instanceId);
-        if (result != null) {
-            vo.setStorageProvider(result.getProviderName());
-            vo.setBucketName(result.getBucketName());
-            vo.setObjectKey(result.getObjectKey());
-            vo.setUrl(result.getUrl());
-            vo.setEtag(result.getEtag());
-        }
-        return vo;
-    }
-
-    private String buildObjectKey(String targetPath, MultipartFile file) {
-        String fileName = file == null ? null : file.getOriginalFilename();
-        if (StringUtil.isBlank(fileName)) {
-            throw new RuntimeException("???????");
+    private String buildTargetObjectKey(String targetPath, String originalFilename) {
+        if (StringUtil.isBlank(originalFilename)) {
+            throw new RuntimeException("original file name is empty");
         }
         if (StringUtil.isBlank(targetPath)) {
-            return fileName;
+            return originalFilename;
         }
-        return com.peach.util.StoragePathUtil.joinObjectKey(targetPath, fileName);
+        return targetPath + "/" + originalFilename;
     }
 
-    private String resolveName(String path) {
+    private String extractName(String path) {
         if (StringUtil.isBlank(path)) {
             return path;
         }
-        String normalized = path;
-        while (normalized.endsWith("/")) {
-            normalized = normalized.substring(0, normalized.length() - 1);
-        }
-        int index = normalized.lastIndexOf('/');
-        return index >= 0 ? normalized.substring(index + 1) : normalized;
+        int index = path.lastIndexOf('/');
+        return index < 0 ? path : path.substring(index + 1);
+    }
+
+    private com.peach.fileservice.entity.CloudStorageInstanceDO toInstanceDO(CloudStorageInstanceVO instanceVO) {
+        com.peach.fileservice.entity.CloudStorageInstanceDO instanceDO = new com.peach.fileservice.entity.CloudStorageInstanceDO();
+        instanceDO.setInstanceId(instanceVO.getInstanceId());
+        instanceDO.setInstanceName(instanceVO.getInstanceName());
+        instanceDO.setStoreType(instanceVO.getStoreType());
+        instanceDO.setEndpoint(instanceVO.getEndpoint());
+        instanceDO.setRegion(instanceVO.getRegion());
+        instanceDO.setBucketName(instanceVO.getBucketName());
+        instanceDO.setPrefix(instanceVO.getPrefix());
+        instanceDO.setAccessKey(instanceVO.getAccessKey());
+        instanceDO.setSecretKey(instanceVO.getSecretKey());
+        instanceDO.setRootPath(instanceVO.getRootPath());
+        instanceDO.setDomain(instanceVO.getDomain());
+        instanceDO.setPathStyleAccess(instanceVO.getPathStyleAccess());
+        instanceDO.setPublicRead(instanceVO.getPublicRead());
+        instanceDO.setExtraJson(instanceVO.getExtraJson());
+        instanceDO.setEnabled(instanceVO.getEnabled());
+        instanceDO.setRemark(instanceVO.getRemark());
+        return instanceDO;
     }
 }
