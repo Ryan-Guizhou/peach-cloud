@@ -1,24 +1,39 @@
-﻿# Language And Encoding
+# Language And Encoding
 
-本规则用于限制语言级别、JDK API 选择和中文文件编码，避免 agent 生成不兼容或乱码内容。
+## Java And Framework Compatibility
 
-## Java Compatibility
+`REQUIRED`：
 
-- 所有 Java 代码必须兼容 Java 8
-- 禁止使用 Java 9+ 语法：`var`、`record`、`sealed`、text block、switch expression、pattern matching
-- 禁止使用 Java 9+ 常见 API：`List.of`、`Set.of`、`Map.of`、`Stream.toList`、`Optional.isEmpty`、`Files.readString`、`Files.writeString`、`Path.of`
-- 日期时间方案优先沿用当前模块已有写法；如使用 `java.time`，必须确认当前模块和上下游已一致采用
+- Java 源码兼容 Java 8；禁止 `var`、`record`、text block、switch expression、pattern matching 等 Java 9+ 语法。
+- 禁止 `List.of`、`Map.of`、`Stream.toList`、`Optional.isEmpty`、`Files.readString`、`Path.of` 等 Java 9+ API。
+- Spring Boot 按 `2.7.13`，Spring Cloud 按 `2021.0.5`，Spring Cloud Alibaba 按 `2021.0.5.0` 编写。
+- 不确定外部 API 时查询当前依赖源码、仓库范式或 `context7`，不得凭记忆生成。
 
-## Framework Compatibility
+## UTF-8 Without BOM
 
-- Spring Boot 代码和配置按 `2.7.13` 能力边界编写
-- Spring Cloud 按 `2021.0.5` 能力边界编写
-- Spring Cloud Alibaba 按 `2021.0.5.0` 能力边界编写
-- 不确定某个框架 API、配置项、注解行为时，先查 `context7` 或仓库现有实现
+`REQUIRED`：
 
-## Encoding Rules
+- 所有源码、Markdown、SQL、脚本、配置和前端文本必须是严格 UTF-8，且文件开头不得包含 UTF-8 BOM（`EF BB BF`）。
+- 禁止 UTF-16、GBK、ANSI、系统默认编码以及任何带 BOM 的 UTF-8 文本。
+- 新建文件默认 LF；`.bat`、`.cmd` 按 `.editorconfig`/`.gitattributes` 使用 CRLF。编码要求和换行要求彼此独立。
+- 读写中文文件时必须显式指定 UTF-8；禁止使用会按系统默认编码整文件读写的 PowerShell、Java、Python、Node 或编辑器操作。
+- 修改前先严格解码目标文件；无法严格解码时停止写入并报告，不得通过替换字符或全量重写掩盖损坏。
+- 修改后运行 `node scripts/check-utf8.mjs`。若仅需清理现存 UTF-8 BOM，可运行 `node scripts/check-utf8.mjs --fix-bom`，该命令不得转换其他编码。
 
-- 所有源码、Markdown、YAML、properties、XML 文档保持 UTF-8
-- 中文内容必须可正常显示，禁止提交乱码或 mojibake 文本
-- 终端显示乱码时，先区分控制台编码问题和文件实际损坏，再决定是否修复文件
-- 修改中文文件后，必须自检是否出现异常拉丁字符组合、Unicode replacement character（U+FFFD）等典型 mojibake 片段
+`FORBIDDEN`：
+
+- 将控制台乱码复制回源码或文档。
+- 出现 Unicode replacement character（`U+FFFD`）或检查脚本定义的其他已知乱码标记。
+- 为局部编辑顺带改变无关文件正文、换行或格式。
+- 对无法识别的原始字节做猜测性转码。
+
+## Verification
+
+编码验证以文件字节为准，不以终端显示为准：
+
+```bash
+node scripts/check-utf8.mjs
+mvn validate -Pdevelopment
+```
+
+Maven `validate` 已接入同一脚本；若 Node.js 不可用，构建应失败而不是跳过编码门禁。终端显示乱码时，先运行脚本确认文件本体，再调整控制台编码。

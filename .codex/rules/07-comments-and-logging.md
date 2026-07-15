@@ -1,44 +1,26 @@
-﻿# Comments And Logging
+# Comments And Logging
 
-本规则用于约束 `peach-cloud` 项目中的注释、Javadoc 和日志风格。
+## Comments
 
-## Javadoc Scope
+- 类、接口和非显而易见的公开方法使用 Javadoc，说明真实业务职责、边界、参数、返回值和必要异常，不重复代码本身。
+- Service 接口声明公开能力；实现类语义未变化时不复制同一份方法注释。
+- 模型字段优先使用 `@Schema(description = "...")`，特殊边界再补 Javadoc。
+- `@Author`、`@Version`、`@CreateTime` 属于 `LEGACY_COMPATIBLE`：维护已有统一模板时可沿用，但不得伪造实际作者或为了形式生成无价值时间戳；新模块是否保留由用户或模块规范决定。
+- 禁止乱码、占位注释、与实现不一致的长篇说明和逐行翻译式注释。
 
-- 类注释、方法注释统一使用 Javadoc 风格
-- 新增类、接口、枚举、非显而易见的方法时，按项目既有习惯补充注释
-- 注释内容要描述真实职责，不写空话，不复制模板废话
-- REST Controller 的类注释必须说明所属业务域、职责边界和主要接口用途，不能只写一句泛化描述
-- 如果同一批 controller 需要补 Javadoc、校验注解和操作日志注解，应当一起补齐，避免只完成部分文件
-- 新增 Java 类时，必须逐个检查并补齐类注释标签，不能只写简短中文说明后就结束
-- REST / Service / DAO / Entity 这类新增核心类，类注释至少要说明业务域、职责边界和模块归属，避免出现“XXX实现”这种过于空泛的描述
-- 如果新增文件里存在乱码、半角符号错位或历史脏注释，优先在当前变更中一并修正，不要把注释质量问题留给后续
+## Runtime Logging
 
-## Required Javadoc Tags
+- 仅实际记录日志的类添加 `@Slf4j`；禁止 `System.out.println` 和 `printStackTrace`。
+- `debug` 用于调试细节，`info` 用于关键正常流程，`warn` 用于可恢复异常或风险，`error` 用于执行失败；操作类型本身不决定日志级别。
+- 日志包含必要业务标识、阶段、结果和异常上下文，避免只写“执行失败”。
+- 异常日志使用参数化消息并传入异常对象；不得重复打印同一异常链。
 
-- 类注释必须包含以下标签：
-  - `@Author Mr Shu`
-  - `@Version 1.0.0`
-  - `@CreateTime yyyy/M/d HH:mm`
-- `@CreateTime` 必须按当前系统时间生成，不能随意猜测或复用旧时间
-- 方法注释如为自定义方法，直接在方法上补充 Javadoc
-- 方法注释如为接口定义的方法，优先在接口定义处补充；实现类尽量不重复复制同一份方法注释
+## Audit And Sensitive Data
 
-## Method Comment Rules
+`FORBIDDEN`：
 
-- 自定义方法应说明用途、关键参数、返回值和必要的异常语义
-- 接口方法的实现类若语义未变化，不重复写一份几乎相同的注释
-- 如果实现类相对接口增加了额外行为、边界或副作用，可以在实现类补充必要说明
+- 输出密码、token、secret、私钥、签名 URL、身份证号、完整请求/响应或消息体。
+- 在 `@UserOperLog` 中使用 `#p0` 等表达式记录完整 DTO；DTO 即使当前没有敏感字段，也不应形成可被后续字段扩展破坏的隐式白名单。
+- 复制存量代码中 DELETE=`ERROR`、UPDATE=`DEBUG` 之类机械级别映射。
 
-## Field Comment Rules
-
-- DO、DTO、QO、VO 不强制添加属性级 Javadoc 注释
-- 这类模型属性的说明统一优先使用 Swagger 注解，例如 `@Schema(description = "...")`
-- 如某个属性存在额外边界、格式限制或易误用语义，优先在类注释或相关方法注释中补充，不在每个字段上重复堆叠 Javadoc
-
-## Logging Rules
-
-- 日志统一使用 Lombok 的 `@Slf4j`
-- 按语义选择日志级别：调试信息用 `debug`，常规关键流程用 `info`，可恢复异常或预警用 `warn`，错误和失败用 `error`
-- 不使用 `System.out.println`、`printStackTrace`
-- 日志内容要能定位问题，避免只打印“执行失败”这类无上下文信息
-- 日志中禁止输出密钥、token、密码、签名 URL、完整敏感报文
+操作审计应显式选择稳定且非敏感的字段，例如业务 ID、操作类型、资源类型和执行结果。新增字段后必须重新检查 DTO `toString()`、SpEL 和序列化链路。

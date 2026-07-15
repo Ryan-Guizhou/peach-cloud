@@ -1,34 +1,32 @@
-﻿# Module And Change Boundaries
-
-本规则用于限制改动范围，避免 agent 破坏 `peach-cloud` 的模块边界。
+# Module And Change Boundaries
 
 ## Module Placement
 
-- `*-launch` 只放启动类和运行时配置
-- `*-rest` 只放 Controller 和接口适配
-- `*-service` 放领域服务和业务逻辑
-- `*-entity` 放 DO、DTO、QO、VO 等模型
-- `*-common` 只放当前业务域共享对象，不反向依赖上层模块
-- `*-autoconfigure` 放 starter 核心 API、默认实现、自动配置、SPI
-- `*-starter` 只做接入聚合，不承载复杂业务逻辑
-- `*-example` 放可运行示例和覆盖默认实现的样例
+`REQUIRED`：
 
-## Project-Specific Boundaries
+- `*-launch`：启动类和运行时配置。
+- `*-rest`：Controller 和接口适配，不直接调用 DAO。
+- `*-service`：领域逻辑、事务、状态流转和业务编排。
+- `*-entity`：DO、DTO、QO、VO 等模型。
+- `*-common`：当前业务域共享对象，不反向依赖上层模块。
+- `*-openfeign-external`：跨服务 Feign 契约。
+- `*-autoconfigure`：starter 核心 API、自动配置、默认实现和 SPI。
+- `*-starter`：接入依赖聚合，不承载复杂业务逻辑。
+- `*-example`：可运行示例和覆盖默认实现的样例。
 
-- `peach-common` 只承载通用响应、异常、常量、工具、上下文、基础模型，不放业务域逻辑
-- RocketMQ 接入优先走 `MqPublisher`、`@MqEvent`、`@MqConsumer`、`MqMessageHandler<T>`
-- Storage 接入统一走 `StorageTemplate`，不直接耦合厂商 SDK
-- Threadpool 异步统一走 `ThreadPoolManager` 或 `@AsyncExecuted`，不要新建游离线程池
-- `peach-cloud-front` 是独立 Vue 3 + Vite + TypeScript 工程，不加入 Maven reactor；前端改动使用 npm 脚本验证
-- `peach-generator` 属于高影响代码生成模块，改模板、生成规则或 SQL 元数据处理前先确认生成产物影响范围
+业务模块优先依赖 starter；RocketMQ 使用 `MqPublisher`/`@MqConsumer`，Storage 使用 `StorageTemplate`，异步使用 `ThreadPoolManager`/`@AsyncExecuted`。`peach-common` 只承载无业务域语义的稳定基础能力。
 
 ## Change Scope
 
-- 默认只改用户要求范围内的文件
-- 遇到公共 API、公共响应对象、基础实体、starter 配置类时，先评估影响面再改
-- 文档任务只改文档；代码任务只改必要代码、测试和相关文档
-- 不回退用户已有改动，不顺手做无关重构
-- 当用户一次要求一组同类 controller 或 service 时，必须一次性完成整组，不允许只落地单个文件后就停
-- 当 controller、service、DTO、group 之间存在联动时，必须同步更新对应层级的签名、校验和注释，避免只改表层 controller
-- 默认采用单 DTO + JSR-303 分组的方式表达新增/更新场景，只有用户明确要求拆分 DTO，或者仓库既有范式已经是拆分结构时，才创建 AddDTO / UpdateDTO
-- 编辑文件时默认使用增量修改，不要先整文件删除再重写；只有当结构性重构、跨段大改或增量补丁会显著降低可读性时，才允许全量替换
+- 默认只修改用户要求所需代码、测试和行为相关文档，不顺手重构无关代码。
+- 用户一次点名一组同类文件时，先扫描整组，再一次性完成；Controller、Service、DTO、校验分组、DAO/XML 联动必须同步。
+- 公共 API、公共响应、基础实体、starter 配置、生成器模板和 DAO 签名改动前先评估影响面。
+- 保留用户未提交改动；禁止通过删除重建、`git checkout --`、`git reset --hard` 等方式覆盖。
+- 优先增量修改；批量机械编码处理只允许执行可审计的 UTF-8 BOM 移除，不得改变正文。
+
+## Existing Style Versus Target Style
+
+- 安全、正确性、Java 8 和模块边界是 `REQUIRED`。
+- 单 DTO + JSR-303 分组是 `PREFERRED`；当前模块明确采用拆分 DTO 时可以兼容。
+- 历史 CRUD 路由、VO 继承 DO、固定注解组合、接口命名等属于 `LEGACY_COMPATIBLE`，不得无条件扩散到新公共 API。
+- 完整 DTO 日志、敏感字段响应、错误事务位置、资源泄漏和跨层依赖属于 `FORBIDDEN`，即使相邻代码存在也不能复制。

@@ -1,41 +1,33 @@
-﻿# Layered Java Style
+# Layered Java Style
 
-本规则用于约束 `peach-cloud` 从 DO 到 REST 的基础代码风格和分层职责。
+本规则区分新代码目标和存量兼容；安全与正确性要求见 `08-security-and-quality-gates.md`。
 
-## Model Layer
+## Models
 
-- DO 完全适配数据库表结构和字段语义
-- DO 统一继承 `PeachDO`，复用公共审计字段
-- VO 默认继承对应 DO；仅在展示层需要时新增额外属性
-- QO 只用于查询条件封装
-- QO 有分页需求时继承 `PeachEntity`
-- DTO 只用于新增和修改，不承担查询职责
+- `REQUIRED`：DO 对应持久化结构并继承 `PeachDO`；QO 只表达查询；DTO 只表达命令入参；VO 只表达允许返回的数据。
+- `PREFERRED`：分页 QO 继承 `PeachEntity`；新增/更新复用 DTO 并使用 JSR-303 分组。
+- `LEGACY_COMPATIBLE`：无敏感字段的简单 VO 可在维护存量模块时继承 DO。
+- `FORBIDDEN`：含密码、token、secret、身份证等敏感字段的 DO 直接作为 VO 或被响应序列化；让前端 DTO 控制审计字段、逻辑删除或权限字段。
 
-## Validation
+REST 入参必须触发 JSR-303 校验；Service 继续承担业务语义、权限和状态校验。校验分组沿用当前模块已有 `PeachGroup` 派生类，不为形式重复创建空分组类。
 
-- DTO、QO、ID 等前端传入参数必须使用 JSR-303 校验
-- 需要区分场景时必须使用分组校验，按 `PeachGroup.insertGroup`、`updateGroup`、`deleteGroup`、`queryGroup` 组织
-- REST 入参不能跳过校验直接透传 service
-- 同一实体的新增、更新场景优先复用一个 DTO，通过校验分组区分语义；不要在没有明确需求时主动拆成两个 DTO
-- 如果任务同时涉及 controller、service、DTO、group 和日志注解，必须把这一组改动视为一个整体完成，不能只补其中一层
+## DAO And XML
 
-## DAO Contract
+- DAO 继承 `PeachDao<T, E>`，自定义多参数方法显式使用 `@Param`。
+- DAO 方法、XML `namespace/id`、参数类型、结果类型和字段片段必须同步。
+- 修改公共 DAO 签名或 XML `id` 前评估调用方；修改后运行受影响模块测试或启动装配检查。
+- 租户、组织、逻辑删除和状态条件属于数据完整性边界，不得为复用 SQL 随意省略。
 
-- 所有 DAO 接口统一继承 `PeachDao<T, E>`
-- DAO 必须实现 `PeachDao` 约定的基础方法
-- 如有额外查询或更新需求，可新增方法，但必须声明明确的入参和出参类型
-- 不使用模糊返回值或无类型容器让调用方猜测结构
+## REST And Service
 
-## MyBatis XML Style
+- REST 只负责绑定、校验、调用 Service 和包装响应；事务、DAO、线程控制和领域编排不得放入 Controller。
+- `@Slf4j`、`@Indexed`、`@Validated` 按实际用途添加；未使用日志时不机械添加 `@Slf4j`。
+- 写操作审计只记录非敏感业务标识和结果，禁止记录完整 DTO。
+- Service 对外写方法按原子性需要使用 `@Transactional(rollbackFor = Exception.class)`；禁止依赖 private 方法或同类自调用触发代理。
+- 简单对象转换可沿用 `BeanUtils.copyProperties`，但主键、审计、权限、逻辑删除和敏感字段必须显式处理。
 
-- MyBatis XML 编写风格参考 `peach-auth/peach-auth-service/src/main/resources/com/peach/auth/dao/UserDao.xml`
-- 保持现有缩进方式、SQL 片段拆分方式和标签布局一致
-- `jdbcType` 必须显式声明，并与同类字段现有写法保持一致
-- `parameterType`、`resultType`、`resultMap` 不能省略到影响可读性或一致性的程度
-- 新增 SQL 方法时，参数名、别名、集合遍历和条件片段写法保持与现有 DAO 一致
+## API Compatibility
 
-## REST And Service Boundary
-
-- REST 层只负责接收参数、触发校验、调用 service、返回 `Response`
-- 复杂业务逻辑、事务、领域编排放在 service 层
-- 不在 REST 层直接拼接复杂 SQL、处理核心领域逻辑或散落校验规则
+- 存量接口继续使用当前 `Response` 包装和模块路由，除非用户明确授权公共 API 演进。
+- 非泛型 `Response`、动作式 CRUD 路由和 VO 继承 DO 视为存量兼容，不作为新公共 API 的默认目标。
+- 新 API 设计有歧义时先确认，不以“仓库中数量最多”替代架构判断。

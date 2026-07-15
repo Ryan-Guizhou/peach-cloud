@@ -11,7 +11,7 @@ description: 规范 peach-cloud 项目中 peach-rocket-starter / peach-rocket-au
 2. 修改业务接入时，优先使用 `peach-rocket-starter` 对外暴露的 API，不直接散落使用 RocketMQ 原生注解和客户端。
 3. 修改 starter 能力时，保持三段式结构：`peach-rocket-autoconfigure` 放核心 API/自动配置/默认实现，`peach-rocket-starter` 只做依赖聚合，`peach-rocket-example` 放可运行示例和业务覆盖示例。
 4. 需要详细模块边界、配置项、SPI、示例路径时，读取 `references/module-guide.md`。
-5. 完成后至少运行与改动范围匹配的 Maven 校验；无法运行时说明原因和残余风险。
+5. 完成后运行 `node scripts/check-utf8.mjs`、受影响模块 Maven 编译/测试和 `git diff --check`；无法运行时说明原因和残余风险。
 
 ## 使用规则
 
