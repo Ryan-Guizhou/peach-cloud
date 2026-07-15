@@ -1,4 +1,4 @@
-﻿import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 const mouse = ref({ x: 0, y: 0 })
 let bindCount = 0

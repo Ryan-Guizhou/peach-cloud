@@ -17,6 +17,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
+        <node.executable>node</node.executable>
         <spring.boot>2.7.13</spring.boot>
         <spring.cloud>2021.0.5</spring.cloud>
         <spring.cloud.alibaba>2021.0.5.0</spring.cloud.alibaba>
@@ -891,6 +893,30 @@
 
         <!-- 2. 全局生效的插件 (所有模块都会自动继承) -->
         <plugins>
+            <!-- 仓库文本统一使用严格 UTF-8 且不允许 BOM。 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>check-utf8-without-bom</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${node.executable}</executable>
+                            <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
+                            <arguments>
+                                <argument>scripts/check-utf8.mjs</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- 编译插件：所有模块都需要编译 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -901,6 +927,7 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <configuration>
                     <encoding>UTF-8</encoding>
+                    <propertiesEncoding>UTF-8</propertiesEncoding>
                 </configuration>
             </plugin>
 

@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import Pupil from './Pupil.vue'
 
 withDefaults(

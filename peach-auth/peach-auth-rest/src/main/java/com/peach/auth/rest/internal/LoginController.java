@@ -18,6 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.annotation.Resource;
 
 /**
+ * 登录接口。
+ * <p>负责登录、注册和登出等认证入口，不承载业务域数据维护逻辑。</p>
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/24 15:17

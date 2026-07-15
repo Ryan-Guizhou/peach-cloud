@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useMousePosition } from '../../composables/useMousePosition'
 import Eye from './Eye.vue'
