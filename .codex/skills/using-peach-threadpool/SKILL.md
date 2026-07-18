@@ -10,7 +10,7 @@ description: 规范 peach-cloud 项目中 peach-threadpool / peach-threadpool-st
 1. 先判断任务是配置线程池、使用注解、直接提交任务、扩展 starter，还是补充 README。
 2. 需要异步执行时优先使用 `ThreadPoolManager` 或 `@AsyncExecuted`，不要随手 `new Thread`、`Executors.newFixedThreadPool`。
 3. 涉及配置字段、默认行为或当前实现限制时，读取 `references/module-guide.md`。
-4. 改动后至少编译 `peach-component/peach-threadpool`；如涉及 AOP 行为，需要补充或执行相应测试。
+4. 改动后运行 `node scripts/check-utf8.mjs`、编译 `peach-component/peach-threadpool` 并执行 `git diff --check`；涉及 AOP 行为时补充或执行相应测试。
 
 ## 使用规则
 

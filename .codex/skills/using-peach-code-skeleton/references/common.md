@@ -1,77 +1,52 @@
 # Common Placement
 
-目标：
+用于判断复用代码应留在业务模块、模块 `*-common`，还是进入全局 `peach-common`。安全、依赖方向和真实复用高于存量命名习惯。
 
-- 把复用代码放到正确层级，减少业务模块横向污染，同时贴合当前仓库真实落点。
+## 导航结构
 
-当前仓库的常见落点：
-
-- 模块内通用常量：常见放在 `xxx-common` 或模块下 `common` 包，很多采用 `interface XxxConst` / `interface XxxConstant`。
-- 模块内工具类：常见放在 `auth.common`、`message.common` 之类包下，例如 `RsaPasswordUtil`。
-- 全局基础能力：放在 `peach-common`，例如 `PeachDO`、`PeachEntity`、`Response`、`CurrentContext`、通用校验/工具类。
-
-归属规则：
-
-- 只在当前模块内复用的方法、常量、枚举、转换器、工具类，优先放当前模块 `common`。
-- 跨多个业务模块稳定复用，且不携带具体业务语义的能力，才进入 `peach-common`。
-- 带领域语义、表语义、流程语义的常量，不要直接扔进 `peach-common`。
-- 不要因为“以后可能复用”就提前上提到 `peach-common`。
-
-结合现有仓库的具体判断：
-
-- 缓存 key、模块编码、业务状态码、WebSocket topic、文件域状态这类内容，优先留在模块 `common`，参考 `MessageConst`、`SettingConst`、`FileDomainConstant`。
-- 当前仓库常见 `interface Const` 风格，新增模块常量时优先沿用，不要突然切成另一套 `final class + private constructor`，除非该模块已经统一这么写。
-- 模块包名中如果已有存量拼写，例如 `peach.setting.comon.enums` 的 `comon`，新代码优先复用现有包结构，不要在同一模块里再平行造一套 `common/enums` 导致分裂。
-
-上提到 `peach-common` 的条件：
-
-- 与具体业务模块无关。
-- 不依赖某个业务域的 DTO/DO/VO/QO。
-- 提上去不会引入反向依赖、循环依赖或新的模块耦合。
-- 真的已经被多个模块稳定使用，而不是预判将来会用。
-
-不应上提的情况：
-
-- 只服务于单个模块某个 service 的 helper。
-- 只在一两个查询中使用的 SQL 常量或状态码。
-- 依赖领域对象、业务状态流转、消息类别、文件状态等业务语义。
-
-案例 1：应该留在模块 common
-
-```java
-/**
- * 消息模块常量。
- *
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime yyyy/M/d HH:mm
- */
-public interface MessageConst {
-
-    String MODULE_CODE = "MESSAGE";
-
-    String WEBSOCKET_REDIS_TOPIC = "peach:message:websocket:push";
-}
+```text
+peach-cloud/
+├── peach-common/                         # 全局、无业务域语义的基础能力
+│   └── src/main/java/com/peach/common/
+├── peach-auth/
+│   └── peach-auth-common/                # 认证域内部共享
+├── peach-message/
+│   └── peach-message-common/             # 消息域内部共享
+└── peach-generator/
+    └── peach-generator-common/           # 生成器域内部共享
 ```
 
-案例 2：应该进入 peach-common
+先定位所属业务域，再决定是否上提；不要从“未来可能复用”反推全局 common。
 
-```java
-public final class IdCardMaskUtil {
+## REQUIRED
 
-    private IdCardMaskUtil() {
-    }
+- 只在一个业务域复用的常量、枚举、转换器和工具放该域的 `*-common`。
+- 进入 `peach-common` 的代码不得依赖任何业务 DTO/DO/VO/QO，不得携带表、流程或状态机语义。
+- 上提前确认至少有多个模块的稳定真实调用，并检查不会形成反向依赖或循环依赖。
+- 敏感数据处理工具必须默认安全，例如脱敏而不是明文格式化；不得把业务密钥和生产配置做成公共常量。
 
-    public static String mask(String value) {
-        // 仅示意：不依赖任何业务模块对象
-        return value;
-    }
-}
-```
+## PREFERRED
 
-提交前检查：
+- 闭合集合使用 enum；无状态工具使用 `final class` + 私有构造；配置使用类型安全对象。
+- 复用接口保持最小，避免把仅为一个调用方服务的大型 helper 暴露成公共 API。
+- 模块 common 只暴露稳定语义，业务流程仍留在 Service。
 
-- 这个常量/工具是模块内复用，还是全局基础能力。
-- 是否已经依赖某个业务模块对象；如果依赖了，就不应进入 `peach-common`。
-- 当前模块已有的常量组织方式是 `interface Const` 还是别的风格，新代码是否保持一致。
-- 是否因为包名洁癖去“修正”现有存量包结构，导致同模块产生双轨 common。
+## LEGACY_COMPATIBLE
+
+- `interface XxxConst`、历史 `common/comon` 包名仅在维护既有引用时兼容，不作为新模块模板。
+- 修正历史包名会影响大量调用时，先评估迁移范围；不得同时新增两套平行包结构。
+
+## FORBIDDEN
+
+- 将缓存 key、业务状态码、Topic、表字段或领域异常直接塞入 `peach-common`。
+- 为消除少量重复提前创建全局工具。
+- 通过公共静态可变字段保存请求、用户、线程或业务流程状态。
+- 为保持存量风格继续新增拼写错误的包名或类型名。
+
+## 决策检查
+
+1. 是否含业务域、表或流程语义？是：留在业务域。
+2. 是否已有多个模块稳定调用？否：不要上提。
+3. 是否依赖业务模型或上层模块？是：禁止进入 `peach-common`。
+4. 是否会扩大公共 API 或安全暴露面？是：先做影响分析。
+5. 修改后运行受影响模块测试、UTF-8 检查和 `git diff --check`。

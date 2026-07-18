@@ -11,7 +11,7 @@ description: 规范 peach-cloud 项目中 peach-store-starter / peach-store-auto
 2. 业务接入统一通过 `StorageTemplate`，不要在业务模块直接调用厂商 SDK。
 3. provider 扩展遵循 `StorageProviderFactory` 负责启动期校验和创建，`StorageProvider` 负责运行期读写。
 4. 涉及配置、能力矩阵、路径语义或扩展细节时，读取 `references/module-guide.md`。
-5. 改动后运行 `mvn -f "peach-component/peach-storage/pom.xml" test` 或更小范围测试。
+5. 改动后运行 `node scripts/check-utf8.mjs`、`mvn -f "peach-component/peach-storage/pom.xml" test`（或更小范围测试）和 `git diff --check`。
 
 ## 使用规则
 

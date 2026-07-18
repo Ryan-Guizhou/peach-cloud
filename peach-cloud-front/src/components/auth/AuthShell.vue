@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import AuthIllustration from './AuthIllustration.vue'
 import PeachCloudLogo from './PeachCloudLogo.vue'
 

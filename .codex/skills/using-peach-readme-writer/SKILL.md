@@ -7,11 +7,12 @@ description: 为 peach-cloud 的 starter、autoconfigure、example、业务模�
 
 ## 工作流
 
-1. 先读取模块 `pom.xml`、源码入口、配置类、自动配置文件、示例代码和已有 README。
-2. 不直接复用乱码或过期段落；以当前源码和构建文件为准重写。
-3. README 使用中文 `README.md`，如已有 `README.en-US.md`，只在用户要求时同步英文版。
-4. starter 文档必须讲清楚“模块提供什么、不提供什么、业务如何接入、如何扩展、如何验证”。
-5. 写完后检查所有路径、类名、配置项、命令都能在仓库中找到或被当前改动引入。
+1. 仅在用户明确要求文档，或公共 API、配置、扩展点、运行机制和生产边界变化时触发；纯内部重构不扩大文档范围。
+2. 先读取模块 `pom.xml`、源码入口、配置类、自动配置文件、示例代码和已有 README。
+3. 不直接复用乱码或过期段落；以当前源码和构建文件为准重写。
+4. README 使用中文 `README.md`，如已有 `README.en-US.md`，只在用户要求时同步英文版。
+5. starter 文档必须讲清楚“模块提供什么、不提供什么、业务如何接入、如何扩展、如何验证”。
+6. 写完后检查所有路径、类名、配置项、命令都能在仓库中找到或被当前改动引入，并运行 `node scripts/check-utf8.mjs` 确认为 UTF-8 无 BOM。
 
 ## 标准结构
 
@@ -53,3 +54,5 @@ description: 为 peach-cloud 的 starter、autoconfigure、example、业务模�
 - 写 rocket README 时先使用 `$using-peach-rocket` 理清 MQ 边界。
 - 写 storage README 时先使用 `$using-peach-storage` 理清 provider、路径和能力边界。
 - 写 threadpool README 时先使用 `$using-peach-threadpool` 理清注解真实语义和配置参数。
+- 写 email README 时先使用 `$using-peach-email` 理清 provider、凭证、重试和幂等边界。
+- 写 Redis/Redisson README 时先使用 `$using-peach-redis` 理清缓存、消息、锁和 key 安全边界。

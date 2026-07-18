@@ -1,26 +1,21 @@
-﻿# Documentation And README
+# Documentation And README
 
-本规则用于限制 agent 产出的文档质量，尤其是 README 和模块说明。
+## Trigger
 
-## Before Writing
+只有用户明确要求文档，或公共 API、配置项、扩展点、运行机制、生产边界发生变化时同步 README。纯内部重构、注释和格式修改不强制扩大到文档任务。
 
-- 先读模块 `pom.xml`
-- 再读源码入口、配置类、自动配置、示例代码、已有 README
-- 需要写 starter 文档时，同时确认默认实现、覆盖方式、边界和验证方法
+## Evidence Before Writing
 
-## Required Content
+- 读取模块 `pom.xml`、入口、配置类、自动配置、默认实现、示例和现有 README。
+- 类名、配置项、默认值、命令和目录必须能在当前源码或本次变更中确认。
+- 第三方行为不确定时查对应版本官方文档；不把推断写成已支持能力。
 
-- 中文文档用 `README.md`
-- 英文文档用 `README.en-US.md`
-- 模块定位必须说明“解决什么”和“不解决什么”
-- 配置说明必须只写仓库中可确认的配置项
-- 验证部分必须给出可以执行的 Maven 或 npm 命令
-- 排障部分要给出现象、检查点、处理方式
+## Required Quality
 
-## Prohibited Content
+- 中文使用 `README.md`，英文使用 `README.en-US.md`。
+- 说明模块解决什么、不解决什么、最小接入、扩展方式、生产边界、验证命令和真实排障路径。
+- 目录只列源码、资源和文档，不列 `target`、IDE 或生成文件。
+- 示例不得包含真实密钥、token、生产地址、签名 URL或完整敏感报文。
+- 文档必须是 UTF-8 无 BOM；完成后运行 `node scripts/check-utf8.mjs`。
 
-- 不复制乱码和历史遗留脏内容
-- 不把 `target/`、`.flattened-pom.xml`、日志目录、IDE 目录写成源码结构
-- 不承诺源码中不存在的能力
-- 不在未确认时编写默认值；不确定就明确写“当前未在配置类中声明默认值”
-- 不暴露真实密钥、token、数据库密码、签名 URL
+无法验证示例、配置或命令时明确标注未验证，不得承诺源码不存在的能力。

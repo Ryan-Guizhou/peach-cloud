@@ -1,122 +1,51 @@
 # REST Layer
 
-参考基线：
+REST 是协议适配边界。当前 Controller 只用于确认已有契约；安全、校验和职责边界高于注解组合与路由形式。
 
-- `peach-auth/peach-auth-rest/src/main/java/com/peach/auth/rest/internal/UserController.java`
-- `peach-auth/peach-auth-rest/src/main/java/com/peach/auth/rest/internal/LoginController.java`
-- `peach-auth/peach-auth-rest/src/main/java/com/peach/auth/rest/external/RoleExternalController.java`
-- `peach-message/peach-message-rest/src/main/java/com/peach/message/rest/external/MessageExternalController.java`
-- `.codex/rules/07-comments-and-logging.md`
+## 导航结构
 
-当前仓库里的 controller 有两类：
-
-- `rest/internal`：面向本系统前端或内部业务接口，常见写操作日志 `@UserOperLog`、分组校验、分页查询。
-- `rest/external`：面向其他服务暴露，通常更薄，少业务日志，但仍保留 `Response` 包装、Swagger 注解和必要校验。
-
-通用规则：
-
-- 类上优先沿用 `@Slf4j`、`@Indexed`、`@Validated`、`@RestController`、`@RequestMapping`、`@Tag`。
-- 类注释使用 Javadoc，优先写业务域、职责边界、主要接口用途；不是所有存量代码都写得完整，但新代码应补齐。
-- Swagger 统一使用 OpenAPI 3：类上 `@Tag`，方法上 `@Operation`，必要时参数上 `@Parameter`。
-- 返回值统一使用 `Response`；不要直接返回裸对象、`PageInfo`、`List`。
-- REST 层只做参数接收、分组校验、调用 service、响应转换；不要堆事务、复杂业务编排、DAO 调用、线程控制。
-
-参数与路由规则：
-
-- 查询分页当前仓库常见 `@PostMapping("/pageList") + @RequestBody QO`。
-- 主键详情既有 `@GetMapping("/selectById")` + 普通参数，也有 `@GetMapping("/xxx/{id}")` + `@PathVariable`；优先跟随当前模块已有风格，不要跨模块统一强改。
-- 写操作当前仓库多用 `@PostMapping("/add")`、`/update`，删除常用 `@DeleteMapping("/delById")` 或 `/delete`。
-- JSR-303 校验可以落在参数位，例如 `@Validated(Group.class) @RequestBody DTO`、`@NotBlank String id`。
-
-内部接口规则：
-
-- 涉及新增、更新、删除、发布、撤销、导入等业务操作时，优先补齐 `@UserOperLog`。
-- `@UserOperLog` 的 `moduleCode`、`optType`、`optLevel`、`optContent` 先对齐相邻 controller，避免新造表达方式。
-- 分页接口通常直接 `return Response.success(service.pageList(qo));`。
-
-外部接口规则：
-
-- 放在 `rest/external` 包下，路径通常带 `/external` 前缀。
-- 一般不加 `@UserOperLog`，除非当前模块已有明确先例。
-- 仍需保留 `@Tag`、`@Operation`、必要的 `@Validated`。
-
-日志规则：
-
-- Controller 自身通常日志不多，除非需要记录边界异常或关键请求。
-- 日志中不要打印密码、token、完整请求报文、签名 URL。
-- 不要为了“有日志”强行在每个接口头尾打印一遍。
-
-案例 1：内部 controller
-
-```java
-/**
- * 用户管理接口。
- *
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime yyyy/M/d HH:mm
- */
-@Slf4j
-@Indexed
-@Validated
-@RestController
-@RequestMapping("/auth/user")
-@Tag(name = "UserController", description = "用户管理")
-public class UserController {
-
-    @Resource
-    private IUserService userService;
-
-    @Operation(summary = "查询用户列表")
-    @PostMapping("/pageList")
-    public Response pageList(@RequestBody UserQO userQO) {
-        return Response.success(userService.pageList(userQO));
-    }
-
-    @Operation(summary = "新增用户")
-    @PostMapping("/add")
-    @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
-            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增用户信息,用户信息:['+#p0+']'")
-    public Response add(@Validated(UserGroup.insertGroup.class) @RequestBody UserDTO userDTO) {
-        userService.add(userDTO);
-        return Response.success();
-    }
-}
+```text
+peach-auth/peach-auth-rest/src/main/java/com/peach/auth/rest/
+├── internal/
+│   ├── UserController.java               # 本系统业务接口
+│   └── LoginController.java              # 认证边界
+└── external/
+    └── RoleExternalController.java       # 跨服务外部接口
 ```
 
-案例 2：外部 controller
+处理接口时继续向下定位 `peach-auth-entity` 的 DTO/QO/VO 和 `peach-auth-service` 的 Service 契约。
 
-```java
-/**
- * 消息服务外部接口。
- *
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime yyyy/M/d HH:mm
- */
-@Slf4j
-@Indexed
-@Validated
-@RestController
-@RequestMapping("/message/external")
-@Tag(name = "消息服务外部接口", description = "消息服务外部接口")
-public class MessageExternalController {
+## REQUIRED
 
-    @Resource
-    private IMessageService messageService;
+- Controller 只做参数绑定、JSR-303 校验、鉴权边界、Service 调用和响应转换。
+- 主键、查询和路径参数显式使用 `@RequestParam`、`@PathVariable` 等绑定注解，不依赖参数名推断。
+- 请求体按场景使用 `@Validated(Group.class)`；类级 `@Validated` 用于方法参数约束。
+- internal/external 路径、权限和暴露范围必须与包职责一致。
+- 返回模型逐字段检查敏感数据；不得返回含 password/token/secret 的 DO/VO。
+- 操作审计只记录经确认的非敏感字段白名单，不引用完整 DTO、请求或对象 `toString()`。
 
-    @PostMapping("/publish")
-    @Operation(summary = "发布消息")
-    public Response publish(@Validated @RequestBody MessagePublishDTO data) {
-        return messageService.publish(data);
-    }
-}
-```
+## PREFERRED
 
-提交前检查：
+- 新公共 API 使用语义清晰、稳定且可演进的资源/动作设计；错误响应由统一异常处理生成。
+- `@Tag`、`@Operation` 和参数文档描述真实契约，不复制类型名作为无意义说明。
+- `@Slf4j` 仅在实际记录边界日志时添加；日志级别按结果语义选择。
+- 简单转发可以直接返回 `Response.success(service.xxx(...))`，但复杂转换应使用明确 mapper/assembler。
 
-- 当前类属于 `internal` 还是 `external`，注解和路径是否跟包位一致。
-- 是否统一返回 `Response`。
-- 写操作是否遗漏 `@UserOperLog`。
-- 参数校验是否真实落在 controller 入参，而不是只在 DTO 上声明。
-- 是否把业务判断、事务、DAO 调用错误地下沉到了 REST 层。
+## LEGACY_COMPATIBLE
+
+- `/pageList`、`/selectById`、`/add`、`/update`、`/delById` 等动作式路由在维护既有 API 时保留。
+- 当前非泛型 `Response` 和 internal/external 注解组合属于兼容约束，不作为新公共响应设计的质量证明。
+- `@Indexed` 仅在确有组件索引需求时保留，不机械添加。
+
+## FORBIDDEN
+
+- Controller 直接调用 DAO、开启事务、创建线程或实现核心业务流程。
+- `@UserOperLog` 使用 `#p0` 等表达式记录整个 DTO。
+- DELETE 固定映射 ERROR、UPDATE 固定映射 DEBUG 等机械日志级别规则。
+- 仅因相邻 Controller 存在就复制无效注解、缺失绑定或敏感响应。
+
+## 验证
+
+- 检查绑定来源、校验分组、权限、Service 签名、响应模型和操作日志。
+- 操作日志 SpEL 必须结合当前解析器源码验证，不提供未经验证的表达式模板。
+- 运行接口/模块测试、UTF-8 检查和 `git diff --check`。

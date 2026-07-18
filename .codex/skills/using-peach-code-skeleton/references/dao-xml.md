@@ -1,129 +1,57 @@
-# DAO And XML
+# DAO And MyBatis XML
 
-参考基线：
+当前源码用于确认契约和兼容性，不自动等于新代码目标。DAO/XML 的首要要求是参数、SQL、租户边界和返回模型一致。
 
-- `peach-common/src/main/java/com/peach/common/PeachDao.java`
-- `peach-auth/peach-auth-service/src/main/java/com/peach/auth/dao/UserDao.java`
-- `peach-auth/peach-auth-service/src/main/resources/com/peach/auth/dao/UserDao.xml`
-- `peach-setting/peach-setting-service/src/main/resources/com/peach/setting/dao/DictTypeDao.xml`
+## 导航结构
 
-当前仓库里的 DAO/XML 风格有三个稳定特征：
-
-- DAO 接口统一继承 `PeachDao<T, E>`，基础 CRUD 由 XML 全量实现。
-- XML 先放通用片段，再放基础 CRUD，最后放业务查询，例如 `selectByQO`、`login`、`selectByIdsAndOrgId`。
-- 不同业务模块都尽量保持相同片段名和排版顺序，即使个别查询条件保留注释块或模块特有条件。
-
-DAO 接口规则：
-
-- DAO 接口统一继承 `PeachDao<T, E>`。
-- `PeachDao` 定义的方法必须全部在 XML 中实现：
-  - `insert`
-  - `batchInsert`
-  - `update`
-  - `updateById`
-  - `del`
-  - `delById`
-  - `delByIds`
-  - `count`
-  - `selectById`
-  - `selectByIds`
-  - `select`
-- 自定义方法可以新增，但方法名、参数和返回值必须明确。
-- 多参数方法统一显式标注 `@Param`。
-- 接口类上沿用 `@Indexed`、`@MybatisDao`。
-
-XML 结构规则：
-
-- `namespace` 必须与 DAO 全限定名一致。
-- 优先保持以下顺序：
-  - `allColumn`
-  - `allColumnAlias`
-  - `allColumnValue`
-  - `itemAllColumnValue`
-  - `allColumnSet`
-  - `updateSelectiveColumn`
-  - `updateSelectiveValue`
-  - `allColumnCond`
-  - 基础 `insert/update/delete/select/count`
-  - 业务自定义查询
-- `parameterType`、`resultType`、`jdbcType` 显式声明，不要省略。
-- 改 DAO 方法名时同步改 XML `id`；不要让 Spring/MyBatis 在运行期才暴露失配。
-
-字段同步规则：
-
-- 新增字段后，至少同步检查这些片段是否都补齐：
-  - `allColumn`
-  - `allColumnAlias`
-  - `allColumnValue`
-  - `itemAllColumnValue`
-  - `allColumnSet`
-  - `updateSelectiveColumn`
-  - `updateSelectiveValue`
-  - `allColumnCond`
-- 如果模块存在组织、租户、逻辑删除、状态字段等业务约束，例如 `orgId`、`isDelete`、`status`，要同步检查它们是否应该进入 `where` 条件、`updateById` 条件或业务查询条件。
-
-业务查询规则：
-
-- 基础 CRUD 之外，仓库普遍会定义 `selectByQO`。
-- `selectByQO` 的 `resultType` 通常是对应 `VO`，不是 `DO`。
-- 允许保留与当前模块实现直接相关的注释或注释掉的条件块，例如 `DictTypeDao.xml` 里保留的 `<where>` 注释；不要为“代码整洁”擅自删掉存量设计痕迹，除非你确认它是无效噪音。
-
-格式校验要求：
-
-- 修改 XML 后至少人工检查片段顺序、缩进、空行、标签闭合和 `id`/DAO 方法对应关系。
-- 如果环境可用，优先跑受影响模块编译，利用 MyBatis/Spring 装配暴露错误。
-- 不引入项目里不存在的新 XML 书写风格，例如突然改成 `resultMap` 主导、或把已有片段体系整套替换掉。
-
-案例 1：最小 PeachDao 骨架
-
-```xml
-<mapper namespace="com.peach.xxx.dao.XxxDao">
-    <sql id="allColumn">...</sql>
-    <sql id="allColumnAlias">...</sql>
-    <sql id="allColumnValue">...</sql>
-    <sql id="itemAllColumnValue">...</sql>
-    <sql id="allColumnSet">...</sql>
-    <sql id="updateSelectiveColumn">...</sql>
-    <sql id="updateSelectiveValue">...</sql>
-    <sql id="allColumnCond">...</sql>
-
-    <insert id="insert" parameterType="com.peach.xxx.entity.XxxDO">...</insert>
-    <insert id="batchInsert" parameterType="com.peach.xxx.entity.XxxDO">...</insert>
-    <update id="update" parameterType="com.peach.xxx.entity.XxxDO">...</update>
-    <delete id="delById" parameterType="string">...</delete>
-    <delete id="delByIds" parameterType="java.util.List">...</delete>
-    <delete id="del" parameterType="com.peach.xxx.entity.XxxDO">...</delete>
-    <update id="updateById" parameterType="com.peach.xxx.entity.XxxDO">...</update>
-    <select id="selectById" parameterType="string" resultType="com.peach.xxx.entity.XxxDO">...</select>
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.xxx.entity.XxxDO">...</select>
-    <select id="select" parameterType="com.peach.xxx.entity.XxxDO" resultType="com.peach.xxx.entity.XxxDO">...</select>
-    <select id="count" parameterType="com.peach.xxx.entity.XxxDO" resultType="java.lang.Integer">...</select>
-</mapper>
+```text
+peach-cloud/
+├── peach-common/src/main/java/com/peach/common/
+│   ├── PeachDao.java                     # DAO 基础契约
+│   └── annoation/MybatisDao.java         # Mapper 标识
+└── peach-auth/peach-auth-service/src/main/
+    ├── java/com/peach/auth/dao/
+    │   └── UserDao.java                  # DAO 接口参考
+    └── resources/com/peach/auth/dao/
+        └── UserDao.xml                   # XML 契约参考
 ```
 
-案例 2：业务查询骨架
+处理其他模块时，按相同的 `src/main/java/.../dao` 与 `src/main/resources/.../dao` 对照定位，不能只修改一侧。
 
-```xml
-<select id="selectByQO" parameterType="com.peach.xxx.qo.XxxQO" resultType="com.peach.xxx.vo.XxxVO">
-    SELECT
-        <include refid="allColumnAlias" />
-    FROM PEACH_XXX
-    <where>
-        <if test="id != null and id != ''">
-            AND ID = #{id,jdbcType=VARCHAR}
-        </if>
-        <if test="status != null">
-            AND STATUS = #{status,jdbcType=INTEGER}
-        </if>
-    </where>
-    ORDER BY MODIFY_TIME DESC
-</select>
-```
+## REQUIRED
 
-提交前检查：
+- DAO 与 XML `namespace`、方法名/`id`、参数、返回类型必须一一对应。
+- 继承 `PeachDao<T, E>` 时，当前契约要求的方法必须有明确实现；修改基础契约前先做全仓影响分析。
+- 多参数方法显式使用 `@Param`；SQL 中只引用已命名参数。
+- `jdbcType`、`parameterType`、`resultType/resultMap` 按项目契约显式声明。
+- 新增字段同步检查列清单、别名、插入、更新、条件和结果映射。
+- 租户、组织、逻辑删除、权限和状态条件属于数据安全边界，查询与更新不得遗漏。
+- 动态排序、表名和列名不得直接拼接未校验的外部输入。
 
-- DAO 是否仍完整承接 `PeachDao` 约定的方法。
-- 自定义查询是否用了明确的 `parameterType/resultType`。
-- 字段新增后，八个通用片段是否同步更新。
-- 租户/组织/逻辑删除字段是否遗漏在关键查询或更新条件里。
-- `selectByQO`、`selectByIdAndOrgId` 这类业务查询是否保持 VO 返回语义。
+## PREFERRED
+
+- XML 按“公共片段 → 基础 CRUD → 业务查询”组织，并让片段名表达用途。
+- 查询只选择调用方需要的字段；敏感字段不得因 `allColumn` 被带入响应模型。
+- 批量操作明确空集合、最大批次、事务和部分失败语义。
+- 复杂查询优先使用明确的 QO 和 VO，不使用无类型 `Map` 传递业务结构。
+
+## LEGACY_COMPATIBLE
+
+- `allColumn*` 八片段和 XML 全量 CRUD 是当前模块兼容模式；新增模块可复用，但不得因此复制无关字段或不安全条件。
+- `selectByQO`、历史方法命名和 XML 排版可在局部维护时保持，不作为正确性依据。
+- `@Indexed` 仅在确有索引需求时保留，不是 DAO 必选注解。
+
+## FORBIDDEN
+
+- 仅修改 DAO 或仅修改 XML。
+- 通过 `${}` 拼接未经白名单校验的请求参数。
+- 为保持历史片段而返回密码、token、secret 等敏感列。
+- 删除租户、逻辑删除或权限条件以“修复查不到数据”。
+- 依赖运行期启动才发现 mapper 失配。
+
+## 验证
+
+1. 搜索 DAO 方法全部调用方和 XML `id`。
+2. 对照字段片段与 DO/QO/VO。
+3. 运行 mapper smoke test 或受影响模块测试。
+4. 运行 `node scripts/check-utf8.mjs` 与 `git diff --check`。

@@ -1,39 +1,47 @@
-﻿# MCP And Skills Selection
+# MCP And Skills Selection
 
-本规则用于约束 agent 在 `peach-cloud` 内如何选择 MCP 和 skills，避免乱用工具或跳过项目约定。
+本规则只负责工具与 skill 路由。配置存在不代表每次任务都应调用，运行时能力以实际暴露工具为准。
 
-## MCP Selection
+## MCP Routing
 
-- 代码结构、模块职责、调用链、影响面：先用 `codegraph`
-- 当前会话可能只暴露 `codegraph_files`、`codegraph_search`、`codegraph_context`、`codegraph_impact`、`codegraph_status` 等部分工具；只按实际可用工具执行，不假设所有 codegraph 能力都存在
-- README、SQL、脚本、配置、纯文本：`codegraph` 不适合时再用 `rg` / 直接读文件
-- 第三方库、框架、SDK、CLI 当前文档：用 `context7`
-- GitHub 仓库、PR、issue、CI：只有用户明确要求时用 `github`
-- 数据库连接、schema、表结构、只读 SQL：只有用户要求并且环境具备时用 `mysql`
-- IntelliJ 当前项目模块、打开文件、符号快速文档、数据库连接、格式化：用 `idea`
+- 当前代码结构、符号、调用链、影响面：优先 `codegraph`，查询范围必须限定到 `peach-cloud` 根目录。
+- 跨会话决策、历史排障和已确认约定：仅在延续性任务中使用 `agentmemory`；命中后必须用当前源码验证。
+- 框架、SDK、配置语法和版本迁移：使用 `context7`。
+- PR、issue、Actions、远程仓库：仅用户明确要求时使用官方 GitHub MCP。
+- schema、表结构、样例数据、只读 SQL：仅用户明确要求且连接可用时使用 MySQL MCP。
+- README、SQL、脚本、配置和纯文本：直接读取或 `rg`；不要强行使用代码图。
+- IDE 当前文件、符号文档、格式化和数据库连接：仅当前会话实际提供 IDE 工具时使用。
 
-## MCP Constraints
+## MCP Safety
 
-- 不要用 `context7` 搜项目源码
-- 不要用 `rg` 重建 `codegraph` 已经能直接回答的问题
-- 不要假设 `idea` 一定在仓库配置中声明；只有当前会话可用时才使用
-- `mysql` 默认只读；没有明确授权不做写操作
-- 涉及 secrets 的返回值不写入文件，不原样回显
+`REQUIRED`：
 
-## Skills Selection
+- npm MCP 包固定到已验证版本，不使用 `@latest`；升级时单独验证并更新版本。
+- GitHub 使用官方 `github/github-mcp-server`，不得使用 2025 年已停止维护的 `@modelcontextprotocol/server-github`。
+- MySQL 使用只读账号；写 SQL、GitHub 推送/评论/PR、记忆删除/导出等外部副作用必须由用户明确授权。
+- secret 只通过环境变量传入，不写入 TOML、源码、记忆或回复。
+- `agentmemory` 日常只暴露核心工具；审计、导出和治理能力按需临时开启。
+- 修改 MCP 配置后运行 `node scripts/check-mcp.mjs`；静态错误必须修复，缺少 Docker 等运行时依赖的警告在使用对应 MCP 前处理。
+- codegraph 结果出现 `.m2`、构建产物、IDE 插件或仓外目录时视为 scope 错误，不得作为项目证据。
 
-- `.codex/skills/` 下的目录名、`SKILL.md` 的 `name` 和 `$skill` 调用名必须保持一致，当前统一使用 `using-peach-*`
-- 写或刷新 README、模块说明、starter 接入文档：使用 `using-peach-readme-writer`
-- 涉及 `peach-middleware/peach-rocket`、RocketMQ、`@MqEvent`、`@MqConsumer`：使用 `using-peach-rocket`
-- 涉及 `peach-component/peach-storage`、`StorageTemplate`、provider：使用 `using-peach-storage`
-- 涉及 `peach-component/peach-threadpool`、`ThreadPoolManager`、`@AsyncExecuted`：使用 `using-peach-threadpool`
-- 编写、生成、重构或审查 REST、Entity、DAO/XML、Service、common 归属：使用 `using-peach-code-skeleton`
+记忆保存只记录可复用决策，并包含 `project`、来源文件或依据、适用模块、保存时间和重新验证条件。不得保存一次性操作过程、猜测或敏感数据。
 
-## Skill Constraints
+## Skill Routing
 
-- 命中 skill 场景时，先完整读取 `SKILL.md`
-- `SKILL.md` 引用 `references/module-guide.md` 时，涉及配置、边界、SPI、示例、README，必须继续读参考文件
-- 未在 skill 或源码中确认的配置项、默认值、扩展点，不得编造
-- 当用户一次性点名一组同类文件时，例如多个 controller、service、DTO 或其配套层级，必须先把这组文件全部扫完再动手，不能只改其中一个就结束
-- 当任务涉及“补齐既有模式”时，必须先在仓库里找一个可工作的同类范式作为参照，例如注解、校验分组、日志、Javadoc，再开始批量修改
-- 当用户后续补充了更强约束时，例如“不要拆 AddDTO/UpdateDTO，改用分组校验”，后续实现必须以新约束为准，之前的方案不能继续沿用
+- REST、Entity、DAO/XML、Service、common：`using-peach-code-skeleton`。
+- README 或公共 API/配置/扩展点变化需要同步文档：`using-peach-readme-writer`。
+- RocketMQ：代码骨架 skill + `using-peach-rocket`。
+- Storage：代码骨架 skill + `using-peach-storage`。
+- Threadpool/异步：代码骨架 skill + `using-peach-threadpool`。
+- Email、SMTP、模板、邮件重试与幂等：代码骨架 skill + `using-peach-email`。
+- Redis、Redisson、多级缓存、Stream、分布式锁、延迟队列、布隆过滤器与防重复：代码骨架 skill + `using-peach-redis`。
+
+命中 skill 时先完整读取 `SKILL.md`，再只读取与任务层级相关的 reference。不得因“推荐顺序”加载全部规则和 reference。
+
+## Skill Quality
+
+- skill 中的事实必须能绑定到当前源码、POM、配置类或测试；reference 必须区分可验证事实、目标规则和存量兼容，不能把现有代码数量当成正确性依据。
+- 模块 reference 的路径使用 `text` 目录树展示聚合模块、子模块和核心入口，忽略 `target`、`.flattened-pom.xml` 等构建产物。
+- 示例必须符合 Java 8 和当前依赖；不得把存量缺陷包装为范式。
+- 安全与正确性高于局部风格；完整 DTO 日志、敏感字段 VO、错误事务边界和资源泄漏即使存在先例也不得复制。
+- 每个实现任务必须有完成定义：受影响文件、编码检查、编译/测试、未验证风险。

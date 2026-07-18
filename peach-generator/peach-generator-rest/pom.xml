@@ -41,6 +41,12 @@
             <artifactId>peach-generator-common</artifactId>
         </dependency>
 
+        <!-- Operation Audit -->
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-auth-log-external</artifactId>
+        </dependency>
+
         <!-- Spring Boot Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
