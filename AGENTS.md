@@ -38,9 +38,16 @@
 | Threadpool/异步 | `using-peach-code-skeleton` + `using-peach-threadpool` |
 | Email/SMTP/邮件模板 | `using-peach-code-skeleton` + `using-peach-email` |
 | Redis/Redisson/缓存/锁/队列 | `using-peach-code-skeleton` + `using-peach-redis` |
+| 前端 Vue、目录、路由权限、Pinia、Axios、Ant Design Vue | `using-peach-front` |
+| 新页面视觉、交互流程、布局重构、响应式、动效、体验优化 | `using-peach-front` + `ui-ux-pro-max` |
+| 设计 token、主题、字体/间距尺度、组件状态规范、设计系统 | `using-peach-front` + `design-system` + `ui-ux-pro-max` |
+| 审查现有 UI、可访问性、UX 或 Web 界面最佳实践 | `using-peach-front` + `web-design-guidelines`；需要改进方案时叠加 `ui-ux-pro-max` |
+| Tailwind、shadcn/ui、Canvas 视觉方案 | 仅用户明确要求时叠加 `ui-styling`；不得默认替换 Vue 3 + Ant Design Vue 技术栈 |
 | MCP、历史决策、外部文档 | `.codex/rules/01-mcp-and-skills.md` |
 
 不要为简单任务读取全部规则或全部 reference。
+
+前端 skill 按最小必要集合调用：仅目录迁移、行为保持重命名、API/类型/Store/路由权限逻辑、依赖维护或构建修复时，不调用 UX/UI skills；任务会改变界面外观、交互方式、布局、动效或可访问体验时才调用 `ui-ux-pro-max`。纯审查不授权修改代码，用户要求修复后再进入实现流程。
 
 ## Non-Negotiable Boundaries
 
