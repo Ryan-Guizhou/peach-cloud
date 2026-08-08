@@ -1,0 +1,6 @@
+/.env
+/runtime/
+/jar/.env
+/jar/runtime/
+/nginx/html/*
+!/nginx/html/.gitkeep

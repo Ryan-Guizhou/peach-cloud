@@ -1,0 +1,319 @@
+name: ${COMPOSE_PROJECT_NAME:-peach-cloud}
+
+x-common-env: &common-env
+  TZ: ${TZ:-Asia/Shanghai}
+  JAVA_OPTS: ${JAVA_OPTS:-}
+  SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+  NACOS_SERVER_ADDR: ${NACOS_SERVER_ADDR:-nacos:8848}
+  SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: ${NACOS_SERVER_ADDR:-nacos:8848}
+  SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR:-nacos:8848}
+  SPRING_CLOUD_NACOS_CONFIG_NAMESPACE: ${NACOS_NAMESPACE_ID:-peach-cloud}
+  SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE: ${NACOS_NAMESPACE_ID:-peach-cloud}
+  SPRING_CLOUD_NACOS_CONFIG_GROUP: ${NACOS_GROUP:-PEACH-CLOUD}
+  SPRING_CLOUD_NACOS_DISCOVERY_GROUP: ${NACOS_GROUP:-PEACH-CLOUD}
+  SPRING_CLOUD_NACOS_CONFIG_FILE_EXTENSION: yml
+  SPRING_CLOUD_NACOS_CONFIG_ENCODE: UTF-8
+  SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-peach_cloud}?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+  SPRING_DATASOURCE_USERNAME: root
+  SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+  REDIS_HOST: redis:6379
+  PEACH_REDIS_HOST: redis:6379
+  REDIS_PASSWORD: ${REDIS_PASSWORD}
+  PEACH_REDIS_PASSWORD: ${REDIS_PASSWORD}
+  REDIS_DATABASE: 0
+  SPRING_REDIS_HOST: redis
+  SPRING_REDIS_PORT: 6379
+  SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+x-service-build: &service-build
+  context: ..
+  dockerfile: deploy/docker/Dockerfile.service
+
+x-image-label-args: &image-label-args
+  IMAGE_AUTHORS: ${IMAGE_AUTHORS:-Mr Shu}
+  IMAGE_VENDOR: ${IMAGE_VENDOR:-Peach Cloud}
+  IMAGE_VERSION: ${PEACH_IMAGE_TAG:-latest}
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: peach-mysql
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --lower-case-table-names=1
+      - --bind-address=0.0.0.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-peach_cloud}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${MYSQL_HOST_PORT:-3307}:3306"
+    volumes:
+      - ./runtime/data/mysql:/var/lib/mysql
+      - ../sql/ALL_TABLE_CREATE.sql:/docker-entrypoint-initdb.d/00_ALL_TABLE_CREATE.sql:ro
+      - ../sql/INIT.sql:/docker-entrypoint-initdb.d/01_INIT.sql:ro
+      - ./runtime/logs/mysql:/var/log/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - peach-net
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: peach-redis
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_HOST_PORT:-6380}:6379"
+    volumes:
+      - ./runtime/data/redis:/data
+      - ./runtime/logs/redis:/var/log/redis
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      TZ: ${TZ:-Asia/Shanghai}
+    networks:
+      - peach-net
+
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: peach-nacos
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: ${NACOS_AUTH_ENABLE:-false}
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+      JVM_XMN: 128m
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${NACOS_HOST_PORT:-8849}:8848"
+      - "${NACOS_GRPC_HOST_PORT:-9850}:9848"
+    volumes:
+      - ./runtime/data/nacos:/home/nacos/data
+      - ./runtime/logs/nacos:/home/nacos/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8848/nacos/actuator/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+    networks:
+      - peach-net
+
+  peach-gateway:
+    image: peach-cloud/peach-gateway:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-gateway
+    build:
+      <<: *service-build
+      args:
+        <<: *image-label-args
+        IMAGE_TITLE: Peach Gateway
+        IMAGE_DESCRIPTION: Peach Cloud gateway service
+        JAR_FILE: peach-gateway/peach-gateway-launch/target/peach-gateway-launch-1.0.0-SNAPSHOT.jar
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${GATEWAY_PORT:-18080}
+      SPRING_APPLICATION_NAME: peach-gateway
+    volumes:
+      - ./runtime/logs/peach-gateway:/app/logs
+      - ./runtime/config/services/peach-gateway:/app/config
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - peach-net
+
+  peach-auth:
+    image: peach-cloud/peach-auth:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-auth
+    build:
+      <<: *service-build
+      args:
+        <<: *image-label-args
+        IMAGE_TITLE: Peach Auth
+        IMAGE_DESCRIPTION: Peach Cloud authentication and authorization service
+        JAR_FILE: peach-auth/peach-auth-launch/target/peach-auth-launch-1.0.0-SNAPSHOT.jar
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${AUTH_PORT:-18081}
+      SPRING_APPLICATION_NAME: peach-auth
+    volumes:
+      - ./runtime/logs/peach-auth:/app/logs
+      - ./runtime/config/services/peach-auth:/app/config
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - peach-net
+
+  peach-monitor:
+    image: peach-cloud/peach-monitor:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-monitor
+    build:
+      <<: *service-build
+      args:
+        <<: *image-label-args
+        IMAGE_TITLE: Peach Monitor
+        IMAGE_DESCRIPTION: Peach Cloud monitoring service
+        JAR_FILE: peach-monitor/peach-monitor-launch/target/peach-monitor-launch-1.0.0-SNAPSHOT.jar
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${MONITOR_PORT:-18082}
+      SPRING_APPLICATION_NAME: peach-monitor
+    volumes:
+      - ./runtime/logs/peach-monitor:/app/logs
+      - ./runtime/config/services/peach-monitor:/app/config
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - peach-net
+
+  peach-fileservice:
+    image: peach-cloud/peach-fileservice:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-fileservice
+    build:
+      <<: *service-build
+      args:
+        <<: *image-label-args
+        IMAGE_TITLE: Peach Fileservice
+        IMAGE_DESCRIPTION: Peach Cloud file service
+        JAR_FILE: peach-fileservice/peach-fileservice-launch/target/peach-fileservice-launch-1.0.0-SNAPSHOT.jar
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${FILESERVICE_PORT:-18083}
+      SPRING_APPLICATION_NAME: peach-fileservice
+      PEACH_UPLOAD_ROOT: /app/upload
+    volumes:
+      - ./runtime/logs/peach-fileservice:/app/logs
+      - ./runtime/config/services/peach-fileservice:/app/config
+      - ./runtime/upload/peach-fileservice:/app/upload
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - peach-net
+
+  peach-message:
+    image: peach-cloud/peach-message:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-message
+    build:
+      <<: *service-build
+      args:
+        <<: *image-label-args
+        IMAGE_TITLE: Peach Message
+        IMAGE_DESCRIPTION: Peach Cloud message service
+        JAR_FILE: peach-message/peach-message-launch/target/peach-message-launch-1.0.0-SNAPSHOT.jar
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${MESSAGE_PORT:-18084}
+      SPRING_APPLICATION_NAME: peach-message
+    volumes:
+      - ./runtime/logs/peach-message:/app/logs
+      - ./runtime/config/services/peach-message:/app/config
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - peach-net
+
+  peach-setting:
+    image: peach-cloud/peach-setting:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-setting
+    build:
+      <<: *service-build
+      args:
+        <<: *image-label-args
+        IMAGE_TITLE: Peach Setting
+        IMAGE_DESCRIPTION: Peach Cloud setting service
+        JAR_FILE: peach-setting/peach-setting-launch/target/peach-setting-launch-1.0.0-SNAPSHOT.jar
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${SETTING_PORT:-18085}
+      SPRING_APPLICATION_NAME: peach-setting
+    volumes:
+      - ./runtime/logs/peach-setting:/app/logs
+      - ./runtime/config/services/peach-setting:/app/config
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - peach-net
+
+  peach-generator:
+    image: peach-cloud/peach-generator:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-generator
+    build:
+      <<: *service-build
+      args:
+        <<: *image-label-args
+        IMAGE_TITLE: Peach Generator
+        IMAGE_DESCRIPTION: Peach Cloud code generator service
+        JAR_FILE: peach-generator/peach-generator-launch/target/peach-generator-launch-1.0.0-SNAPSHOT.jar
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${GENERATOR_PORT:-18086}
+      SPRING_APPLICATION_NAME: peach-generator
+    volumes:
+      - ./runtime/logs/peach-generator:/app/logs
+      - ./runtime/config/services/peach-generator:/app/config
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - peach-net
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: peach-nginx
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./runtime/nginx/html:/usr/share/nginx/html:ro
+      - ./runtime/logs/nginx:/var/log/nginx
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - peach-gateway
+    networks:
+      - peach-net
+
+networks:
+  peach-net:
+    driver: bridge

@@ -1,0 +1,30 @@
+FROM eclipse-temurin:8-jre-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache tzdata \
+    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && echo 'Asia/Shanghai' > /etc/timezone
+
+ARG JAR_FILE
+ARG IMAGE_TITLE="Peach Cloud Service"
+ARG IMAGE_DESCRIPTION="Peach Cloud Spring Boot service image"
+ARG IMAGE_AUTHORS="Mr Shu"
+ARG IMAGE_VENDOR="Peach Cloud"
+ARG IMAGE_VERSION="latest"
+
+LABEL org.opencontainers.image.title="${IMAGE_TITLE}" \
+      org.opencontainers.image.description="${IMAGE_DESCRIPTION}" \
+      org.opencontainers.image.authors="${IMAGE_AUTHORS}" \
+      org.opencontainers.image.vendor="${IMAGE_VENDOR}" \
+      org.opencontainers.image.version="${IMAGE_VERSION}"
+
+COPY ${JAR_FILE} /app/app.jar
+
+ENV TZ=Asia/Shanghai
+ENV JAVA_OPTS=""
+ENV SPRING_PROFILES_ACTIVE=docker
+
+VOLUME ["/app/logs"]
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar --spring.profiles.active=$SPRING_PROFILES_ACTIVE"]
