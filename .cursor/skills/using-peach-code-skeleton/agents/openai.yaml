@@ -1,0 +1,6 @@
+interface:
+  display_name: "Peach Code Skeleton"
+  short_description: "约束 peach-cloud 分层骨架、注解、日志、DAO XML 与 common 归属。"
+  default_prompt: "Use $using-peach-code-skeleton to implement or review code in peach-cloud with the required layer skeleton."
+policy:
+  allow_implicit_invocation: true

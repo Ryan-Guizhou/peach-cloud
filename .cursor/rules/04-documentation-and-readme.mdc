@@ -1,0 +1,26 @@
+---
+description: 规范 peach-cloud README 与模块文档的证据、结构、安全示例和验证要求。
+globs: "**/{README,README.*}.md,docs/**/*.md"
+alwaysApply: false
+---
+# Documentation And README
+
+## Trigger
+
+只有用户明确要求文档，或公共 API、配置项、扩展点、运行机制、生产边界发生变化时同步 README。纯内部重构、注释和格式修改不强制扩大到文档任务。
+
+## Evidence Before Writing
+
+- 读取模块 `pom.xml`、入口、配置类、自动配置、默认实现、示例和现有 README。
+- 类名、配置项、默认值、命令和目录必须能在当前源码或本次变更中确认。
+- 第三方行为不确定时查对应版本官方文档；不把推断写成已支持能力。
+
+## Required Quality
+
+- 中文使用 `README.md`，英文使用 `README.en-US.md`。
+- 说明模块解决什么、不解决什么、最小接入、扩展方式、生产边界、验证命令和真实排障路径。
+- 目录只列源码、资源和文档，不列 `target`、IDE 或生成文件。
+- 示例不得包含真实密钥、token、生产地址、签名 URL或完整敏感报文。
+- 文档必须是 UTF-8 无 BOM；完成后运行 `node scripts/check-utf8.mjs`。
+
+无法验证示例、配置或命令时明确标注未验证，不得承诺源码不存在的能力。

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Peach 前端编码规范"
+  short_description: "规范 Peach Vue 3 前端并按场景协调 UX/UI 设计与审查"
+  default_prompt: "使用 $using-peach-front 按 Peach Cloud 规范实现或审查 Vue 3 前端，并按任务范围选择 UX/UI skills。"
