@@ -1,0 +1,21 @@
+peach:
+  code:
+    enabled: true
+    redis-enabled: true
+    redis-key-prefix: "peach:code:generate:"
+    example:
+      verify-on-startup: true
+      tenant-id: T001
+
+# Configure a test database before starting the example.
+# The schema is in sql/PEACH_CODE_RULE.sql.
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/peach_cloud?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: ${PEACH_TEST_DB_USERNAME:root}
+    password: ${PEACH_TEST_DB_PASSWORD:123456}
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    database: 0
+    password: ${PEACH_TEST_REDIS_PASSWORD:123456}

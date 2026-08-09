@@ -509,6 +509,17 @@
 
             <dependency>
                 <groupId>com.peach</groupId>
+                <artifactId>peach-code-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-code-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
                 <artifactId>peach-auth-service</artifactId>
                 <version>${revision}</version>
             </dependency>
@@ -729,18 +740,6 @@
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-satoken-core</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.peach</groupId>
-                <artifactId>peach-satoken-gateway-autoconfigure</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.peach</groupId>
-                <artifactId>peach-satoken-gateway-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
 

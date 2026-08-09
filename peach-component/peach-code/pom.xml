@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-code</artifactId>
+    <name>peach-code</name>
+    <description>Tenant-aware business code generator</description>
+    <packaging>pom</packaging>
+
+    <parent>
+        <groupId>com.peach</groupId>
+        <artifactId>peach-component</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <modules>
+        <module>peach-code-autoconfigure</module>
+        <module>peach-code-starter</module>
+        <module>peach-code-example</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-code-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-code-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>
