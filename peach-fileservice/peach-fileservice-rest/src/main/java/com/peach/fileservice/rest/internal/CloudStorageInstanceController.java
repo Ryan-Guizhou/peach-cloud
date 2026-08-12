@@ -4,6 +4,7 @@ import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.common.PeachGroup;
 import com.peach.common.response.Response;
+import com.peach.fileservice.common.FileApiConstant;
 import com.peach.fileservice.dto.CloudStorageInstanceSaveDTO;
 import com.peach.fileservice.qo.CloudStorageInstanceQO;
 import com.peach.fileservice.service.ICloudStorageInstanceService;
@@ -37,7 +38,7 @@ import javax.validation.constraints.NotBlank;
 @Indexed
 @Validated
 @RestController
-@RequestMapping("/cloud/storage/instance")
+@RequestMapping(FileApiConstant.INTERNAL_STORAGE_INSTANCE_PREFIX)
 @Tag(name = "CloudStorageInstanceController", description = "云存储实例管理")
 public class CloudStorageInstanceController {
 
@@ -47,7 +48,7 @@ public class CloudStorageInstanceController {
     @PostMapping
     @Operation(summary = "新增云存储实例")
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.INSERT,
-            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增云存储实例,实例信息:['+#p0+']'")
+            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增云存储实例,实例名称:['+#p0.instanceName+']'")
     public Response add(@Validated(PeachGroup.insertGroup.class) @RequestBody CloudStorageInstanceSaveDTO data) {
         log.info("新增云存储实例,实例名称={}", data.getInstanceName());
         return Response.success(cloudStorageService.add(data));
@@ -56,7 +57,7 @@ public class CloudStorageInstanceController {
     @PutMapping
     @Operation(summary = "更新云存储实例")
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.UPDATE,
-            optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'更新云存储实例,实例信息:['+#p0+']'")
+            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'更新云存储实例,实例ID:['+#p0.instanceId+'],实例名称:['+#p0.instanceName+']'")
     public Response update(@Validated(PeachGroup.updateGroup.class) @RequestBody CloudStorageInstanceSaveDTO data) {
         log.info("更新云存储实例,实例ID={},实例名称={}", data.getInstanceId(), data.getInstanceName());
         return Response.success(cloudStorageService.update(data));
@@ -95,7 +96,7 @@ public class CloudStorageInstanceController {
     @PostMapping("/testConnection")
     @Operation(summary = "测试云存储连通性")
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.SELECT,
-            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'测试云存储连通性,实例信息:['+#p0+']'")
+            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'测试云存储连通性,实例名称:['+#p0.instanceName+']'")
     public Response testConnection(@Validated(PeachGroup.insertGroup.class) @RequestBody CloudStorageInstanceSaveDTO data) {
         log.info("测试云存储连通性,实例名称={}", data.getInstanceName());
         return Response.success(cloudStorageService.testConnection(data));
@@ -113,9 +114,12 @@ public class CloudStorageInstanceController {
     @PostMapping("/list")
     @Operation(summary = "查询云存储实例列表")
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.SELECT,
-            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'查询云存储实例列表,查询参数:['+#p0+']'")
+            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'查询云存储实例列表'")
     public Response list(@RequestBody(required = false) CloudStorageInstanceQO data) {
-        log.info("查询云存储实例列表,查询参数={}", data);
+        log.info("查询云存储实例列表,实例名称={},存储类型={},启用状态={}",
+                data == null ? null : data.getInstanceName(),
+                data == null ? null : data.getStoreType(),
+                data == null ? null : data.getEnabled());
         return Response.success(cloudStorageService.list(data));
     }
 

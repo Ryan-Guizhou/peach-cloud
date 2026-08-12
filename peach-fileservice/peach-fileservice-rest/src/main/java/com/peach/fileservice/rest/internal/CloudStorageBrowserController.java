@@ -3,6 +3,7 @@ package com.peach.fileservice.rest.internal;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.common.response.Response;
+import com.peach.fileservice.common.FileApiConstant;
 import com.peach.fileservice.dto.CloudStorageCreateDirectoryDTO;
 import com.peach.fileservice.dto.CloudStorageDeleteDirectoryDTO;
 import com.peach.fileservice.dto.CloudStorageDeleteObjectDTO;
@@ -41,7 +42,7 @@ import javax.validation.Valid;
 @Indexed
 @Validated
 @RestController
-@RequestMapping("/cloud/storage/browser")
+@RequestMapping(FileApiConstant.INTERNAL_STORAGE_BROWSER_PREFIX)
 @Tag(name = "CloudStorageBrowserController", description = "云存储浏览")
 public class CloudStorageBrowserController {
 
@@ -70,7 +71,7 @@ public class CloudStorageBrowserController {
     @PostMapping("/{instanceId}/list")
     @Operation(summary = "查询对象列表")
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.SELECT,
-            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'查询对象列表,实例ID:['+#p0+'],查询参数:['+#p1+']'")
+            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'查询对象列表,实例ID:['+#p0+'],目录路径:['+#p1.path+']'")
     public Response list(@PathVariable("instanceId") String instanceId,
                          @RequestBody(required = false) CloudStorageListDTO data) {
         log.info("查询对象列表,实例ID={},目录路径={}", instanceId, data == null ? null : data.getPath());
