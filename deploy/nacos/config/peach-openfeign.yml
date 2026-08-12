@@ -1,0 +1,44 @@
+peach:
+  openfeign:
+    enabled: true
+    same-token-enabled: true
+    async-context-enabled: true
+    circuit-breaker-enabled: true
+    upload-max-bytes: 10485760
+    client:
+      okhttp-enabled: true
+      connect-timeout-millis: 3000
+      read-timeout-millis: 10000
+      follow-redirects: true
+      named:
+        fileFeignClient:
+          read-timeout-millis: 60000
+
+feign:
+  okhttp:
+    enabled: true
+  client:
+    config:
+      default:
+        connectTimeout: 3000
+        readTimeout: 10000
+
+spring:
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 15s
+        permittedNumberOfCallsInHalfOpenState: 3
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 15s

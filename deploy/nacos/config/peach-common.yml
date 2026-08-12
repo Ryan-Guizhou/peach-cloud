@@ -1,0 +1,4 @@
+# 样例 黑名单ip
+peach:
+  common:
+    blockIp: 127.0.0.1

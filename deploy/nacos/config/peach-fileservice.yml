@@ -1,0 +1,17 @@
+server:
+  port: 18083
+
+springdoc:
+  servers:
+    - url: /api/fileservice
+      description: Gateway
+  packages-to-scan:
+    - com.peach.fileservice.rest.internal
+    - com.peach.fileservice.launch.health
+
+clamd:
+  host: 127.0.0.1
+  port: 3310
+  timeout: 500
+  maxfilesize: 20000KB
+  maxrequestsize: 102400

@@ -1,5 +1,3 @@
-server:
-  port: 18085
 spring:
   application:
     name: peach-setting
@@ -17,9 +15,11 @@ spring:
         enabled: true
   config:
     import:
-      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-common.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-openfeign.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-satoken.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-datasource.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-store.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
-#      - optional:nacos:application-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-redis.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-knife4j.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}

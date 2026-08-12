@@ -1,0 +1,10 @@
+server:
+  port: 18086
+
+springdoc:
+  servers:
+    - url: /api/generator
+      description: Gateway
+  packages-to-scan:
+    - com.peach.generator.rest.internal
+    - com.peach.generator.launch.health

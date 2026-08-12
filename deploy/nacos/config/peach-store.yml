@@ -1,0 +1,28 @@
+# 存储相关配置
+peach.storage:
+  enabled: true
+  primary: aliyun
+  providers:
+    local:
+      type: LOCAL
+      bucket-name: peach-example
+      root-path: ./data/peach-storage
+      prefix: example/app
+      domain: http://localhost/files
+    aliyun:
+      type: OSS
+      name: aliyun
+      endpoint: oss-cn-beijing.aliyuncs.com
+      bucketName: peachsoft
+      accessKey: "@OSS_ACCESS_KEY@"
+      secretKey: "@OSS_SECRET_KEY@"
+      region: cn-beijing
+    cos:
+      type: COS
+      name: cos
+      endpoint: cos.ap-beijing.myqcloud.com
+      bucketName: peachsoft-1305539175
+      accessKey: "@COS_ACCESS_KEY@"
+      secretKey: "@COS_SECRET_KEY@"
+      prefix: /cos/peach
+      region: ap-beijing

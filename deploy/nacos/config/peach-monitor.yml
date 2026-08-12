@@ -1,0 +1,10 @@
+server:
+  port: 18082
+
+springdoc:
+  servers:
+    - url: /api/monitor
+      description: Gateway
+  packages-to-scan:
+    - com.peach.monitor.rest.internal
+    - com.peach.monitor.launch.health

@@ -1,0 +1,38 @@
+peach:
+  redis:
+    mode: standalone
+    host: "@REDIS_HOST@"
+    password: "@REDIS_PASSWORD@"
+    database: 0
+    sentinelMaster: master
+    redisson:
+      enabled: true
+      threads: 16
+      netty-threads: 32
+      timeout: 3000
+      idle-connection-timeout: 10000
+      ping-timeout: 1000
+      connect-timeout: 10000
+      retry-attempts: 3
+      retry-interval: 1500
+      connection-pool-size: 64
+      connection-minimum-idle-size: 10
+      subscription-connection-pool-size: 50
+      subscription-connection-minimum-idle-size: 1
+      slave-connection-minimum-idle-size: 10
+      master-connection-minimum-idle-size: 10
+      slave-connection-pool-size: 64
+      master-connection-pool-size: 64
+      scan-interval: 1000
+      subscriptions-per-connection: 5
+      ssl-enable: false
+    bloom:
+      enabled: true
+      default-namespace: default
+      enable-local-cache: true
+      key-prefix: bloom
+      load-factor: 0.9
+      max-segments: 32
+      false-positive-probability: 0.001
+      initial-capacity: 1000000
+      scale-factor: 2.0

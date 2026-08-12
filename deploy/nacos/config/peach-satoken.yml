@@ -1,0 +1,30 @@
+sa-token:
+  token-name: Authorization
+  timeout: 2592000
+  active-timeout: 600
+  is-concurrent: true
+  is-share: true
+  #是否检查same-token
+  check-same-token: true 
+  # same-token 超时时间
+  same-token-timeout: 30 
+  is-read-cookie: false
+  # 是否打印日志
+  is-log: true
+
+peach:
+  satoken:
+    dao:
+      enabled: true
+    session-strategy:
+      enabled: true
+    same-token:
+      enabled: true
+      log-path: false
+      exclude-path-patterns:
+        - /error
+    request-id:
+      enabled: true
+      header-name: X-Request-Id
+    user-context:
+      enabled: true

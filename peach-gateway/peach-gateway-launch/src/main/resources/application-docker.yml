@@ -1,113 +1,21 @@
-
-server:
-  port: ${SERVER_PORT:18080}
-
 spring:
   application:
     name: ${SPRING_APPLICATION_NAME:peach-gateway}
-
   cloud:
     nacos:
       discovery:
-        # 关键修改：Docker 中用 nacos:8848，本地用 127.0.0.1:8849
-        server-addr: ${SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR:${NACOS_SERVER_ADDR:127.0.0.1:884}}
-        namespace: ${SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE:bb1fa0d2-f008-4ea0-8d2c-0d4f22bb3375}
-        group: ${SPRING_CLOUD_NACOS_DISCOVERY_GROUP:PEACH-CLOUD}
+        server-addr: ${SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR:${NACOS_SERVER_ADDR:nacos:8848}}
+        namespace: ${SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE:${NACOS_NAMESPACE_ID:peach-cloud}}
+        group: ${SPRING_CLOUD_NACOS_DISCOVERY_GROUP:${NACOS_GROUP:PEACH-CLOUD}}
       config:
-        server-addr: ${SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR:${NACOS_SERVER_ADDR:127.0.0.1:8849}}
+        server-addr: ${SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR:${NACOS_SERVER_ADDR:nacos:8848}}
         file-extension: ${SPRING_CLOUD_NACOS_CONFIG_FILE_EXTENSION:yml}
-        group: ${SPRING_CLOUD_NACOS_CONFIG_GROUP:PEACH-CLOUD}
-        namespace: ${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:bb1fa0d2-f008-4ea0-8d2c-0d4f22bb3375}
-        encode: ${SPRING_CLOUD_NACOS_CONFIG_ENCODE:UTF-8}  # 添加编码配置
+        group: ${SPRING_CLOUD_NACOS_CONFIG_GROUP:${NACOS_GROUP:PEACH-CLOUD}}
+        namespace: ${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:${NACOS_NAMESPACE_ID:peach-cloud}}
+        encode: ${SPRING_CLOUD_NACOS_CONFIG_ENCODE:UTF-8}
         enabled: true
-    gateway:
-      discovery:
-        locator:
-          enabled: true
-      routes:
-        # 用户服务 Swagger 文档路由 (优先级高，精确匹配)
-        - id: peach-auth-swagger
-          uri: lb://peach-auth
-          predicates:
-            - Path=/api/auth/v3/api-docs
-          filters:
-            - SetPath=/v3/api-docs
-        # 监控服务 Swagger 文档路由
-        - id: peach-monitor-swagger
-          uri: lb://peach-monitor
-          predicates:
-            - Path=/api/monitor/v3/api-docs
-          filters:
-            - SetPath=/v3/api-docs
-        # 文件服务 Swagger 文档路由
-        - id: peach-fileservice-swagger
-          uri: lb://peach-fileservice
-          predicates:
-            - Path=/api/file/v3/api-docs
-          filters:
-            - SetPath=/v3/api-docs
-        # 设置服务 Swagger 文档路由
-        - id: peach-setting-swagger
-          uri: lb://peach-setting
-          predicates:
-            - Path=/api/setting/v3/api-docs
-          filters:
-            - SetPath=/v3/api-docs
-        # 消息推送服务 Swagger 文档路由
-        - id: peach-message-swagger
-          uri: lb://peach-message
-          predicates:
-            - Path=/api/message/v3/api-docs
-          filters:
-            - SetPath=/v3/api-docs
-        # 代码生成服务 Swagger 文档路由
-        - id: peach-generator-swagger
-          uri: lb://peach-generator
-          predicates:
-            - Path=/api/generator/v3/api-docs
-          filters:
-            - SetPath=/v3/api-docs
-        # 通用业务路由
-        - id: peach-auth
-          uri: lb://peach-auth
-          predicates:
-            - Path=/api/auth/**
-          filters:
-            - StripPrefix=1
-        - id: peach-monitor
-          uri: lb://peach-monitor
-          predicates:
-            - Path=/api/monitor/**
-          filters:
-            - StripPrefix=1
-        - id: peach-fileservice
-          uri: lb://peach-fileservice
-          predicates:
-            - Path=/api/file/**
-          filters:
-            - StripPrefix=1
-        # 2. 路由 WebSocket 请求 (给前端浏览器建立长连接)
-        - id: peach-message-ws
-          uri: lb:ws://peach-message # 注意这里协议是 lb:ws://
-          predicates:
-            - Path=/webSocket/**               # 匹配 @ServerEndpoint 的路径
-            # 1. 路由 HTTP 请求 (给内部服务 Feign 调用，或者前端偶尔调用的 HTTP 接口)
-        - id: peach-message
-          uri: lb://peach-message  # 负载均衡转发到消息服务
-          predicates:
-            - Path=/api/message/**                # 匹配 Controller 中的路径
-          filters:
-            - StripPrefix=1
-        - id: peach-generator
-          uri: lb://peach-generator  # 负载均衡转发到消息服务
-          predicates:
-            - Path=/api/generator/**                # 匹配 Controller 中的路径
-          filters:
-            - StripPrefix=1
-
   config:
     import:
-      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-common.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-satoken.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
-      - optional:nacos:peach-datasource.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
-      - optional:nacos:peach-store.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}

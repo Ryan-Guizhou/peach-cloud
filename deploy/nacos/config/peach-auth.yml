@@ -1,0 +1,20 @@
+server:
+  port: 18081
+
+spring:
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+      write-null-map-values: false
+      write-empty-json-arrays: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+springdoc:
+  servers:
+    - url: /api/auth
+      description: Gateway
+  packages-to-scan:
+    - com.peach.auth.rest.internal
+    - com.peach.auth.launch.health

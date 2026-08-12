@@ -1,27 +1,26 @@
-server:
-  port: 18084
-
 spring:
-  main:
-    web-application-type: reactive
   application:
     name: peach-message
   cloud:
     nacos:
       discovery:
-        server-addr: 127.0.0.1:8848
-        namespace: 4e7af3ed-7a49-4e3f-bdfc-67c20b1bfd05
-        group: PEACH-CLOUD
+        server-addr: ${SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR:${NACOS_SERVER_ADDR:127.0.0.1:8848}}
+        namespace: ${SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE:${NACOS_NAMESPACE_ID:peach-cloud}}
+        group: ${SPRING_CLOUD_NACOS_DISCOVERY_GROUP:${NACOS_GROUP:PEACH-CLOUD}}
       config:
-        server-addr: 127.0.0.1:8848
-        file-extension: yml
-        group: PEACH-CLOUD
-        namespace: 4e7af3ed-7a49-4e3f-bdfc-67c20b1bfd05
+        server-addr: ${SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR:${NACOS_SERVER_ADDR:127.0.0.1:8848}}
+        file-extension: ${SPRING_CLOUD_NACOS_CONFIG_FILE_EXTENSION:yml}
+        group: ${SPRING_CLOUD_NACOS_CONFIG_GROUP:${NACOS_GROUP:PEACH-CLOUD}}
+        namespace: ${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:${NACOS_NAMESPACE_ID:peach-cloud}}
+        encode: ${SPRING_CLOUD_NACOS_CONFIG_ENCODE:UTF-8}
+        enabled: true
   config:
     import:
-      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-common.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-openfeign.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-satoken.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-datasource.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-store.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
-  
+      - optional:nacos:peach-redis.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-knife4j.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
