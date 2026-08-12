@@ -113,4 +113,15 @@ public interface PubCommonConst {
      * 验证方式 2、邮件验证
      */
     Integer VALIDATE_TYPE_EMAIL = 2;
+
+    /**
+     * 通配符常量，表示匹配所有（如 CORS 来源或路径匹配）。
+     * <p>注意：在允许携带凭证的 CORS 场景中，此值已被安全策略禁止使用。</p>
+     */
+    String WILDCARD_ALL  = "*";
+
+    /**
+     * 逗号分隔符常量，用于拆分多值配置（如 IP 黑名单、允许来源列表等）。
+     */
+    String SEPARATOR_COMMA = ",";
 }

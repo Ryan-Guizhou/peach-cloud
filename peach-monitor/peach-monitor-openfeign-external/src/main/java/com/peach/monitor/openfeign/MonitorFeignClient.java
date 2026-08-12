@@ -1,7 +1,9 @@
 package com.peach.monitor.openfeign;
 
+import com.peach.common.constant.ServiceContextConstant;
 import com.peach.common.constant.ServiceNameConstant;
 import com.peach.common.constant.ServicePathConstant;
+import com.peach.monitor.openfeign.fallback.MonitorFeignClientFallbackFactory;
 import org.springframework.cloud.openfeign.FeignClient;
 
 /**
@@ -11,8 +13,10 @@ import org.springframework.cloud.openfeign.FeignClient;
  * @Description setting 服务 Feign 客户端定义
  */
 @FeignClient(
+        contextId = ServiceContextConstant.MONITOR_SERVICE_CONTEXT,
         name = ServiceNameConstant.MONITOR_SERVICE,
-        path = ServicePathConstant.MONITOR_PATH_SERVICE
+        path = ServicePathConstant.MONITOR_PATH_SERVICE,
+        fallbackFactory = MonitorFeignClientFallbackFactory.class
 )
 public interface MonitorFeignClient {
 

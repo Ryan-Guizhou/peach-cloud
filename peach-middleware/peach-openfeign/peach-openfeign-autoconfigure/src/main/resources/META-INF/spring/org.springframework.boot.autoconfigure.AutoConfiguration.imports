@@ -1,1 +1,4 @@
 com.peach.openfeign.autoconfigure.PeachOpenfeignAutoConfiguration
+com.peach.openfeign.autoconfigure.PeachOpenfeignClientAutoConfiguration
+com.peach.openfeign.autoconfigure.PeachOpenfeignWebAutoConfiguration
+com.peach.openfeign.autoconfigure.PeachOpenfeignSentinelAutoConfiguration

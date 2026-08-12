@@ -1,294 +1,72 @@
-# Peach OpenFeign Starter
+# peach-openfeign
 
-[中文](README.md)
+English | [中文](README.md)
 
-Last updated: 2026/7/2  
-Maintainer: Mr Shu  
-Baseline: `peach-cloud 1.0.0-SNAPSHOT`, JDK 8, Spring Boot 2.7.x, Spring Cloud OpenFeign
+Last updated: 2026-08-12
 
-## Table of Contents
+artifactId: `peach-openfeign`
 
-- [1. Overview](#1-overview)
-- [2. Responsibility Boundary](#2-responsibility-boundary)
-- [3. Module Structure](#3-module-structure)
-- [4. File Responsibilities](#4-file-responsibilities)
-- [5. Default Behavior](#5-default-behavior)
-- [6. Quick Start](#6-quick-start)
-- [7. Full Configuration Reference](#7-full-configuration-reference)
-- [8. Key Implementation Notes](#8-key-implementation-notes)
-- [9. Auto-Configuration Details](#9-auto-configuration-details)
-- [10. Build and Verification](#10-build-and-verification)
-- [11. Troubleshooting](#11-troubleshooting)
-- [12. Current Limitations and Suggestions](#12-current-limitations-and-suggestions)
+Runtime: Java 8, Spring Boot `2.7.13`, Spring Cloud `2021.0.5`, Spring Cloud Alibaba `2021.0.5.0`
 
-## 1. Overview
+## Role
 
-`peach-openfeign` is the shared OpenFeign starter for Peach Cloud. It standardizes common request-header handling for service-to-service Feign calls.
+`peach-openfeign` provides the OpenFeign starter and auto-configuration for Peach Cloud service-to-service HTTP calls.
 
-The module currently focuses on two things:
+It provides Same-Token propagation, RequestId propagation, OkHttp timeouts, explicit retry policy, Sentinel flow/degrade integration, unified exception mapping, and fallback validation.
 
-- Automatically injecting `Same-Token` into downstream Feign requests
-- Relaying selected incoming HTTP headers to downstream services
+It does not define business Feign contracts or generic header relay. Business clients belong to `*-openfeign-external` modules. Inbound Same-Token validation is handled by `peach-satoken-starter`.
 
-The module uses a two-part structure:
+## Modules
 
-- `peach-openfeign-autoconfigure`: auto-configuration, properties, and interceptor implementation
-- `peach-openfeign-starter`: the starter dependency used by business modules
-
-This module does not:
-
-- scan concrete `@FeignClient` definitions
-- manage fallback, retry, timeout, or logging policies
-- replace service-side authentication logic
-- handle Gateway-to-service `Same-Token` injection
-
-## 2. Responsibility Boundary
-
-### 2.1 What the Module Provides
-
-- A shared Feign `RequestInterceptor`
-- Skipping the inbound `Same-Token` during header relay
-- Re-injecting the current valid `Same-Token` for downstream calls
-- Switches for header relay and same-token injection
-- A configurable exclusion list for headers that must not be relayed
-- Full relay for multi-value request headers
-
-### 2.2 What the Module Does Not Provide
-
-- Guaranteed Servlet request context in async or scheduled threads
-- Ordering coordination across all custom Feign interceptors
-- Business header reconstruction for non-HTTP call chains
-- Gateway routing or downstream path mapping
-
-### 2.3 Relationship with `peach-satoken`
-
-- `peach-satoken` handles Sa-Token authentication and Same-Token validation on Gateway and regular services
-- `peach-openfeign` handles outbound Feign propagation from one service to another
-
-Recommended mental model:
-
-- external request entering the system: `peach-satoken`
-- internal Feign request leaving a service: `peach-openfeign`
-
-## 3. Module Structure
-
-```text
-peach-middleware/peach-openfeign/
-├── pom.xml
-├── README.md
-├── README.en-US.md
-├── peach-openfeign-autoconfigure/
-│   ├── pom.xml
-│   └── src/main/
-│       ├── java/com/peach/openfeign/
-│       │   ├── autoconfigure/
-│       │   │   └── PeachOpenFeignAutoConfiguration.java
-│       │   └── config/
-│       │       └── PeachOpenFeignProperties.java
-│       └── resources/
-│           └── META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
-└── peach-openfeign-starter/
-    └── pom.xml
-```
-
-## 4. File Responsibilities
-
-### 4.1 Root-Level Files
-
-| Path | Purpose |
+| Module | Responsibility |
 | --- | --- |
-| `peach-middleware/peach-openfeign/pom.xml` | Aggregator POM for the `autoconfigure` and `starter` modules |
-| `peach-middleware/peach-openfeign/README.md` | Main Chinese documentation |
-| `peach-middleware/peach-openfeign/README.en-US.md` | Main English documentation |
+| `peach-openfeign-autoconfigure` | Auto-configuration, properties, interceptors, retry, exceptions, Sentinel baseline rules, fallback validation |
+| `peach-openfeign-starter` | Business dependency entry, aggregating autoconfigure, OkHttp, and Sentinel |
 
-### 4.2 `peach-openfeign-autoconfigure`
-
-| File | Purpose |
-| --- | --- |
-| `autoconfigure/PeachOpenFeignAutoConfiguration.java` | Registers the Feign interceptor and applies header relay plus same-token injection |
-| `config/PeachOpenFeignProperties.java` | Property model for `peach.openfeign.*` |
-| `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` | Spring Boot auto-configuration entry |
-
-### 4.3 `peach-openfeign-starter`
-
-| File | Purpose |
-| --- | --- |
-| `peach-openfeign-starter/pom.xml` | Public starter used by business modules |
-
-## 5. Default Behavior
-
-After the starter is introduced, the following behavior is enabled by default:
-
-- register `peachOpenFeignRequestInterceptor`
-- enable downstream `Same-Token` injection
-- enable relay of current Servlet request headers
-- skip inbound `Same-Token` during relay
-- exclude headers that should not be forwarded:
-    - `content-type`
-    - `content-length`
-    - `host`
-    - `connection`
-    - `keep-alive`
-    - `proxy-connection`
-    - `te`
-    - `trailer`
-    - `transfer-encoding`
-    - `upgrade`
-    - `accept-encoding`
-
-## 6. Quick Start
-
-### 6.1 Dependency
-
-```xml
-<dependency>
-    <groupId>com.peach</groupId>
-    <artifactId>peach-openfeign-starter</artifactId>
-</dependency>
-```
-
-In most services, this starter is pulled indirectly through `*-openfeign-external` modules.
-
-### 6.2 Minimal Configuration
-
-Most services do not need extra configuration:
-
-```yaml
-peach:
-  openfeign:
-    enabled: true
-```
-
-### 6.3 Runtime Flow
-
-When a service receives an HTTP request and then calls another service through Feign:
-
-1. the interceptor reads `ServletRequestAttributes`
-2. allowed headers are copied to the downstream Feign request
-3. any existing `Same-Token` is skipped
-4. the current valid `Same-Token` is injected again
-
-## 7. Full Configuration Reference
+## Main Properties
 
 | Property | Default | Description |
 | --- | --- | --- |
-| `peach.openfeign.enabled` | `true` | Enables auto-configuration |
-| `peach.openfeign.same-token-enabled` | `true` | Injects `Same-Token` into downstream Feign requests |
-| `peach.openfeign.relay-headers` | `true` | Relays current Servlet request headers |
-| `peach.openfeign.exclude-headers` | see below | Case-insensitive header names that must not be relayed |
+| `peach.openfeign.enabled` | `true` | Enable auto-configuration |
+| `peach.openfeign.same-token-enabled` | `true` | Inject Sa-Token Same-Token |
+| `peach.openfeign.same-token-fail-fast` | `false` | Reject outbound call when Same-Token is missing; recommended `true` in shared production config |
+| `peach.openfeign.request-id-enabled` | `true` | Inject RequestId |
+| `peach.openfeign.upload-max-bytes` | `10485760` | Feign upload limit; large files should use direct object-storage upload |
+| `peach.openfeign.retry.methods` | `GET,HEAD` | Retry-enabled HTTP methods; write methods must be explicit |
+| `peach.openfeign.retry.statuses` | `429,503,504` | Retryable HTTP statuses |
+| `peach.openfeign.retry.exceptions` | network/timeout exceptions | Retryable exception class names |
+| `peach.openfeign.sentinel.enabled` | `true` | Enable Sentinel governance |
+| `peach.openfeign.sentinel.flow-data-id` | `peach-openfeign-sentinel-flow-rules` | Nacos flow rule dataId |
+| `peach.openfeign.sentinel.degrade-data-id` | `peach-openfeign-sentinel-degrade-rules` | Nacos degrade rule dataId |
+| `peach.openfeign.fallback.validate-on-startup` | `true` | Validate `fallbackFactory` at startup |
+| `peach.openfeign.fallback.fail-fast-if-missing` | `true` | Fail startup outside production profiles when fallback is missing |
+| `feign.sentinel.enabled` | `true` | Enable Spring Cloud Alibaba Sentinel Feign integration |
+| `feign.circuitbreaker.enabled` | `true` | Enable Spring Cloud OpenFeign circuit breaker integration |
+| `feign.sentinel.rules` | current config | Feign client/method Sentinel circuit-breaker rules |
 
-Default `exclude-headers`:
+## Sentinel Rules
 
-```yaml
-peach:
-  openfeign:
-    exclude-headers:
-      - content-type
-      - content-length
-      - host
-      - connection
-      - keep-alive
-      - proxy-connection
-      - te
-      - trailer
-      - transfer-encoding
-      - upgrade
-      - accept-encoding
-```
+Nacos rule files:
 
-## 8. Key Implementation Notes
+| File | rule-type |
+| --- | --- |
+| `deploy/nacos/config/peach-openfeign-sentinel-flow-rules.json` | `flow` |
+| `deploy/nacos/config/peach-openfeign-sentinel-degrade-rules.json` | `degrade` |
 
-### 8.1 `Same-Token` Strategy
+Resource names follow Feign `contextId`, for example `authFeignClient`, `fileFeignClient`, and `messageFeignClient`.
 
-The current implementation does not simply forward the inbound `Same-Token`.
+## Same-Token And RequestId
 
-It does this instead:
+- Same-Token is resolved from the current HTTP request header first, then from `SaSameUtil.getToken()`.
+- RequestId is only relayed from the current HTTP request header. The module does not create RequestId, use MDC, or keep a custom context holder.
+- Non-Servlet, async, and scheduled Feign calls usually have no original RequestId. If `same-token-fail-fast=true` and Same-Token cannot be resolved, the outbound call fails before reaching the remote service.
+- Inbound Same-Token validation belongs to the consumer service through `peach-satoken-starter`.
+- Retryable HTTP statuses keep their original classification after retry exhaustion. For example, 429 is still handled as rate limiting, and 503/504 are still handled as service unavailable.
 
-1. skip `Same-Token` during header relay
-2. call `SaSameUtil.getToken()` and inject a fresh value
-
-This keeps downstream validation aligned with the current service context.
-
-### 8.2 Multi-Value Header Relay
-
-The current version preserves full multi-value headers instead of taking only the first value.  
-Headers such as `Accept` and `Accept-Language` are no longer truncated.
-
-### 8.3 Behavior Without Servlet Context
-
-If the current thread does not carry `ServletRequestAttributes`:
-
-- no exception is thrown
-- HTTP headers are not relayed
-- `Same-Token` injection still runs when enabled
-
-This is useful for some internal, test, or non-Web execution paths.
-
-### 8.4 Why Hop-by-Hop Headers Are Excluded
-
-Headers like `connection`, `transfer-encoding`, and `upgrade` are valid only for a single transport hop. Forwarding them to downstream services can cause conflicts or undefined behavior, so they are excluded by default.
-
-## 9. Auto-Configuration Details
-
-Auto-configuration entry:
-
-```text
-peach-openfeign-autoconfigure/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
-```
-
-Registered configuration:
-
-```text
-com.peach.openfeign.autoconfigure.PeachOpenFeignAutoConfiguration
-```
-
-Default bean:
-
-| Bean Name | Type | Purpose |
-| --- | --- | --- |
-| `peachOpenFeignRequestInterceptor` | `RequestInterceptor` | Handles header relay and same-token injection |
-
-Activation conditions:
-
-- `RequestInterceptor` exists on the classpath
-- `peach.openfeign.enabled=true`
-- no bean named `peachOpenFeignRequestInterceptor` already exists
-
-## 10. Build and Verification
-
-Module-level build command:
+## Verification
 
 ```bash
-mvn -f "peach-middleware/peach-openfeign/pom.xml" -DskipTests compile
+node scripts/check-utf8.mjs
+mvn -pl peach-middleware/peach-openfeign/peach-openfeign-autoconfigure,peach-setting/peach-setting-openfeign-external,peach-monitor/peach-monitor-openfeign-external -am -DskipTests compile -Pdevelopment
+git diff --check
 ```
-
-This change should verify:
-
-- `peach-openfeign-autoconfigure` compiles
-- `peach-openfeign-starter` compiles
-- multi-value header relay compiles cleanly
-- the new default exclusion list compiles cleanly
-
-## 11. Troubleshooting
-
-| Symptom | Check |
-| --- | --- |
-| downstream `Same-Token` validation fails | confirm the service includes `peach-openfeign-starter` and `same-token-enabled=true` |
-| language-related headers look incomplete downstream | check whether another interceptor overwrites them; this module now supports full multi-value relay |
-| some headers must not be forwarded | add them to `exclude-headers` |
-| downstream calls from non-Web threads miss business headers | expected behavior; supply explicit headers or build a custom context strategy |
-| custom Feign interceptors conflict | inspect whether multiple interceptors append or overwrite the same headers |
-
-## 12. Current Limitations and Suggestions
-
-Current limitations:
-
-- only Servlet request context is supported today
-- header relay only covers inbound HTTP request context
-- the module still has no dedicated automated test class
-
-Suggestions:
-
-- if async context propagation is needed later, extract a dedicated request-header context provider
-- if WebFlux upstream context must be supported, do not keep relying only on `RequestContextHolder`
-- if more shared Feign interceptors are introduced, define ordering and ownership clearly

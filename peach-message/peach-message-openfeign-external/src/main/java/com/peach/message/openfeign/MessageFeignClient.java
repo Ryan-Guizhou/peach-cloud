@@ -1,10 +1,12 @@
 package com.peach.message.openfeign;
 
+import com.peach.common.constant.ServiceContextConstant;
 import com.peach.common.constant.ServiceNameConstant;
 import com.peach.common.constant.ServicePathConstant;
 import com.peach.common.response.Response;
 import com.peach.message.dto.MessagePublishDTO;
 import com.peach.message.dto.MessageRevokeDTO;
+import com.peach.message.openfeign.fallback.MessageFeignClientFallbackFactory;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,9 +18,10 @@ import org.springframework.web.bind.annotation.RequestBody;
  * @Description 消息服务Feign客户端
  */
 @FeignClient(
-        contextId = "messageFeignClient",
+        contextId = ServiceContextConstant.MESSAGE_SERVICE_CONTEXT,
         name = ServiceNameConstant.MESSAGE_SERVICE,
-        path = ServicePathConstant.MESSAGE_PATH_SERVICE
+        path = ServicePathConstant.MESSAGE_PATH_SERVICE,
+        fallbackFactory = MessageFeignClientFallbackFactory.class
 )
 public interface MessageFeignClient {
 

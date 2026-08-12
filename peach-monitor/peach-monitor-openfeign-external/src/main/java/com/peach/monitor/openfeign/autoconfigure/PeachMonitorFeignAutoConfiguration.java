@@ -2,10 +2,14 @@ package com.peach.monitor.openfeign.autoconfigure;
 
 
 import com.peach.monitor.openfeign.MonitorFeignClient;
+import com.peach.monitor.openfeign.fallback.MonitorFeignClientFallbackFactory;
+import com.peach.openfeign.support.PeachFeignFallbackSupport;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.context.annotation.Bean;
 
 
 /**
@@ -17,5 +21,11 @@ import org.springframework.cloud.openfeign.FeignClient;
 @AutoConfiguration
 @ConditionalOnClass(FeignClient.class)
 @EnableFeignClients(clients = MonitorFeignClient.class)
-public class PeachAuthFeignMonitorConfiguration {
+public class PeachMonitorFeignAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    public MonitorFeignClientFallbackFactory monitorFeignClientFallbackFactory(PeachFeignFallbackSupport fallbackSupport) {
+        return new MonitorFeignClientFallbackFactory(fallbackSupport);
+    }
 }
