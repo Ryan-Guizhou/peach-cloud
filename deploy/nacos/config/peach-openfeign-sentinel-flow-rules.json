@@ -1,0 +1,27 @@
+[
+  {
+    "resource": "authFeignClient",
+    "grade": 1,
+    "count": 200
+  },
+  {
+    "resource": "fileFeignClient",
+    "grade": 1,
+    "count": 50
+  },
+  {
+    "resource": "messageFeignClient",
+    "grade": 1,
+    "count": 100
+  },
+  {
+    "resource": "settingFeginClient",
+    "grade": 1,
+    "count": 100
+  },
+  {
+    "resource": "monitorFeignClient",
+    "grade": 1,
+    "count": 100
+  }
+]

@@ -2,8 +2,8 @@ peach:
   openfeign:
     enabled: true
     same-token-enabled: true
-    async-context-enabled: true
-    circuit-breaker-enabled: true
+    same-token-fail-fast: true
+    request-id-enabled: true
     upload-max-bytes: 10485760
     client:
       okhttp-enabled: true
@@ -13,32 +13,82 @@ peach:
       named:
         fileFeignClient:
           read-timeout-millis: 60000
+        messageFeignClient:
+          read-timeout-millis: 5000
+    retry:
+      enabled: true
+      max-attempts: 2
+      initial-interval-millis: 100
+      max-interval-millis: 300
+      multiplier: 2.0
+      methods:
+        - GET
+        - HEAD
+      statuses:
+        - 429
+        - 503
+        - 504
+      exceptions:
+        - java.net.ConnectException
+        - java.net.SocketTimeoutException
+        - java.net.UnknownHostException
+        - feign.RetryableException
+    sentinel:
+      enabled: true
+      datasource-type: nacos
+      flow-data-id: peach-openfeign-sentinel-flow-rules
+      degrade-data-id: peach-openfeign-sentinel-degrade-rules
+      group-id: PEACH-CLOUD
+    exception:
+      expose-remote-message: false
+      log-stacktrace-for-4xx: false
+      log-stacktrace-for-5xx: true
+    fallback:
+      validate-on-startup: true
+      fail-fast-if-missing: true
+      production-profiles:
+        - prod
+        - production
+        - docker
 
 feign:
   okhttp:
     enabled: true
+  circuitbreaker:
+    enabled: true
+  sentinel:
+    enabled: true
+    default-rule: default
+    rules:
+      default:
+        - grade: 2
+          count: 5
+          timeWindow: 30
+          statIntervalMs: 10000
+          minRequestAmount: 20
   client:
     config:
       default:
         connectTimeout: 3000
         readTimeout: 10000
+      fileFeignClient:
+        readTimeout: 60000
+      messageFeignClient:
+        readTimeout: 5000
 
 spring:
   cloud:
-    openfeign:
-      circuitbreaker:
-        enabled: true
-
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        slidingWindowSize: 20
-        minimumNumberOfCalls: 5
-        failureRateThreshold: 50
-        waitDurationInOpenState: 15s
-        permittedNumberOfCallsInHalfOpenState: 3
-  timelimiter:
-    configs:
-      default:
-        timeoutDuration: 15s
+    sentinel:
+      datasource:
+        peach-openfeign-flow:
+          nacos:
+            data-id: peach-openfeign-sentinel-flow-rules
+            group-id: PEACH-CLOUD
+            data-type: json
+            rule-type: flow
+        peach-openfeign-degrade:
+          nacos:
+            data-id: peach-openfeign-sentinel-degrade-rules
+            group-id: PEACH-CLOUD
+            data-type: json
+            rule-type: degrade
