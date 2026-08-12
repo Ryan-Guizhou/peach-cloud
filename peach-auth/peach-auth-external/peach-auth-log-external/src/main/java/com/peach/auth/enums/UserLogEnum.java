@@ -57,18 +57,18 @@ public interface UserLogEnum {
     /**
      * 操作类型枚举
      */
-    enum OptType implements UserLogEnum{
+    enum OptType implements UserLogEnum {
 
 
-        DELETE("DELETE","删除"),
+        DELETE("DELETE", "删除"),
 
-        SELECT("SELECT","查询"),
+        SELECT("SELECT", "查询"),
 
-        INSERT("INSERT","新增"),
+        INSERT("INSERT", "新增"),
 
-        UPDATE("UPDATE","更新"),
+        UPDATE("UPDATE", "更新"),
 
-        DEFAULT("UNKNOWN","未知"),
+        DEFAULT("UNKNOWN", "未知"),
         ;
 
         private final String optTypeCode;
@@ -87,7 +87,7 @@ public interface UserLogEnum {
         public String getOptTypeName() {
             return optTypeName;
         }
-        
+
         public OptType getOptTypeEnumByOptTypeCode(String optTypeCode) {
             for (OptType optTypeEnum : OptType.values()) {
                 if (optTypeEnum.getOptTypeCode().equals(optTypeCode)) {
@@ -101,17 +101,17 @@ public interface UserLogEnum {
     /**
      * 日志级别枚举
      */
-    enum LogLevel implements UserLogEnum{
+    enum LogLevel implements UserLogEnum {
 
-        INFO("INFO","INFO"),
+        INFO("INFO", "INFO"),
 
-        DEBUG("DEBUG","DEBUG"),
+        DEBUG("DEBUG", "DEBUG"),
 
-        WARN("WARN","WARN"),
+        WARN("WARN", "WARN"),
 
-        ERROR("ERROR","ERROR"),
+        ERROR("ERROR", "ERROR"),
 
-        DEFAULT("UNKNOWN","未知"),
+        DEFAULT("UNKNOWN", "未知"),
         ;
 
         private final String logLevelCode;
