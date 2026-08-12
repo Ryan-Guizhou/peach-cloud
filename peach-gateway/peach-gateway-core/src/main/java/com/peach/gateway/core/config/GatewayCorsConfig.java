@@ -8,9 +8,11 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.util.pattern.PathPatternParser;
 
 /**
- * 网关跨域配置
+ * 网关跨域配置。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
+ * @CreateTime 2026/8/11 14:45
  */
 @Configuration
 public class GatewayCorsConfig {

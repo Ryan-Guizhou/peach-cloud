@@ -739,19 +739,13 @@
 
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-satoken-core</artifactId>
+                <artifactId>peach-satoken-autoconfigure</artifactId>
                 <version>${revision}</version>
             </dependency>
 
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-satoken-web-autoconfigure</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.peach</groupId>
-                <artifactId>peach-satoken-web-starter</artifactId>
+                <artifactId>peach-satoken-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
         </dependencies>

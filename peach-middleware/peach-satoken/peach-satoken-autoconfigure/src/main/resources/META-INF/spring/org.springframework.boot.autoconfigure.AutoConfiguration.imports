@@ -1,0 +1,3 @@
+com.peach.satoken.autoconfigure.PeachSaTokenDaoAutoConfiguration
+com.peach.satoken.autoconfigure.PeachSaTokenSessionStrategyAutoConfiguration
+com.peach.satoken.autoconfigure.PeachSaTokenWebAutoConfiguration

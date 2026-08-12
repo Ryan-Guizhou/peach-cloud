@@ -33,10 +33,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.peach</groupId>
-            <artifactId>peach-redis-common</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
         </dependency>

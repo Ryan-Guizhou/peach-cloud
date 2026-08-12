@@ -21,6 +21,7 @@
         <module>peach-storage</module>
         <module>peach-initialize</module>
         <module>peach-threadpool</module>
+        <module>peach-code</module>
     </modules>
 
 </project>

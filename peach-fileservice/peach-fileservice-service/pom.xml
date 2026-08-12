@@ -33,7 +33,7 @@
         <!-- Sa-Token 权限认证 -->
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-satoken-web-starter</artifactId>
+            <artifactId>peach-satoken-starter</artifactId>
         </dependency>
         <!-- Redis -->
         <dependency>

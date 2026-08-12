@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-satoken-web-starter</artifactId>
+            <artifactId>peach-satoken-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>com.peach</groupId>
