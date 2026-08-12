@@ -101,12 +101,20 @@ render_template() {
   mysql_password_escaped=$(sed_escape "$MYSQL_ROOT_PASSWORD")
   redis_host_escaped=$(sed_escape "$REDIS_HOST")
   redis_password_escaped=$(sed_escape "$REDIS_PASSWORD")
+  oss_access_key_escaped=$(sed_escape "$OSS_ACCESS_KEY")
+  oss_secret_key_escaped=$(sed_escape "$OSS_SECRET_KEY")
+  cos_access_key_escaped=$(sed_escape "$COS_ACCESS_KEY")
+  cos_secret_key_escaped=$(sed_escape "$COS_SECRET_KEY")
   sed -i \
     -e "s/@MYSQL_HOST@/$mysql_host_escaped/g" \
     -e "s/@MYSQL_DATABASE@/$mysql_database_escaped/g" \
     -e "s/@MYSQL_ROOT_PASSWORD@/$mysql_password_escaped/g" \
     -e "s/@REDIS_HOST@/$redis_host_escaped/g" \
     -e "s/@REDIS_PASSWORD@/$redis_password_escaped/g" \
+    -e "s/@OSS_ACCESS_KEY@/$oss_access_key_escaped/g" \
+    -e "s/@OSS_SECRET_KEY@/$oss_secret_key_escaped/g" \
+    -e "s/@COS_ACCESS_KEY@/$cos_access_key_escaped/g" \
+    -e "s/@COS_SECRET_KEY@/$cos_secret_key_escaped/g" \
     "$dst"
 }
 
