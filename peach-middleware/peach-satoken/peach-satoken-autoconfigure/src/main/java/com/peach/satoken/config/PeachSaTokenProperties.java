@@ -11,9 +11,9 @@ import java.util.List;
  *
  * <p>该配置用于统一管理 Sa-Token 的 DAO、会话策略和 Same-Token 校验。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2025/10/10 15:30
  */
 @Data
 @ConfigurationProperties(prefix = "peach.satoken")

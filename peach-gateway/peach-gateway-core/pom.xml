@@ -70,11 +70,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.peach</groupId>
-            <artifactId>peach-satoken-autoconfigure</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
         </dependency>

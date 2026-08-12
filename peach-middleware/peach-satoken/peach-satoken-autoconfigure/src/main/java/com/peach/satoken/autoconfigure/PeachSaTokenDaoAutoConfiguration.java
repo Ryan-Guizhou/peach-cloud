@@ -18,9 +18,9 @@ import org.springframework.lang.NonNull;
  *
  * <p>当项目中存在 Redis 连接工厂且开启 `peach.satoken.dao.enabled` 时，注册基于 Redis 的 `SaTokenDao` 实现。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2025/10/10 15:30
  */
 @AutoConfiguration
 @AutoConfigureAfter(name = {

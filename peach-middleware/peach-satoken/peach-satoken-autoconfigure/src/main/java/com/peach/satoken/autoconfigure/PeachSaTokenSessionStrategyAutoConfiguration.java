@@ -13,9 +13,9 @@ import javax.annotation.PostConstruct;
  *
  * <p>用于替换默认会话创建策略，使 Sa-Token 会话对象使用当前项目定制实现。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2025/10/10 15:30
  */
 @AutoConfiguration
 @ConditionalOnClass(SaStrategy.class)

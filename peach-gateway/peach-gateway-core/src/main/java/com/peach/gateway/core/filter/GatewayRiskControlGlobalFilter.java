@@ -133,8 +133,9 @@ public class GatewayRiskControlGlobalFilter implements GlobalFilter, Ordered {
      */
     private Mono<Void> reject(ServerWebExchange exchange, String method, String path,
                               String client, String reason) {
-        log.warn("Gateway risk-control rejected request, method={}, path={}, client={}, reason={}",
-                method, path, client, reason);
+        String requestId = exchange.getRequest().getHeaders().getFirst(GatewayConstant.REQUEST_ID_HEADER);
+        log.warn("Gateway risk-control rejected request, requestId={}, method={}, path={}, client={}, reason={}",
+                requestId, method, path, client, reason);
         return GatewayFilterSupport.writeError(exchange, HttpStatus.FORBIDDEN,
                 "Request blocked by gateway security policy");
     }

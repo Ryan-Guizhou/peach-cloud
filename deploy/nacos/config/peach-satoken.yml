@@ -5,9 +5,9 @@ sa-token:
   is-concurrent: true
   is-share: true
   #是否检查same-token
-  check-same-token: true 
+  check-same-token: true
   # same-token 超时时间
-  same-token-timeout: 30 
+  same-token-timeout: 30
   is-read-cookie: false
   # 是否打印日志
   is-log: true
@@ -28,3 +28,114 @@ peach:
       header-name: X-Request-Id
     user-context:
       enabled: true
+      public-endpoints:
+        - method: OPTIONS
+          path: /**
+        - method: ANY
+          path: /login
+        - method: ANY
+          path: /logout
+        - method: ANY
+          path: /register
+        - method: ANY
+          path: /getCaptcha
+        - method: ANY
+          path: /checkCaptcha
+        - method: ANY
+          path: /init
+        - method: ANY
+          path: /doc.html
+        - method: ANY
+          path: /swagger-resources
+        - method: ANY
+          path: /swagger-resources/**
+        - method: ANY
+          path: /webjars
+        - method: ANY
+          path: /webjars/**
+        - method: ANY
+          path: /v3/api-docs
+        - method: ANY
+          path: /v3/api-docs/**
+        - method: ANY
+          path: /v2/api-docs
+        - method: ANY
+          path: /v2/api-docs/**
+        - method: ANY
+          path: /actuator
+        - method: ANY
+          path: /actuator/**
+        - method: ANY
+          path: /health
+        - method: ANY
+          path: health
+        - method: ANY
+          path: /sse
+        - method: ANY
+          path: /sse/**
+        - method: ANY
+          path: /favicon.ico
+        - method: POST
+          path: /api/auth/login
+        - method: POST
+          path: /api/auth/logout
+        - method: POST
+          path: /api/auth/register
+        - method: POST
+          path: /api/auth/forget
+        - method: POST
+          path: /api/auth/reset
+        - method: POST
+          path: /api/auth/getCaptcha
+        - method: POST
+          path: /api/auth/checkCaptcha
+        - method: POST
+          path: /api/auth/init
+        - method: GET
+          path: /api/auth/rsa-public-key
+        - method: ANY
+          path: /api/doc.html
+        - method: ANY
+          path: /api/swagger-resources
+        - method: ANY
+          path: /api/swagger-resources/**
+        - method: ANY
+          path: /api/webjars
+        - method: ANY
+          path: /api/webjars/**
+        - method: ANY
+          path: /api/v3/api-docs
+        - method: ANY
+          path: /api/v3/api-docs/**
+        - method: ANY
+          path: /api/v2/api-docs
+        - method: ANY
+          path: /api/v2/api-docs/**
+        - method: ANY
+          path: /api/actuator
+        - method: ANY
+          path: /api/actuator/**
+        - method: ANY
+          path: /api/health
+        - method: ANY
+          path: /api/sse
+        - method: ANY
+          path: /api/sse/**
+        - method: ANY
+          path: /api/favicon.ico
+        - method: GET
+          path: /api/auth/v3/api-docs
+        - method: GET
+          path: /api/file/v3/api-docs
+        - method: GET
+          path: /api/message/v3/api-docs
+        - method: GET
+          path: /api/setting/v3/api-docs
+        - method: GET
+          path: /api/generator/v3/api-docs
+        - method: GET
+          path: /api/monitor/v3/api-docs
+        - method: GET
+          path: /api/monitor/actuator/**
+        - method: GET
+          path: /api/monitor/health

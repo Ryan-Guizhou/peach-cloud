@@ -128,19 +128,6 @@ peach:
       blocked-ips:
       blocked-user-agents:
 
-# redis配置
-spring.redis:
-    host: ${REDIS_HOST:127.0.0.1}
-    port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:}
-    database: ${REDIS_DATABASE:0}
-    timeout: ${REDIS_TIMEOUT:3000ms}
-    lettuce:
-      pool:
-        max-active: ${REDIS_POOL_MAX_ACTIVE:16}
-        max-idle: ${REDIS_POOL_MAX_IDLE:8}
-        min-idle: ${REDIS_POOL_MIN_IDLE:0}
-        max-wait: ${REDIS_POOL_MAX_WAIT:3000ms}
 # 响应式配置
 spring.main:
     web-application-type: reactive

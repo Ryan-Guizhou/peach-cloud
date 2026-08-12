@@ -35,9 +35,9 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>负责 Sa-Token 的字符串、对象、过期时间与搜索操作，底层通过项目内 Redis 连接工厂构建模板。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2025/10/10 15:30
  */
 @Slf4j
 public class PeachSaTokenDao implements SaTokenDao {

@@ -8,6 +8,7 @@ import cn.dev33.satoken.exception.NotSafeException;
 import cn.dev33.satoken.reactor.context.SaReactorSyncHolder;
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.gateway.core.config.GatewaySaTokenProperties;
+import com.peach.gateway.core.constant.GatewayConstant;
 import com.peach.gateway.core.security.GatewaySecurityEndpointMatcher;
 import com.peach.gateway.core.support.GatewayFilterSupport;
 import lombok.extern.slf4j.Slf4j;
@@ -79,8 +80,9 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
     private Mono<Void> handleAuthenticationError(ServerWebExchange exchange, String method,
                                                 String path, Throwable e) {
         HttpStatus status = resolveStatus(e);
-        log.warn("Gateway authorization rejected, method={}, path={}, status={}, reason={}",
-                method, path, status.value(), e.getClass().getSimpleName());
+        String requestId = exchange.getRequest().getHeaders().getFirst(GatewayConstant.REQUEST_ID_HEADER);
+        log.warn("Gateway authorization rejected, requestId={}, method={}, path={}, status={}, reason={}",
+                requestId, method, path, status.value(), e.getClass().getSimpleName());
         return GatewayFilterSupport.writeError(exchange, status, resolveMessage(e));
     }
 

@@ -1,38 +1,39 @@
 package com.peach.gateway.core;
 
 import cn.dev33.satoken.dao.SaTokenDao;
-import com.peach.satoken.dao.PeachSaTokenDao;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import com.peach.gateway.core.dao.PeachSaTokenDao;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Indexed;
 
 /**
- * Sa-Token DAO 自动配置。
+ * 网关侧 Sa-Token Redis DAO 配置。
  *
- * <p>当项目中存在 Redis 连接工厂且开启 `peach.satoken.dao.enabled` 时，注册基于 Redis 的 `SaTokenDao` 实现。</p>
+ * <p>该配置属于网关服务内部模块，由 {@code peach-gateway-launch} 的组件扫描加载。
+ * 网关不引入业务服务侧 {@code peach-satoken}，但需要使用同一套 Redis Sa-Token 数据。
+ * 存在 Redis 连接工厂且 {@code peach.satoken.dao.enabled=true} 时，注册网关独立的
+ * {@link PeachSaTokenDao}。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/8/11 14:45
  */
-@AutoConfiguration
-@AutoConfigureAfter(name = {
-        "com.peach.redis.common.RedisConfig"
-})
-@ConditionalOnClass({SaTokenDao.class, RedisConnectionFactory.class})
-@ConditionalOnBean(RedisConnectionFactory.class)
+@Indexed
+@Configuration(proxyBeanMethods = false)
+@ConditionalOnClass({SaTokenDao.class, JedisConnectionFactory.class})
+@ConditionalOnBean(JedisConnectionFactory.class)
 @ConditionalOnProperty(prefix = "peach.satoken.dao", name = "enabled", havingValue = "true", matchIfMissing = true)
-public class PeachSaTokenDaoAutoConfiguration {
+public class GatewaySaTokenDaoConfiguration {
 
     /**
-     * 创建 Sa-Token DAO。
+     * 创建网关侧 Sa-Token DAO。
      *
      * @param jedisConnectionFactory Redis 连接工厂
      * @return Sa-Token DAO 实现

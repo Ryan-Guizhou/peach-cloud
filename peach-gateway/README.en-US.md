@@ -2,30 +2,30 @@
 
 English | [中文](README.md)
 
-Last updated: 2026-08-09
+Last updated: 2026-08-12
 
-`peach-gateway` is the unified traffic entrypoint for Peach Cloud. It is based on Spring Cloud Gateway and provides routing, service discovery, gateway-side Sa-Token authentication, Same-Token relay, basic risk control, request ID propagation, access logs, CORS, Knife4j aggregation, and safe unified error responses.
+`peach-gateway` is the unified traffic entry point for Peach Cloud. It is based on Spring Cloud Gateway and provides routing, service discovery, gateway-side Sa-Token login checks, Same-Token injection, basic risk control, request ID propagation, access logs, CORS, Knife4j aggregation, and safe unified error responses.
 
 ## Scope
 
-This module is responsible for traffic entering backend services before it reaches business modules.
+This module handles external HTTP/WebSocket traffic before it reaches backend business services.
 
 It provides:
 
 - HTTP and WebSocket routing through Spring Cloud Gateway.
-- Nacos service discovery and Nacos config import.
+- Nacos service discovery and Nacos configuration import.
 - Gateway-side Sa-Token login-state verification.
-- Gateway-local Sa-Token Redis DAO and Jackson session serialization, without depending on `peach-satoken-core`.
-- Same-Token injection for downstream service-to-service authentication.
-- Basic risk control for URI length, header count, unsupported methods, static blocklists, and Redis dynamic IP blocklist.
-- Safe gateway exception mapping that avoids returning raw exception details.
-- Request ID propagation and access logs without query, body, token, or full DTO data.
+- Gateway-local Sa-Token Redis DAO, Session serialization, and token strategy for Reactor runtime.
+- Same-Token injection for authenticated downstream service calls.
+- Basic risk control for URI length, header count, unsafe HTTP methods, static blocklists, and Redis dynamic IP blocklist.
+- Safe exception mapping without leaking raw internal exception details.
+- Request ID propagation and access logs without query, body, token, password, or full DTO data.
 - Knife4j/OpenAPI document aggregation.
 
 It does not provide:
 
-- User, role, menu, or permission data management. That belongs to `peach-auth`.
-- Business-service `SecurityContextHolder` restoration. Business services should use the aggregate `peach-satoken` module and rebuild context from `StpUtil.getLoginId()` plus cache data.
+- User, role, menu, or permission data management. Those belong to `peach-auth`.
+- Business-service `SecurityContextHolder` restoration. Business services should use `peach-satoken-starter`.
 - Full WAF, DDoS protection, gray release, or full production gateway governance.
 - Protection for traffic that bypasses the gateway and calls business services directly.
 
@@ -33,24 +33,39 @@ It does not provide:
 
 | Module | Responsibility |
 | --- | --- |
-| `peach-gateway-core` | Gateway filters, security matcher, Sa-Token Redis DAO, config properties, and shared support code |
+| `peach-gateway-core` | Gateway filters, security endpoint matching, gateway-side Sa-Token configurations, properties, and shared support code |
 | `peach-gateway-launch` | Spring Boot launch module, profile bootstrap config, and logback config |
+
+## Gateway-side Sa-Token Configurations
+
+Gateway does not depend on `peach-satoken`, but it maintains its own Sa-Token support inside `peach-gateway-core`. This module is an internal gateway business module, not a starter, and it does not expose Spring Boot auto-configuration through `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`.
+
+These configuration classes are loaded by `@ComponentScan("com.peach")` on the `peach-gateway-launch` application class:
+
+| Class | Responsibility |
+| --- | --- |
+| `GatewayCorePropertiesConfiguration` | Enables `GatewaySaTokenProperties` and `GatewayRiskControlProperties` |
+| `GatewaySaTokenDaoConfiguration` | Registers gateway-side `SaTokenDao` using `PeachSaTokenDao` |
+| `GatewaySaTokenSessionStrategyConfiguration` | Overrides Sa-Token Session creation to keep Jackson serialization compatible |
+| `GatewaySaTokenStrategyConfiguration` | Overrides Sa-Token token generation strategy when enabled |
+
+The class names intentionally avoid the `AutoConfiguration` suffix to prevent confusion with the business-service `peach-satoken` starter auto-configurations.
 
 ## Key Classes
 
 | Capability | Class / Config | Notes |
 | --- | --- | --- |
 | Request ID | `GatewayRequestGlobalFilter` | Writes `X-Request-Id` to downstream requests and responses |
-| Risk control | `GatewayRiskControlGlobalFilter`, `GatewayRiskControlProperties` | Rejects abnormal request shape and explicit blocklist hits |
+| Risk control | `GatewayRiskControlGlobalFilter`, `GatewayRiskControlProperties` | Rejects abnormal request shapes and explicit blocklist hits |
 | Authentication | `GatewayAuthorizationGlobalFilter`, `GatewaySaTokenProperties` | Runs `StpUtil.checkLogin()` for non-public endpoints |
-| Same-Token | `GatewaySameTokenGlobalFilter` | Injects Sa-Token Same-Token into downstream requests |
+| Same-Token | `GatewaySameTokenGlobalFilter` | Injects Sa-Token Same-Token for non-public downstream calls |
 | Unified errors | `GatewayExceptionGlobalFilter` | Maps auth, permission, routing, 4xx, and 5xx errors to safe JSON |
-| Access logs | `GatewayAccessLogGlobalFilter` | Logs method, path, status, duration, requestId, and client only |
+| Access logs | `GatewayAccessLogGlobalFilter` | Logs method, path, status, durationMs, requestId, and client only |
 | Public endpoints | `GatewaySecurityEndpointMatcher`, `GatewaySecurityEndpointRule` | Gateway-local public endpoint matching |
-| Sa-Token storage | `PeachSaTokenDao`, `PeachSaSessionForJacksonCustomized` | Shared Sa-Token Redis/session implementation from `peach-satoken-autoconfigure` |
+| Sa-Token storage | `PeachSaTokenDao`, `PeachSaSessionForJacksonCustomized` | Gateway-local implementation compatible with the shared Redis/session contract |
 | CORS | `GatewayCorsConfig` | Registers reactive CORS configuration |
 
-Filter order:
+## Filter Order
 
 | Order | Filter | Purpose |
 | --- | --- | --- |
@@ -58,8 +73,22 @@ Filter order:
 | `-300` | `GatewayRequestGlobalFilter` | Creates and propagates request ID |
 | `-250` | `GatewayRiskControlGlobalFilter` | Applies basic gateway risk-control checks |
 | `-200` | `GatewayAuthorizationGlobalFilter` | Checks Sa-Token login state |
-| `-150` | `GatewaySameTokenGlobalFilter` | Adds Same-Token for downstream calls |
+| `-150` | `GatewaySameTokenGlobalFilter` | Adds Same-Token |
 | `Ordered.LOWEST_PRECEDENCE` | `GatewayAccessLogGlobalFilter` | Writes final access logs |
+
+Requests matching `peach.gateway.satoken.public-endpoints` skip risk control, authentication, and Same-Token injection.
+
+## Logging Format
+
+Gateway security logs use English parameterized messages and keep these field orders:
+
+```text
+requestId={}, method={}, path={}, status={}, reason={}
+requestId={}, method={}, path={}, client={}, reason={}
+requestId={}, method={}, path={}, status={}, durationMs={}, client={}
+```
+
+Logs must not include request body, query, token, password, full DTO data, or Redis password. Allowed operational fields are requestId, method, path, status, durationMs, client, and reason.
 
 ## Configuration Layout
 
@@ -73,7 +102,7 @@ Gateway runtime configuration is centralized in Nacos:
 
 - `deploy/nacos/config/peach-gateway.yml`
 
-The profile files import `peach-gateway.yml` through:
+The profile files import Nacos config through:
 
 ```yaml
 spring:
@@ -107,76 +136,66 @@ Document routes:
 | `peach-message-swagger` | `/api/message/v3/api-docs` | `lb://peach-message` | `SetPath=/v3/api-docs` |
 | `peach-generator-swagger` | `/api/generator/v3/api-docs` | `lb://peach-generator` | `SetPath=/v3/api-docs` |
 
-## Gateway Properties
+## Properties
 
 `peach.gateway.satoken` maps to `GatewaySaTokenProperties`.
 
 | Property | Default | Description |
 | --- | --- | --- |
 | `enabled` | `true` | Enables gateway authentication and gateway Sa-Token customization |
-| `inject-same-token` | `true` | Injects Same-Token into downstream requests |
+| `inject-same-token` | `true` | Injects Same-Token for non-public downstream requests |
 | `token-strategy-enabled` | `true` | Overrides Sa-Token token generation strategy |
-| `log-path` | `true` | Logs skipped public endpoints |
-| `public-endpoints` | source defaults | Public endpoints skipped by authentication and risk control |
+| `log-path` | `true` | Logs public endpoint bypasses |
+| `public-endpoints` | source defaults / Nacos override | Endpoints skipped by risk control, authentication, and Same-Token injection |
 
 `peach.gateway.risk-control` maps to `GatewayRiskControlProperties`.
 
 | Property | Default | Description |
 | --- | --- | --- |
-| `enabled` | `false` in code, `true` in Nacos config | Enables the risk-control filter |
+| `enabled` | `false` in code, `true` in Nacos sample | Enables the risk-control filter |
 | `max-uri-length` | `2048` | Maximum raw URI length |
 | `max-header-count` | `100` | Maximum number of request headers |
 | `blocked-ips` | empty | Static client IP blocklist, comma-separated |
 | `blocked-user-agents` | empty | Static User-Agent blocklist, comma-separated |
 
-Redis dynamic IP blocklist uses this Redis Set key:
+Redis dynamic IP blocklist uses this Redis Set:
 
 ```text
 peach:gateway:risk-control:blocked-ip:
 ```
 
-Gateway Redis connectivity uses Spring Boot native Redis configuration. It is consumed by shared `PeachSaTokenDao` and the dynamic risk-control blocklist:
-
-| Property | Description |
-| --- | --- |
-| `spring.redis.host` | Redis host |
-| `spring.redis.port` | Redis port |
-| `spring.redis.password` | Redis password, preferably injected through environment variables |
-| `spring.redis.database` | Redis database |
-| `spring.redis.timeout` | Redis command timeout |
-| `spring.redis.lettuce.pool.*` | Lettuce connection pool settings |
+Gateway Redis connectivity uses `peach.redis.*` from `peach-redis.yml` and must point to the same Sa-Token Redis data as business services.
 
 ## Boundaries
 
-- Gateway Sa-Token is independent from business-side `peach-satoken-core`.
-- Gateway does not use business-side `SecurityContextHolder`.
-- Gateway does not depend on `peach-redis-common`.
-- Gateway logs are written in English and must not include request body, token, password, or full DTO content.
-- Public endpoint rules are maintained in gateway config and are not automatically synchronized from business services.
-- Redis blocklist lookup fails open and logs an English WARN message.
+- Gateway does not depend on `peach-satoken`, does not load business-side Servlet filters, and does not use business-side `SecurityContextHolder`.
+- Gateway must keep Sa-Token Redis keys, `sa-token.token-name`, and Session serialization compatible with business services.
+- Public endpoint rules are maintained by gateway config and are not automatically synchronized from business services.
+- Redis dynamic blocklist lookup fails open and logs an English WARN message.
+- Same-Token is injected only for non-public endpoints. Unauthenticated public requests do not depend on service credentials.
 
 ## Verification
 
 Compile gateway:
 
 ```bash
-mvn -f peach-gateway\pom.xml -pl peach-gateway-launch -am clean compile -Pdevelopment
+mvn -pl peach-gateway/peach-gateway-core,peach-gateway/peach-gateway-launch -am -DskipTests compile -Pdevelopment
 ```
 
 Check encoding and diff:
 
 ```bash
-node scripts\check-utf8.mjs
-git diff --check -- peach-gateway deploy/nacos/config/peach-gateway.yml
+node scripts/check-utf8.mjs
+git diff --check -- peach-gateway
 ```
 
 ## Troubleshooting
 
 | Symptom | Check | Action |
 | --- | --- | --- |
-| `401` response | Token presence, Redis Sa-Token data, public endpoint config | Verify login token creation, then check `peach.gateway.satoken.public-endpoints` |
-| `403` response | Permission error, Same-Token error, or risk-control rejection | Search logs for `Gateway authorization rejected` or `Gateway risk-control rejected request` |
+| `401` response | Token header, Sa-Token Redis data, public endpoint config | Verify login token creation, then check `peach.gateway.satoken.public-endpoints` |
+| `403` response | Permission error, Same-Token error, or risk-control rejection | Search logs for `Gateway authorization rejected`, `Gateway same-token relay failed`, or `Gateway risk-control rejected request` |
 | `404` response | Route path, `StripPrefix`, downstream controller path | Check `spring.cloud.gateway.routes` in Nacos and downstream mappings |
 | Swagger cannot open | Gateway document route and downstream `/v3/api-docs` | Test downstream docs first, then check gateway `SetPath` |
 | WebSocket fails | `lb:ws://peach-message`, `/webSocket/**`, service registration | Check browser URL, Nacos service name, and message endpoint |
-| Risk control does not work | `peach.gateway.risk-control.enabled` and public endpoint match | Ensure the Nacos config enables risk control and the path is not public |
+| Risk control does not work | `peach.gateway.risk-control.enabled` and public endpoint match | Ensure Nacos enables risk control and the path is not public |
