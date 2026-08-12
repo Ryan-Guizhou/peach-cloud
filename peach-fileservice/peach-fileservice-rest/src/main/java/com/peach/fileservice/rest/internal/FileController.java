@@ -1,9 +1,7 @@
 package com.peach.fileservice.rest.internal;
 
 import com.peach.common.response.Response;
-import com.peach.fileservice.dto.FileMultipartCompleteDTO;
-import com.peach.fileservice.dto.FileMultipartInitDTO;
-import com.peach.fileservice.dto.FileMultipartPartUrlDTO;
+import com.peach.fileservice.common.FileApiConstant;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
 import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.service.IFileDomainService;
@@ -25,11 +23,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.MessageDigest;
 
 /**
  * 文件域 REST 控制器
@@ -46,7 +39,7 @@ import java.security.MessageDigest;
 @Indexed
 @Validated
 @RestController
-@RequestMapping("/file/internal/")
+@RequestMapping(FileApiConstant.INTERNAL_PREFIX)
 @Tag(name = "文件领域接口", description = "文件上传下载与文件记录管理接口")
 public class FileController {
 
@@ -81,64 +74,6 @@ public class FileController {
     public Response upload(@Valid @ModelAttribute FileUploadCheckDTO data,
                            @RequestPart("file") MultipartFile file) {
         return Response.success(fileDomainService.upload(data, file));
-    }
-
-    /**
-     * 初始化分片上传
-     *
-     * <p>创建分片上传会话，返回 uploadId 和预签名URL列表，
-     * 客户端根据返回的URL列表逐个上传分片。</p>
-     *
-     * @param data 分片上传初始化数据传输对象
-     * @return 统一响应结果，包含分片上传初始化结果
-     */
-    @PostMapping("/multipart/init")
-    @Operation(summary = "初始化分片上传")
-    public Response initMultipart(@Valid @RequestBody FileMultipartInitDTO data) {
-        return Response.success(fileDomainService.initMultipartUpload(data));
-    }
-
-    /**
-     * 获取分片上传地址
-     *
-     * <p>为指定分片生成预签名上传URL，用于客户端直传分片数据。</p>
-     *
-     * @param data 分片URL数据传输对象
-     * @return 统一响应结果，包含分片URL结果
-     */
-    @PostMapping("/multipart/part-url")
-    @Operation(summary = "获取分片上传地址")
-    public Response partUrl(@Valid @RequestBody FileMultipartPartUrlDTO data) {
-        return Response.success(fileDomainService.prepareMultipartPart(data));
-    }
-
-    /**
-     * 完成分片上传
-     *
-     * <p>所有分片上传完成后调用此接口，合并分片并创建文件记录。</p>
-     *
-     * @param data 分片完成数据传输对象
-     * @return 统一响应结果，包含文件上传结果
-     */
-    @PostMapping("/multipart/complete")
-    @Operation(summary = "完成分片上传")
-    public Response completeMultipart(@Valid @RequestBody FileMultipartCompleteDTO data) {
-        return Response.success(fileDomainService.completeMultipartUpload(data));
-    }
-
-    /**
-     * 中止分片上传
-     *
-     * <p>取消正在进行的分片上传任务，清理已上传的分片和会话数据。</p>
-     *
-     * @param sessionId 上传会话ID（不能为空）
-     * @return 统一响应结果
-     */
-    @PostMapping("/multipart/abort/{sessionId}")
-    @Operation(summary = "中止分片上传")
-    public Response abortMultipart(@NotBlank(message = "sessionId不能为空") @PathVariable String sessionId) {
-        fileDomainService.abortMultipartUpload(sessionId);
-        return Response.success();
     }
 
     /**
@@ -213,44 +148,4 @@ public class FileController {
         return Response.success();
     }
 
-    /**
-     * 主方法（仅用于测试）
-     *
-     * <p>计算指定文件的 SHA-256 哈希值，用于测试和调试。</p>
-     *
-     * @param args 命令行参数
-     * @throws Exception 文件读取或哈希计算异常
-     */
-    public static void main(String[] args) throws Exception {
-        String sha256 = sha256(Paths.get("C:\\Users\\Administrator\\Downloads\\peach-storage.rar"));
-        System.out.println("sha256 = " + sha256);
-    }
-
-    /**
-     * 计算文件的 SHA-256 哈希值
-     *
-     * <p>使用流式读取方式计算大文件的哈希值，避免内存溢出。</p>
-     *
-     * @param path 文件路径
-     * @return SHA-256 哈希值（十六进制字符串）
-     * @throws Exception 文件读取或哈希计算异常
-     */
-    public static String sha256(Path path) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-
-        try (InputStream inputStream = Files.newInputStream(path)) {
-            byte[] buffer = new byte[8192];
-            int read;
-            while ((read = inputStream.read(buffer)) != -1) {
-                digest.update(buffer, 0, read);
-            }
-        }
-
-        byte[] hash = digest.digest();
-        StringBuilder builder = new StringBuilder(hash.length * 2);
-        for (byte b : hash) {
-            builder.append(String.format("%02x", b & 0xff));
-        }
-        return builder.toString();
-    }
 }

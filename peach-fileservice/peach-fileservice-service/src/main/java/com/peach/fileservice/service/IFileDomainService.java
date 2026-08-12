@@ -4,9 +4,12 @@ import com.peach.common.PageResult;
 import com.peach.fileservice.dto.FileMultipartCompleteDTO;
 import com.peach.fileservice.dto.FileMultipartInitDTO;
 import com.peach.fileservice.dto.FileMultipartPartUrlDTO;
+import com.peach.fileservice.dto.FileExternalUploadDTO;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
 import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.vo.FileDownloadUrlVO;
+import com.peach.fileservice.vo.FileDigestVO;
+import com.peach.fileservice.vo.FileExternalFileVO;
 import com.peach.fileservice.vo.FileMultipartInitVO;
 import com.peach.fileservice.vo.FileMultipartPartVO;
 import com.peach.fileservice.vo.FileRecordVO;
@@ -25,6 +28,31 @@ import org.springframework.web.multipart.MultipartFile;
  * @since 2026/6/19
  */
 public interface IFileDomainService {
+
+    /**
+     * 计算上传文件的 SHA-256 摘要。
+     *
+     * @param file multipart 文件
+     * @return 摘要和文件大小
+     */
+    FileDigestVO calculateSha256(MultipartFile file);
+
+    /**
+     * 处理外部上传请求。服务端负责计算摘要并复用内部上传流程。
+     *
+     * @param data 外部上传参数
+     * @param file multipart 文件
+     * @return 上传结果
+     */
+    FileUploadVO uploadExternal(FileExternalUploadDTO data, MultipartFile file);
+
+    /**
+     * 查询不包含存储定位信息的外部文件详情。
+     *
+     * @param fileId 业务文件ID
+     * @return 外部文件详情
+     */
+    FileExternalFileVO selectExternalByFileId(String fileId);
 
     /**
      * 文件上传前校验

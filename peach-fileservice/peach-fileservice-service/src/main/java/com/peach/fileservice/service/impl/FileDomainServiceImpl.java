@@ -2,9 +2,6 @@ package com.peach.fileservice.service.impl;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.peach.common.CurrentContext;
-import com.peach.common.CurrentContextEntity;
-import com.peach.common.CurrentUserDO;
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.PageResult;
 import com.peach.common.util.DateUtil;
@@ -19,6 +16,7 @@ import com.peach.fileservice.dto.FileMultipartCompleteDTO;
 import com.peach.fileservice.dto.FileMultipartCompletePartDTO;
 import com.peach.fileservice.dto.FileMultipartInitDTO;
 import com.peach.fileservice.dto.FileMultipartPartUrlDTO;
+import com.peach.fileservice.dto.FileExternalUploadDTO;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
 import com.peach.fileservice.entity.FileObjectDO;
 import com.peach.fileservice.entity.FileRecordDO;
@@ -26,6 +24,8 @@ import com.peach.fileservice.entity.FileUploadSessionDO;
 import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.service.IFileDomainService;
 import com.peach.fileservice.vo.FileDownloadUrlVO;
+import com.peach.fileservice.vo.FileDigestVO;
+import com.peach.fileservice.vo.FileExternalFileVO;
 import com.peach.fileservice.vo.FileMultipartInitVO;
 import com.peach.fileservice.vo.FileMultipartPartVO;
 import com.peach.fileservice.vo.FileObjectVO;
@@ -33,6 +33,7 @@ import com.peach.fileservice.vo.FileRecordVO;
 import com.peach.fileservice.vo.FileUploadCheckVO;
 import com.peach.fileservice.vo.FileUploadSessionVO;
 import com.peach.fileservice.vo.FileUploadVO;
+import com.peach.fileservice.common.util.FileDigestUtils;
 import com.peach.request.AbortMultipartUploadRequest;
 import com.peach.request.CompleteMultipartUploadRequest;
 import com.peach.request.DeleteObjectRequest;
@@ -46,6 +47,8 @@ import com.peach.response.InitiateMultipartUploadResult;
 import com.peach.response.PresignedUrlResult;
 import com.peach.response.UploadPartResult;
 import com.peach.response.UploadResult;
+import com.peach.satoken.context.SecurityContextHolder;
+import com.peach.satoken.context.UserContext;
 import com.peach.service.MultiZoneStorage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
@@ -117,16 +120,60 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Resource
     private FileDomainProperties fileDomainProperties;
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p><b>实现说明：</b>
-     * <ul>
-     *   <li>通过 SHA-256 + 文件大小检测文件是否已存在（秒传）</li>
-     *   <li>若文件已存在，直接创建文件记录并增加引用计数</li>
-     *   <li>若文件不存在，返回需要上传的标识</li>
-     * </ul>
-     */
+    @Override
+    public FileDigestVO calculateSha256(MultipartFile file) {
+        FileDigestVO result = new FileDigestVO();
+        result.setAlgorithm(FileDomainConstant.DIGEST_SHA256_ALGORITHM);
+        result.setSha256(FileDigestUtils.sha256(file));
+        result.setFileSize(file.getSize());
+        return result;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FileUploadVO uploadExternal(FileExternalUploadDTO data, MultipartFile file) {
+        if (data == null) {
+            throw new IllegalArgumentException("upload data is null");
+        }
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("upload file is empty");
+        }
+        FileUploadCheckDTO check = new FileUploadCheckDTO();
+        check.setSha256(FileDigestUtils.sha256(file));
+        check.setFileSize(file.getSize());
+        check.setFileName(resolveFileName(file));
+        check.setDisplayName(data.getDisplayName());
+        check.setContentType(data.getContentType());
+        check.setBizType(data.getBizType());
+        check.setBizId(data.getBizId());
+        check.setBizTag(data.getBizTag());
+        check.setRemark(data.getRemark());
+        check.setStorageProvider(data.getStorageProvider());
+        return upload(check, file);
+    }
+
+    @Override
+    public FileExternalFileVO selectExternalByFileId(String fileId) {
+        FileRecordVO source = selectByFileId(fileId);
+        if (source == null) {
+            return null;
+        }
+        FileExternalFileVO result = new FileExternalFileVO();
+        result.setFileId(source.getFileId());
+        result.setFileName(source.getFileName());
+        result.setDisplayName(source.getDisplayName());
+        result.setContentType(source.getContentType());
+        result.setFileSize(source.getFileSize());
+        result.setFileStatus(source.getFileStatus());
+        return result;
+    }
+
+    private String resolveFileName(MultipartFile file) {
+        String fileName = file.getOriginalFilename();
+        return StringUtil.isBlank(fileName) ? FileDomainConstant.DEFAULT_FILE_NAME : fileName;
+    }
+
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileUploadCheckVO uploadCheck(FileUploadCheckDTO data) {
@@ -147,17 +194,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p><b>实现说明：</b>
-     * <ul>
-     *   <li>验证文件大小一致性</li>
-     *   <li>检测秒传：若文件已存在，直接复用存储对象</li>
-     *   <li>读取文件内容并验证 SHA-256 摘要</li>
-     *   <li>上传到云存储并创建文件对象和文件记录</li>
-     * </ul>
-     */
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileUploadVO upload(FileUploadCheckDTO data, MultipartFile file) {
@@ -198,17 +235,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p><b>实现说明：</b>
-     * <ul>
-     *   <li>秒传检测：若文件已存在，直接返回秒传结果</li>
-     *   <li>创建上传会话记录（包含 uploadId、过期时间等）</li>
-     *   <li>调用云存储初始化分片上传</li>
-     *   <li>返回会话信息和预签名URL列表</li>
-     * </ul>
-     */
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileMultipartInitVO initMultipartUpload(FileMultipartInitDTO data) {
@@ -281,18 +308,6 @@ public class FileDomainServiceImpl implements IFileDomainService {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p><b>实现说明：</b>
-     * <ul>
-     *   <li>验证上传会话状态</li>
-     *   <li>调用云存储完成分片合并</li>
-     *   <li>验证上传对象的 SHA-256 摘要</li>
-     *   <li>创建文件对象和文件记录</li>
-     *   <li>更新会话状态为已完成</li>
-     * </ul>
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileUploadVO completeMultipartUpload(FileMultipartCompleteDTO data) {
@@ -401,16 +416,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p><b>实现说明：</b>
-     * <ul>
-     *   <li>将文件状态设置为 DELETED</li>
-     *   <li>记录删除时间和过期删除时间（当前时间 + 保留天数）</li>
-     *   <li>不立即删除存储对象，等待定时任务处理</li>
-     * </ul>
-     */
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void logicalDelete(String fileId) {
@@ -429,16 +435,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p><b>实现说明：</b>
-     * <ul>
-     *   <li>验证文件处于已删除状态</li>
-     *   <li>将文件状态恢复为 ACTIVE</li>
-     *   <li>清除删除标记和过期删除时间</li>
-     * </ul>
-     */
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void restore(String fileId) {
@@ -458,17 +455,6 @@ public class FileDomainServiceImpl implements IFileDomainService {
                 FileDomainConstant.LogicDelete.NO, now, currentOperator());
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p><b>实现说明：</b>
-     * <ul>
-     *   <li>查询所有超过过期删除时间的已删除文件记录</li>
-     *   <li>逐个物理删除存储对象（若引用计数为0）</li>
-     *   <li>删除文件记录</li>
-     *   <li>减少文件对象的引用计数</li>
-     * </ul>
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void cleanupExpiredDeletedFiles() {
@@ -483,16 +469,6 @@ public class FileDomainServiceImpl implements IFileDomainService {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p><b>实现说明：</b>
-     * <ul>
-     *   <li>查询所有超过过期时间的上传会话</li>
-     *   <li>调用云存储中止分片上传（清理已上传的分片）</li>
-     *   <li>更新会话状态为 EXPIRED</li>
-     * </ul>
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void cleanupExpiredUploadSessions() {
@@ -708,12 +684,12 @@ public class FileDomainServiceImpl implements IFileDomainService {
     }
 
     private void verifyDigest(FileUploadCheckDTO data, byte[] bytes) {
-        String sha256 = digest("SHA-256", bytes);
+        String sha256 = digest(FileDomainConstant.DIGEST_SHA256_ALGORITHM, bytes);
         if (!data.getSha256().equalsIgnoreCase(sha256)) {
             throw new RuntimeException("sha256 verify failed");
         }
         if (StringUtil.isNotBlank(data.getMd5())) {
-            String md5 = digest("MD5", bytes);
+            String md5 = digest(FileDomainConstant.DIGEST_MD5_ALGORITHM, bytes);
             if (!data.getMd5().equalsIgnoreCase(md5)) {
                 throw new RuntimeException("md5 verify failed");
             }
@@ -728,8 +704,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
         try (InputStream inputStream = StringUtil.isBlank(sessionVO.getStorageProvider())
                 ? multiZoneStorage.download(request)
                 : multiZoneStorage.download(sessionVO.getStorageProvider(), request)) {
-            MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
-            byte[] buffer = new byte[8192];
+            MessageDigest sha256 = MessageDigest.getInstance(FileDomainConstant.DIGEST_SHA256_ALGORITHM);
+            byte[] buffer = new byte[FileDomainConstant.BUFFER_SIZE];
             int len;
             long total = 0L;
             while ((len = inputStream.read(buffer)) != -1) {
@@ -788,16 +764,16 @@ public class FileDomainServiceImpl implements IFileDomainService {
         if (StringUtil.isNotBlank(fallback)) {
             return fallback;
         }
-        return "application/octet-stream";
+        return FileDomainConstant.DEFAULT_CONTENT_TYPE;
     }
 
     private String buildObjectKey(String bizType, String fileName) {
         String ext = extractExtension(fileName);
-        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern(FileDomainConstant.OBJECT_KEY_DATE_PATTERN));
         StringBuilder key = new StringBuilder();
-        key.append(fileDomainProperties.getObjectKeyPrefix()).append("/")
-                .append(normalizePathSegment(bizType)).append("/")
-                .append(datePart).append("/")
+        key.append(fileDomainProperties.getObjectKeyPrefix()).append(FileDomainConstant.OBJECT_KEY_SEPARATOR)
+                .append(normalizePathSegment(bizType)).append(FileDomainConstant.OBJECT_KEY_SEPARATOR)
+                .append(datePart).append(FileDomainConstant.OBJECT_KEY_SEPARATOR)
                 .append(IDGeneratorUtil.UUID());
         if (StringUtil.isNotBlank(ext)) {
             key.append(".").append(ext.toLowerCase(Locale.ROOT));
@@ -806,8 +782,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
     }
 
     private String normalizePathSegment(String value) {
-        String source = StringUtil.isBlank(value) ? "common" : value;
-        return source.replaceAll("[^a-zA-Z0-9/_-]", "_");
+        String source = StringUtil.isBlank(value) ? FileDomainConstant.DEFAULT_BIZ_TYPE : value;
+        return source.replaceAll(FileDomainConstant.BIZ_TYPE_ALLOWED_PATTERN, "_");
     }
 
     private String extractExtension(String fileName) {
@@ -844,15 +820,11 @@ public class FileDomainServiceImpl implements IFileDomainService {
     }
 
     private String currentOperator() {
-        CurrentContextEntity context = CurrentContext.getCurrentContext();
-        if (context == null) {
+        UserContext context = SecurityContextHolder.get();
+        if (context == null || StringUtil.isBlank(context.getUserId())) {
             return FileDomainConstant.SYSTEM_OPERATOR;
         }
-        CurrentUserDO currentUserDO = context.getCurrentUserDO();
-        if (currentUserDO == null || StringUtil.isBlank(currentUserDO.getUserId())) {
-            return FileDomainConstant.SYSTEM_OPERATOR;
-        }
-        return currentUserDO.getUserId();
+        return context.getUserId();
     }
 
     private String format(LocalDateTime localDateTime) {

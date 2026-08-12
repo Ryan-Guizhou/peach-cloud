@@ -10,7 +10,15 @@ package com.peach.fileservice.common;
 public interface FileDomainConstant {
 
     String SYSTEM_OPERATOR = "system";
-
+    String DEFAULT_FILE_NAME = "upload.bin";
+    String DEFAULT_BIZ_TYPE = "common";
+    String DEFAULT_CONTENT_TYPE = "application/octet-stream";
+    String OBJECT_KEY_SEPARATOR = "/";
+    String OBJECT_KEY_DATE_PATTERN = "yyyyMMdd";
+    String BIZ_TYPE_ALLOWED_PATTERN = "[^a-zA-Z0-9/_-]";
+    String DIGEST_SHA256_ALGORITHM = "SHA-256";
+    String DIGEST_MD5_ALGORITHM = "MD5";
+    int BUFFER_SIZE = 8192;
     interface LogicDelete {
         Integer NO = 0;
         Integer YES = 1;

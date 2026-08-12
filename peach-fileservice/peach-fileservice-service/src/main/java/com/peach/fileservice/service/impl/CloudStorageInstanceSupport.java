@@ -2,9 +2,6 @@ package com.peach.fileservice.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
-import com.peach.common.CurrentContext;
-import com.peach.common.CurrentContextEntity;
-import com.peach.common.CurrentUserDO;
 import com.peach.common.util.StringUtil;
 import com.peach.common.util.encrypt.EncryptConst;
 import com.peach.common.util.encrypt.EncryptFactory;
@@ -13,6 +10,8 @@ import com.peach.config.StorageProperties;
 import com.peach.enums.StorageType;
 import com.peach.fileservice.entity.CloudStorageInstanceDO;
 import com.peach.fileservice.vo.CloudStorageInstanceVO;
+import com.peach.satoken.context.SecurityContextHolder;
+import com.peach.satoken.context.UserContext;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -160,15 +159,11 @@ public class CloudStorageInstanceSupport {
      * @return 当前操作用户 ID
      */
     public String currentOperator() {
-        CurrentContextEntity currentContext = CurrentContext.getCurrentContext();
-        if (currentContext == null) {
+        UserContext context = SecurityContextHolder.get();
+        if (context == null || StringUtil.isBlank(context.getUserId())) {
             return "system";
         }
-        CurrentUserDO currentUserDO = currentContext.getCurrentUserDO();
-        if (currentUserDO == null || StringUtil.isBlank(currentUserDO.getUserId())) {
-            return "system";
-        }
-        return currentUserDO.getUserId();
+        return context.getUserId();
     }
 
     /**
