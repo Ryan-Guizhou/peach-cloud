@@ -1,0 +1,178 @@
+pipeline {
+    agent any
+
+    options {
+        disableConcurrentBuilds()
+        skipDefaultCheckout(true)
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+    }
+
+    environment {
+        REGISTRY = 'registry:5000'
+        IMAGE_PREFIX = "${REGISTRY}/peach-cloud"
+        MAVEN_IMAGE = 'maven:3.9.11-eclipse-temurin-8'
+        DEPLOY_COMPOSE_FILE = 'deploy-pipline/docker-compose.deploy.yml'
+        DEPLOY_ENV_CREDENTIAL = 'peach-deploy-env'
+        DEPLOY_ROOT = '/var/jenkins_home/peach-cloud-deploy'
+        SERVICES = 'peach-gateway peach-auth peach-monitor peach-fileservice peach-message peach-setting peach-generator peach-front'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                script {
+                    env.IMAGE_TAG = sh(
+                        script: 'git rev-parse --short=12 HEAD',
+                        returnStdout: true
+                    ).trim()
+                }
+            }
+        }
+
+        stage('Maven package') {
+            steps {
+                sh '''
+                    mkdir -p /var/jenkins_home/.m2
+                    docker run --rm \
+                      --user "$(id -u):$(id -g)" \
+                      -e HOME=/tmp \
+                      -v "$WORKSPACE:/workspace" \
+                      -v "/var/jenkins_home/.m2:/tmp/.m2" \
+                      -w /workspace \
+                      "$MAVEN_IMAGE" \
+                      mvn -B -Pdocker -Dmaven.repo.local=/tmp/.m2/repository -DskipTests clean package
+                '''
+            }
+        }
+
+        stage('Build and push images') {
+            steps {
+                withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
+                    sh '''
+                        build_image() {
+                          service="$1"
+                          jar_path="$2"
+                          title="$3"
+                          description="$4"
+
+                          rm -rf deploy-pipline/build-context
+                          mkdir -p deploy-pipline/build-context
+                          cp "$jar_path" deploy-pipline/build-context/app.jar
+
+                          docker build \
+                            --build-arg JAR_FILE=build-context/app.jar \
+                            --build-arg IMAGE_TITLE="$title" \
+                            --build-arg IMAGE_DESCRIPTION="$description" \
+                            --build-arg IMAGE_AUTHORS="${IMAGE_AUTHORS:-Mr Shu}" \
+                            --build-arg IMAGE_VENDOR="${IMAGE_VENDOR:-Peach Cloud}" \
+                            --build-arg IMAGE_VERSION="$IMAGE_TAG" \
+                            -f deploy-pipline/docker/Dockerfile.service \
+                            -t "$IMAGE_PREFIX/$service:$IMAGE_TAG" \
+                            deploy-pipline
+                          docker push "$IMAGE_PREFIX/$service:$IMAGE_TAG"
+                        }
+
+                        set -a
+                        . "$DEPLOY_ENV_FILE"
+                        set +a
+
+                        build_image peach-gateway peach-gateway/peach-gateway-launch/target/peach-gateway-launch-1.0.0-SNAPSHOT.jar "Peach Gateway" "Peach Cloud gateway service"
+                        build_image peach-auth peach-auth/peach-auth-launch/target/peach-auth-launch-1.0.0-SNAPSHOT.jar "Peach Auth" "Peach Cloud authentication and authorization service"
+                        build_image peach-monitor peach-monitor/peach-monitor-launch/target/peach-monitor-launch-1.0.0-SNAPSHOT.jar "Peach Monitor" "Peach Cloud monitoring service"
+                        build_image peach-fileservice peach-fileservice/peach-fileservice-launch/target/peach-fileservice-launch-1.0.0-SNAPSHOT.jar "Peach Fileservice" "Peach Cloud file service"
+                        build_image peach-message peach-message/peach-message-launch/target/peach-message-launch-1.0.0-SNAPSHOT.jar "Peach Message" "Peach Cloud message service"
+                        build_image peach-setting peach-setting/peach-setting-launch/target/peach-setting-launch-1.0.0-SNAPSHOT.jar "Peach Setting" "Peach Cloud setting service"
+                        build_image peach-generator peach-generator/peach-generator-launch/target/peach-generator-launch-1.0.0-SNAPSHOT.jar "Peach Generator" "Peach Cloud code generator service"
+                    '''
+                }
+            }
+        }
+
+        stage('Build frontend') {
+            steps {
+                withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
+                    sh '''
+                    set -a
+                    . "$DEPLOY_ENV_FILE"
+                    set +a
+
+                    docker run --rm \
+                      --user "$(id -u):$(id -g)" \
+                      -e HOME=/tmp \
+                      -v "$WORKSPACE:/workspace" \
+                      -w /workspace/peach-cloud-front \
+                      node:22-alpine \
+                      sh -c 'npm ci && npm run build'
+
+                    rm -rf deploy-pipline/front-dist
+                    mkdir -p deploy-pipline/front-dist
+                    cp -R peach-cloud-front/dist/. deploy-pipline/front-dist/
+
+                    docker build \
+                      --build-arg IMAGE_AUTHORS="${IMAGE_AUTHORS:-Mr Shu}" \
+                      --build-arg IMAGE_VENDOR="${IMAGE_VENDOR:-Peach Cloud}" \
+                      --build-arg IMAGE_VERSION="$IMAGE_TAG" \
+                      -f deploy-pipline/docker/Dockerfile.front \
+                      -t "$IMAGE_PREFIX/peach-front:$IMAGE_TAG" \
+                      deploy-pipline
+                    docker push "$IMAGE_PREFIX/peach-front:$IMAGE_TAG"
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
+                    sh '''
+                        mkdir -p "$DEPLOY_ROOT/deploy/runtime/logs/nginx" "$DEPLOY_ROOT/sql"
+                        cp -R deploy/docker deploy/nacos "$DEPLOY_ROOT/deploy/"
+                        cp deploy-pipline/docker-compose.deploy.yml "$DEPLOY_ROOT/deploy/docker-compose.yml"
+                        cp deploy-pipline/import-nacos.sh "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"
+                        cp sql/ALL_TABLE_CREATE.sql sql/INIT.sql "$DEPLOY_ROOT/sql/"
+
+                        export PEACH_IMAGE_PREFIX="$IMAGE_PREFIX"
+                        export PEACH_IMAGE_TAG="$IMAGE_TAG"
+                        export PEACH_ENV_FILE="$DEPLOY_ENV_FILE"
+                        export NACOS_ADDR='http://docker:8849'
+                        docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" pull $SERVICES
+                        docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" up -d mysql redis nacos
+                        for container in peach-mysql peach-redis peach-nacos; do
+                          i=0
+                          until [ "$i" -ge 90 ]; do
+                            status=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container" 2>/dev/null || true)
+                            if [ "$status" = "healthy" ] || [ "$status" = "running" ]; then
+                              break
+                            fi
+                            i=$((i + 1))
+                            sleep 2
+                          done
+                          if [ "$i" -ge 90 ]; then
+                            echo "Container is not healthy: $container" >&2
+                            exit 1
+                          fi
+                        done
+                        docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" exec -T mysql sh -c 'mysql --default-character-set=utf8mb4 -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < /docker-entrypoint-initdb.d/01_INIT.sql'
+                        "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"
+                        docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" up -d --no-build $SERVICES
+                        docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" ps
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Deployment succeeded: ${IMAGE_PREFIX}:${IMAGE_TAG}"
+        }
+        failure {
+            sh 'docker ps --format "table {{.Names}}\\t{{.Image}}\\t{{.Status}}" || true'
+        }
+        always {
+            deleteDir()
+        }
+    }
+}

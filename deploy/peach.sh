@@ -50,7 +50,7 @@ ensure_dirs() {
     "$SCRIPT_DIR/runtime/config/services/peach-message" \
     "$SCRIPT_DIR/runtime/config/services/peach-setting" \
     "$SCRIPT_DIR/runtime/config/services/peach-generator" \
-    "$SCRIPT_DIR/runtime/nginx/html" \
+    "$SCRIPT_DIR/runtime/build/front-dist" \
     "$SCRIPT_DIR/runtime/nacos"
 }
 
@@ -122,16 +122,17 @@ backend_build() {
 
 front_build() {
   if [ ! -d "$REPO_DIR/peach-cloud-front" ]; then
-    echo "peach-cloud-front not found, skip frontend build."
-    return 0
+    echo "peach-cloud-front not found. The peach-front image cannot be built." >&2
+    exit 1
   fi
   cd "$REPO_DIR/peach-cloud-front"
-  npm install
+  npm ci
   npm run build
-  rm -rf "$SCRIPT_DIR/runtime/nginx/html"
-  mkdir -p "$SCRIPT_DIR/runtime/nginx/html"
-  cp -R dist/. "$SCRIPT_DIR/runtime/nginx/html/"
+  rm -rf "$SCRIPT_DIR/runtime/build/front-dist"
+  mkdir -p "$SCRIPT_DIR/runtime/build/front-dist"
+  cp -R dist/. "$SCRIPT_DIR/runtime/build/front-dist/"
   cd "$SCRIPT_DIR"
+  compose build peach-front
 }
 
 init_all() {
@@ -153,7 +154,7 @@ up_all() {
   check_mysql_case_insensitive
   ensure_mysql_seed_data
   "$SCRIPT_DIR/nacos/import-nacos.sh"
-  compose up -d peach-gateway peach-auth peach-monitor peach-fileservice peach-message peach-setting peach-generator nginx
+  compose up -d peach-gateway peach-auth peach-monitor peach-fileservice peach-message peach-setting peach-generator peach-front
 }
 
 down_all() {
@@ -163,19 +164,27 @@ down_all() {
 
 restart_target() {
   load_env
-  if [ "${1:-}" = "" ]; then
+  target="${1:-}"
+  if [ "$target" = "nginx" ]; then
+    target="peach-front"
+  fi
+  if [ "$target" = "" ]; then
     compose restart
   else
-    compose restart "$1"
+    compose restart "$target"
   fi
 }
 
 logs_target() {
   load_env
-  if [ "${1:-}" = "" ]; then
+  target="${1:-}"
+  if [ "$target" = "nginx" ]; then
+    target="peach-front"
+  fi
+  if [ "$target" = "" ]; then
     compose logs -f --tail=200
   else
-    compose logs -f --tail=200 "$1"
+    compose logs -f --tail=200 "$target"
   fi
 }
 
@@ -211,8 +220,8 @@ Usage: ./peach.sh <command> [service]
 Commands:
   init             Create .env and runtime directories
   build            Build backend jars and service images
-  front:build      Build frontend and publish dist to nginx html directory
-  up               Start mysql/redis/nacos, import Nacos config, start services and nginx
+  front:build      Build frontend dist and peach-front image
+  up               Start mysql/redis/nacos, import Nacos config, start services and peach-front
   down             Stop containers without deleting data
   restart [svc]    Restart all containers or one service
   logs [svc]       Follow all logs or one service
@@ -220,7 +229,7 @@ Commands:
   health           Check compose status, MySQL case mode, and Nacos config import
   mysql:init       Import idempotent MySQL seed data from sql/INIT.sql
   nacos:import     Import Nacos config templates
-  nginx:reload     Reload nginx config
+  nginx:reload     Reload peach-front nginx config
   clean:logs       Delete log files under runtime/logs
   clean:data       Delete runtime data after explicit confirmation
 USAGE
@@ -238,7 +247,7 @@ case "${1:-}" in
   health) health_all ;;
   mysql:init) load_env; import_mysql_seed_data; ensure_mysql_seed_data ;;
   nacos:import) load_env; "$SCRIPT_DIR/nacos/import-nacos.sh" ;;
-  nginx:reload) load_env; compose exec nginx nginx -s reload ;;
+  nginx:reload) load_env; compose exec peach-front nginx -s reload ;;
   clean:logs) clean_logs ;;
   clean:data) clean_data ;;
   *) usage; exit 1 ;;

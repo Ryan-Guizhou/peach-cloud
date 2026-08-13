@@ -25,15 +25,6 @@ x-common-env: &common-env
   SPRING_REDIS_PORT: 6379
   SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD}
 
-x-service-build: &service-build
-  context: ..
-  dockerfile: deploy/docker/Dockerfile.service
-
-x-image-label-args: &image-label-args
-  IMAGE_AUTHORS: ${IMAGE_AUTHORS:-Mr Shu}
-  IMAGE_VENDOR: ${IMAGE_VENDOR:-Peach Cloud}
-  IMAGE_VERSION: ${PEACH_IMAGE_TAG:-latest}
-
 services:
   mysql:
     image: mysql:8.0
@@ -108,15 +99,8 @@ services:
       - peach-net
 
   peach-gateway:
-    image: peach-cloud/peach-gateway:${PEACH_IMAGE_TAG:-latest}
+    image: ${PEACH_IMAGE_PREFIX:-peach-cloud}/peach-gateway:${PEACH_IMAGE_TAG:-latest}
     container_name: peach-gateway
-    build:
-      <<: *service-build
-      args:
-        <<: *image-label-args
-        IMAGE_TITLE: Peach Gateway
-        IMAGE_DESCRIPTION: Peach Cloud gateway service
-        JAR_FILE: peach-gateway/peach-gateway-launch/target/peach-gateway-launch-1.0.0-SNAPSHOT.jar
     environment:
       <<: *common-env
       SERVER_PORT: ${GATEWAY_PORT:-18080}
@@ -135,15 +119,8 @@ services:
       - peach-net
 
   peach-auth:
-    image: peach-cloud/peach-auth:${PEACH_IMAGE_TAG:-latest}
+    image: ${PEACH_IMAGE_PREFIX:-peach-cloud}/peach-auth:${PEACH_IMAGE_TAG:-latest}
     container_name: peach-auth
-    build:
-      <<: *service-build
-      args:
-        <<: *image-label-args
-        IMAGE_TITLE: Peach Auth
-        IMAGE_DESCRIPTION: Peach Cloud authentication and authorization service
-        JAR_FILE: peach-auth/peach-auth-launch/target/peach-auth-launch-1.0.0-SNAPSHOT.jar
     environment:
       <<: *common-env
       SERVER_PORT: ${AUTH_PORT:-18081}
@@ -162,15 +139,8 @@ services:
       - peach-net
 
   peach-monitor:
-    image: peach-cloud/peach-monitor:${PEACH_IMAGE_TAG:-latest}
+    image: ${PEACH_IMAGE_PREFIX:-peach-cloud}/peach-monitor:${PEACH_IMAGE_TAG:-latest}
     container_name: peach-monitor
-    build:
-      <<: *service-build
-      args:
-        <<: *image-label-args
-        IMAGE_TITLE: Peach Monitor
-        IMAGE_DESCRIPTION: Peach Cloud monitoring service
-        JAR_FILE: peach-monitor/peach-monitor-launch/target/peach-monitor-launch-1.0.0-SNAPSHOT.jar
     environment:
       <<: *common-env
       SERVER_PORT: ${MONITOR_PORT:-18082}
@@ -189,15 +159,8 @@ services:
       - peach-net
 
   peach-fileservice:
-    image: peach-cloud/peach-fileservice:${PEACH_IMAGE_TAG:-latest}
+    image: ${PEACH_IMAGE_PREFIX:-peach-cloud}/peach-fileservice:${PEACH_IMAGE_TAG:-latest}
     container_name: peach-fileservice
-    build:
-      <<: *service-build
-      args:
-        <<: *image-label-args
-        IMAGE_TITLE: Peach Fileservice
-        IMAGE_DESCRIPTION: Peach Cloud file service
-        JAR_FILE: peach-fileservice/peach-fileservice-launch/target/peach-fileservice-launch-1.0.0-SNAPSHOT.jar
     environment:
       <<: *common-env
       SERVER_PORT: ${FILESERVICE_PORT:-18083}
@@ -218,15 +181,8 @@ services:
       - peach-net
 
   peach-message:
-    image: peach-cloud/peach-message:${PEACH_IMAGE_TAG:-latest}
+    image: ${PEACH_IMAGE_PREFIX:-peach-cloud}/peach-message:${PEACH_IMAGE_TAG:-latest}
     container_name: peach-message
-    build:
-      <<: *service-build
-      args:
-        <<: *image-label-args
-        IMAGE_TITLE: Peach Message
-        IMAGE_DESCRIPTION: Peach Cloud message service
-        JAR_FILE: peach-message/peach-message-launch/target/peach-message-launch-1.0.0-SNAPSHOT.jar
     environment:
       <<: *common-env
       SERVER_PORT: ${MESSAGE_PORT:-18084}
@@ -245,15 +201,8 @@ services:
       - peach-net
 
   peach-setting:
-    image: peach-cloud/peach-setting:${PEACH_IMAGE_TAG:-latest}
+    image: ${PEACH_IMAGE_PREFIX:-peach-cloud}/peach-setting:${PEACH_IMAGE_TAG:-latest}
     container_name: peach-setting
-    build:
-      <<: *service-build
-      args:
-        <<: *image-label-args
-        IMAGE_TITLE: Peach Setting
-        IMAGE_DESCRIPTION: Peach Cloud setting service
-        JAR_FILE: peach-setting/peach-setting-launch/target/peach-setting-launch-1.0.0-SNAPSHOT.jar
     environment:
       <<: *common-env
       SERVER_PORT: ${SETTING_PORT:-18085}
@@ -272,15 +221,8 @@ services:
       - peach-net
 
   peach-generator:
-    image: peach-cloud/peach-generator:${PEACH_IMAGE_TAG:-latest}
+    image: ${PEACH_IMAGE_PREFIX:-peach-cloud}/peach-generator:${PEACH_IMAGE_TAG:-latest}
     container_name: peach-generator
-    build:
-      <<: *service-build
-      args:
-        <<: *image-label-args
-        IMAGE_TITLE: Peach Generator
-        IMAGE_DESCRIPTION: Peach Cloud code generator service
-        JAR_FILE: peach-generator/peach-generator-launch/target/peach-generator-launch-1.0.0-SNAPSHOT.jar
     environment:
       <<: *common-env
       SERVER_PORT: ${GENERATOR_PORT:-18086}
@@ -299,19 +241,12 @@ services:
       - peach-net
 
   peach-front:
-    image: peach-cloud/peach-front:${PEACH_IMAGE_TAG:-latest}
+    image: ${PEACH_IMAGE_PREFIX:-peach-cloud}/peach-front:${PEACH_IMAGE_TAG:-latest}
     container_name: peach-front
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.front
-      args:
-        <<: *image-label-args
-        IMAGE_TITLE: Peach Front
-        IMAGE_DESCRIPTION: Peach Cloud frontend
     environment:
       GATEWAY_PORT: ${GATEWAY_PORT:-18080}
     ports:
-      - "${NGINX_HTTP_PORT:-80}:80"
+      - "80:80"
     volumes:
       - ./runtime/logs/nginx:/var/log/nginx
     depends_on:

@@ -5,13 +5,14 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 DEPLOY_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 CONFIG_DIR="$SCRIPT_DIR/config"
 RUNTIME_NACOS_DIR="$DEPLOY_DIR/runtime/nacos"
+ENV_FILE="${PEACH_ENV_FILE:-$DEPLOY_DIR/.env}"
 
-if [ -f "$DEPLOY_DIR/.env" ]; then
+if [ -f "$ENV_FILE" ]; then
   set -a
-  . "$DEPLOY_DIR/.env"
+  . "$ENV_FILE"
   set +a
 else
-  echo "Missing $DEPLOY_DIR/.env. Copy .env.example to .env first." >&2
+  echo "Missing $ENV_FILE. Provide PEACH_ENV_FILE or create deploy/.env first." >&2
   exit 1
 fi
 

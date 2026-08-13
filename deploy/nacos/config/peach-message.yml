@@ -13,10 +13,3 @@ springdoc:
     - com.peach.message.rest.internal
     - com.peach.message.launch.health
 
-logging:
-  level:
-    com.alibaba.nacos: DEBUG
-    com.alibaba.cloud.nacos: DEBUG
-    org.springframework.cloud.bootstrap: DEBUG
-    org.springframework.cloud.config: DEBUG
-    org.springframework.cloud.gateway: DEBUG
