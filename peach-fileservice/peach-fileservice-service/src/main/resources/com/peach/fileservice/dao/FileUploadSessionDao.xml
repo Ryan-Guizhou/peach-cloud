@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.fileservice.dao.FileUploadSessionDao">
     <sql id="allColumn">
-        SESSION_ID,                                       FILE_ID,                                          OBJECT_ID,                                        HASH_SHA256,
+        SESSION_ID,                                       FILE_ID,                                          OBJECT_ID,                                        TENANT_ID,                                        ORG_ID,                                        HASH_SHA256,
         HASH_MD5,                                         FILE_SIZE,                                        FILE_NAME,                                        DISPLAY_NAME,
         CONTENT_TYPE,                                     BIZ_TYPE,                                         BIZ_ID,                                           BIZ_TAG,
         REMARK,                                           STORAGE_PROVIDER,                                 BUCKET_NAME,                                      OBJECT_KEY,
@@ -11,7 +11,7 @@
     </sql>
 
     <sql id="allColumnAlias">
-        SESSION_ID as sessionId,                          FILE_ID as fileId,                                OBJECT_ID as objectId,                            HASH_SHA256 as hashSha256,
+        SESSION_ID as sessionId,                          FILE_ID as fileId,                                OBJECT_ID as objectId,                            TENANT_ID as tenantId,                            ORG_ID as orgId,                            HASH_SHA256 as hashSha256,
         HASH_MD5 as hashMd5,                              FILE_SIZE as fileSize,                            FILE_NAME as fileName,                            DISPLAY_NAME as displayName,
         CONTENT_TYPE as contentType,                      BIZ_TYPE as bizType,                              BIZ_ID as bizId,                                  BIZ_TAG as bizTag,
         REMARK as remark,                                 STORAGE_PROVIDER as storageProvider,              BUCKET_NAME as bucketName,                        OBJECT_KEY as objectKey,
@@ -20,7 +20,7 @@
     </sql>
 
     <sql id="allColumnValue">
-        #{sessionId,jdbcType=VARCHAR},                    #{fileId,jdbcType=VARCHAR},                       #{objectId,jdbcType=VARCHAR},                     #{hashSha256,jdbcType=VARCHAR},
+        #{sessionId,jdbcType=VARCHAR},                    #{fileId,jdbcType=VARCHAR},                       #{objectId,jdbcType=VARCHAR},                     #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                     #{hashSha256,jdbcType=VARCHAR},
         #{hashMd5,jdbcType=VARCHAR},                      #{fileSize,jdbcType=BIGINT},                      #{fileName,jdbcType=VARCHAR},                     #{displayName,jdbcType=VARCHAR},
         #{contentType,jdbcType=VARCHAR},                  #{bizType,jdbcType=VARCHAR},                      #{bizId,jdbcType=VARCHAR},                        #{bizTag,jdbcType=VARCHAR},
         #{remark,jdbcType=VARCHAR},                       #{storageProvider,jdbcType=VARCHAR},              #{bucketName,jdbcType=VARCHAR},                   #{objectKey,jdbcType=VARCHAR},
@@ -30,7 +30,7 @@
 
 
     <sql id="itemAllColumnValue">
-        #{item.sessionId,jdbcType=VARCHAR},               #{item.fileId,jdbcType=VARCHAR},                  #{item.objectId,jdbcType=VARCHAR},                #{item.hashSha256,jdbcType=VARCHAR},
+        #{item.sessionId,jdbcType=VARCHAR},               #{item.fileId,jdbcType=VARCHAR},                  #{item.objectId,jdbcType=VARCHAR},                #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                #{item.hashSha256,jdbcType=VARCHAR},
         #{item.hashMd5,jdbcType=VARCHAR},                 #{item.fileSize,jdbcType=BIGINT},                 #{item.fileName,jdbcType=VARCHAR},                #{item.displayName,jdbcType=VARCHAR},
         #{item.contentType,jdbcType=VARCHAR},             #{item.bizType,jdbcType=VARCHAR},                 #{item.bizId,jdbcType=VARCHAR},                   #{item.bizTag,jdbcType=VARCHAR},
         #{item.remark,jdbcType=VARCHAR},                  #{item.storageProvider,jdbcType=VARCHAR},         #{item.bucketName,jdbcType=VARCHAR},              #{item.objectKey,jdbcType=VARCHAR},
@@ -40,6 +40,12 @@
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="fileId != null and fileId != ''">
                 FILE_ID = #{fileId,jdbcType=VARCHAR},
             </if>
@@ -262,6 +268,12 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
         <if test="sessionId != null and sessionId != ''">
             AND SESSION_ID = #{sessionId,jdbcType=VARCHAR}
         </if>

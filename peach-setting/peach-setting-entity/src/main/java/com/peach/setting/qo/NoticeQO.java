@@ -20,6 +20,12 @@ public class NoticeQO extends PeachEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Schema(description = "通知ID")
     private String id;
 

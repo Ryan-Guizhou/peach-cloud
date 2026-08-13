@@ -3,6 +3,7 @@
 package com.peach.redis.common;
 
 
+import org.springframework.stereotype.Indexed;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +52,7 @@ import java.util.stream.IntStream;
  */
 @Slf4j
 @Data
+@Indexed
 @Configuration
 public class RedisConfig<K, V> {
 

@@ -1,5 +1,6 @@
 package com.peach.sample.delayqueue;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.redission.delayqueue.context.DelayQueueContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit;
  * @Version 1.0.0
  * @CreateTime 2025/12/17 18:55
  */
+@Indexed
 @RestController
 @RequestMapping("/queue")
 public class AdobeController {

@@ -1,5 +1,6 @@
 package com.peach.sample.initialize;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.initialize.base.AbstractAppCommandLineHandler;
 import com.peach.initialize.base.AbstractAppPostConstructHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
  * @CreateTime 2025/12/16 15:33
  */
 @Slf4j
+@Indexed
 @Component
 public class CustomCommandLineRunner extends AbstractAppCommandLineHandler {
     @Override

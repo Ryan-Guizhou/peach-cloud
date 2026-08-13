@@ -2,28 +2,28 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.ValueSetItemDao">
     <sql id="allColumn">
-        ID,                                               VALUE_SET_CODE,                                   ITEM_CODE,                                        ITEM_VALUE,
+        ID,                                               VALUE_SET_CODE,                                        TENANT_ID,                                        ORG_ID,                                   ITEM_CODE,                                        ITEM_VALUE,
         MESSAGE_KEY,                                      SOURCE_TYPE,                                      SORT_ORDER,                                       STATUS,
         VISIBLE_FLAG,                                     EXTRA_JSON,                                       CREATED_TIME,                                     CREATOR_ID,
         MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        ID as id,                                         VALUE_SET_CODE as valueSetCode,                   ITEM_CODE as itemCode,                            ITEM_VALUE as itemValue,
+        ID as id,                                         VALUE_SET_CODE as valueSetCode,                            TENANT_ID as tenantId,                            ORG_ID as orgId,                   ITEM_CODE as itemCode,                            ITEM_VALUE as itemValue,
         MESSAGE_KEY as messageKey,                        SOURCE_TYPE as sourceType,                        SORT_ORDER as sortOrder,                          STATUS as status,
         VISIBLE_FLAG as visibleFlag,                      EXTRA_JSON as extraJson,                          CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,
         MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                           #{valueSetCode,jdbcType=VARCHAR},                 #{itemCode,jdbcType=VARCHAR},                     #{itemValue,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR},                           #{valueSetCode,jdbcType=VARCHAR},                     #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                 #{itemCode,jdbcType=VARCHAR},                     #{itemValue,jdbcType=VARCHAR},
         #{messageKey,jdbcType=VARCHAR},                   #{sourceType,jdbcType=VARCHAR},                   #{sortOrder,jdbcType=INTEGER},                    #{status,jdbcType=INTEGER},
         #{visibleFlag,jdbcType=INTEGER},                  #{extraJson,jdbcType=VARCHAR},                    #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},
         #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},                      #{item.valueSetCode,jdbcType=VARCHAR},            #{item.itemCode,jdbcType=VARCHAR},                #{item.itemValue,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR},                      #{item.valueSetCode,jdbcType=VARCHAR},                #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},            #{item.itemCode,jdbcType=VARCHAR},                #{item.itemValue,jdbcType=VARCHAR},
         #{item.messageKey,jdbcType=VARCHAR},              #{item.sourceType,jdbcType=VARCHAR},              #{item.sortOrder,jdbcType=INTEGER},               #{item.status,jdbcType=INTEGER},
         #{item.visibleFlag,jdbcType=INTEGER},             #{item.extraJson,jdbcType=VARCHAR},               #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},
         #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
@@ -31,6 +31,12 @@
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="valueSetCode != null and valueSetCode != ''">
                 VALUE_SET_CODE = #{valueSetCode,jdbcType=VARCHAR},
             </if>
@@ -162,6 +168,12 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
         <if test="id != null and id != ''">
             AND ID = #{id,jdbcType=VARCHAR}
         </if>
@@ -301,6 +313,12 @@
         <include refid="allColumnAlias" />
         FROM PEACH_VALUE_SET_ITEM
         <where>
+            <if test="tenantId != null and tenantId != ''">
+                AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+            </if>
+            <if test="orgId != null and orgId != ''">
+                AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+            </if>
             <if test="valueSetCode != null and valueSetCode != ''">
                 AND VALUE_SET_CODE = #{valueSetCode,jdbcType=VARCHAR}
             </if>

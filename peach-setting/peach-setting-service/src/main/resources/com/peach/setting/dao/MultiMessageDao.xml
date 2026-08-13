@@ -2,28 +2,28 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.MultiMessageDao">
     <sql id="allColumn">
-        ID,                                               MESSAGE_KEY,                                      LOCALE,                                           MODULE_CODE,
+        ID,                                               MESSAGE_KEY,                                      LOCALE,                                        TENANT_ID,                                        ORG_ID,                                           MODULE_CODE,
         MESSAGE_TYPE,                                     USAGE_SCOPE,                                      MESSAGE_CONTENT,                                  DESCRIPTION,
         STATUS,                                           CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,
         MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        ID as id,                                         MESSAGE_KEY as messageKey,                        LOCALE as locale,                                 MODULE_CODE as moduleCode,
+        ID as id,                                         MESSAGE_KEY as messageKey,                        LOCALE as locale,                            TENANT_ID as tenantId,                            ORG_ID as orgId,                                 MODULE_CODE as moduleCode,
         MESSAGE_TYPE as messageType,                      USAGE_SCOPE as usageScope,                        MESSAGE_CONTENT as messageContent,                DESCRIPTION as description,
         STATUS as status,                                 CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,
         MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                           #{messageKey,jdbcType=VARCHAR},                   #{locale,jdbcType=VARCHAR},                       #{moduleCode,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR},                           #{messageKey,jdbcType=VARCHAR},                   #{locale,jdbcType=VARCHAR},                     #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                       #{moduleCode,jdbcType=VARCHAR},
         #{messageType,jdbcType=VARCHAR},                  #{usageScope,jdbcType=VARCHAR},                   #{messageContent,jdbcType=VARCHAR},               #{description,jdbcType=VARCHAR},
         #{status,jdbcType=INTEGER},                       #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},
         #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},                      #{item.messageKey,jdbcType=VARCHAR},              #{item.locale,jdbcType=VARCHAR},                  #{item.moduleCode,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR},                      #{item.messageKey,jdbcType=VARCHAR},              #{item.locale,jdbcType=VARCHAR},                #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                  #{item.moduleCode,jdbcType=VARCHAR},
         #{item.messageType,jdbcType=VARCHAR},             #{item.usageScope,jdbcType=VARCHAR},              #{item.messageContent,jdbcType=VARCHAR},          #{item.description,jdbcType=VARCHAR},
         #{item.status,jdbcType=INTEGER},                  #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},
         #{item.modifierId,jdbcType=VARCHAR}
@@ -31,6 +31,12 @@
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="messageKey != null and messageKey != ''">
                 MESSAGE_KEY = #{messageKey,jdbcType=VARCHAR},
             </if>
@@ -154,6 +160,12 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
         <if test="id != null and id != ''">
             AND ID = #{id,jdbcType=VARCHAR}
         </if>
@@ -285,10 +297,16 @@
         <include refid="allColumnAlias" />
         FROM PEACH_MULTI_MESSAGE
         <where>
+            <if test="tenantId != null and tenantId != ''">
+                AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+            </if>
+            <if test="orgId != null and orgId != ''">
+                AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+            </if>
             <if test="messageKey != null and messageKey != ''">
                 AND MESSAGE_KEY = #{messageKey,jdbcType=VARCHAR}
             </if>
-            <if test="moduleCode != null and moduleCode">
+            <if test="moduleCode != null and moduleCode != ''">
                 AND MODULE_CODE = #{moduleCode,jdbcType=VARCHAR}
             </if>
         </where>

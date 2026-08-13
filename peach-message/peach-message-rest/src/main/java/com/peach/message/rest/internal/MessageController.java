@@ -1,18 +1,16 @@
 package com.peach.message.rest.internal;
 
-import cn.dev33.satoken.stp.StpUtil;
-import com.peach.common.CurrentContext;
-import com.peach.common.CurrentContextEntity;
-import com.peach.common.CurrentUserDO;
 import com.peach.common.response.Response;
+
 import com.peach.message.common.MessageCategoryConfig;
 import com.peach.message.common.enums.MessageEnum;
 import com.peach.message.dto.MessageReadDTO;
 import com.peach.message.qo.SiteMessageQO;
 import com.peach.message.service.IMessageService;
+import com.peach.satoken.context.SecurityContextHolder;
+import com.peach.satoken.context.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Indexed;
 import org.springframework.validation.annotation.Validated;
@@ -33,7 +31,6 @@ import javax.validation.constraints.NotBlank;
  * @CreateTime 2026/6/23 14:45
  * @Description 站内信接口
  */
-@Slf4j
 @Indexed
 @Validated
 @RestController
@@ -49,7 +46,7 @@ public class MessageController {
     public Response query(@RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
                           @RequestParam(value = "pageSize", required = false, defaultValue = "20") Integer pageSize,
                           @RequestParam(value = "readFlag", required = false) Integer readFlag) {
-        String userId = getCurrentUserId();
+        String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
             return Response.businessResponse("当前用户未登录");
         }
@@ -97,7 +94,7 @@ public class MessageController {
     @GetMapping("/unread-count")
     @Operation(summary = "查询未读数")
     public Response queryUnreadCount() {
-        String userId = getCurrentUserId();
+        String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
             return Response.businessResponse("当前用户未登录");
         }
@@ -125,7 +122,7 @@ public class MessageController {
     @PostMapping("/{messageId}/read")
     @Operation(summary = "标记站内信已读")
     public Response read(@NotBlank(message = "消息ID不能为空") @PathVariable String messageId) {
-        String userId = getCurrentUserId();
+        String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
             return Response.businessResponse("当前用户未登录");
         }
@@ -138,7 +135,7 @@ public class MessageController {
     @PostMapping("/read-all")
     @Operation(summary = "全部标记已读")
     public Response readAll() {
-        String userId = getCurrentUserId();
+        String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
             return Response.businessResponse("当前用户未登录");
         }
@@ -164,7 +161,7 @@ public class MessageController {
     }
 
     private Response queryByCategory(String messageCategory, String messageType, Integer pageNum, Integer pageSize, Integer readFlag) {
-        String userId = getCurrentUserId();
+        String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
             return Response.businessResponse("当前用户未登录");
         }
@@ -179,7 +176,7 @@ public class MessageController {
     }
 
     private Response queryUnreadCountByCategory(String messageCategory, String messageType) {
-        String userId = getCurrentUserId();
+        String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
             return Response.businessResponse("当前用户未登录");
         }
@@ -187,27 +184,12 @@ public class MessageController {
     }
 
     private Response readAllByCategory(String messageCategory, String messageType) {
-        String userId = getCurrentUserId();
+        String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
             return Response.businessResponse("当前用户未登录");
         }
         return messageService.readAll(userId, messageCategory, messageType);
     }
 
-    private String getCurrentUserId() {
-        CurrentContextEntity context = CurrentContext.getCurrentContext();
-        if (context != null) {
-            CurrentUserDO currentUserDO = context.getCurrentUserDO();
-            if (currentUserDO != null && StringUtils.isNotBlank(currentUserDO.getUserId())) {
-                return currentUserDO.getUserId();
-            }
-        }
-        try {
-            Object loginId = StpUtil.getLoginId();
-            return loginId == null ? null : String.valueOf(loginId);
-        } catch (Exception e) {
-            log.warn("Get current user id failed", e);
-            return null;
-        }
-    }
+
 }

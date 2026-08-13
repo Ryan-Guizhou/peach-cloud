@@ -1,5 +1,6 @@
 package com.peach.sample.email;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.email.core.SendResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import java.io.IOException;
  * @CreateTime 2025/12/10 10:57
  */
 @Slf4j
+@Indexed
 @RestController
 @RequestMapping("/email")
 public class EmailSendController {

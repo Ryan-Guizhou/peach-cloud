@@ -9,6 +9,7 @@ import com.peach.fileservice.qo.CloudStorageInstanceQO;
 import com.peach.fileservice.service.ICloudStorageInstanceService;
 import com.peach.fileservice.vo.CloudStorageInstanceVO;
 import com.peach.manager.CloudStorageManagerService;
+import com.peach.satoken.context.SecurityContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
@@ -45,7 +46,7 @@ public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceSer
         validateSaveRequest(data, false);
         CloudStorageInstanceDO instanceDO = buildForSave(data, null);
         instanceDO.setInstanceId(IDGeneratorUtil.UUID());
-        instanceDO.fillCreateTime(cloudStorageInstanceSupport.currentOperator());
+        instanceDO.fillCreateTime();
         cloudStorageInstanceDao.insert(instanceDO);
         return selectById(instanceDO.getInstanceId());
     }
@@ -99,12 +100,16 @@ public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceSer
 
     @Override
     public List<CloudStorageInstanceVO> list(CloudStorageInstanceQO data) {
-        CloudStorageInstanceDO query = new CloudStorageInstanceDO();
-        if (data != null) {
-            query.setInstanceName(data.getInstanceName());
-            query.setStoreType(data.getStoreType());
-            query.setEnabled(data.getEnabled());
+        if (data == null) {
+            data = new CloudStorageInstanceQO();
         }
+        fillCurrentTenantOrg(data);
+        CloudStorageInstanceDO query = new CloudStorageInstanceDO();
+        query.setInstanceName(data.getInstanceName());
+        query.setStoreType(data.getStoreType());
+        query.setEnabled(data.getEnabled());
+        query.setTenantId(data.getTenantId());
+        query.setOrgId(data.getOrgId());
         List<CloudStorageInstanceVO> records = cloudStorageInstanceDao.select(query);
         return sanitize(records);
     }
@@ -186,5 +191,26 @@ public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceSer
         }
         int visible = Math.min(4, secretKey.length());
         return "****" + secretKey.substring(secretKey.length() - visible);
+    }
+
+    private void fillCurrentTenantOrg(CloudStorageInstanceQO qo) {
+        qo.setTenantId(requireTenantId());
+        qo.setOrgId(requireOrgId());
+    }
+
+    private String requireTenantId() {
+        String tenantId = SecurityContextHolder.currentTenantId();
+        if (StringUtil.isBlank(tenantId)) {
+            throw new IllegalStateException("Current tenant context is missing");
+        }
+        return tenantId;
+    }
+
+    private String requireOrgId() {
+        String orgId = SecurityContextHolder.currentOrgId();
+        if (StringUtil.isBlank(orgId)) {
+            throw new IllegalStateException("Current organization context is missing");
+        }
+        return orgId;
     }
 }

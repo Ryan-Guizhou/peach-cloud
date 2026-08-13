@@ -28,6 +28,8 @@ public interface NoticeDao extends PeachDao<NoticeDO, NoticeVO> {
      */
     List<NoticeVO> selectByQO(NoticeQO qo);
 
+    NoticeVO selectByNoticeCode(@Param("noticeCode") String noticeCode);
+
     /**
      * 增加公告的阅读次数
      *

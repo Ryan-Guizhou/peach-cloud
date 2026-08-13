@@ -26,6 +26,12 @@ public class SiteMessageQO extends PeachEntity implements Serializable {
     @Schema(description = "消息编码")
     private String messageCode;
 
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Schema(description = "接收人ID")
     private String receiverId;
 

@@ -1,5 +1,6 @@
 package com.peach.rocket.example.config;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.rocket.example.config.jdbc.ExampleJdbcMqIdempotentStore;
 import com.peach.rocket.example.config.jdbc.ExampleJdbcMqOutboxStore;
 import com.peach.rocket.idempotent.MqIdempotentStore;
@@ -19,6 +20,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * @version 1.0.0
  * @since 2026/6/26
  */
+@Indexed
 @Configuration
 @ConditionalOnBean(JdbcTemplate.class)
 public class ExampleJdbcRocketConfiguration {

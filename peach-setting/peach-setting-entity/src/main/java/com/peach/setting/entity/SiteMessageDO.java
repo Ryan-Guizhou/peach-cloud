@@ -35,6 +35,14 @@ public class SiteMessageDO extends PeachDO implements Serializable {
     @Schema(description = "消息编码")
     private String messageCode;
 
+    @Column(name = "TENANT_ID")
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Column(name = "ORG_ID")
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Column(name = "RECEIVER_ID")
     @Schema(description = "接收人用户ID")
     private String receiverId;

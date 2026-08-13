@@ -2,7 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.fileservice.dao.FileRecordDao">
     <sql id="allColumn">
-        FILE_ID,                                          OBJECT_ID,                                        BIZ_TYPE,                                         BIZ_ID,
+        FILE_ID,                                          OBJECT_ID,                                        TENANT_ID,                                        ORG_ID,
+        BIZ_TYPE,                                         BIZ_ID,
         BIZ_TAG,                                          FILE_NAME,                                        DISPLAY_NAME,                                     CONTENT_TYPE,
         FILE_SIZE,                                        FILE_EXT,                                         FILE_STATUS,                                      DELETE_TIME,
         EXPIRE_DELETE_TIME,                               REMARK,                                           IS_DELETE,                                        CREATED_TIME,
@@ -10,7 +11,7 @@
     </sql>
 
     <sql id="allColumnAlias">
-        FILE_ID as fileId,                                OBJECT_ID as objectId,                            BIZ_TYPE as bizType,                              BIZ_ID as bizId,
+        FILE_ID as fileId,                                OBJECT_ID as objectId,                            TENANT_ID as tenantId,                            ORG_ID as orgId,                            BIZ_TYPE as bizType,                              BIZ_ID as bizId,
         BIZ_TAG as bizTag,                                FILE_NAME as fileName,                            DISPLAY_NAME as displayName,                      CONTENT_TYPE as contentType,
         FILE_SIZE as fileSize,                            FILE_EXT as fileExt,                              FILE_STATUS as fileStatus,                        DELETE_TIME as deleteTime,
         EXPIRE_DELETE_TIME as expireDeleteTime,           REMARK as remark,                                 IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
@@ -18,7 +19,8 @@
     </sql>
 
     <sql id="allColumnValue">
-        #{fileId,jdbcType=VARCHAR},                       #{objectId,jdbcType=VARCHAR},                     #{bizType,jdbcType=VARCHAR},                      #{bizId,jdbcType=VARCHAR},
+        #{fileId,jdbcType=VARCHAR},                       #{objectId,jdbcType=VARCHAR},                     #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},
+        #{bizType,jdbcType=VARCHAR},                      #{bizId,jdbcType=VARCHAR},
         #{bizTag,jdbcType=VARCHAR},                       #{fileName,jdbcType=VARCHAR},                     #{displayName,jdbcType=VARCHAR},                  #{contentType,jdbcType=VARCHAR},
         #{fileSize,jdbcType=BIGINT},                      #{fileExt,jdbcType=VARCHAR},                      #{fileStatus,jdbcType=VARCHAR},                   #{deleteTime,jdbcType=VARCHAR},
         #{expireDeleteTime,jdbcType=VARCHAR},             #{remark,jdbcType=VARCHAR},                       #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},
@@ -26,7 +28,7 @@
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.fileId,jdbcType=VARCHAR},                  #{item.objectId,jdbcType=VARCHAR},                #{item.bizType,jdbcType=VARCHAR},                 #{item.bizId,jdbcType=VARCHAR},
+        #{item.fileId,jdbcType=VARCHAR},                  #{item.objectId,jdbcType=VARCHAR},                #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                #{item.bizType,jdbcType=VARCHAR},                 #{item.bizId,jdbcType=VARCHAR},
         #{item.bizTag,jdbcType=VARCHAR},                  #{item.fileName,jdbcType=VARCHAR},                #{item.displayName,jdbcType=VARCHAR},             #{item.contentType,jdbcType=VARCHAR},
         #{item.fileSize,jdbcType=BIGINT},                 #{item.fileExt,jdbcType=VARCHAR},                 #{item.fileStatus,jdbcType=VARCHAR},              #{item.deleteTime,jdbcType=VARCHAR},
         #{item.expireDeleteTime,jdbcType=VARCHAR},        #{item.remark,jdbcType=VARCHAR},                  #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},
@@ -35,6 +37,12 @@
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="objectId != null and objectId != ''">
                 OBJECT_ID = #{objectId,jdbcType=VARCHAR},
             </if>
@@ -93,6 +101,12 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
         <if test="fileId != null and fileId != ''">
             AND FILE_ID = #{fileId,jdbcType=VARCHAR}
         </if>
@@ -239,7 +253,8 @@
 
     <select id="selectByQO" parameterType="com.peach.fileservice.qo.FileQueryQO" resultType="com.peach.fileservice.vo.FileRecordVO">
         SELECT
-            r.FILE_ID as fileId, r.OBJECT_ID as objectId, r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
+            r.FILE_ID as fileId, r.OBJECT_ID as objectId, r.TENANT_ID as tenantId, r.ORG_ID as orgId,
+            r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
             r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
             r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
             r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete, r.CREATED_TIME as createdTime,
@@ -248,6 +263,12 @@
         FROM PEACH_FILE_RECORD r
         LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
         <where>
+            <if test="tenantId != null and tenantId != ''">
+                AND r.TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+            </if>
+            <if test="orgId != null and orgId != ''">
+                AND r.ORG_ID = #{orgId,jdbcType=VARCHAR}
+            </if>
             <if test="bizType != null and bizType != ''">
                 AND r.BIZ_TYPE = #{bizType,jdbcType=VARCHAR}
             </if>

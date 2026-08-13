@@ -40,6 +40,14 @@ public class FileRecordDO extends PeachDO implements Serializable {
     @Schema(description = "物理对象ID")
     private String objectId;
 
+    @Column(name = "TENANT_ID")
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Column(name = "ORG_ID")
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Column(name = "BIZ_TYPE")
     @Schema(description = "业务类型")
     private String bizType;

@@ -1,6 +1,7 @@
 package com.peach.redis.bloom.autoconfigure;
 
 
+import org.springframework.stereotype.Indexed;
 import com.peach.redis.common.RedisConfig;
 import com.peach.redis.bloom.config.BloomFilterProperties;
 import com.peach.redis.bloom.constant.SpiConstant;
@@ -31,6 +32,7 @@ import java.util.ServiceLoader;
  * 同时允许用户自定义 Bean 覆盖（使用 @ConditionalOnMissingBean）。
  */
 @Slf4j
+@Indexed
 @Configuration
 @AutoConfigureAfter(RedisConfig.class)
 @EnableConfigurationProperties(BloomFilterProperties.class)

@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.fileservice.dao.CloudStorageInstanceDao">
     <sql id="allColumn">
-        INSTANCE_ID,                                      INSTANCE_NAME,                                    STORE_TYPE,                                       ENDPOINT,
+        INSTANCE_ID,                                      INSTANCE_NAME,                                    STORE_TYPE,                                        TENANT_ID,                                        ORG_ID,                                       ENDPOINT,
         REGION,                                           BUCKET_NAME,                                      PREFIX,                                           ACCESS_KEY,
         SECRET_KEY,                                       ROOT_PATH,                                        DOMAIN,                                           PATH_STYLE_ACCESS,
         PUBLIC_READ,                                      EXTRA_JSON,                                       ENABLED,                                          BUILT_IN,
@@ -11,7 +11,7 @@
     </sql>
 
     <sql id="allColumnAlias">
-        INSTANCE_ID as instanceId,                        INSTANCE_NAME as instanceName,                    STORE_TYPE as storeType,                          ENDPOINT as endpoint,
+        INSTANCE_ID as instanceId,                        INSTANCE_NAME as instanceName,                    STORE_TYPE as storeType,                            TENANT_ID as tenantId,                            ORG_ID as orgId,                          ENDPOINT as endpoint,
         REGION as region,                                 BUCKET_NAME as bucketName,                        PREFIX as prefix,                                 ACCESS_KEY as accessKey,
         SECRET_KEY as secretKey,                          ROOT_PATH as rootPath,                            DOMAIN as domain,                                 PATH_STYLE_ACCESS as pathStyleAccess,
         PUBLIC_READ as publicRead,                        EXTRA_JSON as extraJson,                          ENABLED as enabled,                               BUILT_IN as builtIn,
@@ -20,7 +20,7 @@
     </sql>
 
     <sql id="allColumnValue">
-        #{instanceId,jdbcType=VARCHAR},                   #{instanceName,jdbcType=VARCHAR},                 #{storeType,jdbcType=VARCHAR},                   #{endpoint,jdbcType=VARCHAR},
+        #{instanceId,jdbcType=VARCHAR},                   #{instanceName,jdbcType=VARCHAR},                 #{storeType,jdbcType=VARCHAR},                     #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                   #{endpoint,jdbcType=VARCHAR},
         #{region,jdbcType=VARCHAR},                      #{bucketName,jdbcType=VARCHAR},                  #{prefix,jdbcType=VARCHAR},                     #{accessKey,jdbcType=VARCHAR},
         #{secretKey,jdbcType=VARCHAR},                   #{rootPath,jdbcType=VARCHAR},                    #{domain,jdbcType=VARCHAR},                      #{pathStyleAccess,jdbcType=INTEGER},
         #{publicRead,jdbcType=INTEGER},                  #{extraJson,jdbcType=VARCHAR},                   #{enabled,jdbcType=INTEGER},                    #{builtIn,jdbcType=INTEGER},
@@ -29,7 +29,7 @@
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.instanceId,jdbcType=VARCHAR},              #{item.instanceName,jdbcType=VARCHAR},           #{item.storeType,jdbcType=VARCHAR},             #{item.endpoint,jdbcType=VARCHAR},
+        #{item.instanceId,jdbcType=VARCHAR},              #{item.instanceName,jdbcType=VARCHAR},           #{item.storeType,jdbcType=VARCHAR},                #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},             #{item.endpoint,jdbcType=VARCHAR},
         #{item.region,jdbcType=VARCHAR},                 #{item.bucketName,jdbcType=VARCHAR},             #{item.prefix,jdbcType=VARCHAR},                #{item.accessKey,jdbcType=VARCHAR},
         #{item.secretKey,jdbcType=VARCHAR},              #{item.rootPath,jdbcType=VARCHAR},               #{item.domain,jdbcType=VARCHAR},                #{item.pathStyleAccess,jdbcType=INTEGER},
         #{item.publicRead,jdbcType=INTEGER},             #{item.extraJson,jdbcType=VARCHAR},              #{item.enabled,jdbcType=INTEGER},               #{item.builtIn,jdbcType=INTEGER},
@@ -39,6 +39,12 @@
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="instanceName != null and instanceName != ''">
                 INSTANCE_NAME = #{instanceName,jdbcType=VARCHAR},
             </if>
@@ -103,6 +109,12 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
         <if test="instanceId != null and instanceId != ''">
             AND INSTANCE_ID = #{instanceId,jdbcType=VARCHAR}
         </if>
@@ -210,6 +222,12 @@
             <include refid="allColumnAlias" />
         FROM PEACH_STORAGE_INSTANCE
         <where>
+            <if test="tenantId != null and tenantId != ''">
+                AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+            </if>
+            <if test="orgId != null and orgId != ''">
+                AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+            </if>
             <if test="instanceId != null and instanceId != ''">
                 AND INSTANCE_ID = #{instanceId,jdbcType=VARCHAR}
             </if>

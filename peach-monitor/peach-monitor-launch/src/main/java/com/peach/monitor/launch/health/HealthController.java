@@ -1,5 +1,6 @@
 package com.peach.monitor.launch.health;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.common.response.Response;
 import com.peach.monitor.entity.monitor.MonitorSnapshotDTO;
 import com.peach.monitor.service.IMonitorRuntimeService;
@@ -18,6 +19,7 @@ import java.util.Map;
  * @Version 1.0.0
  * @CreateTime 2025-11-25 17:47
  */
+@Indexed
 @RestController
 @RequestMapping("/monitor")
 @Tag(name = "HealthController", description = "健康检查")

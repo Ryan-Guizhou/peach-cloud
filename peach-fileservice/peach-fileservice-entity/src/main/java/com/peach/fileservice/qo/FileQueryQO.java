@@ -27,6 +27,12 @@ public class FileQueryQO extends PeachEntity implements Serializable {
     @Schema(description = "业务类型")
     private String bizType;
 
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Schema(description = "业务ID")
     private String bizId;
 

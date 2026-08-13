@@ -2,6 +2,7 @@
 
 package com.peach.redis.common.tool;
 
+import org.springframework.stereotype.Indexed;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit;
  * @CreateTime 2025/12/4 17:39
  */
 @Slf4j
+@Indexed
 @Repository("redisDao")
 public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implements RedisDao {
 

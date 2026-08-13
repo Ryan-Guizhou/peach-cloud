@@ -1,5 +1,6 @@
 package com.peach.redis.config;
 
+import org.springframework.stereotype.Indexed;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
@@ -14,6 +15,7 @@ import java.util.Set;
  * @Description 多级缓存配置
  */
 @Data
+@Indexed
 @ConfigurationProperties(prefix = "peach.multicache")
 public class MultiCacheConfig {
 

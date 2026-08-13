@@ -277,7 +277,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         sessionDO.setSessionStatus(FileDomainConstant.SessionStatus.INITIATED);
         sessionDO.setExpireTime(format(LocalDateTime.now().plusMinutes(fileDomainProperties.getUploadSessionExpireMinutes())));
         sessionDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
-        sessionDO.fillCreateTime(currentOperator());
+        sessionDO.fillCreateTime();
         fileUploadSessionDao.insert(sessionDO);
 
         FileMultipartInitVO result = new FileMultipartInitVO();
@@ -345,7 +345,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
             objectDO.setUploadTime(DateUtil.nowTime());
             objectDO.setLastAccessTime(DateUtil.nowTime());
             objectDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
-            objectDO.fillCreateTime(currentOperator());
+            objectDO.fillCreateTime(sessionVO.getTenantId(), sessionVO.getOrgId());
             fileObjectDao.insert(objectDO);
 
             FileRecordDO recordDO = buildFileRecord(sessionVO, sessionVO.getObjectId(), sessionVO.getFileSize());
@@ -411,6 +411,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     @Override
     public PageResult<FileRecordVO> pageList(FileQueryQO qo) {
+        fillCurrentTenantOrg(qo);
         PageInfo<FileRecordVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> fileRecordDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
@@ -538,7 +539,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         objectDO.setUploadTime(DateUtil.nowTime());
         objectDO.setLastAccessTime(DateUtil.nowTime());
         objectDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
-        objectDO.fillCreateTime(currentOperator());
+        objectDO.fillCreateTime();
         return objectDO;
     }
 
@@ -557,7 +558,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         recordDO.setFileStatus(FileDomainConstant.FileStatus.ACTIVE);
         recordDO.setRemark(data.getRemark());
         recordDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
-        recordDO.fillCreateTime(currentOperator());
+        recordDO.fillCreateTime();
         return recordDO;
     }
 
@@ -576,7 +577,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         recordDO.setFileStatus(FileDomainConstant.FileStatus.ACTIVE);
         recordDO.setRemark(sessionVO.getRemark());
         recordDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
-        recordDO.fillCreateTime(currentOperator());
+        recordDO.fillCreateTime(sessionVO.getTenantId(), sessionVO.getOrgId());
         return recordDO;
     }
 
@@ -825,6 +826,27 @@ public class FileDomainServiceImpl implements IFileDomainService {
             return FileDomainConstant.SYSTEM_OPERATOR;
         }
         return context.getUserId();
+    }
+
+    private void fillCurrentTenantOrg(FileQueryQO qo) {
+        qo.setTenantId(requireTenantId());
+        qo.setOrgId(requireOrgId());
+    }
+
+    private String requireTenantId() {
+        String tenantId = SecurityContextHolder.currentTenantId();
+        if (StringUtil.isBlank(tenantId)) {
+            throw new IllegalStateException("Current tenant context is missing");
+        }
+        return tenantId;
+    }
+
+    private String requireOrgId() {
+        String orgId = SecurityContextHolder.currentOrgId();
+        if (StringUtil.isBlank(orgId)) {
+            throw new IllegalStateException("Current organization context is missing");
+        }
+        return orgId;
     }
 
     private String format(LocalDateTime localDateTime) {

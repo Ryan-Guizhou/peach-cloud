@@ -1,5 +1,6 @@
 package com.peach.sample.redis.bloom.controller;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.redis.bloom.core.BloomFilterService;
 import com.peach.redis.bloom.core.BloomStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import java.util.Map;
  * @Version 1.0.0
  * @CreateTime 2025/12/8 15:20
  */
+@Indexed
 @RestController
 @RequestMapping("/bloom")
 public class BloomController {

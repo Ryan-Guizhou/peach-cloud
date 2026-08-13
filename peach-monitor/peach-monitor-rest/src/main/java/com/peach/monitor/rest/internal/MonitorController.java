@@ -1,6 +1,6 @@
 package com.peach.monitor.rest.internal;
 
-import com.peach.auth.openfeign.UserFeignClient;
+import com.peach.auth.openfeign.AuthFeignClient;
 import com.peach.common.response.Response;
 import com.peach.monitor.entity.UserDTO;
 import com.peach.monitor.entity.monitor.MonitorSnapshotDTO;
@@ -29,7 +29,7 @@ import javax.annotation.Resource;
 public class MonitorController {
 
     @Resource
-    private UserFeignClient userFeignClient;
+    private AuthFeignClient authFeignClient;
 
     @Resource
     private IMonitorRuntimeService monitorRuntimeService;
@@ -81,12 +81,12 @@ public class MonitorController {
     @Operation(summary = "获取路由信息")
     @GetMapping("/routerInfo/{routerId}")
     public Response routerInfo(@PathVariable("routerId") String routerId) {
-        return userFeignClient.getRouterInfo(routerId);
+        return authFeignClient.getRouterInfo(routerId);
     }
 
     @Operation(summary = "获取角色信息")
     @GetMapping("/roleInfo/{roleId}")
     public Response roleInfo(@PathVariable("roleId") String roleId) {
-        return userFeignClient.getRoleInfo(roleId);
+        return authFeignClient.getRoleInfo(roleId);
     }
 }

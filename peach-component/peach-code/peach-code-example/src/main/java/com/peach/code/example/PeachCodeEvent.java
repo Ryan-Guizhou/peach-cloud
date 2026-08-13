@@ -1,5 +1,6 @@
 package com.peach.code.example;
 
+import org.springframework.stereotype.Indexed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
  * <p>应用启动完成后为指定租户生成菜单和通知编码，并记录格式校验结果。该事件用于人工验证
  * Redis/MySQL 双通道发号是否符合预期，不承担业务数据创建职责。</p>
  */
+@Indexed
 @Component
 public class PeachCodeEvent {
 

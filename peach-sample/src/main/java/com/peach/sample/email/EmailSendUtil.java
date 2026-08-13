@@ -1,5 +1,6 @@
 package com.peach.sample.email;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.email.autoconfigure.EmailProperties;
 import com.peach.email.core.Attachment;
 import com.peach.email.core.EmailMessage;
@@ -24,6 +25,7 @@ import java.util.Map;
  * @Version 1.0.0
  * @CreateTime 2025/12/10 10:59
  */
+@Indexed
 @Component
 public class EmailSendUtil {
 

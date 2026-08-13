@@ -50,6 +50,12 @@ public class PeachDO implements Serializable {
      */
     private static final Map<Class<?>, Field> ID_FIELD_CACHE = new ConcurrentHashMap<>();
 
+    private static final String SECURITY_CONTEXT_HOLDER_CLASS = "com.peach.satoken.context.SecurityContextHolder";
+
+    private static final String TENANT_ID_FIELD = "tenantId";
+
+    private static final String ORG_ID_FIELD = "orgId";
+
     /**
      * Created time.
      */
@@ -305,6 +311,31 @@ public class PeachDO implements Serializable {
     }
 
     /**
+     * Fill create audit fields from current user context.
+     *
+     * <p>
+     * peach-common cannot directly depend on peach-satoken, so the current context is read reflectively.
+     * If the entity has tenantId/orgId writable properties, they are filled and validated here.
+     * </p>
+     */
+    public void fillCreateTime() {
+        fillCreateTime(currentContextValue("currentUserId"));
+        fillCurrentTenantOrg();
+        requireTenantOrgIfPresent();
+    }
+
+    /**
+     * Fill create audit fields from current user context and explicit tenant/organization values.
+     *
+     * @param tenantId tenant id
+     * @param orgId    organization id
+     */
+    public void fillCreateTime(String tenantId, String orgId) {
+        fillCreateTime(currentContextValue("currentUserId"));
+        fillTenantOrg(tenantId, orgId);
+    }
+
+    /**
      * Fill modify audit fields.
      *
      * @param modifierId modifier id
@@ -312,6 +343,41 @@ public class PeachDO implements Serializable {
     public void fillModifyTime(String modifierId) {
         this.modifyTime = getCurrentTime();
         this.modifierId = modifierId;
+    }
+
+    /**
+     * Fill modify audit fields from current user context.
+     */
+    public void fillModifyTime() {
+        fillModifyTime(currentContextValue("currentUserId"));
+    }
+
+    /**
+     * Fill tenant and organization fields from current user context when the entity declares those properties.
+     */
+    public void fillCurrentTenantOrg() {
+        setPropertyIfWritable(TENANT_ID_FIELD, currentContextValue("currentTenantId"));
+        setPropertyIfWritable(ORG_ID_FIELD, currentContextValue("currentOrgId"));
+    }
+
+    /**
+     * Fill tenant and organization fields from explicit values when the entity declares those properties.
+     *
+     * @param tenantId tenant id
+     * @param orgId    organization id
+     */
+    public void fillTenantOrg(String tenantId, String orgId) {
+        setPropertyIfWritable(TENANT_ID_FIELD, tenantId);
+        setPropertyIfWritable(ORG_ID_FIELD, orgId);
+        requireTenantOrgIfPresent();
+    }
+
+    /**
+     * Validate tenant and organization fields when the entity declares those properties.
+     */
+    public void requireTenantOrgIfPresent() {
+        requirePropertyIfWritable(TENANT_ID_FIELD, "Current tenant context is missing");
+        requirePropertyIfWritable(ORG_ID_FIELD, "Current organization context is missing");
     }
 
 
@@ -392,6 +458,44 @@ public class PeachDO implements Serializable {
             PropertyUtils.setProperty(this, field, value);
         } catch (Exception e) {
             throw new RuntimeException("Set field value failed, field: " + field, e);
+        }
+    }
+
+    private static String currentContextValue(String methodName) {
+        try {
+            Class<?> holderClass = Class.forName(SECURITY_CONTEXT_HOLDER_CLASS);
+            Object value = holderClass.getMethod(methodName).invoke(null);
+            if (value == null || StringUtil.isEmpty(value.toString())) {
+                return null;
+            }
+            return value.toString();
+        } catch (ClassNotFoundException e) {
+            return null;
+        } catch (NoSuchMethodException e) {
+            return null;
+        } catch (Exception e) {
+            throw new RuntimeException("Get current security context failed, method: " + methodName, e);
+        }
+    }
+
+    private void setPropertyIfWritable(String field, String value) {
+        if (!PropertyUtils.isWriteable(this, field)) {
+            return;
+        }
+        try {
+            PropertyUtils.setProperty(this, field, value);
+        } catch (Exception e) {
+            throw new RuntimeException("Set context field failed, field: " + field, e);
+        }
+    }
+
+    private void requirePropertyIfWritable(String field, String message) {
+        if (!PropertyUtils.isWriteable(this, field)) {
+            return;
+        }
+        Object value = getField(field);
+        if (value == null || StringUtil.isEmpty(value.toString())) {
+            throw new IllegalStateException(message);
         }
     }
 

@@ -35,6 +35,14 @@ public class ValueSetDO extends PeachDO implements Serializable {
     @Schema(description = "值集编码")
     private String valueSetCode;
 
+    @Column(name = "TENANT_ID")
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Column(name = "ORG_ID")
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Column(name = "VALUE_SET_NAME")
     @Schema(description = "值集名称")
     private String valueSetName;

@@ -8,6 +8,7 @@ import com.peach.common.constant.PubCommonConst;
 import com.peach.common.util.DateUtil;
 import com.peach.common.util.PeachCollectionUtil;
 import com.peach.redis.common.tool.RedisDao;
+import com.peach.satoken.context.SecurityContextHolder;
 import com.peach.setting.comon.enums.SettingConst;
 import com.peach.setting.comon.enums.SettingEnum;
 import com.peach.setting.dao.NoticeDao;
@@ -57,6 +58,7 @@ public class NoticeServiceImpl implements INoticeService {
 
     @Override
     public PageResult<NoticeVO> noticePageList(NoticeQO qo) {
+        fillCurrentTenantOrg(qo);
         PageInfo<NoticeVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> noticeDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
@@ -78,7 +80,7 @@ public class NoticeServiceImpl implements INoticeService {
         noticeDO.setReadCount(Optional.ofNullable(noticeDO.getReadCount()).orElse(PubCommonConst.LOGIC_FLASE));
         noticeDO.setPublishStatus(Optional.ofNullable(noticeDO.getPublishStatus()).orElse(SettingEnum.PublishStatus.DRAFT.getCode()));
         noticeDO.setInboxEnabled(Optional.ofNullable(noticeDO.getInboxEnabled()).orElse(PubCommonConst.LOGIC_FLASE));
-        noticeDO.setCreatedTime(DateUtil.nowTime());
+        noticeDO.fillCreateTime();
         noticeDao.insert(noticeDO);
     }
 
@@ -130,7 +132,7 @@ public class NoticeServiceImpl implements INoticeService {
             message.setSourceCode(db.getNoticeCode());
             message.setReadFlag(PubCommonConst.LOGIC_FLASE);
             message.setSendStatus(SettingEnum.SendStatus.SENT.getCode());
-            message.setCreatedTime(DateUtil.nowTime());
+            message.fillCreateTime(db.getTenantId(), db.getOrgId());
             list.add(message);
         }
         if (!list.isEmpty()) {
@@ -167,6 +169,7 @@ public class NoticeServiceImpl implements INoticeService {
 
     @Override
     public PageResult<SiteMessageVO> siteMessagePageList(SiteMessageQO qo) {
+        fillCurrentTenantOrg(qo);
         PageInfo<SiteMessageVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> siteMessageDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
@@ -180,6 +183,32 @@ public class NoticeServiceImpl implements INoticeService {
         update.setReadFlag(PubCommonConst.LOGIC_TRUE);
         update.setModifyTime(DateUtil.nowTime());
         siteMessageDao.updateById(update);
+    }
+
+    private void fillCurrentTenantOrg(NoticeQO qo) {
+        qo.setTenantId(requireTenantId());
+        qo.setOrgId(requireOrgId());
+    }
+
+    private void fillCurrentTenantOrg(SiteMessageQO qo) {
+        qo.setTenantId(requireTenantId());
+        qo.setOrgId(requireOrgId());
+    }
+
+    private String requireTenantId() {
+        String tenantId = SecurityContextHolder.currentTenantId();
+        if (tenantId == null || tenantId.trim().isEmpty()) {
+            throw new IllegalStateException("Current tenant context is missing");
+        }
+        return tenantId;
+    }
+
+    private String requireOrgId() {
+        String orgId = SecurityContextHolder.currentOrgId();
+        if (orgId == null || orgId.trim().isEmpty()) {
+            throw new IllegalStateException("Current organization context is missing");
+        }
+        return orgId;
     }
 }
 

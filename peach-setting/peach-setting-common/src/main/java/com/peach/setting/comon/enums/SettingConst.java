@@ -24,6 +24,8 @@ public interface SettingConst {
 
     String CACHE_NOTICE = "setting:notice";
 
+    String GATEWAY_IP_WHITELIST_KEY = "peach:gateway:risk-control:whitelist-ip";
+
     String NOTICE_READ_PENDING_LIST = "setting:notice:read:pending:list";
 
     String NOTICE_READ_PENDING_KEY_PREFIX = "setting:notice:read:pending:{0}:{1}";

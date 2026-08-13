@@ -1,5 +1,6 @@
 package com.peach.common.validate;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.common.exception.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
  * @CreateTime 2025/11/10 18:34
  */
 @Slf4j
+@Indexed
 @Component
 public class CommonValidator {
 

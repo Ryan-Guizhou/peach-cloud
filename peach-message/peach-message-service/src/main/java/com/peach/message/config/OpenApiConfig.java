@@ -1,5 +1,6 @@
 package com.peach.message.config;
 
+import org.springframework.stereotype.Indexed;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Configuration;
  * @Description 配置 OpenAPI 3.0 的所有基本信息项（使用 Java 8 语法）
  */
 @Slf4j
+@Indexed
 @Configuration
 public class OpenApiConfig {
     @Bean

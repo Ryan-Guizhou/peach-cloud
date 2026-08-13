@@ -18,6 +18,7 @@ import com.peach.message.qo.SiteMessageQO;
 import com.peach.message.service.IMessageService;
 import com.peach.message.service.IWebSocketPushService;
 import com.peach.message.vo.SiteMessageVO;
+import com.peach.satoken.context.SecurityContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Indexed;
@@ -106,6 +107,7 @@ public class MessageServiceImpl implements IMessageService {
 
     @Override
     public Response pageList(SiteMessageQO qo) {
+        fillCurrentTenantOrg(qo);
         PageInfo<SiteMessageVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> siteMessageDao.selectByQO(qo));
         return Response.success(new PageResult<SiteMessageVO>(pageInfo.getList(), pageInfo.getTotal()));
@@ -213,7 +215,7 @@ public class MessageServiceImpl implements IMessageService {
         message.setSourceCode(StringUtils.defaultIfBlank(data.getSourceCode(), data.getBizId()));
         message.setReadFlag(PubCommonConst.LOGIC_FLASE);
         message.setSendStatus(MessageEnum.SendStatus.SENT.getCode());
-        message.setCreatedTime(DateUtil.nowTime());
+        message.fillCreateTime();
         return message;
     }
 
@@ -243,6 +245,27 @@ public class MessageServiceImpl implements IMessageService {
         payload.put("messageType", messageType);
         payload.put("count", siteMessageDao.countUnread(receiverId, resolveMessageTypes(messageCategory), messageType));
         webSocketPushService.pushToUser(receiverId, MessageEnum.WebSocketEventType.UNREAD_COUNT_CHANGED.getCode(), payload);
+    }
+
+    private void fillCurrentTenantOrg(SiteMessageQO qo) {
+        qo.setTenantId(requireTenantId());
+        qo.setOrgId(requireOrgId());
+    }
+
+    private String requireTenantId() {
+        String tenantId = SecurityContextHolder.currentTenantId();
+        if (StringUtils.isBlank(tenantId)) {
+            throw new IllegalStateException("Current tenant context is missing");
+        }
+        return tenantId;
+    }
+
+    private String requireOrgId() {
+        String orgId = SecurityContextHolder.currentOrgId();
+        if (StringUtils.isBlank(orgId)) {
+            throw new IllegalStateException("Current organization context is missing");
+        }
+        return orgId;
     }
 
     private List<String> resolveMessageTypes(String messageCategory) {

@@ -1,5 +1,6 @@
 package com.peach.setting.openfeign;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.common.constant.ServiceContextConstant;
 import com.peach.common.constant.ServiceNameConstant;
 import com.peach.common.constant.ServicePathConstant;
@@ -12,6 +13,7 @@ import org.springframework.cloud.openfeign.FeignClient;
  * @CreateTime 2026/2/9 15:01
  * @Description setting 服务 Feign 客户端定义
  */
+@Indexed
 @FeignClient(
    contextId = ServiceContextConstant.SETTING_SERVICE_CONTEXT,
    name = ServiceNameConstant.SETTING_SERVICE,

@@ -1,5 +1,6 @@
 package com.peach.rocket.example.service;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.rocket.core.MqDelay;
 import com.peach.rocket.core.MqPublisher;
 import com.peach.rocket.example.event.OrderCreatedEvent;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
  * @since 2026/6/26
  */
 @Slf4j
+@Indexed
 @Service
 public class OrderService {
 

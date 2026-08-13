@@ -2,32 +2,38 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.DictItemDao">
     <sql id="allColumn">
-        ID,                                               DICT_CODE,                                        ITEM_CODE,                                        ITEM_VALUE,
+        ID,                                               DICT_CODE,                                        TENANT_ID,                                        ORG_ID,                                        ITEM_CODE,                                        ITEM_VALUE,
         SORT_ORDER,                                       MESSAGE_KEY,                                      EXTRA_JSON,                                       STATUS,
         CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        ID as id,                                         DICT_CODE as dictCode,                            ITEM_CODE as itemCode,                            ITEM_VALUE as itemValue,
+        ID as id,                                         DICT_CODE as dictCode,                            TENANT_ID as tenantId,                            ORG_ID as orgId,                            ITEM_CODE as itemCode,                            ITEM_VALUE as itemValue,
         SORT_ORDER as sortOrder,                          MESSAGE_KEY as messageKey,                        EXTRA_JSON as extraJson,                          STATUS as status,
         CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                           #{dictCode,jdbcType=VARCHAR},                     #{itemCode,jdbcType=VARCHAR},                     #{itemValue,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR},                           #{dictCode,jdbcType=VARCHAR},                     #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                     #{itemCode,jdbcType=VARCHAR},                     #{itemValue,jdbcType=VARCHAR},
         #{sortOrder,jdbcType=INTEGER},                    #{messageKey,jdbcType=VARCHAR},                   #{extraJson,jdbcType=VARCHAR},                    #{status,jdbcType=INTEGER},
         #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},                      #{item.dictCode,jdbcType=VARCHAR},                #{item.itemCode,jdbcType=VARCHAR},                #{item.itemValue,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR},                      #{item.dictCode,jdbcType=VARCHAR},                #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                #{item.itemCode,jdbcType=VARCHAR},                #{item.itemValue,jdbcType=VARCHAR},
         #{item.sortOrder,jdbcType=INTEGER},               #{item.messageKey,jdbcType=VARCHAR},              #{item.extraJson,jdbcType=VARCHAR},               #{item.status,jdbcType=INTEGER},
         #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="dictCode != null and dictCode != ''">
                 DICT_CODE = #{dictCode,jdbcType=VARCHAR},
             </if>
@@ -141,6 +147,12 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
         <if test="id != null and id != ''">
             AND ID = #{id,jdbcType=VARCHAR}
         </if>
@@ -274,6 +286,12 @@
         <include refid="allColumnAlias" />
         FROM PEACH_DICT_ITEM
         <where>
+            <if test="tenantId != null and tenantId != ''">
+                AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+            </if>
+            <if test="orgId != null and orgId != ''">
+                AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+            </if>
             <if test="dictCode != null and dictCode != ''">
                 AND DICT_CODE = #{dictCode,jdbcType=VARCHAR}
             </if>

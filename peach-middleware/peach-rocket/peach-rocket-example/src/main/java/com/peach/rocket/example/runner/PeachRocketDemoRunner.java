@@ -1,5 +1,6 @@
 package com.peach.rocket.example.runner;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.rocket.example.service.OrderService;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
  * @since 2026/6/26
  */
 @Slf4j
+@Indexed
 @Component
 @ConditionalOnProperty(prefix = "example.rocket.demo", name = "enabled", havingValue = "true")
 public class PeachRocketDemoRunner implements ApplicationRunner {

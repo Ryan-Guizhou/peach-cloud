@@ -1,5 +1,6 @@
 package com.peach.example;
 
+import org.springframework.stereotype.Indexed;
 import com.alibaba.fastjson.JSON;
 import com.peach.content.UploadContent;
 import com.peach.enums.StorageCapability;
@@ -35,6 +36,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+@Indexed
 @Component
 public class StorageExampleRunner implements CommandLineRunner {
 

@@ -2,27 +2,33 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.NoticeReadRecordDao">
     <sql id="allColumn">
-        ID,                                               NOTICE_CODE,                                      READ_USER_ID,                                     READ_TIME,
+        ID,                                               NOTICE_CODE,                                        TENANT_ID,                                        ORG_ID,                                      READ_USER_ID,                                     READ_TIME,
         CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        ID as id,                                         NOTICE_CODE as noticeCode,                        READ_USER_ID as readUserId,                       READ_TIME as readTime,
+        ID as id,                                         NOTICE_CODE as noticeCode,                            TENANT_ID as tenantId,                            ORG_ID as orgId,                        READ_USER_ID as readUserId,                       READ_TIME as readTime,
         CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                           #{noticeCode,jdbcType=VARCHAR},                   #{readUserId,jdbcType=VARCHAR},                   #{readTime,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR},                           #{noticeCode,jdbcType=VARCHAR},                     #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                   #{readUserId,jdbcType=VARCHAR},                   #{readTime,jdbcType=VARCHAR},
         #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},                      #{item.noticeCode,jdbcType=VARCHAR},              #{item.readUserId,jdbcType=VARCHAR},              #{item.readTime,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR},                      #{item.noticeCode,jdbcType=VARCHAR},                #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},              #{item.readUserId,jdbcType=VARCHAR},              #{item.readTime,jdbcType=VARCHAR},
         #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="noticeCode != null and noticeCode != ''">
                 NOTICE_CODE = #{noticeCode,jdbcType=VARCHAR},
             </if>
@@ -100,6 +106,12 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
         <if test="id != null and id != ''">
             AND ID = #{id,jdbcType=VARCHAR}
         </if>
@@ -215,9 +227,14 @@
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_NOTICE_READ_RECORD
-<!--        <where>-->
-<!--            <include refid="allColumnCond" />-->
-<!--        </where>-->
+        <where>
+            <if test="tenantId != null and tenantId != ''">
+                AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+            </if>
+            <if test="orgId != null and orgId != ''">
+                AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+            </if>
+        </where>
         ORDER BY READ_TIME DESC
     </select>
 

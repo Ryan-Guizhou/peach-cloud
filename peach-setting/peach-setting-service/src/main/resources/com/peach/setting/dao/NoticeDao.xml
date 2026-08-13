@@ -2,28 +2,28 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.NoticeDao">
     <sql id="allColumn">
-        ID,                                               NOTICE_CODE,                                      TITLE_MESSAGE_KEY,                                CONTENT_MESSAGE_KEY,
+        ID,                                               NOTICE_CODE,                                        TENANT_ID,                                        ORG_ID,                                      TITLE_MESSAGE_KEY,                                CONTENT_MESSAGE_KEY,
         NOTICE_TYPE,                                      PRIORITY,                                         PUBLISH_STATUS,                                   EFFECTIVE_FROM,
         EFFECTIVE_TO,                                     READ_COUNT,                                       INBOX_ENABLED,                                    STATUS,
         CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        ID as id,                                         NOTICE_CODE as noticeCode,                        TITLE_MESSAGE_KEY as titleMessageKey,             CONTENT_MESSAGE_KEY as contentMessageKey,
+        ID as id,                                         NOTICE_CODE as noticeCode,                            TENANT_ID as tenantId,                            ORG_ID as orgId,                        TITLE_MESSAGE_KEY as titleMessageKey,             CONTENT_MESSAGE_KEY as contentMessageKey,
         NOTICE_TYPE as noticeType,                        PRIORITY as priority,                             PUBLISH_STATUS as publishStatus,                  EFFECTIVE_FROM as effectiveFrom,
         EFFECTIVE_TO as effectiveTo,                      READ_COUNT as readCount,                          INBOX_ENABLED as inboxEnabled,                    STATUS as status,
         CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                           #{noticeCode,jdbcType=VARCHAR},                   #{titleMessageKey,jdbcType=VARCHAR},              #{contentMessageKey,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR},                           #{noticeCode,jdbcType=VARCHAR},                     #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                   #{titleMessageKey,jdbcType=VARCHAR},              #{contentMessageKey,jdbcType=VARCHAR},
         #{noticeType,jdbcType=VARCHAR},                   #{priority,jdbcType=INTEGER},                     #{publishStatus,jdbcType=VARCHAR},                #{effectiveFrom,jdbcType=VARCHAR},
         #{effectiveTo,jdbcType=VARCHAR},                  #{readCount,jdbcType=INTEGER},                    #{inboxEnabled,jdbcType=INTEGER},                 #{status,jdbcType=INTEGER},
         #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},                      #{item.noticeCode,jdbcType=VARCHAR},              #{item.titleMessageKey,jdbcType=VARCHAR},         #{item.contentMessageKey,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR},                      #{item.noticeCode,jdbcType=VARCHAR},                #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},              #{item.titleMessageKey,jdbcType=VARCHAR},         #{item.contentMessageKey,jdbcType=VARCHAR},
         #{item.noticeType,jdbcType=VARCHAR},              #{item.priority,jdbcType=INTEGER},                #{item.publishStatus,jdbcType=VARCHAR},           #{item.effectiveFrom,jdbcType=VARCHAR},
         #{item.effectiveTo,jdbcType=VARCHAR},             #{item.readCount,jdbcType=INTEGER},               #{item.inboxEnabled,jdbcType=INTEGER},            #{item.status,jdbcType=INTEGER},
         #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
@@ -31,6 +31,12 @@
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="noticeCode != null and noticeCode != ''">
                 NOTICE_CODE = #{noticeCode,jdbcType=VARCHAR},
             </if>
@@ -180,6 +186,12 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
         <if test="id != null and id != ''">
             AND ID = #{id,jdbcType=VARCHAR}
         </if>
@@ -325,10 +337,23 @@
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_NOTICE
-<!--        <where>-->
-<!--            <include refid="allColumnCond" />-->
-<!--        </where>-->
+        <where>
+            <if test="tenantId != null and tenantId != ''">
+                AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+            </if>
+            <if test="orgId != null and orgId != ''">
+                AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+            </if>
+        </where>
         ORDER BY PRIORITY DESC, MODIFY_TIME DESC
+    </select>
+
+    <select id="selectByNoticeCode" resultType="com.peach.setting.vo.NoticeVO">
+        SELECT
+        <include refid="allColumnAlias" />
+        FROM PEACH_NOTICE
+        WHERE NOTICE_CODE = #{noticeCode,jdbcType=VARCHAR}
+        LIMIT 1
     </select>
 </mapper>
 

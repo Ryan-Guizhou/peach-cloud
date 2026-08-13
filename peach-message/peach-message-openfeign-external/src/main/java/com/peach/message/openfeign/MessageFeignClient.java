@@ -1,5 +1,6 @@
 package com.peach.message.openfeign;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.common.constant.ServiceContextConstant;
 import com.peach.common.constant.ServiceNameConstant;
 import com.peach.common.constant.ServicePathConstant;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
  * @CreateTime 2026/6/23 14:45
  * @Description 消息服务Feign客户端
  */
+@Indexed
 @FeignClient(
         contextId = ServiceContextConstant.MESSAGE_SERVICE_CONTEXT,
         name = ServiceNameConstant.MESSAGE_SERVICE,

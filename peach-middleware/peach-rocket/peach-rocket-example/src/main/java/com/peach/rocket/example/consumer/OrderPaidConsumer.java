@@ -1,5 +1,6 @@
 package com.peach.rocket.example.consumer;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.rocket.annotation.MqConsumer;
 import com.peach.rocket.core.MqConsumeContext;
 import com.peach.rocket.core.MqMessageHandler;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
  * @since 2026/6/26
  */
 @Slf4j
+@Indexed
 @Component
 @MqConsumer(topic = "order", tag = "paid", consumerGroup = "peach-rocket-example-order-paid")
 public class OrderPaidConsumer implements MqMessageHandler<OrderPaidEvent> {

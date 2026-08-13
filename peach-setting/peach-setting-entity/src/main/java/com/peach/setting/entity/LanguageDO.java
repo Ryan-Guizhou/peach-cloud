@@ -35,6 +35,14 @@ public class LanguageDO extends PeachDO implements Serializable {
     @Schema(description = "语言编码，如zh_CN或en_US")
     private String languageCode;
 
+    @Column(name = "TENANT_ID")
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Column(name = "ORG_ID")
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Column(name = "LANGUAGE_NAME")
     @Schema(description = "语言名称")
     private String languageName;

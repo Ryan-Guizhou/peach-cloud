@@ -1,5 +1,6 @@
 package com.peach.sample.redis.bloom.provider;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.initialize.base.AbstractAppStartedEventHandler;
 import com.peach.redis.bloom.core.BloomFilterService;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import java.util.List;
  * @CreateTime 2025/12/18 15:41
  */
 @Slf4j
+@Indexed
 @Component
 public class UserBloomFilterInitData extends AbstractAppStartedEventHandler {
 

@@ -26,6 +26,12 @@ public class DictTypeQO extends PeachEntity implements Serializable {
     @Schema(description = "字典编码")
     private String dictCode;
 
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Schema(description = "字典名称")
     private String dictName;
 

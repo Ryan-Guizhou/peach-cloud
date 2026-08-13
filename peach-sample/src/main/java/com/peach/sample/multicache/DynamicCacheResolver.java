@@ -1,5 +1,6 @@
 package com.peach.sample.multicache;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.redis.manager.MultiCacheManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.interceptor.CacheOperationInvocationContext;
@@ -17,6 +18,7 @@ import java.util.List;
  * @CreateTime 2025/12/10 15:15
  * @Description 自定义缓存解析器，根据id动态拼接缓存key，例如：userCache:123
  */
+@Indexed
 @Component("dynamicCacheResolver")
 public class DynamicCacheResolver extends SimpleCacheResolver {
 

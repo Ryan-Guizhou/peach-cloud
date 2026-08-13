@@ -7,6 +7,7 @@
 - `PEACH_*.sql`：单表建表脚本，每个文件只维护一张表的 `CREATE TABLE` 定义。
 - `USER_OPER_LOG.sql`：独立日志表建表脚本。
 - `PEACH_TENANT.sql`：租户主数据建表脚本。
+- `PEACH_CODE_RULE.sql`：机构维度业务编码规则建表脚本。
 - `PEACH_USER_ORG.sql`：用户与机构关系表建表脚本。
 - `ALL_TABLE_CREATE.sql`：由各个单表脚本聚合生成的总建表脚本。
 - `init.sql`：初始化脚本，用于清库、初始化基础数据或应用种子数据，不作为单表定义源文件。
@@ -34,12 +35,14 @@
 - `PEACH_AUTH_LOG.sql`
 - `PEACH_AUTH_PARTY.sql`
 - `PEACH_AUTH_RESOURCE.sql`
+- `PEACH_CODE_RULE.sql`
 - `PEACH_DICT_ITEM.sql`
 - `PEACH_DICT_TYPE.sql`
 - `PEACH_FILE_OBJECT.sql`
 - `PEACH_FILE_RECORD.sql`
 - `PEACH_FILE_UPLOAD_SESSION.sql`
 - `PEACH_FUNCTION.sql`
+- `PEACH_IP_WHITELIST.sql`
 - `PEACH_LANGUAGE.sql`
 - `PEACH_MENU.sql`
 - `PEACH_MULTI_MESSAGE.sql`
@@ -50,6 +53,7 @@
 - `PEACH_ROLE.sql`
 - `PEACH_ROUTER.sql`
 - `PEACH_SITE_MESSAGE.sql`
+- `PEACH_STORAGE_INSTANCE.sql`
 - `PEACH_TENANT.sql`
 - `PEACH_USER.sql`
 - `PEACH_USER_ORG.sql`
@@ -68,12 +72,14 @@ $order = @(
   'PEACH_AUTH_LOG.sql',
   'PEACH_AUTH_PARTY.sql',
   'PEACH_AUTH_RESOURCE.sql',
+  'PEACH_CODE_RULE.sql',
   'PEACH_DICT_ITEM.sql',
   'PEACH_DICT_TYPE.sql',
   'PEACH_FILE_OBJECT.sql',
   'PEACH_FILE_RECORD.sql',
   'PEACH_FILE_UPLOAD_SESSION.sql',
   'PEACH_FUNCTION.sql',
+  'PEACH_IP_WHITELIST.sql',
   'PEACH_LANGUAGE.sql',
   'PEACH_MENU.sql',
   'PEACH_MULTI_MESSAGE.sql',
@@ -84,6 +90,7 @@ $order = @(
   'PEACH_ROLE.sql',
   'PEACH_ROUTER.sql',
   'PEACH_SITE_MESSAGE.sql',
+  'PEACH_STORAGE_INSTANCE.sql',
   'PEACH_TENANT.sql',
   'PEACH_USER.sql',
   'PEACH_USER_ORG.sql',
@@ -110,7 +117,7 @@ foreach ($name in $order) {
 [System.IO.File]::WriteAllText(
   (Resolve-Path .\sql\ALL_TABLE_CREATE.sql),
   (($builder -join "`r`n").TrimEnd() + "`r`n"),
-  (New-Object System.Text.UTF8Encoding($true))
+  (New-Object System.Text.UTF8Encoding($false))
 )
 ```
 

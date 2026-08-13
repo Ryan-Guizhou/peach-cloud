@@ -1,5 +1,6 @@
 package com.peach.sample.multicache;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.redis.manager.MultiCacheManager;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import java.util.Map;
  * @CreateTime 2025/12/10 15:16
  */
 @Slf4j
+@Indexed
 @Component
 public class MulticacheService {
 

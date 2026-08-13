@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.fileservice.dao.FileObjectDao">
     <sql id="allColumn">
-        OBJECT_ID,                                        HASH_SHA256,                                      HASH_MD5,                                         FILE_SIZE,
+        OBJECT_ID,                                        HASH_SHA256,                                        TENANT_ID,                                        ORG_ID,                                      HASH_MD5,                                         FILE_SIZE,
         STORAGE_PROVIDER,                                 BUCKET_NAME,                                      OBJECT_KEY,                                       ORIGIN_FILE_NAME,
         CONTENT_TYPE,                                     EXTENSION,                                        STORAGE_STATUS,                                   REF_COUNT,
         UPLOAD_TIME,                                      LAST_ACCESS_TIME,                                 IS_DELETE,                                        CREATED_TIME,
@@ -10,7 +10,7 @@
     </sql>
 
     <sql id="allColumnAlias">
-        OBJECT_ID as objectId,                            HASH_SHA256 as hashSha256,                        HASH_MD5 as hashMd5,                              FILE_SIZE as fileSize,
+        OBJECT_ID as objectId,                            HASH_SHA256 as hashSha256,                            TENANT_ID as tenantId,                            ORG_ID as orgId,                        HASH_MD5 as hashMd5,                              FILE_SIZE as fileSize,
         STORAGE_PROVIDER as storageProvider,              BUCKET_NAME as bucketName,                        OBJECT_KEY as objectKey,                          ORIGIN_FILE_NAME as originFileName,
         CONTENT_TYPE as contentType,                      EXTENSION as extension,                           STORAGE_STATUS as storageStatus,                  REF_COUNT as refCount,
         UPLOAD_TIME as uploadTime,                        LAST_ACCESS_TIME as lastAccessTime,               IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
@@ -18,7 +18,7 @@
     </sql>
 
     <sql id="allColumnValue">
-        #{objectId,jdbcType=VARCHAR},                     #{hashSha256,jdbcType=VARCHAR},                   #{hashMd5,jdbcType=VARCHAR},                      #{fileSize,jdbcType=BIGINT},
+        #{objectId,jdbcType=VARCHAR},                     #{hashSha256,jdbcType=VARCHAR},                     #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                   #{hashMd5,jdbcType=VARCHAR},                      #{fileSize,jdbcType=BIGINT},
         #{storageProvider,jdbcType=VARCHAR},              #{bucketName,jdbcType=VARCHAR},                   #{objectKey,jdbcType=VARCHAR},                    #{originFileName,jdbcType=VARCHAR},
         #{contentType,jdbcType=VARCHAR},                  #{extension,jdbcType=VARCHAR},                    #{storageStatus,jdbcType=VARCHAR},                #{refCount,jdbcType=INTEGER},
         #{uploadTime,jdbcType=VARCHAR},                   #{lastAccessTime,jdbcType=VARCHAR},               #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},
@@ -26,7 +26,7 @@
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.objectId,jdbcType=VARCHAR},                #{item.hashSha256,jdbcType=VARCHAR},              #{item.hashMd5,jdbcType=VARCHAR},                 #{item.fileSize,jdbcType=BIGINT},
+        #{item.objectId,jdbcType=VARCHAR},                #{item.hashSha256,jdbcType=VARCHAR},                #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},              #{item.hashMd5,jdbcType=VARCHAR},                 #{item.fileSize,jdbcType=BIGINT},
         #{item.storageProvider,jdbcType=VARCHAR},         #{item.bucketName,jdbcType=VARCHAR},              #{item.objectKey,jdbcType=VARCHAR},               #{item.originFileName,jdbcType=VARCHAR},
         #{item.contentType,jdbcType=VARCHAR},             #{item.extension,jdbcType=VARCHAR},               #{item.storageStatus,jdbcType=VARCHAR},           #{item.refCount,jdbcType=INTEGER},
         #{item.uploadTime,jdbcType=VARCHAR},              #{item.lastAccessTime,jdbcType=VARCHAR},          #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},
@@ -35,6 +35,12 @@
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="hashSha256 != null and hashSha256 != ''">
                 HASH_SHA256 = #{hashSha256,jdbcType=VARCHAR},
             </if>
@@ -93,6 +99,12 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
         <if test="objectId != null and objectId != ''">
             AND OBJECT_ID = #{objectId,jdbcType=VARCHAR}
         </if>

@@ -39,6 +39,14 @@ public class CloudStorageInstanceDO extends PeachDO implements Serializable {
     @Schema(description = "存储类型")
     private String storeType;
 
+    @Column(name = "TENANT_ID")
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Column(name = "ORG_ID")
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Column(name = "ENDPOINT")
     @Schema(description = "访问节点地址")
     private String endpoint;

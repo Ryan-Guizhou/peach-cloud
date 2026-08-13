@@ -5,6 +5,7 @@ import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.PageResult;
 import com.peach.common.util.DateUtil;
+import com.peach.satoken.context.SecurityContextHolder;
 import com.peach.setting.comon.enums.SettingConst;
 import com.peach.setting.dao.DictItemDao;
 import com.peach.setting.dao.DictTypeDao;
@@ -48,6 +49,7 @@ public class DictServiceImpl implements IDictService {
 
     @Override
     public PageResult<DictTypeVO> typePageList(DictTypeQO qo) {
+        fillCurrentTenantOrg(qo);
         PageInfo<DictTypeVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> dictTypeDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
@@ -69,7 +71,7 @@ public class DictServiceImpl implements IDictService {
         DictTypeDO dictTypeDO = new DictTypeDO();
         BeanUtils.copyProperties(data, dictTypeDO);
         dictTypeDO.setId(IDGeneratorUtil.UUID());
-        dictTypeDO.setCreatedTime(DateUtil.nowTime());
+        dictTypeDO.fillCreateTime();
         dictTypeDao.insert(dictTypeDO);
     }
 
@@ -104,6 +106,7 @@ public class DictServiceImpl implements IDictService {
 
     @Override
     public PageResult<DictItemVO> itemPageList(DictItemQO qo) {
+        fillCurrentTenantOrg(qo);
         PageInfo<DictItemVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> dictItemDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
@@ -128,7 +131,7 @@ public class DictServiceImpl implements IDictService {
         DictItemDO dictItemDO = new DictItemDO();
         BeanUtils.copyProperties(data, dictItemDO);
         dictItemDO.setId(IDGeneratorUtil.UUID());
-        dictItemDO.setCreatedTime(DateUtil.nowTime());
+        dictItemDO.fillCreateTime();
         dictItemDao.insert(dictItemDO);
     }
 
@@ -147,5 +150,31 @@ public class DictServiceImpl implements IDictService {
     @Transactional(rollbackFor = Exception.class)
     public void deleteItem(List<String> ids) {
         dictItemDao.delByIds(ids);
+    }
+
+    private void fillCurrentTenantOrg(DictTypeQO qo) {
+        qo.setTenantId(requireTenantId());
+        qo.setOrgId(requireOrgId());
+    }
+
+    private void fillCurrentTenantOrg(DictItemQO qo) {
+        qo.setTenantId(requireTenantId());
+        qo.setOrgId(requireOrgId());
+    }
+
+    private String requireTenantId() {
+        String tenantId = SecurityContextHolder.currentTenantId();
+        if (tenantId == null || tenantId.trim().isEmpty()) {
+            throw new IllegalStateException("Current tenant context is missing");
+        }
+        return tenantId;
+    }
+
+    private String requireOrgId() {
+        String orgId = SecurityContextHolder.currentOrgId();
+        if (orgId == null || orgId.trim().isEmpty()) {
+            throw new IllegalStateException("Current organization context is missing");
+        }
+        return orgId;
     }
 }

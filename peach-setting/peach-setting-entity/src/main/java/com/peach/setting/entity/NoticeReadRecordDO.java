@@ -35,6 +35,14 @@ public class NoticeReadRecordDO extends PeachDO implements Serializable {
     @Schema(description = "通知编码")
     private String noticeCode;
 
+    @Column(name = "TENANT_ID")
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Column(name = "ORG_ID")
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Column(name = "READ_USER_ID")
     @Schema(description = "阅读用户ID")
     private String readUserId;

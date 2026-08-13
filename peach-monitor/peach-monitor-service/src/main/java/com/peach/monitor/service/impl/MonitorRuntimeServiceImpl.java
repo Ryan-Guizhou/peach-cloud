@@ -1,5 +1,6 @@
 package com.peach.monitor.service.impl;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.monitor.entity.monitor.MonitorSnapshotDTO;
 import com.peach.monitor.service.IMonitorRuntimeService;
 import org.springframework.beans.factory.ObjectProvider;
@@ -26,6 +27,7 @@ import java.sql.Statement;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Indexed
 @Service
 public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
 

@@ -1,5 +1,6 @@
 package com.peach.sample.distributed;
 
+import org.springframework.stereotype.Indexed;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @Version 1.0.0
  * @CreateTime 2025/12/29 10:26
  */
+@Indexed
 @RestController
 @RequestMapping("/distributed")
 public class DistributedLockController {

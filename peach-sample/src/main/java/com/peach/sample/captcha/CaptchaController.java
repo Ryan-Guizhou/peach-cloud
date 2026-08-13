@@ -1,6 +1,7 @@
 package com.peach.sample.captcha;
 
 
+import org.springframework.stereotype.Indexed;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.service.CaptchaService;
 import com.peach.common.response.Response;
@@ -17,6 +18,7 @@ import javax.annotation.Resource;
  * @Version 1.0.0
  * @CreateTime 2025/12/29 18:53
  */
+@Indexed
 @RestController
 @RequestMapping("/captcha")
 public class CaptchaController {

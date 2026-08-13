@@ -35,6 +35,14 @@ public class DictItemDO extends PeachDO implements Serializable {
     @Schema(description = "字典编码")
     private String dictCode;
 
+    @Column(name = "TENANT_ID")
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Column(name = "ORG_ID")
+    @Schema(description = "机构ID")
+    private String orgId;
+
     @Column(name = "ITEM_CODE")
     @Schema(description = "项编码")
     private String itemCode;

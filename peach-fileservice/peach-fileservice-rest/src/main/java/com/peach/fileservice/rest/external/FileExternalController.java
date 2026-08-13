@@ -1,5 +1,6 @@
 package com.peach.fileservice.rest.external;
 
+import org.springframework.stereotype.Indexed;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.peach.common.response.Response;
 import com.peach.fileservice.common.FileApiConstant;
@@ -27,6 +28,7 @@ import javax.validation.constraints.NotBlank;
  * <p>外部接口只暴露业务文件 ID 和临时 URL，不暴露 bucket、objectKey 或本地路径。</p>
  */
 @Validated
+@Indexed
 @RestController
 @RequestMapping(FileApiConstant.EXTERNAL_PREFIX)
 @Tag(name = "文件外部接口", description = "供其他业务服务调用的文件 API")

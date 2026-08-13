@@ -1,6 +1,7 @@
 package com.peach.email.autoconfigure;
 
 
+import org.springframework.stereotype.Indexed;
 import com.peach.email.Idempotency.IdempotencyStore;
 import com.peach.email.Idempotency.SimpleIdempotencyStore;
 import com.peach.email.constant.EmailConstant;
@@ -35,6 +36,7 @@ import java.util.Set;
  * @CreateTime 2025/12/9 15:16
  * @Description 邮件自动配置
  */
+@Indexed
 @Configuration
 @EnableConfigurationProperties(EmailProperties.class)
 public class EmailAutoConfiguration {

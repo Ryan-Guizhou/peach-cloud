@@ -4,14 +4,14 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: ${SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR:${NACOS_SERVER_ADDR:127.0.0.1:8848}}
-        namespace: ${SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE:${NACOS_NAMESPACE_ID:peach-cloud}}
-        group: ${SPRING_CLOUD_NACOS_DISCOVERY_GROUP:${NACOS_GROUP:PEACH-CLOUD}}
+        server-addr: 127.0.0.1:8848
+        namespace: 4e7af3ed-7a49-4e3f-bdfc-67c20b1bfd05
+        group: PEACH-CLOUD
       config:
-        server-addr: ${SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR:${NACOS_SERVER_ADDR:127.0.0.1:8848}}
-        file-extension: ${SPRING_CLOUD_NACOS_CONFIG_FILE_EXTENSION:yml}
-        group: ${SPRING_CLOUD_NACOS_CONFIG_GROUP:${NACOS_GROUP:PEACH-CLOUD}}
-        namespace: ${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:${NACOS_NAMESPACE_ID:peach-cloud}}
+        server-addr: 127.0.0.1:8848
+        file-extension: yml
+        group: PEACH-CLOUD
+        namespace: 4e7af3ed-7a49-4e3f-bdfc-67c20b1bfd05
         encode: ${SPRING_CLOUD_NACOS_CONFIG_ENCODE:UTF-8}
         enabled: true
   config:

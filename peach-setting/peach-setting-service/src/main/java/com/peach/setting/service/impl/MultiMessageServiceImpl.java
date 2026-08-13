@@ -6,6 +6,7 @@ import com.peach.common.IDGeneratorUtil;
 import com.peach.common.PageResult;
 import com.peach.common.constant.PubCommonConst;
 import com.peach.common.util.DateUtil;
+import com.peach.satoken.context.SecurityContextHolder;
 import com.peach.setting.comon.enums.SettingConst;
 import com.peach.setting.dao.LanguageDao;
 import com.peach.setting.dao.MultiMessageDao;
@@ -49,6 +50,7 @@ public class MultiMessageServiceImpl implements IMultiMessageService {
 
     @Override
     public PageResult<LanguageVO> languagePageList(LanguageQO qo) {
+        fillCurrentTenantOrg(qo);
         PageInfo<LanguageVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> languageDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
@@ -72,7 +74,7 @@ public class MultiMessageServiceImpl implements IMultiMessageService {
             languageDao.clearDefaultFlag();
         }
         languageDO.setId(IDGeneratorUtil.UUID());
-        languageDO.setCreatedTime(DateUtil.nowTime());
+        languageDO.fillCreateTime();
         languageDao.insert(languageDO);
     }
 
@@ -102,6 +104,7 @@ public class MultiMessageServiceImpl implements IMultiMessageService {
 
     @Override
     public PageResult<MulitMessageVO> messagePageList(MulitMessageQO qo) {
+        fillCurrentTenantOrg(qo);
         PageInfo<MulitMessageVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> multiMessageDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
@@ -126,7 +129,7 @@ public class MultiMessageServiceImpl implements IMultiMessageService {
         MultiMessageDO multiMessageDO = new MultiMessageDO();
         BeanUtils.copyProperties(data, multiMessageDO);
         multiMessageDO.setId(IDGeneratorUtil.UUID());
-        multiMessageDO.setCreatedTime(DateUtil.nowTime());
+        multiMessageDO.fillCreateTime();
         multiMessageDao.insert(multiMessageDO);
     }
 
@@ -145,6 +148,32 @@ public class MultiMessageServiceImpl implements IMultiMessageService {
     @Transactional(rollbackFor = Exception.class)
     public void deleteMessage(List<String> ids) {
         multiMessageDao.delByIds(ids);
+    }
+
+    private void fillCurrentTenantOrg(LanguageQO qo) {
+        qo.setTenantId(requireTenantId());
+        qo.setOrgId(requireOrgId());
+    }
+
+    private void fillCurrentTenantOrg(MulitMessageQO qo) {
+        qo.setTenantId(requireTenantId());
+        qo.setOrgId(requireOrgId());
+    }
+
+    private String requireTenantId() {
+        String tenantId = SecurityContextHolder.currentTenantId();
+        if (tenantId == null || tenantId.trim().isEmpty()) {
+            throw new IllegalStateException("Current tenant context is missing");
+        }
+        return tenantId;
+    }
+
+    private String requireOrgId() {
+        String orgId = SecurityContextHolder.currentOrgId();
+        if (orgId == null || orgId.trim().isEmpty()) {
+            throw new IllegalStateException("Current organization context is missing");
+        }
+        return orgId;
     }
 }
 

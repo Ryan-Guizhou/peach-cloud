@@ -1,5 +1,6 @@
 package com.peach.sample.multicache;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.redis.common.tool.RedisDao;
 import com.peach.redis.manager.MultiCacheManagerService;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @CreateTime 2025/12/10 15:15
  */
 @Slf4j
+@Indexed
 @RestController
 @RequestMapping("/multicache")
 public class MulticacheController {

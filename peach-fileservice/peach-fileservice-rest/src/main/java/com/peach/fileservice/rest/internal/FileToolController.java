@@ -1,5 +1,6 @@
 package com.peach.fileservice.rest.internal;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.common.response.Response;
 import com.peach.fileservice.common.FileApiConstant;
 import com.peach.fileservice.service.IFileDomainService;
@@ -18,6 +19,7 @@ import javax.annotation.Resource;
  * 文件内部工具接口。
  */
 @Validated
+@Indexed
 @RestController
 @RequestMapping(FileApiConstant.INTERNAL_TOOLS_PREFIX)
 @Tag(name = "文件内部工具", description = "供内部调用方使用的文件辅助工具")

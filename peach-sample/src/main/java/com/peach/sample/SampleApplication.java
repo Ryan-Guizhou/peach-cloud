@@ -1,5 +1,6 @@
 package com.peach.sample;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.email.Idempotency.IdempotencyStore;
 import com.peach.email.Idempotency.SimpleIdempotencyStore;
 import com.peach.email.retry.RetryPolicy;

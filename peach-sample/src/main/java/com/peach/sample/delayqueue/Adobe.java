@@ -1,5 +1,6 @@
 package com.peach.sample.delayqueue;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.redission.delayqueue.core.ConsumerTask;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
  * @CreateTime 2025/12/17 18:54
  */
 @Slf4j
+@Indexed
 @Component
 public class Adobe implements ConsumerTask {
 

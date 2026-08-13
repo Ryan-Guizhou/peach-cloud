@@ -8,6 +8,7 @@ import com.peach.setting.comon.enums.SettingConst;
 import com.peach.setting.dao.NoticeDao;
 import com.peach.setting.dao.NoticeReadRecordDao;
 import com.peach.setting.entity.NoticeReadRecordDO;
+import com.peach.setting.vo.NoticeVO;
 import com.peach.setting.vo.NoticeReadRecordVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -72,9 +73,20 @@ public class NoticeReadFlushTask {
             if (exists != null) {
                 continue;
             }
+            NoticeVO notice = noticeDao.selectByNoticeCode(noticeCode);
+            if (notice == null) {
+                continue;
+            }
+            if (notice.getTenantId() == null || notice.getTenantId().trim().isEmpty()
+                    || notice.getOrgId() == null || notice.getOrgId().trim().isEmpty()) {
+                log.warn("skip notice read record flush because notice tenant or organization is missing, noticeCode={}", noticeCode);
+                continue;
+            }
             NoticeReadRecordDO record = new NoticeReadRecordDO();
             record.setId(IDGeneratorUtil.UUID());
             record.setNoticeCode(noticeCode);
+            record.setTenantId(notice.getTenantId());
+            record.setOrgId(notice.getOrgId());
             record.setReadUserId(readUserId);
             record.setReadTime(String.valueOf(value));
             record.setCreatedTime(DateUtil.nowTime());

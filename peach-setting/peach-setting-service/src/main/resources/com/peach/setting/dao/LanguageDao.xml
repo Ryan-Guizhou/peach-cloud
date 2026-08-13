@@ -2,31 +2,37 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.setting.dao.LanguageDao">
     <sql id="allColumn">
-        ID,                                               LANGUAGE_CODE,                                    LANGUAGE_NAME,                                    NATIVE_NAME,
+        ID,                                               LANGUAGE_CODE,                                        TENANT_ID,                                        ORG_ID,                                    LANGUAGE_NAME,                                    NATIVE_NAME,
         ICON,                                             STATUS,                                           DEFAULT_FLAG,                                     SORT_ORDER,
         CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        ID as id,                                         LANGUAGE_CODE as languageCode,                    LANGUAGE_NAME as languageName,                    NATIVE_NAME as nativeName,
+        ID as id,                                         LANGUAGE_CODE as languageCode,                            TENANT_ID as tenantId,                            ORG_ID as orgId,                    LANGUAGE_NAME as languageName,                    NATIVE_NAME as nativeName,
         ICON as icon,                                     STATUS as status,                                 DEFAULT_FLAG as defaultFlag,                      SORT_ORDER as sortOrder,
         CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                           #{languageCode,jdbcType=VARCHAR},                 #{languageName,jdbcType=VARCHAR},                 #{nativeName,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR},                           #{languageCode,jdbcType=VARCHAR},                     #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                 #{languageName,jdbcType=VARCHAR},                 #{nativeName,jdbcType=VARCHAR},
         #{icon,jdbcType=VARCHAR},                         #{status,jdbcType=INTEGER},                       #{defaultFlag,jdbcType=INTEGER},                  #{sortOrder,jdbcType=INTEGER},
         #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},                      #{item.languageCode,jdbcType=VARCHAR},            #{item.languageName,jdbcType=VARCHAR},            #{item.nativeName,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR},                      #{item.languageCode,jdbcType=VARCHAR},                #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},            #{item.languageName,jdbcType=VARCHAR},            #{item.nativeName,jdbcType=VARCHAR},
         #{item.icon,jdbcType=VARCHAR},                    #{item.status,jdbcType=INTEGER},                  #{item.defaultFlag,jdbcType=INTEGER},             #{item.sortOrder,jdbcType=INTEGER},
         #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
+            <if test="tenantId != null and tenantId != ''">
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="orgId != null and orgId != ''">
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
+            </if>
             <if test="languageCode != null and languageCode != ''">
                 LANGUAGE_CODE = #{languageCode,jdbcType=VARCHAR},
             </if>
@@ -140,6 +146,12 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
         <if test="id != null and id != ''">
             AND ID = #{id,jdbcType=VARCHAR}
         </if>
@@ -272,9 +284,14 @@
         SELECT
         <include refid="allColumnAlias" />
         FROM PEACH_LANGUAGE
-<!--        <where>-->
-<!--            <include refid="allColumnCond" />-->
-<!--        </where>-->
+        <where>
+            <if test="tenantId != null and tenantId != ''">
+                AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+            </if>
+            <if test="orgId != null and orgId != ''">
+                AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+            </if>
+        </where>
         ORDER BY DEFAULT_FLAG DESC, SORT_ORDER ASC, MODIFY_TIME DESC
     </select>
 </mapper>

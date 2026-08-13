@@ -1,5 +1,6 @@
 package com.peach.code.example;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.code.CodeGenerator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>示例通过 Spring 事务代理调用编码生成器，展示编码生成与业务写入应处于同一个事务边界。
  * 实际业务服务应采用同样的事务边界，不要直接在事务外调用 {@code CodeGenerator}。</p>
  */
+@Indexed
 @Service
 public class ExampleCodeService {
 

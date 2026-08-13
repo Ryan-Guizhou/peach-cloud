@@ -1,5 +1,6 @@
 package com.peach.fileservice.service.impl;
 
+import org.springframework.stereotype.Indexed;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.peach.common.util.StringUtil;
@@ -41,6 +42,7 @@ import java.util.Map;
  * @version 1.0.0
  * @since 2026/7/9
  */
+@Indexed
 @Component
 public class CloudStorageInstanceSupport {
 
@@ -104,6 +106,8 @@ public class CloudStorageInstanceSupport {
         result.setInstanceId(instanceDO.getInstanceId());
         result.setInstanceName(instanceDO.getInstanceName());
         result.setStoreType(instanceDO.getStoreType());
+        result.setTenantId(instanceDO.getTenantId());
+        result.setOrgId(instanceDO.getOrgId());
         result.setEndpoint(instanceDO.getEndpoint());
         result.setRegion(instanceDO.getRegion());
         result.setBucketName(instanceDO.getBucketName());

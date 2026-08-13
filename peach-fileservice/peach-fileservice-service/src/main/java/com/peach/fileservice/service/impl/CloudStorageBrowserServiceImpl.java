@@ -1,5 +1,6 @@
 package com.peach.fileservice.service.impl;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.common.util.DateUtil;
 import com.peach.common.util.StringUtil;
 import com.peach.config.StorageProperties;
@@ -30,6 +31,7 @@ import java.util.List;
 /**
  * Default browser service for persisted storage instances.
  */
+@Indexed
 @Service
 public class CloudStorageBrowserServiceImpl implements ICloudStorageBrowserService {
 

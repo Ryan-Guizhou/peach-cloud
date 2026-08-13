@@ -5,6 +5,7 @@ import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.PageResult;
 import com.peach.common.util.DateUtil;
+import com.peach.satoken.context.SecurityContextHolder;
 import com.peach.setting.comon.enums.SettingConst;
 import com.peach.setting.dao.ValueSetDao;
 import com.peach.setting.dao.ValueSetItemDao;
@@ -48,6 +49,7 @@ public class ValueSetServiceImpl implements IValueSetService {
 
     @Override
     public PageResult<ValueSetVO> pageList(ValueSetQO qo) {
+        fillCurrentTenantOrg(qo);
         PageInfo<ValueSetVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> valueSetDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
@@ -69,7 +71,7 @@ public class ValueSetServiceImpl implements IValueSetService {
         ValueSetDO valueSetDO = new ValueSetDO();
         BeanUtils.copyProperties(data, valueSetDO);
         valueSetDO.setId(IDGeneratorUtil.UUID());
-        valueSetDO.setCreatedTime(DateUtil.nowTime());
+        valueSetDO.fillCreateTime();
         valueSetDao.insert(valueSetDO);
     }
 
@@ -104,6 +106,7 @@ public class ValueSetServiceImpl implements IValueSetService {
 
     @Override
     public PageResult<ValueSetItemVO> itemPageList(ValueSetItemQO qo) {
+        fillCurrentTenantOrg(qo);
         PageInfo<ValueSetItemVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> valueSetItemDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
@@ -128,7 +131,7 @@ public class ValueSetServiceImpl implements IValueSetService {
         ValueSetItemDO valueSetItemDO = new ValueSetItemDO();
         BeanUtils.copyProperties(data, valueSetItemDO);
         valueSetItemDO.setId(IDGeneratorUtil.UUID());
-        valueSetItemDO.setCreatedTime(DateUtil.nowTime());
+        valueSetItemDO.fillCreateTime();
         valueSetItemDao.insert(valueSetItemDO);
     }
 
@@ -147,6 +150,32 @@ public class ValueSetServiceImpl implements IValueSetService {
     @Transactional(rollbackFor = Exception.class)
     public void deleteItem(List<String> ids) {
         valueSetItemDao.delByIds(ids);
+    }
+
+    private void fillCurrentTenantOrg(ValueSetQO qo) {
+        qo.setTenantId(requireTenantId());
+        qo.setOrgId(requireOrgId());
+    }
+
+    private void fillCurrentTenantOrg(ValueSetItemQO qo) {
+        qo.setTenantId(requireTenantId());
+        qo.setOrgId(requireOrgId());
+    }
+
+    private String requireTenantId() {
+        String tenantId = SecurityContextHolder.currentTenantId();
+        if (tenantId == null || tenantId.trim().isEmpty()) {
+            throw new IllegalStateException("Current tenant context is missing");
+        }
+        return tenantId;
+    }
+
+    private String requireOrgId() {
+        String orgId = SecurityContextHolder.currentOrgId();
+        if (orgId == null || orgId.trim().isEmpty()) {
+            throw new IllegalStateException("Current organization context is missing");
+        }
+        return orgId;
     }
 }
 

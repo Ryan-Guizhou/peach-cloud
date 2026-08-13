@@ -1,5 +1,6 @@
 package com.peach.fileservice.openfeign;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.common.constant.ServiceContextConstant;
 import com.peach.common.constant.ServiceNameConstant;
 import com.peach.common.constant.ServicePathConstant;
@@ -22,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @CreateTime 2026/2/1 15:00
  * @Description 文件服务Feign客户端
  */
+@Indexed
 @FeignClient(
         contextId = ServiceContextConstant.FILE_SERVICE_CONTEXT,
         name = ServiceNameConstant.FILE_SERVICE,
