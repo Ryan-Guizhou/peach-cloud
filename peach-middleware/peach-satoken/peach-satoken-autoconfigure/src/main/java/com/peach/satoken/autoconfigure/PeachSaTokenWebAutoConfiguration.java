@@ -154,7 +154,7 @@ public class PeachSaTokenWebAutoConfiguration {
     public FilterRegistrationBean<UserContextFilter> userContextFilterRegistration(UserContextFilter filter) {
         FilterRegistrationBean<UserContextFilter> registration = new FilterRegistrationBean<>(filter);
         registration.setName("peachUserContextFilter");
-        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 40);
+        registration.setOrder(0);
         return registration;
     }
 }

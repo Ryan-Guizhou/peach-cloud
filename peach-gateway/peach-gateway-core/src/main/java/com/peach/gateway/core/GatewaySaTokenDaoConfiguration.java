@@ -2,6 +2,7 @@ package com.peach.gateway.core;
 
 import cn.dev33.satoken.dao.SaTokenDao;
 import com.peach.gateway.core.dao.PeachSaTokenDao;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -27,6 +28,9 @@ import org.springframework.stereotype.Indexed;
  */
 @Indexed
 @Configuration(proxyBeanMethods = false)
+@AutoConfigureAfter(name = {
+        "com.peach.redis.common.RedisConfig"
+})
 @ConditionalOnClass({SaTokenDao.class, JedisConnectionFactory.class})
 @ConditionalOnBean(JedisConnectionFactory.class)
 @ConditionalOnProperty(prefix = "peach.satoken.dao", name = "enabled", havingValue = "true", matchIfMissing = true)

@@ -61,7 +61,10 @@ public class GatewaySameTokenGlobalFilter implements GlobalFilter, Ordered {
             SaReactorSyncHolder.setContext(exchange);
             String sameToken = SaSameUtil.getToken();
             ServerHttpRequest request = exchange.getRequest().mutate()
-                    .header(SaSameUtil.SAME_TOKEN, sameToken)
+                    .headers(headers -> {
+                        headers.remove(SaSameUtil.SAME_TOKEN);
+                        headers.add(SaSameUtil.SAME_TOKEN, sameToken);
+                    })
                     .build();
             return chain.filter(exchange.mutate().request(request).build())
                     .doFinally(signal -> SaReactorSyncHolder.clearContext());

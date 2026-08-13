@@ -48,6 +48,21 @@ public final class SecurityContextHolder {
         return HOLDER.get();
     }
 
+    public static String currentUserId() {
+        UserContext context = get();
+        return context == null ? null : trimToNull(context.getUserId());
+    }
+
+    public static String currentTenantId() {
+        UserContext context = get();
+        return context == null ? null : trimToNull(context.getTenantId());
+    }
+
+    public static String currentOrgId() {
+        UserContext context = get();
+        return context == null ? null : trimToNull(context.getOrgId());
+    }
+
     /**
      * 清除当前线程的用户上下文。
      * <p>建议在请求完成（如拦截器的 afterCompletion 或过滤器的 finally 块）中调用，
@@ -55,5 +70,13 @@ public final class SecurityContextHolder {
      */
     public static void clear() {
         HOLDER.remove();
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

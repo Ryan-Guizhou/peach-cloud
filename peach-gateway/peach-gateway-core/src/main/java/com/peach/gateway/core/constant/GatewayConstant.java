@@ -29,4 +29,14 @@ public interface GatewayConstant {
      */
     String RISK_CONTROL_BLOCKED_IP_KEY = "peach:gateway:risk-control:blocked-ip:";
 
+    /**
+     * 动态客户端地址白名单 Redis Set key。
+     */
+    String RISK_CONTROL_WHITELIST_IP_KEY = "peach:gateway:risk-control:whitelist-ip";
+
+    /**
+     * 用户 API 资源授权 Redis Set key 前缀。
+     */
+    String USER_API_RESOURCE_CACHE_PREFIX = "peach:security:user:api-resources:";
+
 }

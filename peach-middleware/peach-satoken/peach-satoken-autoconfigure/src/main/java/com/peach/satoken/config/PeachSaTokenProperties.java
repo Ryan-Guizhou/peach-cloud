@@ -7,9 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Peach Sa-Token 配置属性。
- *
- * <p>该配置用于统一管理 Sa-Token 的 DAO、会话策略和 Same-Token 校验。</p>
+ * Peach Sa-Token extension properties.
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -20,17 +18,22 @@ import java.util.List;
 public class PeachSaTokenProperties {
 
     /**
-     * DAO 相关配置。
+     * Sa-Token DAO properties.
      */
     private Dao dao = new Dao();
 
     /**
-     * 会话策略相关配置。
+     * Sa-Token session strategy properties.
      */
     private SessionStrategy sessionStrategy = new SessionStrategy();
 
     /**
-     * 同 token 校验相关配置。
+     * Sa-Token token creation strategy properties.
+     */
+    private TokenStrategy tokenStrategy = new TokenStrategy();
+
+    /**
+     * Same-Token check properties.
      */
     private SameToken sameToken = new SameToken();
 
@@ -38,7 +41,7 @@ public class PeachSaTokenProperties {
     public static class Dao {
 
         /**
-         * 是否启用 Sa-Token DAO。
+         * Whether to enable custom Sa-Token DAO.
          */
         private boolean enabled = true;
     }
@@ -47,7 +50,16 @@ public class PeachSaTokenProperties {
     public static class SessionStrategy {
 
         /**
-         * 是否启用会话策略覆盖。
+         * Whether to override Sa-Token session creation strategy.
+         */
+        private boolean enabled = true;
+    }
+
+    @Data
+    public static class TokenStrategy {
+
+        /**
+         * Whether to override Sa-Token token creation strategy.
          */
         private boolean enabled = true;
     }
@@ -56,17 +68,17 @@ public class PeachSaTokenProperties {
     public static class SameToken {
 
         /**
-         * 是否启用同 token 校验。
+         * Whether to enable Same-Token verification.
          */
         private boolean enabled = true;
 
         /**
-         * 是否在日志中打印请求路径。
+         * Whether to log request paths during Same-Token verification.
          */
         private boolean logPath = true;
 
         /**
-         * 同 token 校验排除路径。
+         * Paths excluded from Same-Token verification.
          */
         private List<String> excludePathPatterns = Arrays.asList(
                 "/error"

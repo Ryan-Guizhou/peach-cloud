@@ -57,7 +57,10 @@ public class PeachOpenfeignRequestInterceptor implements RequestInterceptor {
         // 2. 中继当前请求的 RequestId（若启用）
         addRequestId(template);
 
-        // 3. 注入 Same-Token（若启用）
+        // 3. 注入Authorizaion  主要是为了在任何服务都可以使用到上下文
+        sanitizeAuthorization(template);
+
+        // 4. 注入 Same-Token（若启用）
         addSameToken(template);
 
         log.debug("[PeachFeign] request intercepted method={} path={}", template.method(), safePath(template));
@@ -117,6 +120,42 @@ public class PeachOpenfeignRequestInterceptor implements RequestInterceptor {
 
         template.header(PeachOpenfeignConstants.HEADER_REQUEST_ID, requestId);
         log.debug("[PeachFeign] request-id relayed path={}", safePath(template));
+    }
+
+    private void sanitizeAuthorization(RequestTemplate template) {
+        boolean relayAuthorization = properties.isRelayAuthorizationEnabled()
+                || hasTruthyHeader(template, PeachOpenfeignConstants.HEADER_RELAY_AUTHORIZATION);
+        template.removeHeader(PeachOpenfeignConstants.HEADER_RELAY_AUTHORIZATION);
+
+        if (relayAuthorization) {
+            relayAuthorization(template);
+            return;
+        }
+        if (!hasHeader(template, PeachOpenfeignConstants.HEADER_AUTHORIZATION)) {
+            return;
+        }
+        template.removeHeader(PeachOpenfeignConstants.HEADER_AUTHORIZATION);
+        log.debug("[PeachFeign] authorization header removed for service call path={}", safePath(template));
+    }
+
+    private void relayAuthorization(RequestTemplate template) {
+        if (hasHeader(template, PeachOpenfeignConstants.HEADER_AUTHORIZATION)) {
+            log.debug("[PeachFeign] authorization header kept for service call path={}", safePath(template));
+            return;
+        }
+        String authorization = sanitizeHeaderValue(
+                PeachOpenfeignConstants.HEADER_AUTHORIZATION,
+                getCurrentRequestHeader(PeachOpenfeignConstants.HEADER_AUTHORIZATION),
+                PeachOpenfeignConstants.MAX_AUTHORIZATION_LENGTH,
+                template
+        );
+        if (authorization == null || authorization.isEmpty()) {
+            log.debug("[PeachFeign] authorization relay requested but current request has no authorization path={}",
+                    safePath(template));
+            return;
+        }
+        template.header(PeachOpenfeignConstants.HEADER_AUTHORIZATION, authorization);
+        log.debug("[PeachFeign] authorization header relayed for service call path={}", safePath(template));
     }
 
     /**
@@ -236,6 +275,23 @@ public class PeachOpenfeignRequestInterceptor implements RequestInterceptor {
         for (String existingHeader : template.headers().keySet()) {
             if (existingHeader != null && existingHeader.equalsIgnoreCase(headerName)) {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasTruthyHeader(RequestTemplate template, String headerName) {
+        if (template == null || template.headers() == null || headerName == null) {
+            return false;
+        }
+        for (String existingHeader : template.headers().keySet()) {
+            if (existingHeader == null || !existingHeader.equalsIgnoreCase(headerName)) {
+                continue;
+            }
+            for (String value : template.headers().get(existingHeader)) {
+                if ("true".equalsIgnoreCase(String.valueOf(value).trim())) {
+                    return true;
+                }
             }
         }
         return false;

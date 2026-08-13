@@ -39,6 +39,11 @@ public class GatewaySaTokenProperties {
     private boolean logPath = true;
 
     /**
+     * 是否启用网关 API 资源权限校验。
+     */
+    private boolean apiPermissionEnabled = true;
+
+    /**
      * 网关认证和风控需要跳过的公开端点列表。
      */
     private List<GatewaySecurityEndpointRule> publicEndpoints = Arrays.asList(

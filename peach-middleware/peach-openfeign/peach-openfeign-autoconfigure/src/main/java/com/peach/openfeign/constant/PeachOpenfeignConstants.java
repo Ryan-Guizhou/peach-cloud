@@ -19,7 +19,13 @@ public interface PeachOpenfeignConstants {
 
     String HEADER_REQUEST_ID = "X-Request-Id";
 
+    String HEADER_AUTHORIZATION = "Authorization";
+
+    String HEADER_RELAY_AUTHORIZATION = "X-Peach-Relay-Authorization";
+
     int MAX_REQUEST_ID_LENGTH = 128;
+
+    int MAX_AUTHORIZATION_LENGTH = 4096;
 
     int MAX_SAME_TOKEN_LENGTH = 4096;
 

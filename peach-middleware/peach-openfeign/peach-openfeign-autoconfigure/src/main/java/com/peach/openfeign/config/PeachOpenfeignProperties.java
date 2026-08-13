@@ -38,6 +38,8 @@ public class PeachOpenfeignProperties {
      */
     private boolean sameTokenFailFast = false;
 
+    private boolean relayAuthorizationEnabled = true;
+
     /**
      * 是否向 Feign 请求透传 RequestId。
      */
