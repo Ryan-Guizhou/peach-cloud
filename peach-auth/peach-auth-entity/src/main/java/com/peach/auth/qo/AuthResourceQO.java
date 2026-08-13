@@ -17,4 +17,28 @@ import java.io.Serializable;
 @Schema(description = "AuthResource查询参数")
 public class AuthResourceQO extends PeachEntity implements Serializable {
     private static final long serialVersionUID = 1L;
+
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Schema(description = "机构ID")
+    private String orgId;
+
+    @Schema(description = "参与者代码")
+    private String partyCode;
+
+    @Schema(description = "功能代码")
+    private String funcCode;
+
+    @Schema(description = "操作类型")
+    private String opType;
+
+    @Schema(description = "资源编码")
+    private String resourceCode;
+
+    @Schema(description = "应用ID")
+    private String appId;
+
+    @Schema(description = "年度")
+    private Integer fiscal;
 }

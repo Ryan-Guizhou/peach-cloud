@@ -26,7 +26,7 @@ public class LoginDTO implements Serializable {
 
     @Schema(description = "密码")
     @NotBlank(message = "密码不能为空", groups = {LoginGroup.Login.class})
-    @Size(min = 9, max = 20, message = "密码长度为9-20")
+    @Size(max = 1024, message = "密码密文长度不能超过1024个字符", groups = {LoginGroup.Login.class})
     private String password;
 
     @Schema(description = "年度")

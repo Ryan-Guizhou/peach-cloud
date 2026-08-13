@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 import javax.annotation.Resource;
 
@@ -33,36 +34,31 @@ public class FileController {
 
     @PostMapping("/upload")
     public Response upload(@RequestPart("file") MultipartFile file,
-                           @RequestParam("targetPath") String targetPath) {
-        return fileFeignClient.upload(file, targetPath);
+                           @RequestParam("bizType") String bizType,
+                           @RequestParam(value = "bizId", required = false) String bizId,
+                           @RequestParam(value = "bizTag", required = false) String bizTag,
+                           @RequestParam(value = "displayName", required = false) String displayName,
+                           @RequestParam(value = "contentType", required = false) String contentType,
+                           @RequestParam(value = "remark", required = false) String remark,
+                           @RequestParam(value = "storageProvider", required = false) String storageProvider) {
+        return fileFeignClient.upload(file, bizType, bizId, bizTag, displayName, contentType, remark, storageProvider);
     }
 
-    @PostMapping("/download/local")
-    @Operation(summary = "下载文件")
-    public Response downloadToLocal(
-            @RequestParam("targetPath") String targetPath,
-            @RequestParam("localPath") String localPath,
-            @RequestParam("fileName") String fileName) {
-        return fileFeignClient.download(targetPath, localPath, fileName);
+    @PostMapping("/url")
+    @Operation(summary = "获取文件 URL")
+    public Response getUrl(@RequestParam("fileId") String fileId) {
+        return fileFeignClient.getUrl(fileId);
     }
 
-
-    @PostMapping("/download/dir")
-    @Operation(summary = "下载文件夹")
-    public Response downloadDir(@RequestParam("sourceDir") String sourceDir,
-                                @RequestParam("localDir") String localDir){
-        return fileFeignClient.downloadDir(sourceDir, localDir);
+    @PostMapping(value = "/sha256", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "计算文件 SHA-256")
+    public Response sha256(@RequestPart("file") MultipartFile file) {
+        return fileFeignClient.sha256(file);
     }
 
     @DeleteMapping("/delete")
     @Operation(summary = "删除文件")
-    public Response delete(@RequestParam("key") String key) {
-        return fileFeignClient.delete(key);
-    }
-
-    @PostMapping("/url")
-    @Operation(summary = "获取文件url")
-    public Response getUrl(@RequestParam("key") String key) {
-        return fileFeignClient.getUrl(key);
+    public Response delete(@RequestParam("fileId") String fileId) {
+        return fileFeignClient.delete(fileId);
     }
 }

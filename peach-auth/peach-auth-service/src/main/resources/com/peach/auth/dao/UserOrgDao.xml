@@ -271,7 +271,7 @@
         FROM PEACH_USER_ORG uo
         LEFT JOIN PEACH_TENANT t ON uo.TENANT_ID = t.TENANT_ID
         LEFT JOIN PEACH_ORGANIZATION o ON uo.ORG_ID = o.ORG_ID
-        WHERE uo.USER_ID = #{value,jdbcType=VARCHAR}
+        WHERE uo.USER_ID = #{userId,jdbcType=VARCHAR}
           AND (uo.IS_DELETE IS NULL OR uo.IS_DELETE != 1)
           AND (t.IS_DELETE IS NULL OR t.IS_DELETE != 1)
           AND (o.IS_DELETE IS NULL OR o.IS_DELETE != 1)

@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.UserAvatarHistoryDao">
+    <sql id="allColumn">
+        AVATAR_HISTORY_ID,                               USER_ID,                                          FILE_ID,                                          SORT_NO,
+        IS_CURRENT,                                      IS_DELETE,                                        CREATED_TIME,                                    CREATOR_ID,
+        MODIFY_TIME,                                     MODIFIER_ID
+    </sql>
+
+    <sql id="allColumnAlias">
+        AVATAR_HISTORY_ID as avatarHistoryId,            USER_ID as userId,                                FILE_ID as fileId,                                SORT_NO as sortNo,
+        IS_CURRENT as isCurrent,                         IS_DELETE as isDelete,                            CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,
+        MODIFY_TIME as modifyTime,                       MODIFIER_ID as modifierId
+    </sql>
+
+    <sql id="allColumnValue">
+        #{avatarHistoryId,jdbcType=VARCHAR},             #{userId,jdbcType=VARCHAR},                       #{fileId,jdbcType=VARCHAR},                       #{sortNo,jdbcType=INTEGER},
+        #{isCurrent,jdbcType=INTEGER},                   #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},
+        #{modifyTime,jdbcType=VARCHAR},                  #{modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="itemAllColumnValue">
+        #{item.avatarHistoryId,jdbcType=VARCHAR},        #{item.userId,jdbcType=VARCHAR},                  #{item.fileId,jdbcType=VARCHAR},                  #{item.sortNo,jdbcType=INTEGER},
+        #{item.isCurrent,jdbcType=INTEGER},              #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},
+        #{item.modifyTime,jdbcType=VARCHAR},             #{item.modifierId,jdbcType=VARCHAR}
+    </sql>
+
+    <sql id="allColumnSet">
+        <trim suffixOverrides=",">
+            <if test="userId != null and userId != ''">
+                USER_ID = #{userId,jdbcType=VARCHAR},
+            </if>
+            <if test="fileId != null and fileId != ''">
+                FILE_ID = #{fileId,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNo != null">
+                SORT_NO = #{sortNo,jdbcType=INTEGER},
+            </if>
+            <if test="isCurrent != null">
+                IS_CURRENT = #{isCurrent,jdbcType=INTEGER},
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE = #{isDelete,jdbcType=INTEGER},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveColumn">
+        <trim suffixOverrides=",">
+            <if test="userId != null and userId != ''">
+                USER_ID,
+            </if>
+            <if test="fileId != null and fileId != ''">
+                FILE_ID,
+            </if>
+            <if test="sortNo != null">
+                SORT_NO,
+            </if>
+            <if test="isCurrent != null">
+                IS_CURRENT,
+            </if>
+            <if test="isDelete != null">
+                IS_DELETE,
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                CREATED_TIME,
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                CREATOR_ID,
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                MODIFY_TIME,
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                MODIFIER_ID,
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="updateSelectiveValue">
+        <trim suffixOverrides=",">
+            <if test="userId != null and userId != ''">
+                #{userId,jdbcType=VARCHAR},
+            </if>
+            <if test="fileId != null and fileId != ''">
+                #{fileId,jdbcType=VARCHAR},
+            </if>
+            <if test="sortNo != null">
+                #{sortNo,jdbcType=INTEGER},
+            </if>
+            <if test="isCurrent != null">
+                #{isCurrent,jdbcType=INTEGER},
+            </if>
+            <if test="isDelete != null">
+                #{isDelete,jdbcType=INTEGER},
+            </if>
+            <if test="createdTime != null and createdTime != ''">
+                #{createdTime,jdbcType=VARCHAR},
+            </if>
+            <if test="creatorId != null and creatorId != ''">
+                #{creatorId,jdbcType=VARCHAR},
+            </if>
+            <if test="modifyTime != null and modifyTime != ''">
+                #{modifyTime,jdbcType=VARCHAR},
+            </if>
+            <if test="modifierId != null and modifierId != ''">
+                #{modifierId,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </sql>
+
+    <sql id="allColumnCond">
+        <if test="avatarHistoryId != null and avatarHistoryId != ''">
+            AND AVATAR_HISTORY_ID = #{avatarHistoryId,jdbcType=VARCHAR}
+        </if>
+        <if test="userId != null and userId != ''">
+            AND USER_ID = #{userId,jdbcType=VARCHAR}
+        </if>
+        <if test="fileId != null and fileId != ''">
+            AND FILE_ID = #{fileId,jdbcType=VARCHAR}
+        </if>
+        <if test="sortNo != null">
+            AND SORT_NO = #{sortNo,jdbcType=INTEGER}
+        </if>
+        <if test="isCurrent != null">
+            AND IS_CURRENT = #{isCurrent,jdbcType=INTEGER}
+        </if>
+        <if test="isDelete != null">
+            AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
+        </if>
+        <if test="createdTime != null and createdTime != ''">
+            AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
+        </if>
+        <if test="creatorId != null and creatorId != ''">
+            AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
+        </if>
+        <if test="modifyTime != null and modifyTime != ''">
+            AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
+        </if>
+        <if test="modifierId != null and modifierId != ''">
+            AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
+        </if>
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.auth.entity.UserAvatarHistoryDO">
+        INSERT INTO PEACH_USER_AVATAR_HISTORY (
+            <include refid="allColumn" />
+        ) VALUES (
+            <include refid="allColumnValue" />
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="com.peach.auth.entity.UserAvatarHistoryDO">
+        INSERT INTO PEACH_USER_AVATAR_HISTORY (
+            <include refid="allColumn" />
+        ) VALUES
+        <foreach collection="list" index="index" item="item" separator=",">
+            (<include refid="itemAllColumnValue"/>)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.peach.auth.entity.UserAvatarHistoryDO">
+        UPDATE PEACH_USER_AVATAR_HISTORY SET
+            <include refid="allColumnSet" />
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </update>
+
+    <delete id="delById" parameterType="string">
+        DELETE FROM PEACH_USER_AVATAR_HISTORY
+        WHERE AVATAR_HISTORY_ID = #{value,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="delByIds" parameterType="java.util.List">
+        DELETE FROM PEACH_USER_AVATAR_HISTORY
+        WHERE AVATAR_HISTORY_ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </delete>
+
+    <delete id="del" parameterType="com.peach.auth.entity.UserAvatarHistoryDO">
+        DELETE FROM PEACH_USER_AVATAR_HISTORY
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </delete>
+
+    <update id="updateById" parameterType="com.peach.auth.entity.UserAvatarHistoryDO">
+        UPDATE PEACH_USER_AVATAR_HISTORY SET
+            <include refid="allColumnSet" />
+        WHERE AVATAR_HISTORY_ID = #{avatarHistoryId,jdbcType=VARCHAR}
+    </update>
+
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.UserAvatarHistoryDO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_USER_AVATAR_HISTORY
+        WHERE AVATAR_HISTORY_ID = #{value,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.UserAvatarHistoryDO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_USER_AVATAR_HISTORY
+        WHERE AVATAR_HISTORY_ID IN
+        <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+    <select id="select" parameterType="com.peach.auth.entity.UserAvatarHistoryDO" resultType="com.peach.auth.entity.UserAvatarHistoryDO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_USER_AVATAR_HISTORY
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="count" parameterType="com.peach.auth.entity.UserAvatarHistoryDO" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_USER_AVATAR_HISTORY
+        <where>
+            <include refid="allColumnCond" />
+        </where>
+    </select>
+
+    <select id="selectActiveByUserId" resultType="com.peach.auth.vo.AvatarHistoryVO">
+        SELECT AVATAR_HISTORY_ID as avatarHistoryId,
+               FILE_ID as fileId,
+               SORT_NO as sortNo,
+               IS_CURRENT as isCurrent,
+               CREATED_TIME as createdTime
+        FROM PEACH_USER_AVATAR_HISTORY
+        WHERE USER_ID = #{userId,jdbcType=VARCHAR}
+          AND IS_DELETE = 0
+        ORDER BY SORT_NO ASC, CREATED_TIME DESC, AVATAR_HISTORY_ID ASC
+    </select>
+
+    <update id="updateOrder">
+        UPDATE PEACH_USER_AVATAR_HISTORY
+        SET SORT_NO = #{sortNo,jdbcType=INTEGER},
+            IS_CURRENT = #{isCurrent,jdbcType=INTEGER},
+            MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
+        WHERE AVATAR_HISTORY_ID = #{avatarHistoryId,jdbcType=VARCHAR}
+          AND USER_ID = #{userId,jdbcType=VARCHAR}
+          AND IS_DELETE = 0
+    </update>
+
+    <update id="markDeleted">
+        UPDATE PEACH_USER_AVATAR_HISTORY
+        SET IS_DELETE = 1,
+            IS_CURRENT = 0,
+            MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
+        WHERE USER_ID = #{userId,jdbcType=VARCHAR}
+          AND IS_DELETE = 0
+          AND AVATAR_HISTORY_ID IN
+        <foreach collection="avatarHistoryIds" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=VARCHAR}
+        </foreach>
+    </update>
+</mapper>

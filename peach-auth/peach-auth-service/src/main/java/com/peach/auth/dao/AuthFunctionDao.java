@@ -2,6 +2,7 @@ package com.peach.auth.dao;
 
 import com.peach.common.PeachDao;
 import com.peach.common.annoation.MybatisDao;
+import com.peach.auth.entity.AuthFunctionDO;
 import com.peach.auth.vo.AuthFunctionVO;
 import org.springframework.stereotype.Indexed;
 
@@ -12,5 +13,5 @@ import org.springframework.stereotype.Indexed;
  */
 @Indexed
 @MybatisDao
-public interface AuthFunctionDao extends PeachDao<AuthFunctionVO, AuthFunctionVO> {
+public interface AuthFunctionDao extends PeachDao<AuthFunctionDO, AuthFunctionVO> {
 }

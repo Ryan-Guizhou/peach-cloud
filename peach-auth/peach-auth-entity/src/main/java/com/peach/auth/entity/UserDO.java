@@ -92,10 +92,6 @@ public class UserDO extends PeachDO implements Serializable {
     @Schema(description = "邮箱")
     private String email;
 
-    @Column(name = "DEFAULT_TENANT_ID")
-    @Schema(description = "默认租户ID")
-    private String defaultTenantId;
-
     @Column(name = "DEFAULT_ORG_ID")
     @Schema(description = "默认机构ID")
     private String defaultOrgId;

@@ -5,7 +5,7 @@ import com.peach.common.PeachDao;
 import com.peach.common.annoation.MybatisDao;
 import com.peach.auth.entity.UserDO;
 import com.peach.auth.qo.UserQO;
-import io.lettuce.core.dynamic.annotation.Param;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Indexed;
 
 
@@ -23,4 +23,10 @@ public interface UserDao extends PeachDao<UserDO, UserVO> {
     UserVO login(@Param("username") String username,@Param("password") String password);
 
     List<UserVO> selectByQO(UserQO userQO);
+
+    String lockById(String userId);
+
+    int updateProfileBasic(@Param("userId") String userId, @Param("userName") String userName,
+                           @Param("mobilePhone") String mobilePhone, @Param("email") String email,
+                           @Param("modifyTime") String modifyTime, @Param("modifierId") String modifierId);
 }

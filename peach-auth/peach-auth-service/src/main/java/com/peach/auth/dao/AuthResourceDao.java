@@ -1,5 +1,6 @@
 package com.peach.auth.dao;
 
+import com.peach.auth.entity.AuthResourceDO;
 import com.peach.common.PeachDao;
 import com.peach.common.annoation.MybatisDao;
 import com.peach.auth.vo.AuthResourceVO;
@@ -12,5 +13,5 @@ import org.springframework.stereotype.Indexed;
  */
 @Indexed
 @MybatisDao
-public interface AuthResourceDao extends PeachDao<AuthResourceVO, AuthResourceVO> {
+public interface AuthResourceDao extends PeachDao<AuthResourceDO, AuthResourceVO> {
 }

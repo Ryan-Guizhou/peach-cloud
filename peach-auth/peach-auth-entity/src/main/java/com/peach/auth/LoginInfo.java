@@ -3,6 +3,7 @@ package com.peach.auth;
 import com.peach.auth.vo.MenuVO;
 import com.peach.auth.vo.RoleVO;
 import com.peach.auth.vo.RouterVO;
+import com.peach.auth.vo.AuthResourceVO;
 import com.peach.auth.vo.UserOrgVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -65,4 +66,10 @@ public class LoginInfo {
 
     @Schema(description = "已授权路由列表")
     private List<RouterVO> routerList;
+
+    @Schema(description = "已授权资源列表")
+    private List<AuthResourceVO> resourceList;
+
+    @Schema(description = "已授权权限编码列表")
+    private List<String> permissionList;
 }

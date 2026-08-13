@@ -6,7 +6,7 @@
         IDENTITY_CODE,                                    INVLIDATE,                                        AUTH_MODE,                                        STATUS,
         UNLOCK_TIME,                                      MENU_STYLE,                                       MENU_ROLE,                                        LASTEST_LOGIN,
         ERROR_COUNT,                                      START_DATE,                                       END_DATE,                                         MOBILE_PHONE,
-        EMAIL,                                            DEFAULT_TENANT_ID,                                DEFAULT_ORG_ID,                                   IS_DELETE,
+        EMAIL,                                            TENANT_ID,                                        DEFAULT_ORG_ID,                                   IS_DELETE,
         IS_MODIFY,                                        PASSWD_MODIFY_TIME,                               CREATED_TIME,                                     CREATOR_ID,
         MODIFY_TIME,                                      MODIFIER_ID
 
@@ -17,7 +17,7 @@
         IDENTITY_CODE as identityCode,                    INVLIDATE as invlidate,                           AUTH_MODE as authMode,                            STATUS as status,
         UNLOCK_TIME as unlockTime,                        MENU_STYLE as menuStyle,                          MENU_ROLE as menuRole,                            LASTEST_LOGIN as lastestLogin,
         ERROR_COUNT as errorCount,                        START_DATE as startDate,                          END_DATE as endDate,                              MOBILE_PHONE as mobilePhone,
-        EMAIL as email,                                   DEFAULT_TENANT_ID as defaultTenantId,             DEFAULT_ORG_ID as defaultOrgId,                   IS_DELETE as isDelete,
+        EMAIL as email,                                   TENANT_ID as defaultTenantId,                     DEFAULT_ORG_ID as defaultOrgId,                   IS_DELETE as isDelete,
         IS_MODIFY as isModify,                            PASSWD_MODIFY_TIME as passwdModifyTime,           CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,
         MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
 
@@ -98,7 +98,7 @@
                 EMAIL = #{email,jdbcType=VARCHAR},
             </if>
             <if test="defaultTenantId != null and defaultTenantId != ''">
-                DEFAULT_TENANT_ID = #{defaultTenantId,jdbcType=VARCHAR},
+                TENANT_ID = #{defaultTenantId,jdbcType=VARCHAR},
             </if>
             <if test="defaultOrgId != null and defaultOrgId != ''">
                 DEFAULT_ORG_ID = #{defaultOrgId,jdbcType=VARCHAR},
@@ -179,7 +179,7 @@
                 EMAIL,
             </if>
             <if test="defaultTenantId != null and defaultTenantId != ''">
-                DEFAULT_TENANT_ID,
+                TENANT_ID,
             </if>
             <if test="defaultOrgId != null and defaultOrgId != ''">
                 DEFAULT_ORG_ID,
@@ -341,7 +341,7 @@
             AND EMAIL = #{email,jdbcType=VARCHAR}
         </if>
         <if test="defaultTenantId != null and defaultTenantId != ''">
-            AND DEFAULT_TENANT_ID = #{defaultTenantId,jdbcType=VARCHAR}
+            AND TENANT_ID = #{defaultTenantId,jdbcType=VARCHAR}
         </if>
         <if test="defaultOrgId != null and defaultOrgId != ''">
             AND DEFAULT_ORG_ID = #{defaultOrgId,jdbcType=VARCHAR}
@@ -484,11 +484,30 @@
                 AND USER_NAME = #{username,jdbcType=VARCHAR}
             </if>
             <if test="defaultTenantId != null and defaultTenantId != ''">
-                AND DEFAULT_TENANT_ID = #{defaultTenantId,jdbcType=VARCHAR}
+                AND TENANT_ID = #{defaultTenantId,jdbcType=VARCHAR}
             </if>
             <if test="defaultOrgId != null and defaultOrgId != ''">
                 AND DEFAULT_ORG_ID = #{defaultOrgId,jdbcType=VARCHAR}
             </if>
         </where>
     </select>
+
+    <select id="lockById" parameterType="string" resultType="java.lang.String">
+        SELECT USER_ID
+        FROM PEACH_USER
+        WHERE USER_ID = #{value,jdbcType=VARCHAR}
+          AND IS_DELETE = 0
+        FOR UPDATE
+    </select>
+
+    <update id="updateProfileBasic">
+        UPDATE PEACH_USER
+        SET USER_NAME = #{userName,jdbcType=VARCHAR},
+            MOBILE_PHONE = #{mobilePhone,jdbcType=VARCHAR},
+            EMAIL = #{email,jdbcType=VARCHAR},
+            MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
+        WHERE USER_ID = #{userId,jdbcType=VARCHAR}
+          AND IS_DELETE = 0
+    </update>
 </mapper>

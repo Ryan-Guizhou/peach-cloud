@@ -156,6 +156,12 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="appId != null and appId != ''">
+            AND APP_ID = #{appId,jdbcType=VARCHAR}
+        </if>
         <if test="routerId != null and routerId != ''">
             AND ROUTER_ID = #{routerId,jdbcType=VARCHAR}
         </if>
@@ -248,14 +254,14 @@
         WHERE ROUTER_ID =  #{routerId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.RouterDO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.RouterVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
         WHERE ROUTER_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.RouterDO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.RouterVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
@@ -265,7 +271,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.auth.entity.RouterDO" resultType="com.peach.auth.entity.RouterDO">
+    <select id="select" parameterType="com.peach.auth.entity.RouterDO" resultType="com.peach.auth.vo.RouterVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROUTER

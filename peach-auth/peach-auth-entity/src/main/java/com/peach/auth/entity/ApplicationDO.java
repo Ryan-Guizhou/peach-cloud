@@ -53,6 +53,10 @@ public class ApplicationDO extends PeachDO implements Serializable {
     @Schema(description = "显示顺序")
     private String sortNum;
 
+    @Column(name = "TENANT_ID")
+    @Schema(description = "租户ID")
+    private String tenantId;
+
     @Column(name = "IS_DELETE")
     @Schema(description = "是否删除")
     private Integer isDelete;

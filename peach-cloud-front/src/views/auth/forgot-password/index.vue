@@ -1,31 +1,30 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import AuthShell from '../../components/auth/AuthShell.vue'
+import AuthShell from '../../../components/auth/AuthShell.vue'
 
-const loginEmail = ref('')
-const loginPassword = ref('')
+const email = ref('')
+const password = ref('')
 const isEmailFocused = ref(false)
 const showPassword = ref(false)
-const remember = ref(true)
-
-const passwordLength = computed(() => loginPassword.value.length)
+const passwordLength = computed(() => password.value.length)
+const sent = ref(false)
 
 const onSubmit = () => {
-  // Keep behavior placeholder for API integration
+  sent.value = true
 }
 </script>
 
 <template>
   <AuthShell :is-typing="isEmailFocused" :show-password="showPassword" :password-length="passwordLength">
     <div class="segment">
-      <RouterLink to="/login" class="segment__item is-active">Login</RouterLink>
+      <RouterLink to="/login" class="segment__item">Login</RouterLink>
       <RouterLink to="/register" class="segment__item">Register</RouterLink>
     </div>
 
     <header class="form-header form-header--left">
-      <h2>Welcome back</h2>
-      <p>Sign in to PeachCloud and continue to your data control panel.</p>
+      <h2>Forgot password</h2>
+      <p>Submit your email and we will send a secure password reset link.</p>
     </header>
 
     <form class="login-form" @submit.prevent="onSubmit">
@@ -33,7 +32,7 @@ const onSubmit = () => {
         <span>Email</span>
         <div class="field__control">
           <input
-            v-model="loginEmail"
+            v-model="email"
             type="email"
             placeholder="Enter your email"
             @focus="isEmailFocused = true"
@@ -43,10 +42,10 @@ const onSubmit = () => {
       </label>
 
       <label class="field">
-        <span>Login password</span>
+        <span>Verification password</span>
         <div class="field__control">
           <input
-            v-model="loginPassword"
+            v-model="password"
             :type="showPassword ? 'text' : 'password'"
             :placeholder="'•'.repeat(8)"
           />
@@ -61,23 +60,14 @@ const onSubmit = () => {
         </div>
       </label>
 
-      <div class="form-row">
-        <label class="remember-row">
-          <button
-            type="button"
-            role="checkbox"
-            :aria-checked="remember"
-            :class="`remember-checkbox${remember ? ' is-checked' : ''}`"
-            @click="remember = !remember"
-          >
-            <span v-if="remember" class="remember-indicator" />
-          </button>
-          <span>Keep me signed in for 7 days</span>
-        </label>
-        <RouterLink to="/forgot-password" class="forgot-link">Forgot password?</RouterLink>
-      </div>
-
-      <button type="submit" class="primary-button">Login</button>
+      <button type="submit" class="primary-button">Send reset link</button>
     </form>
+
+    <p v-if="sent" class="reset-tip">If this email exists, a reset link has been sent.</p>
+
+    <p class="return-line">
+      Remembered your password?
+      <RouterLink to="/login" class="forgot-link">Back to login</RouterLink>
+    </p>
   </AuthShell>
 </template>

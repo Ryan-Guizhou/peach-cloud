@@ -1,5 +1,6 @@
 package com.peach.auth.openfeign;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.common.constant.ServiceContextConstant;
 import com.peach.common.constant.ServiceNameConstant;
 import com.peach.common.constant.ServicePathConstant;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
  * @CreateTime 2026/2/1 15:00
  * @Description Auth fegin remote method
  */
+@Indexed
 @FeignClient(
     contextId = ServiceContextConstant.AUTH_SERVICE_CONTEXT,
     name = ServiceNameConstant.AUTH_SERVICE,

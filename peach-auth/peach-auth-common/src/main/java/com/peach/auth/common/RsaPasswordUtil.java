@@ -120,11 +120,24 @@ public class RsaPasswordUtil {
         return byteToHex(bytes);
     }
 
+    /**
+     * 获取供客户端加密登录密码使用的 RSA 公钥。
+     *
+     * @return Base64 编码的 X.509 RSA 公钥
+     */
+    public static String getPublicKeyBase64() {
+        Map<String, String> rsaInfo = getRsaInfo();
+        if (MapUtil.isEmpty(rsaInfo) || StringUtil.isBlank(rsaInfo.get(PUBLIC_KEY))) {
+            throw new IllegalStateException("RSA public key is unavailable");
+        }
+        return rsaInfo.get(PUBLIC_KEY);
+    }
+
 
     public static String decrypt(String cipherText) throws Exception {
         Cipher cipher = initCipher(2, getPrivateKey());
         byte[] bytes = hexToByte(cipherText);
-        return new String(cipher.doFinal(bytes));
+        return new String(cipher.doFinal(bytes), StandardCharsets.UTF_8);
     }
 
     /**

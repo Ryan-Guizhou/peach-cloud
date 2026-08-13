@@ -8,6 +8,7 @@ sa-token:
   check-same-token: true
   # same-token 超时时间
   same-token-timeout: 30
+  is-read-header: true
   is-read-cookie: false
   # 是否打印日志
   is-log: true
@@ -17,6 +18,8 @@ peach:
     dao:
       enabled: true
     session-strategy:
+      enabled: true
+    token-strategy:
       enabled: true
     same-token:
       enabled: true

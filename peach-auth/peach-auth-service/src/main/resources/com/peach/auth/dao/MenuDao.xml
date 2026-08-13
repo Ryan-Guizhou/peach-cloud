@@ -285,6 +285,9 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
         <if test="menuId != null and menuId != ''">
             AND MENU_ID = #{menuId,jdbcType=VARCHAR}
         </if>
@@ -416,14 +419,14 @@
         WHERE MENU_ID =  #{menuId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.MenuDO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.MenuVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_MENU
         WHERE MENU_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.MenuDO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.MenuVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_MENU
@@ -433,7 +436,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.auth.entity.MenuDO" resultType="com.peach.auth.entity.MenuDO">
+    <select id="select" parameterType="com.peach.auth.entity.MenuDO" resultType="com.peach.auth.vo.MenuVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_MENU

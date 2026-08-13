@@ -3,6 +3,7 @@ peach:
     enabled: true
     same-token-enabled: true
     same-token-fail-fast: true
+    relay-authorization-enabled: false
     request-id-enabled: true
     upload-max-bytes: 10485760
     client:

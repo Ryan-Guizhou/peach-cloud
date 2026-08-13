@@ -77,5 +77,9 @@ public class FunctionDO extends PeachDO implements Serializable {
     @Schema(description = "是否删除")
     private Integer isDelete;
 
+    @Column(name = "TENANT_ID")
+    @Schema(description = "租户ID")
+    private String tenantId;
+
 
 }

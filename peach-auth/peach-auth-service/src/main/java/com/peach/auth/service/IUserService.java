@@ -2,12 +2,14 @@ package com.peach.auth.service;
 
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dto.RegisterDTO;
+import com.peach.auth.dto.SwitchContextDTO;
 import com.peach.auth.dto.UserDTO;
 import com.peach.common.response.Response;
 import com.peach.auth.dto.LoginDTO;
 import com.peach.auth.entity.UserDO;
 import com.peach.auth.qo.UserQO;
 import com.peach.auth.vo.UserVO;
+import com.peach.auth.vo.LoginInitVO;
 
 import java.util.List;
 
@@ -45,6 +47,21 @@ public interface IUserService {
      * @return 登录结果
      */
     Response login(LoginDTO loginDTO);
+
+    /**
+     * 切换当前租户机构上下文。
+     *
+     * @param switchContextDTO 上下文参数
+     * @return 切换后的登录信息
+     */
+    Response switchContext(SwitchContextDTO switchContextDTO);
+
+    /**
+     * 获取登录前所需的系统信息和密码加密公钥。
+     *
+     * @return 登录初始化信息
+     */
+    LoginInitVO initLogin();
 
     /**
      * 用户注册。

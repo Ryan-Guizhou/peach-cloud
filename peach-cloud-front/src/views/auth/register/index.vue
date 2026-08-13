@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import AuthShell from '../../components/auth/AuthShell.vue'
+import AuthShell from '../../../components/auth/AuthShell.vue'
 
 const registerForm = ref({
   name: '',

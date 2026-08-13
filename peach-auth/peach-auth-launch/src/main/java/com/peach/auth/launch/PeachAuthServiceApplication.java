@@ -1,5 +1,6 @@
 package com.peach.auth.launch;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.common.annoation.MybatisDao;
 import com.peach.auth.launch.datasource.DataSourceProperties;
 import com.zaxxer.hikari.HikariDataSource;
@@ -41,6 +42,7 @@ import java.util.Properties;
 @MapperScan(basePackages = {"com.peach.*.dao"},
         annotationClass = MybatisDao.class,
         sqlSessionFactoryRef = "mybatis-session")
+@Indexed
 @SpringBootApplication
 public class PeachAuthServiceApplication {
 

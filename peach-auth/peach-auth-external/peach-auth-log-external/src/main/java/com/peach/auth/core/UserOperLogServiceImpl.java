@@ -1,12 +1,14 @@
 package com.peach.auth.core;
 
-import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.peach.auth.dao.UserOperLogDao;
 import com.peach.auth.entity.UserOperLogDO;
+import com.peach.auth.qo.UserOperLogQO;
 import com.peach.auth.vo.UserOperLogVO;
 import com.peach.common.util.PeachCollectionUtil;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
@@ -37,6 +39,12 @@ public class UserOperLogServiceImpl implements IUserOperLogService {
     private SqlSessionFactory sqlSessionFactory;
 
     @Override
+    public PageInfo<UserOperLogVO> pageList(UserOperLogQO userOperLogQO) {
+        return PageHelper.startPage(userOperLogQO.getPageNum(), userOperLogQO.getPageSize())
+                .doSelectPageInfo(() -> userOperLogDao.select(buildQuery(userOperLogQO)));
+    }
+
+    @Override
     public void insert(UserOperLogVO userOperLogVO) {
         UserOperLogDO userOperLogDO = _mapper.convertValue(userOperLogVO, UserOperLogDO.class);
         userOperLogDao.insert(userOperLogDO);
@@ -64,5 +72,20 @@ public class UserOperLogServiceImpl implements IUserOperLogService {
             log.error("Batch insertion of user operation logs failed", e);
             throw e; // 让上层感知失败
         }
+    }
+
+    private UserOperLogDO buildQuery(UserOperLogQO userOperLogQO) {
+        UserOperLogDO userOperLogDO = new UserOperLogDO();
+        if (userOperLogQO == null) {
+            return userOperLogDO;
+        }
+        userOperLogDO.setOptTypeCode(userOperLogQO.getOptTypeCode());
+        userOperLogDO.setModuleCode(userOperLogQO.getModuleCode());
+        userOperLogDO.setCreatorCode(userOperLogQO.getCreatorCode());
+        userOperLogDO.setOptLevel(userOperLogQO.getOptLevel());
+        userOperLogDO.setIsSuccess(userOperLogQO.getIsSuccess());
+        userOperLogDO.setRequestUri(userOperLogQO.getRequestUri());
+        userOperLogDO.setRequestMethod(userOperLogQO.getRequestMethod());
+        return userOperLogDO;
     }
 }

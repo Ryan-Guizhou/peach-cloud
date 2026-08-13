@@ -263,14 +263,14 @@
         WHERE ID =  #{id,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.AuthFunctionDO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.AuthFunctionVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_FUNCTION
         WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.AuthFunctionDO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.AuthFunctionVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_FUNCTION
@@ -280,7 +280,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.auth.entity.AuthFunctionDO" resultType="com.peach.auth.entity.AuthFunctionDO">
+    <select id="select" parameterType="com.peach.auth.entity.AuthFunctionDO" resultType="com.peach.auth.vo.AuthFunctionVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_FUNCTION
