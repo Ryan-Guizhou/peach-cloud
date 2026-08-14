@@ -1,0 +1,755 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.peach</groupId>
+    <artifactId>peach-dependencies</artifactId>
+    <name>peach-dependencies</name>
+    <description>Peach Cloud shared dependency BOM</description>
+    <packaging>pom</packaging>
+
+    <version>${revision}</version>
+
+    <properties>
+        <!-- 按属性名长度从短到长排列 -->
+        <revision>1.0.0-SNAPSHOT</revision>
+        <bos.version>0.10.228</bos.version>
+        <cos.version>5.6.227</cos.version>
+        <obs.version>3.24.9</obs.version>
+        <oss.version>3.18.5</oss.version>
+        <asw.version>1.12.170</asw.version>
+        <spring.boot>2.7.13</spring.boot>
+        <jsch.version>0.1.55</jsch.version>
+        <mail.version>1.6.2</mail.version>
+        <spring.cloud>2021.0.5</spring.cloud>
+        <guava.version>27.0.1-jre</guava.version>
+        <minio.version>8.5.12</minio.version>
+        <hutool.version>5.8.20</hutool.version>
+        <jasypt.version>3.0.5</jasypt.version>
+        <mybatis.version>2.3.1</mybatis.version>
+        <esdk-obs.version>3.25.10</esdk-obs.version>
+        <knife4j.version>4.4.0</knife4j.version>
+        <fastjson.version>2.0.21</fastjson.version>
+        <redisson.version>3.26.1</redisson.version>
+        <rocketmq.version>5.3.2</rocketmq.version>
+        <sa-token.version>1.37.0</sa-token.version>
+        <commons-io.version>2.16.1</commons-io.version>
+        <freemarker.version>2.3.31</freemarker.version>
+        <pagehelper.version>1.4.7</pagehelper.version>
+        <user-agent.version>1.2.3</user-agent.version>
+        <guava-retry.version>2.0.0</guava-retry.version>
+        <persistence.version>1.0.2</persistence.version>
+        <spring.cloud.alibaba>2021.0.5.0</spring.cloud.alibaba>
+        <swagger-anno.version>2.2.9</swagger-anno.version>
+        <commons-langs.version>3.6</commons-langs.version>
+        <rocketmq-spring.version>2.2.3</rocketmq-spring.version>
+        <commons-beanutils.version>1.9.4</commons-beanutils.version>
+        <spring-statemachine.version>3.2.1</spring-statemachine.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- ==================== Spring 生态 BOM ==================== -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring.boot}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring.cloud}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring.cloud.alibaba}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- ==================== Spring 相关三方依赖 ==================== -->
+            <!-- Jasypt 敏感信息加密 -->
+            <dependency>
+                <groupId>com.github.ulisesbocchio</groupId>
+                <artifactId>jasypt-spring-boot-starter</artifactId>
+                <version>${jasypt.version}</version>
+            </dependency>
+            <!-- Spring State Machine -->
+            <dependency>
+                <groupId>org.springframework.statemachine</groupId>
+                <artifactId>spring-statemachine-core</artifactId>
+                <version>${spring-statemachine.version}</version>
+            </dependency>
+            <!-- MyBatis -->
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${mybatis.version}</version>
+            </dependency>
+            <!-- PageHelper 分页 -->
+            <dependency>
+                <groupId>com.github.pagehelper</groupId>
+                <artifactId>pagehelper-spring-boot-starter</artifactId>
+                <version>${pagehelper.version}</version>
+            </dependency>
+            <!-- Knife4j 网关聚合 -->
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-gateway-spring-boot-starter</artifactId>
+                <version>${knife4j.version}</version>
+            </dependency>
+            <!-- Knife4j 业务 API 文档 -->
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-openapi3-spring-boot-starter</artifactId>
+                <version>${knife4j.version}</version>
+            </dependency>
+            <!-- Sa-Token Reactor（网关） -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-reactor-spring-boot-starter</artifactId>
+                <version>${sa-token.version}</version>
+            </dependency>
+            <!-- Sa-Token Servlet（业务服务） -->
+            <dependency>
+                <groupId>cn.dev33</groupId>
+                <artifactId>sa-token-spring-boot-starter</artifactId>
+                <version>${sa-token.version}</version>
+            </dependency>
+            <!-- RocketMQ Spring Boot -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-spring-boot-starter</artifactId>
+                <version>${rocketmq-spring.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-client</artifactId>
+                <version>${rocketmq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-common</artifactId>
+                <version>${rocketmq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-remoting</artifactId>
+                <version>${rocketmq.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-tools</artifactId>
+                <version>${rocketmq.version}</version>
+            </dependency>
+
+            <!-- ==================== 通用工具与基础库 ==================== -->
+            <!-- Guava -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.rholder</groupId>
+                <artifactId>guava-retrying</artifactId>
+                <version>${guava-retry.version}</version>
+            </dependency>
+            <!-- Apache Commons -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-langs.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
+            <!-- JSON / 工具 -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>fastjson</artifactId>
+                <version>${fastjson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
+            <!-- OpenAPI -->
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations</artifactId>
+                <version>${swagger-anno.version}</version>
+            </dependency>
+            <!-- Redis 客户端 -->
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson</artifactId>
+                <version>${redisson.version}</version>
+            </dependency>
+            <!-- 邮件 / 模板 / 持久化 API -->
+            <dependency>
+                <groupId>com.sun.mail</groupId>
+                <artifactId>javax.mail</artifactId>
+                <version>${mail.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.freemarker</groupId>
+                <artifactId>freemarker</artifactId>
+                <version>${freemarker.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.persistence</groupId>
+                <artifactId>persistence-api</artifactId>
+                <version>${persistence.version}</version>
+            </dependency>
+            <!-- SSH -->
+            <dependency>
+                <groupId>com.jcraft</groupId>
+                <artifactId>jsch</artifactId>
+                <version>${jsch.version}</version>
+            </dependency>
+            <!--            <dependency>-->
+            <!--                <groupId>user-agent-utils</groupId>-->
+            <!--                <artifactId>user-agent-utils</artifactId>-->
+            <!--                <version>${user-agent.version}</version>-->
+            <!--            </dependency>-->
+
+            <!-- ==================== 云存储 SDK ==================== -->
+            <dependency>
+                <groupId>com.aliyun.oss</groupId>
+                <artifactId>aliyun-sdk-oss</artifactId>
+                <version>${oss.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-s3</artifactId>
+                <version>${asw.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.huaweicloud</groupId>
+                <artifactId>esdk-obs-java-bundle</artifactId>
+                <version>${obs.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.huaweicloud</groupId>
+                <artifactId>esdk-obs-java</artifactId>
+                <version>${esdk-obs.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.minio</groupId>
+                <artifactId>minio</artifactId>
+                <version>${minio.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baidubce</groupId>
+                <artifactId>bce-java-sdk</artifactId>
+                <version>${bos.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.qcloud</groupId>
+                <artifactId>cos_api</artifactId>
+                <version>${cos.version}</version>
+            </dependency>
+
+            <!-- ==================== peach-common ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-middleware / peach-redis ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-multicache-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-multicache-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-tool-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-tool-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-stream-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-stream-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-middleware / peach-redission ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-bloomfilter-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-bloomfilter-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-delayqueue-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-delayqueue-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-repeat-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-repeat-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-distributedlock-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redission-distributedlock-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-middleware / peach-rocket ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-rocket</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-rocket-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-rocket-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-rocket-example</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-middleware / peach-openfeign ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-openfeign-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-openfeign-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-middleware / peach-satoken ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-satoken-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-satoken-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-middleware / peach-mongo ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-mongo-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-mongo-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-component / peach-captcha ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-captcha</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-captcha-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-captcha-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-component / peach-email ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-email</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-email-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-email-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-component / peach-storage ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-storage</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-store-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-store-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-component / peach-initialize ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-initialize-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-initialize-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-component / peach-threadpool ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-threadpool-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-threadpool-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-component / peach-code ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-code-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-code-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-component / peach-scheduler ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduler-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduler-provider-quartz</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduler-transport-rocket</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduler-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduler-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-registery ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-registery-spi</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-registery-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-registery-provider-nacos</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-registery-provider-consul</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-registery-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-auth ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-auth-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-auth-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-auth-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-auth-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-auth-log-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-auth-openfeign-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-gateway ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-gateway-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-monitor ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-monitor-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-monitor-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-monitor-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-monitor-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-monitor-openfeign-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-fileservice ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-fileservice-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-fileservice-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-fileservice-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-fileservice-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-fileservice-openfeign-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-message ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-message-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-message-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-message-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-message-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-message-openfeign-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-setting ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-setting-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-setting-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-setting-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-setting-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-setting-openfeign-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-generator ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-generator-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-generator-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-generator-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-generator-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-scheduled ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduled-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduled-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduled-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduled-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduled-openfeign-external</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>
