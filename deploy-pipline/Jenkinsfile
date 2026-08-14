@@ -11,7 +11,7 @@ pipeline {
     environment {
         REGISTRY = 'registry:5000'
         IMAGE_PREFIX = "${REGISTRY}/peach-cloud"
-        MAVEN_IMAGE = 'maven:3.9.11-eclipse-temurin-8'
+        MAVEN_IMAGE = 'peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22'
         DEPLOY_COMPOSE_FILE = 'deploy-pipline/docker-compose.deploy.yml'
         DEPLOY_ENV_CREDENTIAL = 'peach-deploy-env'
         DEPLOY_ROOT = '/var/jenkins_home/peach-cloud-deploy'
@@ -28,6 +28,17 @@ pipeline {
                         returnStdout: true
                     ).trim()
                 }
+            }
+        }
+
+        stage('Build CI image') {
+            steps {
+                sh '''
+                    docker build \
+                      -f deploy-pipline/pipline/maven-node/Dockerfile \
+                      -t "$MAVEN_IMAGE" \
+                      deploy-pipline/pipline/maven-node
+                '''
             }
         }
 

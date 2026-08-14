@@ -8,8 +8,10 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `deploy-pipline/docker-compose.yml` | 启动 GitLab、Jenkins、Registry、Registry UI 和 Jenkins 专用 Docker Engine |
-| `deploy-pipline/jenkins/Dockerfile` | 构建带 Docker CLI、Compose 插件和 GitLab 插件的 Jenkins 镜像 |
+| `deploy-pipline/pipline/docker-compose.yml` | 启动 GitLab、Jenkins、Registry、Registry UI、DevOps Nginx 和 Jenkins 专用 Docker Engine |
+| `deploy-pipline/pipline/jenkins/Dockerfile` | 构建带 Docker CLI、Compose 插件、Node、Maven 和 GitLab 插件的 Jenkins 镜像 |
+| `deploy-pipline/pipline/maven-node/Dockerfile` | 构建流水线 Maven 阶段使用的 Maven + Node CI 镜像 |
+| `deploy-pipline/pipline/nginx/devops.conf` | DevOps 入口 Nginx 配置，按域名代理 Jenkins、GitLab、Registry、Nacos 和 Peach Cloud |
 | `deploy-pipline/Jenkinsfile` | Jenkins 流水线定义 |
 | `deploy-pipline/docker/Dockerfile.service` | 后端服务镜像 Dockerfile |
 | `deploy-pipline/docker/Dockerfile.front` | 前端 Nginx 镜像 Dockerfile |
@@ -37,57 +39,74 @@ registry:5000/peach-cloud/peach-front:<git-sha>
 
 | 层级 | 配置位置 | 含义 |
 | --- | --- | --- |
-| 宿主机到 Jenkins DinD | `deploy-pipline/docker-compose.yml` 的 `PEACH_APP_HTTP_PORT`、`PEACH_APP_HTTPS_PORT` | 控制你在 Windows/宿主机访问 Peach Cloud 的端口 |
+| 宿主机到 DevOps Nginx | `deploy-pipline/pipline/docker-compose.yml` 的 `DEVOPS_HTTP_PORT` | 控制宿主机访问统一反向代理入口的端口，默认 80 |
 | DinD 内部服务端口 | Jenkins Secret file，也就是 `peach-deploy.env` | 控制 `peach-gateway`、`peach-auth` 等容器内部监听端口 |
 
 默认访问链路是：
 
 ```text
-http://localhost:8088
+http://peachsoft.peach-cloud.test
+  -> peach-devops-nginx:80
   -> jenkins-docker:80
   -> peach-front:80
   -> /api 代理到 peach-gateway:${GATEWAY_PORT}
 ```
 
-如果宿主机端口冲突，启动 DevOps 服务前设置：
+如果宿主机 80 端口冲突，启动 DevOps 服务前设置：
 
 ```bash
-PEACH_APP_HTTP_PORT=18088 docker compose -f deploy-pipline/docker-compose.yml up -d
+DEVOPS_HTTP_PORT=18088 docker compose -f deploy-pipline/pipline/docker-compose.yml up -d
 ```
 
-Jenkins Secret file 里不需要再配置 `NGINX_HTTP_PORT`。`peach-front` 在 Jenkins DinD 内固定监听 80，宿主机动态端口由外层 `jenkins-docker` 映射决定。当前没有配置 HTTPS server block；需要 HTTPS 时要补证书挂载和 Nginx 443 配置。
+Jenkins Secret file 里不需要再配置 `NGINX_HTTP_PORT`。`peach-front` 在 Jenkins DinD 内固定监听 80，外层由 `peach-devops-nginx` 代理到 `jenkins-docker:80`。当前没有配置 HTTPS server block；需要 HTTPS 时要补证书挂载和 Nginx 443 配置。
 
 ## 首次启动 DevOps 服务
 
 在仓库根目录执行：
 
 ```bash
-docker compose -f deploy-pipline/docker-compose.yml config
-docker compose -f deploy-pipline/docker-compose.yml build jenkins
-docker compose -f deploy-pipline/docker-compose.yml up -d
-docker compose -f deploy-pipline/docker-compose.yml ps
+docker compose -f deploy-pipline/pipline/docker-compose.yml config
+docker compose -f deploy-pipline/pipline/docker-compose.yml build jenkins
+docker compose -f deploy-pipline/pipline/docker-compose.yml up -d
+docker compose -f deploy-pipline/pipline/docker-compose.yml ps
 ```
 
 默认入口：
 
 | 服务 | 地址 |
 | --- | --- |
-| GitLab | `http://peachsoft.gitlab.test:8929` |
+| Peach Cloud 前端 | `http://peachsoft.peach-cloud.test` |
+| Jenkins | `http://peachsoft.jenkins.test` |
+| GitLab | `http://peachsoft.gitlab.test` |
+| Registry UI | `http://peachsoft.registry.test` |
+| Registry API | `http://peachsoft.registry.test/v2/` |
+| Nacos | `http://peachsoft.nacos.test/nacos/` 或 `http://peachsoft.peach-cloud.test/nacos/` |
+
+直连兜底地址仍保留：
+
+| 服务 | 地址 |
+| --- | --- |
 | Jenkins | `http://localhost:8080` |
+| GitLab | `http://localhost:8929` |
 | Registry API | `http://localhost:5000/v2/` |
 | Registry UI | `http://localhost:5001` |
-| Peach Cloud | `http://localhost:${PEACH_APP_HTTP_PORT:-8088}` |
 
 Windows hosts 需要增加：
 
 ```text
+127.0.0.1 peachsoft.peach-cloud.test
+127.0.0.1 peachsoft.jenkins.test
 127.0.0.1 peachsoft.gitlab.test
+127.0.0.1 peachsoft.registry.test
+127.0.0.1 peachsoft.nacos.test
 ```
+
+如果设置了 `DEVOPS_HTTP_PORT=18088`，浏览器地址需要带端口，例如 `http://peachsoft.peach-cloud.test:18088`。
 
 首次获取 Jenkins 管理员密码：
 
 ```bash
-docker compose -f deploy-pipline/docker-compose.yml exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
 ```
 
 ## Jenkins 凭据
@@ -177,8 +196,16 @@ Nginx 官方镜像启动时会把模板渲染成实际配置。`GATEWAY_PORT` �
 5. SCM 选择 Git，Repository URL 建议使用容器内地址：
 
 ```text
-http://gitlab:8929/<group>/<project>.git
+http://gitlab/<group>/<project>.git
 ```
+
+例如当前项目：
+
+```text
+http://gitlab/peachsoft/peach-cloud.git
+```
+
+不要继续使用 `http://gitlab:8929/...`。当前 GitLab 容器内监听 80，宿主机兜底端口 `8929` 是 Docker 端口映射，不是 Jenkins 容器访问 GitLab 的内部端口。
 
 6. Credentials 选择 `gitlab-peach-cloud`。
 7. Branch Specifier 填部署分支，例如 `*/main`。
@@ -209,7 +236,8 @@ SSL verification: 当前 HTTP 内网地址不需要；改 HTTPS 后必须开启�
 | 阶段 | 行为 |
 | --- | --- |
 | Checkout | 从 GitLab 拉取触发提交，计算 12 位短 SHA |
-| Maven package | 使用 `maven:3.9.11-eclipse-temurin-8` 执行 `mvn -B -Pdocker -DskipTests clean package` |
+| Build CI image | 在 Jenkins DinD 中构建 `peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22` |
+| Maven package | 使用 Maven + Node CI 镜像执行 `mvn -B -Pdocker -DskipTests clean package` |
 | Build and push images | 构建并推送 7 个后端镜像 |
 | Build frontend | 构建前端 dist，打包并推送 `peach-front` 镜像 |
 | Deploy | 同步专用 Compose、Nacos 脚本和 SQL 到 Jenkins 持久目录，拉取镜像并启动容器 |
@@ -236,15 +264,15 @@ peach-openfeign-sentinel-degrade-rules.json
 检查 DevOps 容器：
 
 ```bash
-docker compose -f deploy-pipline/docker-compose.yml ps
+docker compose -f deploy-pipline/pipline/docker-compose.yml ps
 ```
 
 检查 Jenkins 内部 Docker Engine：
 
 ```bash
-docker compose -f deploy-pipline/docker-compose.yml exec jenkins docker ps
-docker compose -f deploy-pipline/docker-compose.yml exec jenkins docker images 'registry:5000/peach-cloud/*'
-curl http://localhost:${PEACH_APP_HTTP_PORT:-8088}/
+docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker ps
+docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker images 'registry:5000/peach-cloud/*'
+curl http://peachsoft.peach-cloud.test/
 curl http://localhost:5000/v2/_catalog
 ```
 
@@ -261,14 +289,16 @@ Registry UI 中应看到 8 个镜像仓库：7 个后端服务和 `peach-front`�
 | 现象 | 检查点 | 处理方式 |
 | --- | --- | --- |
 | Jenkins 构建找不到 `deploy-pipline/Jenkinsfile` | Pipeline Script Path | 确认填的是 `deploy-pipline/Jenkinsfile` |
-| Jenkins 镜像构建失败，找不到 Docker CLI | Jenkins 镜像是否由 `deploy-pipline/jenkins/Dockerfile` 构建 | 重新执行 `docker compose -f deploy-pipline/docker-compose.yml build jenkins` |
+| Jenkins 镜像构建失败，找不到 Docker CLI | Jenkins 镜像是否由 `deploy-pipline/pipline/jenkins/Dockerfile` 构建 | 重新执行 `docker compose -f deploy-pipline/pipline/docker-compose.yml build jenkins` |
+| Maven 阶段报 `Cannot run program "node"` | Maven 阶段是否仍在使用纯 `maven:3.9.11-eclipse-temurin-8` 镜像 | 使用本仓库 `Jenkinsfile` 的 `Build CI image` 阶段，确保 Maven package 使用 `peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22` |
 | Maven 成功但后端镜像构建找不到 jar | `*-launch/target/*.jar` 是否存在 | 检查 Maven 阶段输出和模块打包结果 |
 | 前端页面 404 或白屏 | `peach-front` 镜像是否包含 `index.html` | 检查 `Build frontend` 阶段和 `docker run --rm <image> ls /usr/share/nginx/html` |
 | 前端能打开但接口不通 | `GATEWAY_PORT` 与 `peach-gateway` 的 `SERVER_PORT` 是否一致 | 检查 Secret file、`docker-compose.deploy.yml` 和 `peach-front` 容器渲染后的 Nginx 配置 |
 | WebSocket 连接失败 | 前端实际 WS 地址、Nginx `/api/` 代理和网关 WebSocket 路由是否匹配 | 先看浏览器 Network 中的 WS 地址，再核对网关路由 |
 | 推送 Registry 报 HTTP/HTTPS 协议错误 | DinD 是否配置 insecure registry | 检查 `jenkins-docker` 参数 `--insecure-registry=registry:5000` |
 | Webhook 无法访问 Jenkins | GitLab outbound policy 和 Docker 网络 | 确认服务都在 `peach-devops` 网络，只放行 Jenkins 地址 |
-| 主机访问不到 Peach Cloud | 外层 `PEACH_APP_HTTP_PORT` 映射和 `peach-front` 容器状态 | 检查 `jenkins-docker` 是否映射宿主机端口到内部 80，检查 `peach-front` 是否运行 |
+| 主机访问不到 Peach Cloud | `DEVOPS_HTTP_PORT`、hosts 解析和 `peach-front` 容器状态 | 检查 hosts 是否指向 `127.0.0.1`，检查 `peach-devops-nginx` 和 Jenkins DinD 内的 `peach-front` 是否运行 |
+| Nacos 代理 502 | Peach Cloud 运行 Compose 是否已启动 Nacos | Jenkins 首次完成 Deploy 后，`jenkins-docker:8849` 才会有 Nacos 服务 |
 | MySQL 密码修改后仍认证失败 | 持久数据目录已有旧密码 | 使用旧密码；只有确认数据可丢时再清理数据 |
 
 ## 生产边界
@@ -284,7 +314,7 @@ Jenkins Docker-in-Docker 使用特权模式，等同高权限基础设施。应�
 修改本目录后建议执行：
 
 ```bash
-docker compose -f deploy-pipline/docker-compose.yml config
+docker compose -f deploy-pipline/pipline/docker-compose.yml config
 docker compose --env-file deploy-pipline/peach-deploy.env.example -f deploy-pipline/docker-compose.deploy.yml config
 node scripts/check-utf8.mjs
 git diff --check
