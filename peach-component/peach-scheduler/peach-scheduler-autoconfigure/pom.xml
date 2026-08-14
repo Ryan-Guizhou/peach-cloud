@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-scheduler-autoconfigure</artifactId>
+    <name>peach-scheduler-autoconfigure</name>
+    <description>Distributed scheduler executor auto-configuration</description>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>com.peach</groupId>
+        <artifactId>peach-scheduler</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-scheduler-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-threadpool-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+    </dependencies>
+</project>

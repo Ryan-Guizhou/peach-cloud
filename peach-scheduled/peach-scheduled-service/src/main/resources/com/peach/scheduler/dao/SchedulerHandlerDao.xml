@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.scheduler.dao.SchedulerHandlerDao">
+    <sql id="allColumnAlias">
+        ID as id, APPLICATION_NAME as applicationName, HANDLER_NAME as handlerName, DESCRIPTION as description,
+        STATUS as status, INSTANCE_ID as instanceId, LAST_HEARTBEAT_TIME as lastHeartbeatTime,
+        CREATED_TIME as createdTime, MODIFY_TIME as modifyTime
+    </sql>
+
+    <insert id="upsert" parameterType="com.peach.scheduled.entity.SchedulerHandlerDO">
+        INSERT INTO PEACH_SCHEDULER_HANDLER (
+            APPLICATION_NAME, HANDLER_NAME, DESCRIPTION, STATUS, INSTANCE_ID, LAST_HEARTBEAT_TIME, CREATED_TIME, MODIFY_TIME
+        ) VALUES (
+            #{applicationName,jdbcType=VARCHAR}, #{handlerName,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR},
+            'ONLINE', #{instanceId,jdbcType=VARCHAR}, NOW(), NOW(), NOW()
+        ) ON DUPLICATE KEY UPDATE
+            DESCRIPTION = VALUES(DESCRIPTION),
+            STATUS = 'ONLINE',
+            INSTANCE_ID = VALUES(INSTANCE_ID),
+            LAST_HEARTBEAT_TIME = NOW(),
+            MODIFY_TIME = NOW()
+    </insert>
+
+    <select id="selectOne" resultType="com.peach.scheduled.entity.SchedulerHandlerDO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_SCHEDULER_HANDLER
+        WHERE APPLICATION_NAME = #{applicationName,jdbcType=VARCHAR}
+          AND HANDLER_NAME = #{handlerName,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectOnline" resultType="com.peach.scheduled.entity.SchedulerHandlerDO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_SCHEDULER_HANDLER
+        WHERE STATUS = 'ONLINE'
+        ORDER BY APPLICATION_NAME, HANDLER_NAME
+    </select>
+
+    <update id="markOfflineBefore">
+        UPDATE PEACH_SCHEDULER_HANDLER
+        SET STATUS = 'OFFLINE', MODIFY_TIME = NOW()
+        WHERE STATUS = 'ONLINE'
+          AND LAST_HEARTBEAT_TIME &lt; DATE_SUB(NOW(), INTERVAL #{seconds,jdbcType=INTEGER} SECOND)
+    </update>
+</mapper>

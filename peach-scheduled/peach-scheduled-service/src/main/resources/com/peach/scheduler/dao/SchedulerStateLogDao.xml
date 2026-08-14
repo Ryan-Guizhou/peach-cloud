@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.scheduler.dao.SchedulerStateLogDao">
+    <insert id="insert">
+        INSERT INTO PEACH_SCHEDULER_STATE_LOG (
+            AGGREGATE_TYPE, AGGREGATE_ID, FROM_STATE, EVENT, TO_STATE, OPERATOR_ID, REMARK, CREATED_TIME
+        ) VALUES (
+            #{aggregateType,jdbcType=VARCHAR}, #{aggregateId,jdbcType=VARCHAR}, #{fromState,jdbcType=VARCHAR},
+            #{event,jdbcType=VARCHAR}, #{toState,jdbcType=VARCHAR}, #{operatorId,jdbcType=VARCHAR},
+            #{remark,jdbcType=VARCHAR}, NOW()
+        )
+    </insert>
+</mapper>

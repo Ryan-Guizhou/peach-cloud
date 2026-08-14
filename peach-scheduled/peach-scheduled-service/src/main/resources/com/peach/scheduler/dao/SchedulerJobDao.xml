@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.scheduler.dao.SchedulerJobDao">
+    <resultMap id="JobMap" type="com.peach.scheduled.entity.SchedulerJobDO">
+        <id column="ID" property="id" />
+        <result column="JOB_CODE" property="jobCode" />
+        <result column="JOB_NAME" property="jobName" />
+        <result column="APPLICATION_NAME" property="applicationName" />
+        <result column="HANDLER_NAME" property="handlerName" />
+        <result column="DESCRIPTION" property="description" />
+        <result column="SCHEDULE_TYPE" property="scheduleType" />
+        <result column="CRON_EXPRESSION" property="cronExpression" />
+        <result column="INTERVAL_SECONDS" property="intervalSeconds" />
+        <result column="START_AT" property="startAt" />
+        <result column="TIME_ZONE" property="timeZone" />
+        <result column="MISFIRE_POLICY" property="misfirePolicy" />
+        <result column="CONCURRENCY_POLICY" property="concurrencyPolicy" />
+        <result column="TIMEOUT_MS" property="timeoutMs" />
+        <result column="MAX_ATTEMPTS" property="maxAttempts" />
+        <result column="RETRY_INTERVAL_SECONDS" property="retryIntervalSeconds" />
+        <result column="PARAMETERS_JSON" property="parametersJson" />
+        <result column="STATE" property="state" javaType="com.peach.scheduled.common.JobState" />
+        <result column="SCHEDULE_VERSION" property="scheduleVersion" />
+        <result column="SYNC_STATUS" property="syncStatus" javaType="com.peach.scheduled.common.SyncStatus" />
+        <result column="LAST_SYNC_ERROR" property="lastSyncError" />
+        <result column="NEXT_FIRE_TIME" property="nextFireTime" />
+        <result column="LAST_FIRE_TIME" property="lastFireTime" />
+        <result column="VERSION" property="version" />
+        <result column="CREATOR_ID" property="creatorId" />
+        <result column="CREATED_TIME" property="createdTime" />
+        <result column="MODIFIER_ID" property="modifierId" />
+        <result column="MODIFY_TIME" property="modifyTime" />
+    </resultMap>
+
+    <sql id="columns">
+        ID, JOB_CODE, JOB_NAME, APPLICATION_NAME, HANDLER_NAME, DESCRIPTION, SCHEDULE_TYPE,
+        CRON_EXPRESSION, INTERVAL_SECONDS, START_AT, TIME_ZONE, MISFIRE_POLICY, CONCURRENCY_POLICY,
+        TIMEOUT_MS, MAX_ATTEMPTS, RETRY_INTERVAL_SECONDS, PARAMETERS_JSON, STATE, SCHEDULE_VERSION,
+        SYNC_STATUS, LAST_SYNC_ERROR, NEXT_FIRE_TIME, LAST_FIRE_TIME, VERSION, CREATOR_ID, CREATED_TIME,
+        MODIFIER_ID, MODIFY_TIME
+    </sql>
+
+    <select id="selectById" resultMap="JobMap">
+        SELECT <include refid="columns" />
+        FROM PEACH_SCHEDULER_JOB
+        WHERE ID = #{id}
+    </select>
+
+    <select id="selectByCode" resultMap="JobMap">
+        SELECT <include refid="columns" />
+        FROM PEACH_SCHEDULER_JOB
+        WHERE JOB_CODE = #{jobCode}
+    </select>
+
+    <select id="selectByIdForUpdate" resultMap="JobMap">
+        SELECT <include refid="columns" />
+        FROM PEACH_SCHEDULER_JOB
+        WHERE ID = #{id}
+        FOR UPDATE
+    </select>
+
+    <insert id="insert" parameterType="com.peach.scheduled.entity.SchedulerJobDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO PEACH_SCHEDULER_JOB
+        (JOB_CODE, JOB_NAME, APPLICATION_NAME, HANDLER_NAME, DESCRIPTION, SCHEDULE_TYPE, CRON_EXPRESSION,
+         INTERVAL_SECONDS, START_AT, TIME_ZONE, MISFIRE_POLICY, CONCURRENCY_POLICY, TIMEOUT_MS, MAX_ATTEMPTS,
+         RETRY_INTERVAL_SECONDS, PARAMETERS_JSON, STATE, SCHEDULE_VERSION, SYNC_STATUS, VERSION, CREATOR_ID,
+         CREATED_TIME, MODIFIER_ID, MODIFY_TIME)
+        VALUES
+        (#{jobCode}, #{jobName}, #{applicationName}, #{handlerName}, #{description}, #{scheduleType},
+         #{cronExpression}, #{intervalSeconds}, #{startAt}, #{timeZone}, #{misfirePolicy}, #{concurrencyPolicy},
+         #{timeoutMs}, #{maxAttempts}, #{retryIntervalSeconds}, #{parametersJson}, #{state}, #{scheduleVersion},
+         #{syncStatus}, #{version}, #{creatorId}, NOW(3), #{modifierId}, NOW(3))
+    </insert>
+
+    <update id="updateDefinition" parameterType="com.peach.scheduled.entity.SchedulerJobDO">
+        UPDATE PEACH_SCHEDULER_JOB
+        SET JOB_NAME = #{jobName},
+            APPLICATION_NAME = #{applicationName},
+            HANDLER_NAME = #{handlerName},
+            DESCRIPTION = #{description},
+            SCHEDULE_TYPE = #{scheduleType},
+            CRON_EXPRESSION = #{cronExpression},
+            INTERVAL_SECONDS = #{intervalSeconds},
+            START_AT = #{startAt},
+            TIME_ZONE = #{timeZone},
+            MISFIRE_POLICY = #{misfirePolicy},
+            CONCURRENCY_POLICY = #{concurrencyPolicy},
+            TIMEOUT_MS = #{timeoutMs},
+            MAX_ATTEMPTS = #{maxAttempts},
+            RETRY_INTERVAL_SECONDS = #{retryIntervalSeconds},
+            PARAMETERS_JSON = #{parametersJson},
+            SCHEDULE_VERSION = SCHEDULE_VERSION + 1,
+            SYNC_STATUS = 'PENDING',
+            LAST_SYNC_ERROR = NULL,
+            VERSION = VERSION + 1,
+            MODIFIER_ID = #{modifierId},
+            MODIFY_TIME = NOW(3)
+        WHERE ID = #{id}
+          AND VERSION = #{version}
+          AND STATE &lt;&gt; 'DELETED'
+    </update>
+
+    <update id="updateState">
+        UPDATE PEACH_SCHEDULER_JOB
+        SET STATE = #{toState},
+            SCHEDULE_VERSION = SCHEDULE_VERSION + 1,
+            SYNC_STATUS = 'PENDING',
+            VERSION = VERSION + 1,
+            MODIFIER_ID = #{modifierId},
+            MODIFY_TIME = NOW(3)
+        WHERE ID = #{id}
+          AND STATE = #{fromState}
+          AND VERSION = #{version}
+    </update>
+
+    <update id="markSyncSuccess">
+        UPDATE PEACH_SCHEDULER_JOB
+        SET SYNC_STATUS = 'SYNCED', LAST_SYNC_ERROR = NULL
+        WHERE ID = #{id} AND SCHEDULE_VERSION = #{scheduleVersion}
+    </update>
+
+    <update id="markSyncFailure">
+        UPDATE PEACH_SCHEDULER_JOB
+        SET SYNC_STATUS = 'FAILED', LAST_SYNC_ERROR = #{error}
+        WHERE ID = #{id} AND SCHEDULE_VERSION = #{scheduleVersion}
+    </update>
+
+    <select id="selectPendingSync" resultMap="JobMap">
+        SELECT <include refid="columns" />
+        FROM PEACH_SCHEDULER_JOB
+        WHERE SYNC_STATUS IN ('PENDING', 'FAILED')
+        ORDER BY MODIFY_TIME ASC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectPage" resultMap="JobMap">
+        SELECT <include refid="columns" />
+        FROM PEACH_SCHEDULER_JOB
+        WHERE STATE &lt;&gt; 'DELETED'
+        <if test="applicationName != null and applicationName != ''">
+            AND APPLICATION_NAME = #{applicationName}
+        </if>
+        <if test="state != null and state != ''">
+            AND STATE = #{state}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (JOB_CODE LIKE CONCAT('%', #{keyword}, '%') OR JOB_NAME LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY MODIFY_TIME DESC
+        LIMIT #{safePageSize} OFFSET #{offset}
+    </select>
+</mapper>

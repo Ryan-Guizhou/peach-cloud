@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.scheduler.dao.SchedulerJobVersionDao">
+    <insert id="insertSnapshot" parameterType="com.peach.scheduled.entity.SchedulerJobDO">
+        INSERT INTO PEACH_SCHEDULER_JOB_VERSION (
+            JOB_ID, SCHEDULE_VERSION, JOB_CODE, APPLICATION_NAME, HANDLER_NAME, SCHEDULE_TYPE, CRON_EXPRESSION,
+            INTERVAL_SECONDS, START_AT, TIME_ZONE, MISFIRE_POLICY, CONCURRENCY_POLICY, TIMEOUT_MS, MAX_ATTEMPTS,
+            RETRY_INTERVAL_SECONDS, PARAMETERS_JSON, STATE, CREATED_TIME, CREATOR_ID
+        ) VALUES (
+            #{id,jdbcType=BIGINT}, #{scheduleVersion,jdbcType=BIGINT}, #{jobCode,jdbcType=VARCHAR},
+            #{applicationName,jdbcType=VARCHAR}, #{handlerName,jdbcType=VARCHAR}, #{scheduleType,jdbcType=VARCHAR},
+            #{cronExpression,jdbcType=VARCHAR}, #{intervalSeconds,jdbcType=BIGINT}, #{startAt,jdbcType=TIMESTAMP},
+            #{timeZone,jdbcType=VARCHAR}, #{misfirePolicy,jdbcType=VARCHAR}, #{concurrencyPolicy,jdbcType=VARCHAR},
+            #{timeoutMs,jdbcType=BIGINT}, #{maxAttempts,jdbcType=INTEGER}, #{retryIntervalSeconds,jdbcType=INTEGER},
+            #{parametersJson,jdbcType=LONGVARCHAR}, #{state,jdbcType=VARCHAR}, NOW(), #{modifierId,jdbcType=VARCHAR}
+        )
+    </insert>
+</mapper>

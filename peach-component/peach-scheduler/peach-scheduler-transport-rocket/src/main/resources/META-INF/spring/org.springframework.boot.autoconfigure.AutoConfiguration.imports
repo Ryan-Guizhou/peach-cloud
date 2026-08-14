@@ -1,0 +1,3 @@
+com.peach.scheduler.rocket.jdbc.SchedulerRocketJdbcAutoConfiguration
+com.peach.scheduler.rocket.PeachSchedulerRocketAutoConfiguration
+com.peach.scheduler.rocket.jdbc.SchedulerRocketDurabilityAutoConfiguration

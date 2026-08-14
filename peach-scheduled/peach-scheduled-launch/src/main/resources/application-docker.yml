@@ -1,0 +1,74 @@
+server:
+  port: ${PEACH_SCHEDULER_PORT:8088}
+
+spring:
+  application:
+    name: peach-scheduler
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:nacos:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:PEACH-CLOUD}
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:nacos:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:PEACH-CLOUD}
+        file-extension: yml
+  config:
+    import:
+      - optional:nacos:peach-common.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-openfeign.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-satoken.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-datasource.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-knife4j.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+  datasource:
+    url: ${PEACH_SCHEDULER_DB_URL:jdbc:mysql://mysql:3306/peach?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
+    username: ${PEACH_SCHEDULER_DB_USERNAME:root}
+    password: ${PEACH_SCHEDULER_DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: never
+    overwrite-existing-jobs: false
+    wait-for-jobs-to-complete-on-shutdown: false
+    properties:
+      org.quartz.scheduler.instanceName: peachScheduler
+      org.quartz.scheduler.instanceId: AUTO
+      org.quartz.jobStore.class: org.springframework.scheduling.quartz.LocalDataSourceJobStore
+      org.quartz.jobStore.driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+      org.quartz.jobStore.isClustered: true
+      org.quartz.jobStore.clusterCheckinInterval: 15000
+      org.quartz.jobStore.misfireThreshold: 60000
+      org.quartz.jobStore.tablePrefix: QRTZ_
+      org.quartz.threadPool.threadCount: 8
+      org.quartz.threadPool.threadPriority: 5
+
+mybatis:
+  mapper-locations: classpath*:com/peach/scheduler/dao/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:rocketmq-namesrv:9876}
+  producer:
+    group: peach-scheduler-producer
+
+peach:
+  scheduler:
+    enabled: true
+    provider: quartz
+    rocket:
+      require-jdbc: true
+  rocket:
+    enabled: true
+    app-name: peach-scheduler
+    topic:
+      auto-create: false
+    consumer:
+      dynamic-register: true
+      enable-idempotent: true
+    outbox:
+      enabled: true

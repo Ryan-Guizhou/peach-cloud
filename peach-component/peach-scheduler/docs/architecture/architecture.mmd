@@ -1,0 +1,21 @@
+flowchart TB
+    UI[peach-cloud-front] --> REST[peach-scheduler REST]
+    REST --> JDBC[(PEACH_SCHEDULER_* canonical JDBC)]
+    JDBC --> SM[Spring StateMachine]
+    JDBC --> REC[SchedulerReconciler]
+    REC --> SPI[SchedulingProvider SPI]
+    SPI --> Q[QuartzSchedulingProvider]
+    Q --> QDB[(Quartz JDBC QRTZ_*)]
+    Q --> BRIDGE[Quartz Trigger Bridge]
+    BRIDGE --> OCC[Create JDBC Execution]
+    OCC --> DISP[JobDispatcher SPI]
+    DISP --> OUTBOX[(Peach Rocket JDBC Outbox)]
+    OUTBOX --> MQ[RocketMQ]
+    MQ --> EXEC[Business Service Scheduler Consumer]
+    EXEC --> CLAIM[Same-Token Claim API]
+    CLAIM --> PE[PeachJobExecutor]
+    PE --> TP[ThreadPoolManager / SCHEDULED]
+    TP --> H[@PeachJob JobHandler]
+    H --> RESULT[Result Outbox]
+    RESULT --> MQ
+    EXT[Future Provider Module] -.->|providerId| .-> SPI

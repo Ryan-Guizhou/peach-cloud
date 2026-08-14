@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.scheduler.dao.SchedulerExecutionAttemptDao">
+    <insert id="insertStart">
+        INSERT INTO PEACH_SCHEDULER_EXECUTION_ATTEMPT (
+            EXECUTION_ID, ATTEMPT_NO, EXECUTOR_INSTANCE, STATE, START_TIME, CREATED_TIME
+        ) VALUES (
+            #{executionId,jdbcType=VARCHAR}, #{attemptNo,jdbcType=INTEGER}, #{executorInstance,jdbcType=VARCHAR},
+            'RUNNING', #{startTime,jdbcType=TIMESTAMP}, NOW(3)
+        )
+    </insert>
+
+    <update id="complete">
+        UPDATE PEACH_SCHEDULER_EXECUTION_ATTEMPT
+        SET STATE = #{state,jdbcType=VARCHAR},
+            FINISH_TIME = #{finishTime,jdbcType=TIMESTAMP},
+            DURATION_MS = #{durationMs,jdbcType=BIGINT},
+            ERROR_TYPE = #{errorType,jdbcType=VARCHAR},
+            ERROR_MESSAGE = #{errorMessage,jdbcType=VARCHAR}
+        WHERE EXECUTION_ID = #{executionId,jdbcType=VARCHAR}
+          AND ATTEMPT_NO = #{attemptNo,jdbcType=INTEGER}
+    </update>
+</mapper>

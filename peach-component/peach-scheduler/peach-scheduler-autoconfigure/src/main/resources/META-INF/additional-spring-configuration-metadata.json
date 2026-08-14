@@ -1,0 +1,45 @@
+{
+  "properties": [
+    {
+      "name": "peach.scheduler.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enable Peach Scheduler."
+    },
+    {
+      "name": "peach.scheduler.provider",
+      "type": "java.lang.String",
+      "defaultValue": "quartz",
+      "description": "Selected SchedulingProvider id. The built-in provider id is quartz."
+    },
+    {
+      "name": "peach.scheduler.application-name",
+      "type": "java.lang.String",
+      "description": "Logical application name used by scheduler metadata."
+    },
+    {
+      "name": "peach.scheduler.execution.default-timeout-ms",
+      "type": "java.lang.Long",
+      "defaultValue": 1800000,
+      "description": "Best-effort execution timeout in milliseconds. Values less than or equal to zero wait indefinitely."
+    },
+    {
+      "name": "peach.scheduler.execution.memory-history-limit",
+      "type": "java.lang.Integer",
+      "defaultValue": 1000,
+      "description": "Maximum records retained by the development in-memory execution store."
+    },
+    {
+      "name": "peach.scheduler.execution.persist-error-message",
+      "type": "java.lang.Boolean",
+      "defaultValue": false,
+      "description": "Persist sanitized exception messages in execution history. Disabled by default to reduce sensitive-data leakage risk."
+    },
+    {
+      "name": "peach.scheduler.store.type",
+      "type": "java.lang.String",
+      "defaultValue": "memory",
+      "description": "Execution history store type. Built-in values are memory and jdbc."
+    }
+  ]
+}

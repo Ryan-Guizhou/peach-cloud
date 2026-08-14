@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-scheduled-openfeign-external</artifactId>
+    <name>peach-scheduled-openfeign-external</name>
+    <description>scheduled executor-side OpenFeign integration</description>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>com.peach</groupId>
+        <artifactId>peach-scheduled</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-scheduler-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-scheduler-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-scheduled-entity</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-openfeign-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+    </dependencies>
+</project>

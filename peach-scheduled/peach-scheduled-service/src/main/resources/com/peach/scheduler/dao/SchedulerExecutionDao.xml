@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.scheduler.dao.SchedulerExecutionDao">
+    <resultMap id="ExecutionMap" type="com.peach.scheduled.entity.SchedulerExecutionDO">
+        <id column="EXECUTION_ID" property="executionId" />
+        <result column="JOB_ID" property="jobId" />
+        <result column="JOB_CODE" property="jobCode" />
+        <result column="OCCURRENCE_KEY" property="occurrenceKey" />
+        <result column="TRIGGER_TYPE" property="triggerType" />
+        <result column="SCHEDULED_TIME" property="scheduledTime" />
+        <result column="STATE" property="state" javaType="com.peach.scheduled.common.ExecutionState" />
+        <result column="ATTEMPT" property="attempt" />
+        <result column="EXECUTOR_INSTANCE" property="executorInstance" />
+        <result column="LEASE_UNTIL" property="leaseUntil" />
+        <result column="NEXT_RETRY_TIME" property="nextRetryTime" />
+        <result column="START_TIME" property="startTime" />
+        <result column="FINISH_TIME" property="finishTime" />
+        <result column="DURATION_MS" property="durationMs" />
+        <result column="TRACE_ID" property="traceId" />
+        <result column="ERROR_TYPE" property="errorType" />
+        <result column="ERROR_MESSAGE" property="errorMessage" />
+        <result column="VERSION" property="version" />
+        <result column="CREATED_TIME" property="createdTime" />
+        <result column="MODIFY_TIME" property="modifyTime" />
+    </resultMap>
+    <sql id="columns">
+        EXECUTION_ID, JOB_ID, JOB_CODE, OCCURRENCE_KEY, TRIGGER_TYPE, SCHEDULED_TIME, STATE, ATTEMPT,
+        EXECUTOR_INSTANCE, LEASE_UNTIL, NEXT_RETRY_TIME, START_TIME, FINISH_TIME, DURATION_MS, TRACE_ID,
+        ERROR_TYPE, ERROR_MESSAGE, VERSION, CREATED_TIME, MODIFY_TIME
+    </sql>
+    <select id="selectById" resultMap="ExecutionMap">
+        SELECT <include refid="columns" /> FROM PEACH_SCHEDULER_EXECUTION WHERE EXECUTION_ID = #{executionId}
+    </select>
+    <insert id="insertIgnore" parameterType="com.peach.scheduled.entity.SchedulerExecutionDO">
+        INSERT IGNORE INTO PEACH_SCHEDULER_EXECUTION
+        (EXECUTION_ID, JOB_ID, JOB_CODE, OCCURRENCE_KEY, TRIGGER_TYPE, SCHEDULED_TIME, STATE, ATTEMPT,
+         TRACE_ID, VERSION, CREATED_TIME, MODIFY_TIME)
+        VALUES
+        (#{executionId}, #{jobId}, #{jobCode}, #{occurrenceKey}, #{triggerType}, #{scheduledTime}, #{state}, #{attempt},
+         #{traceId}, #{version}, NOW(3), NOW(3))
+    </insert>
+    <update id="updateState">
+        UPDATE PEACH_SCHEDULER_EXECUTION
+        SET STATE = #{toState}, ERROR_TYPE = #{errorType}, ERROR_MESSAGE = #{errorMessage},
+            VERSION = VERSION + 1, MODIFY_TIME = NOW(3)
+        WHERE EXECUTION_ID = #{executionId} AND STATE = #{fromState} AND VERSION = #{version}
+    </update>
+    <update id="claim">
+        UPDATE PEACH_SCHEDULER_EXECUTION
+        SET STATE = 'RUNNING', EXECUTOR_INSTANCE = #{executorInstance}, LEASE_UNTIL = #{leaseUntil},
+            START_TIME = NOW(3), FINISH_TIME = NULL, DURATION_MS = NULL,
+            VERSION = VERSION + 1, MODIFY_TIME = NOW(3)
+        WHERE EXECUTION_ID = #{executionId} AND STATE = 'QUEUED' AND VERSION = #{version}
+    </update>
+    <update id="complete">
+        UPDATE PEACH_SCHEDULER_EXECUTION
+        SET STATE = #{toState}, FINISH_TIME = #{finishTime}, DURATION_MS = #{durationMs}, LEASE_UNTIL = NULL,
+            NEXT_RETRY_TIME = NULL, ERROR_TYPE = #{errorType}, ERROR_MESSAGE = #{errorMessage},
+            VERSION = VERSION + 1, MODIFY_TIME = NOW(3)
+        WHERE EXECUTION_ID = #{executionId} AND STATE = #{fromState} AND VERSION = #{version}
+          AND EXECUTOR_INSTANCE = #{executorInstance}
+    </update>
+    <update id="scheduleRetry">
+        UPDATE PEACH_SCHEDULER_EXECUTION
+        SET STATE = 'RETRY_WAIT', LEASE_UNTIL = NULL, NEXT_RETRY_TIME = #{nextRetryTime},
+            FINISH_TIME = NOW(3), ERROR_TYPE = #{errorType}, ERROR_MESSAGE = #{errorMessage},
+            VERSION = VERSION + 1, MODIFY_TIME = NOW(3)
+        WHERE EXECUTION_ID = #{executionId} AND STATE = 'RUNNING' AND VERSION = #{version}
+    </update>
+    <update id="requeueRetry">
+        UPDATE PEACH_SCHEDULER_EXECUTION
+        SET STATE = 'QUEUED', ATTEMPT = ATTEMPT + 1, EXECUTOR_INSTANCE = NULL, LEASE_UNTIL = NULL,
+            NEXT_RETRY_TIME = NULL, START_TIME = NULL, FINISH_TIME = NULL, DURATION_MS = NULL,
+            VERSION = VERSION + 1, MODIFY_TIME = NOW(3)
+        WHERE EXECUTION_ID = #{executionId} AND STATE = 'RETRY_WAIT' AND VERSION = #{version}
+    </update>
+    <select id="countActiveByJobId" resultType="int">
+        SELECT COUNT(1)
+        FROM PEACH_SCHEDULER_EXECUTION
+        WHERE JOB_ID = #{jobId}
+          AND STATE IN ('QUEUED', 'RUNNING', 'RETRY_WAIT')
+    </select>
+    <select id="selectDeferredCreated" resultMap="ExecutionMap">
+        SELECT <include refid="columns" /> FROM PEACH_SCHEDULER_EXECUTION
+        WHERE STATE = 'CREATED'
+        ORDER BY CREATED_TIME ASC LIMIT #{limit}
+    </select>
+    <select id="selectExpiredRunning" resultMap="ExecutionMap">
+        SELECT <include refid="columns" /> FROM PEACH_SCHEDULER_EXECUTION
+        WHERE STATE = 'RUNNING' AND LEASE_UNTIL &lt; #{now}
+        ORDER BY LEASE_UNTIL ASC LIMIT #{limit}
+    </select>
+    <select id="selectDueRetries" resultMap="ExecutionMap">
+        SELECT <include refid="columns" /> FROM PEACH_SCHEDULER_EXECUTION
+        WHERE STATE = 'RETRY_WAIT' AND NEXT_RETRY_TIME &lt;= #{now}
+        ORDER BY NEXT_RETRY_TIME ASC LIMIT #{limit}
+    </select>
+    <select id="selectPage" resultMap="ExecutionMap">
+        SELECT <include refid="columns" /> FROM PEACH_SCHEDULER_EXECUTION
+        WHERE 1 = 1
+        <if test="jobCode != null and jobCode != ''">AND JOB_CODE = #{jobCode}</if>
+        <if test="state != null and state != ''">AND STATE = #{state}</if>
+        ORDER BY CREATED_TIME DESC
+        LIMIT #{safePageSize} OFFSET #{offset}
+    </select>
+</mapper>

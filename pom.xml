@@ -57,6 +57,7 @@
         <bos.version>0.10.228</bos.version>
         <swagger-anno.version>2.2.9</swagger-anno.version>
         <jsch.version>0.1.55</jsch.version>
+        <spring-statemachine.version>3.2.1</spring-statemachine.version>
     </properties>
 
     <modules>
@@ -71,6 +72,7 @@
         <module>peach-message</module>
         <module>peach-setting</module>
         <module>peach-generator</module>
+        <module>peach-scheduled</module>
     </modules>
 
     <dependencyManagement>
@@ -148,6 +150,12 @@
                 <groupId>com.alibaba</groupId>
                 <artifactId>fastjson</artifactId>
                 <version>${fastjson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.statemachine</groupId>
+                <artifactId>spring-statemachine-core</artifactId>
+                <version>${spring-statemachine.version}</version>
             </dependency>
 
             <dependency>
@@ -746,6 +754,67 @@
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-satoken-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduler-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduler-provider-quartz</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduler-transport-rocket</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduler-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduler-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduled-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduled-entity</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduled-service</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduled-rest</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-scheduled-openfeign-external</artifactId>
                 <version>${revision}</version>
             </dependency>
         </dependencies>

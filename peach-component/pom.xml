@@ -22,6 +22,8 @@
         <module>peach-initialize</module>
         <module>peach-threadpool</module>
         <module>peach-code</module>
+        <module>peach-scheduler</module>
+
     </modules>
 
 </project>

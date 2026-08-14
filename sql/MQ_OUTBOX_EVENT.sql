@@ -1,0 +1,31 @@
+-- RocketMQ JDBC Outbox 可靠消息表（peach-scheduled / peach-scheduler-transport-rocket）
+
+CREATE TABLE MQ_OUTBOX_EVENT
+(
+    ID                 BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+    MESSAGE_ID         VARCHAR(64)  NOT NULL COMMENT '消息唯一 ID',
+    TOPIC              VARCHAR(128) NOT NULL COMMENT 'RocketMQ Topic',
+    TAG                VARCHAR(128) NULL COMMENT 'RocketMQ Tag',
+    BUSINESS_KEY       VARCHAR(128) NULL COMMENT '业务 Key，通常为 executionId',
+    PAYLOAD            LONGTEXT     NOT NULL COMMENT 'Base64 编码后的标准消息 Envelope',
+    SEND_MODE          VARCHAR(32)  NOT NULL DEFAULT 'NORMAL' COMMENT '发送模式：NORMAL、ORDERLY、DELAY',
+    SHARDING_KEY       VARCHAR(128) NULL COMMENT '顺序消息分片键',
+    DELAY_LEVEL        INT          NULL COMMENT 'RocketMQ 延迟级别',
+    PAYLOAD_TYPE       VARCHAR(256) NULL COMMENT 'Payload 类型名称',
+    HEADERS            TEXT         NULL COMMENT '消息 Headers 快照，禁止写入敏感字段',
+    STATUS             VARCHAR(32)  NOT NULL COMMENT '状态：INIT、SENDING、SENT、RETRY、FAILED',
+    RETRY_COUNT        INT          NOT NULL DEFAULT 0 COMMENT '重试次数',
+    NEXT_RETRY_TIME    DATETIME(3)  NOT NULL COMMENT '下次可重试时间',
+    LAST_ERROR         VARCHAR(1000) NULL COMMENT '脱敏后的最近错误',
+    BROKER_MESSAGE_ID  VARCHAR(128) NULL COMMENT 'Broker 返回的消息 ID',
+    CLAIMED_BY         VARCHAR(128) NULL COMMENT 'Outbox 抢占实例标识',
+    CLAIMED_AT         DATETIME(3)  NULL COMMENT 'Outbox 抢占时间',
+    SENT_AT            DATETIME(3)  NULL COMMENT '投递成功时间',
+    CREATED_AT         DATETIME(3)  NOT NULL COMMENT '创建时间',
+    UPDATED_AT         DATETIME(3)  NOT NULL COMMENT '更新时间',
+    PRIMARY KEY (ID),
+    UNIQUE KEY UK_MQ_OUTBOX_MESSAGE (MESSAGE_ID),
+    KEY IDX_MQ_OUTBOX_STATUS_RETRY (STATUS, NEXT_RETRY_TIME),
+    KEY IDX_MQ_OUTBOX_STATUS_CLAIMED (STATUS, CLAIMED_AT),
+    KEY IDX_MQ_OUTBOX_TOPIC_KEY (TOPIC, BUSINESS_KEY)
+) COMMENT='RocketMQ JDBC Outbox 可靠消息表';

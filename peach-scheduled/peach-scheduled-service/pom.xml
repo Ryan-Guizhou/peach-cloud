@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-scheduled-service</artifactId>
+    <name>peach-scheduled-service</name>
+    <description>peach-scheduled-service</description>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>com.peach</groupId>
+        <artifactId>peach-scheduled</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-scheduled-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-scheduled-entity</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-scheduler-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-scheduler-provider-quartz</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-scheduler-transport-rocket</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-rocket-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.statemachine</groupId>
+            <artifactId>spring-statemachine-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+    </dependencies>
+</project>

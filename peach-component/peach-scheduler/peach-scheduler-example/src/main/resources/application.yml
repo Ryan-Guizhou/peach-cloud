@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: peach-scheduler-example
+
+peach:
+  scheduler:
+    enabled: true
+    rocket:
+      require-jdbc: false
+    executor:
+      application-name: ${spring.application.name}
+      default-timeout-ms: 1800000
+  threadpool:
+    pools:
+      - type: SCHEDULED
+        core-size: 4
+        max-size: 16
+        queue-capacity: 200
+        keep-alive-seconds: 60
+        thread-name-prefix: scheduler-business-
+        rejected-policy: ABORT
+  rocket:
+    enabled: true
+    app-name: ${spring.application.name}
+    consumer:
+      dynamic-register: true
+      enable-idempotent: true
+    outbox:
+      enabled: true
+    topic:
+      auto-create: false

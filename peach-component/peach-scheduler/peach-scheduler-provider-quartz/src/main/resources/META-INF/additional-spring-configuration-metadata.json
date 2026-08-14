@@ -1,0 +1,5 @@
+{
+  "properties": [
+    {"name":"peach.scheduler.quartz.group","type":"java.lang.String","defaultValue":"PEACH_SCHEDULER","description":"Quartz JobKey/TriggerKey group used by Peach Scheduler."}
+  ]
+}

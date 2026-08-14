@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.scheduler.dao.SchedulerOperationLogDao">
+    <insert id="insertSuccess">
+        INSERT INTO PEACH_SCHEDULER_OPERATION_LOG (
+            OPERATION, TARGET_TYPE, TARGET_ID, OPERATOR_ID, REASON, RESULT, CREATED_TIME
+        ) VALUES (
+            #{operation,jdbcType=VARCHAR}, #{targetType,jdbcType=VARCHAR}, #{targetId,jdbcType=VARCHAR},
+            #{operatorId,jdbcType=VARCHAR}, #{reason,jdbcType=VARCHAR}, 'SUCCESS', NOW(3)
+        )
+    </insert>
+</mapper>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-scheduler-transport-rocket</artifactId>
+    <name>peach-scheduler-transport-rocket</name>
+    <description>RocketMQ result reporting and executor bridge</description>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>com.peach</groupId>
+        <artifactId>peach-scheduler</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-scheduler-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-rocket-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+</project>

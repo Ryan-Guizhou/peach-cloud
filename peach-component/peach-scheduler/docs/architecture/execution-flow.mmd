@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant Q as Quartz Scheduler
+    participant B as Peach Quartz Bridge
+    participant E as PeachJobExecutor
+    participant T as ThreadPoolManager(SCHEDULED)
+    participant H as JobHandler
+    participant S as JobExecutionStore
+
+    Q->>B: trigger(jobCode, parameters)
+    B->>E: execute(jobCode, providerId=quartz)
+    E->>S: started(record)
+    E->>T: submit(handler)
+    T->>H: execute(JobContext)
+    H-->>T: JobResult / Exception
+    T-->>E: Future result
+    E->>S: finished(record)
+    E-->>B: JobResult / JobExecutionException
+    B-->>Q: success / failure
