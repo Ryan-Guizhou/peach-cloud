@@ -22,7 +22,7 @@ artifactId：`peach-threadpool`
 | 对象 | 说明 |
 | --- | --- |
 | `ThreadPoolProperties` | 绑定 `peach.threadpool` 配置 |
-| `GlobalProperties` | MDC、SecurityContext 传递开关，当前参考默认均为 `true` |
+| `GlobalProperties` | SecurityContext 传递开关，当前参考默认值为 `true` |
 | `PoolProperties` | 单个线程池参数 |
 | `ThreadPoolManager` | 获取、提交和执行任务 |
 | `TaskWrapper` | 任务上下文包装 |
@@ -44,7 +44,6 @@ artifactId：`peach-threadpool`
 peach:
   threadpool:
     global:
-      enable-mdc: true
       enable-security-context: true
     pools:
       - type: IO
@@ -88,7 +87,7 @@ public CompletableFuture<String> loadRemote() {
 
 - IO 任务不要误用 CPU 池，CPU 密集任务不要无限扩大线程数。
 - 队列容量过大可能掩盖过载并导致延迟堆积。
-- 关闭 MDC / SecurityContext 传递前，需要确认日志追踪和权限上下文不受影响。
+- 关闭 SecurityContext 传递前，需要确认权限上下文不受影响。
 - 自调用不会经过 Spring AOP，注解可能不生效。
 
 ## 构建与验证
@@ -106,5 +105,4 @@ mvn -pl peach-component/peach-threadpool -am clean package -DskipTests -Pdevelop
 | 注解不生效 | 是否标在方法上；调用是否经过 Spring 代理 | 避免自调用，确认 Bean 被 Spring 管理 |
 | 调用线程仍在等待 | 方法是否普通返回值 | 使用 `CompletableFuture` 或直接提交任务 |
 | 队列堆积 | `queueCapacity`、线程数、任务耗时 | 调整池参数，增加监控和拒绝策略 |
-| 日志 trace 丢失 | MDC 传递是否开启 | 检查 `peach.threadpool.global.enable-mdc` |
 | 权限上下文丢失 | SecurityContext 传递是否开启 | 检查 `enable-security-context` |

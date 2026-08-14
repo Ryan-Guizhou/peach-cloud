@@ -18,7 +18,7 @@ English | [中文](README.md)
 - `ThreadPoolProperties`: binds `peach.threadpool`.
 - `ThreadPoolManager`: gets, submits, and executes tasks by `PoolType`.
 - `@AsyncExecuted`: method-level async execution annotation.
-- `TaskWrapper`: propagates MDC and SecurityContext.
+- `TaskWrapper`: propagates SecurityContext.
 - `PoolProperties`: thread pool parameters.
 
 ## Configuration Example
@@ -27,7 +27,6 @@ English | [中文](README.md)
 peach:
   threadpool:
     global:
-      enable-mdc: true
       enable-security-context: true
     pools:
       - type: IO

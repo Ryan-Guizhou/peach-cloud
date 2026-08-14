@@ -33,13 +33,11 @@ public class ThreadPoolManager {
 
     private final Map<String, ExecutorService> executors = new ConcurrentHashMap<>();
 
-    private final GlobalProperties global;
-
     private final TaskWrapper wrapper;
 
     public ThreadPoolManager(ThreadPoolProperties properties) {
-        this.global = properties.getGlobal();
-        this.wrapper = new TaskWrapper(global.isEnableMdc(), global.isEnableSecurityContext());
+        GlobalProperties global = properties.getGlobal();
+        this.wrapper = new TaskWrapper(global.isEnableSecurityContext());
         List<PoolProperties> list = properties.getPools();
         if (CollectionUtils.isEmpty(list)) {
             list = new ArrayList<>();

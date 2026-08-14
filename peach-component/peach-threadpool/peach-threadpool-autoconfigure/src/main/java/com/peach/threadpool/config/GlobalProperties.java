@@ -7,19 +7,8 @@ package com.peach.threadpool.config;
  */
 public class GlobalProperties {
 
-    private boolean enableMdc = true;
-
     private boolean enableSecurityContext = true;
 
-
-
-    public boolean isEnableMdc() {
-        return enableMdc;
-    }
-
-    public void setEnableMdc(boolean enableMdc) {
-        this.enableMdc = enableMdc;
-    }
 
     public boolean isEnableSecurityContext() {
         return enableSecurityContext;
