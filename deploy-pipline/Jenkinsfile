@@ -31,6 +31,22 @@ pipeline {
             }
         }
 
+        stage('Validate Jenkins credentials') {
+            steps {
+                script {
+                    try {
+                        withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
+                            sh '''
+                                test -s "$DEPLOY_ENV_FILE"
+                            '''
+                        }
+                    } catch (err) {
+                        error "Missing Jenkins Secret file credential '${env.DEPLOY_ENV_CREDENTIAL}'. Create it in Manage Jenkins -> Credentials -> System -> Global credentials, choose Kind 'Secret file', upload a .env file based on deploy-pipline/peach-deploy.env.example, and set ID to '${env.DEPLOY_ENV_CREDENTIAL}'."
+                    }
+                }
+            }
+        }
+
         stage('Build CI image') {
             steps {
                 sh '''
@@ -142,6 +158,7 @@ pipeline {
                         cp -R deploy/docker deploy/nacos "$DEPLOY_ROOT/deploy/"
                         cp deploy-pipline/docker-compose.deploy.yml "$DEPLOY_ROOT/deploy/docker-compose.yml"
                         cp deploy-pipline/import-nacos.sh "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"
+                        chmod +x "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"
                         cp sql/ALL_TABLE_CREATE.sql sql/INIT.sql "$DEPLOY_ROOT/sql/"
 
                         export PEACH_IMAGE_PREFIX="$IMAGE_PREFIX"
@@ -166,7 +183,7 @@ pipeline {
                           fi
                         done
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" exec -T mysql sh -c 'mysql --default-character-set=utf8mb4 -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < /docker-entrypoint-initdb.d/01_INIT.sql'
-                        "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"
+                        sh "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" up -d --no-build $SERVICES
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" ps
                     '''

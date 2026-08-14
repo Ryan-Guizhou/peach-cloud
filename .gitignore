@@ -40,3 +40,6 @@ build/
 
 # Logs
 .logs
+
+# Local CI/CD deploy secrets
+deploy-pipline/peach-deploy.env

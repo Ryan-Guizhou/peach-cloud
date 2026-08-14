@@ -128,6 +128,15 @@ ID: peach-deploy-env
 File: 基于 deploy-pipline/peach-deploy.env.example 复制并修改后的 env 文件
 ```
 
+创建步骤：
+
+1. 在本机基于 `deploy-pipline/peach-deploy.env.example` 准备一份真实 `.env` 文件，替换其中的 `change_me_*` 占位值。
+2. 进入 `Manage Jenkins -> Credentials -> System -> Global credentials -> Add Credentials`。
+3. `Kind` 选择 `Secret file`。
+4. `File` 上传这份 `.env` 文件。
+5. `ID` 必须填写 `peach-deploy-env`，不能留空，也不能写成别的名字。
+6. 保存后重新执行流水线。
+
 至少确认这些变量：
 
 ```dotenv
@@ -299,6 +308,7 @@ Registry UI 中应看到 8 个镜像仓库：7 个后端服务和 `peach-front`�
 | Webhook 无法访问 Jenkins | GitLab outbound policy 和 Docker 网络 | 确认服务都在 `peach-devops` 网络，只放行 Jenkins 地址 |
 | 主机访问不到 Peach Cloud | `DEVOPS_HTTP_PORT`、hosts 解析和 `peach-front` 容器状态 | 检查 hosts 是否指向 `127.0.0.1`，检查 `peach-devops-nginx` 和 Jenkins DinD 内的 `peach-front` 是否运行 |
 | Nacos 代理 502 | Peach Cloud 运行 Compose 是否已启动 Nacos | Jenkins 首次完成 Deploy 后，`jenkins-docker:8849` 才会有 Nacos 服务 |
+| `import-nacos.sh: Permission denied` | Jenkins 工作区或 GitLab 仓库未保留 shell 脚本执行位 | 当前 Jenkinsfile 会在复制后执行 `chmod +x`，并通过 `sh import-nacos.sh` 调用；更新流水线后重新构建 |
 | MySQL 密码修改后仍认证失败 | 持久数据目录已有旧密码 | 使用旧密码；只有确认数据可丢时再清理数据 |
 
 ## 生产边界
