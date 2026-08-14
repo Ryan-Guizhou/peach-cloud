@@ -118,55 +118,6 @@ services:
 
 
   # ============================================================
-  # Jenkins Docker Engine
-  #
-  # Jenkins:
-  #
-  # docker CLI
-  #     |
-  #     | TLS :2376
-  #     v
-  # docker:dind
-  #
-  # Registry 使用 HTTP，所以配置 insecure-registry。
-  # ============================================================
-  jenkins-docker:
-    image: docker:dind
-    container_name: jenkins-docker
-    hostname: jenkins-docker
-    restart: unless-stopped
-
-    privileged: true
-
-    environment:
-      DOCKER_TLS_CERTDIR: "/certs"
-
-    command:
-      - "--storage-driver=overlay2"
-      - "--insecure-registry=registry:5000"
-
-    volumes:
-      - jenkins-docker-certs:/certs/client
-      - jenkins-docker-data:/var/lib/docker
-      - jenkins-data:/var/jenkins_home
-
-    healthcheck:
-      test:
-        - CMD
-        - docker
-        - info
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 30s
-
-    networks:
-      devops:
-        aliases:
-          - docker
-
-
-  # ============================================================
   # Jenkins
   #
   # Nginx:
@@ -179,10 +130,10 @@ services:
   #   http://gitlab
   #
   # Registry:
-  #   registry:5000
+  #   localhost:5000
   #
   # Docker Engine:
-  #   tcp://docker:2376
+  #   Docker Desktop via /var/run/docker.sock
   #
   # 注意：
   # Maven 本地仓库不再单独挂载 volume。
@@ -198,12 +149,10 @@ services:
     image: peach-jenkins:lts-jdk21
     container_name: jenkins
     hostname: jenkins
+    user: root
     restart: unless-stopped
 
     depends_on:
-      jenkins-docker:
-        condition: service_healthy
-
       registry:
         condition: service_started
 
@@ -218,13 +167,9 @@ services:
         -Duser.timezone=Asia/Shanghai
         -Dfile.encoding=UTF-8
 
-      DOCKER_HOST: "tcp://docker:2376"
-      DOCKER_CERT_PATH: "/certs/client"
-      DOCKER_TLS_VERIFY: "1"
-
     volumes:
       - jenkins-data:/var/jenkins_home
-      - jenkins-docker-certs:/certs/client:ro
+      - /var/run/docker.sock:/var/run/docker.sock
 
     networks:
       - devops
@@ -240,7 +185,7 @@ services:
   #   http://peachsoft.nacos.test
   #
   # peachsoft.peach-cloud.test proxies the deployed Peach frontend
-  # after Jenkins starts it inside jenkins-docker. The helper paths
+  # after Jenkins starts it in Docker Desktop. The helper paths
   # /jenkins, /gitlab, /registry and /nacos provide a single-domain
   # entry point for common DevOps consoles.
   # ============================================================
@@ -261,7 +206,6 @@ services:
       - jenkins
       - registry
       - registry-ui
-      - jenkins-docker
 
     networks:
       - devops
@@ -291,14 +235,6 @@ volumes:
   # Jenkins
   jenkins-data:
     name: peach-jenkins-data
-
-
-  # Jenkins Docker Engine
-  jenkins-docker-certs:
-    name: peach-jenkins-docker-certs
-
-  jenkins-docker-data:
-    name: peach-jenkins-docker-data
 
 
 # ==============================================================

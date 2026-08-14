@@ -8,7 +8,7 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `deploy-pipline/pipline/docker-compose.yml` | 启动 GitLab、Jenkins、Registry、Registry UI、DevOps Nginx 和 Jenkins 专用 Docker Engine |
+| `deploy-pipline/pipline/docker-compose.yml` | 启动 GitLab、Jenkins、Registry、Registry UI 和 DevOps Nginx；Jenkins 通过 Docker socket 操作本机 Docker Desktop |
 | `deploy-pipline/pipline/jenkins/Dockerfile` | 构建带 Docker CLI、Compose 插件、Node、Maven 和 GitLab 插件的 Jenkins 镜像 |
 | `deploy-pipline/pipline/maven-node/Dockerfile` | 构建流水线 Maven 阶段使用的 Maven + Node CI 镜像 |
 | `deploy-pipline/pipline/nginx/devops.conf` | DevOps 入口 Nginx 配置，按域名代理 Jenkins、GitLab、Registry、Nacos 和 Peach Cloud |
@@ -23,31 +23,30 @@
 流水线会推送这些镜像：
 
 ```text
-registry:5000/peach-cloud/peach-gateway:<git-sha>
-registry:5000/peach-cloud/peach-auth:<git-sha>
-registry:5000/peach-cloud/peach-monitor:<git-sha>
-registry:5000/peach-cloud/peach-fileservice:<git-sha>
-registry:5000/peach-cloud/peach-message:<git-sha>
-registry:5000/peach-cloud/peach-setting:<git-sha>
-registry:5000/peach-cloud/peach-generator:<git-sha>
-registry:5000/peach-cloud/peach-front:<git-sha>
+localhost:5000/peach-cloud/peach-gateway:<git-sha>
+localhost:5000/peach-cloud/peach-auth:<git-sha>
+localhost:5000/peach-cloud/peach-monitor:<git-sha>
+localhost:5000/peach-cloud/peach-fileservice:<git-sha>
+localhost:5000/peach-cloud/peach-message:<git-sha>
+localhost:5000/peach-cloud/peach-setting:<git-sha>
+localhost:5000/peach-cloud/peach-generator:<git-sha>
+localhost:5000/peach-cloud/peach-front:<git-sha>
 ```
 
 ## 端口模型
 
-这套方案有两层 Docker：
+这套方案只使用本机 Docker Desktop 这一套 Docker daemon。Jenkins 容器通过 `/var/run/docker.sock` 调用宿主机 Docker Desktop，因此流水线构建出的镜像和启动的容器会直接出现在本机 Docker Desktop。
 
 | 层级 | 配置位置 | 含义 |
 | --- | --- | --- |
 | 宿主机到 DevOps Nginx | `deploy-pipline/pipline/docker-compose.yml` 的 `DEVOPS_HTTP_PORT` | 控制宿主机访问统一反向代理入口的端口，默认 80 |
-| DinD 内部服务端口 | Jenkins Secret file，也就是 `peach-deploy.env` | 控制 `peach-gateway`、`peach-auth` 等容器内部监听端口 |
+| Peach Cloud 运行容器 | Jenkins Secret file，也就是 `peach-deploy.env` | 控制 `peach-gateway`、`peach-auth` 等容器内部监听端口 |
 
 默认访问链路是：
 
 ```text
 http://peachsoft.peach-cloud.test
   -> peach-devops-nginx:80
-  -> jenkins-docker:80
   -> peach-front:80
   -> /api 代理到 peach-gateway:${GATEWAY_PORT}
 ```
@@ -58,7 +57,7 @@ http://peachsoft.peach-cloud.test
 DEVOPS_HTTP_PORT=18088 docker compose -f deploy-pipline/pipline/docker-compose.yml up -d
 ```
 
-Jenkins Secret file 里不需要再配置 `NGINX_HTTP_PORT`。`peach-front` 在 Jenkins DinD 内固定监听 80，外层由 `peach-devops-nginx` 代理到 `jenkins-docker:80`。当前没有配置 HTTPS server block；需要 HTTPS 时要补证书挂载和 Nginx 443 配置。
+Jenkins Secret file 里不需要再配置 `NGINX_HTTP_PORT`。`peach-front` 不发布宿主机 80 端口，外层由 `peach-devops-nginx` 代理到 Docker Desktop 中的 `peach-front:80`。当前没有配置 HTTPS server block；需要 HTTPS 时要补证书挂载和 Nginx 443 配置。
 
 ## 首次启动 DevOps 服务
 
@@ -69,6 +68,12 @@ docker compose -f deploy-pipline/pipline/docker-compose.yml config
 docker compose -f deploy-pipline/pipline/docker-compose.yml build jenkins
 docker compose -f deploy-pipline/pipline/docker-compose.yml up -d
 docker compose -f deploy-pipline/pipline/docker-compose.yml ps
+```
+
+启动后确认 Jenkins 能访问本机 Docker Desktop：
+
+```bash
+docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker version
 ```
 
 默认入口：
@@ -168,8 +173,8 @@ GENERATOR_PORT=18086
 ```bash
 npm ci
 npm run build
-docker build -f deploy-pipline/docker/Dockerfile.front -t registry:5000/peach-cloud/peach-front:<git-sha> deploy-pipline
-docker push registry:5000/peach-cloud/peach-front:<git-sha>
+docker build -f deploy-pipline/docker/Dockerfile.front -t localhost:5000/peach-cloud/peach-front:<git-sha> deploy-pipline
+docker push localhost:5000/peach-cloud/peach-front:<git-sha>
 ```
 
 `Dockerfile.front` 基于 `nginx:1.25-alpine`，把两类内容打进镜像：
@@ -245,11 +250,11 @@ SSL verification: 当前 HTTP 内网地址不需要；改 HTTPS 后必须开启�
 | 阶段 | 行为 |
 | --- | --- |
 | Checkout | 从 GitLab 拉取触发提交，计算 12 位短 SHA |
-| Build CI image | 在 Jenkins DinD 中构建 `peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22` |
+| Build CI image | 通过 Docker Desktop 构建 `peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22` |
 | Maven package | 使用 Maven + Node CI 镜像执行 `mvn -B -Pdocker -DskipTests clean package` |
 | Build and push images | 构建并推送 7 个后端镜像 |
 | Build frontend | 构建前端 dist，打包并推送 `peach-front` 镜像 |
-| Deploy | 同步专用 Compose、Nacos 脚本和 SQL 到 Jenkins 持久目录，拉取镜像并启动容器 |
+| Deploy | 同步专用 Compose、Nacos 脚本和 SQL 到 Jenkins 持久目录，在本机 Docker Desktop 拉取镜像并启动容器 |
 
 Deploy 阶段会把 `deploy/nacos/config` 同步到 Jenkins 持久目录，并通过 `deploy-pipline/import-nacos.sh` 导入 `.yml`、`.yaml` 和 `.json`。以下两个 Sentinel 规则文件也会作为 Nacos 配置导入：
 
@@ -266,7 +271,7 @@ peach-openfeign-sentinel-degrade-rules.json
 /var/jenkins_home/peach-cloud-deploy
 ```
 
-该目录位于 Jenkins 持久卷，Jenkins 清理 workspace 时不会删除 MySQL、Redis、Nacos 和上传文件。
+该目录位于 Jenkins 持久卷，只保存部署脚本、Nacos 配置和 SQL。MySQL、Redis、Nacos、服务日志和上传文件使用 Docker named volumes，Jenkins 清理 workspace 时不会删除。
 
 ## 验证
 
@@ -276,11 +281,11 @@ peach-openfeign-sentinel-degrade-rules.json
 docker compose -f deploy-pipline/pipline/docker-compose.yml ps
 ```
 
-检查 Jenkins 内部 Docker Engine：
+检查 Jenkins 访问的 Docker Desktop daemon：
 
 ```bash
 docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker ps
-docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker images 'registry:5000/peach-cloud/*'
+docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker images 'localhost:5000/peach-cloud/*'
 curl http://peachsoft.peach-cloud.test/
 curl http://localhost:5000/v2/_catalog
 ```
@@ -291,23 +296,25 @@ Registry UI 中应看到 8 个镜像仓库：7 个后端服务和 `peach-front`�
 
 常规回滚方式是在 Jenkins 中找到历史成功构建，重新构建对应提交。流水线会重新生成或复用该提交对应的镜像标签，并更新容器。
 
-不要通过删除运行期数据目录处理发布失败。`/var/jenkins_home/peach-cloud-deploy/deploy/runtime/data` 包含数据库和中间件数据，只有确认数据可丢弃时才允许清理。
+不要通过删除 Docker named volumes 处理发布失败。`peach-mysql-data`、`peach-redis-data`、`peach-nacos-data` 和 `peach-fileservice-upload` 包含数据库、中间件和上传文件数据，只有确认数据可丢弃时才允许清理。
 
 ## 常见问题
 
 | 现象 | 检查点 | 处理方式 |
 | --- | --- | --- |
 | Jenkins 构建找不到 `deploy-pipline/Jenkinsfile` | Pipeline Script Path | 确认填的是 `deploy-pipline/Jenkinsfile` |
+| `fatal: not in a git directory` | 上一次流水线是否清空了 Jenkins workspace 的 `.git` | 更新 Jenkinsfile 后，先在 Jenkins 任务页面执行一次 `Wipe out current workspace`，或删除该任务 workspace，再重新构建 |
 | Jenkins 镜像构建失败，找不到 Docker CLI | Jenkins 镜像是否由 `deploy-pipline/pipline/jenkins/Dockerfile` 构建 | 重新执行 `docker compose -f deploy-pipline/pipline/docker-compose.yml build jenkins` |
+| Jenkins 执行 `docker ps` 失败 | Docker Desktop socket 是否挂载进 Jenkins | 确认 Docker Desktop 已启动，且 `jenkins` 服务挂载了 `/var/run/docker.sock:/var/run/docker.sock` |
 | Maven 阶段报 `Cannot run program "node"` | Maven 阶段是否仍在使用纯 `maven:3.9.11-eclipse-temurin-8` 镜像 | 使用本仓库 `Jenkinsfile` 的 `Build CI image` 阶段，确保 Maven package 使用 `peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22` |
 | Maven 成功但后端镜像构建找不到 jar | `*-launch/target/*.jar` 是否存在 | 检查 Maven 阶段输出和模块打包结果 |
 | 前端页面 404 或白屏 | `peach-front` 镜像是否包含 `index.html` | 检查 `Build frontend` 阶段和 `docker run --rm <image> ls /usr/share/nginx/html` |
 | 前端能打开但接口不通 | `GATEWAY_PORT` 与 `peach-gateway` 的 `SERVER_PORT` 是否一致 | 检查 Secret file、`docker-compose.deploy.yml` 和 `peach-front` 容器渲染后的 Nginx 配置 |
 | WebSocket 连接失败 | 前端实际 WS 地址、Nginx `/api/` 代理和网关 WebSocket 路由是否匹配 | 先看浏览器 Network 中的 WS 地址，再核对网关路由 |
-| 推送 Registry 报 HTTP/HTTPS 协议错误 | DinD 是否配置 insecure registry | 检查 `jenkins-docker` 参数 `--insecure-registry=registry:5000` |
+| 推送 Registry 报 HTTP/HTTPS 协议错误 | 镜像标签是否仍使用 `registry:5000` | Docker Desktop 模式下使用 `localhost:5000/peach-cloud/...`，不要使用 `registry:5000` 作为构建产物标签 |
 | Webhook 无法访问 Jenkins | GitLab outbound policy 和 Docker 网络 | 确认服务都在 `peach-devops` 网络，只放行 Jenkins 地址 |
-| 主机访问不到 Peach Cloud | `DEVOPS_HTTP_PORT`、hosts 解析和 `peach-front` 容器状态 | 检查 hosts 是否指向 `127.0.0.1`，检查 `peach-devops-nginx` 和 Jenkins DinD 内的 `peach-front` 是否运行 |
-| Nacos 代理 502 | Peach Cloud 运行 Compose 是否已启动 Nacos | Jenkins 首次完成 Deploy 后，`jenkins-docker:8849` 才会有 Nacos 服务 |
+| 主机访问不到 Peach Cloud | `DEVOPS_HTTP_PORT`、hosts 解析、运行网络和 `peach-front` 容器状态 | 检查 hosts 是否指向 `127.0.0.1`，检查 `peach-devops-nginx` 是否已连接到 `peach-cloud-runtime`，检查 `peach-front` 是否运行 |
+| Nacos 代理 502 | Peach Cloud 运行 Compose 是否已启动 Nacos | Jenkins 首次完成 Deploy 后，`peach-devops-nginx` 才能通过 `peach-cloud-runtime` 访问 `nacos:8848` |
 | `import-nacos.sh: Permission denied` | Jenkins 工作区或 GitLab 仓库未保留 shell 脚本执行位 | 当前 Jenkinsfile 会在复制后执行 `chmod +x`，并通过 `sh import-nacos.sh` 调用；更新流水线后重新构建 |
 | MySQL 密码修改后仍认证失败 | 持久数据目录已有旧密码 | 使用旧密码；只有确认数据可丢时再清理数据 |
 
@@ -315,7 +322,7 @@ Registry UI 中应看到 8 个镜像仓库：7 个后端服务和 `peach-front`�
 
 当前 Registry 是 HTTP 且无认证，只适合隔离可信内网。生产环境需要补齐 TLS、认证、镜像清理策略和访问控制。
 
-Jenkins Docker-in-Docker 使用特权模式，等同高权限基础设施。应限制 Jenkins 管理员、任务配置和部署分支写权限。
+Jenkins 挂载 Docker Desktop socket 后可以控制本机 Docker daemon，等同高权限基础设施。本方案中 Jenkins 容器以 root 用户运行，用于避免 Docker socket 权限不一致导致流水线无法执行 `docker` 命令；应限制 Jenkins 管理员、任务配置和部署分支写权限。
 
 当前发布方式是单机重建式更新，会有短暂停机。需要零停机、灰度、自动迁移和多节点调度时，应迁移到 Kubernetes、Docker Swarm 或专门部署节点。
 

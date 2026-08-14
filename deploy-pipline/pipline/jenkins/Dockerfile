@@ -145,9 +145,9 @@ RUN set -eux; \
 # Docker CLI:
 #     Jenkins Container
 #            |
-#            | DOCKER_HOST=tcp://docker:2376
+#            | /var/run/docker.sock
 #            v
-#     Jenkins Docker DinD
+#     Host Docker Desktop daemon
 #
 # 安装：
 # - docker-ce-cli

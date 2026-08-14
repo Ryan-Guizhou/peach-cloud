@@ -42,10 +42,8 @@ services:
     ports:
       - "${MYSQL_HOST_PORT:-3307}:3306"
     volumes:
-      - ./runtime/data/mysql:/var/lib/mysql
-      - ../sql/ALL_TABLE_CREATE.sql:/docker-entrypoint-initdb.d/00_ALL_TABLE_CREATE.sql:ro
-      - ../sql/INIT.sql:/docker-entrypoint-initdb.d/01_INIT.sql:ro
-      - ./runtime/logs/mysql:/var/log/mysql
+      - peach-mysql-data:/var/lib/mysql
+      - peach-mysql-logs:/var/log/mysql
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
       interval: 10s
@@ -61,8 +59,8 @@ services:
     ports:
       - "${REDIS_HOST_PORT:-6380}:6379"
     volumes:
-      - ./runtime/data/redis:/data
-      - ./runtime/logs/redis:/var/log/redis
+      - peach-redis-data:/data
+      - peach-redis-logs:/var/log/redis
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
       interval: 10s
@@ -88,8 +86,8 @@ services:
       - "${NACOS_HOST_PORT:-8849}:8848"
       - "${NACOS_GRPC_HOST_PORT:-9850}:9848"
     volumes:
-      - ./runtime/data/nacos:/home/nacos/data
-      - ./runtime/logs/nacos:/home/nacos/logs
+      - peach-nacos-data:/home/nacos/data
+      - peach-nacos-logs:/home/nacos/logs
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8848/nacos/actuator/health >/dev/null || exit 1"]
       interval: 10s
@@ -106,8 +104,8 @@ services:
       SERVER_PORT: ${GATEWAY_PORT:-18080}
       SPRING_APPLICATION_NAME: peach-gateway
     volumes:
-      - ./runtime/logs/peach-gateway:/app/logs
-      - ./runtime/config/services/peach-gateway:/app/config
+      - peach-gateway-logs:/app/logs
+      - peach-gateway-config:/app/config
     depends_on:
       mysql:
         condition: service_healthy
@@ -126,8 +124,8 @@ services:
       SERVER_PORT: ${AUTH_PORT:-18081}
       SPRING_APPLICATION_NAME: peach-auth
     volumes:
-      - ./runtime/logs/peach-auth:/app/logs
-      - ./runtime/config/services/peach-auth:/app/config
+      - peach-auth-logs:/app/logs
+      - peach-auth-config:/app/config
     depends_on:
       mysql:
         condition: service_healthy
@@ -146,8 +144,8 @@ services:
       SERVER_PORT: ${MONITOR_PORT:-18082}
       SPRING_APPLICATION_NAME: peach-monitor
     volumes:
-      - ./runtime/logs/peach-monitor:/app/logs
-      - ./runtime/config/services/peach-monitor:/app/config
+      - peach-monitor-logs:/app/logs
+      - peach-monitor-config:/app/config
     depends_on:
       mysql:
         condition: service_healthy
@@ -167,9 +165,9 @@ services:
       SPRING_APPLICATION_NAME: peach-fileservice
       PEACH_UPLOAD_ROOT: /app/upload
     volumes:
-      - ./runtime/logs/peach-fileservice:/app/logs
-      - ./runtime/config/services/peach-fileservice:/app/config
-      - ./runtime/upload/peach-fileservice:/app/upload
+      - peach-fileservice-logs:/app/logs
+      - peach-fileservice-config:/app/config
+      - peach-fileservice-upload:/app/upload
     depends_on:
       mysql:
         condition: service_healthy
@@ -188,8 +186,8 @@ services:
       SERVER_PORT: ${MESSAGE_PORT:-18084}
       SPRING_APPLICATION_NAME: peach-message
     volumes:
-      - ./runtime/logs/peach-message:/app/logs
-      - ./runtime/config/services/peach-message:/app/config
+      - peach-message-logs:/app/logs
+      - peach-message-config:/app/config
     depends_on:
       mysql:
         condition: service_healthy
@@ -208,8 +206,8 @@ services:
       SERVER_PORT: ${SETTING_PORT:-18085}
       SPRING_APPLICATION_NAME: peach-setting
     volumes:
-      - ./runtime/logs/peach-setting:/app/logs
-      - ./runtime/config/services/peach-setting:/app/config
+      - peach-setting-logs:/app/logs
+      - peach-setting-config:/app/config
     depends_on:
       mysql:
         condition: service_healthy
@@ -228,8 +226,8 @@ services:
       SERVER_PORT: ${GENERATOR_PORT:-18086}
       SPRING_APPLICATION_NAME: peach-generator
     volumes:
-      - ./runtime/logs/peach-generator:/app/logs
-      - ./runtime/config/services/peach-generator:/app/config
+      - peach-generator-logs:/app/logs
+      - peach-generator-config:/app/config
     depends_on:
       mysql:
         condition: service_healthy
@@ -245,10 +243,8 @@ services:
     container_name: peach-front
     environment:
       GATEWAY_PORT: ${GATEWAY_PORT:-18080}
-    ports:
-      - "80:80"
     volumes:
-      - ./runtime/logs/nginx:/var/log/nginx
+      - peach-front-nginx-logs:/var/log/nginx
     depends_on:
       peach-gateway:
         condition: service_started
@@ -257,4 +253,51 @@ services:
 
 networks:
   peach-net:
+    name: peach-cloud-runtime
     driver: bridge
+
+volumes:
+  peach-mysql-data:
+    name: peach-mysql-data
+  peach-mysql-logs:
+    name: peach-mysql-logs
+  peach-redis-data:
+    name: peach-redis-data
+  peach-redis-logs:
+    name: peach-redis-logs
+  peach-nacos-data:
+    name: peach-nacos-data
+  peach-nacos-logs:
+    name: peach-nacos-logs
+  peach-gateway-logs:
+    name: peach-gateway-logs
+  peach-gateway-config:
+    name: peach-gateway-config
+  peach-auth-logs:
+    name: peach-auth-logs
+  peach-auth-config:
+    name: peach-auth-config
+  peach-monitor-logs:
+    name: peach-monitor-logs
+  peach-monitor-config:
+    name: peach-monitor-config
+  peach-fileservice-logs:
+    name: peach-fileservice-logs
+  peach-fileservice-config:
+    name: peach-fileservice-config
+  peach-fileservice-upload:
+    name: peach-fileservice-upload
+  peach-message-logs:
+    name: peach-message-logs
+  peach-message-config:
+    name: peach-message-config
+  peach-setting-logs:
+    name: peach-setting-logs
+  peach-setting-config:
+    name: peach-setting-config
+  peach-generator-logs:
+    name: peach-generator-logs
+  peach-generator-config:
+    name: peach-generator-config
+  peach-front-nginx-logs:
+    name: peach-front-nginx-logs

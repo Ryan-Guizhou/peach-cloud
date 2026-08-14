@@ -9,12 +9,13 @@ pipeline {
     }
 
     environment {
-        REGISTRY = 'registry:5000'
+        REGISTRY = 'localhost:5000'
         IMAGE_PREFIX = "${REGISTRY}/peach-cloud"
         MAVEN_IMAGE = 'peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22'
         DEPLOY_COMPOSE_FILE = 'deploy-pipline/docker-compose.deploy.yml'
         DEPLOY_ENV_CREDENTIAL = 'peach-deploy-env'
         DEPLOY_ROOT = '/var/jenkins_home/peach-cloud-deploy'
+        DEPLOY_NETWORK = 'peach-cloud-runtime'
         SERVICES = 'peach-gateway peach-auth peach-monitor peach-fileservice peach-message peach-setting peach-generator peach-front'
     }
 
@@ -64,12 +65,11 @@ pipeline {
                     mkdir -p /var/jenkins_home/.m2
                     docker run --rm \
                       --user "$(id -u):$(id -g)" \
-                      -e HOME=/tmp \
-                      -v "$WORKSPACE:/workspace" \
-                      -v "/var/jenkins_home/.m2:/tmp/.m2" \
-                      -w /workspace \
+                      -e HOME=/var/jenkins_home \
+                      -v "peach-jenkins-data:/var/jenkins_home" \
+                      -w "$WORKSPACE" \
                       "$MAVEN_IMAGE" \
-                      mvn -B -Pdocker -Dmaven.repo.local=/tmp/.m2/repository -DskipTests clean package
+                      mvn -B -Pdocker -Dmaven.repo.local=/var/jenkins_home/.m2/repository -DskipTests clean package
                 '''
             }
         }
@@ -128,8 +128,8 @@ pipeline {
                     docker run --rm \
                       --user "$(id -u):$(id -g)" \
                       -e HOME=/tmp \
-                      -v "$WORKSPACE:/workspace" \
-                      -w /workspace/peach-cloud-front \
+                      -v "peach-jenkins-data:/var/jenkins_home" \
+                      -w "$WORKSPACE/peach-cloud-front" \
                       node:22-alpine \
                       sh -c 'npm ci && npm run build'
 
@@ -164,9 +164,12 @@ pipeline {
                         export PEACH_IMAGE_PREFIX="$IMAGE_PREFIX"
                         export PEACH_IMAGE_TAG="$IMAGE_TAG"
                         export PEACH_ENV_FILE="$DEPLOY_ENV_FILE"
-                        export NACOS_ADDR='http://docker:8849'
+                        export NACOS_ADDR='http://nacos:8848'
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" pull $SERVICES
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" up -d mysql redis nacos
+                        docker network inspect "$DEPLOY_NETWORK" >/dev/null
+                        docker network connect "$DEPLOY_NETWORK" jenkins 2>/dev/null || true
+                        docker network connect "$DEPLOY_NETWORK" peach-devops-nginx 2>/dev/null || true
                         for container in peach-mysql peach-redis peach-nacos; do
                           i=0
                           until [ "$i" -ge 90 ]; do
@@ -182,7 +185,13 @@ pipeline {
                             exit 1
                           fi
                         done
-                        docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" exec -T mysql sh -c 'mysql --default-character-set=utf8mb4 -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < /docker-entrypoint-initdb.d/01_INIT.sql'
+                        docker cp "$DEPLOY_ROOT/sql/ALL_TABLE_CREATE.sql" peach-mysql:/tmp/ALL_TABLE_CREATE.sql
+                        docker cp "$DEPLOY_ROOT/sql/INIT.sql" peach-mysql:/tmp/INIT.sql
+                        table_count=$(docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" exec -T mysql sh -c 'mysql --default-character-set=utf8mb4 -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '\''$MYSQL_DATABASE'\'';"')
+                        if [ "$table_count" = "0" ]; then
+                          docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" exec -T mysql sh -c 'mysql --default-character-set=utf8mb4 -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < /tmp/ALL_TABLE_CREATE.sql'
+                        fi
+                        docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" exec -T mysql sh -c 'mysql --default-character-set=utf8mb4 -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < /tmp/INIT.sql'
                         sh "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" up -d --no-build $SERVICES
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" ps
@@ -200,7 +209,7 @@ pipeline {
             sh 'docker ps --format "table {{.Names}}\\t{{.Image}}\\t{{.Status}}" || true'
         }
         always {
-            deleteDir()
+            sh 'rm -rf deploy-pipline/build-context deploy-pipline/front-dist || true'
         }
     }
 }
