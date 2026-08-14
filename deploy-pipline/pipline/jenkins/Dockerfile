@@ -173,6 +173,9 @@ RUN set -eux; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 
+COPY --chown=jenkins:jenkins clean-jenkins-scm-cache.sh /usr/local/bin/clean-jenkins-scm-cache.sh
+RUN chmod 0755 /usr/local/bin/clean-jenkins-scm-cache.sh
+
 
 # ============================================================
 # Jenkins Plugins

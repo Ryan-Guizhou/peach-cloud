@@ -22,6 +22,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                deleteDir()
                 checkout scm
                 script {
                     env.IMAGE_TAG = sh(
@@ -187,7 +188,7 @@ pipeline {
                         done
                         docker cp "$DEPLOY_ROOT/sql/ALL_TABLE_CREATE.sql" peach-mysql:/tmp/ALL_TABLE_CREATE.sql
                         docker cp "$DEPLOY_ROOT/sql/INIT.sql" peach-mysql:/tmp/INIT.sql
-                        table_count=$(docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" exec -T mysql sh -c 'mysql --default-character-set=utf8mb4 -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '\''$MYSQL_DATABASE'\'';"')
+                        table_count=$(docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" exec -T mysql sh -c 'mysql --default-character-set=utf8mb4 -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE();"')
                         if [ "$table_count" = "0" ]; then
                           docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" exec -T mysql sh -c 'mysql --default-character-set=utf8mb4 -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < /tmp/ALL_TABLE_CREATE.sql'
                         fi

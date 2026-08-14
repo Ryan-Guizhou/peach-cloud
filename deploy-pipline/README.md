@@ -303,7 +303,7 @@ Registry UI 中应看到 8 个镜像仓库：7 个后端服务和 `peach-front`�
 | 现象 | 检查点 | 处理方式 |
 | --- | --- | --- |
 | Jenkins 构建找不到 `deploy-pipline/Jenkinsfile` | Pipeline Script Path | 确认填的是 `deploy-pipline/Jenkinsfile` |
-| `fatal: not in a git directory` | 上一次流水线是否清空了 Jenkins workspace 的 `.git` | 更新 Jenkinsfile 后，先在 Jenkins 任务页面执行一次 `Wipe out current workspace`，或删除该任务 workspace，再重新构建 |
+| `fatal: not in a git directory` 且堆栈包含 `GitSCMFileSystem` | Jenkins 的 Lightweight checkout SCM 缓存已损坏 | 在任务配置里取消勾选 `Lightweight checkout`，保存后重新构建；流水线已在 `checkout scm` 前自动清理当前 workspace，但这类报错发生在 Jenkins 读取 `Jenkinsfile` 之前，不能靠流水线自身先删 `caches`。仍失败时先重建 Jenkins 镜像，再在 Jenkins 容器内执行 `clean-jenkins-scm-cache.sh <job-name>` 后重试 |
 | Jenkins 镜像构建失败，找不到 Docker CLI | Jenkins 镜像是否由 `deploy-pipline/pipline/jenkins/Dockerfile` 构建 | 重新执行 `docker compose -f deploy-pipline/pipline/docker-compose.yml build jenkins` |
 | Jenkins 执行 `docker ps` 失败 | Docker Desktop socket 是否挂载进 Jenkins | 确认 Docker Desktop 已启动，且 `jenkins` 服务挂载了 `/var/run/docker.sock:/var/run/docker.sock` |
 | Maven 阶段报 `Cannot run program "node"` | Maven 阶段是否仍在使用纯 `maven:3.9.11-eclipse-temurin-8` 镜像 | 使用本仓库 `Jenkinsfile` 的 `Build CI image` 阶段，确保 Maven package 使用 `peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22` |
