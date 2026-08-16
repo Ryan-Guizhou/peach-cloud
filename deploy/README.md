@@ -23,6 +23,8 @@ deploy/
     config/*.yml
     config/*.json
     import-nacos.sh
+    import-nacos.ps1
+    import-nacos.private.json # 本机私密配置，已被 Git 忽略
   nginx/
     peach.conf.template
     conf.d/peach.conf
@@ -186,6 +188,41 @@ NACOS_GROUP=PEACH-CLOUD
 ./peach.sh nacos:import
 ```
 
+### Windows PowerShell 手工导入
+
+`nacos/import-nacos.ps1` 用于 Windows PowerShell 5.1 或 PowerShell 7+ 下手工导入 Nacos 配置。它不会修改 `nacos/config/` 中的 YAML/JSON 模板；导入时会读取同目录且被 Git 忽略的 `nacos/import-nacos.private.json`，在内存中完成替换后发布到 Nacos。
+
+创建 `nacos/import-nacos.private.json`，并按实际环境填写以下字段。不要把该文件提交到 Git：
+
+```json
+{
+  "MYSQL_HOST": "<mysql-host:port>",
+  "MYSQL_DATABASE": "<mysql-database>",
+  "MYSQL_USERNAME": "<mysql-username>",
+  "MYSQL_ROOT_PASSWORD": "<mysql-password>",
+  "REDIS_HOST": "<redis-host:port>",
+  "REDIS_PASSWORD": "<redis-password>",
+  "OSS_ACCESS_KEY": "<oss-access-key>",
+  "OSS_SECRET_KEY": "<oss-secret-key>",
+  "COS_ACCESS_KEY": "<cos-access-key>",
+  "COS_SECRET_KEY": "<cos-secret-key>",
+  "BOS_ACCESS_KEY": "<bos-access-key>",
+  "BOSS_SECRET_KEY": "<bos-secret-key>",
+  "OBS_ACCESS_KEY": "<obs-access-key>",
+  "OBS_SECRET_KEY": "<obs-secret-key>"
+}
+```
+
+从 `nacos/` 目录运行：
+
+```powershell
+.\import-nacos.ps1
+```
+
+脚本会替换模板中的 `@MYSQL_HOST@`、`@MYSQL_DATABASE@`、`@MYSQL_ROOT_PASSWORD@`、`@REDIS_HOST@`、`@REDIS_PASSWORD@` 以及 OSS/COS 密钥占位符，并覆盖 `peach-datasource.yml` 的 MySQL `username`。YAML 替换后的值不保留模板双引号；因此私密配置中的值必须符合 YAML 无引号标量语法，不能包含空格、`#`、`: ` 等会改变 YAML 解析结果的字符。
+
+`./peach.sh nacos:import` 仍调用 `nacos/import-nacos.sh` 并读取 `deploy/.env`，不会自动调用 PowerShell 脚本。
+
 `peach-openfeign.yml` 中启用了 Sentinel Nacos 数据源，脚本会同时导入以下两个 JSON 配置：
 
 ```text
@@ -240,6 +277,8 @@ peach-openfeign-sentinel-degrade-rules.json
 | MySQL 表名大小写异常 | `lower_case_table_names` 是否为 `1` | 该参数必须在数据目录初始化前生效；数据可丢时重建 |
 | 初始化菜单、用户、租户缺失 | `sql/INIT.sql` 是否导入 | 执行 `./peach.sh mysql:init` |
 | Nacos 配置为空 | namespace、group 是否与 `.env` 一致 | 执行 `./peach.sh nacos:import`，再重启相关服务 |
+| PowerShell 导入提示私密文件不存在或字段缺失 | `nacos/import-nacos.private.json` 是否存在、字段名是否与模板占位符一致 | 创建或补全私密文件；不要将其提交到 Git |
+| PowerShell 导入后配置无法解析 | 私密值是否含 YAML 无引号不支持的字符 | 使用符合 YAML 无引号标量语法的值，或调整脚本的引号处理策略 |
 | 业务服务退出 | Nacos、MySQL、Redis 地址和密码是否一致 | 执行 `./peach.sh logs <service>` |
 | 修改 Nginx 模板后不生效 | 镜像是否重建 | 执行 `./peach.sh front:build` 后 `./peach.sh restart peach-front` |
 

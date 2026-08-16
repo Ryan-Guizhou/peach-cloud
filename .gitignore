@@ -43,3 +43,4 @@ build/
 
 # Local CI/CD deploy secrets
 deploy-pipline/peach-deploy.env
+deploy/nacos/import-nacos.private.json
