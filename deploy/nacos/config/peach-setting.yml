@@ -4,6 +4,10 @@ server:
 peach:
   multicache:
     enabled: true
+  openapi:
+    version: V1.0.0
+    server-url: /api/setting
+    server-description: Gateway
 
 springdoc:
   servers:

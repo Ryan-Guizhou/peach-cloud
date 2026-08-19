@@ -6,10 +6,14 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Indexed;
+
+import java.util.Collections;
 
 /**
  * @Author Mr Shu
@@ -22,9 +26,33 @@ import org.springframework.stereotype.Indexed;
 @Configuration
 public class OpenApiConfig {
 
+    @Value("${peach.openapi.title:PEACH-CLOUD 设置中心 API}")
+    private String title;
+
+    @Value("${peach.openapi.description:PEACH-CLOUD 设置中心 API}")
+    private String description;
+
+    @Value("${peach.openapi.version:V1.0.0}")
+    private String version;
+
+    @Value("${peach.openapi.contact.name:Ryan_GuiZhou}")
+    private String contactName;
+
+    @Value("${peach.openapi.contact.url:https://peachsoft.com}")
+    private String contactUrl;
+
+    @Value("${peach.openapi.contact.email:huanhuanshu48@gmail.com}")
+    private String contactEmail;
+
+    @Value("${peach.openapi.server-url:}")
+    private String serverUrl;
+
+    @Value("${peach.openapi.server-description:网关地址}")
+    private String serverDescription;
+
     @Bean
     public OpenAPI completeOpenApi() {
-        return new OpenAPI()
+        OpenAPI openAPI = new OpenAPI()
                 .info(createApiInfo())
                 .addSecurityItem(new SecurityRequirement().addList("Authorization"))
                 .components(new Components()
@@ -43,9 +71,15 @@ public class OpenApiConfig {
                         .addSecuritySchemes("Referer",
                                 new SecurityScheme()
                                         .name("Referer")
-                                        .type(SecurityScheme.Type.APIKEY)
-                                        .in(SecurityScheme.In.HEADER)
-                                        .description("Referer 来源头")));
+                                .type(SecurityScheme.Type.APIKEY)
+                                .in(SecurityScheme.In.HEADER)
+                                .description("Referer 来源头")));
+        if (serverUrl != null && serverUrl.trim().length() > 0) {
+            openAPI.servers(Collections.singletonList(new Server()
+                    .url(serverUrl.trim())
+                    .description(serverDescription)));
+        }
+        return openAPI;
     }
 
     /**
@@ -55,14 +89,14 @@ public class OpenApiConfig {
      */
     private Info createApiInfo() {
         Contact contact = new Contact()
-                .name("Ryan_GuiZhou")
-                .url("https://peachsoft.com")
-                .email("huanhuanshu48@gmail.com");
+                .name(contactName)
+                .url(contactUrl)
+                .email(contactEmail);
 
         return new Info()
-                .title("PEACH-CLOUD 设置中心 API")
-                .description("PEACH-CLOUD 设置中心 API")
-                .version("V1.0.0")
+                .title(title)
+                .description(description)
+                .version(version)
                 .contact(contact);
     }
 }

@@ -5,7 +5,7 @@ import com.peach.initialize.constant.InitializeHandlerType;
 import com.peach.initialize.execute.base.AbstractAppExecute;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 /**
  * @Author Mr Shu

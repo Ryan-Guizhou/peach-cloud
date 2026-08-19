@@ -2,7 +2,7 @@ package com.peach.rocket.example.runner;
 
 import org.springframework.stereotype.Indexed;
 import com.peach.rocket.example.service.OrderService;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;

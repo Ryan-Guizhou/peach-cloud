@@ -13,3 +13,8 @@ springdoc:
     - com.peach.message.rest.internal
     - com.peach.message.launch.health
 
+peach:
+  openapi:
+    version: V1.0.0
+    server-url: /api/message
+    server-description: Gateway

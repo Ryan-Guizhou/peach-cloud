@@ -18,3 +18,9 @@ springdoc:
   packages-to-scan:
     - com.peach.auth.rest.internal
     - com.peach.auth.launch.health
+
+peach:
+  openapi:
+    version: V1.0.0
+    server-url: /api/auth
+    server-description: Gateway

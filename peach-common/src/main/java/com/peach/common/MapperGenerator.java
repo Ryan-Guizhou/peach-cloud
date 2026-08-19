@@ -3,9 +3,9 @@ package com.peach.common;
 
 import com.peach.common.util.StringUtil;
 
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;

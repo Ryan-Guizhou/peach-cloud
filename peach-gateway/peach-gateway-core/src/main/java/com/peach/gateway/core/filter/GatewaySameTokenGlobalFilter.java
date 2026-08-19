@@ -50,7 +50,7 @@ public class GatewaySameTokenGlobalFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
         String path = exchange.getRequest().getURI().getRawPath();
-        String method = exchange.getRequest().getMethodValue();
+        String method = exchange.getRequest().getMethod().name();
         if (endpointMatcher.matches(properties.getPublicEndpoints(), method, path)) {
             if (properties.isLogPath()) {
                 log.info("Gateway same-token relay skipped for public endpoint, method={}, path={}", method, path);

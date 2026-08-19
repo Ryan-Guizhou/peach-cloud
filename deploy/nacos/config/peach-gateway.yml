@@ -108,7 +108,7 @@ peach:
         - method: GET
           path: /api/auth/v3/api-docs
         - method: GET
-          path: /api/file/v3/api-docs
+          path: /api/fileservice/v3/api-docs
         - method: GET
           path: /api/message/v3/api-docs
         - method: GET
@@ -135,86 +135,88 @@ spring.main:
 # 网关路由配置
 spring.cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-      routes:
-        - id: peach-auth-swagger
-          uri: lb://peach-auth
-          predicates:
-            - Path=/api/auth/v3/api-docs
-          filters:
-            - SetPath=/v3/api-docs
-        - id: peach-monitor-swagger
-          uri: lb://peach-monitor
-          predicates:
-            - Path=/api/monitor/v3/api-docs
-          filters:
-            - SetPath=/v3/api-docs
-        - id: peach-fileservice-swagger
-          uri: lb://peach-fileservice
-          predicates:
-            - Path=/api/file/v3/api-docs
-          filters:
-            - SetPath=/v3/api-docs
-        - id: peach-setting-swagger
-          uri: lb://peach-setting
-          predicates:
-            - Path=/api/setting/v3/api-docs
-          filters:
-            - SetPath=/v3/api-docs
-        - id: peach-message-swagger
-          uri: lb://peach-message
-          predicates:
-            - Path=/api/message/v3/api-docs
-          filters:
-            - SetPath=/v3/api-docs
-        - id: peach-generator-swagger
-          uri: lb://peach-generator
-          predicates:
-            - Path=/api/generator/v3/api-docs
-          filters:
-            - SetPath=/v3/api-docs
-        - id: peach-auth
-          uri: lb://peach-auth
-          predicates:
-            - Path=/api/auth/**
-          filters:
-            - StripPrefix=1
-        - id: peach-monitor
-          uri: lb://peach-monitor
-          predicates:
-            - Path=/api/monitor/**
-          filters:
-            - StripPrefix=1
-        - id: peach-fileservice
-          uri: lb://peach-fileservice
-          predicates:
-            - Path=/api/file/**
-          filters:
-            - StripPrefix=1
-        - id: peach-setting
-          uri: lb://peach-setting
-          predicates:
-            - Path=/api/setting/**
-          filters:
-            - StripPrefix=1
-        - id: peach-message-ws
-          uri: lb:ws://peach-message
-          predicates:
-            - Path=/webSocket/**
-        - id: peach-message
-          uri: lb://peach-message
-          predicates:
-            - Path=/api/message/**
-          filters:
-            - StripPrefix=1
-        - id: peach-generator
-          uri: lb://peach-generator
-          predicates:
-            - Path=/api/generator/**
-          filters:
-            - StripPrefix=1
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+          routes:
+            - id: peach-auth-swagger
+              uri: lb://peach-auth
+              predicates:
+                - Path=/api/auth/v3/api-docs
+              filters:
+                - SetPath=/v3/api-docs
+            - id: peach-monitor-swagger
+              uri: lb://peach-monitor
+              predicates:
+                - Path=/api/monitor/v3/api-docs
+              filters:
+                - SetPath=/v3/api-docs
+            - id: peach-fileservice-swagger
+              uri: lb://peach-fileservice
+              predicates:
+                - Path=/api/fileservice/v3/api-docs
+              filters:
+                - SetPath=/v3/api-docs
+            - id: peach-setting-swagger
+              uri: lb://peach-setting
+              predicates:
+                - Path=/api/setting/v3/api-docs
+              filters:
+                - SetPath=/v3/api-docs
+            - id: peach-message-swagger
+              uri: lb://peach-message
+              predicates:
+                - Path=/api/message/v3/api-docs
+              filters:
+                - SetPath=/v3/api-docs
+            - id: peach-generator-swagger
+              uri: lb://peach-generator
+              predicates:
+                - Path=/api/generator/v3/api-docs
+              filters:
+                - SetPath=/v3/api-docs
+            - id: peach-auth
+              uri: lb://peach-auth
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
+            - id: peach-monitor
+              uri: lb://peach-monitor
+              predicates:
+                - Path=/api/monitor/**
+              filters:
+                - StripPrefix=1
+            - id: peach-fileservice
+              uri: lb://peach-fileservice
+              predicates:
+                - Path=/api/file/**
+              filters:
+                - StripPrefix=1
+            - id: peach-setting
+              uri: lb://peach-setting
+              predicates:
+                - Path=/api/setting/**
+              filters:
+                - StripPrefix=1
+            - id: peach-message-ws
+              uri: lb:ws://peach-message
+              predicates:
+                - Path=/webSocket/**
+            - id: peach-message
+              uri: lb://peach-message
+              predicates:
+                - Path=/api/message/**
+              filters:
+                - StripPrefix=1
+            - id: peach-generator
+              uri: lb://peach-generator
+              predicates:
+                - Path=/api/generator/**
+              filters:
+                - StripPrefix=1
 
 # 网关聚合knife4j 配置
 knife4j:
@@ -225,38 +227,33 @@ knife4j:
       - name: 认证服务
         url: /api/auth/v3/api-docs
         service-name: peach-auth
-        context-path: /api
+        context-path: /api/auth
         order: 1
       - name: 监控服务
         url: /api/monitor/v3/api-docs
         service-name: peach-monitor
-        context-path: /api
+        context-path: /api/monitor
         order: 2
       - name: 文件服务
         url: /api/file/v3/api-docs
         service-name: peach-fileservice
-        context-path: /api
+        context-path: /api/fileservice
         order: 3
       - name: 消息服务
         url: /api/message/v3/api-docs
         service-name: peach-message
-        context-path: /api
+        context-path: /api/message
         order: 4
       - name: 设置服务
         url: /api/setting/v3/api-docs
         service-name: peach-setting
-        context-path: /api
+        context-path: /api/setting
         order: 5
       - name: 代码生成服务
         url: /api/generator/v3/api-docs
         service-name: peach-generator
-        context-path: /api
+        context-path: /api/generator
         order: 6
 
 
 
-logging:
-  level:
-    com.alibaba.nacos: INFO
-    com.alibaba.cloud.nacos: INFO
-    org.springframework.cloud.gateway: INFO

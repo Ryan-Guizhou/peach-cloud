@@ -11,7 +11,7 @@ import org.springframework.cloud.openfeign.FeignAutoConfiguration;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Indexed;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 
 /**

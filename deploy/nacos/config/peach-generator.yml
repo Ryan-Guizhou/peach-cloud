@@ -8,3 +8,8 @@ springdoc:
   packages-to-scan:
     - com.peach.generator.rest.internal
     - com.peach.generator.launch.health
+peach:
+  openapi:
+    version: V1.0.0
+    server-url: /api/generator
+    server-description: Gateway

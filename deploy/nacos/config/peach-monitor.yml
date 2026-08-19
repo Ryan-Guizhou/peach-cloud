@@ -8,3 +8,9 @@ springdoc:
   packages-to-scan:
     - com.peach.monitor.rest.internal
     - com.peach.monitor.launch.health
+
+peach:
+  openapi:
+    version: V1.0.0
+    server-url: /api/monitor
+    server-description: Gateway

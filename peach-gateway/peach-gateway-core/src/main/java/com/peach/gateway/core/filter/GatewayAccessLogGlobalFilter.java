@@ -38,7 +38,7 @@ public class GatewayAccessLogGlobalFilter implements GlobalFilter, Ordered {
                     String requestId = exchange.getRequest().getHeaders()
                             .getFirst(GatewayConstant.REQUEST_ID_HEADER);
                     String path = exchange.getRequest().getURI().getPath();
-                    String method = exchange.getRequest().getMethodValue();
+                    String method = exchange.getRequest().getMethod().name();
                     String client = GatewayFilterSupport.clientAddress(exchange);
                     if (status >= 500) {
                         log.warn("Gateway access completed, requestId={}, method={}, path={}, status={}, durationMs={}, client={}",

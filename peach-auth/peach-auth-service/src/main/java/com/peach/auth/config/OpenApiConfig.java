@@ -6,10 +6,14 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Indexed;
+
+import java.util.Collections;
 
 
 /**
@@ -22,9 +26,34 @@ import org.springframework.stereotype.Indexed;
 @Indexed
 @Configuration
 public class OpenApiConfig {
+
+    @Value("${peach.openapi.title:认证服务 API}")
+    private String title;
+
+    @Value("${peach.openapi.description:PEACH-CLOUD管理系统认证模块 API 接口}")
+    private String description;
+
+    @Value("${peach.openapi.version:V1.0.0}")
+    private String version;
+
+    @Value("${peach.openapi.contact.name:Ryan_GuiZhou}")
+    private String contactName;
+
+    @Value("${peach.openapi.contact.url:https://peachsoft.com}")
+    private String contactUrl;
+
+    @Value("${peach.openapi.contact.email:huanhuanshu48@gmail.com}")
+    private String contactEmail;
+
+    @Value("${peach.openapi.server-url:}")
+    private String serverUrl;
+
+    @Value("${peach.openapi.server-description:网关地址}")
+    private String serverDescription;
+
     @Bean
     public OpenAPI completeOpenApi() {
-        return new OpenAPI()
+        OpenAPI openAPI = new OpenAPI()
                 .info(createApiInfo())
                 // 全局安全要求（所有接口默认需要 Token）
                 .addSecurityItem(new SecurityRequirement().addList("Authorization"))
@@ -47,6 +76,12 @@ public class OpenApiConfig {
                                 .in(SecurityScheme.In.HEADER)
                                 .description("Referer 引用来源"))
                 );
+        if (serverUrl != null && serverUrl.trim().length() > 0) {
+            openAPI.servers(Collections.singletonList(new Server()
+                    .url(serverUrl.trim())
+                    .description(serverDescription)));
+        }
+        return openAPI;
     }
 
     /**
@@ -55,15 +90,15 @@ public class OpenApiConfig {
      */
     private Info createApiInfo() {
         Contact contact = new Contact()
-                .name("Ryan_GuiZhou")
-                .url("https://peachsoft.com")
-                .email("huanhuanshu48@gmail.com");
+                .name(contactName)
+                .url(contactUrl)
+                .email(contactEmail);
 
         // 构建 Info 对象
         return new Info()
-                .title("认证服务 API")
-                .description("PEACH-CLOUD管理系统认证模块 API 接口")
-                .version("V1.0.0")
+                .title(title)
+                .description(description)
+                .version(version)
                 .contact(contact);
     }
 

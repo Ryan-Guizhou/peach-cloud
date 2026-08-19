@@ -1,6 +1,7 @@
 package com.peach.satoken.dao;
 
 import cn.dev33.satoken.dao.SaTokenDao;
+import cn.dev33.satoken.session.SaSession;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -17,7 +18,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -237,6 +238,26 @@ public class PeachSaTokenDao implements SaTokenDao {
     }
 
     /**
+     * 获取指定类型的对象值。
+     *
+     * @param key 键
+     * @param classType 目标类型
+     * @param <T> 目标类型
+     * @return 对象值
+     */
+    @Override
+    public <T> T getObject(String key, Class<T> classType) {
+        Object value = getObject(key);
+        if (value == null || classType == null) {
+            return null;
+        }
+        if (classType.isInstance(value)) {
+            return classType.cast(value);
+        }
+        return objectMapper.convertValue(value, classType);
+    }
+
+    /**
      * 设置对象值。
      *
      * @param key     键
@@ -308,6 +329,76 @@ public class PeachSaTokenDao implements SaTokenDao {
             return;
         }
         objectRedisTemplate.expire(key, timeout, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 获取 Sa-Token Session。
+     *
+     * @param sessionId Session ID
+     * @return Session
+     */
+    @Override
+    public SaSession getSession(String sessionId) {
+        return getObject(sessionId, SaSession.class);
+    }
+
+    /**
+     * 设置 Sa-Token Session。
+     *
+     * @param session Session
+     * @param timeout 超时时间，单位秒
+     */
+    @Override
+    public void setSession(SaSession session, long timeout) {
+        if (session == null) {
+            return;
+        }
+        setObject(session.getId(), session, timeout);
+    }
+
+    /**
+     * 更新 Sa-Token Session。
+     *
+     * @param session Session
+     */
+    @Override
+    public void updateSession(SaSession session) {
+        if (session == null) {
+            return;
+        }
+        updateObject(session.getId(), session);
+    }
+
+    /**
+     * 删除 Sa-Token Session。
+     *
+     * @param sessionId Session ID
+     */
+    @Override
+    public void deleteSession(String sessionId) {
+        deleteObject(sessionId);
+    }
+
+    /**
+     * 获取 Sa-Token Session 剩余过期时间。
+     *
+     * @param sessionId Session ID
+     * @return 剩余过期时间
+     */
+    @Override
+    public long getSessionTimeout(String sessionId) {
+        return getObjectTimeout(sessionId);
+    }
+
+    /**
+     * 更新 Sa-Token Session 过期时间。
+     *
+     * @param sessionId Session ID
+     * @param timeout 超时时间，单位秒
+     */
+    @Override
+    public void updateSessionTimeout(String sessionId, long timeout) {
+        updateObjectTimeout(sessionId, timeout);
     }
 
     /**

@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * 过期上传会话清理定时任务

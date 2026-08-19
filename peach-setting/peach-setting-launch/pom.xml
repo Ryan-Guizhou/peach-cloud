@@ -68,7 +68,7 @@
 
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-openapi3-spring-boot-starter</artifactId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
         </dependency>
 
         <dependency>
@@ -95,29 +95,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-
-            <!-- 2. 可选：Jib 容器化构建 -->
-<!--            <plugin>-->
-<!--                <groupId>com.google.cloud.tools</groupId>-->
-<!--                <artifactId>jib-maven-plugin</artifactId>-->
-<!--                <version>3.4.0</version>-->
-<!--                <configuration>-->
-<!--                    <from>-->
-<!--                        <image>openjdk:8-jre-alpine</image> &lt;!&ndash; 鍩虹闀滃儚 &ndash;&gt;-->
-<!--                    </from>-->
-<!--                    <to>-->
-<!--                        <image>registry.your-company.com/peach-setting</image> &lt;!&ndash; 鐩爣闀滃儚 &ndash;&gt;-->
-<!--                        <tags>-->
-<!--                            <tag>latest</tag>-->
-<!--                            <tag>${project.version}</tag>-->
-<!--                        </tags>-->
-<!--                    </to>-->
-<!--                    <container>-->
-<!--                        <mainClass>com.peach.gateway.launch.PeachGatewayApplication</mainClass>-->
-<!--                        <creationTime>USE_CURRENT_TIMESTAMP</creationTime>-->
-<!--                    </container>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>
@@ -130,8 +107,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <release>${java.version}</release>
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <parameters>true</parameters>
                 </configuration>

@@ -2,8 +2,8 @@ package com.peach.email.smtp;
 
 import com.peach.email.core.EmailContext;
 
-import javax.mail.Session;
-import javax.mail.Transport;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
 
 /**
  * @Author Mr Shu

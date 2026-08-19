@@ -3,8 +3,8 @@ package com.peach.sample.email.retry;
 import com.peach.email.retry.RetryPolicy;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.mail.MessagingException;
-import javax.mail.SendFailedException;
+import jakarta.mail.MessagingException;
+import jakarta.mail.SendFailedException;
 
 /**
  * 固定间隔重试策略

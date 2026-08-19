@@ -61,6 +61,21 @@ need_cmd() {
   fi
 }
 
+check_java_runtime() {
+  java_bin="${JAVA_BIN:-java}"
+  required="${JAVA_REQUIRED_MAJOR:-21}"
+  version_output=$("$java_bin" -version 2>&1 | sed -n '1p')
+  major=$(printf '%s\n' "$version_output" | sed -E 's/.*version "([0-9]+).*/\1/')
+  if [ -z "$major" ] || [ "$major" = "$version_output" ]; then
+    echo "Unable to detect Java version from: $version_output" >&2
+    exit 1
+  fi
+  if [ "$major" -lt "$required" ]; then
+    echo "Java $required or later is required, actual: $version_output" >&2
+    exit 1
+  fi
+}
+
 check_tools() {
   need_cmd docker
   docker compose version >/dev/null
@@ -114,6 +129,7 @@ ensure_mysql_seed_data() {
 }
 
 backend_build() {
+  check_java_runtime
   cd "$REPO_DIR"
   ./mvnw -DskipTests package 2>/dev/null || mvn -DskipTests package
   cd "$SCRIPT_DIR"

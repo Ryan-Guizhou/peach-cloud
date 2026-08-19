@@ -1,11 +1,8 @@
 package com.peach.email.retry;
 
-
-
-//import lombok.extern.slf4j.Slf4j;
-
-import javax.mail.MessagingException;
-import javax.mail.SendFailedException;
+import jakarta.mail.MessagingException;
+import jakarta.mail.SendFailedException;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author Mr Shu
@@ -13,7 +10,7 @@ import javax.mail.SendFailedException;
  * @CreateTime 2025/12/9 15:10
  * @Description: 简单的重试策略
  */
-//@Slf4j
+@Slf4j
 public class SimpleRetryPolicy implements RetryPolicy{
 
     private final int maxAttempts;
@@ -23,7 +20,7 @@ public class SimpleRetryPolicy implements RetryPolicy{
     public SimpleRetryPolicy(int maxAttempts, long delayMillis) {
         this.maxAttempts = maxAttempts;
         this.delayMillis = delayMillis;
-//        log.info("Init SimpleRetryPolicy: maxAttempts={}, delayMillis={}", maxAttempts, delayMillis);
+        log.info("Init SimpleRetryPolicy: maxAttempts={}, delayMillis={}", maxAttempts, delayMillis);
     }
 
     @Override

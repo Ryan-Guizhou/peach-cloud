@@ -7,9 +7,9 @@ import com.peach.email.core.EmailMessage;
 import com.peach.email.core.EmailTransport;
 import com.peach.email.core.SendResult;
 
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.MimeMessage;
 import java.util.Properties;
 
 /**

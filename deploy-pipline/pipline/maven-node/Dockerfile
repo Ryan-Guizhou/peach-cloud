@@ -1,6 +1,6 @@
 FROM node:22-bookworm AS node
 
-FROM maven:3.9.11-eclipse-temurin-8
+FROM maven:3.9.11-eclipse-temurin-21
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules

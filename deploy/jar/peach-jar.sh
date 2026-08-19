@@ -68,6 +68,21 @@ need_cmd() {
   fi
 }
 
+check_java_runtime() {
+  java_bin="${JAVA_BIN:-java}"
+  required="${JAVA_REQUIRED_MAJOR:-21}"
+  version_output=$("$java_bin" -version 2>&1 | sed -n '1p')
+  major=$(printf '%s\n' "$version_output" | sed -E 's/.*version "([0-9]+).*/\1/')
+  if [ -z "$major" ] || [ "$major" = "$version_output" ]; then
+    echo "Unable to detect Java version from: $version_output" >&2
+    exit 1
+  fi
+  if [ "$major" -lt "$required" ]; then
+    echo "Java $required or later is required, actual: $version_output" >&2
+    exit 1
+  fi
+}
+
 init_all() {
   ensure_env
   ensure_dirs
@@ -350,6 +365,7 @@ case "$command" in
     load_env
     ensure_dirs
     need_cmd "${JAVA_BIN:-java}"
+    check_java_runtime
     run_for_each start "$target"
     ;;
   stop)

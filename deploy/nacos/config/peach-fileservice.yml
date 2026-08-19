@@ -9,6 +9,12 @@ springdoc:
     - com.peach.fileservice.rest.internal
     - com.peach.fileservice.launch.health
 
+peach:
+  openapi:
+    version: V1.0.0
+    server-url: /api/file
+    server-description: Gateway
+
 clamd:
   host: 127.0.0.1
   port: 3310

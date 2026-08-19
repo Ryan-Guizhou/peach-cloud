@@ -1,11 +1,10 @@
 package com.peach.email.smtp;
 
 import com.peach.email.core.EmailContext;
-//import lombok.extern.slf4j.Slf4j;
 
-import javax.mail.MessagingException;
-import javax.mail.Session;
-import javax.mail.Transport;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author Mr Shu
@@ -13,7 +12,7 @@ import javax.mail.Transport;
  * @CreateTime 2025/12/9 18:27
  * @Description 简单的连接提供者
  */
-//@Slf4j
+@Slf4j
 public class SimpleSmtpConnectionProvider implements SmtpConnectionProvider{
     @Override
     public Transport acquire(Session session, EmailContext context) throws Exception {
@@ -36,7 +35,7 @@ public class SimpleSmtpConnectionProvider implements SmtpConnectionProvider{
         try {
             transport.close();
         } catch (Exception e) {
-//            log.error("Failed to close SMTP transport", e);
+            log.error("Failed to close SMTP transport", e);
         }
     }
 }

@@ -16,35 +16,36 @@
         <revision>1.0.0-SNAPSHOT</revision>
         <bos.version>0.10.228</bos.version>
         <cos.version>5.6.227</cos.version>
-        <obs.version>3.24.9</obs.version>
+        <obs.version>3.24.12</obs.version>
         <oss.version>3.18.5</oss.version>
-        <asw.version>1.12.170</asw.version>
-        <spring.boot>2.7.13</spring.boot>
-        <jsch.version>0.1.55</jsch.version>
-        <mail.version>1.6.2</mail.version>
-        <spring.cloud>2021.0.5</spring.cloud>
-        <guava.version>27.0.1-jre</guava.version>
-        <minio.version>8.5.12</minio.version>
-        <hutool.version>5.8.20</hutool.version>
+        <asw.version>1.12.791</asw.version>
+        <spring.boot>3.5.4</spring.boot>
+        <jsch.version>0.2.25</jsch.version>
+        <mail.version>2.0.1</mail.version>
+        <spring.cloud>2025.0.0</spring.cloud>
+        <guava.version>33.4.8-jre</guava.version>
+        <minio.version>8.5.17</minio.version>
+        <hutool.version>5.8.39</hutool.version>
         <jasypt.version>3.0.5</jasypt.version>
-        <mybatis.version>2.3.1</mybatis.version>
+        <mybatis.version>3.0.4</mybatis.version>
         <esdk-obs.version>3.25.10</esdk-obs.version>
-        <knife4j.version>4.4.0</knife4j.version>
-        <fastjson.version>2.0.21</fastjson.version>
-        <redisson.version>3.26.1</redisson.version>
+        <knife4j.version>4.5.0</knife4j.version>
+        <springdoc.version>2.8.17</springdoc.version>
+        <fastjson.version>2.0.58</fastjson.version>
+        <redisson.version>3.50.0</redisson.version>
         <rocketmq.version>5.3.2</rocketmq.version>
-        <sa-token.version>1.37.0</sa-token.version>
-        <commons-io.version>2.16.1</commons-io.version>
-        <freemarker.version>2.3.31</freemarker.version>
-        <pagehelper.version>1.4.7</pagehelper.version>
+        <sa-token.version>1.44.0</sa-token.version>
+        <commons-io.version>2.19.0</commons-io.version>
+        <freemarker.version>2.3.34</freemarker.version>
+        <pagehelper.version>2.1.0</pagehelper.version>
         <user-agent.version>1.2.3</user-agent.version>
         <guava-retry.version>2.0.0</guava-retry.version>
-        <persistence.version>1.0.2</persistence.version>
-        <spring.cloud.alibaba>2021.0.5.0</spring.cloud.alibaba>
-        <swagger-anno.version>2.2.9</swagger-anno.version>
-        <commons-langs.version>3.6</commons-langs.version>
-        <rocketmq-spring.version>2.2.3</rocketmq-spring.version>
-        <commons-beanutils.version>1.9.4</commons-beanutils.version>
+        <persistence.version>3.2.0</persistence.version>
+        <spring.cloud.alibaba>2025.0.0.0</spring.cloud.alibaba>
+        <swagger-anno.version>2.2.35</swagger-anno.version>
+        <commons-langs.version>3.18.0</commons-langs.version>
+        <rocketmq-spring.version>2.3.3</rocketmq-spring.version>
+        <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <spring-statemachine.version>3.2.1</spring-statemachine.version>
     </properties>
 
@@ -107,19 +108,34 @@
             <!-- Knife4j 业务 API 文档 -->
             <dependency>
                 <groupId>com.github.xiaoymin</groupId>
-                <artifactId>knife4j-openapi3-spring-boot-starter</artifactId>
+                <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
                 <version>${knife4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-common</artifactId>
+                <version>${springdoc.version}</version>
             </dependency>
             <!-- Sa-Token Reactor（网关） -->
             <dependency>
                 <groupId>cn.dev33</groupId>
-                <artifactId>sa-token-reactor-spring-boot-starter</artifactId>
+                <artifactId>sa-token-reactor-spring-boot3-starter</artifactId>
                 <version>${sa-token.version}</version>
             </dependency>
             <!-- Sa-Token Servlet（业务服务） -->
             <dependency>
                 <groupId>cn.dev33</groupId>
-                <artifactId>sa-token-spring-boot-starter</artifactId>
+                <artifactId>sa-token-spring-boot3-starter</artifactId>
                 <version>${sa-token.version}</version>
             </dependency>
             <!-- RocketMQ Spring Boot -->
@@ -171,6 +187,12 @@
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
                 <version>${commons-beanutils.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -191,7 +213,7 @@
             <!-- OpenAPI -->
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations</artifactId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
                 <version>${swagger-anno.version}</version>
             </dependency>
             <!-- Redis 客户端 -->
@@ -203,7 +225,7 @@
             <!-- 邮件 / 模板 / 持久化 API -->
             <dependency>
                 <groupId>com.sun.mail</groupId>
-                <artifactId>javax.mail</artifactId>
+                <artifactId>jakarta.mail</artifactId>
                 <version>${mail.version}</version>
             </dependency>
             <dependency>
@@ -212,13 +234,13 @@
                 <version>${freemarker.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.persistence</groupId>
-                <artifactId>persistence-api</artifactId>
+                <groupId>jakarta.persistence</groupId>
+                <artifactId>jakarta.persistence-api</artifactId>
                 <version>${persistence.version}</version>
             </dependency>
             <!-- SSH -->
             <dependency>
-                <groupId>com.jcraft</groupId>
+                <groupId>com.github.mwiede</groupId>
                 <artifactId>jsch</artifactId>
                 <version>${jsch.version}</version>
             </dependency>
@@ -233,11 +255,23 @@
                 <groupId>com.aliyun.oss</groupId>
                 <artifactId>aliyun-sdk-oss</artifactId>
                 <version>${oss.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-s3</artifactId>
                 <version>${asw.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.huaweicloud</groupId>
@@ -258,11 +292,31 @@
                 <groupId>com.baidubce</groupId>
                 <artifactId>bce-java-sdk</artifactId>
                 <version>${bos.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>jdk.tools</groupId>
+                        <artifactId>jdk.tools</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.validation</groupId>
+                        <artifactId>validation-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.qcloud</groupId>
                 <artifactId>cos_api</artifactId>
                 <version>${cos.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- ==================== peach-common ==================== -->

@@ -38,7 +38,7 @@ public class GatewayIpWhitelistGlobalFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String client = GatewayFilterSupport.clientAddress(exchange);
-        String method = exchange.getRequest().getMethodValue();
+        String method = exchange.getRequest().getMethod().name();
         String path = exchange.getRequest().getURI().getRawPath();
         if (redisTemplate == null || isBlank(client) || "unknown".equals(client)) {
             return chain.filter(exchange);

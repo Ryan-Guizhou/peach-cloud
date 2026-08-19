@@ -55,7 +55,7 @@ public class GatewayRiskControlGlobalFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getRawPath();
-        String method = exchange.getRequest().getMethodValue();
+        String method = exchange.getRequest().getMethod().name();
         if (!riskControlProperties.isEnabled() || endpointMatcher.matches(saTokenProperties.getPublicEndpoints(), method, path)) {
             return chain.filter(exchange);
         }

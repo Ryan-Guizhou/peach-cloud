@@ -1,5 +1,5 @@
 knife4j:
-  enable: true
+  enable: false
   setting:
     language: zh_cn
 
