@@ -1,6 +1,9 @@
 package com.peach.scheduler.statemachine;
 
 import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.StateMachineEventResult;
+import org.springframework.messaging.support.MessageBuilder;
+import reactor.core.publisher.Mono;
 
 /**
  * 校验相关数据。
@@ -28,7 +31,10 @@ public final class StateMachineTransitionResolver {
      * @throws IllegalStateException 异常说明
      */
     public static <S, E> S transit(StateMachine<S, E> machine, E event) {
-        if (!machine.sendEvent(event)) {
+        StateMachineEventResult<S, E> result = machine.sendEvent(
+                Mono.just(MessageBuilder.withPayload(event).build())
+        ).blockLast();
+        if (result == null || result.getResultType() != StateMachineEventResult.ResultType.ACCEPTED) {
             throw new IllegalStateException("State transition rejected: " + event);
         }
         return machine.getState().getId();

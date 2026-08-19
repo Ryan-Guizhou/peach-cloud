@@ -71,7 +71,7 @@ public class PeachOpenFeignErrorDecoder implements ErrorDecoder {
 
         PeachFeignRetryableException(int status, String message, Request.HttpMethod httpMethod, Request request,
                                      Throwable cause) {
-            super(status, message, httpMethod, cause, null, request);
+            super(status, message, httpMethod, cause, (Long)null, request);
         }
     }
 

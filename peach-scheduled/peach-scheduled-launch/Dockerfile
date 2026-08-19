@@ -11,11 +11,11 @@ RUN apk add --no-cache tzdata \
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-COPY target/peach-setting-launch-1.0.0-SNAPSHOT.jar /app/app.jar
+COPY target/peach-scheduled-launch-1.0.0-SNAPSHOT.jar /app/app.jar
 
 VOLUME ["/app/logs"]
 
-EXPOSE 18085
+EXPOSE 8088
 
 ENV JAVA_OPTS=""
 ENV SPRING_PROFILES_ACTIVE=docker

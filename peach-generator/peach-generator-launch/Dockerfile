@@ -1,14 +1,23 @@
-FROM openjdk:8-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
-LABEL maintainer="peach-cloud"
 
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories && \
-    apk add --no-cache bash
 
 WORKDIR /app
 
-COPY target/peach-generator-launch-${revision}.jar app.jar
+RUN apk add --no-cache tzdata \
+    && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && echo 'Asia/Shanghai' > /etc/timezone
 
-EXPOSE 8085
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
-ENTRYPOINT ["java","-jar","/app/app.jar","--spring.profiles.active=docker"]
+COPY target/peach-generator-launch-1.0.0-SNAPSHOT.jar /app/app.jar
+
+VOLUME ["/app/logs"]
+
+EXPOSE 18086
+
+ENV JAVA_OPTS=""
+ENV SPRING_PROFILES_ACTIVE=docker
+
+ENTRYPOINT ["sh", "/app/start.sh"]

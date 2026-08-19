@@ -77,12 +77,12 @@ public class PeachOpenfeignRequestInterceptor implements RequestInterceptor {
     private void assertUploadSize(RequestTemplate template) {
         long maxBytes = properties.getUploadMaxBytes();
         // 未配置上限或无请求体则跳过
-        if (maxBytes <= 0L || template == null || template.requestBody() == null) {
+        if (maxBytes <= 0L || template == null || template.body() == null) {
             return;
         }
 
-        Integer length = template.requestBody().length();
-        if (length != null && length > maxBytes) {
+        int length = template.body().length;
+        if (length > maxBytes) {
             log.warn("[PeachFeign] request body size exceeds limit contentLength={} maxBytes={} path={}",
                     length, maxBytes, safePath(template));
             throw new FeignUploadSizeLimitException(safePath(template), length, maxBytes);

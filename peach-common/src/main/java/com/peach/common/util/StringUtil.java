@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.sql.Timestamp;
@@ -75,6 +76,7 @@ public final class StringUtil implements Serializable {
         return tempString;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T getGenericsValue(Object value, T clazz) {
         if (isEmpty(value)) {
             return null;
@@ -208,7 +210,7 @@ public final class StringUtil implements Serializable {
 
     public static BigDecimal toBigDecimal(String value) {
         BigDecimal decimal = new BigDecimal(Double.valueOf("0").doubleValue());
-        decimal = decimal.setScale(2, 5);
+        decimal = decimal.setScale(2, RoundingMode.HALF_UP);
         if (null == value) {
             return decimal;
         }

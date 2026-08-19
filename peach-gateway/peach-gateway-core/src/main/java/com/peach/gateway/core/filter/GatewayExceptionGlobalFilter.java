@@ -61,7 +61,7 @@ public class GatewayExceptionGlobalFilter implements GlobalFilter, Ordered {
     private Mono<Void> handle(ServerWebExchange exchange, Throwable e) {
         HttpStatus status = resolveStatus(e);
         String requestId = ensureRequestId(exchange);
-        String method = exchange.getRequest().getMethodValue();
+        String method = exchange.getRequest().getMethod().name();
         String path = exchange.getRequest().getURI().getRawPath();
         if (status.is5xxServerError()) {
             log.error("Gateway unhandled exception, requestId={}, method={}, path={}, status={}, reason={}",
@@ -103,7 +103,7 @@ public class GatewayExceptionGlobalFilter implements GlobalFilter, Ordered {
             return HttpStatus.FORBIDDEN;
         }
         if (e instanceof ResponseStatusException) {
-            return ((ResponseStatusException) e).getStatus();
+            return HttpStatus.valueOf(((ResponseStatusException) e).getStatusCode().value());
         }
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }

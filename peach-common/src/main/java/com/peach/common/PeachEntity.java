@@ -22,7 +22,8 @@ public class PeachEntity implements Serializable {
     @Schema(description = "分页大小")
     private Integer pageSize = 20;
 
-    public <T extends PeachEntity> T clone(Map source) {
+    @SuppressWarnings("unchecked")
+    public <T extends PeachEntity> T clone(Map<?, ?> source) {
         try {
             BeanUtils.copyProperties(this, source);
             return (T) this;
@@ -33,7 +34,7 @@ public class PeachEntity implements Serializable {
 
     public static <T extends PeachEntity> T create(Class<T> c) throws RuntimeException {
         try {
-            T t = c.newInstance();
+            T t = c.getDeclaredConstructor().newInstance();
             return t;
         } catch (Exception ex) {
             throw new RuntimeException(ex);

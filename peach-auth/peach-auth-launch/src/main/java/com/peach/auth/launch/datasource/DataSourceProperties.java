@@ -1,8 +1,8 @@
 package com.peach.auth.launch.datasource;
 
-import org.springframework.stereotype.Indexed;
 import com.zaxxer.hikari.HikariConfig;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 
@@ -12,7 +12,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @CreateTime 2026/1/9 15:47
  */
 @Data
-@Indexed
+@EqualsAndHashCode(callSuper = true)
 @ConfigurationProperties(prefix = "spring.datasource.hikari")
 public class DataSourceProperties extends HikariConfig {
 

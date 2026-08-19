@@ -52,7 +52,7 @@ public class SqlCostInterceptor implements Interceptor {
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
         StopWatch watch = null;
-        Map info = new HashMap();
+        Map<String, Object> info = new HashMap<>();
         try {
             info = genSqlInfo(invocation.getTarget()).get();
             watch = new StopWatch((String) info.get("id"));
@@ -91,7 +91,7 @@ public class SqlCostInterceptor implements Interceptor {
     }
 
     private Optional<Map<String, Object>> genSqlInfo(Object statementHandler) {
-        Map<String, Object> result = new HashMap();
+        Map<String, Object> result = new HashMap<>();
         try {
             if (statementHandler instanceof StatementHandler) {
                 StatementHandler delegateHandler = (StatementHandler) DELEGATE_FIELD.get(statementHandler);

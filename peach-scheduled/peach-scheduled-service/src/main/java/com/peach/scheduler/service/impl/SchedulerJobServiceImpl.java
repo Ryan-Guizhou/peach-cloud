@@ -236,7 +236,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
     private void rejectSensitiveKeys(JsonNode node) {
         if (node == null) return;
         if (node.isObject()) {
-            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            Iterator<Map.Entry<String, JsonNode>> fields = node.properties().iterator();
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> field = fields.next();
                 if (DENIED_PARAMETER_NAMES.contains(field.getKey().toLowerCase())) {

@@ -45,12 +45,13 @@ public class MessageSameTokenWebFilter implements WebFilter {
     }
 
     private boolean isWhiteList(String path) {
-        return StringUtils.contains(path, "health")
-                || StringUtils.contains(path, "/actuator")
-                || StringUtils.contains(path, "/doc.html")
-                || StringUtils.contains(path, "/webjars")
-                || StringUtils.contains(path, "/swagger-resources")
-                || StringUtils.contains(path, "/v3/api-docs")
-                || StringUtils.contains(path, "/v2/api-docs");
+        return path != null
+                && (path.contains("health")
+                || path.contains("/actuator")
+                || path.contains("/doc.html")
+                || path.contains("/webjars")
+                || path.contains("/swagger-resources")
+                || path.contains("/v3/api-docs")
+                || path.contains("/v2/api-docs"));
     }
 }

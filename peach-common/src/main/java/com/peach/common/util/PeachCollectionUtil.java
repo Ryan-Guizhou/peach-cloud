@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
  * @Description //借用spring的集合工具类的便利，补全一下反向判断
  * @CreateTime 2024/10/14 15:51
  */
+@SuppressWarnings({"rawtypes", "unchecked"})
 public final class PeachCollectionUtil extends CollectionUtils {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();

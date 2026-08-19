@@ -1,4 +1,6 @@
-FROM eclipse-temurin:8-jdk-alpine
+FROM eclipse-temurin:21-jre-alpine
+
+
 
 WORKDIR /app
 
@@ -17,5 +19,8 @@ COPY target/peach-auth-launch-1.0.0-SNAPSHOT.jar /app/app.jar
 VOLUME ["/app/logs"]
 
 EXPOSE 18081
+
+ENV JAVA_OPTS=""
+ENV SPRING_PROFILES_ACTIVE=docker
 
 ENTRYPOINT ["sh", "/app/start.sh"]

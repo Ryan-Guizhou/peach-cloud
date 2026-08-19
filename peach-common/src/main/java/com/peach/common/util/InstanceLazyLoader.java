@@ -27,7 +27,7 @@ public final class InstanceLazyLoader {
      * @param supplier 创建实例的工厂方法
      * @return 创建的实例
      */
-    public static <T> T getInstance(Class<T> clazz, Supplier supplier) {
+    public static <T> T getInstance(Class<T> clazz, Supplier<? extends T> supplier) {
         Object instance = INSTANCE_MAP.get(clazz);
         if (instance == null) {
             synchronized (INSTANCE_MAP) {
@@ -42,7 +42,7 @@ public final class InstanceLazyLoader {
                 }
             }
         }
-        return (T) instance;
+        return clazz.cast(instance);
     }
 
     /**

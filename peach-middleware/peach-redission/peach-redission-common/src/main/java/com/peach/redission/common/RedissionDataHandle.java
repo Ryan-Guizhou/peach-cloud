@@ -36,11 +36,11 @@ public class RedissionDataHandle {
     }
 
     public void expire(String key, long time) {
-        redissonClient.getBucket(key).expire(time, TimeUnit.SECONDS);
+        redissonClient.getBucket(key).expire(getDuration(time, TimeUnit.SECONDS));
     }
 
     public void set(String key, Object value, long time,TimeUnit timeUnit){
-        redissonClient.getBucket(key).set(value,time,timeUnit);
+        redissonClient.getBucket(key).set(value, getDuration(time, timeUnit));
     }
 
     public Duration getDuration(long timeToLive, TimeUnit timeUnit){
