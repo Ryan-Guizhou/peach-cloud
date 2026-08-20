@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.peach</groupId>
     <artifactId>peach-scheduled</artifactId>
-    <name>peach-scheduler-service-platform</name>
+    <name>peach-scheduled</name>
     <description>Peach Scheduler central control plane service</description>
     <packaging>pom</packaging>
 

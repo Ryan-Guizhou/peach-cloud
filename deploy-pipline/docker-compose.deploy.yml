@@ -238,6 +238,26 @@ services:
     networks:
       - peach-net
 
+  peach-scheduled:
+    image: ${PEACH_IMAGE_PREFIX:-peach-cloud}/peach-scheduled:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-scheduled
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${SCHEDULED_PORT:-18087}
+      SPRING_APPLICATION_NAME: peach-scheduled
+    volumes:
+      - peach-scheduled-logs:/app/logs
+      - peach-scheduled-config:/app/config
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    networks:
+      - peach-net
+
   peach-front:
     image: ${PEACH_IMAGE_PREFIX:-peach-cloud}/peach-front:${PEACH_IMAGE_TAG:-latest}
     container_name: peach-front
@@ -299,5 +319,9 @@ volumes:
     name: peach-generator-logs
   peach-generator-config:
     name: peach-generator-config
+  peach-scheduled-logs:
+    name: peach-scheduled-logs
+  peach-scheduled-config:
+    name: peach-scheduled-config
   peach-front-nginx-logs:
     name: peach-front-nginx-logs

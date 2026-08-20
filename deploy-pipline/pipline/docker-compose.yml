@@ -74,13 +74,13 @@ services:
   # GitLab CE
   #
   # Nginx:
-  #   http://peachsoft.gitlab.test
+  #   http://gitlab.peachsoft.com
   #
   # Direct fallback:
   #   http://localhost:8929
   #
   # SSH:
-  #   ssh://git@peachsoft.gitlab.test:2424
+  #   ssh://git@gitlab.peachsoft.com:2424
   #
   # Jenkins 内部:
   #   http://gitlab
@@ -97,7 +97,7 @@ services:
       TZ: "Asia/Shanghai"
 
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://peachsoft.gitlab.test'
+        external_url 'http://gitlab.peachsoft.com'
         gitlab_rails['gitlab_shell_ssh_port'] = 2424
         letsencrypt['enable'] = false
         gitlab_rails['smtp_enable'] = false
@@ -118,10 +118,42 @@ services:
 
 
   # ============================================================
+  # Sonatype Nexus 3 (Maven private repository / proxy cache)
+  #
+  # Browser:
+  #   http://nexus.peachsoft.com
+  #
+  # Direct fallback:
+  #   http://localhost:8081
+  #
+  # Jenkins / Maven CI container (same peach-devops network):
+  #   http://nexus:8081/repository/maven-public/
+  # ============================================================
+  nexus:
+    image: sonatype/nexus3:3.75.1
+    container_name: nexus
+    hostname: nexus
+    restart: unless-stopped
+
+    ports:
+      - "${NEXUS_HOST_PORT:-8081}:8081"
+
+    environment:
+      TZ: "Asia/Shanghai"
+      INSTALL4J_ADD_VM_PARAMS: "-Xms512m -Xmx1024m -XX:MaxDirectMemorySize=512m"
+
+    volumes:
+      - nexus-data:/nexus-data
+
+    networks:
+      - devops
+
+
+  # ============================================================
   # Jenkins
   #
   # Nginx:
-  #   http://peachsoft.jenkins.test
+  #   http://jenkins.peachsoft.com
   #
   # Direct fallback:
   #   http://localhost:8080
@@ -132,14 +164,15 @@ services:
   # Registry:
   #   localhost:5000
   #
+  # Nexus:
+  #   http://nexus:8081
+  #
   # Docker Engine:
   #   Docker Desktop via /var/run/docker.sock
   #
-  # 注意：
-  # Maven 本地仓库不再单独挂载 volume。
-  #
-  # 因为整个 /var/jenkins_home 已经由 jenkins-data 持久化，
-  # 所以 /var/jenkins_home/.m2 同样会被持久化。
+  # Maven 本地仓库与 settings：
+  #   /var/jenkins_home/.m2 由 jenkins-data 持久化；
+  #   settings.generated.xml 由 Jenkinsfile 基于 deploy-pipline/maven/settings.xml 渲染。
   # ============================================================
   jenkins:
     build:
@@ -154,6 +187,8 @@ services:
 
     depends_on:
       registry:
+        condition: service_started
+      nexus:
         condition: service_started
 
     ports:
@@ -175,19 +210,20 @@ services:
       - devops
 
   # ============================================================
-  # DevOps Reverse Proxy
+  # DevOps Reverse Proxy（运维入口，与业务前端分离）
   #
-  # Primary domains:
-  #   http://peachsoft.peach-cloud.test
-  #   http://peachsoft.jenkins.test
-  #   http://peachsoft.gitlab.test
-  #   http://peachsoft.registry.test
-  #   http://peachsoft.nacos.test
+  # 业务（仅前端 + API）：
+  #   http://peach_cloud.peachsoft.com
   #
-  # peachsoft.peach-cloud.test proxies the deployed Peach frontend
-  # after Jenkins starts it in Docker Desktop. The helper paths
-  # /jenkins, /gitlab, /registry and /nacos provide a single-domain
-  # entry point for common DevOps consoles.
+  # DevOps 独立子域（书签访问，勿与业务混在同一 location 树）：
+  #   http://jenkins.peachsoft.com
+  #   http://gitlab.peachsoft.com
+  #   http://registry.peachsoft.com
+  #   http://nacos.peachsoft.com
+  #   http://nexus.peachsoft.com
+  #
+  # Maven / CI 推荐直连 Nexus 容器端口或 nexus:8081，不经本 Nginx。
+  # 详见 deploy-pipline/docs/nginx-architecture.md
   # ============================================================
   nginx:
     image: nginx:1.25-alpine
@@ -206,6 +242,7 @@ services:
       - jenkins
       - registry
       - registry-ui
+      - nexus
 
     networks:
       - devops
@@ -235,6 +272,10 @@ volumes:
   # Jenkins
   jenkins-data:
     name: peach-jenkins-data
+
+  # Nexus Repository
+  nexus-data:
+    name: peach-nexus-data
 
 
 # ==============================================================

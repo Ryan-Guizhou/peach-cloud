@@ -2,8 +2,8 @@
 
 [English](README.en-US.md) | 中文
 
-最后更新时间：2026-07-03  
-适用版本：JDK 8，Spring Boot 2.7.13，Spring Cloud 2021.0.5，Spring Cloud Alibaba 2021.0.5.0  
+最后更新时间：2026-08-20
+适用版本：JDK 21，Maven 3.9.11，Spring Boot 3.5.4，Spring Cloud 2025.0.0，Spring Cloud Alibaba 2025.0.0.0
 项目版本：`1.0.0-SNAPSHOT`，Maven 坐标组：`com.peach`
 
 ## 项目定位
@@ -20,8 +20,8 @@
 
 这个仓库不直接承诺以下能力：
 
-- 不替代生产级部署平台、CI/CD 流水线或运行时治理系统。
-- 不保证本地 `docker-compose.yml` 可以直接作为生产编排使用。
+- 不替代生产级部署平台或运行时治理系统；CI/CD 见 `deploy-pipline/`，能力边界见该目录 README。
+- 不保证本地 Compose 可以直接作为生产编排使用。
 - 不把本地配置中的账号、密码、端口视为生产默认值。
 - 不保证所有 starter 在未配置外部依赖时都具备完整生产语义，例如消息、分布式锁、对象存储、邮件、缓存等能力仍依赖真实中间件和业务配置。
 
@@ -29,23 +29,26 @@
 
 ```text
 peach-cloud
-├── bin/                  # Docker Compose 启停脚本
-├── doc/                  # 接入说明、组件手册和治理文档
-├── sql/                  # 数据库初始化和业务表脚本
-├── peach-auth/           # 认证、用户、角色、资源、登录、操作日志
-├── peach-gateway/        # Spring Cloud Gateway 网关
-├── peach-fileservice/    # 文件领域服务和文件接口
-├── peach-message/        # 站内信、公告、待办、未读状态、WebSocket 推送
-├── peach-setting/        # 字典、值集、通知、多语言消息等系统配置
-├── peach-monitor/        # 监控、审计和运行时接口
-├── peach-generator/      # 数据源、元数据、模板和代码生成
-├── peach-common/         # 公共常量、响应、异常、工具和基础模型
-├── peach-component/      # captcha、email、initialize、storage、threadpool
-├── peach-middleware/     # redis、redission、mongo、openfeign、satoken、rocket 等封装
-├── peach-sample/         # 组件和中间件使用示例
-├── peach-cloud-front/    # Vue 3 + Vite 前端工程
-├── docker-compose.yml    # 本地依赖和后端服务编排
-└── pom.xml               # Maven 聚合根 POM
+├── bin/                      # 本地 Docker Compose 启停脚本（指向 deploy/docker-compose.yml）
+├── deploy/                   # 本地 Docker 编排、Nacos 配置模板、运行时目录
+├── deploy-pipline/           # GitLab + Jenkins + Registry CI/CD 与流水线部署 Compose
+├── docs/                     # 项目级设计与接入文档
+├── doc/                      # 历史接入说明与组件手册
+├── sql/                      # 数据库初始化和业务表脚本
+├── peach-auth/               # 认证、用户、角色、资源、登录、操作日志
+├── peach-gateway/            # Spring Cloud Gateway 网关
+├── peach-fileservice/        # 文件领域服务和文件接口
+├── peach-message/            # 站内信、公告、待办、未读状态、WebSocket 推送
+├── peach-setting/            # 字典、值集、通知、多语言消息等系统配置
+├── peach-monitor/            # 监控、审计和运行时接口
+├── peach-generator/          # 数据源、元数据、模板和代码生成
+├── peach-scheduled/          # 调度服务（Quartz / 任务执行）
+├── peach-common/             # 公共常量、响应、异常、工具和基础模型
+├── peach-component/          # captcha、email、initialize、storage、threadpool、scheduler
+├── peach-middleware/         # redis、redission、openfeign、satoken、rocket 等封装
+├── peach-sample/             # 组件和中间件使用示例
+├── peach-cloud-front/        # Vue 3 + Vite 前端工程
+└── pom.xml                   # Maven 聚合根 POM
 ```
 
 说明：
@@ -65,6 +68,7 @@ peach-cloud
 | `peach-setting` | `common`，`entity`，`service`，`rest`，`openfeign-external`，`launch` | 字典、值集、通知、多语言消息等配置能力 |
 | `peach-monitor` | `common`，`entity`，`service`，`rest`，`openfeign-external`，`launch` | 监控、审计、运行时查询和监控接口 |
 | `peach-generator` | `common`，`entity`，`service`，`rest`，`launch` | 数据源、表元数据、模板、预览和代码生成 |
+| `peach-scheduled` | `common`，`entity`，`service`，`rest`，`openfeign-external`，`launch` | 调度任务管理、执行与对外 Feign 接口 |
 | `peach-common` | 单模块 | 公共响应、异常、常量、基础模型和工具类 |
 | `peach-component` | `peach-captcha`，`peach-email`，`peach-storage`，`peach-initialize`，`peach-threadpool` | 与业务无关的通用组件 starter |
 | `peach-middleware` | `peach-kafka`，`peach-rocket`，`peach-redis`，`peach-redission`，`peach-mongo`，`peach-satoken`，`peach-openfeign` | 中间件接入、自动配置、starter 和示例 |
@@ -82,36 +86,39 @@ peach-cloud
 | 配置服务 | `com.peach.setting.launch.PeachSettingApplication` | `peach-setting/peach-setting-launch/src/main/resources` |
 | 监控服务 | `com.peach.monitor.launch.PeachMonitorApplication` | `peach-monitor/peach-monitor-launch/src/main/resources` |
 | 代码生成服务 | `com.peach.generator.launch.PeachGeneratorApplication` | `peach-generator/peach-generator-launch/src/main/resources` |
+| 调度服务 | `com.peach.scheduled.PeachScheduledApplication` | `peach-scheduled/peach-scheduled-launch/src/main/resources` |
 | 示例服务 | `com.peach.sample.SampleApplication` | `peach-sample/src/main/resources` |
 | 存储示例 | `com.peach.example.PeachStoreExampleApplication` | `peach-component/peach-storage/peach-store-example/src/main/resources` |
 | RocketMQ 示例 | `com.peach.rocket.example.PeachRocketExampleApplication` | `peach-middleware/peach-rocket/peach-rocket-example/src/main/resources` |
 
 ## 技术栈与版本
 
-主要版本由根 `pom.xml` 统一声明：
+主要版本由 `peach-dependencies/pom.xml` 与根 `pom.xml` 统一管理：
 
 | 类别 | 版本 |
 | --- | --- |
-| Java | `1.8` |
-| Spring Boot | `2.7.13` |
-| Spring Cloud | `2021.0.5` |
-| Spring Cloud Alibaba | `2021.0.5.0` |
-| Sa-Token | `1.37.0` |
-| MyBatis Spring Boot Starter | `2.3.1` |
-| PageHelper | `1.4.7` |
-| Knife4j | `4.4.0` |
-| Hutool | `5.8.20` |
-| Fastjson | `2.0.21` |
-| Redisson | `3.26.1` |
-| RocketMQ Spring | `2.2.3` |
+| Java | `21` |
+| Maven（推荐） | `3.9.11` |
+| Spring Boot | `3.5.4` |
+| Spring Cloud | `2025.0.0` |
+| Spring Cloud Alibaba | `2025.0.0.0` |
+| Sa-Token | `1.44.0` |
+| MyBatis Spring Boot Starter | `3.0.4` |
+| PageHelper | `2.1.0` |
+| Knife4j | `4.5.0` |
+| Hutool | `5.8.39` |
+| Fastjson | `2.0.58` |
+| Redisson | `3.50.0` |
+| RocketMQ Spring | `2.3.3` |
 | RocketMQ Client | `5.3.2` |
-| MinIO Java SDK | `8.5.12` |
+| MinIO Java SDK | `8.5.17` |
 
 构建配置要点：
 
 - 根 POM 使用 `${revision}` 管理项目内模块版本。
 - `development` profile 默认激活，另外提供 `production`、`docker`、`test` profile。
-- `maven-compiler-plugin` 统一使用 Java 8，并开启 `parameters`。
+- `maven-compiler-plugin` 使用 **Java 21**（`maven.compiler.release=21`），并开启 `parameters`。
+- 本地与 CI 构建均需 **JDK 21**；Jenkins 流水线使用 `deploy-pipline/pipline/maven-node/Dockerfile` 中的 Maven 3.9.11 + Temurin 21 镜像。
 - `flatten-maven-plugin` 会在构建过程中生成 `.flattened-pom.xml`，该文件属于构建产物，不应作为文档结构的一部分。
 
 ## 快速构建
@@ -131,7 +138,7 @@ mvn clean validate -Pdevelopment
 构建指定业务域及其依赖：
 
 ```bash
-mvn -pl peach-auth -am clean package -DskipTests -Pdevelopment
+mvn -pl peach-auth -am clean compile -DskipTests -Pdevelopment
 mvn -pl peach-gateway -am clean package -DskipTests -Pdevelopment
 ```
 
@@ -151,19 +158,21 @@ mvn -pl peach-middleware/peach-rocket -am clean package -DskipTests -Pdevelopmen
 
 ## 本地依赖与 Docker Compose
 
-仓库提供 `docker-compose.yml` 和 `bin/` 脚本，用于本地启动 MySQL、Redis、Nacos 和多个后端服务。
+本地编排位于 `deploy/docker-compose.yml`；`bin/` 脚本默认使用该文件启动 MySQL、Redis、Nacos 和多个后端服务。
 
 | 服务 | 容器名 | 本地端口 |
 | --- | --- | --- |
 | MySQL | `peach-mysql` | `3307 -> 3306` |
 | Redis | `peach-redis` | `6380 -> 6379` |
-| Nacos | `peach-nacos` | `8849 -> 8848`，`9849 -> 9848` |
-| Gateway | `peach-gateway` | `18080` |
+| Nacos | `peach-nacos` | `8849 -> 8848`，`9850 -> 9848` |
+| Gateway | `peach-gateway` | `18080`（容器内，默认不映射宿主机） |
 | Auth | `peach-auth` | `18081` |
 | Monitor | `peach-monitor` | `18082` |
 | Fileservice | `peach-fileservice` | `18083` |
 | Message | `peach-message` | `18084` |
 | Setting | `peach-setting` | `18085` |
+| Generator | `peach-generator` | `18086` |
+| Front | `peach-front` | `80`（经 compose 映射） |
 
 Windows：
 
@@ -197,14 +206,124 @@ sh bin/start.sh down
 Windows 脚本可以通过第二个参数指定 compose 文件：
 
 ```bat
-bin\start.bat up docker-compose.yml
+bin\start.bat up deploy\docker-compose.yml
 ```
 
 Linux / macOS 脚本可以通过环境变量指定 compose 文件：
 
 ```sh
-COMPOSE_FILE=docker-compose.yml sh bin/start.sh up
+COMPOSE_FILE=deploy/docker-compose.yml sh bin/start.sh up
 ```
+
+## CI/CD（GitLab + Jenkins）
+
+自动化构建部署方案位于 `deploy-pipline/`，与本地 `deploy/` 目录并行存在：**流水线不会修改** `deploy/docker-compose.yml` 或 `deploy/peach.sh`。
+
+| 文档 | 说明 |
+| --- | --- |
+| `deploy-pipline/README.md` | CI/CD 主文档（凭据、流水线、排障） |
+| `docs/pipline/peach-cloud-gitlab-jenkins-webhook-guide.md` | GitLab Webhook 与 Jenkins 详细指南 |
+
+### CI 构建环境
+
+| 组件 | 版本 |
+| --- | --- |
+| JDK | Eclipse Temurin **21** |
+| Maven | **3.9.11** |
+| Node.js | **22**（前端构建阶段） |
+
+CI 镜像：`peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22`（定义于 `deploy-pipline/pipline/maven-node/Dockerfile`）
+
+Maven 依赖经 DevOps 栈内 **Nexus 3** 代理下载；默认 settings 为 `deploy-pipline/maven/settings.xml`。初始化与自定义说明见 [`deploy-pipline/maven/README.md`](deploy-pipline/maven/README.md)。
+
+### 首次搭建 DevOps 环境（完整步骤）
+
+在仓库根目录执行：
+
+```bash
+# 1. 校验 Compose 配置
+docker compose -f deploy-pipline/pipline/docker-compose.yml config
+
+# 2. 构建 Jenkins 镜像（含 Docker CLI、GitLab 插件等）
+docker compose -f deploy-pipline/pipline/docker-compose.yml build jenkins
+
+# 3. 启动 GitLab、Jenkins、Registry、DevOps Nginx
+docker compose -f deploy-pipline/pipline/docker-compose.yml up -d
+
+# 4. 确认 Jenkins 可访问宿主机 Docker
+docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker version
+```
+
+Windows hosts 增加（DevOps 域名入口）：
+
+```text
+127.0.0.1 peachsoft.peach-cloud.test
+127.0.0.1 peachsoft.jenkins.test
+127.0.0.1 peachsoft.gitlab.test
+127.0.0.1 peachsoft.registry.test
+127.0.0.1 peachsoft.nacos.test
+127.0.0.1 peachsoft.nexus.test
+```
+
+首次获取 Jenkins 初始密码：
+
+```bash
+docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+```
+
+### 配置 Jenkins 凭据
+
+1. 进入 `Manage Jenkins -> Credentials -> System -> Global credentials`。
+2. 创建 GitLab 凭据：`Username with password`，ID 建议 `gitlab-peach-cloud`。
+3. 基于 `deploy-pipline/peach-deploy.env.example` 准备 `.env` 文件，替换所有 `change_me_*` 占位值。
+4. 创建 `Secret file` 凭据，**ID 必须为** `peach-deploy-env`，上传上述 `.env` 文件。
+
+### 创建 Pipeline 任务
+
+1. `New Item` -> `Pipeline`。
+2. `Build Triggers` 勾选 GitLab Push（按 `deploy-pipline/README.md` 配置 Webhook）。
+3. `Pipeline script from SCM`，Script Path：`deploy-pipline/Jenkinsfile`。
+4. Git 仓库 URL 使用容器内地址，例如：`http://gitlab/peachsoft/peach-cloud.git`。
+5. 手动 **Build Now** 验证全流程。
+
+### 流水线阶段（当前定义，未变更）
+
+| 阶段 | 行为 |
+| --- | --- |
+| Checkout | 拉取代码，计算 12 位 Git SHA 作为镜像 tag |
+| Validate Jenkins credentials | 校验 `peach-deploy-env` Secret file |
+| Build CI image | 构建 `peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22` |
+| Maven package | `mvn -B -Pdocker -DskipTests clean package` |
+| Build and push images | 构建并推送 7 个后端镜像 |
+| Build frontend | `npm ci && npm run build`，推送 `peach-front` 镜像 |
+| Deploy | 同步 Compose/Nacos/SQL，启动 Peach Cloud 运行时 |
+
+### 从 Java 8 CI 升级到 Java 21 的执行步骤
+
+若历史环境仍使用 `...-temurin-8-node22` 镜像，按顺序执行：
+
+1. 合并包含新 `Jenkinsfile` 的代码到部署分支。
+2. （可选）本地预构建 CI 镜像：
+
+```bash
+docker build \
+  -f deploy-pipline/pipline/maven-node/Dockerfile \
+  -t peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22 \
+  deploy-pipline/pipline/maven-node
+```
+
+3. （可选）删除旧镜像：`docker rmi peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22`
+4. Jenkins 执行 **Build Now**。
+5. 确认 `Build CI image` 与 `Maven package` 成功。
+6. 若依赖缓存导致异常，在 Jenkins 容器内清理 Maven 本地仓库后重试：
+
+```bash
+docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins rm -rf /var/jenkins_home/.m2/repository
+```
+
+> 本次 CI 调整**仅**升级 JDK/Maven 构建镜像版本；流水线阶段、服务列表与 Deploy 逻辑保持不变。
+
+更完整的 Webhook、Nginx 代理、回滚与排障说明见 `deploy-pipline/README.md`。
 
 ## 单服务本地运行
 
@@ -342,7 +461,9 @@ npm run preview
 
 ```bash
 mvn clean validate -Pdevelopment
-mvn clean package -DskipTests -Pdevelopment
+mvn clean compile -DskipTests -Pdevelopment
+mvn -pl peach-auth -am clean compile -DskipTests -Pdevelopment
+
 ```
 
 指定模块验证：
@@ -381,7 +502,7 @@ bin\start.bat logs
 
 | 现象 | 检查点 | 处理方式 |
 | --- | --- | --- |
-| Maven 找不到项目内模块版本 | 是否从仓库根目录执行；是否使用了 `${revision}`；是否缺少 `-am` | 在根目录执行命令，指定模块时加 `-am`，必要时先执行 `mvn clean install -DskipTests` |
+| Maven 找不到项目内模块版本 | 是否从仓库根目录执行；是否使用 JDK 21；是否使用了 `-am` | 确认 `java -version` 为 21，在根目录执行命令，指定模块时加 `-am` |
 | 构建生成 `.flattened-pom.xml` | 根 POM 启用了 `flatten-maven-plugin` | 这是构建产物，不要写入源码结构或人工维护 |
 | 服务启动后读不到配置 | profile 是否正确；Nacos 是否启动；配置文件名、命名空间、分组是否匹配 | 确认 `application-*.yml` 和 Nacos 配置，检查启动参数 `spring.profiles.active` |
 | Docker Compose 端口冲突 | 本地是否已有 MySQL、Redis、Nacos 或服务占用端口 | 修改 compose 端口映射，或停止本地占用进程 |
@@ -398,7 +519,8 @@ bin\start.bat logs
 
 - 根 `pom.xml` 的 `<modules>` 和 `<dependencyManagement>`。
 - 业务域 `pom.xml` 的子模块列表。
-- `docker-compose.yml` 是否需要新增服务、端口、环境变量或依赖关系。
+- `deploy/docker-compose.yml` 是否需要新增服务、端口、环境变量或依赖关系。
+- `deploy-pipline/docker-compose.deploy.yml` 与 Jenkins 流水线是否需要同步（CI 变更时）。
 - `sql/` 是否需要新增初始化脚本。
 - 模块 `README.md` 和 `README.en-US.md` 是否需要同步更新。
 - 顶层 README 的模块导航和启动入口是否仍然准确。

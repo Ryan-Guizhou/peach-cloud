@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+
+    <!--
+        Maven settings 模板。
+
+        Jenkins 会在 Maven package 阶段读取本文件，按 peach-deploy.env 自动生成：
+        /var/jenkins_home/.m2/settings.generated.xml
+
+        本地开发可复制到 ~/.m2/settings.xml 后手动替换 @...@ 占位符。
+        不要提交真实账号、密码或代理凭据。
+    -->
+    <localRepository>@MAVEN_LOCAL_REPOSITORY@</localRepository>
+
+<!-- @optional NEXUS_AUTH
+    <servers>
+        <server>
+            <id>nexus-public</id>
+            <username>@MAVEN_NEXUS_USERNAME@</username>
+            <password>@MAVEN_NEXUS_PASSWORD@</password>
+        </server>
+        <server>
+            <id>peach-releases</id>
+            <username>@MAVEN_NEXUS_USERNAME@</username>
+            <password>@MAVEN_NEXUS_PASSWORD@</password>
+        </server>
+        <server>
+            <id>peach-snapshots</id>
+            <username>@MAVEN_NEXUS_USERNAME@</username>
+            <password>@MAVEN_NEXUS_PASSWORD@</password>
+        </server>
+    </servers>
+@optional-end -->
+
+<!-- @optional MAVEN_PROXY
+    <proxies>
+        <proxy>
+            <id>@MAVEN_PROXY_ID@</id>
+            <active>@MAVEN_PROXY_ACTIVE@</active>
+            <protocol>@MAVEN_PROXY_PROTOCOL@</protocol>
+            <host>@MAVEN_PROXY_HOST@</host>
+            <port>@MAVEN_PROXY_PORT@</port>
+            @MAVEN_PROXY_AUTH@
+            <nonProxyHosts>@MAVEN_PROXY_NON_PROXY_HOSTS@</nonProxyHosts>
+        </proxy>
+    </proxies>
+@optional-end -->
+
+    <profiles>
+        <profile>
+            <id>peach-repository-fallback</id>
+            <repositories>
+                <repository>
+                    <id>nexus-public</id>
+                    <name>Peach Nexus Public Repository</name>
+                    <url>@MAVEN_NEXUS_URL@/repository/maven-public/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>always</updatePolicy>
+                    </snapshots>
+                </repository>
+                <repository>
+                    <id>aliyun-public</id>
+                    <name>Aliyun Maven Public Repository</name>
+                    <url>@MAVEN_ALIYUN_PUBLIC_URL@</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>nexus-public</id>
+                    <name>Peach Nexus Public Repository</name>
+                    <url>@MAVEN_NEXUS_URL@/repository/maven-public/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </pluginRepository>
+                <pluginRepository>
+                    <id>aliyun-public</id>
+                    <name>Aliyun Maven Public Repository</name>
+                    <url>@MAVEN_ALIYUN_PUBLIC_URL@</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+    </profiles>
+
+    <activeProfiles>
+        <activeProfile>peach-repository-fallback</activeProfile>
+    </activeProfiles>
+
+    <mirrors>
+        <mirror>
+            <id>maven-default-http-blocker</id>
+            <mirrorOf>external:http:*</mirrorOf>
+            <url>http://0.0.0.0/</url>
+            <blocked>false</blocked>
+        </mirror>
+    </mirrors>
+
+</settings>

@@ -11,12 +11,13 @@ pipeline {
     environment {
         REGISTRY = 'localhost:5000'
         IMAGE_PREFIX = "${REGISTRY}/peach-cloud"
-        MAVEN_IMAGE = 'peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22'
+        MAVEN_IMAGE = 'peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22'
         DEPLOY_COMPOSE_FILE = 'deploy-pipline/docker-compose.deploy.yml'
         DEPLOY_ENV_CREDENTIAL = 'peach-deploy-env'
         DEPLOY_ROOT = '/var/jenkins_home/peach-cloud-deploy'
         DEPLOY_NETWORK = 'peach-cloud-runtime'
-        SERVICES = 'peach-gateway peach-auth peach-monitor peach-fileservice peach-message peach-setting peach-generator peach-front'
+        DEVOPS_NETWORK = 'peach-devops'
+        SERVICES = 'peach-gateway peach-auth peach-monitor peach-fileservice peach-message peach-setting peach-generator peach-scheduled peach-front'
     }
 
     stages {
@@ -62,16 +63,113 @@ pipeline {
 
         stage('Maven package') {
             steps {
-                sh '''
-                    mkdir -p /var/jenkins_home/.m2
-                    docker run --rm \
-                      --user "$(id -u):$(id -g)" \
-                      -e HOME=/var/jenkins_home \
-                      -v "peach-jenkins-data:/var/jenkins_home" \
-                      -w "$WORKSPACE" \
-                      "$MAVEN_IMAGE" \
-                      mvn -B -Pdocker -Dmaven.repo.local=/var/jenkins_home/.m2/repository -DskipTests clean package
-                '''
+                withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
+                    sh '''
+                        set -a
+                        . "$DEPLOY_ENV_FILE"
+                        set +a
+
+                        mkdir -p /var/jenkins_home/.m2
+                        MAVEN_SETTINGS_TEMPLATE="${MAVEN_SETTINGS_TEMPLATE:-$WORKSPACE/deploy-pipline/maven/settings.xml}"
+                        MAVEN_SETTINGS_GENERATED="/var/jenkins_home/.m2/settings.generated.xml"
+                        if [ ! -f "$MAVEN_SETTINGS_TEMPLATE" ]; then
+                          echo "Maven settings template not found: $MAVEN_SETTINGS_TEMPLATE" >&2
+                          exit 1
+                        fi
+
+                        export MAVEN_SETTINGS_TEMPLATE
+                        export MAVEN_SETTINGS_GENERATED
+                        export MAVEN_LOCAL_REPOSITORY="${MAVEN_LOCAL_REPOSITORY:-/var/jenkins_home/.m2/repository}"
+                        export MAVEN_NEXUS_URL="${MAVEN_NEXUS_URL:-${PEACH_NEXUS_URL:-http://nexus:8081}}"
+                        export PEACH_NEXUS_URL="$MAVEN_NEXUS_URL"
+                        export MAVEN_ALIYUN_PUBLIC_URL="${MAVEN_ALIYUN_PUBLIC_URL:-https://maven.aliyun.com/repository/public}"
+                        export MAVEN_PROXY_ID="${MAVEN_PROXY_ID:-corp-proxy}"
+                        export MAVEN_PROXY_ACTIVE="${MAVEN_PROXY_ACTIVE:-true}"
+                        export MAVEN_PROXY_PROTOCOL="${MAVEN_PROXY_PROTOCOL:-http}"
+                        export MAVEN_PROXY_NON_PROXY_HOSTS="${MAVEN_PROXY_NON_PROXY_HOSTS:-localhost|127.0.0.1|nexus|*.aliyun.com|maven.aliyun.com|10.*|172.*|192.168.*}"
+
+                        node <<'NODE'
+                        const fs = require('fs');
+
+                        const env = process.env;
+                        const escapeXml = (value) => String(value || '')
+                          .replace(/&/g, '&amp;')
+                          .replace(/</g, '&lt;')
+                          .replace(/>/g, '&gt;')
+                          .replace(/"/g, '&quot;')
+                          .replace(/'/g, '&apos;');
+
+                        let text = fs.readFileSync(env.MAVEN_SETTINGS_TEMPLATE, 'utf8');
+                        const hasNexusAuth = Boolean(env.MAVEN_NEXUS_USERNAME && env.MAVEN_NEXUS_PASSWORD);
+                        const hasProxy = Boolean(env.MAVEN_PROXY_HOST && env.MAVEN_PROXY_PORT);
+                        const hasProxyAuth = Boolean(env.MAVEN_PROXY_USERNAME && env.MAVEN_PROXY_PASSWORD);
+
+                        const proxyAuth = hasProxyAuth
+                          ? `            <username>${escapeXml(env.MAVEN_PROXY_USERNAME)}</username>\n            <password>${escapeXml(env.MAVEN_PROXY_PASSWORD)}</password>`
+                          : '';
+
+                        const values = {
+                          MAVEN_LOCAL_REPOSITORY: env.MAVEN_LOCAL_REPOSITORY,
+                          MAVEN_NEXUS_URL: env.MAVEN_NEXUS_URL.replace(/\/+$/, ''),
+                          MAVEN_ALIYUN_PUBLIC_URL: env.MAVEN_ALIYUN_PUBLIC_URL,
+                          MAVEN_NEXUS_USERNAME: env.MAVEN_NEXUS_USERNAME,
+                          MAVEN_NEXUS_PASSWORD: env.MAVEN_NEXUS_PASSWORD,
+                          MAVEN_PROXY_ID: env.MAVEN_PROXY_ID,
+                          MAVEN_PROXY_ACTIVE: env.MAVEN_PROXY_ACTIVE,
+                          MAVEN_PROXY_PROTOCOL: env.MAVEN_PROXY_PROTOCOL,
+                          MAVEN_PROXY_HOST: env.MAVEN_PROXY_HOST,
+                          MAVEN_PROXY_PORT: env.MAVEN_PROXY_PORT,
+                          MAVEN_PROXY_NON_PROXY_HOSTS: env.MAVEN_PROXY_NON_PROXY_HOSTS,
+                          MAVEN_PROXY_AUTH: proxyAuth,
+                        };
+
+                        const optional = (name, enabled) => {
+                          const pattern = new RegExp(`\\n?<!-- @optional ${name}\\n([\\s\\S]*?)\\n@optional-end -->`, 'g');
+                          text = text.replace(pattern, enabled ? '\n$1' : '');
+                        };
+
+                        optional('NEXUS_AUTH', hasNexusAuth);
+                        optional('MAVEN_PROXY', hasProxy);
+
+                        text = text.replace(/@([A-Z0-9_]+)@/g, (match, key) => {
+                          if (Object.prototype.hasOwnProperty.call(values, key)) {
+                            if (key === 'MAVEN_PROXY_AUTH') {
+                              return values[key];
+                            }
+                            return escapeXml(values[key]);
+                          }
+                          throw new Error(`Missing Maven settings placeholder: ${key}`);
+                        });
+
+                        if (text.includes('@optional')) {
+                          throw new Error('Unresolved optional block marker in Maven settings');
+                        }
+
+                        fs.writeFileSync(env.MAVEN_SETTINGS_GENERATED, text, { encoding: 'utf8', mode: 0o600 });
+NODE
+
+                        docker run --rm \
+                          --network "$DEVOPS_NETWORK" \
+                          --user "$(id -u):$(id -g)" \
+                          -e HOME=/var/jenkins_home \
+                          -e LANG=C.UTF-8 \
+                          -e LC_ALL=C.UTF-8 \
+                          -e MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Duser.language=en -Duser.country=US" \
+                          -e JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Duser.language=en -Duser.country=US" \
+                          -v "peach-jenkins-data:/var/jenkins_home" \
+                          -w "$WORKSPACE" \
+                          "$MAVEN_IMAGE" \
+                          mvn -B -Pdocker \
+                            -s /var/jenkins_home/.m2/settings.generated.xml \
+                            -Dmaven.repo.local=/var/jenkins_home/.m2/repository \
+                            -Dpeach.nexus.url="$PEACH_NEXUS_URL" \
+                            -Dfile.encoding=UTF-8 \
+                            -Dsun.jnu.encoding=UTF-8 \
+                            -Duser.language=en \
+                            -Duser.country=US \
+                            -DskipTests clean package
+                    '''
+                }
             }
         }
 
@@ -113,6 +211,7 @@ pipeline {
                         build_image peach-message peach-message/peach-message-launch/target/peach-message-launch-1.0.0-SNAPSHOT.jar "Peach Message" "Peach Cloud message service"
                         build_image peach-setting peach-setting/peach-setting-launch/target/peach-setting-launch-1.0.0-SNAPSHOT.jar "Peach Setting" "Peach Cloud setting service"
                         build_image peach-generator peach-generator/peach-generator-launch/target/peach-generator-launch-1.0.0-SNAPSHOT.jar "Peach Generator" "Peach Cloud code generator service"
+                        build_image peach-scheduled peach-scheduled/peach-scheduled-launch/target/peach-scheduled-launch-1.0.0-SNAPSHOT.jar "Peach Scheduled" "Peach Cloud scheduled task service"
                     '''
                 }
             }

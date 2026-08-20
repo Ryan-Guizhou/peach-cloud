@@ -1,17 +1,30 @@
 # GitLab + Jenkins + Registry 自动构建部署指南
 
-本目录是独立的 CI/CD 部署方案，用于通过 GitLab Webhook 触发 Jenkins，完成代码拉取、Maven 打包、后端镜像构建、前端镜像构建、推送 Registry，并启动 Peach Cloud。
+本目录是独立的 CI/CD 部署方案：GitLab Webhook → Jenkins → Maven 打包 → 镜像推送 Registry → 启动 Peach Cloud。
 
-原有 `deploy/` 目录仍然保留本地 Docker Desktop 部署方式；本方案不要求修改 `deploy/.env`、`deploy/peach.sh` 或 `deploy/docker-compose.yml`。
+**快速导航**
+
+| 文档 | 内容 |
+| --- | --- |
+| 本文 | DevOps 栈启动、Jenkins/GitLab 配置、流水线说明 |
+| [`docs/local-development.md`](docs/local-development.md) | **本地 Maven 依赖、刷新缓存、IDEA、Windows 命令** |
+| [`docs/nginx-architecture.md`](docs/nginx-architecture.md) | 业务 Nginx 与 DevOps 子域分层 |
+| [`maven/README.md`](maven/README.md) | Nexus 初始化、settings id 对应关系 |
+
+原有 `deploy/` 目录仍保留本地 Docker Desktop 部署方式；本方案不要求修改 `deploy/.env` 或 `deploy/docker-compose.yml`。
 
 ## 文件职责
 
 | 文件 | 用途 |
 | --- | --- |
-| `deploy-pipline/pipline/docker-compose.yml` | 启动 GitLab、Jenkins、Registry、Registry UI 和 DevOps Nginx；Jenkins 通过 Docker socket 操作本机 Docker Desktop |
-| `deploy-pipline/pipline/jenkins/Dockerfile` | 构建带 Docker CLI、Compose 插件、Node、Maven 和 GitLab 插件的 Jenkins 镜像 |
-| `deploy-pipline/pipline/maven-node/Dockerfile` | 构建流水线 Maven 阶段使用的 Maven + Node CI 镜像 |
-| `deploy-pipline/pipline/nginx/devops.conf` | DevOps 入口 Nginx 配置，按域名代理 Jenkins、GitLab、Registry、Nacos 和 Peach Cloud |
+| `deploy-pipline/pipline/docker-compose.yml` | 启动 GitLab、Jenkins、Registry、Nexus、DevOps Nginx |
+| `deploy-pipline/pipline/jenkins/Dockerfile` | Jenkins 镜像（Docker CLI、GitLab 插件、JDK 21） |
+| `deploy-pipline/pipline/maven-node/Dockerfile` | Maven + Node CI 镜像 |
+| `maven/settings.xml` | 唯一 Maven settings 模板；本地可复制，CI 自动渲染 |
+| `deploy-pipline/maven/README.md` | Nexus 与 settings 说明 |
+| `deploy-pipline/docs/local-development.md` | 本地开发、依赖刷新、IDEA |
+| `deploy-pipline/docs/nginx-architecture.md` | Nginx 分层方案 |
+| `deploy-pipline/pipline/nginx/devops.conf` | DevOps 多域名反代（业务域仅前端） |
 | `deploy-pipline/Jenkinsfile` | Jenkins 流水线定义 |
 | `deploy-pipline/docker/Dockerfile.service` | 后端服务镜像 Dockerfile |
 | `deploy-pipline/docker/Dockerfile.front` | 前端 Nginx 镜像 Dockerfile |
@@ -30,6 +43,7 @@ localhost:5000/peach-cloud/peach-fileservice:<git-sha>
 localhost:5000/peach-cloud/peach-message:<git-sha>
 localhost:5000/peach-cloud/peach-setting:<git-sha>
 localhost:5000/peach-cloud/peach-generator:<git-sha>
+localhost:5000/peach-cloud/peach-scheduled:<git-sha>
 localhost:5000/peach-cloud/peach-front:<git-sha>
 ```
 
@@ -45,10 +59,17 @@ localhost:5000/peach-cloud/peach-front:<git-sha>
 默认访问链路是：
 
 ```text
-http://peachsoft.peach-cloud.test
+# 业务（用户）
+http://peach_cloud.peachsoft.com
   -> peach-devops-nginx:80
   -> peach-front:80
   -> /api 代理到 peach-gateway:${GATEWAY_PORT}
+
+# DevOps（运维书签，独立子域）
+http://jenkins.peachsoft.com  -> Jenkins
+http://nexus.peachsoft.com    -> Nexus UI（Maven 请直连 :8081）
+
+详见 deploy-pipline/docs/nginx-architecture.md
 ```
 
 如果宿主机 80 端口冲突，启动 DevOps 服务前设置：
@@ -80,12 +101,14 @@ docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker 
 
 | 服务 | 地址 |
 | --- | --- |
-| Peach Cloud 前端 | `http://peachsoft.peach-cloud.test` |
-| Jenkins | `http://peachsoft.jenkins.test` |
-| GitLab | `http://peachsoft.gitlab.test` |
-| Registry UI | `http://peachsoft.registry.test` |
-| Registry API | `http://peachsoft.registry.test/v2/` |
-| Nacos | `http://peachsoft.nacos.test/nacos/` 或 `http://peachsoft.peach-cloud.test/nacos/` |
+| Peach Cloud 前端 | `http://peach_cloud.peachsoft.com` |
+| Jenkins | `http://jenkins.peachsoft.com` |
+| GitLab | `http://gitlab.peachsoft.com` |
+| Registry UI | `http://registry.peachsoft.com` |
+| Registry API | `http://registry.peachsoft.com/v2/` |
+| Nexus | `http://nexus.peachsoft.com` 或 `http://localhost:8081` |
+| Nacos（DevOps 子域） | `http://nacos.peachsoft.com/nacos/` |
+| Nacos（部署后，经前端容器） | `http://peach_cloud.peachsoft.com/nacos/`（需 Deploy 完成且 `peach-front` 运行） |
 
 直连兜底地址仍保留：
 
@@ -99,14 +122,15 @@ docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker 
 Windows hosts 需要增加：
 
 ```text
-127.0.0.1 peachsoft.peach-cloud.test
-127.0.0.1 peachsoft.jenkins.test
-127.0.0.1 peachsoft.gitlab.test
-127.0.0.1 peachsoft.registry.test
-127.0.0.1 peachsoft.nacos.test
+127.0.0.1 peach_cloud.peachsoft.com
+127.0.0.1 jenkins.peachsoft.com
+127.0.0.1 gitlab.peachsoft.com
+127.0.0.1 registry.peachsoft.com
+127.0.0.1 nacos.peachsoft.com
+127.0.0.1 nexus.peachsoft.com
 ```
 
-如果设置了 `DEVOPS_HTTP_PORT=18088`，浏览器地址需要带端口，例如 `http://peachsoft.peach-cloud.test:18088`。
+如果设置了 `DEVOPS_HTTP_PORT=18088`，浏览器地址需要带端口，例如 `http://peach_cloud.peachsoft.com:18088`。
 
 首次获取 Jenkins 管理员密码：
 
@@ -142,6 +166,13 @@ File: 基于 deploy-pipline/peach-deploy.env.example 复制并修改后的 env �
 5. `ID` 必须填写 `peach-deploy-env`，不能留空，也不能写成别的名字。
 6. 保存后重新执行流水线。
 
+把这份真实 `.env` 直接放到 Jenkins Secret file 是当前推荐方式。注意边界：
+
+- 可以放：数据库、Redis、Nacos、对象存储、Nexus、Maven 代理等流水线需要的环境变量。
+- 不要放到 Git：真实密码、token、生产地址、代理凭据。
+- 不上传真实 Maven `settings.xml`；仓库内 `maven/settings.xml` 只作为模板。Jenkinsfile 会在 Maven 容器启动前填充变量，生成 `/var/jenkins_home/.m2/settings.generated.xml`，再通过 Jenkins 持久卷挂载给 Maven 容器读取。
+- `.env` 会被 Jenkins shell source；包含 `|`、空格、`#`、`&` 等特殊字符的值必须加引号，例如 `MAVEN_PROXY_NON_PROXY_HOSTS="localhost|127.0.0.1|nexus"`。
+
 至少确认这些变量：
 
 ```dotenv
@@ -162,6 +193,13 @@ FILESERVICE_PORT=18083
 MESSAGE_PORT=18084
 SETTING_PORT=18085
 GENERATOR_PORT=18086
+SCHEDULED_PORT=18087
+MAVEN_LOCAL_REPOSITORY=/var/jenkins_home/.m2/repository
+MAVEN_NEXUS_URL=http://nexus:8081
+MAVEN_ALIYUN_PUBLIC_URL=https://maven.aliyun.com/repository/public
+PEACH_NEXUS_URL=http://nexus:8081
+MAVEN_NEXUS_USERNAME=Development
+MAVEN_NEXUS_PASSWORD=change_me_nexus_password
 ```
 
 不要把真实密码、token 或生产地址写入仓库文件。
@@ -194,10 +232,82 @@ Nginx 官方镜像启动时会把模板渲染成实际配置。`GATEWAY_PORT` �
 | `/api/` | 代理到 `peach-gateway:${GATEWAY_PORT}/api/` |
 | `/api/doc.html`、`/doc.html`、`/webjars/`、`/v3/api-docs/` | 代理接口文档资源到网关 |
 | `/webSocket/` | 代理到 `peach-gateway:${GATEWAY_PORT}/webSocket/` |
-| `/api/webSocket/...` | 命中 `/api/` 代理，再由网关处理 |
-| `/nacos/` | 代理到 `nacos:8848/nacos/` |
+| `/nacos/` | 部署后由 `peach-front` 容器代理到 `nacos:8848`（非 DevOps Nginx） |
 
 当前前端代码未设置 `VITE_API_BASE_URL` 时使用 `/api`，未设置 `VITE_WS_BASE_URL` 时使用当前页面 host 拼 `/api/webSocket/message`。因此浏览器访问外层端口即可同时访问前端、接口和 WebSocket。
+
+## CI 构建环境（JDK / Maven）
+
+流水线 Maven 打包阶段使用仓库内 CI 镜像，与根 `pom.xml` 的 **Java 21** 保持一致：
+
+| 组件 | 版本 |
+| --- | --- |
+| JDK | Eclipse Temurin **21** |
+| Maven | **3.9.11** |
+| Node.js | **22**（CI 镜像内，供前端构建阶段使用） |
+
+镜像定义：`deploy-pipline/pipline/maven-node/Dockerfile`
+镜像标签：`peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22`（由 `Jenkinsfile` 的 `Build CI image` 阶段构建）
+
+### 从 Java 8 CI 升级到 Java 21 的执行步骤
+
+若 Jenkins 仍缓存旧镜像 `...-temurin-8-node22`，按顺序执行：
+
+1. 拉取包含新 `Jenkinsfile` 和 `maven-node/Dockerfile` 的代码并推送到 GitLab 部署分支。
+2. 在仓库根目录手动重建 CI 镜像（可选，流水线 `Build CI image` 阶段也会重建）：
+
+```bash
+docker build \
+  -f deploy-pipline/pipline/maven-node/Dockerfile \
+  -t peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22 \
+  deploy-pipline/pipline/maven-node
+```
+
+3. 删除旧 CI 镜像（可选，避免误用）：
+
+```bash
+docker rmi peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22 2>/dev/null || true
+```
+
+4. 在 Jenkins 中对 Pipeline 任务执行 **Build Now**。
+5. 确认 `Build CI image` 与 `Maven package` 阶段成功；失败时查看 Maven 日志是否为 Java 版本或依赖不兼容。
+6. 首次升级后若 Maven 依赖解析异常，可在 Jenkins 容器内清理本地仓库后重试（会重新下载依赖）：
+
+```bash
+docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins rm -rf /var/jenkins_home/.m2/repository
+```
+
+> 本升级**仅**变更 CI 使用的 JDK/Maven 镜像版本；流水线阶段、服务列表、部署逻辑保持不变。
+
+## Maven 私服（Nexus）与 settings
+
+策略：依赖解析优先访问 Nexus `maven-public`，Nexus 连接不上时第三方依赖回退到阿里云 `public` 仓库。私有 `com.peach` 构件和发布仍依赖 Nexus。仓库只维护 `maven/settings.xml` 一份模板，本地复制使用，Jenkins 自动渲染。
+
+| 项 | 值 |
+| --- | --- |
+| 本地 Maven URL | `http://nexus.peachsoft.com:8081/repository/maven-public/` |
+| CI 内部 URL | `http://nexus:8081/repository/maven-public/` |
+| settings `<id>` | 优先下载 **`nexus-public`**；回退 `aliyun-public`；发布 `peach-releases` / `peach-snapshots` |
+| 本地 settings | 复制 `maven/settings.xml` → `~/.m2/settings.xml` |
+| CI settings | `Jenkinsfile` 根据 `maven/settings.xml` 生成 `/var/jenkins_home/.m2/settings.generated.xml` |
+| CI Nexus 账号 | 在 Jenkins Secret file `.env` 中配置 `MAVEN_NEXUS_USERNAME` / `MAVEN_NEXUS_PASSWORD`；为空时不生成 `<servers>` |
+| CI Maven 代理 | 在 Jenkins Secret file `.env` 中配置 `MAVEN_PROXY_HOST` / `MAVEN_PROXY_PORT`；为空时不生成 `<proxies>` |
+
+**本地依赖刷新**（改版本、清缓存、IDEA 重导）：见 [`docs/local-development.md`](docs/local-development.md)。
+
+### Nexus 首次部署
+
+1. `docker compose -f deploy-pipline/pipline/docker-compose.yml up -d nexus`
+2. 初始密码：`docker exec nexus cat /nexus-data/admin.password`
+3. 创建 `aliyun-public` proxy + `maven-public` group（成员含 `aliyun-public`、`maven-releases`、`maven-snapshots`）
+4. 配置用户或开启 Anonymous Read
+5. 本地复制 `settings.xml`，替换 `@MAVEN_*@` 占位符；不需要账号或代理时删除对应 `@optional` 注释块，再执行 `mvn dependency:get -Dartifact=org.springframework.boot:spring-boot-starter:3.5.4`
+
+### Jenkins 清 CI 依赖缓存
+
+```bash
+docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins rm -rf /var/jenkins_home/.m2/repository
+```
 
 ## Jenkins Pipeline
 
@@ -250,9 +360,9 @@ SSL verification: 当前 HTTP 内网地址不需要；改 HTTPS 后必须开启�
 | 阶段 | 行为 |
 | --- | --- |
 | Checkout | 从 GitLab 拉取触发提交，计算 12 位短 SHA |
-| Build CI image | 通过 Docker Desktop 构建 `peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22` |
-| Maven package | 使用 Maven + Node CI 镜像执行 `mvn -B -Pdocker -DskipTests clean package` |
-| Build and push images | 构建并推送 7 个后端镜像 |
+| Build CI image | 通过 Docker Desktop 构建 `peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22`（Maven 3.9.11 + JDK 21 + Node 22） |
+| Maven package | 从 `settings.xml` 渲染 `settings.generated.xml`，按 Nexus → 阿里云顺序解析依赖，执行 `mvn -B -Pdocker -Dpeach.nexus.url=${PEACH_NEXUS_URL:-http://nexus:8081} -DskipTests clean package` |
+| Build and push images | 构建并推送 8 个后端镜像 |
 | Build frontend | 构建前端 dist，打包并推送 `peach-front` 镜像 |
 | Deploy | 同步专用 Compose、Nacos 脚本和 SQL 到 Jenkins 持久目录，在本机 Docker Desktop 拉取镜像并启动容器 |
 
@@ -286,11 +396,11 @@ docker compose -f deploy-pipline/pipline/docker-compose.yml ps
 ```bash
 docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker ps
 docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker images 'localhost:5000/peach-cloud/*'
-curl http://peachsoft.peach-cloud.test/
+curl http://peach_cloud.peachsoft.com/
 curl http://localhost:5000/v2/_catalog
 ```
 
-Registry UI 中应看到 8 个镜像仓库：7 个后端服务和 `peach-front`。
+Registry UI 中应看到 9 个镜像仓库：8 个后端服务和 `peach-front`。
 
 ## 回滚
 
@@ -306,7 +416,13 @@ Registry UI 中应看到 8 个镜像仓库：7 个后端服务和 `peach-front`�
 | `fatal: not in a git directory` 且堆栈包含 `GitSCMFileSystem` | Jenkins 的 Lightweight checkout SCM 缓存已损坏 | 在任务配置里取消勾选 `Lightweight checkout`，保存后重新构建；流水线已在 `checkout scm` 前自动清理当前 workspace，但这类报错发生在 Jenkins 读取 `Jenkinsfile` 之前，不能靠流水线自身先删 `caches`。仍失败时先重建 Jenkins 镜像，再在 Jenkins 容器内执行 `clean-jenkins-scm-cache.sh <job-name>` 后重试 |
 | Jenkins 镜像构建失败，找不到 Docker CLI | Jenkins 镜像是否由 `deploy-pipline/pipline/jenkins/Dockerfile` 构建 | 重新执行 `docker compose -f deploy-pipline/pipline/docker-compose.yml build jenkins` |
 | Jenkins 执行 `docker ps` 失败 | Docker Desktop socket 是否挂载进 Jenkins | 确认 Docker Desktop 已启动，且 `jenkins` 服务挂载了 `/var/run/docker.sock:/var/run/docker.sock` |
-| Maven 阶段报 `Cannot run program "node"` | Maven 阶段是否仍在使用纯 `maven:3.9.11-eclipse-temurin-8` 镜像 | 使用本仓库 `Jenkinsfile` 的 `Build CI image` 阶段，确保 Maven package 使用 `peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22` |
+| Maven 依赖下载很慢 | Nexus / `maven-public` group / settings | 见 [`maven/README.md`](maven/README.md) 与 [`docs/local-development.md`](docs/local-development.md) |
+| Maven 401 | Nexus 账号与 settings `<server>` id | 确认 `nexus-public` 与仓库 id 一致；CI 在 Secret file 中设置 `MAVEN_NEXUS_USERNAME` / `MAVEN_NEXUS_PASSWORD`；匿名读开启时可不配置 |
+| Maven 仍用旧依赖 | 本地或 CI 缓存 | 本地 `mvn -U` 或删 `D:/Environment/repository/...`；CI 清 `/var/jenkins_home/.m2/repository` |
+| Maven 阶段报 settings 模板不存在 | `MAVEN_SETTINGS_TEMPLATE` 路径 | 默认使用 `$WORKSPACE/deploy-pipline/maven/settings.xml`；自定义路径需在 Jenkins 可访问 |
+| Nexus 停止后私有构件拉不到 | `com.peach` 构件是否只存在 Nexus | 启动 Nexus 或先发布对应构件；阿里云只作为第三方依赖回退 |
+| Maven 日志中文乱码 | Maven JVM、forked javac 和 CI 镜像编码/语言是否一致 | 仓库已通过 `.mvn/jvm.config` 固定 UTF-8 + English diagnostics；CI 需执行 `Build CI image` 阶段重建，确保 `LANG`、`LC_ALL`、`MAVEN_OPTS`、`JAVA_TOOL_OPTIONS` 生效 |
+| Maven 阶段报 `Cannot run program "node"` | 是否使用 `peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22` | 执行 `Build CI image` 阶段重建 CI 镜像 |
 | Maven 成功但后端镜像构建找不到 jar | `*-launch/target/*.jar` 是否存在 | 检查 Maven 阶段输出和模块打包结果 |
 | 前端页面 404 或白屏 | `peach-front` 镜像是否包含 `index.html` | 检查 `Build frontend` 阶段和 `docker run --rm <image> ls /usr/share/nginx/html` |
 | 前端能打开但接口不通 | `GATEWAY_PORT` 与 `peach-gateway` 的 `SERVER_PORT` 是否一致 | 检查 Secret file、`docker-compose.deploy.yml` 和 `peach-front` 容器渲染后的 Nginx 配置 |
@@ -314,9 +430,16 @@ Registry UI 中应看到 8 个镜像仓库：7 个后端服务和 `peach-front`�
 | 推送 Registry 报 HTTP/HTTPS 协议错误 | 镜像标签是否仍使用 `registry:5000` | Docker Desktop 模式下使用 `localhost:5000/peach-cloud/...`，不要使用 `registry:5000` 作为构建产物标签 |
 | Webhook 无法访问 Jenkins | GitLab outbound policy 和 Docker 网络 | 确认服务都在 `peach-devops` 网络，只放行 Jenkins 地址 |
 | 主机访问不到 Peach Cloud | `DEVOPS_HTTP_PORT`、hosts 解析、运行网络和 `peach-front` 容器状态 | 检查 hosts 是否指向 `127.0.0.1`，检查 `peach-devops-nginx` 是否已连接到 `peach-cloud-runtime`，检查 `peach-front` 是否运行 |
-| Nacos 代理 502 | Peach Cloud 运行 Compose 是否已启动 Nacos | Jenkins 首次完成 Deploy 后，`peach-devops-nginx` 才能通过 `peach-cloud-runtime` 访问 `nacos:8848` |
+| Nacos 代理 502 | Peach Cloud 运行 Compose 是否已启动 Nacos | Jenkins 完成 Deploy 后，`peach-front` 才能代理 `/nacos/`；DevOps 入口用 `nacos.peachsoft.com` |
 | `import-nacos.sh: Permission denied` | Jenkins 工作区或 GitLab 仓库未保留 shell 脚本执行位 | 当前 Jenkinsfile 会在复制后执行 `chmod +x`，并通过 `sh import-nacos.sh` 调用；更新流水线后重新构建 |
 | MySQL 密码修改后仍认证失败 | 持久数据目录已有旧密码 | 使用旧密码；只有确认数据可丢时再清理数据 |
+
+## 已知限制
+
+| 项 | 说明 |
+| --- | --- |
+| HTTPS | DevOps Nginx 当前仅 HTTP；生产需补 443 与证书 |
+| Registry | 本地 HTTP 无认证，仅适合可信内网 |
 
 ## 生产边界
 

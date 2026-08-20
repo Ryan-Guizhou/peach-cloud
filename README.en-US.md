@@ -2,8 +2,8 @@
 
 English | [中文](README.md)
 
-Last updated: 2026-07-03  
-Target stack: JDK 8, Spring Boot 2.7.13, Spring Cloud 2021.0.5, Spring Cloud Alibaba 2021.0.5.0  
+Last updated: 2026-08-20
+Target stack: JDK 21, Maven 3.9.11, Spring Boot 3.5.4, Spring Cloud 2025.0.0, Spring Cloud Alibaba 2025.0.0.0
 Project version: `1.0.0-SNAPSHOT`, Maven group: `com.peach`
 
 ## Purpose
@@ -20,8 +20,8 @@ This repository is intended to:
 
 This repository does not provide:
 
-- A production deployment platform, CI/CD pipeline, or runtime governance system.
-- A production-ready guarantee for the local `docker-compose.yml`.
+- A production deployment platform or runtime governance system. CI/CD lives under `deploy-pipline/`; see that README for scope.
+- A production-ready guarantee for the local Compose setup.
 - Production defaults for local usernames, passwords, ports, or service addresses.
 - Complete production semantics for every starter without real external dependencies and business configuration. Messaging, distributed locks, object storage, mail, and cache behavior still depend on the actual middleware and runtime settings.
 
@@ -29,23 +29,26 @@ This repository does not provide:
 
 ```text
 peach-cloud
-├── bin/                  # Docker Compose helper scripts
-├── doc/                  # Integration notes, component manuals, governance docs
-├── sql/                  # Database initialization and business table scripts
-├── peach-auth/           # Authentication, users, roles, resources, login, operation logs
-├── peach-gateway/        # Spring Cloud Gateway service
-├── peach-fileservice/    # File domain service and file APIs
-├── peach-message/        # Site messages, announcements, todos, unread state, WebSocket push
-├── peach-setting/        # Dictionaries, value sets, notices, localized messages
-├── peach-monitor/        # Monitoring, audit, runtime APIs
-├── peach-generator/      # Datasources, metadata, templates, code generation
-├── peach-common/         # Shared constants, responses, exceptions, utilities, base models
-├── peach-component/      # captcha, email, initialize, storage, threadpool
-├── peach-middleware/     # redis, redission, mongo, openfeign, satoken, rocket wrappers
-├── peach-sample/         # Component and middleware usage samples
-├── peach-cloud-front/    # Vue 3 + Vite frontend project
-├── docker-compose.yml    # Local dependencies and backend service composition
-└── pom.xml               # Maven root aggregator POM
+├── bin/                      # Local Compose helper scripts (default: deploy/docker-compose.yml)
+├── deploy/                   # Local Docker layout, Nacos config templates, runtime dirs
+├── deploy-pipline/           # GitLab + Jenkins + Registry CI/CD and deploy Compose
+├── docs/                     # Project-level design and integration docs
+├── doc/                      # Legacy integration notes and component manuals
+├── sql/                      # Database initialization and business table scripts
+├── peach-auth/               # Authentication, users, roles, resources, login, operation logs
+├── peach-gateway/            # Spring Cloud Gateway service
+├── peach-fileservice/        # File domain service and file APIs
+├── peach-message/            # Site messages, announcements, todos, unread state, WebSocket push
+├── peach-setting/            # Dictionaries, value sets, notices, localized messages
+├── peach-monitor/            # Monitoring, audit, runtime APIs
+├── peach-generator/          # Datasources, metadata, templates, code generation
+├── peach-scheduled/          # Scheduler service
+├── peach-common/             # Shared constants, responses, exceptions, utilities, base models
+├── peach-component/          # captcha, email, initialize, storage, threadpool, scheduler
+├── peach-middleware/         # redis, redission, openfeign, satoken, rocket wrappers
+├── peach-sample/             # Component and middleware usage samples
+├── peach-cloud-front/        # Vue 3 + Vite frontend project
+└── pom.xml                   # Maven root aggregator POM
 ```
 
 Notes:
@@ -65,6 +68,7 @@ Notes:
 | `peach-setting` | `common`, `entity`, `service`, `rest`, `openfeign-external`, `launch` | Dictionaries, value sets, notices, localized messages |
 | `peach-monitor` | `common`, `entity`, `service`, `rest`, `openfeign-external`, `launch` | Monitoring, audit, runtime queries, monitor APIs |
 | `peach-generator` | `common`, `entity`, `service`, `rest`, `launch` | Datasources, table metadata, templates, preview, code generation |
+| `peach-scheduled` | `common`, `entity`, `service`, `rest`, `openfeign-external`, `launch` | Scheduler jobs, execution, OpenFeign external APIs |
 | `peach-common` | Single module | Shared responses, exceptions, constants, base models, utilities |
 | `peach-component` | `peach-captcha`, `peach-email`, `peach-storage`, `peach-initialize`, `peach-threadpool` | Business-neutral reusable component starters |
 | `peach-middleware` | `peach-kafka`, `peach-rocket`, `peach-redis`, `peach-redission`, `peach-mongo`, `peach-satoken`, `peach-openfeign` | Middleware integration, autoconfigure modules, starters, examples |
@@ -82,36 +86,39 @@ Notes:
 | Setting | `com.peach.setting.launch.PeachSettingApplication` | `peach-setting/peach-setting-launch/src/main/resources` |
 | Monitor | `com.peach.monitor.launch.PeachMonitorApplication` | `peach-monitor/peach-monitor-launch/src/main/resources` |
 | Generator | `com.peach.generator.launch.PeachGeneratorApplication` | `peach-generator/peach-generator-launch/src/main/resources` |
+| Scheduled | `com.peach.scheduled.PeachScheduledApplication` | `peach-scheduled/peach-scheduled-launch/src/main/resources` |
 | Sample | `com.peach.sample.SampleApplication` | `peach-sample/src/main/resources` |
 | Storage example | `com.peach.example.PeachStoreExampleApplication` | `peach-component/peach-storage/peach-store-example/src/main/resources` |
 | RocketMQ example | `com.peach.rocket.example.PeachRocketExampleApplication` | `peach-middleware/peach-rocket/peach-rocket-example/src/main/resources` |
 
 ## Stack And Versions
 
-Major versions are declared in the root `pom.xml`:
+Major versions are managed in `peach-dependencies/pom.xml` and the root `pom.xml`:
 
 | Area | Version |
 | --- | --- |
-| Java | `1.8` |
-| Spring Boot | `2.7.13` |
-| Spring Cloud | `2021.0.5` |
-| Spring Cloud Alibaba | `2021.0.5.0` |
-| Sa-Token | `1.37.0` |
-| MyBatis Spring Boot Starter | `2.3.1` |
-| PageHelper | `1.4.7` |
-| Knife4j | `4.4.0` |
-| Hutool | `5.8.20` |
-| Fastjson | `2.0.21` |
-| Redisson | `3.26.1` |
-| RocketMQ Spring | `2.2.3` |
+| Java | `21` |
+| Maven (recommended) | `3.9.11` |
+| Spring Boot | `3.5.4` |
+| Spring Cloud | `2025.0.0` |
+| Spring Cloud Alibaba | `2025.0.0.0` |
+| Sa-Token | `1.44.0` |
+| MyBatis Spring Boot Starter | `3.0.4` |
+| PageHelper | `2.1.0` |
+| Knife4j | `4.5.0` |
+| Hutool | `5.8.39` |
+| Fastjson | `2.0.58` |
+| Redisson | `3.50.0` |
+| RocketMQ Spring | `2.3.3` |
 | RocketMQ Client | `5.3.2` |
-| MinIO Java SDK | `8.5.12` |
+| MinIO Java SDK | `8.5.17` |
 
 Build notes:
 
 - The root POM uses `${revision}` for internal module versions.
 - The `development` profile is active by default. Additional profiles are `production`, `docker`, and `test`.
-- `maven-compiler-plugin` is configured for Java 8 and `parameters`.
+- `maven-compiler-plugin` targets **Java 21** (`maven.compiler.release=21`) with `parameters`.
+- Local and CI builds require **JDK 21**. Jenkins uses the Maven 3.9.11 + Temurin 21 image from `deploy-pipline/pipline/maven-node/Dockerfile`.
 - `flatten-maven-plugin` generates `.flattened-pom.xml` during builds. Treat it as a build artifact.
 
 ## Quick Build
@@ -151,19 +158,21 @@ mvn -pl peach-middleware/peach-rocket -am clean package -DskipTests -Pdevelopmen
 
 ## Local Dependencies And Docker Compose
 
-The repository provides `docker-compose.yml` and scripts under `bin/` for local MySQL, Redis, Nacos, and backend services.
+Local Compose lives at `deploy/docker-compose.yml`. Scripts under `bin/` use it to start MySQL, Redis, Nacos, and backend services.
 
 | Service | Container | Local port |
 | --- | --- | --- |
 | MySQL | `peach-mysql` | `3307 -> 3306` |
 | Redis | `peach-redis` | `6380 -> 6379` |
-| Nacos | `peach-nacos` | `8849 -> 8848`, `9849 -> 9848` |
-| Gateway | `peach-gateway` | `18080` |
+| Nacos | `peach-nacos` | `8849 -> 8848`, `9850 -> 9848` |
+| Gateway | `peach-gateway` | `18080` (in-container) |
 | Auth | `peach-auth` | `18081` |
 | Monitor | `peach-monitor` | `18082` |
 | Fileservice | `peach-fileservice` | `18083` |
 | Message | `peach-message` | `18084` |
 | Setting | `peach-setting` | `18085` |
+| Generator | `peach-generator` | `18086` |
+| Front | `peach-front` | `80` (mapped by compose) |
 
 Windows:
 
@@ -197,14 +206,64 @@ Supported actions:
 The Windows script accepts a compose file as the second argument:
 
 ```bat
-bin\start.bat up docker-compose.yml
+bin\start.bat up deploy\docker-compose.yml
 ```
 
 The Linux / macOS script accepts `COMPOSE_FILE`:
 
 ```sh
-COMPOSE_FILE=docker-compose.yml sh bin/start.sh up
+COMPOSE_FILE=deploy/docker-compose.yml sh bin/start.sh up
 ```
+
+## CI/CD (GitLab + Jenkins)
+
+Automation lives under `deploy-pipline/` and does **not** modify `deploy/docker-compose.yml`.
+
+| Doc | Purpose |
+| --- | --- |
+| `deploy-pipline/README.md` | Main CI/CD guide |
+| `docs/pipline/peach-cloud-gitlab-jenkins-webhook-guide.md` | Webhook and Jenkins setup |
+
+### CI build environment
+
+| Component | Version |
+| --- | --- |
+| JDK | Eclipse Temurin **21** |
+| Maven | **3.9.11** |
+| Node.js | **22** (frontend stage) |
+
+CI image tag: `peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22`
+
+Maven dependencies are proxied through **Nexus 3** on the DevOps stack. Default settings: `deploy-pipline/maven/settings.xml`. See [`deploy-pipline/maven/README.md`](deploy-pipline/maven/README.md).
+
+### First-time DevOps setup
+
+```bash
+docker compose -f deploy-pipline/pipline/docker-compose.yml config
+docker compose -f deploy-pipline/pipline/docker-compose.yml build jenkins
+docker compose -f deploy-pipline/pipline/docker-compose.yml up -d
+docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker version
+```
+
+Configure Jenkins credentials (`gitlab-peach-cloud`, `peach-deploy-env` Secret file from `deploy-pipline/peach-deploy.env.example`), create a Pipeline job with Script Path `deploy-pipline/Jenkinsfile`, then run **Build Now**.
+
+### Upgrade CI from Java 8 to Java 21
+
+1. Merge the updated `Jenkinsfile` to the deploy branch.
+2. Optionally rebuild the CI image locally:
+
+```bash
+docker build \
+  -f deploy-pipline/pipline/maven-node/Dockerfile \
+  -t peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22 \
+  deploy-pipline/pipline/maven-node
+```
+
+3. Optionally remove the old image: `docker rmi peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22`
+4. Run **Build Now** in Jenkins and confirm `Build CI image` and `Maven package` succeed.
+5. If dependency resolution fails, clear the Maven cache inside Jenkins and retry.
+
+This CI change upgrades **only** the JDK/Maven build image. Pipeline stages, service list, and deploy logic are unchanged. See `deploy-pipline/README.md` for full details.
 
 ## Run A Single Service Locally
 
