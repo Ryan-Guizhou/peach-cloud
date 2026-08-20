@@ -62,9 +62,14 @@ pipeline {
         }
 
         stage('Maven package') {
+            options {
+                timeout(time: 60, unit: 'MINUTES')
+            }
             steps {
                 withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
                     sh '''
+                        set -eu
+
                         set -a
                         . "$DEPLOY_ENV_FILE"
                         set +a
@@ -90,13 +95,31 @@ pipeline {
 
                         node deploy-pipline/scripts/render-maven-settings.mjs
 
+                        echo "Checking Maven CI image: $MAVEN_IMAGE"
+                        docker image inspect "$MAVEN_IMAGE" >/dev/null
+
+                        echo "Checking Docker network: $DEVOPS_NETWORK"
+                        docker network inspect "$DEVOPS_NETWORK" >/dev/null
+
+                        echo "Checking Maven container runtime and mounted workspace"
                         docker run --rm \
+                          --pull=never \
+                          --network "$DEVOPS_NETWORK" \
+                          --user "$(id -u):$(id -g)" \
+                          -e HOME=/var/jenkins_home \
+                          -v "peach-jenkins-data:/var/jenkins_home" \
+                          -w "$WORKSPACE" \
+                          "$MAVEN_IMAGE" \
+                          sh -lc 'java -version && mvn -version && test -f /var/jenkins_home/.m2/settings.generated.xml && test -f pom.xml'
+
+                        docker run --rm \
+                          --pull=never \
                           --network "$DEVOPS_NETWORK" \
                           --user "$(id -u):$(id -g)" \
                           -e HOME=/var/jenkins_home \
                           -e LANG=C.UTF-8 \
                           -e LC_ALL=C.UTF-8 \
-                          -e MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Duser.language=en -Duser.country=US" \
+                          -e MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Duser.language=en -Duser.country=US -Daether.connector.connectTimeout=10000 -Daether.connector.requestTimeout=60000 -Dmaven.wagon.http.connectionTimeout=10000 -Dmaven.wagon.http.readTimeout=60000" \
                           -e JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Duser.language=en -Duser.country=US" \
                           -v "peach-jenkins-data:/var/jenkins_home" \
                           -w "$WORKSPACE" \
@@ -109,6 +132,10 @@ pipeline {
                             -Dsun.jnu.encoding=UTF-8 \
                             -Duser.language=en \
                             -Duser.country=US \
+                            -Daether.connector.connectTimeout=10000 \
+                            -Daether.connector.requestTimeout=60000 \
+                            -Dmaven.wagon.http.connectionTimeout=10000 \
+                            -Dmaven.wagon.http.readTimeout=60000 \
                             -DskipTests clean package
                     '''
                 }
