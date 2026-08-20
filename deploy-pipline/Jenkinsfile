@@ -124,8 +124,8 @@ pipeline {
                         };
 
                         const optional = (name, enabled) => {
-                          const pattern = new RegExp(`\\n?<!-- @optional ${name}\\n([\\s\\S]*?)\\n@optional-end -->`, 'g');
-                          text = text.replace(pattern, enabled ? '\n$1' : '');
+                            const pattern = new RegExp(`\\n?<!-- @optional ${name}\\n([\\s\\S]*?)\\n@optional-end -->`, 'g');
+                            text = text.replace(pattern, enabled ? String.raw`\n$1` : '');
                         };
 
                         optional('NEXUS_AUTH', hasNexusAuth);
