@@ -35,12 +35,12 @@ peach.storage:
       secretKey: "@BOS_SECRET_KEY@"
       prefix: /bos/peach
       region: cn-beijing
-      obs:
-        type: OBS
-        name: OBS
-        endpoint: obs.myhuaweicloud.com
-        bucketName: peachsoft
-        accessKey: "@OBS_ACCESS_KEY@"
-        secretKey: "@OBS_SECRET_KEY@"
-        prefix: /obs/peach
-        region: cn-beijing
+    obs:
+      type: OBS
+      name: OBS
+      endpoint: obs.myhuaweicloud.com
+      bucketName: peachsoft
+      accessKey: "@OBS_ACCESS_KEY@"
+      secretKey: "@OBS_SECRET_KEY@"
+      prefix: /obs/peach
+      region: cn-beijing

@@ -110,7 +110,7 @@ pipeline {
 
                         const values = {
                           MAVEN_LOCAL_REPOSITORY: env.MAVEN_LOCAL_REPOSITORY,
-                          MAVEN_NEXUS_URL: env.MAVEN_NEXUS_URL.replace(/\/+$/, ''),
+                          MAVEN_NEXUS_URL: env.MAVEN_NEXUS_URL.replace("\\/+$", ""),
                           MAVEN_ALIYUN_PUBLIC_URL: env.MAVEN_ALIYUN_PUBLIC_URL,
                           MAVEN_NEXUS_USERNAME: env.MAVEN_NEXUS_USERNAME,
                           MAVEN_NEXUS_PASSWORD: env.MAVEN_NEXUS_PASSWORD,
