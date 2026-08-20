@@ -102,18 +102,20 @@ pipeline {
                         docker network inspect "$DEVOPS_NETWORK" >/dev/null
 
                         echo "Checking Maven container runtime and mounted workspace"
-                        docker run --rm \
+                        timeout 120s docker run --rm \
                           --pull=never \
+                          --entrypoint /bin/sh \
                           --network "$DEVOPS_NETWORK" \
                           --user "$(id -u):$(id -g)" \
                           -e HOME=/var/jenkins_home \
                           -v "peach-jenkins-data:/var/jenkins_home" \
                           -w "$WORKSPACE" \
                           "$MAVEN_IMAGE" \
-                          sh -lc 'java -version && mvn -version && test -f /var/jenkins_home/.m2/settings.generated.xml && test -f pom.xml'
+                          -lc 'echo "container started"; java -version; mvn -version; test -f /var/jenkins_home/.m2/settings.generated.xml; test -f pom.xml'
 
-                        docker run --rm \
+                        timeout 3600s docker run --rm \
                           --pull=never \
+                          --entrypoint /bin/sh \
                           --network "$DEVOPS_NETWORK" \
                           --user "$(id -u):$(id -g)" \
                           -e HOME=/var/jenkins_home \
@@ -124,7 +126,7 @@ pipeline {
                           -v "peach-jenkins-data:/var/jenkins_home" \
                           -w "$WORKSPACE" \
                           "$MAVEN_IMAGE" \
-                          mvn -B -Pdocker \
+                          -lc 'mvn -B -Pdocker \
                             -s /var/jenkins_home/.m2/settings.generated.xml \
                             -Dmaven.repo.local=/var/jenkins_home/.m2/repository \
                             -Dpeach.nexus.url="$PEACH_NEXUS_URL" \
@@ -136,7 +138,7 @@ pipeline {
                             -Daether.connector.requestTimeout=60000 \
                             -Dmaven.wagon.http.connectionTimeout=10000 \
                             -Dmaven.wagon.http.readTimeout=60000 \
-                            -DskipTests clean package
+                            -DskipTests clean package'
                     '''
                 }
             }
