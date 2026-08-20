@@ -21,6 +21,7 @@
 | `deploy-pipline/pipline/jenkins/Dockerfile` | Jenkins 镜像（Docker CLI、GitLab 插件、JDK 21） |
 | `deploy-pipline/pipline/maven-node/Dockerfile` | Maven + Node CI 镜像 |
 | `maven/settings.xml` | 唯一 Maven settings 模板；本地可复制，CI 自动渲染 |
+| `deploy-pipline/scripts/render-maven-settings.mjs` | Jenkins 渲染 Maven settings 的脚本，避免在 Jenkinsfile 内联复杂 XML/正则 |
 | `deploy-pipline/maven/README.md` | Nexus 与 settings 说明 |
 | `deploy-pipline/docs/local-development.md` | 本地开发、依赖刷新、IDEA |
 | `deploy-pipline/docs/nginx-architecture.md` | Nginx 分层方案 |

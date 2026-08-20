@@ -36,7 +36,7 @@
 
 ## Jenkins 自动填充变量
 
-`Jenkinsfile` 在 Maven 打包前读取 `settings.xml`，先填充必要变量，生成 `/var/jenkins_home/.m2/settings.generated.xml`，然后通过 Jenkins 持久卷挂载给 Maven 容器执行：
+`Jenkinsfile` 在 Maven 打包前调用 `deploy-pipline/scripts/render-maven-settings.mjs` 读取 `settings.xml`，先填充必要变量，生成 `/var/jenkins_home/.m2/settings.generated.xml`，然后通过 Jenkins 持久卷挂载给 Maven 容器执行：
 
 ```bash
 mvn -s /var/jenkins_home/.m2/settings.generated.xml ...
