@@ -1,15 +1,16 @@
 # Layered Java Style
 
-本规则区分新代码目标和存量兼容；安全与正确性要求见 `08-security-and-quality-gates.md`。
+本规则区分新代码目标和存量兼容；Java 21 语言与并发风格同时遵循 `09-java21-modern-style.md`，安全与正确性要求见 `08-security-and-quality-gates.md`。
 
 ## Models
 
 - `REQUIRED`：DO 对应持久化结构并继承 `PeachDO`；QO 只表达查询；DTO 只表达命令入参；VO 只表达允许返回的数据。
-- `PREFERRED`：分页 QO 继承 `PeachEntity`；新增/更新复用 DTO 并使用 JSR-303 分组。
-- `LEGACY_COMPATIBLE`：无敏感字段的简单 VO 可在维护存量模块时继承 DO。
+- `PREFERRED`：分页 QO 继承 `PeachEntity`；新增/更新复用 DTO 并使用 Jakarta Validation 分组。
+- `PREFERRED`：DTO/VO/Command/Event 在不破坏 Jackson、Validation、Swagger、Feign、MyBatis 及调用方 getter/setter 契约时优先 `record`。
+- `LEGACY_COMPATIBLE`：存量 mutable DTO/VO、VO 继承 DO 可为保持现有契约暂时保留，但不得作为新代码默认模板。
 - `FORBIDDEN`：含密码、token、secret、身份证等敏感字段的 DO 直接作为 VO 或被响应序列化；让前端 DTO 控制审计字段、逻辑删除或权限字段。
 
-REST 入参必须触发 JSR-303 校验；Service 继续承担业务语义、权限和状态校验。校验分组沿用当前模块已有 `PeachGroup` 派生类，不为形式重复创建空分组类。
+REST 入参必须触发 Jakarta Validation；Service 继续承担业务语义、权限和状态校验。校验分组沿用当前模块已有 `PeachGroup` 派生类，不为形式重复创建空分组类。
 
 ## DAO And XML
 
@@ -17,17 +18,21 @@ REST 入参必须触发 JSR-303 校验；Service 继续承担业务语义、权�
 - DAO 方法、XML `namespace/id`、参数类型、结果类型和字段片段必须同步。
 - 修改公共 DAO 签名或 XML `id` 前评估调用方；修改后运行受影响模块测试或启动装配检查。
 - 租户、组织、逻辑删除和状态条件属于数据完整性边界，不得为复用 SQL 随意省略。
+- MyBatis DO/PO 若依赖无参构造、Setter 或动态填充，保留普通 class；禁止为了使用 Java 21 `record` 破坏映射语义。
 
 ## REST And Service
 
 - REST 只负责绑定、校验、调用 Service 和包装响应；事务、DAO、线程控制和领域编排不得放入 Controller。
+- Spring Bean 默认构造器注入并使用 `private final` 依赖；禁止新增字段级 `@Resource` / `@Autowired`。
 - `@Slf4j`、`@Indexed`、`@Validated` 按实际用途添加；未使用日志时不机械添加 `@Slf4j`。
 - 写操作审计只记录非敏感业务标识和结果，禁止记录完整 DTO。
 - Service 对外写方法按原子性需要使用 `@Transactional(rollbackFor = Exception.class)`；禁止依赖 private 方法或同类自调用触发代理。
-- 简单对象转换可沿用 `BeanUtils.copyProperties`，但主键、审计、权限、逻辑删除和敏感字段必须显式处理。
+- 简单对象转换可为兼容保留 `BeanUtils.copyProperties`；新代码优先显式构造或 MapStruct，并显式处理主键、审计、权限、逻辑删除和敏感字段。
 
 ## API Compatibility
 
-- 存量接口继续使用当前 `Response` 包装和模块路由，除非用户明确授权公共 API 演进。
-- 非泛型 `Response`、动作式 CRUD 路由和 VO 继承 DO 视为存量兼容，不作为新公共 API 的默认目标。
-- 新 API 设计有歧义时先确认，不以“仓库中数量最多”替代架构判断。
+- **既有 API 行为保持是硬约束**：HTTP 路径、JSON 字段、状态码、错误语义、缓存键、MQ 消息、权限和事务行为未经授权不得改变。
+- 存量接口继续使用当前 `Response` 包装和模块路由，除非已完成影响分析并获得公共 API 演进授权。
+- 非泛型 `Response`、动作式 CRUD 路由和 VO 继承 DO 视为存量兼容，不作为新公共 API 默认目标。
+- `Response` 泛型化、DTO/VO record 化、接口重命名等属于契约级改造，必须同步所有调用方与测试，不得机械批量替换。
+- 新 API 设计有歧义时不以“仓库中数量最多”替代架构判断。
