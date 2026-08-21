@@ -1,0 +1,66 @@
+---
+description: 约束 peach-cloud Java 21 现代化编码与保行为重构，适用于所有 Java 后端新增、修改、审查和迁移任务。
+globs: "**/*.java"
+alwaysApply: false
+---
+# Java 21 Modern Style
+
+## Highest Priority
+
+- 现代化重构不得改变既有业务能力、HTTP/JSON 契约、SQL、缓存键、MQ 协议、鉴权、事务、异常和可观察行为，除非用户明确授权。
+- 历史代码用于兼容分析，不作为新代码风格模板。
+- Java 21 是唯一后端语言基线；不得为了 Java 8/11/17 兼容保留旧写法。
+
+## Data Model
+
+- DTO/VO/Command/Event/Value Object 在框架与调用链允许时优先 `record`。
+- DO/PO/MyBatis Entity 若依赖无参构造、Setter、动态填充或反射，保留普通 class。
+- `record` 内部集合需要不可变语义时使用 `copyOf`；原调用方需要修改集合时不得机械变更。
+- 无明确 Java Serialization 需求时 DTO/VO 不实现 `Serializable`。
+
+## Spring
+
+- 新 Bean 默认构造器注入，依赖字段 `private final`；禁止新增字段级 `@Resource` / `@Autowired`。
+- 字段注入迁移时若存在按名称注入、Qualifier 或多实现，必须显式保留 Bean 选择语义。
+- `@Configuration` 在无需 bean method proxy 时使用 `proxyBeanMethods = false`。
+
+## Language And API
+
+- 使用 pattern matching 代替 `instanceof + cast`。
+- 值计算和有限状态分支优先 switch expression；enum/sealed hierarchy 尽量避免吞掉未来类型的 `default`。
+- 有限状态优先 enum；有限类型层级可评估 sealed interface/class。
+- `var` 仅用于右侧类型显而易见的局部变量。
+- 多行 SQL/JSON/HTML/Prompt 优先 text block。
+- 固定不可变集合优先 `List.of/Set.of/Map.of`；Stream 简单转换优先 `.toList()`。
+- 顺序语义明确时可使用 JDK 21 Sequenced Collections 的 `getFirst/getLast/reversed`。
+- JDK 标准库能清晰完成的能力优先 `java.time`、`Duration`、`HttpClient`、`Path/Files`、`Base64`、`HexFormat`、`Objects`。
+- 不为了使用 Stream、`var` 或 record 而降低可读性。
+
+## Concurrency
+
+- 阻塞 IO 高并发优先评估 Virtual Threads。
+- CPU 密集任务继续使用有界 Platform Thread Pool。
+- 长耗时、可靠重试、削峰任务继续使用 RocketMQ/任务系统。
+- Virtual Thread 不替代 HikariCP、Redis/HTTP pool、Sentinel、Semaphore、RateLimiter。
+- 禁止在 `synchronized` 临界区执行 DB/Redis/HTTP/File 阻塞 IO。
+- 禁止业务代码随手 `new Thread` 或创建未托管 Executor。
+
+## Preview Policy
+
+生产代码禁止 `--enable-preview`。JDK 21 中仍为 Preview/Incubator 的 ScopedValue、Structured Concurrency、String Templates 等不得成为公共 API 或基础设施强依赖。
+
+## Migration Levels
+
+- Level A：可证明保行为的机械现代化，如 diamond operator、构造器注入、pattern matching、switch expression、try-with-resources、text block、等价标准库 API。
+- Level B：DTO/VO -> record、Response 泛型化、BeanUtils 替换、字符串状态 enum 化、集合不可变化；必须影响分析、调用方联动和测试。
+- Level C：Virtual Thread、上下文传播、异步返回模型、GC；必须稳定性/性能验证。
+
+## Verification
+
+```bash
+node scripts/check-utf8.mjs
+git diff --check
+mvn -pl <affected-module> -am test
+```
+
+公共基础模块、Starter、SPI、Response、上下文或并发模型改动必须扩大测试范围。
