@@ -1,44 +1,73 @@
 ---
 name: using-peach-threadpool
-description: 规范 peach-cloud 项目中 peach-threadpool / peach-threadpool-starter / peach-threadpool-autoconfigure 的线程池配置、PoolType 选择、@AsyncExecuted 使用、ThreadPoolManager 调用、MDC/SecurityContext 传递、拒绝策略、队列容量、超时和 README 编写。Use when editing thread pool code, adding async execution, configuring peach.threadpool, or writing README for peach-component/peach-threadpool.
+description: 规范 peach-cloud 项目中 peach-threadpool / peach-threadpool-starter / peach-threadpool-autoconfigure 的 Java 21 并发模型、Virtual Thread 适用边界、CPU 有界线程池、@AsyncExecuted、ThreadPoolManager、上下文传递、拒绝策略、队列、超时和 README。Use when editing thread pool code, async execution, virtual threads, task execution, context propagation, or peach.threadpool configuration.
 ---
 
 # Peach Threadpool
 
-## 工作流
+## Highest Priority
 
-1. 先判断任务是配置线程池、使用注解、直接提交任务、扩展 starter，还是补充 README。
-2. 需要异步执行时优先使用 `ThreadPoolManager` 或 `@AsyncExecuted`，不要随手 `new Thread`、`Executors.newFixedThreadPool`。
-3. 涉及配置字段、默认行为或当前实现限制时，读取 `references/module-guide.md`。
-4. 改动后运行 `node scripts/check-utf8.mjs`、编译 `peach-component/peach-threadpool` 并执行 `git diff --check`；涉及 AOP 行为时补充或执行相应测试。
+- 保留当前 `peach-threadpool` 对外 API、注解语义、配置字段、拒绝策略、上下文传播和监控行为，除非用户明确授权行为升级。
+- Java 21 并不意味着删除线程池：**IO concurrency、CPU concurrency、resource concurrency、reliable async 是四个不同问题**。
 
-## 使用规则
+## Workflow
 
-- 配置前缀是 `peach.threadpool`。
-- 根据任务性质选择 `PoolType`：CPU 密集选 `CPU`，IO/远程调用选 `IO`，短生命周期突发任务可评估 `CACHED`，定时任务选 `SCHEDULED`。
-- 队列容量不要无脑设置极大值；高吞吐场景要在延迟、内存和拒绝策略之间明确取舍。
-- 拒绝策略优先选择可解释的行为：关键任务用 `CALLER_RUNS` 做背压，需要快速失败用 `ABORT`，可丢弃任务才使用 `DISCARD` 或 `DISCARD_OLDEST`。
-- 线程名前缀必须能定位业务域，例如 `order-async-`、`storage-upload-`。
-- 默认启用 MDC 和 SecurityContext 传递；关闭前必须确认日志追踪和权限上下文不受影响。
+1. 判断任务属于阻塞 IO、CPU 密集、定时任务、可靠异步、上下文传播或现有 API 兼容。
+2. 先读取 `09-java21-modern-style`，再读取 `references/module-guide.md` 核对当前真实实现。
+3. 修改 ThreadPoolManager、PoolType、`@AsyncExecuted` 或配置字段前评估所有调用方。
+4. 若引入 Virtual Threads，必须明确连接池、Sentinel、Semaphore、RateLimiter 等外部资源边界。
+5. 改动后运行 UTF-8、模块测试与 `git diff --check`；并发语义变化必须增加专项测试。
 
-## @AsyncExecuted 当前语义
+## Java 21 Execution Model
 
-- 注解类路径为 `com.peach.threadpool.annoation.AsyncExecuted`，注意包名当前拼写是 `annoation`。
-- 注解可配置 `type`、`async`、`timeoutMs`。
-- 当前 AOP 只切方法注解，不切类注解；不要只在类上标注后假设所有方法生效。
-- 当前普通返回值路径会提交到线程池后执行 `Future.get()`；这会让调用线程等待结果，不是 fire-and-forget。
-- 需要真正异步返回时，优先让方法返回 `CompletableFuture`，并检查当前实现是否正确使用目标线程池。
-- `timeoutMs > 0` 只限制等待结果的时间，不等于可靠取消底层任务。
+### Blocking IO
 
-## 代码审查重点
+优先评估 Virtual Threads，典型场景：HTTP/Feign、JDBC 外围编排、Redis/OSS/File IO、第三方 API。Virtual Thread 解决线程成本，不解决外部资源容量。
 
-- 检查是否创建了游离线程池且没有关闭。
-- 检查耗时 IO 是否误用 CPU 池。
-- 检查 `queueCapacity` 是否掩盖过载并导致延迟堆积。
-- 检查 `async=false` 是否是有意同步执行。
-- 检查异常是否被吞掉，尤其是 `Future`、`CompletableFuture` 链路。
-- 检查 AOP 自调用是否导致注解不生效。
+### CPU Bound
 
-## README 提醒
+图片编码、压缩、Hash、加解密、复杂计算等继续使用有界 Platform Thread Pool。线程数与 CPU 核心、任务特征和基准测试关联，不创建无限线程。
 
-编辑 `peach-component/peach-threadpool` 或子模块后，使用 `$using-peach-readme-writer` 刷新 README。README 必须写明当前注解真实语义、配置字段、默认池、拒绝策略、MDC/SecurityContext 传递和已知限制。
+### Reliable / Long Running
+
+需要持久化、削峰、可靠重试、跨进程恢复的长任务继续使用 RocketMQ/任务调度系统，不能因为 Virtual Thread 廉价就把可靠异步退化为进程内任务。
+
+### Scheduled
+
+定时任务继续使用受管理 Scheduler；不要用 sleep + Virtual Thread 替代调度系统。
+
+## Existing API Compatibility
+
+- 配置前缀仍是 `peach.threadpool`。
+- `@AsyncExecuted` 当前真实语义必须以源码为准；没有完整迁移方案时不得偷偷改变同步等待、返回值、timeout、取消语义。
+- `PoolType.IO/CACHED/CPU/SCHEDULED` 等现有值若已对外使用，不能直接删除或改名；可通过内部实现演进或新增模式兼容迁移。
+- MDC/SecurityContext/用户上下文传播语义必须保持；Virtual Thread 切换后重点验证 ThreadLocal 生命周期与清理。
+
+## Virtual Thread Guardrails
+
+- 不设置传统“大队列 + 大线程数”来限制 Virtual Thread；有限资源并发使用 Sentinel/Semaphore/连接池等资源级边界。
+- 禁止在 `synchronized` 临界区做 DB、Redis、HTTP、File 阻塞 IO。
+- 不在业务代码随手创建 `Executors.newVirtualThreadPerTaskExecutor()`；优先由 Spring/peach 执行组件统一托管生命周期、指标和上下文。
+- 不把 Virtual Thread 用于期望通过线程数限制 CPU 使用率的任务。
+
+## Review Checklist
+
+- 是否创建游离 Executor 且未关闭。
+- IO 是否错误使用 CPU pool；CPU 任务是否错误无限并发。
+- 是否改变 queue/rejection/backpressure 语义。
+- 是否吞掉 Future/CompletableFuture 异常。
+- 是否在异步边界丢失 MDC/SecurityContext/CurrentContext。
+- 是否因 Virtual Thread 放大数据库、Redis、HTTP 或第三方服务压力。
+- 是否存在 synchronized pinning 风险或锁内阻塞 IO。
+
+## Verification
+
+编辑 `peach-component/peach-threadpool` 后至少执行：
+
+```bash
+node scripts/check-utf8.mjs
+mvn -pl peach-component/peach-threadpool -am test
+git diff --check
+```
+
+涉及公共配置/API 时同步使用 `using-peach-readme-writer` 更新 README。
