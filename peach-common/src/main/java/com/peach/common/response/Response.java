@@ -5,10 +5,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.peach.common.util.StringUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-
 import java.io.Serializable;
 
 /**
+ * 通用响应模型。
+ *
+ * <p>该类当前属于公共兼容契约。本次仅进行实现层现代化，不改变现有继承结构、
+ * 工厂方法、JSON 字段和返回语义。泛型化或 record 化需要在独立契约迁移中完成。</p>
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/11 9:45
@@ -27,6 +31,9 @@ public class Response implements Serializable {
     @Schema(description = "返回数据")
     private Object data;
 
+    public Response() {
+    }
+
     public String getCode() {
         return code;
     }
@@ -43,10 +50,6 @@ public class Response implements Serializable {
         this.data = data;
     }
 
-    public Response() {
-        super();
-    }
-
     public Response setCode(String code) {
         this.code = code;
         return this;
@@ -59,7 +62,7 @@ public class Response implements Serializable {
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public boolean isSuccess() {
-        return this.code.startsWith("2");
+        return code.startsWith("2");
     }
 
     public static Response success() {
@@ -73,6 +76,7 @@ public class Response implements Serializable {
     public static Response fail() {
         return new FailResponse();
     }
+
     public static Response fail(String msg) {
         return new FailResponse(msg);
     }
@@ -88,7 +92,6 @@ public class Response implements Serializable {
     public static Response paramError(String msg) {
         return new FailResponse(StatusEnum.PARAM_ERROR.getCode(), msg);
     }
-
 
     public static Response businessResponse() {
         return new BusinessFailResponse();
@@ -111,116 +114,97 @@ public class Response implements Serializable {
     }
 
     public static Response commonResponse(boolean status, String msg, Object data) {
-        Response res = Response.success();
-        if (status == false)
-            res = Response.fail();
-        if (StringUtil.isNotEmpty(msg))
-            res.setMsg(msg);
-        if (null != data)
-            res.setData(data);
-        return res;
+        var response = status ? Response.success() : Response.fail();
+        if (StringUtil.isNotEmpty(msg)) {
+            response.setMsg(msg);
+        }
+        if (data != null) {
+            response.setData(data);
+        }
+        return response;
     }
 
-
-    public static class SuccessResponse extends Response implements Serializable{
+    public static class SuccessResponse extends Response implements Serializable {
 
         private static final long serialVersionUID = 9040035077231522334L;
 
         public SuccessResponse() {
-            super();
-            this.setCode(StatusEnum.SUCCESS.getCode());
-            this.setMsg(StatusEnum.SUCCESS.getMessage());
+            setCode(StatusEnum.SUCCESS.getCode());
+            setMsg(StatusEnum.SUCCESS.getMessage());
         }
 
         public SuccessResponse(Object data) {
-            super();
-            this.setCode(StatusEnum.SUCCESS.getCode());
-            this.setMsg(StatusEnum.SUCCESS.getMessage());
-            this.setData(data);
+            setCode(StatusEnum.SUCCESS.getCode());
+            setMsg(StatusEnum.SUCCESS.getMessage());
+            setData(data);
         }
     }
 
-    public static class BusinessFailResponse extends Response implements Serializable{
-
+    public static class BusinessFailResponse extends Response implements Serializable {
 
         private static final long serialVersionUID = -348678046434125007L;
 
         public BusinessFailResponse() {
-            super();
-            this.setCode(StatusEnum.BUSINESS_FAIL_CODE.getCode());
-            this.setMsg(StatusEnum.BUSINESS_FAIL_CODE.getMessage());
+            setCode(StatusEnum.BUSINESS_FAIL_CODE.getCode());
+            setMsg(StatusEnum.BUSINESS_FAIL_CODE.getMessage());
         }
 
         public BusinessFailResponse(String msg) {
-            super();
-            this.setCode(StatusEnum.FAIL.getCode());
-            this.setMsg(msg);
+            setCode(StatusEnum.FAIL.getCode());
+            setMsg(msg);
         }
 
         public BusinessFailResponse(String code, String msg) {
-            super();
-            this.setCode(code);
-            this.setMsg(msg);
+            setCode(code);
+            setMsg(msg);
         }
     }
 
-    public static class FailResponse extends Response implements Serializable{
+    public static class FailResponse extends Response implements Serializable {
 
         private static final long serialVersionUID = -3506879010527215679L;
 
         public FailResponse() {
-            super();
-            this.setCode(StatusEnum.FAIL.getCode());
-            this.setMsg(StatusEnum.FAIL.getMessage());
+            setCode(StatusEnum.FAIL.getCode());
+            setMsg(StatusEnum.FAIL.getMessage());
         }
 
         public FailResponse(String msg) {
-            super();
-            this.setCode(StatusEnum.FAIL.getCode());
-            this.setMsg(msg);
+            setCode(StatusEnum.FAIL.getCode());
+            setMsg(msg);
         }
 
         public FailResponse(StatusEnum statusEnum) {
-            super();
-            this.setCode(statusEnum.getCode());
-            this.setMsg(statusEnum.getMessage());
+            setCode(statusEnum.getCode());
+            setMsg(statusEnum.getMessage());
         }
 
         public FailResponse(String code, String msg) {
-            super();
-            this.setCode(code);
-            this.setMsg(msg);
+            setCode(code);
+            setMsg(msg);
         }
-
     }
 
-    public static class CommonResponse extends Response implements Serializable{
+    public static class CommonResponse extends Response implements Serializable {
 
         private static final long serialVersionUID = -5544154186538478127L;
 
         public CommonResponse(StatusEnum statusEnum) {
-            super();
-            this.setCode(statusEnum.getCode());
-            this.setMsg(statusEnum.getMessage());
-            this.setData(null);
+            setCode(statusEnum.getCode());
+            setMsg(statusEnum.getMessage());
+            setData(null);
         }
 
-        public CommonResponse(StatusEnum statusEnum,String msg) {
-            super();
-            this.setCode(statusEnum.getCode());
-            this.setMsg(statusEnum.getMessage()+":"+msg);
-            this.setData(null);
+        public CommonResponse(StatusEnum statusEnum, String msg) {
+            setCode(statusEnum.getCode());
+            setMsg(statusEnum.getMessage() + ":" + msg);
+            setData(null);
         }
 
-        public CommonResponse(String code,String msg) {
-            super();
-            this.setCode(code);
-            this.setMsg(msg);
-            this.setData(null);
+        public CommonResponse(String code, String msg) {
+            setCode(code);
+            setMsg(msg);
+            setData(null);
         }
-
     }
-
-
-
 }
