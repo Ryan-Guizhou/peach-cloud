@@ -121,8 +121,8 @@ pipeline {
                           -e HOME=/var/jenkins_home \
                           -e LANG=C.UTF-8 \
                           -e LC_ALL=C.UTF-8 \
-                          -e MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Duser.language=en -Duser.country=US -Daether.connector.connectTimeout=10000 -Daether.connector.requestTimeout=60000 -Dmaven.wagon.http.connectionTimeout=10000 -Dmaven.wagon.http.readTimeout=60000" \
-                          -e JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Duser.language=en -Duser.country=US" \
+                          -e MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8  -Daether.connector.connectTimeout=10000 -Daether.connector.requestTimeout=60000 -Dmaven.wagon.http.connectionTimeout=10000 -Dmaven.wagon.http.readTimeout=60000" \
+                          -e JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8" \
                           -v "peach-jenkins-data:/var/jenkins_home" \
                           -w "$WORKSPACE" \
                           "$MAVEN_IMAGE" \

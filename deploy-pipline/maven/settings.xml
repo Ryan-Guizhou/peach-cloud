@@ -110,7 +110,7 @@
     <mirrors>
         <mirror>
             <id>maven-default-http-blocker</id>
-            <mirrorOf>external:http:*</mirrorOf>
+            <mirrorOf>external:http:*,!nexus-public</mirrorOf>
             <url>http://0.0.0.0/</url>
             <blocked>false</blocked>
         </mirror>
