@@ -21,7 +21,7 @@ public class RedisDaoAutoConfigure {
     @Bean
     @ConditionalOnBean(RedisTemplate.class)
     @ConditionalOnMissingBean(RedisDao.class)
-    public RedisDao redisDao(@Qualifier("redisTemplate") RedisTemplate<Object, Object> redisTemplate) {
+    public RedisDao redisDao(@Qualifier("redisTemplate") RedisTemplate<?, ?> redisTemplate) {
         return new RedisDaoImpl(redisTemplate);
     }
 }

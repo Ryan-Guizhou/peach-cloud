@@ -217,14 +217,54 @@ services:
     volumes:
       - ../observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
       - alloy-data:/var/lib/alloy/data
-      - peach-gateway-logs:/var/log/peach/gateway:ro
-      - peach-auth-logs:/var/log/peach/auth:ro
-      - peach-monitor-logs:/var/log/peach/monitor:ro
-      - peach-fileservice-logs:/var/log/peach/fileservice:ro
-      - peach-message-logs:/var/log/peach/message:ro
-      - peach-setting-logs:/var/log/peach/setting:ro
-      - peach-generator-logs:/var/log/peach/generator:ro
-      - peach-scheduled-logs:/var/log/peach/scheduled:ro
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-gateway
+        target: /var/log/peach/gateway
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-auth
+        target: /var/log/peach/auth
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-monitor
+        target: /var/log/peach/monitor
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-fileservice
+        target: /var/log/peach/fileservice
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-message
+        target: /var/log/peach/message
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-setting
+        target: /var/log/peach/setting
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-generator
+        target: /var/log/peach/generator
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-scheduled
+        target: /var/log/peach/scheduled
+        read_only: true
+        bind:
+          create_host_path: true
     depends_on:
       loki:
         condition: service_started
@@ -401,24 +441,6 @@ volumes:
     name: peach-alloy-data
   grafana-data:
     name: peach-grafana-data
-
-  peach-gateway-logs:
-    name: peach-gateway-logs
-  peach-auth-logs:
-    name: peach-auth-logs
-  peach-monitor-logs:
-    name: peach-monitor-logs
-  peach-fileservice-logs:
-    name: peach-fileservice-logs
-  peach-message-logs:
-    name: peach-message-logs
-  peach-setting-logs:
-    name: peach-setting-logs
-  peach-generator-logs:
-    name: peach-generator-logs
-  peach-scheduled-logs:
-    name: peach-scheduled-logs
-
 
 # ==============================================================
 # Docker Network

@@ -48,7 +48,7 @@
 
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-setting-rest</artifactId>
+            <artifactId>peach-generator-rest</artifactId>
         </dependency>
 
         <dependency>

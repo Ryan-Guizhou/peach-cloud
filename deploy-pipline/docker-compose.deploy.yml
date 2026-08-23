@@ -48,7 +48,11 @@ services:
       - "${MYSQL_HOST_PORT:-3307}:3306"
     volumes:
       - peach-mysql-data:/var/lib/mysql
-      - peach-mysql-logs:/var/log/mysql
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/mysql
+        target: /var/log/mysql
+        bind:
+          create_host_path: true
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
       interval: 10s
@@ -65,7 +69,11 @@ services:
       - "${REDIS_HOST_PORT:-6380}:6379"
     volumes:
       - peach-redis-data:/data
-      - peach-redis-logs:/var/log/redis
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/redis
+        target: /var/log/redis
+        bind:
+          create_host_path: true
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
       interval: 10s
@@ -92,7 +100,11 @@ services:
       - "${NACOS_GRPC_HOST_PORT:-9850}:9848"
     volumes:
       - peach-nacos-data:/home/nacos/data
-      - peach-nacos-logs:/home/nacos/logs
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/nacos
+        target: /home/nacos/logs
+        bind:
+          create_host_path: true
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8848/nacos/actuator/health >/dev/null || exit 1"]
       interval: 10s
@@ -109,7 +121,11 @@ services:
       SERVER_PORT: ${GATEWAY_PORT:-18080}
       SPRING_APPLICATION_NAME: peach-gateway
     volumes:
-      - peach-gateway-logs:/app/logs
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-gateway
+        target: /app/logs
+        bind:
+          create_host_path: true
       - peach-gateway-config:/app/config
     depends_on:
       mysql:
@@ -130,7 +146,11 @@ services:
       SERVER_PORT: ${AUTH_PORT:-18081}
       SPRING_APPLICATION_NAME: peach-auth
     volumes:
-      - peach-auth-logs:/app/logs
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-auth
+        target: /app/logs
+        bind:
+          create_host_path: true
       - peach-auth-config:/app/config
     depends_on:
       mysql:
@@ -151,7 +171,11 @@ services:
       SERVER_PORT: ${MONITOR_PORT:-18082}
       SPRING_APPLICATION_NAME: peach-monitor
     volumes:
-      - peach-monitor-logs:/app/logs
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-monitor
+        target: /app/logs
+        bind:
+          create_host_path: true
       - peach-monitor-config:/app/config
     depends_on:
       mysql:
@@ -173,7 +197,11 @@ services:
       SPRING_APPLICATION_NAME: peach-fileservice
       PEACH_UPLOAD_ROOT: /app/upload
     volumes:
-      - peach-fileservice-logs:/app/logs
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-fileservice
+        target: /app/logs
+        bind:
+          create_host_path: true
       - peach-fileservice-config:/app/config
       - peach-fileservice-upload:/app/upload
     depends_on:
@@ -195,7 +223,11 @@ services:
       SERVER_PORT: ${MESSAGE_PORT:-18084}
       SPRING_APPLICATION_NAME: peach-message
     volumes:
-      - peach-message-logs:/app/logs
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-message
+        target: /app/logs
+        bind:
+          create_host_path: true
       - peach-message-config:/app/config
     depends_on:
       mysql:
@@ -216,7 +248,11 @@ services:
       SERVER_PORT: ${SETTING_PORT:-18085}
       SPRING_APPLICATION_NAME: peach-setting
     volumes:
-      - peach-setting-logs:/app/logs
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-setting
+        target: /app/logs
+        bind:
+          create_host_path: true
       - peach-setting-config:/app/config
     depends_on:
       mysql:
@@ -237,7 +273,11 @@ services:
       SERVER_PORT: ${GENERATOR_PORT:-18086}
       SPRING_APPLICATION_NAME: peach-generator
     volumes:
-      - peach-generator-logs:/app/logs
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-generator
+        target: /app/logs
+        bind:
+          create_host_path: true
       - peach-generator-config:/app/config
     depends_on:
       mysql:
@@ -258,7 +298,11 @@ services:
       SERVER_PORT: ${SCHEDULED_PORT:-18087}
       SPRING_APPLICATION_NAME: peach-scheduled
     volumes:
-      - peach-scheduled-logs:/app/logs
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-scheduled
+        target: /app/logs
+        bind:
+          create_host_path: true
       - peach-scheduled-config:/app/config
     depends_on:
       mysql:
@@ -277,7 +321,11 @@ services:
     environment:
       GATEWAY_PORT: ${GATEWAY_PORT:-18080}
     volumes:
-      - peach-front-nginx-logs:/var/log/nginx
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/nginx
+        target: /var/log/nginx
+        bind:
+          create_host_path: true
     depends_on:
       peach-gateway:
         condition: service_started
@@ -295,49 +343,25 @@ networks:
 volumes:
   peach-mysql-data:
     name: peach-mysql-data
-  peach-mysql-logs:
-    name: peach-mysql-logs
   peach-redis-data:
     name: peach-redis-data
-  peach-redis-logs:
-    name: peach-redis-logs
   peach-nacos-data:
     name: peach-nacos-data
-  peach-nacos-logs:
-    name: peach-nacos-logs
-  peach-gateway-logs:
-    name: peach-gateway-logs
   peach-gateway-config:
     name: peach-gateway-config
-  peach-auth-logs:
-    name: peach-auth-logs
   peach-auth-config:
     name: peach-auth-config
-  peach-monitor-logs:
-    name: peach-monitor-logs
   peach-monitor-config:
     name: peach-monitor-config
-  peach-fileservice-logs:
-    name: peach-fileservice-logs
   peach-fileservice-config:
     name: peach-fileservice-config
   peach-fileservice-upload:
     name: peach-fileservice-upload
-  peach-message-logs:
-    name: peach-message-logs
   peach-message-config:
     name: peach-message-config
-  peach-setting-logs:
-    name: peach-setting-logs
   peach-setting-config:
     name: peach-setting-config
-  peach-generator-logs:
-    name: peach-generator-logs
   peach-generator-config:
     name: peach-generator-config
-  peach-scheduled-logs:
-    name: peach-scheduled-logs
   peach-scheduled-config:
     name: peach-scheduled-config
-  peach-front-nginx-logs:
-    name: peach-front-nginx-logs

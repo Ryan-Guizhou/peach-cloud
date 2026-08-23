@@ -51,12 +51,13 @@ Compose 已向业务服务注入以下配置：
 - OTLP HTTP Trace 地址为 `http://otel-collector:4318/v1/traces`。
 - 默认采样率为 `0.1`，可使用 `MANAGEMENT_TRACING_SAMPLING_PROBABILITY` 调整。
 - `ALL_FILE` 必须保持 Logstash JSON 输出，Alloy 只读取该文件，避免重复采集 INFO/WARN/ERROR 分文件。
+- DevOps Compose 与业务部署必须使用相同的 `PEACH_LOG_ROOT`。业务容器写入该宿主目录，Alloy 以只读方式挂载同一目录。
 
 ## 数据和容量边界
 
 - Prometheus 默认保留 15 天，可通过 `PROMETHEUS_RETENTION` 修改。
 - Tempo 和 Loki 默认保留 7 天。
-- 所有数据使用 Docker named volume，停止容器不会删除数据。
+- Prometheus、Tempo、Loki、Grafana 等状态数据使用 Docker named volume；服务日志使用 `PEACH_LOG_ROOT` 指向的宿主目录，停止容器不会删除。
 - 当前是单节点模式，不提供跨节点高可用、对象存储、TLS 或多租户隔离。生产集群需要迁移到 Kubernetes/集群模式，并接入对象存储、认证、备份和容量告警。
 - `traceId`、`spanId` 和 `requestId` 不作为 Loki 标签或 Prometheus 标签，避免高基数索引；查询日志时使用 JSON 解析和内容过滤。
 

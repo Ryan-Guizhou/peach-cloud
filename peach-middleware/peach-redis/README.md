@@ -12,7 +12,7 @@ artifactId：`peach-redis`
 
 `peach-redis-common` 同时创建 `RedisTemplate`、`StringRedisTemplate` 和可选 `RedissonClient`，也是 `peach-redission` 各能力的基础依赖。本模块不部署或运维 Redis 服务端。
 
-当前各 autoconfigure 的 Spring Data Redis、Jedis、Redisson 和 common 等依赖多为 optional。业务仅引入 starter 时，必须检查最终依赖树，不能假设所有运行时依赖会自动传递。
+`peach-redis-common` 的自动配置方法签名直接使用 Spring Data Redis、Jedis 和 Redisson 类型，因此这些基础运行时依赖会随 common 传递。其他能力 autoconfigure 中标记为 optional 的依赖仍应由对应 starter 或最终应用提供，接入后必须检查最终依赖树。
 
 ## 模块导航
 
@@ -237,6 +237,8 @@ git diff --check
 | Stream Bean 未创建 | `enable=true` 且是否存在 `MessageConsumer` | 检查配置和业务 Bean |
 | Stream 重复或积压 | consumerName、消费组、处理异常和吞吐 | 保证 consumer 唯一、业务幂等并监控 lag |
 | RedissonClient 冲突 | 是否同时定义自有客户端 | 关闭默认客户端或统一保留一个 Bean |
+| 启动提示缺少 `RedisTemplate<Object,Object>` | `RedisDao` 与 `RedisConfig` 的模板泛型是否一致 | 使用当前 starter；内置 `RedisDao` 在注入边界兼容统一的 `RedisTemplate<String,Object>` Bean |
+| 启动提示缺少 `org.redisson.client.codec.Codec` | 最终运行包是否包含 Redisson | 升级到当前 `peach-redis-common` 依赖并重新构建最终应用 |
 
 
 ## 项目约定

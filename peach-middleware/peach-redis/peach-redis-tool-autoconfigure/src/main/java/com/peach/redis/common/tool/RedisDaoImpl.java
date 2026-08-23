@@ -48,8 +48,22 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     private String redisMode;
     private static final int USE_SCAN_COMMAND = 1;
 
-    public RedisDaoImpl(RedisTemplate<Object, Object> redisTemplate) {
-        super(redisTemplate);
+    public RedisDaoImpl(RedisTemplate<?, ?> redisTemplate) {
+        super(toObjectTemplate(redisTemplate));
+    }
+
+    /**
+     * 将统一 RedisTemplate 适配到历史 RedisDao 的 Object key/value 契约。
+     *
+     * <p>RedisTemplate 的泛型只参与编译期类型检查，实际 key 序列化仍由
+     * {@link com.peach.redis.common.RedisConfig} 统一配置为字符串序列化器。</p>
+     *
+     * @param redisTemplate 应用统一 RedisTemplate
+     * @return RedisDao 历史契约使用的 RedisTemplate 视图
+     */
+    @SuppressWarnings("unchecked")
+    private static RedisTemplate<Object, Object> toObjectTemplate(RedisTemplate<?, ?> redisTemplate) {
+        return (RedisTemplate<Object, Object>) redisTemplate;
     }
 
     private static List<String> getScanResult(Jedis redisService, String key, Integer count) {
