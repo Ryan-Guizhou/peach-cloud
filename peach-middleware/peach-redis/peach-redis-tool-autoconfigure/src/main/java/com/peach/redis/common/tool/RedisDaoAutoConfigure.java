@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.RedisTemplate;
 
@@ -20,7 +21,7 @@ public class RedisDaoAutoConfigure {
     @Bean
     @ConditionalOnBean(RedisTemplate.class)
     @ConditionalOnMissingBean(RedisDao.class)
-    public RedisDao redisDao() {
-        return new RedisDaoImpl();
+    public RedisDao redisDao(@Qualifier("redisTemplate") RedisTemplate<Object, Object> redisTemplate) {
+        return new RedisDaoImpl(redisTemplate);
     }
 }

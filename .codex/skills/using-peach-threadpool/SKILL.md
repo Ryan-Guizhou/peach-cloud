@@ -15,7 +15,8 @@ description: 规范 peach-cloud 项目中 peach-threadpool / peach-threadpool-st
 ## 使用规则
 
 - 配置前缀是 `peach.threadpool`。
-- 根据任务性质选择 `PoolType`：CPU 密集选 `CPU`，IO/远程调用选 `IO`，短生命周期突发任务可评估 `CACHED`，定时任务选 `SCHEDULED`。
+- 根据任务性质选择 `PoolType`：CPU 密集选 `CPU`，IO/远程调用选 `IO`，短生命周期突发任务可评估 `CACHED`，定时任务选 `SCHEDULED`，纯 IO fire-and-forget 且无上下文传递需求时可选 `VIRTUAL`。
+- Servlet 业务服务请求线程优先使用 Spring Boot `spring.threads.virtual.enabled=true`；`ThreadPoolManager` 与 Redisson/Quartz 平台线程池不被虚拟线程替换。
 - 队列容量不要无脑设置极大值；高吞吐场景要在延迟、内存和拒绝策略之间明确取舍。
 - 拒绝策略优先选择可解释的行为：关键任务用 `CALLER_RUNS` 做背压，需要快速失败用 `ABORT`，可丢弃任务才使用 `DISCARD` 或 `DISCARD_OLDEST`。
 - 线程名前缀必须能定位业务域，例如 `order-async-`、`storage-upload-`。

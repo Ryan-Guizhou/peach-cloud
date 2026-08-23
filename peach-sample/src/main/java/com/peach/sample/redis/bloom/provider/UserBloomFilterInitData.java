@@ -1,10 +1,11 @@
 package com.peach.sample.redis.bloom.provider;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.initialize.base.AbstractAppStartedEventHandler;
 import com.peach.redis.bloom.core.BloomFilterService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
 
@@ -19,10 +20,10 @@ import java.util.List;
 @Slf4j
 @Indexed
 @Component
+@RequiredArgsConstructor
 public class UserBloomFilterInitData extends AbstractAppStartedEventHandler {
 
-    @Autowired
-    private BloomFilterService bloomFilterService;
+        private final BloomFilterService bloomFilterService;
 
     @Override
     public Integer executeOrder() {

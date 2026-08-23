@@ -247,10 +247,12 @@ docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker 
 
 Configure Jenkins credentials (`gitlab-peach-cloud`, `peach-deploy-env` Secret file from `deploy-pipline/peach-deploy.env.example`), create a Pipeline job with Script Path `deploy-pipline/Jenkinsfile`, then run **Build Now**.
 
-### Upgrade CI from Java 8 to Java 21
+### Java 21 CI Baseline Check
 
-1. Merge the updated `Jenkinsfile` to the deploy branch.
-2. Optionally rebuild the CI image locally:
+The CI baseline is Maven 3.9.11 + Eclipse Temurin 21 + Node 22. For first-time deployment or after Jenkins cache changes:
+
+1. Merge the current `Jenkinsfile` to the deploy branch.
+2. Optionally rebuild the current CI image locally:
 
 ```bash
 docker build \
@@ -259,11 +261,11 @@ docker build \
   deploy-pipline/pipline/maven-node
 ```
 
-3. Optionally remove the old image: `docker rmi peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22`
-4. Run **Build Now** in Jenkins and confirm `Build CI image` and `Maven package` succeed.
+3. Run **Build Now** in Jenkins and confirm `Build CI image` and `Maven package` succeed.
+4. Confirm the Maven log uses Java 21 compilation.
 5. If dependency resolution fails, clear the Maven cache inside Jenkins and retry.
 
-This CI change upgrades **only** the JDK/Maven build image. Pipeline stages, service list, and deploy logic are unchanged. See `deploy-pipline/README.md` for full details.
+The CI image must stay aligned with root `pom.xml` (`java.version=21`). Do not fall back to an older JDK baseline image. See `deploy-pipline/README.md` for full details.
 
 ## Run A Single Service Locally
 
@@ -461,3 +463,10 @@ When adding or changing a module, check:
 - Whether `sql/` needs initialization or migration scripts.
 - Whether module `README.md` and `README.en-US.md` need updates.
 - Whether this root README still has accurate module and runtime-entry information.
+
+## Project conventions
+
+- Backend documentation follows the current peach-cloud baseline: Java 21, Spring Boot 3.5.4, Spring Cloud 2025.0.0, and Spring Cloud Alibaba 2025.0.0.0.
+- Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
+- Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
+- Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.

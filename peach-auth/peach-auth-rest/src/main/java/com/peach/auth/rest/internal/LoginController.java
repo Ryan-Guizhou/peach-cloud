@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.auth.common.RsaPasswordUtil;
 import com.peach.auth.dto.RegisterDTO;
@@ -19,8 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
 
-import jakarta.annotation.Resource;
-
 /**
  * 登录接口。
  * <p>负责登录、注册和登出等认证入口，不承载业务域数据维护逻辑。</p>
@@ -33,11 +33,11 @@ import jakarta.annotation.Resource;
 @RestController
 @RequestMapping("/auth")
 @Tag(name = "LoginController", description = "用户登录")
+@RequiredArgsConstructor
 public class LoginController {
 
 
-    @Resource
-    private IUserService userService;
+        private final IUserService userService;
 
     @Operation(summary = "用户登录")
     @PostMapping("/login")

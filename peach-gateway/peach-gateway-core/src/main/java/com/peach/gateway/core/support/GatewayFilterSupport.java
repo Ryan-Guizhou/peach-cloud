@@ -33,7 +33,7 @@ public final class GatewayFilterSupport {
      */
     public static String clientAddress(ServerWebExchange exchange) {
         String forwardedFor = exchange.getRequest().getHeaders().getFirst("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.trim().isEmpty()) {
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
             return forwardedFor.split(",")[0].trim();
         }
         return remoteAddress(exchange);

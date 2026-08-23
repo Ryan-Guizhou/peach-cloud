@@ -29,6 +29,7 @@ REST 入参必须触发 JSR-303 校验；Service 继续承担业务语义、权�
 - `@Slf4j`、`@Indexed`、`@Validated` 按实际用途添加；未使用日志时不机械添加 `@Slf4j`。
 - 写操作审计只记录非敏感业务标识和结果，禁止记录完整 DTO。
 - Service 对外写方法按原子性需要使用 `@Transactional(rollbackFor = Exception.class)`；禁止依赖 private 方法或同类自调用触发代理。
+- Spring Bean 依赖使用构造器注入 + `private final` 字段；单构造器使用 `@RequiredArgsConstructor`。
 - 简单对象转换可沿用 `BeanUtils.copyProperties`，但主键、审计、权限、逻辑删除和敏感字段必须显式处理。
 
 ## API Compatibility

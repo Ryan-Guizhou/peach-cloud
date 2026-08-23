@@ -9,7 +9,6 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import jakarta.validation.groups.Default;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -111,7 +110,7 @@ public class CommonValidator {
                     Set<ConstraintViolation<Object>> violations = validator.validate(validObj, validationGroups);
                     return convertToMessage(violations);
                 })
-                .orElse(Collections.singleton("校验对象不能为null"));
+                .orElse(Set.of("校验对象不能为null"));
     }
 
     /**
@@ -147,8 +146,8 @@ public class CommonValidator {
                     Set<ConstraintViolation<Object>> violations = validator.validate(validObj, validationGroups);
                     return violations.stream()
                             .map(v -> new ValidationDetail(v.getPropertyPath().toString(), v.getMessage()))
-                            .collect(Collectors.toSet());
-                }).orElse(Collections.singleton(new ValidationDetail("", "校验对象不能为null")));
+                            .collect(Collectors.toUnmodifiableSet());
+                }).orElse(Set.of(new ValidationDetail("", "校验对象不能为null")));
     }
 
     /**
@@ -276,7 +275,7 @@ public class CommonValidator {
                 .filter(Objects::nonNull)
                 .map(target -> getValidationErrors(target, groups))
                 .flatMap(Set::stream)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toUnmodifiableSet());
 
         // 如果有错误则抛出异常
         createErrorMessage(errors).ifPresent(message -> {
@@ -320,7 +319,7 @@ public class CommonValidator {
                 .map(v -> {
                     String field = v.getPropertyPath().toString();
                     return isNotBlank(field) ? field + ": " + v.getMessage() : v.getMessage();
-                }).collect(Collectors.toSet());
+                }).collect(Collectors.toUnmodifiableSet());
     }
 
     /**
@@ -329,7 +328,7 @@ public class CommonValidator {
      * @return 是否非空
      */
     private static boolean isNotBlank(String str) {
-        return str != null && !str.trim().isEmpty();
+        return str != null && !str.isBlank();
     }
 
     /**

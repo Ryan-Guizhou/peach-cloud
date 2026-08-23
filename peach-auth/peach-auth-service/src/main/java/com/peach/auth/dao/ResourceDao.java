@@ -1,7 +1,6 @@
 package com.peach.auth.dao;
 
 import com.peach.auth.qo.ResourceQO;
-import com.peach.auth.qo.RouterQO;
 import com.peach.common.PeachDao;
 import com.peach.common.annoation.MybatisDao;
 import com.peach.auth.entity.ResourceDO;

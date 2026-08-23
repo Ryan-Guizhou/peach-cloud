@@ -1,5 +1,7 @@
 package com.peach.setting.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
@@ -30,7 +32,6 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.annotation.Resource;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,16 +46,14 @@ import java.util.Optional;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class NoticeServiceImpl implements INoticeService {
 
-    @Resource
-    private NoticeDao noticeDao;
+        private final NoticeDao noticeDao;
 
-    @Resource
-    private SiteMessageDao siteMessageDao;
+        private final SiteMessageDao siteMessageDao;
 
-    @Resource
-    private RedisDao redisDao;
+        private final RedisDao redisDao;
 
     @Override
     public PageResult<NoticeVO> noticePageList(NoticeQO qo) {
@@ -197,7 +196,7 @@ public class NoticeServiceImpl implements INoticeService {
 
     private String requireTenantId() {
         String tenantId = SecurityContextHolder.currentTenantId();
-        if (tenantId == null || tenantId.trim().isEmpty()) {
+        if (tenantId == null || tenantId.isBlank()) {
             throw new IllegalStateException("Current tenant context is missing");
         }
         return tenantId;
@@ -205,7 +204,7 @@ public class NoticeServiceImpl implements INoticeService {
 
     private String requireOrgId() {
         String orgId = SecurityContextHolder.currentOrgId();
-        if (orgId == null || orgId.trim().isEmpty()) {
+        if (orgId == null || orgId.isBlank()) {
             throw new IllegalStateException("Current organization context is missing");
         }
         return orgId;

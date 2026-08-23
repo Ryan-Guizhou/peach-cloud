@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.dto.MenuDTO;
@@ -21,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -39,10 +40,10 @@ import jakarta.validation.constraints.NotBlank;
 @RestController
 @RequestMapping("/auth/menu")
 @Tag(name = "MenuController", description = "菜单管理")
+@RequiredArgsConstructor
 public class MenuController {
 
-    @Resource
-    private IMenuService menuService;
+        private final IMenuService menuService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询菜单")

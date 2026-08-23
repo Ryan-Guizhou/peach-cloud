@@ -9,5 +9,6 @@ public enum PoolType {
     CPU,
     IO,
     SCHEDULED,
-    COMMON;
+    COMMON,
+    VIRTUAL;
 }

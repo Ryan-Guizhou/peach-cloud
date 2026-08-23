@@ -1,5 +1,7 @@
 package com.peach.message.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.common.response.Response;
 
 import com.peach.message.common.MessageCategoryConfig;
@@ -8,7 +10,6 @@ import com.peach.message.dto.MessageReadDTO;
 import com.peach.message.qo.SiteMessageQO;
 import com.peach.message.service.IMessageService;
 import com.peach.satoken.context.SecurityContextHolder;
-import com.peach.satoken.context.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
@@ -22,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -36,10 +36,10 @@ import jakarta.validation.constraints.NotBlank;
 @RestController
 @RequestMapping("/message")
 @Tag(name = "站内信接口", description = "站内信接口")
+@RequiredArgsConstructor
 public class MessageController {
 
-    @Resource
-    private IMessageService messageService;
+        private final IMessageService messageService;
 
     @GetMapping("/query")
     @Operation(summary = "查询站内信列表")

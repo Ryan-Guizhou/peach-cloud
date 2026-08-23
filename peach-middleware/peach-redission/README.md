@@ -287,3 +287,11 @@ git diff --check
 | 延迟任务反复失败 | payload、重试次数、死信状态 | 修复消费逻辑并安全补偿死信 |
 | 布隆误判升高 | 容量、FPP、段数和负载 | 查看 `status`，调整参数或重建命名空间 |
 | 防重复误拦截 | SpEL、业务 key、durationTime | 修正隔离维度并清理错误标记 |
+
+
+## 项目约定
+
+- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
+- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。

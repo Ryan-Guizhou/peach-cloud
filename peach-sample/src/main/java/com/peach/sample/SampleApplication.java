@@ -1,10 +1,7 @@
 package com.peach.sample;
 
-import org.springframework.stereotype.Indexed;
 import com.peach.email.Idempotency.IdempotencyStore;
-import com.peach.email.Idempotency.SimpleIdempotencyStore;
 import com.peach.email.retry.RetryPolicy;
-import com.peach.redis.common.RedisConfig;
 import com.peach.sample.email.Idempotency.TTLIdempotencyStore;
 import com.peach.sample.email.retry.FixedDelayRetryPolicy;
 import org.springframework.boot.Banner;
@@ -12,7 +9,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 
 /**
  * @Author Mr Shu

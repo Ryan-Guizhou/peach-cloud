@@ -38,7 +38,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -360,7 +359,7 @@ public class LocalFileStorageProvider implements StorageProvider {
     private ListObjectsResult slicePage(ListObjectsRequest request, List<ObjectInfo> allObjects) {
         List<ObjectInfo> pageItems = new ArrayList<>();
         String continuationToken = request.getContinuationToken();
-        boolean started = continuationToken == null || continuationToken.trim().isEmpty();
+        boolean started = continuationToken == null || continuationToken.isBlank();
 
         for (ObjectInfo object : allObjects) {
             if (!started) {
@@ -479,7 +478,7 @@ public class LocalFileStorageProvider implements StorageProvider {
      */
     private void copyDirectory(Path source, Path target, boolean overwrite) throws Exception {
         try (Stream<Path> stream = Files.walk(source)) {
-            for (Path path : stream.collect(Collectors.toList())) {
+            for (Path path : stream.toList()) {
                 Path relative = source.relativize(path);
                 Path currentTarget = target.resolve(relative);
                 if (Files.isDirectory(path)) {
@@ -506,7 +505,7 @@ public class LocalFileStorageProvider implements StorageProvider {
             return;
         }
         try (Stream<Path> stream = Files.walk(path)) {
-            for (Path current : stream.sorted(Comparator.reverseOrder()).collect(Collectors.toList())) {
+            for (Path current : stream.sorted(Comparator.reverseOrder()).toList()) {
                 Files.deleteIfExists(current);
             }
         }

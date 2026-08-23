@@ -20,8 +20,6 @@ import reactor.core.publisher.Mono;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
-
 /**
  * 网关基础风控过滤器。
  *
@@ -155,7 +153,7 @@ public class GatewayRiskControlGlobalFilter implements GlobalFilter, Ordered {
                 .map(String::trim)
                 .filter(item -> !item.isEmpty())
                 .map(item -> item.toLowerCase(Locale.ENGLISH))
-                .collect(Collectors.toList());
+                .toList();
         return values.contains(value.toLowerCase(Locale.ENGLISH));
     }
 
@@ -166,7 +164,7 @@ public class GatewayRiskControlGlobalFilter implements GlobalFilter, Ordered {
      * @return 为空时返回 {@code true}
      */
     private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
+        return value == null || value.isBlank();
     }
 
     @Override

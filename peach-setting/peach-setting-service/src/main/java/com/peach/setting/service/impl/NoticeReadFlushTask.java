@@ -1,5 +1,7 @@
 package com.peach.setting.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.util.DateUtil;
 import com.peach.redis.common.tool.RedisDao;
@@ -16,7 +18,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
 
-import jakarta.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,19 +31,16 @@ import java.util.Map;
 @Indexed
 @Component
 @EnableScheduling
+@RequiredArgsConstructor
 public class NoticeReadFlushTask {
 
-    @Resource
-    private RedisDao redisDao;
+        private final RedisDao redisDao;
 
-    @Resource
-    private NoticeReadRecordDao noticeReadRecordDao;
+        private final NoticeReadRecordDao noticeReadRecordDao;
 
-    @Resource
-    private NoticeDao noticeDao;
+        private final NoticeDao noticeDao;
 
-    @Resource
-    private MultiCacheManagerService multiCacheManagerService;
+        private final MultiCacheManagerService multiCacheManagerService;
 
     @Scheduled(fixedRate = 15000)
     public void flushNoticeReadRecord() {
@@ -77,8 +75,8 @@ public class NoticeReadFlushTask {
             if (notice == null) {
                 continue;
             }
-            if (notice.getTenantId() == null || notice.getTenantId().trim().isEmpty()
-                    || notice.getOrgId() == null || notice.getOrgId().trim().isEmpty()) {
+            if (notice.getTenantId() == null || notice.getTenantId().isBlank()
+                    || notice.getOrgId() == null || notice.getOrgId().isBlank()) {
                 log.warn("skip notice read record flush because notice tenant or organization is missing, noticeCode={}", noticeCode);
                 continue;
             }

@@ -3,7 +3,7 @@
 [English](README.en-US.md) | 中文
 
 最后更新时间：2026-08-12
-运行基线：Java 8、Spring Boot 2.7.13、Spring Cloud 2021.0.5
+运行基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0
 
 ## 模块定位
 
@@ -173,3 +173,11 @@ Maven 命令只验证编译和打包，不替代真实 provider、分片直传�
 | 分片 complete 失败 | session 是否过期，ETag/partNumber 是否完整 | 重新初始化会话并按返回 URL 上传 |
 | 下载 URL 失效 | 是否超过 `download-url-expire-seconds` | 重新获取临时 URL |
 | 删除后仍可恢复 | 是否仍在 `retention-days` 内 | 属于逻辑删除语义，检查清理任务状态 |
+
+
+## 项目约定
+
+- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
+- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。

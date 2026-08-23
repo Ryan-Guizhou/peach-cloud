@@ -1,5 +1,7 @@
 package com.peach.fileservice.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.fileservice.config.FileDomainProperties;
 import com.peach.fileservice.service.IFileDomainService;
 import lombok.extern.slf4j.Slf4j;
@@ -7,8 +9,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
-
-import jakarta.annotation.Resource;
 
 /**
  * 过期删除文件清理定时任务
@@ -24,13 +24,12 @@ import jakarta.annotation.Resource;
 @Indexed
 @Component
 @EnableScheduling
+@RequiredArgsConstructor
 public class FileDeleteCleanupTask {
 
-    @Resource
-    private IFileDomainService fileDomainService;
+        private final IFileDomainService fileDomainService;
 
-    @Resource
-    private FileDomainProperties fileDomainProperties;
+        private final FileDomainProperties fileDomainProperties;
 
     /**
      * 执行过期删除文件清理

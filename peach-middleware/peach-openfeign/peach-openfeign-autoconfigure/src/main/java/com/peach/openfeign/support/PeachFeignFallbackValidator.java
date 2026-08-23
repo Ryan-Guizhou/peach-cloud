@@ -145,12 +145,12 @@ public class PeachFeignFallbackValidator implements InitializingBean {
      */
     private String resolveClientName(FeignClientFactoryBean factoryBean) {
         Object name = invokeObject(factoryBean, "getName");
-        if (name instanceof String && !((String) name).trim().isEmpty()) {
-            return (String) name;
+        if (name instanceof String value && !value.isBlank()) {
+            return value;
         }
         Object contextId = invokeObject(factoryBean, "getContextId");
-        if (contextId instanceof String && !((String) contextId).trim().isEmpty()) {
-            return (String) contextId;
+        if (contextId instanceof String value && !value.isBlank()) {
+            return value;
         }
         return "unknown";
     }

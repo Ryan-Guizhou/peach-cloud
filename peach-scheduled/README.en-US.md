@@ -5,7 +5,7 @@ English | [中文](README.md)
 - Last updated: 2026-08-14
 - artifactId: `peach-scheduled`
 - Type: scheduler control-plane service (standalone Spring Boot app)
-- Target stack: Java 8, Spring Boot 2.7.13
+- Target stack: Java 21, Spring Boot 3.5.4
 - Nacos service name: `peach-scheduler`
 
 ## Purpose
@@ -188,3 +188,10 @@ git diff --check -- peach-scheduled sql
 | Claim rejected | execution state/version | verify `QUEUED` and Same-Token |
 | Handler missing in UI | handler registry heartbeat | verify business Feign registration |
 | Durability startup failure | JDBC tables/beans | run SQL scripts, disable memory stores |
+
+## Project conventions
+
+- Backend documentation follows the current peach-cloud baseline: Java 21, Spring Boot 3.5.4, Spring Cloud 2025.0.0, and Spring Cloud Alibaba 2025.0.0.0.
+- Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
+- Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
+- Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.

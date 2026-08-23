@@ -1,8 +1,9 @@
 package com.peach.sample.delayqueue;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.redission.delayqueue.context.DelayQueueContext;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -16,10 +17,10 @@ import java.util.concurrent.TimeUnit;
 @Indexed
 @RestController
 @RequestMapping("/queue")
+@RequiredArgsConstructor
 public class AdobeController {
 
-    @Autowired
-    private DelayQueueContext context;
+        private final DelayQueueContext context;
 
 
     @RequestMapping("/send")

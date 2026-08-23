@@ -1,6 +1,5 @@
 package com.peach.auth.entity;
 
-import com.peach.common.MapperGenerator;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 

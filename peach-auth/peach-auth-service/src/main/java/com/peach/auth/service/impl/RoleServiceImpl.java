@@ -1,6 +1,8 @@
 
 package com.peach.auth.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dao.RoleDao;
@@ -16,7 +18,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
 import java.util.List;
 
 /**
@@ -27,10 +28,10 @@ import java.util.List;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class RoleServiceImpl implements IRoleService {
 
-    @Resource
-    private RoleDao roleDao;
+        private final RoleDao roleDao;
 
     @Override
     public PageInfo<RoleVO> pageList(RoleQO roleQO) {

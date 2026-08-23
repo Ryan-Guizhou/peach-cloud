@@ -1,5 +1,7 @@
 package com.peach.fileservice.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.util.StringUtil;
 import com.peach.fileservice.dao.CloudStorageInstanceDao;
@@ -15,7 +17,6 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,20 +26,18 @@ import java.util.List;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceService {
 
     private static final Integer ENABLED = 1;
 
     private static final Integer DISABLED = 0;
 
-    @Resource
-    private CloudStorageInstanceDao cloudStorageInstanceDao;
+        private final CloudStorageInstanceDao cloudStorageInstanceDao;
 
-    @Resource
-    private CloudStorageInstanceSupport cloudStorageInstanceSupport;
+        private final CloudStorageInstanceSupport cloudStorageInstanceSupport;
 
-    @Resource
-    private CloudStorageManagerService cloudStorageManagerService;
+        private final CloudStorageManagerService cloudStorageManagerService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)

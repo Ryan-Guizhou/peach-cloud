@@ -1,5 +1,5 @@
 ---
-description: 约束 peach-cloud 的 Java 8、框架版本以及所有文本文件 UTF-8 无 BOM 编码。
+description: 约束 peach-cloud 的 Java 21、框架版本以及所有文本文件 UTF-8 无 BOM 编码。
 globs: "**/*.{java,xml,md,sql,js,mjs,cjs,ts,tsx,vue,json,yml,yaml,properties,toml}"
 alwaysApply: false
 ---
@@ -9,9 +9,8 @@ alwaysApply: false
 
 `REQUIRED`：
 
-- Java 源码兼容 Java 8；禁止 `var`、`record`、text block、switch expression、pattern matching 等 Java 9+ 语法。
-- 禁止 `List.of`、`Map.of`、`Stream.toList`、`Optional.isEmpty`、`Files.readString`、`Path.of` 等 Java 9+ API。
-- Spring Boot 按 `2.7.13`，Spring Cloud 按 `2021.0.5`，Spring Cloud Alibaba 按 `2021.0.5.0` 编写。
+- Java 源码基线为 Java 21；语法与 API 选型遵循 `09-java21-coding-style`。
+- Spring Boot 按 `3.5.4`，Spring Cloud 按 `2025.0.0`，Spring Cloud Alibaba 按 `2025.0.0.0` 编写；命名空间使用 `jakarta.*`。
 - 不确定外部 API 时查询当前依赖源码、仓库范式或 `context7`，不得凭记忆生成。
 
 ## UTF-8 Without BOM

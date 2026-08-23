@@ -35,8 +35,8 @@ public class SpelParse {
         context.setTypeLocator(typeName -> {
             throw new EvaluationException("日志表达式不允许访问类型");
         });
-        context.setConstructorResolvers(java.util.Collections.emptyList());
-        context.setMethodResolvers(java.util.Collections.emptyList());
+        context.setConstructorResolvers(java.util.List.of());
+        context.setMethodResolvers(java.util.List.of());
     }
 
     /**

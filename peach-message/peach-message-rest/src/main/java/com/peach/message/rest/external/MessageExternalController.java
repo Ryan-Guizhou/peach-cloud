@@ -1,5 +1,7 @@
 package com.peach.message.rest.external;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.common.response.Response;
 import com.peach.message.dto.MessagePublishDTO;
 import com.peach.message.dto.MessageRevokeDTO;
@@ -14,8 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
-
 /**
  * @Author Mr Shu
  * @Version 1.0.0
@@ -28,10 +28,10 @@ import jakarta.annotation.Resource;
 @RestController
 @RequestMapping("/message/external")
 @Tag(name = "消息服务外部接口", description = "消息服务外部接口")
+@RequiredArgsConstructor
 public class MessageExternalController {
 
-    @Resource
-    private IMessageService messageService;
+        private final IMessageService messageService;
 
     @PostMapping("/publish")
     @Operation(summary = "发布消息")

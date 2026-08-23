@@ -1,5 +1,7 @@
 package com.peach.auth.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dto.MenuDTO;
@@ -15,8 +17,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -27,10 +27,10 @@ import java.util.Optional;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class MenuServiceImpl implements IMenuService {
 
-    @Resource
-    private MenuDao menuDao;
+        private final MenuDao menuDao;
 
     @Override
     public PageInfo<MenuVO> pageList(MenuQO menuQO) {

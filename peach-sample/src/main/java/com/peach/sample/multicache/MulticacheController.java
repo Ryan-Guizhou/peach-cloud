@@ -1,10 +1,11 @@
 package com.peach.sample.multicache;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.redis.common.tool.RedisDao;
 import com.peach.redis.manager.MultiCacheManagerService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,17 +20,15 @@ import org.springframework.web.bind.annotation.RestController;
 @Indexed
 @RestController
 @RequestMapping("/multicache")
+@RequiredArgsConstructor
 public class MulticacheController {
 
 
-    @Autowired
-    private RedisDao redisDao;
+        private final RedisDao redisDao;
 
-    @Autowired
-    private MulticacheService multicacheService;
+        private final MulticacheService multicacheService;
 
-    @Autowired
-    private MultiCacheManagerService multiCacheManagerService;
+        private final MultiCacheManagerService multiCacheManagerService;
 
     /**
      * 测试缓存

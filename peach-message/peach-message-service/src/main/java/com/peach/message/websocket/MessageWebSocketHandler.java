@@ -1,5 +1,7 @@
 package com.peach.message.websocket;
 
+import lombok.RequiredArgsConstructor;
+
 import cn.dev33.satoken.exception.SaTokenException;
 import cn.dev33.satoken.stp.StpUtil;
 import com.alibaba.fastjson.JSON;
@@ -22,7 +24,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import jakarta.annotation.Resource;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
@@ -36,6 +37,7 @@ import java.util.Set;
 @Slf4j
 @Indexed
 @Component
+@RequiredArgsConstructor
 public class MessageWebSocketHandler implements WebSocketHandler {
 
     private static final int PING_INTERVAL_SECONDS = 30;
@@ -46,8 +48,7 @@ public class MessageWebSocketHandler implements WebSocketHandler {
 
     private static final CloseStatus CLOSE_TOKEN_INVALID = new CloseStatus(4001, "token invalid or expired");
 
-    @Resource
-    private WebSocketSessionManager sessionManager;
+        private final WebSocketSessionManager sessionManager;
 
     @Override
     public Mono<Void> handle(WebSocketSession session) {

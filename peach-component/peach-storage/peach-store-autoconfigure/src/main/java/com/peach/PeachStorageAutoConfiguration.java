@@ -203,7 +203,7 @@ public class PeachStorageAutoConfiguration {
     private StorageProvider createProvider(String name, StorageProperties.StorageProvider config,
                                            List<StorageProviderFactory> factories) {
         validateBaseConfig(name, config);
-        if (config.getName() == null || config.getName().trim().isEmpty()) {
+        if (config.getName() == null || config.getName().isBlank()) {
             config.setName(name);
         }
         List<StorageProviderFactory> supportedFactories = new ArrayList<>();
@@ -269,6 +269,6 @@ public class PeachStorageAutoConfiguration {
     }
 
     private static boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
+        return value == null || value.isBlank();
     }
 }

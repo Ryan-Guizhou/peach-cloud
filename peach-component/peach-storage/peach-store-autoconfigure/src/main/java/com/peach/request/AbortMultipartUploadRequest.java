@@ -56,7 +56,7 @@ public class AbortMultipartUploadRequest extends StorageObjectRequest {
 
         public AbortMultipartUploadRequest build() {
             validate();
-            if (uploadId == null || uploadId.trim().isEmpty()) {
+            if (uploadId == null || uploadId.isBlank()) {
                 throw new StorageException(StorageResultCode.BAD_REQUEST, "Upload id must not be blank");
             }
             return new AbortMultipartUploadRequest(this);

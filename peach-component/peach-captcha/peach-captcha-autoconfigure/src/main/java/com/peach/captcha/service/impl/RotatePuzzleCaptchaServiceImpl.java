@@ -12,7 +12,8 @@ import com.peach.common.response.StatusEnum;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 
-import java.awt.*;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;

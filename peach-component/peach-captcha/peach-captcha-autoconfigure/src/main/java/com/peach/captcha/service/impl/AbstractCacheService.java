@@ -18,7 +18,7 @@ import com.peach.common.response.Response;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 
-import java.awt.*;
+import java.awt.Font;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 

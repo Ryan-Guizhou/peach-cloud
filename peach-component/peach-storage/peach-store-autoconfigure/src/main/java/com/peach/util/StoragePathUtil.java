@@ -66,7 +66,7 @@ public final class StoragePathUtil {
      */
     public static String normalizeObjectKey(String objectKey) {
         // 1. 空值校验
-        if (objectKey == null || objectKey.trim().isEmpty()) {
+        if (objectKey == null || objectKey.isBlank()) {
             throw new StorageException(StorageResultCode.BAD_REQUEST, "Object key must not be blank");
         }
 
@@ -118,7 +118,7 @@ public final class StoragePathUtil {
 
         StringBuilder builder = new StringBuilder();
         for (String segment : segments) {
-            if (segment == null || segment.trim().isEmpty()) {
+            if (segment == null || segment.isBlank()) {
                 continue; // 自动跳过空片段
             }
             if (builder.length() > 0) {
@@ -141,7 +141,7 @@ public final class StoragePathUtil {
      * @return 带前缀的规范化对象 Key
      */
     public static String applyPrefix(String prefix, String objectKey) {
-        if (prefix == null || prefix.trim().isEmpty()) {
+        if (prefix == null || prefix.isBlank()) {
             return normalizeObjectKey(objectKey);
         }
         return joinObjectKey(prefix, objectKey);
@@ -225,7 +225,7 @@ public final class StoragePathUtil {
      * @throws StorageException 当路径格式非法或 URI 解析失败时抛出
      */
     public static Path parseLocalPath(String path) {
-        if (path == null || path.trim().isEmpty()) {
+        if (path == null || path.isBlank()) {
             throw new StorageException(StorageResultCode.BAD_REQUEST, "Local path must not be blank");
         }
 

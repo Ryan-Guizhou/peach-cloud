@@ -1,6 +1,5 @@
 package com.peach.scheduled;
 
-import org.springframework.stereotype.Indexed;
 
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;

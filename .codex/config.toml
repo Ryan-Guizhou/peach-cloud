@@ -1,106 +1,76 @@
-[mcp_servers.mysql]
-command = "cmd"
-args = [
-    "/c",
-    "npx",
-    "-y",
-    "mcp-server-mysql@latest"
-]
-env_vars = [
-    "MYSQL_HOST",
-    "MYSQL_PORT",
-    "MYSQL_USER",
-    "MYSQL_PASS",
-    "MYSQL_DB"
-]
-startup_timeout_sec = 30
-tool_timeout_sec = 60
+  [mcp_servers.mysql]
+    command = "cmd"
+    args = ["/c", "npx", "-y", "mcp-server-mysql@latest"]
+    env_vars = ["MYSQL_HOST", "MYSQL_PORT", "MYSQL_USER", "MYSQL_PASS", "MYSQL_DB"]
+    startup_timeout_sec = 30
+    tool_timeout_sec = 60
 
-[mcp_servers.github]
-command = "cmd"
-args = [
-    "/c",
-    "npx",
-    "-y",
-    "@modelcontextprotocol/server-github"
-]
-env_vars = [
-    "GITHUB_PERSONAL_ACCESS_TOKEN"
-]
-startup_timeout_sec = 30
-tool_timeout_sec = 60
+  [mcp_servers.github]
+    command = "cmd"
+    args = ["/c", "npx", "-y", "@modelcontextprotocol/server-github"]
+    env_vars = ["GITHUB_PERSONAL_ACCESS_TOKEN"]
+    startup_timeout_sec = 30
+    tool_timeout_sec = 60
 
-[mcp_servers.context7]
-command = "cmd"
-args = [
-    "/c",
-    "npx",
-    "-y",
-    "@upstash/context7-mcp@latest"
-]
-env_vars = [
-    "CONTEXT7_API_KEY"
-]
-startup_timeout_sec = 30
-tool_timeout_sec = 60
+  [mcp_servers.context7]
+    command = "cmd"
+    args = ["/c", "npx", "-y", "@upstash/context7-mcp@latest"]
+    env_vars = ["CONTEXT7_API_KEY"]
+    startup_timeout_sec = 30
+    tool_timeout_sec = 60
 
-[mcp_servers.codegraph]
-command = "cmd"
-args = [
-    "/c",
-    "npx",
-    "@colbymchenry/codegraph",
-    "serve",
-    "--mcp"
-]
-startup_timeout_sec = 30
-tool_timeout_sec = 120
+  [mcp_servers.codegraph]
+    command = "cmd"
+    args = ["/c", "npx", "@colbymchenry/codegraph", "serve", "--mcp"]
+    startup_timeout_sec = 30
+    tool_timeout_sec = 120
 
-[mcp_servers.codegraph.tools.codegraph_context]
-approval_mode = "approve"
+      [mcp_servers.codegraph.tools.codegraph_context]
+        approval_mode = "approve"
 
-[mcp_servers.codegraph.tools.codegraph_files]
-approval_mode = "approve"
+      [mcp_servers.codegraph.tools.codegraph_files]
+        approval_mode = "approve"
 
-[mcp_servers.codegraph.tools.codegraph_explore]
-approval_mode = "approve"
+      [mcp_servers.codegraph.tools.codegraph_explore]
+        approval_mode = "approve"
 
-[mcp_servers.codegraph.tools.codegraph_node]
-approval_mode = "approve"
+      [mcp_servers.codegraph.tools.codegraph_node]
+        approval_mode = "approve"
 
-[mcp_servers.codegraph.tools.codegraph_status]
-approval_mode = "approve"
+      [mcp_servers.codegraph.tools.codegraph_status]
+        approval_mode = "approve"
 
-[mcp_servers.codegraph.tools.codegraph_search]
-approval_mode = "approve"
+      [mcp_servers.codegraph.tools.codegraph_search]
+        approval_mode = "approve"
 
-[mcp_servers.codegraph.tools.codegraph_impact]
-approval_mode = "approve"
+      [mcp_servers.codegraph.tools.codegraph_impact]
+        approval_mode = "approve"
 
-[mcp_servers.codegraph.tools.codegraph_callers]
-approval_mode = "approve"
+      [mcp_servers.codegraph.tools.codegraph_callers]
+        approval_mode = "approve"
 
-[mcp_servers.codegraph.tools.codegraph_trace]
-approval_mode = "approve"
+      [mcp_servers.codegraph.tools.codegraph_trace]
+        approval_mode = "approve"
 
-[mcp_servers.agentmemory]
-command = "cmd"
-args = ["/c", "npx", "-y", "@agentmemory/mcp"]
-startup_timeout_sec = 30
-tool_timeout_sec = 120
-env_vars = ["AGENTMEMORY_URL", "AGENTMEMORY_SECRET", "AGENTMEMORY_TOOLS"]
+  [mcp_servers.agentmemory]
+    command = "cmd"
+    args = ["/c", "npx", "-y", "@agentmemory/mcp"]
+    startup_timeout_sec = 30
+    tool_timeout_sec = 120
+    env_vars = ["AGENTMEMORY_URL", "AGENTMEMORY_SECRET", "AGENTMEMORY_TOOLS"]
 
-[mcp_servers.agentmemory.env]
-AGENTMEMORY_URL = "http://localhost:3111"
-AGENTMEMORY_TOOLS = "core"
+    [mcp_servers.agentmemory.env]
+      AGENTMEMORY_URL = "http://localhost:3111"
+      AGENTMEMORY_TOOLS = "core"
 
-[mcp_servers.agentmemory.tools.memory_recall]
-approval_mode = "approve"
+      [mcp_servers.agentmemory.tools.memory_recall]
+        approval_mode = "approve"
 
-[mcp_servers.agentmemory.tools.memory_smart_search]
-approval_mode = "approve"
+      [mcp_servers.agentmemory.tools.memory_smart_search]
+        approval_mode = "approve"
 
-[mcp_servers.agentmemory.tools.memory_sessions]
-approval_mode = "approve"
+      [mcp_servers.agentmemory.tools.memory_sessions]
+        approval_mode = "approve"
 
-# memory_save 保留默认审批；审计、导出和治理工具不在 core 模式暴露。
+  [mcp_servers.idea]
+    url = "http://127.0.0.1:64342/stream"

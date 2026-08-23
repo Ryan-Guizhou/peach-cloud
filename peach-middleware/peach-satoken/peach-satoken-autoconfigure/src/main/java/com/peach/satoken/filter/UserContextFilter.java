@@ -107,7 +107,7 @@ public class UserContextFilter extends OncePerRequestFilter {
     private String resolveToken(HttpServletRequest request) {
         String tokenName = StpUtil.getTokenName();
         String token = request.getHeader(tokenName);
-        if (token != null && !token.trim().isEmpty()) {
+        if (token != null && !token.isBlank()) {
             return token;
         }
         return request.getParameter(tokenName);

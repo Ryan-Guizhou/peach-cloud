@@ -1,5 +1,7 @@
 package com.peach.fileservice.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.common.util.DateUtil;
 import com.peach.common.util.StringUtil;
@@ -23,7 +25,6 @@ import com.peach.response.UploadResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.annotation.Resource;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,16 +34,14 @@ import java.util.List;
  */
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class CloudStorageBrowserServiceImpl implements ICloudStorageBrowserService {
 
-    @Resource
-    private CloudStorageInstanceDao cloudStorageInstanceDao;
+        private final CloudStorageInstanceDao cloudStorageInstanceDao;
 
-    @Resource
-    private CloudStorageInstanceSupport cloudStorageInstanceSupport;
+        private final CloudStorageInstanceSupport cloudStorageInstanceSupport;
 
-    @Resource
-    private CloudStorageManagerService cloudStorageManagerService;
+        private final CloudStorageManagerService cloudStorageManagerService;
 
     @Override
     public boolean bucketExists(String instanceId) {

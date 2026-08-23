@@ -2,11 +2,9 @@ package com.peach.auth.service;
 
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dto.MenuDTO;
-import com.peach.auth.entity.MenuDO;
 import com.peach.auth.qo.MenuQO;
 import com.peach.auth.vo.MenuVO;
 
-import java.util.List;
 
 /**
  * 菜单服务接口。

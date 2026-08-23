@@ -1,5 +1,7 @@
 package com.peach.fileservice.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
@@ -56,7 +58,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.annotation.Resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -101,24 +102,20 @@ import java.util.Locale;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class FileDomainServiceImpl implements IFileDomainService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(DateUtil.TIME_PATTERN);
 
-    @Resource
-    private FileObjectDao fileObjectDao;
+        private final FileObjectDao fileObjectDao;
 
-    @Resource
-    private FileRecordDao fileRecordDao;
+        private final FileRecordDao fileRecordDao;
 
-    @Resource
-    private FileUploadSessionDao fileUploadSessionDao;
+        private final FileUploadSessionDao fileUploadSessionDao;
 
-    @Resource
-    private MultiZoneStorage multiZoneStorage;
+        private final MultiZoneStorage multiZoneStorage;
 
-    @Resource
-    private FileDomainProperties fileDomainProperties;
+        private final FileDomainProperties fileDomainProperties;
 
     @Override
     public FileDigestVO calculateSha256(MultipartFile file) {

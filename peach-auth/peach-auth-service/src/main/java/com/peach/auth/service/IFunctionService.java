@@ -2,7 +2,6 @@ package com.peach.auth.service;
 
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dto.FunctionDTO;
-import com.peach.auth.entity.FunctionDO;
 import com.peach.auth.qo.FunctionQO;
 import com.peach.auth.vo.FunctionVO;
 

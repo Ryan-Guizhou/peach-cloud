@@ -40,7 +40,6 @@ import com.qcloud.cos.region.Region;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -48,8 +47,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
  * 腾讯云 COS 存储实现。
  *
@@ -379,7 +376,7 @@ public class CosStorageProvider implements StorageProvider {
                 .ifPresent(metadata::setContentType);
 
         Optional.ofNullable(userMetadata)
-                .orElse(Collections.emptyMap())
+                .orElse(Map.of())
                 .forEach(metadata::addUserMetadata);
     }
 
@@ -390,12 +387,12 @@ public class CosStorageProvider implements StorageProvider {
      */
     private List<PartETag> buildPartETags(List<Part> parts) {
         return Optional.ofNullable(parts)
-                .orElse(Collections.emptyList())
+                .orElse(List.of())
                 .stream()
                 .filter(Objects::nonNull)
                 .map(part -> new PartETag(part.getPartNumber(), part.getETag()))
                 .sorted(Comparator.comparingInt(PartETag::getPartNumber))
-                .collect(Collectors.toList());
+                .toList();
     }
 
 

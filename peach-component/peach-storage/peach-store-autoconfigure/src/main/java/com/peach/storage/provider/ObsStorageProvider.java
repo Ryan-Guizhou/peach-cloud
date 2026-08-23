@@ -46,9 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-
 /**
  * 华为云 OBS 存储实现。
  *
@@ -387,7 +384,7 @@ public class ObsStorageProvider implements StorageProvider {
         return parts.stream()
                 .map(part -> new PartEtag(part.getETag(), part.getPartNumber()))
                 .sorted(Comparator.comparingInt(PartEtag::getPartNumber))
-                .collect(Collectors.toList());
+                .toList();
     }
 
 

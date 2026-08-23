@@ -76,7 +76,7 @@ public class PeachOpenFeignErrorDecoder implements ErrorDecoder {
     }
 
     private String resolveClientName(String methodKey) {
-        if (methodKey == null || methodKey.trim().isEmpty()) {
+        if (methodKey == null || methodKey.isBlank()) {
             return "unknown";
         }
         int index = methodKey.indexOf('#');

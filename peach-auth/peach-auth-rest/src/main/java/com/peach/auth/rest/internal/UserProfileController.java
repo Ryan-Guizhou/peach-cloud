@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.auth.dto.UserProfileUpdateDTO;
 import com.peach.auth.service.IUserProfileService;
@@ -17,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotBlank;
 
 @Validated
@@ -25,10 +26,10 @@ import jakarta.validation.constraints.NotBlank;
 @RestController
 @RequestMapping("/auth/profile")
 @Tag(name = "UserProfileController", description = "个人中心")
+@RequiredArgsConstructor
 public class UserProfileController {
 
-    @Resource
-    private IUserProfileService userProfileService;
+        private final IUserProfileService userProfileService;
 
     @GetMapping
     @Operation(summary = "获取当前用户个人资料")

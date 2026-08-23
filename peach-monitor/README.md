@@ -82,3 +82,11 @@ mvn -pl peach-monitor/peach-monitor-launch -am -Dspring-boot.run.profiles=dev sp
 | 查询很慢 | 表数据量、索引、时间范围是否合理 | 增加索引、限制查询范围或做归档 |
 | Feign 调用失败 | 服务注册、调用方依赖、Nacos 是否正常 | 检查 `peach-monitor-openfeign-external` 和注册中心 |
 | 运行信息泄露 | 接口是否未鉴权暴露 | 通过网关和服务侧权限控制保护监控接口 |
+
+
+## 项目约定
+
+- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
+- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。

@@ -45,6 +45,6 @@ public class MessageCategoryConfig {
         if (MessageEnum.MessageCategory.TODO.equals(category)) {
             return TODO_TYPES;
         }
-        return Collections.emptyList();
+        return List.of();
     }
 }

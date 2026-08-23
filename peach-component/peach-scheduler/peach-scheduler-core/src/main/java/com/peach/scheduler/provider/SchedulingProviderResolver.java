@@ -68,7 +68,7 @@ public class SchedulingProviderResolver {
     }
 
     private String normalizeProviderId(String providerId) {
-        if (providerId == null || providerId.trim().isEmpty()) {
+        if (providerId == null || providerId.isBlank()) {
             throw new SchedulerConfigurationException("Scheduler provider id must not be blank");
         }
         return providerId.trim().toLowerCase(Locale.ROOT);

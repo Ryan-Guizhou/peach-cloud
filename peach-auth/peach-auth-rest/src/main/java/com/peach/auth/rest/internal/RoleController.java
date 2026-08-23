@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.dto.RoleDTO;
@@ -21,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -39,10 +40,10 @@ import jakarta.validation.constraints.NotBlank;
 @RestController
 @RequestMapping("/auth/role")
 @Tag(name = "RoleController", description = "角色管理")
+@RequiredArgsConstructor
 public class RoleController {
 
-    @Resource
-    private IRoleService roleService;
+        private final IRoleService roleService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询角色")

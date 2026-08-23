@@ -1,5 +1,7 @@
 package com.peach.auth.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dto.ResourceDTO;
@@ -15,7 +17,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
 import java.util.List;
 
 /**
@@ -26,10 +27,10 @@ import java.util.List;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class ResouceServceImpl implements IResouceService {
 
-    @Resource
-    private ResourceDao resourceDao;
+        private final ResourceDao resourceDao;
 
     @Override
     public PageInfo<ResourceVO> pageList(ResourceQO resourceQO) {

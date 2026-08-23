@@ -1,5 +1,9 @@
 package com.peach.message.service.impl;
 
+import java.util.List;
+
+import lombok.RequiredArgsConstructor;
+
 import com.alibaba.fastjson.JSON;
 import com.peach.common.IDGeneratorUtil;
 import com.peach.message.common.MessageConst;
@@ -11,9 +15,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
-import java.util.Collections;
-
 /**
  * @Author Mr Shu
  * @Version 1.0.0
@@ -23,10 +24,10 @@ import java.util.Collections;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class WebSocketPushServiceImpl implements IWebSocketPushService {
 
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
+        private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public void publish(WebSocketMessageDTO message) {
@@ -47,7 +48,7 @@ public class WebSocketPushServiceImpl implements IWebSocketPushService {
         WebSocketMessageDTO message = new WebSocketMessageDTO();
         message.setMode(MessageEnum.WsPushMode.SINGLE);
         message.setType(type);
-        message.setUserIds(Collections.singletonList(userId));
+        message.setUserIds(List.of(userId));
         message.setPayload(payload);
         publish(message);
     }

@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.dto.UserDTO;
@@ -21,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -39,10 +40,10 @@ import jakarta.validation.constraints.NotBlank;
 @RestController
 @RequestMapping("/auth/user")
 @Tag(name = "UserController", description = "用户管理")
+@RequiredArgsConstructor
 public class UserController {
 
-    @Resource
-    private IUserService userService;
+        private final IUserService userService;
 
     @Operation(summary = "查询用户列表")
     @PostMapping("/pageList")

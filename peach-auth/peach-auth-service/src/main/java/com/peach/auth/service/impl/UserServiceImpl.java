@@ -1,5 +1,7 @@
 package com.peach.auth.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.PageHelper;
@@ -44,10 +46,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -66,33 +66,26 @@ import java.time.LocalDate;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements IUserService {
 
     private static final String INIT_APP_ID = "f73b300578a5436d82ec7fca2c07c284";
 
-    @Resource
-    private UserDao userDao;
+        private final UserDao userDao;
 
-    @Resource
-    private UserOrgDao userOrgDao;
+        private final UserOrgDao userOrgDao;
 
-    @Resource
-    private MenuDao menuDao;
+        private final MenuDao menuDao;
 
-    @Resource
-    private RouterDao routerDao;
+        private final RouterDao routerDao;
 
-    @Resource
-    private AuthFunctionDao authFunctionDao;
+        private final AuthFunctionDao authFunctionDao;
 
-    @Resource
-    private AuthResourceDao authResourceDao;
+        private final AuthResourceDao authResourceDao;
 
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
+        private final StringRedisTemplate stringRedisTemplate;
 
-    @Resource
-    private IRoleService iRoleService;
+        private final IRoleService iRoleService;
 
     @Override
     public PageInfo<UserVO> pageList(UserQO userQO) {
@@ -301,7 +294,7 @@ public class UserServiceImpl implements IUserService {
     private List<AuthResourceVO> selectResources(List<RoleVO> roleList, String tenantId, String orgId, Integer fiscal) {
         Map<String, AuthResourceVO> resourceMap = new LinkedHashMap<>();
         if (CollectionUtils.isEmpty(roleList)) {
-            return Collections.emptyList();
+            return List.of();
         }
         for (RoleVO role : roleList) {
             if (role == null || StringUtil.isBlank(role.getRoleCode())) {
@@ -330,7 +323,7 @@ public class UserServiceImpl implements IUserService {
 
     private List<String> buildPermissionList(List<AuthResourceVO> resourceList) {
         if (CollectionUtils.isEmpty(resourceList)) {
-            return Collections.emptyList();
+            return List.of();
         }
         Set<String> permissionSet = new LinkedHashSet<>();
         for (AuthResourceVO resourceVO : resourceList) {
@@ -389,7 +382,7 @@ public class UserServiceImpl implements IUserService {
             return new ArrayList<>(menuMap.values());
         }
 
-        return Collections.emptyList();
+        return List.of();
     }
 
     private List<RouterVO> selectRouters(List<RoleVO> roleList, String tenantId, String orgId, Integer fiscal) {
@@ -437,7 +430,7 @@ public class UserServiceImpl implements IUserService {
             return new ArrayList<>(routerMap.values());
         }
 
-        return Collections.emptyList();
+        return List.of();
     }
 
     private UserOrgVO resolveUserOrg(LoginDTO loginDTO, UserVO userVO, List<UserOrgVO> userOrgList) {

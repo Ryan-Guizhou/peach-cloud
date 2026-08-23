@@ -1,5 +1,7 @@
 package com.peach.setting.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
@@ -27,7 +29,6 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.annotation.Resource;
 import java.util.List;
 
 /**
@@ -39,13 +40,12 @@ import java.util.List;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class ValueSetServiceImpl implements IValueSetService {
 
-    @Resource
-    private ValueSetDao valueSetDao;
+        private final ValueSetDao valueSetDao;
 
-    @Resource
-    private ValueSetItemDao valueSetItemDao;
+        private final ValueSetItemDao valueSetItemDao;
 
     @Override
     public PageResult<ValueSetVO> pageList(ValueSetQO qo) {
@@ -164,7 +164,7 @@ public class ValueSetServiceImpl implements IValueSetService {
 
     private String requireTenantId() {
         String tenantId = SecurityContextHolder.currentTenantId();
-        if (tenantId == null || tenantId.trim().isEmpty()) {
+        if (tenantId == null || tenantId.isBlank()) {
             throw new IllegalStateException("Current tenant context is missing");
         }
         return tenantId;
@@ -172,7 +172,7 @@ public class ValueSetServiceImpl implements IValueSetService {
 
     private String requireOrgId() {
         String orgId = SecurityContextHolder.currentOrgId();
-        if (orgId == null || orgId.trim().isEmpty()) {
+        if (orgId == null || orgId.isBlank()) {
             throw new IllegalStateException("Current organization context is missing");
         }
         return orgId;

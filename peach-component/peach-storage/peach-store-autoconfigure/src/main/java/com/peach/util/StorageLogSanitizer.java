@@ -55,7 +55,7 @@ public final class StorageLogSanitizer {
     }
 
     private static String maskEndpoint(String value) {
-        if (value == null || value.trim().isEmpty()) {
+        if (value == null || value.isBlank()) {
             return value;
         }
         String trimmed = value.trim();
@@ -63,7 +63,7 @@ public final class StorageLogSanitizer {
             URI uri = URI.create(trimmed.contains("://") ? trimmed : "https://" + trimmed);
             String host = uri.getHost();
             String scheme = uri.getScheme();
-            if (host == null || host.trim().isEmpty()) {
+            if (host == null || host.isBlank()) {
                 return maskPlain(trimmed);
             }
             return (scheme == null ? "" : scheme + "://") + maskHost(host);
@@ -73,14 +73,14 @@ public final class StorageLogSanitizer {
     }
 
     private static String maskPath(String value) {
-        if (value == null || value.trim().isEmpty()) {
+        if (value == null || value.isBlank()) {
             return value;
         }
         String normalized = value.trim().replace('\\', '/');
         String[] parts = normalized.split("/");
         String last = null;
         for (int i = parts.length - 1; i >= 0; i--) {
-            if (parts[i] != null && !parts[i].trim().isEmpty()) {
+            if (parts[i] != null && !parts[i].isBlank()) {
                 last = parts[i].trim();
                 break;
             }

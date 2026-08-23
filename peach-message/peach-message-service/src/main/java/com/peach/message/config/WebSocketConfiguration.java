@@ -1,5 +1,7 @@
 package com.peach.message.config;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.message.common.MessageConst;
 import com.peach.message.websocket.MessageWebSocketHandler;
 import org.springframework.context.annotation.Bean;
@@ -9,8 +11,7 @@ import org.springframework.web.reactive.HandlerMapping;
 import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter;
 
-import jakarta.annotation.Resource;
-import java.util.Collections;
+import java.util.Map;
 
 /**
  * @Author Mr Shu
@@ -20,15 +21,15 @@ import java.util.Collections;
  */
 @Indexed
 @Configuration
+@RequiredArgsConstructor
 public class WebSocketConfiguration {
 
-    @Resource
-    private MessageWebSocketHandler messageWebSocketHandler;
+        private final MessageWebSocketHandler messageWebSocketHandler;
 
     @Bean
     public HandlerMapping webSocketHandlerMapping() {
         SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
-        mapping.setUrlMap(Collections.singletonMap(MessageConst.WEBSOCKET_ENDPOINT, messageWebSocketHandler));
+        mapping.setUrlMap(Map.of(MessageConst.WEBSOCKET_ENDPOINT, messageWebSocketHandler));
         mapping.setOrder(-1);
         return mapping;
     }

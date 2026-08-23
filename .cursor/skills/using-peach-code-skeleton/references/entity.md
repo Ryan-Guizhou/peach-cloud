@@ -39,7 +39,7 @@ peach-auth/peach-auth-entity/src/main/java/com/peach/auth/
 ## LEGACY_COMPATIBLE
 
 - 无敏感字段的简单 `VO extends DO` 可在局部维护时保留，但不作为新模型默认。
-- `javax.persistence` 注解、`PeachDO`、`PeachEntity` 和现有 group 命名按当前框架兼容。
+- `jakarta.persistence` 注解、`PeachDO`、`PeachEntity` 和现有 group 命名按当前框架兼容；纯不可变 DTO/事件可评估 `record`（见 `09-java21-coding-style`）。
 - 历史拼写错误字段只能在兼容数据库/API 时保留；新字段不得继续复制错误命名。
 
 ## FORBIDDEN

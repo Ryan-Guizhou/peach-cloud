@@ -38,7 +38,7 @@ description: 约束 peach-cloud 的 REST、Entity、DAO/XML、Service、common �
 
 - 分层、签名、校验、DAO/XML 和文档联动完整。
 - 未记录或返回敏感字段，日志使用显式非敏感字段白名单。
-- Java 8 和当前框架版本兼容。
+- Java 21 和当前框架版本兼容。
 - `node scripts/check-utf8.mjs` 通过。
 - 受影响模块编译或测试通过；无法运行的检查在最终回复中明确说明。
 - `git diff --check` 通过，且未覆盖用户无关改动。

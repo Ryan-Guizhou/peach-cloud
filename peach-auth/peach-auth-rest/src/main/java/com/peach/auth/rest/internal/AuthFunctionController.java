@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dto.RoleFunctionAuthDTO;
 import com.peach.auth.qo.AuthFunctionQO;
@@ -15,8 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
-
 /**
  * 角色功能授权接口。
  *
@@ -29,10 +29,10 @@ import jakarta.annotation.Resource;
 @RestController
 @RequestMapping("/auth/authFunction")
 @Tag(name = "AuthFunctionController", description = "角色功能授权")
+@RequiredArgsConstructor
 public class AuthFunctionController {
 
-    @Resource
-    private IAuthFunctionService authFunctionService;
+        private final IAuthFunctionService authFunctionService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询角色功能授权")

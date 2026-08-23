@@ -263,7 +263,7 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
      * @return 为空时返回 {@code true}
      */
     private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
+        return value == null || value.isBlank();
     }
 
     @Override

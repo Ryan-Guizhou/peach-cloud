@@ -1,5 +1,7 @@
 package com.peach.message.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
@@ -25,7 +27,6 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,13 +41,12 @@ import java.util.Map;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class MessageServiceImpl implements IMessageService {
 
-    @Resource
-    private SiteMessageDao siteMessageDao;
+        private final SiteMessageDao siteMessageDao;
 
-    @Resource
-    private IWebSocketPushService webSocketPushService;
+        private final IWebSocketPushService webSocketPushService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)

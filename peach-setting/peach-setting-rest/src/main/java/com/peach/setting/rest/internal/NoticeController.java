@@ -1,5 +1,7 @@
 package com.peach.setting.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.common.response.Response;
@@ -22,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
@@ -39,10 +40,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/setting/notice")
 @Tag(name = "公告与站内信接口", description = "公告与站内信接口")
+@RequiredArgsConstructor
 public class NoticeController {
 
-    @Resource
-    private INoticeService noticeService;
+        private final INoticeService noticeService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询公告")

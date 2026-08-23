@@ -250,12 +250,12 @@ Nginx 官方镜像启动时会把模板渲染成实际配置。`GATEWAY_PORT` �
 镜像定义：`deploy-pipline/pipline/maven-node/Dockerfile`
 镜像标签：`peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22`（由 `Jenkinsfile` 的 `Build CI image` 阶段构建）
 
-### 从 Java 8 CI 升级到 Java 21 的执行步骤
+### Java 21 CI 构建环境确认
 
-若 Jenkins 仍缓存旧镜像 `...-temurin-8-node22`，按顺序执行：
+当前 CI 基线必须与根 `pom.xml` 的 `java.version=21` 保持一致。首次部署、Jenkins 缓存异常或 CI 镜像变更后，按顺序确认：
 
-1. 拉取包含新 `Jenkinsfile` 和 `maven-node/Dockerfile` 的代码并推送到 GitLab 部署分支。
-2. 在仓库根目录手动重建 CI 镜像（可选，流水线 `Build CI image` 阶段也会重建）：
+1. 拉取包含当前 `Jenkinsfile` 和 `maven-node/Dockerfile` 的代码并推送到 GitLab 部署分支。
+2. 在仓库根目录手动重建当前 CI 镜像（可选，流水线 `Build CI image` 阶段也会重建）：
 
 ```bash
 docker build \
@@ -264,21 +264,15 @@ docker build \
   deploy-pipline/pipline/maven-node
 ```
 
-3. 删除旧 CI 镜像（可选，避免误用）：
-
-```bash
-docker rmi peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22 2>/dev/null || true
-```
-
-4. 在 Jenkins 中对 Pipeline 任务执行 **Build Now**。
-5. 确认 `Build CI image` 与 `Maven package` 阶段成功；失败时查看 Maven 日志是否为 Java 版本或依赖不兼容。
-6. 首次升级后若 Maven 依赖解析异常，可在 Jenkins 容器内清理本地仓库后重试（会重新下载依赖）：
+3. 在 Jenkins 中对 Pipeline 任务执行 **Build Now**。
+4. 确认 `Build CI image` 与 `Maven package` 阶段成功，Maven 日志应显示 Java 21 编译；失败时优先检查 Java 版本、依赖解析和仓库凭证。
+5. 若 Maven 依赖解析异常，可在 Jenkins 容器内清理本地仓库后重试（会重新下载依赖）：
 
 ```bash
 docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins rm -rf /var/jenkins_home/.m2/repository
 ```
 
-> 本升级**仅**变更 CI 使用的 JDK/Maven 镜像版本；流水线阶段、服务列表、部署逻辑保持不变。
+> 不要回退到旧 JDK 基线 CI 镜像；当前项目源码、依赖和 Maven Enforcer 均以 Java 21 为基线。
 
 ## Maven 私服（Nexus）与 settings
 
@@ -460,3 +454,11 @@ docker compose --env-file deploy-pipline/peach-deploy.env.example -f deploy-pipl
 node scripts/check-utf8.mjs
 git diff --check
 ```
+
+
+## 项目约定
+
+- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
+- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。

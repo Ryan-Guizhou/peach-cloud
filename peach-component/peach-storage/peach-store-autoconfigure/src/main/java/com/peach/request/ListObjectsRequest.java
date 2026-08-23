@@ -115,7 +115,7 @@ public class ListObjectsRequest {
 
         public Builder recursive(boolean recursive) {
             this.recursive = recursive;
-            if (recursive && (this.delimiter == null || this.delimiter.trim().isEmpty())) {
+            if (recursive && (this.delimiter == null || this.delimiter.isBlank())) {
                 this.delimiter = "/";
             }
             return this;
@@ -125,7 +125,7 @@ public class ListObjectsRequest {
             if (maxKeys <= 0) {
                 throw new StorageException(StorageResultCode.BAD_REQUEST, "Max keys must be greater than 0");
             }
-            if (delimiter != null && delimiter.trim().isEmpty()) {
+            if (delimiter != null && delimiter.isBlank()) {
                 throw new StorageException(StorageResultCode.BAD_REQUEST, "Delimiter must not be blank");
             }
             return new ListObjectsRequest(this);

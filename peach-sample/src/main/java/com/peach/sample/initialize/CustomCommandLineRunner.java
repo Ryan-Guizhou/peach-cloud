@@ -2,7 +2,6 @@ package com.peach.sample.initialize;
 
 import org.springframework.stereotype.Indexed;
 import com.peach.initialize.base.AbstractAppCommandLineHandler;
-import com.peach.initialize.base.AbstractAppPostConstructHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;

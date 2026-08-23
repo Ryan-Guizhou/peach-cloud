@@ -1,9 +1,10 @@
 package com.peach.sample.email;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.email.core.SendResult;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,10 +21,10 @@ import java.io.IOException;
 @Indexed
 @RestController
 @RequestMapping("/email")
+@RequiredArgsConstructor
 public class EmailSendController {
 
-    @Autowired
-    private EmailSendUtil emailSendUtil;
+        private final EmailSendUtil emailSendUtil;
 
     /**
      * 发送简单邮件

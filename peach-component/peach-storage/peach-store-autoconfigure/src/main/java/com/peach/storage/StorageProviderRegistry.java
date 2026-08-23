@@ -42,7 +42,7 @@ public class StorageProviderRegistry implements DisposableBean {
                     continue;
                 }
                 String name = provider.name();
-                if (name == null || name.trim().isEmpty()) {
+                if (name == null || name.isBlank()) {
                     throw new StorageException(StorageResultCode.BAD_REQUEST,
                             "Storage provider name must not be blank");
                 }
@@ -67,7 +67,7 @@ public class StorageProviderRegistry implements DisposableBean {
         Map<String, StorageProvider> providersMap = new LinkedHashMap<>();
         if (providersByName != null) {
             providersByName.forEach((name, provider) -> {
-                if (name == null || name.trim().isEmpty()) {
+                if (name == null || name.isBlank()) {
                     throw new StorageException(StorageResultCode.BAD_REQUEST,
                             "Storage provider name must not be blank");
                 }
@@ -105,7 +105,7 @@ public class StorageProviderRegistry implements DisposableBean {
      * @return provider Optional
      */
     public Optional<StorageProvider> findByName(String name) {
-        if (name == null || name.trim().isEmpty()) {
+        if (name == null || name.isBlank()) {
             return Optional.empty();
         }
         return Optional.ofNullable(providersByName.get(name.trim()));

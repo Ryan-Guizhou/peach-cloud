@@ -87,7 +87,7 @@ public class BatchDeleteObjectsRequest {
                 throw new StorageException(StorageResultCode.BAD_REQUEST, "Object keys must not be empty");
             }
             for (String objectKey : objectKeys) {
-                if (objectKey == null || objectKey.trim().isEmpty()) {
+                if (objectKey == null || objectKey.isBlank()) {
                     throw new StorageException(StorageResultCode.BAD_REQUEST, "Object key must not be blank");
                 }
             }

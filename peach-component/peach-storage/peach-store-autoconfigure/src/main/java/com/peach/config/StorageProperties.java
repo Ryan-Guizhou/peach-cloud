@@ -67,7 +67,7 @@ public class StorageProperties {
         if (!enabled) {
             return;
         }
-        if (primary == null || primary.trim().isEmpty()) {
+        if (primary == null || primary.isBlank()) {
             throw new IllegalStateException("Property '" + "peach.storage.primary"
                     + "' must not be blank when storage is enabled");
         }

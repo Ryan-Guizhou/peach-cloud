@@ -1,5 +1,7 @@
 package com.peach.fileservice.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.common.response.Response;
 import com.peach.fileservice.common.FileApiConstant;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
@@ -20,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -41,10 +42,10 @@ import jakarta.validation.constraints.NotBlank;
 @RestController
 @RequestMapping(FileApiConstant.INTERNAL_PREFIX)
 @Tag(name = "文件领域接口", description = "文件上传下载与文件记录管理接口")
+@RequiredArgsConstructor
 public class FileController {
 
-    @Resource
-    private IFileDomainService fileDomainService;
+        private final IFileDomainService fileDomainService;
 
     /**
      * 文件上传预检查

@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.common.response.Response;
 import com.peach.message.dto.MessagePublishDTO;
 import com.peach.message.openfeign.MessageFeignClient;
@@ -11,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
-import jakarta.annotation.Resource;
 import java.util.Arrays;
 
 /**
@@ -24,10 +25,10 @@ import java.util.Arrays;
 @RequestMapping("/auth/demo")
 @Tag(name = "DemoMessage", description = "资源管理")
 @ConditionalOnProperty(prefix = "peach.demo", name = "feign-enabled", havingValue = "true")
+@RequiredArgsConstructor
 public class DemoMessage {
 
-    @Resource
-    private MessageFeignClient messageFeignClient;
+        private final MessageFeignClient messageFeignClient;
 
     @PostMapping("")
     public Response upload() {

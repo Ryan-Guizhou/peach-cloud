@@ -1,5 +1,7 @@
 package com.peach.auth.core;
 
+import lombok.RequiredArgsConstructor;
+
 
 import com.peach.auth.vo.UserOperLogVO;
 import com.peach.common.util.PeachCollectionUtil;
@@ -10,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
 import org.springframework.util.StopWatch;
 
-import jakarta.annotation.Resource;
 import java.util.List;
 
 /**
@@ -22,12 +23,12 @@ import java.util.List;
 @Indexed
 @Component
 @EnableScheduling
+@RequiredArgsConstructor
 public class UserOperLogTask {
 
     private final UserOperLogQueue userOperLogQueue = UserOperLogQueue.getInstance();
 
-    @Resource
-    private IUserOperLogService userOperLogService;
+        private final IUserOperLogService userOperLogService;
 
     @Scheduled(fixedRate = 10_000)
     public void excuted() {

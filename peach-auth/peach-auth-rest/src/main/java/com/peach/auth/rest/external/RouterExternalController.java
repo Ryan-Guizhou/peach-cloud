@@ -1,5 +1,7 @@
 package com.peach.auth.rest.external;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.auth.service.IRouterService;
 import com.peach.common.response.Response;
 import com.peach.auth.vo.RouterVO;
@@ -13,8 +15,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
-
 /**
  * @Author Mr Shu
  * @Version 1.0.0
@@ -25,10 +25,10 @@ import jakarta.annotation.Resource;
 @RestController
 @RequestMapping("/auth/external")
 @Tag(name = "路由管理外部接口")
+@RequiredArgsConstructor
 public class RouterExternalController {
 
-    @Resource
-    private IRouterService routerService;
+        private final IRouterService routerService;
 
     @GetMapping("/router/{routerId}")
     @Operation(summary = "服务间调用外部接口,根据路由ID查询路由信息")

@@ -5,7 +5,7 @@
 - 最后更新时间：2026-08-14
 - artifactId：`peach-scheduler`
 - 类型：定时任务执行侧组件（SDK + Provider SPI + RocketMQ Transport）
-- 适用版本：Java 8、Spring Boot 2.7.13
+- 适用版本：Java 21、Spring Boot 3.5.4
 
 ## 模块定位
 
@@ -252,3 +252,11 @@ git diff --check -- peach-component/peach-scheduler
 | 重复执行业务副作用 | 仅依赖 Claim 不够 | 在 Handler 内基于 `executionId` 做幂等 |
 | 启动 fail-fast（durability） | `require-jdbc=true` 但无 JDBC 表或 Bean | 执行 `MQ_*.sql` 并确认未使用内存 Store |
 | MQ 消费不到消息 | Topic 名称是否与 `scheduler-execute-{app}` 完全一致 | 对照 `SchedulerConstants.executionTopic()` 修正 `@MqConsumer` |
+
+
+## 项目约定
+
+- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
+- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。

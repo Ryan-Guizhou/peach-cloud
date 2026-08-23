@@ -6,7 +6,12 @@ import com.peach.redis.bloom.spi.BloomScalePolicy;
 import com.peach.redis.bloom.spi.CodecProvider;
 import com.peach.redis.bloom.spi.KeyNamingStrategy;
 import jodd.util.StringUtil;
-import org.redisson.api.*;
+import org.redisson.api.RAtomicLong;
+import org.redisson.api.RBloomFilter;
+import org.redisson.api.RList;
+import org.redisson.api.RLock;
+import org.redisson.api.RMap;
+import org.redisson.api.RedissonClient;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
 /**
  * 分段可扩容的 BloomFilter 实现：
  * - 写入统一进入“尾段”，达到负载阈值时新增下一段；
@@ -196,7 +199,7 @@ public class SegmentedBloomFilterService implements BloomFilterService {
         }
         // Prefer tail-first (new -> old) for better hit rate
         Collections.reverse(names);
-        return names.stream().map(this::getBloomFilterCached).collect(Collectors.toList());
+        return names.stream().map(this::getBloomFilterCached).toList();
     }
 
     private void afterAdd(String ns) {

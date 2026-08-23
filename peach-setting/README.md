@@ -91,3 +91,11 @@ mvn -pl peach-setting/peach-setting-launch -am -Dspring-boot.run.profiles=dev sp
 | 多语言消息缺失 | 语言编码、消息 key、默认语言是否存在 | 补齐配置记录并检查前端语言选择 |
 | Feign 调用失败 | 服务注册、接口依赖、Nacos 是否正常 | 检查 `peach-setting-openfeign-external` 和服务状态 |
 | 生产配置泄漏 | 是否把应用密钥当作业务配置维护 | 敏感配置应放入安全配置体系，不写入普通配置表 |
+
+
+## 项目约定
+
+- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
+- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。

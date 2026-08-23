@@ -1,12 +1,12 @@
 package com.peach.auth.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.auth.dao.ApplicationDao;
 import com.peach.auth.service.IApplicationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
-
-import jakarta.annotation.Resource;
 
 /**
  * @Author Mr Shu
@@ -16,9 +16,9 @@ import jakarta.annotation.Resource;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class ApplicationServiceImpl implements IApplicationService {
 
-    @Resource
-    private ApplicationDao applicationDao;
+        private final ApplicationDao applicationDao;
 
 }

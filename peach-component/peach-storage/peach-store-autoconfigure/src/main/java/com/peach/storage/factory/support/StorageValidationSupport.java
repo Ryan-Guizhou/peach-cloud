@@ -72,7 +72,7 @@ public final class StorageValidationSupport {
      * @param type
      */
     private static void requireText(String name, String value, String fieldName, String type) {
-        if (value == null || value.trim().isEmpty()) {
+        if (value == null || value.isBlank()) {
             throw new IllegalStateException("Missing '" + fieldName + "' for  "
                     + "peach.storage.providers." + name + " type=" + type);
         }
@@ -84,6 +84,6 @@ public final class StorageValidationSupport {
      * @return
      */
     private static boolean hasText(String value) {
-        return value != null && !value.trim().isEmpty();
+        return value != null && !value.isBlank();
     }
 }

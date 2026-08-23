@@ -2,3 +2,8 @@
 peach:
   common:
     blockIp: 127.0.0.1
+# 启动虚拟线程池
+spring:
+  threads:
+    virtual:
+      enabled: true

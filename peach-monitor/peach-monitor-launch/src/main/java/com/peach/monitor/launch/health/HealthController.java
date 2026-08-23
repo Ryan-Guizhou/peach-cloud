@@ -1,5 +1,7 @@
 package com.peach.monitor.launch.health;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.common.response.Response;
 import com.peach.monitor.entity.monitor.MonitorSnapshotDTO;
@@ -10,7 +12,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,10 +24,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/monitor")
 @Tag(name = "HealthController", description = "健康检查")
+@RequiredArgsConstructor
 public class HealthController {
 
-    @Resource
-    private IMonitorRuntimeService monitorRuntimeService;
+        private final IMonitorRuntimeService monitorRuntimeService;
 
     @GetMapping("/health")
     @Operation(summary = "监控健康检查")

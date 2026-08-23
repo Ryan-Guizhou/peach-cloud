@@ -294,16 +294,16 @@ docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins cat /va
 | Validate Jenkins credentials | 校验 `peach-deploy-env` Secret file |
 | Build CI image | 构建 `peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22` |
 | Maven package | `mvn -B -Pdocker -DskipTests clean package` |
-| Build and push images | 构建并推送 7 个后端镜像 |
+| Build and push images | 构建并推送 8 个后端镜像 |
 | Build frontend | `npm ci && npm run build`，推送 `peach-front` 镜像 |
 | Deploy | 同步 Compose/Nacos/SQL，启动 Peach Cloud 运行时 |
 
-### 从 Java 8 CI 升级到 Java 21 的执行步骤
+### Java 21 CI 构建环境确认
 
-若历史环境仍使用 `...-temurin-8-node22` 镜像，按顺序执行：
+当前 CI 基线为 Maven 3.9.11 + Eclipse Temurin 21 + Node 22。首次部署或调整 Jenkins 缓存后，按顺序确认：
 
 1. 合并包含新 `Jenkinsfile` 的代码到部署分支。
-2. （可选）本地预构建 CI 镜像：
+2. （可选）本地预构建当前 CI 镜像：
 
 ```bash
 docker build \
@@ -312,16 +312,15 @@ docker build \
   deploy-pipline/pipline/maven-node
 ```
 
-3. （可选）删除旧镜像：`docker rmi peach-ci/maven-node:3.9.11-eclipse-temurin-8-node22`
-4. Jenkins 执行 **Build Now**。
-5. 确认 `Build CI image` 与 `Maven package` 成功。
-6. 若依赖缓存导致异常，在 Jenkins 容器内清理 Maven 本地仓库后重试：
+3. Jenkins 执行 **Build Now**。
+4. 确认 `Build CI image` 与 `Maven package` 成功，Maven 日志应显示 Java 21 编译。
+5. 若依赖缓存导致异常，在 Jenkins 容器内清理 Maven 本地仓库后重试：
 
 ```bash
 docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins rm -rf /var/jenkins_home/.m2/repository
 ```
 
-> 本次 CI 调整**仅**升级 JDK/Maven 构建镜像版本；流水线阶段、服务列表与 Deploy 逻辑保持不变。
+> CI 镜像版本必须与根 `pom.xml` 的 `java.version=21` 保持一致；不要回退到旧 JDK 基线镜像。
 
 更完整的 Webhook、Nginx 代理、回滚与排障说明见 `deploy-pipline/README.md`。
 
@@ -524,3 +523,10 @@ bin\start.bat logs
 - `sql/` 是否需要新增初始化脚本。
 - 模块 `README.md` 和 `README.en-US.md` 是否需要同步更新。
 - 顶层 README 的模块导航和启动入口是否仍然准确。
+
+## 项目约定
+
+- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
+- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。

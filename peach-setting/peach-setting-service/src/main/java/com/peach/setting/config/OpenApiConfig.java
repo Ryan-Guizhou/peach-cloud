@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Indexed;
 
-import java.util.Collections;
+import java.util.List;
 
 /**
  * @Author Mr Shu
@@ -75,7 +75,7 @@ public class OpenApiConfig {
                                 .in(SecurityScheme.In.HEADER)
                                 .description("Referer 来源头")));
         if (serverUrl != null && serverUrl.trim().length() > 0) {
-            openAPI.servers(Collections.singletonList(new Server()
+            openAPI.servers(List.of(new Server()
                     .url(serverUrl.trim())
                     .description(serverDescription)));
         }

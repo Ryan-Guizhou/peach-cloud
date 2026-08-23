@@ -6,7 +6,6 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -55,7 +54,7 @@ public class AesEncryptService extends AbstractEncrypt {
 
     @Override
     public Map<String, String> getRsaInfo() throws Exception {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     /**

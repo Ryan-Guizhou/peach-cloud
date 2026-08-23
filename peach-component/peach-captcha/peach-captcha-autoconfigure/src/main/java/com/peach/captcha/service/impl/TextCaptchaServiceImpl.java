@@ -11,7 +11,11 @@ import com.peach.common.response.StatusEnum;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.Properties;
 import java.util.Random;

@@ -1,5 +1,7 @@
 package com.peach.monitor.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.monitor.entity.monitor.MonitorSnapshotDTO;
 import com.peach.monitor.service.IMonitorRuntimeService;
@@ -9,7 +11,6 @@ import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
 import javax.sql.DataSource;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -29,16 +30,14 @@ import java.util.Map;
 
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
 
-    @Resource
-    private Environment environment;
+        private final Environment environment;
 
-    @Resource
-    private ObjectProvider<DataSource> dataSourceProvider;
+        private final ObjectProvider<DataSource> dataSourceProvider;
 
-    @Resource
-    private ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
+        private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
 
     @Override
     public MonitorSnapshotDTO snapshot() {

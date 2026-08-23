@@ -5,7 +5,7 @@ import com.peach.captcha.constant.CaptchaEnum;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.awt.*;
+import java.awt.Font;
 
 /**
  * @Author Mr Shu

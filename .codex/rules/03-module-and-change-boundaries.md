@@ -26,7 +26,7 @@
 
 ## Existing Style Versus Target Style
 
-- 安全、正确性、Java 8 和模块边界是 `REQUIRED`。
+- 安全、正确性、Java 21 和模块边界是 `REQUIRED`。
 - 单 DTO + JSR-303 分组是 `PREFERRED`；当前模块明确采用拆分 DTO 时可以兼容。
 - 历史 CRUD 路由、VO 继承 DO、固定注解组合、接口命名等属于 `LEGACY_COMPATIBLE`，不得无条件扩散到新公共 API。
 - 完整 DTO 日志、敏感字段响应、错误事务位置、资源泄漏和跨层依赖属于 `FORBIDDEN`，即使相邻代码存在也不能复制。

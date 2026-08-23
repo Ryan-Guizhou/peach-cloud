@@ -15,7 +15,6 @@ import com.peach.satoken.context.SecurityContextHolder;
 import com.peach.satoken.context.UserContext;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -207,7 +206,7 @@ public class CloudStorageInstanceSupport {
      */
     private Map<String, String> parseExtra(String extraJson) {
         if (StringUtil.isBlank(extraJson)) {
-            return Collections.emptyMap();
+            return Map.of();
         }
         return JSON.parseObject(extraJson, new TypeReference<Map<String, String>>() {
         });

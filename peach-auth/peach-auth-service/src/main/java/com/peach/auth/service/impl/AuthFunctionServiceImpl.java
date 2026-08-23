@@ -1,5 +1,7 @@
 package com.peach.auth.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import cn.dev33.satoken.stp.StpUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -21,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,13 +36,12 @@ import java.util.List;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class AuthFunctionServiceImpl implements IAuthFunctionService {
 
-    @Resource
-    private AuthFunctionDao authFunctionDao;
+        private final AuthFunctionDao authFunctionDao;
 
-    @Resource
-    private IAuthLogService authLogService;
+        private final IAuthLogService authLogService;
 
     @Override
     public PageInfo<AuthFunctionVO> pageList(AuthFunctionQO authFunctionQO) {

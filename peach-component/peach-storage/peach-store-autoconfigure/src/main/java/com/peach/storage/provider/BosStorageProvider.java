@@ -39,13 +39,10 @@ import com.peach.response.UploadPartResult;
 import com.peach.response.UploadResult;
 import com.peach.storage.spi.StorageProvider;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.zookeeper.Op;
 
-import javax.swing.text.html.Option;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -53,8 +50,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
  * 百度云 BOS 存储实现。
  *
@@ -360,12 +355,12 @@ public class BosStorageProvider implements StorageProvider {
 
     private List<PartETag> buildPartETags(List<Part> parts) {
         return Optional.ofNullable(parts)
-                .orElse(Collections.emptyList())
+                .orElse(List.of())
                 .stream()
                 .filter(Objects::nonNull)
                 .map(part -> new PartETag(part.getPartNumber(), part.getETag()))
                 .sorted(Comparator.comparingInt(PartETag::getPartNumber))
-                .collect(Collectors.toList());
+                .toList();
     }
 
 

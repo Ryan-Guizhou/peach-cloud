@@ -197,7 +197,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
         if (type == ScheduleType.FIXED_INTERVAL && (data.getIntervalSeconds() == null || data.getIntervalSeconds() <= 0)) {
             throw new IllegalArgumentException("intervalSeconds must be positive");
         }
-        if (type == ScheduleType.ONE_TIME && (data.getStartAt() == null || data.getStartAt().trim().isEmpty())) {
+        if (type == ScheduleType.ONE_TIME && (data.getStartAt() == null || data.getStartAt().isBlank())) {
             throw new IllegalArgumentException("startAt is required for ONE_TIME schedule");
         }
         try { ZoneId.of(data.getTimeZone()); }
@@ -219,7 +219,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
     }
 
     private void validateParameters(String parametersJson) {
-        if (parametersJson == null || parametersJson.trim().isEmpty()) return;
+        if (parametersJson == null || parametersJson.isBlank()) return;
         if (parametersJson.length() > MAX_PARAMETER_LENGTH) {
             throw new IllegalArgumentException("parametersJson exceeds 16 KiB limit");
         }
@@ -258,7 +258,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
         job.setScheduleType(data.getScheduleType());
         job.setCronExpression(data.getCronExpression());
         job.setIntervalSeconds(data.getIntervalSeconds());
-        job.setStartAt(data.getStartAt() == null || data.getStartAt().trim().isEmpty()
+        job.setStartAt(data.getStartAt() == null || data.getStartAt().isBlank()
                 ? null : LocalDateTime.parse(data.getStartAt()));
         job.setTimeZone(data.getTimeZone());
         job.setMisfirePolicy(data.getMisfirePolicy());

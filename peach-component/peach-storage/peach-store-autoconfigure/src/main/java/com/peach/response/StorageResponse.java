@@ -61,7 +61,7 @@ public class StorageResponse<T> {
      * @return 失败响应
      */
     public static <T> StorageResponse<T> failure(StorageResultCode code, String message) {
-        String responseMessage = message == null || message.trim().isEmpty() ? code.getMessage() : message;
+        String responseMessage = message == null || message.isBlank() ? code.getMessage() : message;
         return new StorageResponse<>(false, code.getCode(), responseMessage, null);
     }
 

@@ -1,5 +1,7 @@
 package com.peach.setting.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.common.response.Response;
@@ -23,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
@@ -40,10 +41,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/setting/multiMessage")
 @Tag(name = "多语言管理接口", description = "多语言管理接口")
+@RequiredArgsConstructor
 public class MultiMessageController {
 
-    @Resource
-    private IMultiMessageService i18nService;
+        private final IMultiMessageService i18nService;
 
     @PostMapping("/language/pageList")
     @Operation(summary = "分页查询语言配置")

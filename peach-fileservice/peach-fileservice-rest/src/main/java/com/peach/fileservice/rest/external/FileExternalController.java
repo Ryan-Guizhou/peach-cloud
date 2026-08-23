@@ -1,5 +1,7 @@
 package com.peach.fileservice.rest.external;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.peach.common.response.Response;
@@ -18,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -32,10 +33,10 @@ import jakarta.validation.constraints.NotBlank;
 @RestController
 @RequestMapping(FileApiConstant.EXTERNAL_PREFIX)
 @Tag(name = "文件外部接口", description = "供其他业务服务调用的文件 API")
+@RequiredArgsConstructor
 public class FileExternalController {
 
-    @Resource
-    private IFileDomainService fileDomainService;
+        private final IFileDomainService fileDomainService;
 
     @PostMapping(FileApiConstant.EXTERNAL_UPLOAD)
     @Operation(summary = "外部上传文件")

@@ -121,10 +121,10 @@ public class StorageTransferRequest {
         }
 
         protected void validate() {
-            if (sourceObjectKey == null || sourceObjectKey.trim().isEmpty()) {
+            if (sourceObjectKey == null || sourceObjectKey.isBlank()) {
                 throw new StorageException(StorageResultCode.BAD_REQUEST, "Source object key must not be blank");
             }
-            if (targetObjectKey == null || targetObjectKey.trim().isEmpty()) {
+            if (targetObjectKey == null || targetObjectKey.isBlank()) {
                 throw new StorageException(StorageResultCode.BAD_REQUEST, "Target object key must not be blank");
             }
             if (sourceObjectKey.trim().equals(targetObjectKey.trim()) && sameBucket(sourceBucketName, targetBucketName)) {

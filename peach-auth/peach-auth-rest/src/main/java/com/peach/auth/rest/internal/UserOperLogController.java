@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.core.IUserOperLogService;
 import com.peach.auth.qo.UserOperLogQO;
@@ -13,8 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
-
 /**
  * 操作日志查询接口。
  *
@@ -26,10 +26,10 @@ import jakarta.annotation.Resource;
 @RestController
 @RequestMapping("/auth/operLog")
 @Tag(name = "UserOperLogController", description = "操作日志")
+@RequiredArgsConstructor
 public class UserOperLogController {
 
-    @Resource
-    private IUserOperLogService userOperLogService;
+        private final IUserOperLogService userOperLogService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询操作日志")

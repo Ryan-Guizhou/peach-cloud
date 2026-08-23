@@ -2,7 +2,6 @@ package com.peach.auth.service;
 
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dto.RoleDTO;
-import com.peach.auth.entity.RoleDO;
 import com.peach.auth.qo.RoleQO;
 import com.peach.auth.vo.RoleVO;
 

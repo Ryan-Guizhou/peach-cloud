@@ -1,8 +1,9 @@
 package com.peach.rocket.example.runner;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.rocket.example.service.OrderService;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -20,10 +21,10 @@ import org.springframework.stereotype.Component;
 @Indexed
 @Component
 @ConditionalOnProperty(prefix = "example.rocket.demo", name = "enabled", havingValue = "true")
+@RequiredArgsConstructor
 public class PeachRocketDemoRunner implements ApplicationRunner {
 
-    @Resource
-    private OrderService orderService;
+        private final OrderService orderService;
 
     @Override
     public void run(ApplicationArguments args) {

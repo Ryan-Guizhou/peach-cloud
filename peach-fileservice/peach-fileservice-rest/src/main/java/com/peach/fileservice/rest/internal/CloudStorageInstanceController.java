@@ -1,5 +1,7 @@
 package com.peach.fileservice.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.common.PeachGroup;
@@ -22,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -40,10 +41,10 @@ import jakarta.validation.constraints.NotBlank;
 @RestController
 @RequestMapping(FileApiConstant.INTERNAL_STORAGE_INSTANCE_PREFIX)
 @Tag(name = "CloudStorageInstanceController", description = "云存储实例管理")
+@RequiredArgsConstructor
 public class CloudStorageInstanceController {
 
-    @Resource
-    private ICloudStorageInstanceService cloudStorageService;
+        private final ICloudStorageInstanceService cloudStorageService;
 
     @PostMapping
     @Operation(summary = "新增云存储实例")

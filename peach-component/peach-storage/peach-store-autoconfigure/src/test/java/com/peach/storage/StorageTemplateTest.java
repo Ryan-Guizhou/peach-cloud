@@ -8,8 +8,8 @@ import com.peach.response.ObjectInfo;
 import com.peach.storage.spi.StorageProvider;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,7 +38,7 @@ class StorageTemplateTest {
     @Test
     void shouldRejectUnknownProvider() {
         TrackingProvider primary = new TrackingProvider("primary");
-        StorageTemplate template = new StorageTemplate(primary, Collections.singletonMap("primary", primary));
+        StorageTemplate template = new StorageTemplate(primary, Map.of("primary", primary));
 
         assertThrows(IllegalArgumentException.class, () -> template.provider("missing"));
     }
@@ -109,7 +109,7 @@ class StorageTemplateTest {
                     .providerName(name)
                     .bucketName("bucket")
                     .prefix(request.getPrefix())
-                    .items(Collections.singletonList(
+                    .items(List.of(
                             ObjectInfo.builder().providerName(name).bucketName("bucket").objectKey("docs/a.txt").build()))
                     .truncated(false)
                     .build();

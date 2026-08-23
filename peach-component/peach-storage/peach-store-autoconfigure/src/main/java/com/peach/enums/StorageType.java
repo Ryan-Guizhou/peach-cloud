@@ -72,7 +72,7 @@ public enum StorageType {
      * @throws IllegalArgumentException 当配置为空或无法识别时抛出
      */
     public static StorageType parse(String value) {
-        if (value == null || value.trim().isEmpty()) {
+        if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("Storage type must not be blank");
         }
         String normalized = value.trim().replace('-', '_').toUpperCase();

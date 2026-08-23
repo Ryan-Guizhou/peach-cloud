@@ -14,7 +14,6 @@ import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
@@ -53,8 +52,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
  * AWS S3 存储实现。
  *
@@ -191,7 +188,7 @@ public class S3StorageProvider implements StorageProvider {
     @Override
     public ListObjectsResult list(ListObjectsRequest request) {
         String actualBucket = bucketName(config, request.getBucketName());
-        String prefix = request.getPrefix() == null || request.getPrefix().trim().isEmpty()
+        String prefix = request.getPrefix() == null || request.getPrefix().isBlank()
                 ? null : buildObjectKey(config, request.getPrefix());
         try {
             ListObjectsV2Request listRequest = new ListObjectsV2Request()
@@ -422,6 +419,6 @@ public class S3StorageProvider implements StorageProvider {
         return parts.stream()
                 .map(part -> new PartETag(part.getPartNumber(), part.getETag()))
                 .sorted(Comparator.comparingInt(PartETag::getPartNumber))
-                .collect(Collectors.toList());
+                .toList();
     }
 }

@@ -24,7 +24,7 @@ public abstract class AbstracyLockInfoHandle implements LockInfoHandle{
 
     @Override
     public String getAssemblyLockName(String name, String[] keys) {
-        List<String> keyList = Arrays.stream(keys).collect(Collectors.toList());
+        List<String> keyList = Arrays.stream(keys).toList();
         return LOCK_PREFIX_NAME + ":" + name + ":" + String.join("-", keyList);
     }
 

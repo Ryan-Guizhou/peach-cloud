@@ -43,7 +43,7 @@ public class PeachOpenfeignRetryPolicy {
             return;
         }
         for (String exception : retry.getExceptions()) {
-            if (exception != null && !exception.trim().isEmpty()) {
+            if (exception != null && !exception.isBlank()) {
                 exceptions.add(exception.trim());
             }
         }

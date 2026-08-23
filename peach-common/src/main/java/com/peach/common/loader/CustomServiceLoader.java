@@ -2,11 +2,24 @@ package com.peach.common.loader;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.Set;
 
 
 /**
@@ -63,7 +76,7 @@ public class CustomServiceLoader {
         if (customPaths != null && customPaths.length > 0) {
             for (String customPath : customPaths) {
                 // 跳过空路径
-                if (customPath != null && !customPath.trim().isEmpty()) {
+                if (customPath != null && !customPath.isBlank()) {
                     providers.addAll(loadFromCustomPath(serviceClass, customPath, loader));
                 }
             }

@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.dto.ResourceDTO;
@@ -21,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -39,10 +40,10 @@ import jakarta.validation.constraints.NotBlank;
 @RestController
 @RequestMapping("/auth/resource")
 @Tag(name = "ResourceController", description = "资源管理")
+@RequiredArgsConstructor
 public class ResourceController {
 
-    @Resource
-    private IResouceService resourceService;
+        private final IResouceService resourceService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询资源")

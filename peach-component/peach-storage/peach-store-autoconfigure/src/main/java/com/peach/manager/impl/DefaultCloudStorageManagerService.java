@@ -16,7 +16,6 @@ import com.peach.response.ObjectInfo;
 import com.peach.response.UploadResult;
 import com.peach.storage.spi.StorageProvider;
 import com.peach.util.StoragePathUtil;
-import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,7 +25,6 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -363,7 +361,7 @@ public class DefaultCloudStorageManagerService implements CloudStorageManagerSer
         // 基于 continuationToken 进行分页截取
         List<ObjectInfo> pageItems = new ArrayList<>();
         String continuationToken = request.getContinuationToken();
-        boolean started = continuationToken == null || continuationToken.trim().isEmpty();
+        boolean started = continuationToken == null || continuationToken.isBlank();
 
         for (ObjectInfo objectInfo : allObjects) {
             // 定位到 continuationToken 之后的位置
@@ -428,7 +426,7 @@ public class DefaultCloudStorageManagerService implements CloudStorageManagerSer
         Set<String> commonPrefixes = new LinkedHashSet<>();  // 使用LinkedHashSet保持顺序
 
         try (Stream<Path> stream = Files.list(basePath)) {
-            for (Path child : stream.sorted().collect(Collectors.toList())) {
+            for (Path child : stream.sorted().toList()) {
                 if (Files.isDirectory(child)) {
                     // 子目录加入公共前缀列表
                     commonPrefixes.add(toBusinessPath(providerConfig, rootPath, child));
@@ -549,7 +547,7 @@ public class DefaultCloudStorageManagerService implements CloudStorageManagerSer
 
         try (Stream<Path> stream = Files.walk(targetPath)) {
             // 按逆序排序（深度优先，先子后父）
-            for (Path current : stream.sorted(Comparator.reverseOrder()).collect(Collectors.toList())) {
+            for (Path current : stream.sorted(Comparator.reverseOrder()).toList()) {
                 Files.deleteIfExists(current);
             }
         } catch (Exception ex) {
@@ -668,7 +666,7 @@ public class DefaultCloudStorageManagerService implements CloudStorageManagerSer
      * @throws IllegalArgumentException 路径为空时抛出
      */
     private String normalizeRelativePath(String path) {
-        if (path == null || path.trim().isEmpty()) {
+        if (path == null || path.isBlank()) {
             throw new IllegalArgumentException("Path must not be blank");
         }
         return StoragePathUtil.normalizeObjectKey(path);
@@ -683,7 +681,7 @@ public class DefaultCloudStorageManagerService implements CloudStorageManagerSer
      * @return 规范化后的路径，如果为空则返回 null
      */
     private String normalizeOptionalPath(String path) {
-        if (path == null || path.trim().isEmpty()) {
+        if (path == null || path.isBlank()) {
             return null;
         }
         return StoragePathUtil.normalizeObjectKey(path);

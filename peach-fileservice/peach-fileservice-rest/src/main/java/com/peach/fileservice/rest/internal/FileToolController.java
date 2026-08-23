@@ -1,5 +1,7 @@
 package com.peach.fileservice.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.common.response.Response;
 import com.peach.fileservice.common.FileApiConstant;
@@ -13,8 +15,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.annotation.Resource;
-
 /**
  * 文件内部工具接口。
  */
@@ -23,10 +23,10 @@ import jakarta.annotation.Resource;
 @RestController
 @RequestMapping(FileApiConstant.INTERNAL_TOOLS_PREFIX)
 @Tag(name = "文件内部工具", description = "供内部调用方使用的文件辅助工具")
+@RequiredArgsConstructor
 public class FileToolController {
 
-    @Resource
-    private IFileDomainService fileDomainService;
+        private final IFileDomainService fileDomainService;
 
     /**
      * 计算 multipart 文件 SHA-256 摘要。

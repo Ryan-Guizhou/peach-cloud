@@ -245,7 +245,7 @@ peach-openfeign-sentinel-degrade-rules.json
 | 命令 | 含义 | 是否删除数据 |
 | --- | --- | --- |
 | `./peach.sh init` | 创建 `.env` 和运行期目录 | 否 |
-| `./peach.sh build` | Maven 打包并构建 7 个后端镜像 | 否 |
+| `./peach.sh build` | Maven 打包并构建本地脚本支持的 7 个后端镜像 | 否 |
 | `./peach.sh front:build` | 构建前端 dist 并构建 `peach-front` 镜像 | 否 |
 | `./peach.sh up` | 启动基础服务、导入配置、启动后端和前端 | 否 |
 | `./peach.sh down` | 停止容器，保留数据 | 否 |
@@ -284,7 +284,7 @@ peach-openfeign-sentinel-degrade-rules.json
 
 ## 与 Pipeline 方案的关系
 
-`deploy-pipline/` 使用同样的运行模型：7 个后端镜像 + `peach-front` 镜像。差异如下：
+`deploy-pipline/` 使用相同的基础设施模型，但服务清单以 Jenkinsfile 为准：Pipeline 当前构建 8 个后端镜像（比本地脚本多 `peach-scheduled`）+ `peach-front` 镜像。差异如下：
 
 | 项目 | 本地 Docker Desktop | GitLab/Jenkins Pipeline |
 | --- | --- | --- |
@@ -303,3 +303,11 @@ docker compose --env-file deploy/.env.example -f deploy/docker-compose.yml confi
 node scripts/check-utf8.mjs
 git diff --check
 ```
+
+
+## 项目约定
+
+- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
+- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。

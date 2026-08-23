@@ -131,6 +131,6 @@ public class UserContextSupport {
      * @return {@code true} 若为空或空白，否则 {@code false}
      */
     private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
+        return value == null || value.isBlank();
     }
 }

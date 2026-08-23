@@ -10,11 +10,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
  * @Author Mr Shu
  * @Version 1.0.0
@@ -38,7 +35,7 @@ public class MongoService<T> implements IMongoService<T>{
     @Override
     public Set<String> collectionNames() {
         Set<String> collectionNames = mongoTemplate.getCollectionNames();
-        return CollectionUtils.isEmpty(collectionNames) ? Collections.emptySet() : collectionNames;
+        return CollectionUtils.isEmpty(collectionNames) ? Set.of() : collectionNames;
     }
 
     @Override
@@ -132,7 +129,7 @@ public class MongoService<T> implements IMongoService<T>{
             pageInfo.setTotal(total);
 
             if (total == 0){
-                pageInfo.setList(Collections.emptyList());
+                pageInfo.setList(List.of());
                 return pageInfo;
             }
             int pages = total / pageSize;
@@ -175,7 +172,7 @@ public class MongoService<T> implements IMongoService<T>{
     @Override
     public PageInfo<T> findPage(String collectionName, Document query, Document sort, Document projection, Integer pageNum, Integer pageSize, Class<T> clazz) {
         PageInfo<Document> pageInfo = findPage(collectionName, query, sort, projection, pageNum, pageSize);
-        return PageInfo.of(pageInfo.getList().stream().map(document -> document.toJson()).map(json -> JSON.parseObject(json, clazz)).collect(Collectors.toList()), pageInfo.getNavigatePages());
+        return PageInfo.of(pageInfo.getList().stream().map(document -> document.toJson()).map(json -> JSON.parseObject(json, clazz)).toList(), pageInfo.getNavigatePages());
     }
 
     @Override

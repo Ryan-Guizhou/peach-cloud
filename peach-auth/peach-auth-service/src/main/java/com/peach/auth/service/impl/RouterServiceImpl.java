@@ -1,5 +1,7 @@
 package com.peach.auth.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.validate.CommonValidator;
@@ -15,7 +17,6 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Resource;
 import java.util.List;
 
 /**
@@ -26,13 +27,12 @@ import java.util.List;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class RouterServiceImpl implements IRouterService {
 
-    @Resource
-    private RouterDao routerDao;
+        private final RouterDao routerDao;
 
-    @Resource
-    private CommonValidator commonValidator;
+        private final CommonValidator commonValidator;
 
     @PostConstruct
     public void init() {

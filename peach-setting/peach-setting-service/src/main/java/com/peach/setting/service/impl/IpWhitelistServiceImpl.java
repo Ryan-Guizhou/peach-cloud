@@ -1,5 +1,7 @@
 package com.peach.setting.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
@@ -23,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import jakarta.annotation.Resource;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,13 +38,12 @@ import java.util.UUID;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class IpWhitelistServiceImpl implements IIpWhitelistService {
 
-    @Resource
-    private IpWhitelistDao ipWhitelistDao;
+        private final IpWhitelistDao ipWhitelistDao;
 
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
+        private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     public PageResult<IpWhitelistVO> pageList(IpWhitelistQO qo) {
@@ -107,7 +107,7 @@ public class IpWhitelistServiceImpl implements IIpWhitelistService {
         stringRedisTemplate.delete(tempKey);
         boolean hasValue = false;
         for (IpWhitelistVO item : enabledList) {
-            if (item.getIpAddress() != null && !item.getIpAddress().trim().isEmpty()) {
+            if (item.getIpAddress() != null && !item.getIpAddress().isBlank()) {
                 stringRedisTemplate.opsForSet().add(tempKey, item.getIpAddress().trim());
                 hasValue = true;
             }
@@ -142,7 +142,7 @@ public class IpWhitelistServiceImpl implements IIpWhitelistService {
 
     private String requireTenantId() {
         String tenantId = SecurityContextHolder.currentTenantId();
-        if (tenantId == null || tenantId.trim().isEmpty()) {
+        if (tenantId == null || tenantId.isBlank()) {
             throw new IllegalStateException("Current tenant context is missing");
         }
         return tenantId;
@@ -150,7 +150,7 @@ public class IpWhitelistServiceImpl implements IIpWhitelistService {
 
     private String requireOrgId() {
         String orgId = SecurityContextHolder.currentOrgId();
-        if (orgId == null || orgId.trim().isEmpty()) {
+        if (orgId == null || orgId.isBlank()) {
             throw new IllegalStateException("Current organization context is missing");
         }
         return orgId;

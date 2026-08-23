@@ -89,3 +89,11 @@ mvn -pl peach-message/peach-message-launch -am -Dspring-boot.run.profiles=dev sp
 | WebSocket 无推送 | 连接是否建立；用户上下文是否识别；服务日志是否报错 | 检查前端连接、认证和服务端推送逻辑 |
 | Feign 调用失败 | Nacos 注册、服务名、调用方依赖是否正确 | 确认 `peach-message-openfeign-external` 和服务注册状态 |
 | 重复消息 | 调用方是否重试；服务侧是否有幂等键 | 为业务消息定义稳定唯一键并在服务侧去重 |
+
+
+## 项目约定
+
+- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
+- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。

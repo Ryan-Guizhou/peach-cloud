@@ -1,9 +1,10 @@
 package com.peach.sample.redis.bloom.controller;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.redis.bloom.core.BloomFilterService;
 import com.peach.redis.bloom.core.BloomStatus;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,10 +21,10 @@ import java.util.Map;
 @Indexed
 @RestController
 @RequestMapping("/bloom")
+@RequiredArgsConstructor
 public class BloomController {
 
-    @Autowired
-    private BloomFilterService bloomFilterService;
+        private final BloomFilterService bloomFilterService;
 
     @PostConstruct
     public void init() {

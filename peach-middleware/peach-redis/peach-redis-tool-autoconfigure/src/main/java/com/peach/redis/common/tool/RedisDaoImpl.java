@@ -13,6 +13,7 @@ import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.SetOperations;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Repository;
@@ -46,6 +47,10 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     @Value("${peach.redis.mode:standalone}")
     private String redisMode;
     private static final int USE_SCAN_COMMAND = 1;
+
+    public RedisDaoImpl(RedisTemplate<Object, Object> redisTemplate) {
+        super(redisTemplate);
+    }
 
     private static List<String> getScanResult(Jedis redisService, String key, Integer count) {
         Date startTime = new Date();

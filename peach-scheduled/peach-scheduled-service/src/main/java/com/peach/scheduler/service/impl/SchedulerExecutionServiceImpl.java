@@ -218,7 +218,7 @@ public class SchedulerExecutionServiceImpl implements ISchedulerExecutionService
     }
 
     private String requireReason(String reason) {
-        if (reason == null || reason.trim().isEmpty()) {
+        if (reason == null || reason.isBlank()) {
             throw new IllegalArgumentException("Operation reason is required");
         }
         String normalized = reason.trim();

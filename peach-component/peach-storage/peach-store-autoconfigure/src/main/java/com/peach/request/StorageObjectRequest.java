@@ -60,7 +60,7 @@ public class StorageObjectRequest {
         }
 
         protected void validate() {
-            if (objectKey == null || objectKey.trim().isEmpty()) {
+            if (objectKey == null || objectKey.isBlank()) {
                 throw new StorageException(StorageResultCode.BAD_REQUEST, "Object key must not be blank");
             }
         }

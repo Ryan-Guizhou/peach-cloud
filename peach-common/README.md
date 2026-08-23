@@ -72,3 +72,11 @@ mvn -pl peach-common -am clean package -DskipTests -Pdevelopment
 | 出现循环依赖 | common 是否依赖了业务域模块 | 移除反向依赖，把业务逻辑放回业务模块 |
 | 工具类行为不符合某业务 | 工具是否过度承载业务语义 | 将业务规则迁回对应业务域 |
 | 版本解析失败 | 是否从根目录构建；`${revision}` 是否生效 | 使用根 Maven 构建或加 `-am` |
+
+
+## 项目约定
+
+- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
+- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。

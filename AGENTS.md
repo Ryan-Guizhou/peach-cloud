@@ -14,7 +14,7 @@
 
 ## Project Context
 
-- 后端：Maven 多模块，Java 8，Spring Boot `2.7.13`，Spring Cloud `2021.0.5`，Spring Cloud Alibaba `2021.0.5.0`。
+- 后端：Maven 多模块，Java 21，Spring Boot `3.5.4`，Spring Cloud `2025.0.0`，Spring Cloud Alibaba `2025.0.0.0`。
 - 前端：`peach-cloud-front`，Vue 3 + Vite + TypeScript，独立 npm 工程，不属于 Maven reactor。
 - 项目版本：`${revision}`，根 POM 默认 `1.0.0-SNAPSHOT`；`development` 为默认 profile。
 - 核心业务域：`peach-auth`、`peach-fileservice`、`peach-message`、`peach-setting`、`peach-generator`；基础设施见 `peach-common`、`peach-component`、`peach-middleware`。
@@ -42,6 +42,7 @@
     - `02-output-and-evidence`
     - `03-module-and-change-boundaries`
     - `05-language-and-encoding`
+    - `09-java21-coding-style`
     - `08-security-and-quality-gates`
 3. 涉及 MCP、跨会话历史或第三方文档时，再应用 `01-mcp-and-skills`。
 4. 使用 CodeGraph 获取任务上下文；修改公共 API、公共响应、DAO/XML、starter 配置、基础实体或生成器模板前，必须额外执行影响面分析。
@@ -53,7 +54,7 @@ README、Markdown、脚本、静态配置和 SQL 文本的纯文本编辑可直�
 ### 2. 编辑中：控制范围
 
 - 只修改完成用户目标所需的代码、测试和行为相关文档，保留用户已有未提交改动。
-- 遵循命中的 Rules 与 Skills；安全、正确性、Java 8、模块边界和 UTF-8 无 BOM 是硬约束。
+- 遵循命中的 Rules 与 Skills；安全、正确性、Java 21、模块边界和 UTF-8 无 BOM 是硬约束。
 - 变更 Controller、Service、DTO/VO、DAO/XML、配置或文档之间存在联动时，同步检查，不留下半套契约。
 - 不确定第三方 API 或版本行为时查当前依赖源码或 Context7，不凭记忆生成。
 
@@ -110,7 +111,7 @@ CodeGraph 查询必须限定在 `peach-cloud` 根目录。结果若出现 `.m2`�
 
 - secret 只通过环境变量传入，不写入 MCP 配置、源码、文档、记忆或回复。
 - MySQL 默认只读；数据库写入、GitHub 推送/评论/PR、记忆删除/导出等外部副作用必须有用户明确授权。
-- 修改 MCP 配置后必须运行 `node scripts/check-mcp.mjs`。
+- 修改 MCP 配置后检查 secret 未写入源码，并确认 Cursor/Codex 的 MCP 配置语法有效。
 - 记忆只保存可复用且已验证的决策，并带项目、依据、适用模块、保存时间和重新验证条件；不得保存敏感数据、猜测或一次性过程。
 
 ## Skill Routing
@@ -155,14 +156,14 @@ Skill 是执行规范，不是背景资料。命中后必须先完整读取 `SKI
 | --- | --- |
 | MCP、Skills、历史决策、外部文档 | `01-mcp-and-skills` |
 | README/模块文档 | `04-documentation-and-readme` |
-| Java 分层与接口风格 | `06-layered-java-style` |
+| Java 分层与接口风格 | `06-layered-java-style`、`09-java21-coding-style` |
 | 注释或日志 | `07-comments-and-logging` |
 
 基础代码规则仍按「标准工作流」中的四个必读文件执行。
 
 ## Non-Negotiable Boundaries
 
-- Java 代码必须兼容 Java 8；框架 API 必须符合项目锁定版本。
+- Java 代码必须兼容 Java 21；框架 API 必须符合项目锁定版本；编码风格遵循 `09-java21-coding-style`。
 - 所有文本文件必须为严格 UTF-8、无 BOM；禁止使用系统默认编码重写中文文件。
 - 不记录或返回密码、token、secret、私钥、签名 URL、身份证号等敏感数据；操作日志不得直接打印完整 DTO。
 - `*-rest` 只做接口适配，业务与事务在 `*-service`；模型在 `*-entity`；业务模块优先依赖 starter，不直接耦合 autoconfigure 或厂商 SDK。

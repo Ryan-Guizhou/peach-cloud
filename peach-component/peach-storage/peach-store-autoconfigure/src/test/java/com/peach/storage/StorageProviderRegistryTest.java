@@ -5,7 +5,7 @@ import com.peach.storage.spi.StorageProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -25,7 +25,7 @@ class StorageProviderRegistryTest {
     @Test
     void shouldCloseProvidersOnDestroy() throws Exception {
         TestProvider provider = new TestProvider("primary");
-        StorageProviderRegistry registry = new StorageProviderRegistry(Collections.singletonList(provider));
+        StorageProviderRegistry registry = new StorageProviderRegistry(List.of(provider));
 
         assertFalse(provider.closed.get());
         registry.destroy();

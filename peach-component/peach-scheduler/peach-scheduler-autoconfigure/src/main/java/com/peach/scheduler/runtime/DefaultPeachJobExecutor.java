@@ -167,6 +167,6 @@ public class DefaultPeachJobExecutor implements PeachJobExecutor {
     }
 
     private static boolean blank(String value) {
-        return value == null || value.trim().isEmpty();
+        return value == null || value.isBlank();
     }
 }

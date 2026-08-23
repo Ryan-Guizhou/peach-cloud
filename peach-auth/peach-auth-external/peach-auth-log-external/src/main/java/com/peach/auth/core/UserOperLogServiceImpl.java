@@ -1,5 +1,7 @@
 package com.peach.auth.core;
 
+import lombok.RequiredArgsConstructor;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.peach.auth.dao.UserOperLogDao;
@@ -13,11 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
 import java.util.List;
 
 /**
@@ -28,15 +28,14 @@ import java.util.List;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class UserOperLogServiceImpl implements IUserOperLogService {
 
     private static final ObjectMapper _mapper = new ObjectMapper();
 
-    @Resource
-    private UserOperLogDao userOperLogDao;
+        private final UserOperLogDao userOperLogDao;
 
-    @Autowired
-    private SqlSessionFactory sqlSessionFactory;
+        private final SqlSessionFactory sqlSessionFactory;
 
     @Override
     public PageInfo<UserOperLogVO> pageList(UserOperLogQO userOperLogQO) {

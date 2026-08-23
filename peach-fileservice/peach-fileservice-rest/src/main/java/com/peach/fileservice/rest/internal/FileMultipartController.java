@@ -1,5 +1,7 @@
 package com.peach.fileservice.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.common.response.Response;
 import com.peach.fileservice.common.FileApiConstant;
 import com.peach.fileservice.dto.FileMultipartCompleteDTO;
@@ -16,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -35,10 +36,10 @@ import jakarta.validation.constraints.NotBlank;
 @RestController
 @RequestMapping(FileApiConstant.INTERNAL_PREFIX + "/multipart")
 @Tag(name = "文件分片上传接口", description = "文件分片上传初始化、分片 URL、完成与中止接口")
+@RequiredArgsConstructor
 public class FileMultipartController {
 
-    @Resource
-    private IFileDomainService fileDomainService;
+        private final IFileDomainService fileDomainService;
 
     /**
      * 初始化分片上传。

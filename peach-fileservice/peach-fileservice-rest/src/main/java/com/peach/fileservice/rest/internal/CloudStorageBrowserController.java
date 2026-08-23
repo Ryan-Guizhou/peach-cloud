@@ -1,5 +1,7 @@
 package com.peach.fileservice.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.common.response.Response;
@@ -26,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 
 /**
@@ -44,10 +45,10 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping(FileApiConstant.INTERNAL_STORAGE_BROWSER_PREFIX)
 @Tag(name = "CloudStorageBrowserController", description = "云存储浏览")
+@RequiredArgsConstructor
 public class CloudStorageBrowserController {
 
-    @Resource
-    private ICloudStorageBrowserService cloudStorageBrowserService;
+        private final ICloudStorageBrowserService cloudStorageBrowserService;
 
     @GetMapping("/{instanceId}/bucket-exists")
     @Operation(summary = "检查存储桶是否存在")

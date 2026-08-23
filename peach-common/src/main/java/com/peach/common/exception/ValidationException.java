@@ -5,7 +5,6 @@ package com.peach.common.exception;
 import com.peach.common.validate.CommonValidator;
 
 import jakarta.validation.ConstraintViolation;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,7 +22,7 @@ public class ValidationException extends RuntimeException{
     // 保留一个主要构造方法，避免冲突
     public ValidationException(String message, Set<CommonValidator.ValidationDetail> fieldErrors) {
         super(message);
-        this.fieldErrors = fieldErrors != null ? new HashSet<>(fieldErrors) : Collections.emptySet();
+        this.fieldErrors = fieldErrors != null ? new HashSet<>(fieldErrors) : Set.of();
     }
 
     // 从ConstraintViolation创建
@@ -34,13 +33,13 @@ public class ValidationException extends RuntimeException{
                         v.getPropertyPath().toString(),
                         v.getMessage()
                 ))
-                .collect(Collectors.toSet());
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     // 简单错误消息
     public ValidationException(String message) {
         super(message);
-        this.fieldErrors = Collections.emptySet();
+        this.fieldErrors = Set.of();
     }
 
     private static String buildMessage(Set<? extends ConstraintViolation<?>> violations) {

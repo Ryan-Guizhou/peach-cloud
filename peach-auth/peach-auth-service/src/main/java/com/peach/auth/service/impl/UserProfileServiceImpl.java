@@ -1,5 +1,7 @@
 package com.peach.auth.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import cn.dev33.satoken.stp.StpUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,16 +29,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.annotation.Resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class UserProfileServiceImpl implements IUserProfileService {
 
     private static final long MAX_AVATAR_SIZE = 5L * 1024L * 1024L;
@@ -44,20 +45,15 @@ public class UserProfileServiceImpl implements IUserProfileService {
     private static final String AVATAR_BIZ_TYPE = "USER_AVATAR";
     private static final String AVATAR_BIZ_TAG = "PROFILE_AVATAR";
 
-    @Resource
-    private UserDao userDao;
+        private final UserDao userDao;
 
-    @Resource
-    private UserAvatarHistoryDao userAvatarHistoryDao;
+        private final UserAvatarHistoryDao userAvatarHistoryDao;
 
-    @Resource
-    private FileFeignClient fileFeignClient;
+        private final FileFeignClient fileFeignClient;
 
-    @Resource
-    private ObjectMapper objectMapper;
+        private final ObjectMapper objectMapper;
 
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
+        private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     public UserProfileVO getCurrentProfile() {
@@ -212,7 +208,7 @@ public class UserProfileServiceImpl implements IUserProfileService {
     private List<AvatarHistoryVO> loadAvatarHistory(String userId) {
         List<AvatarHistoryVO> history = userAvatarHistoryDao.selectActiveByUserId(userId);
         if (CollectionUtils.isEmpty(history)) {
-            return Collections.emptyList();
+            return List.of();
         }
         for (AvatarHistoryVO item : history) {
             item.setAvatarUrl(resolveAvatarUrl(item.getFileId()));

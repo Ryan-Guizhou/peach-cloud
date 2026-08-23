@@ -1,17 +1,16 @@
 package com.peach.sample.captcha;
 
+import lombok.RequiredArgsConstructor;
+
 
 import org.springframework.stereotype.Indexed;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.service.CaptchaService;
 import com.peach.common.response.Response;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import jakarta.annotation.Resource;
 
 /**
  * @Author Mr Shu
@@ -21,10 +20,10 @@ import jakarta.annotation.Resource;
 @Indexed
 @RestController
 @RequestMapping("/captcha")
+@RequiredArgsConstructor
 public class CaptchaController {
 
-    @Resource
-    private CaptchaService captchaService;
+        private final CaptchaService captchaService;
 
     @PostMapping("/get")
     public Response getCaptch(@RequestBody CaptchaVO captchaVO) {

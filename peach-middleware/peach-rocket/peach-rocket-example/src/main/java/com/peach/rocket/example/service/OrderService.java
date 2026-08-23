@@ -1,5 +1,7 @@
 package com.peach.rocket.example.service;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.rocket.core.MqDelay;
 import com.peach.rocket.core.MqPublisher;
@@ -8,7 +10,6 @@ import com.peach.rocket.example.event.OrderPaidEvent;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +23,10 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class OrderService {
 
-    @Resource
-    private MqPublisher mqPublisher;
+        private final MqPublisher mqPublisher;
 
     /**
      * 发布一组订单消息示例。

@@ -298,7 +298,7 @@ public class PeachOpenfeignRequestInterceptor implements RequestInterceptor {
     }
 
     private String safePath(RequestTemplate template) {
-        if (template == null || template.path() == null || template.path().trim().isEmpty()) {
+        if (template == null || template.path() == null || template.path().isBlank()) {
             return "unknown";
         }
         return template.path();

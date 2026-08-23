@@ -6,7 +6,6 @@ import com.peach.auth.dto.SwitchContextDTO;
 import com.peach.auth.dto.UserDTO;
 import com.peach.common.response.Response;
 import com.peach.auth.dto.LoginDTO;
-import com.peach.auth.entity.UserDO;
 import com.peach.auth.qo.UserQO;
 import com.peach.auth.vo.UserVO;
 import com.peach.auth.vo.LoginInitVO;

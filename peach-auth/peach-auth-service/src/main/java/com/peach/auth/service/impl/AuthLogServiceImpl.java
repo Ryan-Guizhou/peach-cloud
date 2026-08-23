@@ -1,5 +1,7 @@
 package com.peach.auth.service.impl;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dao.AuthLogDao;
@@ -14,8 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
-
 /**
  * 授权日志服务实现。
  *
@@ -26,10 +26,10 @@ import jakarta.annotation.Resource;
 @Slf4j
 @Indexed
 @Service
+@RequiredArgsConstructor
 public class AuthLogServiceImpl implements IAuthLogService {
 
-    @Resource
-    private AuthLogDao authLogDao;
+        private final AuthLogDao authLogDao;
 
     @Override
     public PageInfo<AuthLogVO> pageList(AuthLogQO authLogQO) {

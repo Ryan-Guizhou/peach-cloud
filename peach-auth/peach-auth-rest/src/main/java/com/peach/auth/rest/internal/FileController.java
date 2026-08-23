@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.common.response.Response;
 import com.peach.fileservice.openfeign.FileFeignClient;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,8 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
 
-import jakarta.annotation.Resource;
-
 /**
  * @Author Mr Shu
  * @Version 1.0.0
@@ -27,10 +27,10 @@ import jakarta.annotation.Resource;
 @RestController
 @RequestMapping("/auth/file")
 @Tag(name = "FileController", description = "资源管理")
+@RequiredArgsConstructor
 public class FileController {
 
-    @Resource
-    private FileFeignClient fileFeignClient;
+        private final FileFeignClient fileFeignClient;
 
     @PostMapping("/upload")
     public Response upload(@RequestPart("file") MultipartFile file,

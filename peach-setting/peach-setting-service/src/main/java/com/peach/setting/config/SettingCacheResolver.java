@@ -2,7 +2,6 @@ package com.peach.setting.config;
 
 import org.springframework.stereotype.Indexed;
 import com.peach.redis.manager.MultiCacheManager;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.interceptor.CacheOperationInvocationContext;
 import org.springframework.cache.interceptor.SimpleCacheResolver;
 import org.springframework.stereotype.Component;
@@ -19,7 +18,7 @@ import java.util.Collection;
 @Component("settingCacheResolver")
 public class SettingCacheResolver extends SimpleCacheResolver {
 
-    public SettingCacheResolver(@Autowired MultiCacheManager cacheManager) {
+    public SettingCacheResolver(MultiCacheManager cacheManager) {
         super(cacheManager);
     }
 

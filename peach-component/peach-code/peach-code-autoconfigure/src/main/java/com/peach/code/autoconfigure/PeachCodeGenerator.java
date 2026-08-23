@@ -11,7 +11,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
 
 import jakarta.annotation.PostConstruct;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -34,22 +33,26 @@ public class PeachCodeGenerator implements CodeGenerator {
     private static final Pattern SAFE_PART = Pattern.compile("[A-Za-z0-9][A-Za-z0-9-]{0,31}");
 
     /** 初始化、校准并递增序号，保证 key 缺失和并发初始化只有一个结果。 */
-    private static final RedisScript<Long> INCREMENT_SCRIPT = RedisScript.of(
-            "local current = tonumber(redis.call('GET', KEYS[1]) or '0'); "
-                    + "local base = tonumber(ARGV[1]); "
-                    + "if current < base then current = base; end; "
-                    + "local next = current + 1; "
-                    + "if next > tonumber(ARGV[2]) then return -1; end; "
-                    + "redis.call('SET', KEYS[1], tostring(next)); return next",
-            Long.class);
+    private static final RedisScript<Long> INCREMENT_SCRIPT = RedisScript.of("""
+            local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+            local base = tonumber(ARGV[1])
+            if current < base then current = base end
+            local next = current + 1
+            if next > tonumber(ARGV[2]) then return -1 end
+            redis.call('SET', KEYS[1], tostring(next))
+            return next
+            """, Long.class);
 
     /** 仅在目标水位更大时更新 Redis，防止故障恢复期间水位回退。 */
-    private static final RedisScript<Long> SET_IF_GREATER_SCRIPT = RedisScript.of(
-            "local current = tonumber(redis.call('GET', KEYS[1]) or '0'); "
-                    + "local target = tonumber(ARGV[1]); "
-                    + "if current < target then redis.call('SET', KEYS[1], ARGV[1]); return target; end; "
-                    + "return current",
-            Long.class);
+    private static final RedisScript<Long> SET_IF_GREATER_SCRIPT = RedisScript.of("""
+            local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+            local target = tonumber(ARGV[1])
+            if current < target then
+              redis.call('SET', KEYS[1], ARGV[1])
+              return target
+            end
+            return current
+            """, Long.class);
 
     private final JdbcTemplate jdbcTemplate;
     private final CodeProperties properties;
@@ -164,7 +167,7 @@ public class PeachCodeGenerator implements CodeGenerator {
                             tenantId, prefix, redisValue, rule.currentValue);
                 }
                 Long value = redisTemplate.execute(INCREMENT_SCRIPT,
-                        Collections.singletonList(key),
+                        List.of(key),
                         Long.toString(rule.currentValue), Long.toString(maxValue));
                 if (value == null || value < 0L) {
                     throw new CodeGeneratorException("Code sequence exceeds MAX_CODE_WIDTH: " + prefix);
@@ -314,7 +317,7 @@ public class PeachCodeGenerator implements CodeGenerator {
      * @param value 待写入的最小水位
      */
     private void setRedisIfGreater(String key, long value) {
-        redisTemplate.execute(SET_IF_GREATER_SCRIPT, Collections.singletonList(key), Long.toString(value));
+        redisTemplate.execute(SET_IF_GREATER_SCRIPT, List.of(key), Long.toString(value));
     }
 
     /**

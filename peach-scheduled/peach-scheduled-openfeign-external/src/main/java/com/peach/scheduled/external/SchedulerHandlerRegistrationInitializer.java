@@ -72,7 +72,7 @@ public class SchedulerHandlerRegistrationInitializer implements SmartInitializin
                     request.getApplicationName());
             return;
         }
-        if (request.getApplicationName() == null || request.getApplicationName().trim().isEmpty()) {
+        if (request.getApplicationName() == null || request.getApplicationName().isBlank()) {
             log.warn("Scheduler handler registration skipped because applicationName is blank");
             return;
         }
@@ -90,7 +90,7 @@ public class SchedulerHandlerRegistrationInitializer implements SmartInitializin
 
     private String resolveInstanceId() {
         String configured = properties.getExecutor().getInstanceId();
-        if (configured != null && !configured.trim().isEmpty()) return configured;
+        if (configured != null && !configured.isBlank()) return configured;
         try { return InetAddress.getLocalHost().getHostName(); }
         catch (Exception ex) {
             return "unknown-instance";

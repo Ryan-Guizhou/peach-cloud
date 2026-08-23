@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dto.RoleResourceAuthDTO;
 import com.peach.auth.qo.AuthResourceQO;
@@ -15,8 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
-
 /**
  * 角色资源授权接口。
  *
@@ -29,10 +29,10 @@ import jakarta.annotation.Resource;
 @RestController
 @RequestMapping("/auth/authResource")
 @Tag(name = "AuthResourceController", description = "角色资源授权")
+@RequiredArgsConstructor
 public class AuthResourceController {
 
-    @Resource
-    private IAuthResourceService authResourceService;
+        private final IAuthResourceService authResourceService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询角色资源授权")

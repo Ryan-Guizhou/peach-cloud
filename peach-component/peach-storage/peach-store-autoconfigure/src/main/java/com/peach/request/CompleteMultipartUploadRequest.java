@@ -86,14 +86,14 @@ public class CompleteMultipartUploadRequest extends StorageObjectRequest {
 
         public CompleteMultipartUploadRequest build() {
             validate();
-            if (uploadId == null || uploadId.trim().isEmpty()) {
+            if (uploadId == null || uploadId.isBlank()) {
                 throw new StorageException(StorageResultCode.BAD_REQUEST, "Upload id must not be blank");
             }
             if (parts == null || parts.isEmpty()) {
                 throw new StorageException(StorageResultCode.BAD_REQUEST, "Parts must not be empty");
             }
             for (Part part : parts) {
-                if (part == null || part.getPartNumber() <= 0 || part.getETag() == null || part.getETag().trim().isEmpty()) {
+                if (part == null || part.getPartNumber() <= 0 || part.getETag() == null || part.getETag().isBlank()) {
                     throw new StorageException(StorageResultCode.BAD_REQUEST, "Part info is invalid");
                 }
             }

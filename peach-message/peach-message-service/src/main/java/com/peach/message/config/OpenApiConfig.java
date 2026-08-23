@@ -1,5 +1,7 @@
 package com.peach.message.config;
 
+import java.util.List;
+
 import org.springframework.stereotype.Indexed;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -13,14 +15,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Collections;
-
-
 /**
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/24 15:17
- * @Description 配置 OpenAPI 3.0 的所有基本信息项（使用 Java 8 语法）
+ * @Description 配置 OpenAPI 3.0 的所有基本信息项
  */
 @Slf4j
 @Indexed
@@ -77,7 +76,7 @@ public class OpenApiConfig {
                                 .description("Referer 引用来源"))
                 );
         if (serverUrl != null && serverUrl.trim().length() > 0) {
-            openAPI.servers(Collections.singletonList(new Server()
+            openAPI.servers(List.of(new Server()
                     .url(serverUrl.trim())
                     .description(serverDescription)));
         }

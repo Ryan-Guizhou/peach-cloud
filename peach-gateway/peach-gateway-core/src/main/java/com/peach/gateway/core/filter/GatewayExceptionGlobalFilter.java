@@ -81,7 +81,7 @@ public class GatewayExceptionGlobalFilter implements GlobalFilter, Ordered {
      */
     private String ensureRequestId(ServerWebExchange exchange) {
         String requestId = exchange.getRequest().getHeaders().getFirst(GatewayConstant.REQUEST_ID_HEADER);
-        if (requestId == null || requestId.trim().isEmpty()) {
+        if (requestId == null || requestId.isBlank()) {
             requestId = UUID.randomUUID().toString().replace("-", "");
             exchange.getResponse().getHeaders().set(GatewayConstant.REQUEST_ID_HEADER, requestId);
         }

@@ -2,7 +2,6 @@ package com.peach.auth.service;
 
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dto.ResourceDTO;
-import com.peach.auth.entity.ResourceDO;
 import com.peach.auth.qo.ResourceQO;
 import com.peach.auth.vo.ResourceVO;
 

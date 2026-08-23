@@ -48,7 +48,7 @@ public class PeachOpenfeignNamedClientMerger implements InitializingBean {
     private void mergeNamedClient(Map<String, FeignClientProperties.FeignClientConfiguration> config,
                                   String clientName,
                                   PeachOpenfeignProperties.NamedClientOptions options) {
-        if (clientName == null || clientName.trim().isEmpty() || options == null) {
+        if (clientName == null || clientName.isBlank() || options == null) {
             return;
         }
         FeignClientProperties.FeignClientConfiguration clientConfig = config.get(clientName);

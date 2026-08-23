@@ -1,5 +1,7 @@
 package com.peach.monitor.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.peach.auth.openfeign.AuthFeignClient;
 import com.peach.common.response.Response;
 import com.peach.monitor.entity.UserDTO;
@@ -14,8 +16,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
-
 /**
  * @Author Mr Shu
  * @Version 1.0.0
@@ -26,13 +26,12 @@ import jakarta.annotation.Resource;
 @RestController
 @RequestMapping("/monitor")
 @Tag(name = "MonitorController", description = "监控服务接口")
+@RequiredArgsConstructor
 public class MonitorController {
 
-    @Resource
-    private AuthFeignClient authFeignClient;
+        private final AuthFeignClient authFeignClient;
 
-    @Resource
-    private IMonitorRuntimeService monitorRuntimeService;
+        private final IMonitorRuntimeService monitorRuntimeService;
 
     @Operation(summary = "基础联通性检查")
     @GetMapping("/{id}")

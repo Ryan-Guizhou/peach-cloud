@@ -8,9 +8,12 @@ import com.google.common.collect.Maps;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.springframework.util.CollectionUtils;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 /**
  * @Author Mr Shu
  * @Version 1.0.0
@@ -242,7 +245,7 @@ public final class PeachCollectionUtil extends CollectionUtils {
     private static String getFirstLeafCode( String srcCode,String workCode, List<String> sortedCodes ) {
         String resCode = workCode;
         //过滤当前工作节点代码的下级
-        List<String> resCodes = sortedCodes.stream().filter(s -> s.startsWith(workCode) && !s.equals(srcCode) && !s.equals(workCode)).collect(Collectors.toList());
+        List<String> resCodes = sortedCodes.stream().filter(s -> s.startsWith(workCode) && !s.equals(srcCode) && !s.equals(workCode)).toList();
         //如果存在下级就继续匹配
         if (PeachCollectionUtil.isNotEmpty(resCodes)) {
             //暂时将第一个节点作为结果

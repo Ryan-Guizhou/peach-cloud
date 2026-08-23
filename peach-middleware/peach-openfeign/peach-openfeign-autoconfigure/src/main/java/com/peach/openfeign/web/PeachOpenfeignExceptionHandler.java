@@ -151,7 +151,7 @@ public class PeachOpenfeignExceptionHandler {
         if (status >= 500) {
             return Response.fail();
         }
-        if (properties.getException().isExposeRemoteMessage() && remoteMessage != null && !remoteMessage.trim().isEmpty()) {
+        if (properties.getException().isExposeRemoteMessage() && remoteMessage != null && !remoteMessage.isBlank()) {
             return Response.businessResponse(remoteMessage);
         }
         return Response.businessResponse(StatusEnum.BUSINESS_FAIL_CODE.getMessage());

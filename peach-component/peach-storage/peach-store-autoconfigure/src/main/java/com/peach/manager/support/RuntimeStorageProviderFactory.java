@@ -4,7 +4,6 @@ import com.peach.config.StorageProperties;
 import com.peach.storage.spi.StorageProvider;
 import com.peach.storage.spi.StorageProviderFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -99,7 +98,7 @@ public class RuntimeStorageProviderFactory {
         if (providerConfig.getType() == null) {
             throw new IllegalArgumentException("Provider type must not be null");
         }
-        if (providerConfig.getName() == null || providerConfig.getName().trim().isEmpty()) {
+        if (providerConfig.getName() == null || providerConfig.getName().isBlank()) {
             providerConfig.setName(providerConfig.getType().name().toLowerCase());
         }
     }

@@ -3,7 +3,6 @@ package com.peach.storage.spi;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.baidubce.services.bos.model.PartETag;
 import com.peach.config.StorageProperties;
 import com.peach.content.UploadContent;
 import com.peach.enums.StorageCapability;
@@ -44,15 +43,10 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
  * 存储 provider 运行期 SPI。
  *
@@ -310,7 +304,7 @@ public interface StorageProvider extends AutoCloseable {
                 .providerName(name())
                 .bucketName(bucketName())
                 .prefix(request == null ? null : request.getPrefix())
-                .items(Collections.<ObjectInfo>emptyList())
+                .items(List.of())
                 .truncated(false)
                 .build();
     }
@@ -333,7 +327,7 @@ public interface StorageProvider extends AutoCloseable {
      * @return 增强能力集合
      */
     default Set<StorageCapability> capabilities() {
-        return Collections.emptySet();
+        return Set.of();
     }
 
     /**
@@ -391,7 +385,7 @@ public interface StorageProvider extends AutoCloseable {
         if (!isBucketless()) {
             return firstText(requestBucketName, resolved);
         }
-        if (requestBucketName == null || requestBucketName.trim().isEmpty()) {
+        if (requestBucketName == null || requestBucketName.isBlank()) {
             return resolved;
         }
         String requestAlias = requestBucketName.trim();
@@ -442,7 +436,7 @@ public interface StorageProvider extends AutoCloseable {
      * @return 公开访问 URL；未配置域名时返回 null
      */
     default String publicUrl(String domain, String objectKey) {
-        if (domain == null || domain.trim().isEmpty()) {
+        if (domain == null || domain.isBlank()) {
             return null;
         }
         String normalizedDomain = domain.trim();
@@ -460,7 +454,7 @@ public interface StorageProvider extends AutoCloseable {
      * @return 第一个非空白文本
      */
     default String firstText(String first, String second) {
-        if (first != null && !first.trim().isEmpty()) {
+        if (first != null && !first.isBlank()) {
             return first.trim();
         }
         return second;

@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.qo.AuthLogQO;
 import com.peach.auth.service.IAuthLogService;
@@ -13,8 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.annotation.Resource;
-
 /**
  * 授权日志查询接口。
  *
@@ -26,10 +26,10 @@ import jakarta.annotation.Resource;
 @RestController
 @RequestMapping("/auth/authLog")
 @Tag(name = "AuthLogController", description = "授权日志")
+@RequiredArgsConstructor
 public class AuthLogController {
 
-    @Resource
-    private IAuthLogService authLogService;
+        private final IAuthLogService authLogService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询授权日志")

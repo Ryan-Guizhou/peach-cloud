@@ -3,8 +3,8 @@ package com.peach.sample.multicache;
 import org.springframework.stereotype.Indexed;
 import com.peach.redis.manager.MultiCacheManager;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -23,6 +23,7 @@ import java.util.Map;
 @Slf4j
 @Indexed
 @Component
+@RequiredArgsConstructor
 public class MulticacheService {
 
     public static final Map<String,UserDO> USER_DB_MAP = new HashMap<>();
@@ -39,8 +40,7 @@ public class MulticacheService {
         }
     }
     private int counter = 0;
-    @Autowired
-    private MultiCacheManager multiCacheManager;
+        private final MultiCacheManager multiCacheManager;
 
 
     @Cacheable(value = "userCache", unless = "#result == null",key="#id+'-'+#name",sync = false,cacheResolver = "dynamicCacheResolver")

@@ -529,7 +529,7 @@ public class StorageTemplate {
      * @return 去除 scheme、host、bucket path-style 前缀和 query 后的 objectKey
      */
     public static String extractObjectKey(String url, String bucketName) {
-        if (url == null || url.trim().isEmpty()) {
+        if (url == null || url.isBlank()) {
             return url;
         }
         try {
@@ -540,11 +540,11 @@ public class StorageTemplate {
             }
             URI uri = URI.create(url);
             String path = uri.getRawPath();
-            if (path == null || path.trim().isEmpty()) {
+            if (path == null || path.isBlank()) {
                 return "";
             }
             path = removeStart(path, "/");
-            if (bucketName != null && !bucketName.trim().isEmpty() && path.startsWith(bucketName + "/")) {
+            if (bucketName != null && !bucketName.isBlank() && path.startsWith(bucketName + "/")) {
                 path = path.substring(bucketName.length() + 1);
             }
             return URLDecoder.decode(path, StandardCharsets.UTF_8.name());

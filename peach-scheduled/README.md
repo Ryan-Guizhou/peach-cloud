@@ -5,7 +5,7 @@
 - 最后更新时间：2026-08-14
 - artifactId：`peach-scheduled`
 - 类型：定时任务控制面服务（独立 Spring Boot 应用）
-- 适用版本：Java 8、Spring Boot 2.7.13
+- 适用版本：Java 21、Spring Boot 3.5.4
 - Nacos 服务名：`peach-scheduler`（见 `application-dev.yml`）
 
 ## 模块定位
@@ -277,3 +277,11 @@ git diff --check -- peach-scheduled sql
 | 重复执行 | 仅 Claim 不足 | 要求业务 Handler 基于 `executionId` 幂等 |
 | Handler 不可选 | `PEACH_SCHEDULER_HANDLER` 是否 ONLINE | 确认业务服务 Feign 注册与心跳 |
 | 启动 fail-fast | `require-jdbc=true` 但缺表或内存 Store | 执行 SQL 并检查 JDBC Bean |
+
+
+## 项目约定
+
+- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
+- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。

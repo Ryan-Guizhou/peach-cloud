@@ -2,7 +2,6 @@ package com.peach.sample.multicache;
 
 import org.springframework.stereotype.Indexed;
 import com.peach.redis.manager.MultiCacheManager;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.interceptor.CacheOperationInvocationContext;
 import org.springframework.cache.interceptor.SimpleCacheResolver;
 import org.springframework.stereotype.Component;
@@ -22,7 +21,7 @@ import java.util.List;
 @Component("dynamicCacheResolver")
 public class DynamicCacheResolver extends SimpleCacheResolver {
 
-    public DynamicCacheResolver(@Autowired MultiCacheManager cacheManager) {
+    public DynamicCacheResolver(MultiCacheManager cacheManager) {
          super(cacheManager);
     }
 

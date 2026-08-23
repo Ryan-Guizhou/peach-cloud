@@ -3,7 +3,15 @@ package com.peach.captcha.util;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StreamUtils;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
 
 /**
  * @Author Mr Shu

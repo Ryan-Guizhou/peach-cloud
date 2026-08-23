@@ -1,14 +1,14 @@
 package com.peach.sample.email;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
-import com.peach.email.autoconfigure.EmailProperties;
 import com.peach.email.core.Attachment;
 import com.peach.email.core.EmailMessage;
 import com.peach.email.core.InlineResource;
 import com.peach.email.core.SendResult;
 import com.peach.email.service.EmailSendService;
 import com.peach.email.template.TemplateManager;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -27,13 +27,12 @@ import java.util.Map;
  */
 @Indexed
 @Component
+@RequiredArgsConstructor
 public class EmailSendUtil {
 
-    @Autowired
-    private EmailSendService EmailSendService;
+        private final EmailSendService EmailSendService;
 
-    @Autowired
-    private TemplateManager templateManager;
+        private final TemplateManager templateManager;
 
     public SendResult sendSimple() {
         EmailMessage message = EmailMessage.builder().from("445623047@qq.com")

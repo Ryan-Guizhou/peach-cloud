@@ -12,9 +12,7 @@ import com.peach.request.DownloadObjectRequest;
 import com.peach.request.ListObjectsRequest;
 import com.peach.request.MoveObjectRequest;
 import com.peach.request.UploadObjectRequest;
-import com.peach.response.BatchDeleteResult;
 import com.peach.response.CopyResult;
-import com.peach.response.DeleteResult;
 import com.peach.response.ListObjectsResult;
 import com.peach.response.MoveResult;
 import com.peach.response.ObjectInfo;
@@ -421,7 +419,7 @@ public final class StorageProviderSupport {
                 }
             }
             continuationToken = result.getNextContinuationToken();
-        } while (continuationToken != null && !continuationToken.trim().isEmpty());
+        } while (continuationToken != null && !continuationToken.isBlank());
 
         return sourceKeys;
     }
@@ -437,7 +435,7 @@ public final class StorageProviderSupport {
      */
     private static String normalizeDirectoryPrefix(StorageProvider provider, String objectKey) {
         String normalized = provider.rawObjectKey(objectKey);
-        if (normalized == null || normalized.trim().isEmpty()) {
+        if (normalized == null || normalized.isBlank()) {
             return "";
         }
         return normalized.endsWith("/") ? normalized : normalized + "/";

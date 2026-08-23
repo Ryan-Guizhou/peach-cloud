@@ -415,7 +415,7 @@ public class PeachSaTokenDao implements SaTokenDao {
     public List<String> searchData(String prefix, String keyword, int start, int size, boolean sortType) {
         Set<String> keys = objectRedisTemplate.keys(prefix + "*" + keyword + "*");
         if (keys == null || keys.isEmpty()) {
-            return Collections.emptyList();
+            return List.of();
         }
         List<String> list = new ArrayList<>(keys);
         if (!sortType) {
@@ -424,7 +424,7 @@ public class PeachSaTokenDao implements SaTokenDao {
         int fromIndex = Math.max(start, 0);
         int toIndex = size == -1 ? list.size() : Math.min(fromIndex + size, list.size());
         if (fromIndex >= list.size()) {
-            return Collections.emptyList();
+            return List.of();
         }
         return new ArrayList<>(list.subList(fromIndex, toIndex));
     }

@@ -1,7 +1,8 @@
 package com.peach.sample.distributed;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Indexed;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,10 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 @Indexed
 @RestController
 @RequestMapping("/distributed")
+@RequiredArgsConstructor
 public class DistributedLockController {
 
-    @Autowired
-    private DistributedService distributedService;
+        private final DistributedService distributedService;
 
 
     @RequestMapping("/lock")

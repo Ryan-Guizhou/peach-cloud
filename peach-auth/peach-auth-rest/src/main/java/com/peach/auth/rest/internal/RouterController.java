@@ -1,5 +1,7 @@
 package com.peach.auth.rest.internal;
 
+import lombok.RequiredArgsConstructor;
+
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.enums.UserLogEnum;
@@ -10,7 +12,6 @@ import com.peach.auth.dto.RouterDTO;
 import com.peach.auth.qo.RouterQO;
 import com.peach.auth.vo.RouterVO;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
@@ -20,8 +21,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import jakarta.annotation.Resource;
 
 /**
  * @Author Mr Shu
@@ -33,10 +32,10 @@ import jakarta.annotation.Resource;
 @RestController
 @RequestMapping("/auth/router")
 @Tag(name = "RouterController", description = "路由管理管理")
+@RequiredArgsConstructor
 public class RouterController {
 
-    @Resource
-    private IRouterService routerService;
+        private final IRouterService routerService;
 
     @Operation(summary = "根据路由ID查询路由信息")
     @GetMapping("/selectById")

@@ -53,5 +53,5 @@ description: 约束 peach-cloud-front 的 Vue 3、TypeScript、Vite、Axios、Pi
 - 动态路由只接受校验后的后端数据，组件解析受本地白名单约束，刷新和无权限场景有确定行为。
 - 无敏感信息泄露、无无障碍明显回退、无以 `any` 或忽略指令逃避类型检查。
 - 在 `peach-cloud-front` 执行 `npm run build`。
-- 在仓库根目录执行 `node scripts/check-utf8.mjs`、`node scripts/check-mcp.mjs` 和 `git diff --check`。
+- 在仓库根目录执行 `node scripts/check-utf8.mjs` 和 `git diff --check`。
 - 无法执行的检查及残余风险在最终回复中明确说明。

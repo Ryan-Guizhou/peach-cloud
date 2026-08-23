@@ -9,7 +9,6 @@ import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -63,7 +62,7 @@ public class DesEncryptService extends AbstractEncrypt {
 
     @Override
     public Map<String, String> getRsaInfo() throws Exception {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     /**
