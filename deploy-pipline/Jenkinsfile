@@ -16,11 +16,6 @@ pipeline {
             trim: true
         )
         booleanParam(
-            name: 'DEPLOY_OBSERVABILITY',
-            defaultValue: true,
-            description: '是否部署 Prometheus、OpenTelemetry Collector、Tempo、Loki、Alloy 和 Grafana。'
-        )
-        booleanParam(
             name: 'STOP_UNSELECTED_SERVICES',
             defaultValue: false,
             description: '是否停止本次未选择的业务服务；默认保留其当前运行状态。'
@@ -37,7 +32,6 @@ pipeline {
         DEPLOY_NETWORK = 'peach-cloud-runtime'
         DEVOPS_NETWORK = 'peach-devops'
         ALL_APPLICATION_SERVICES = 'peach-gateway peach-auth peach-monitor peach-fileservice peach-message peach-setting peach-generator peach-scheduled peach-front'
-        ALL_OBSERVABILITY_SERVICES = 'prometheus tempo otel-collector loki alloy grafana'
     }
 
     stages {
@@ -73,12 +67,8 @@ pipeline {
                     }
                     env.SELECTED_SERVICES = requested.join(' ')
                     env.UNSELECTED_SERVICES = (allowed - requested).join(' ')
-                    env.OBSERVABILITY_SERVICES = params.DEPLOY_OBSERVABILITY
-                            ? env.ALL_OBSERVABILITY_SERVICES
-                            : ''
                     env.STOP_UNSELECTED = params.STOP_UNSELECTED_SERVICES.toString()
                     echo "Selected application services: ${env.SELECTED_SERVICES}"
-                    echo "Deploy observability: ${params.DEPLOY_OBSERVABILITY}"
                 }
             }
         }
@@ -289,20 +279,9 @@ pipeline {
                         . "$DEPLOY_ENV_FILE"
                         set +a
 
-                        if [ -n "$OBSERVABILITY_SERVICES" ]; then
-                          case "${GRAFANA_ADMIN_PASSWORD:-}" in
-                            ""|change_me_*)
-                              echo "GRAFANA_ADMIN_PASSWORD must be set to a non-placeholder value" >&2
-                              exit 1
-                              ;;
-                          esac
-                        fi
-
                         mkdir -p "$DEPLOY_ROOT/deploy/runtime/logs/nginx" "$DEPLOY_ROOT/sql"
                         cp -R deploy/docker deploy/nacos "$DEPLOY_ROOT/deploy/"
                         cp deploy-pipline/docker-compose.deploy.yml "$DEPLOY_ROOT/deploy/docker-compose.yml"
-                        rm -rf "$DEPLOY_ROOT/deploy/observability"
-                        cp -R deploy-pipline/observability "$DEPLOY_ROOT/deploy/observability"
                         cp deploy-pipline/import-nacos.sh "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"
                         chmod +x "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"
                         cp sql/ALL_TABLE_CREATE.sql sql/INIT.sql "$DEPLOY_ROOT/sql/"
@@ -311,13 +290,18 @@ pipeline {
                         export PEACH_IMAGE_TAG="$IMAGE_TAG"
                         export PEACH_ENV_FILE="$DEPLOY_ENV_FILE"
                         export NACOS_ADDR='http://nacos:8848'
-                        if [ -z "$OBSERVABILITY_SERVICES" ]; then
-                          export MANAGEMENT_OTLP_TRACING_EXPORT_ENABLED=false
+                        if ! docker network inspect "$DEVOPS_NETWORK" >/dev/null 2>&1; then
+                          echo "Required DevOps network is missing: $DEVOPS_NETWORK. Start deploy-pipline/pipline/docker-compose.yml before running this pipeline." >&2
+                          exit 1
                         fi
+                        for container in peach-prometheus peach-tempo peach-otel-collector peach-loki peach-alloy peach-grafana; do
+                          status=$(docker inspect -f '{{.State.Status}}' "$container" 2>/dev/null || true)
+                          if [ "$status" != "running" ]; then
+                            echo "Required observability container is not running: $container (status=${status:-missing})" >&2
+                            exit 1
+                          fi
+                        done
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" pull $SELECTED_SERVICES
-                        if [ -n "$OBSERVABILITY_SERVICES" ]; then
-                          docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" pull $OBSERVABILITY_SERVICES
-                        fi
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" up -d mysql redis nacos
                         docker network inspect "$DEPLOY_NETWORK" >/dev/null
                         docker network connect "$DEPLOY_NETWORK" jenkins 2>/dev/null || true
@@ -348,13 +332,7 @@ pipeline {
                         if [ "$STOP_UNSELECTED" = "true" ] && [ -n "$UNSELECTED_SERVICES" ]; then
                           docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" stop $UNSELECTED_SERVICES
                         fi
-                        if [ "$STOP_UNSELECTED" = "true" ] && [ -z "$OBSERVABILITY_SERVICES" ]; then
-                          docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" stop $ALL_OBSERVABILITY_SERVICES
-                        fi
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" up -d --no-build --no-deps $SELECTED_SERVICES
-                        if [ -n "$OBSERVABILITY_SERVICES" ]; then
-                          docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" up -d --no-build $OBSERVABILITY_SERVICES
-                        fi
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" ps
                     '''
                 }

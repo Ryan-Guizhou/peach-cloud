@@ -43,18 +43,16 @@ Jenkins 构建参数提供受白名单约束的部署开关：
 | 参数 | 默认值 | 说明 |
 | --- | --- | --- |
 | `DEPLOY_SERVICES` | 全部 8 个后端服务和前端 | 使用空格或逗号分隔，也可填写 `all`；未知服务会直接终止流水线 |
-| `DEPLOY_OBSERVABILITY` | `true` | 部署 Prometheus、Collector、Tempo、Loki、Alloy 和 Grafana |
-| `STOP_UNSELECTED_SERVICES` | `false` | 为 `true` 时停止未选择的业务服务；关闭 observability 时也停止已有可观测性容器 |
+| `STOP_UNSELECTED_SERVICES` | `false` | 为 `true` 时停止未选择的业务服务，不影响 DevOps 和可观测性基础设施 |
 
 例如，只发布网关、认证和前端：
 
 ```text
 DEPLOY_SERVICES=peach-gateway peach-auth peach-front
-DEPLOY_OBSERVABILITY=true
 STOP_UNSELECTED_SERVICES=true
 ```
 
-流水线只构建和推送被选择服务的镜像，部署时使用 `--no-deps` 启动这些服务；MySQL、Redis、Nacos 仍作为公共基础设施启动。可观测性组件使用独立 Compose profile，也可以按 [`observability/README.md`](observability/README.md) 手工启动。
+流水线只构建和推送被选择服务的镜像，部署时使用 `--no-deps` 启动这些服务；MySQL、Redis、Nacos 仍作为业务运行基础设施启动。可观测性组件与 Jenkins 一起由 DevOps Compose 先启动，业务流水线不再复制或挂载观测配置。
 
 流水线根据 `DEPLOY_SERVICES` 推送以下镜像中的选中项：
 
@@ -91,6 +89,8 @@ http://peach_cloud.peachsoft.com
 # DevOps（运维书签，独立子域）
 http://jenkins.peachsoft.com  -> Jenkins
 http://nexus.peachsoft.com    -> Nexus UI（Maven 请直连 :8081）
+http://grafana.peachsoft.com  -> Grafana
+http://prometheus.peachsoft.com -> Prometheus
 
 详见 deploy-pipline/docs/nginx-architecture.md
 ```
@@ -105,14 +105,17 @@ Jenkins Secret file 里不需要再配置 `NGINX_HTTP_PORT`。`peach-front` 不�
 
 ## 首次启动 DevOps 服务
 
-在仓库根目录执行：
+先复制环境变量模板并替换所有 `change_me_*` 值，再在仓库根目录执行：
 
 ```bash
-docker compose -f deploy-pipline/pipline/docker-compose.yml config
-docker compose -f deploy-pipline/pipline/docker-compose.yml build jenkins
-docker compose -f deploy-pipline/pipline/docker-compose.yml up -d
-docker compose -f deploy-pipline/pipline/docker-compose.yml ps
+cp deploy-pipline/peach-deploy.env.example deploy-pipline/peach-deploy.env
+docker compose --env-file deploy-pipline/peach-deploy.env -f deploy-pipline/pipline/docker-compose.yml config
+docker compose --env-file deploy-pipline/peach-deploy.env -f deploy-pipline/pipline/docker-compose.yml build jenkins
+docker compose --env-file deploy-pipline/peach-deploy.env -f deploy-pipline/pipline/docker-compose.yml up -d
+docker compose --env-file deploy-pipline/peach-deploy.env -f deploy-pipline/pipline/docker-compose.yml ps
 ```
+
+必须先完成这一步再运行 Jenkins 业务流水线。流水线会检查 `peach-devops` 网络及六个观测容器，任一组件未运行都会在业务部署前终止。
 
 启动后确认 Jenkins 能访问本机 Docker Desktop：
 
@@ -130,6 +133,8 @@ docker compose -f deploy-pipline/pipline/docker-compose.yml exec jenkins docker 
 | Registry UI | `http://registry.peachsoft.com` |
 | Registry API | `http://registry.peachsoft.com/v2/` |
 | Nexus | `http://nexus.peachsoft.com` 或 `http://localhost:8081` |
+| Grafana | `http://grafana.peachsoft.com` 或 `http://localhost:3000` |
+| Prometheus | `http://prometheus.peachsoft.com` 或 `http://127.0.0.1:9090` |
 | Nacos（DevOps 子域） | `http://nacos.peachsoft.com/nacos/` |
 | Nacos（部署后，经前端容器） | `http://peach_cloud.peachsoft.com/nacos/`（需 Deploy 完成且 `peach-front` 运行） |
 
@@ -151,6 +156,8 @@ Windows hosts 需要增加：
 127.0.0.1 registry.peachsoft.com
 127.0.0.1 nacos.peachsoft.com
 127.0.0.1 nexus.peachsoft.com
+127.0.0.1 grafana.peachsoft.com
+127.0.0.1 prometheus.peachsoft.com
 ```
 
 如果设置了 `DEVOPS_HTTP_PORT=18088`，浏览器地址需要带端口，例如 `http://peach_cloud.peachsoft.com:18088`。

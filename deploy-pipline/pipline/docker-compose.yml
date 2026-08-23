@@ -148,6 +148,116 @@ services:
     networks:
       - devops
 
+  # ============================================================
+  # Observability infrastructure (started before applications)
+  # ============================================================
+  prometheus:
+    image: prom/prometheus:${PROMETHEUS_VERSION:-v3.12.0}
+    container_name: peach-prometheus
+    hostname: prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}
+      - --web.enable-lifecycle
+      - --web.enable-remote-write-receiver
+    ports:
+      - "127.0.0.1:${PROMETHEUS_HOST_PORT:-9090}:9090"
+    volumes:
+      - ../observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - devops
+
+  tempo:
+    image: grafana/tempo:${TEMPO_VERSION:-2.10.7}
+    container_name: peach-tempo
+    hostname: tempo
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ../observability/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - tempo-data:/var/tempo
+    networks:
+      - devops
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:${OTEL_COLLECTOR_VERSION:-0.153.0}
+    container_name: peach-otel-collector
+    hostname: otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol-contrib/config.yml"]
+    volumes:
+      - ../observability/otel-collector/config.yml:/etc/otelcol-contrib/config.yml:ro
+    depends_on:
+      tempo:
+        condition: service_started
+    networks:
+      - devops
+
+  loki:
+    image: grafana/loki:${LOKI_VERSION:-3.7.4}
+    container_name: peach-loki
+    hostname: loki
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/loki.yml"]
+    volumes:
+      - ../observability/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki-data:/loki
+    networks:
+      - devops
+
+  alloy:
+    image: grafana/alloy:${ALLOY_VERSION:-v1.18.0}
+    container_name: peach-alloy
+    hostname: alloy
+    restart: unless-stopped
+    command: ["run", "--storage.path=/var/lib/alloy/data", "/etc/alloy/config.alloy"]
+    volumes:
+      - ../observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy/data
+      - peach-gateway-logs:/var/log/peach/gateway:ro
+      - peach-auth-logs:/var/log/peach/auth:ro
+      - peach-monitor-logs:/var/log/peach/monitor:ro
+      - peach-fileservice-logs:/var/log/peach/fileservice:ro
+      - peach-message-logs:/var/log/peach/message:ro
+      - peach-setting-logs:/var/log/peach/setting:ro
+      - peach-generator-logs:/var/log/peach/generator:ro
+      - peach-scheduled-logs:/var/log/peach/scheduled:ro
+    depends_on:
+      loki:
+        condition: service_started
+    networks:
+      - devops
+
+  grafana:
+    image: grafana/grafana:${GRAFANA_VERSION:-13.1.0}
+    container_name: peach-grafana
+    hostname: grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in the env file}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    ports:
+      - "127.0.0.1:${GRAFANA_HOST_PORT:-3000}:3000"
+    volumes:
+      - ../observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_started
+      tempo:
+        condition: service_started
+      loki:
+        condition: service_started
+    networks:
+      - devops
+
 
   # ============================================================
   # Jenkins
@@ -221,6 +331,8 @@ services:
   #   http://registry.peachsoft.com
   #   http://nacos.peachsoft.com
   #   http://nexus.peachsoft.com
+  #   http://grafana.peachsoft.com
+  #   http://prometheus.peachsoft.com
   #
   # Maven / CI 推荐直连 Nexus 容器端口或 nexus:8081，不经本 Nginx。
   # 详见 deploy-pipline/docs/nginx-architecture.md
@@ -243,6 +355,8 @@ services:
       - registry
       - registry-ui
       - nexus
+      - grafana
+      - prometheus
 
     networks:
       - devops
@@ -276,6 +390,34 @@ volumes:
   # Nexus Repository
   nexus-data:
     name: peach-nexus-data
+
+  prometheus-data:
+    name: peach-prometheus-data
+  tempo-data:
+    name: peach-tempo-data
+  loki-data:
+    name: peach-loki-data
+  alloy-data:
+    name: peach-alloy-data
+  grafana-data:
+    name: peach-grafana-data
+
+  peach-gateway-logs:
+    name: peach-gateway-logs
+  peach-auth-logs:
+    name: peach-auth-logs
+  peach-monitor-logs:
+    name: peach-monitor-logs
+  peach-fileservice-logs:
+    name: peach-fileservice-logs
+  peach-message-logs:
+    name: peach-message-logs
+  peach-setting-logs:
+    name: peach-setting-logs
+  peach-generator-logs:
+    name: peach-generator-logs
+  peach-scheduled-logs:
+    name: peach-scheduled-logs
 
 
 # ==============================================================

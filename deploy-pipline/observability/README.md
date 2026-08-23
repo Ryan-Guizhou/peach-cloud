@@ -1,6 +1,6 @@
 # Peach Cloud 可观测性部署
 
-该目录提供 Docker Compose 单机部署所需的指标、Trace 和日志组件配置，适用于本地、测试及中小规模单节点环境。
+该目录提供 DevOps Docker Compose 单机部署所需的指标、Trace 和日志组件配置。可观测性组件与 Jenkins 同属先行启动的基础设施，不由业务发布流水线管理。
 
 ## 组件与数据流
 
@@ -29,16 +29,17 @@ Peach JSON log files --> Grafana Alloy --> Loki -----------┘
 cp deploy-pipline/peach-deploy.env.example deploy-pipline/peach-deploy.env
 docker compose \
   --env-file deploy-pipline/peach-deploy.env \
-  -f deploy-pipline/docker-compose.deploy.yml \
-  --profile observability \
+  -f deploy-pipline/pipline/docker-compose.yml \
   up -d prometheus tempo otel-collector loki alloy grafana
 ```
 
 默认入口：
 
-- Grafana：`http://localhost:3000`
-- Prometheus：`http://127.0.0.1:9090`
-- Loki、Tempo 和 Collector 仅在 `peach-cloud-runtime` Docker 网络中访问。
+- Grafana：`http://grafana.peachsoft.com`，直连兜底为 `http://localhost:3000`
+- Prometheus：`http://prometheus.peachsoft.com`，直连兜底为 `http://127.0.0.1:9090`
+- Loki、Tempo 和 Collector 仅在 `peach-devops` Docker 网络中访问。
+
+Windows hosts 需要增加 `127.0.0.1 grafana.peachsoft.com` 和 `127.0.0.1 prometheus.peachsoft.com`。生产环境应将两个运维域名限制在内网或 VPN，并在外层补充 TLS 与统一身份认证。
 
 Grafana 会自动配置 Prometheus、Loki 和 Tempo 数据源，并建立日志到 Trace、Trace 到日志、Trace 到指标的关联。
 
@@ -63,7 +64,7 @@ Compose 已向业务服务注入以下配置：
 
 ```bash
 docker compose --env-file deploy-pipline/peach-deploy.env \
-  -f deploy-pipline/docker-compose.deploy.yml config
+  -f deploy-pipline/pipline/docker-compose.yml config
 
 curl http://127.0.0.1:9090/-/ready
 curl http://localhost:3000/api/health

@@ -20,6 +20,8 @@
 │  registry.peachsoft.com  → registry-ui / registry:5000    │
 │  nacos.peachsoft.com     → nacos:8848                       │
 │  nexus.peachsoft.com     → nexus:8081（浏览器 UI）          │
+│  grafana.peachsoft.com   → grafana:3000                     │
+│  prometheus.peachsoft.com → prometheus:9090                 │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -59,9 +61,11 @@ DevOps 控制台请直接使用独立子域（hosts 中配置 `127.0.0.1 jenkins
 
 ### L2 DevOps 网关（面向研发运维）
 
-- 域名：`jenkins.peachsoft.com`、`gitlab.peachsoft.com`、`registry.peachsoft.com`、`nacos.peachsoft.com`、`nexus.peachsoft.com` 多个 `server_name`（当前 `devops-nginx`）
-- 内容：Jenkins / GitLab / Registry UI / Nacos UI / Nexus UI
+- 域名：`jenkins.peachsoft.com`、`gitlab.peachsoft.com`、`registry.peachsoft.com`、`nacos.peachsoft.com`、`nexus.peachsoft.com`、`grafana.peachsoft.com`、`prometheus.peachsoft.com` 多个 `server_name`（当前 `devops-nginx`）
+- 内容：Jenkins / GitLab / Registry UI / Nacos UI / Nexus UI / Grafana / Prometheus
 - 建议：仅内网 / VPN / hosts 可达，不与公网业务域混用
+
+Tempo、Loki 和 OpenTelemetry Collector 不配置浏览器代理，只允许 `peach-devops` 网络内的 Grafana、Alloy及业务服务访问，避免无认证暴露 Trace、日志和遥测写入接口。
 
 ### L3 直连端口（面向 CLI / CI）
 
@@ -97,6 +101,8 @@ settings 中 `nexus-public` 仓库 id 与 pom / server id 对齐即可；第三�
 127.0.0.1 nacos.peachsoft.com
 127.0.0.1 registry.peachsoft.com
 127.0.0.1 nexus.peachsoft.com
+127.0.0.1 grafana.peachsoft.com
+127.0.0.1 prometheus.peachsoft.com
 127.0.0.1 peach_cloud.peachsoft.com
 ```
 
