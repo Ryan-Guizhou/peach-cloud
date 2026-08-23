@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "name": "peach.observability",
+      "type": "com.peach.observability.config.PeachObservabilityProperties",
+      "sourceType": "com.peach.observability.config.PeachObservabilityProperties"
+    },
+    {
+      "name": "peach.observability.request-id",
+      "type": "com.peach.observability.config.PeachObservabilityProperties$RequestId",
+      "sourceType": "com.peach.observability.config.PeachObservabilityProperties",
+      "sourceMethod": "getRequestId()"
+    }
+  ]
+}

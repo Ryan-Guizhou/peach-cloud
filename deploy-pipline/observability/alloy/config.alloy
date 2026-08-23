@@ -1,0 +1,24 @@
+loki.source.file "peach_services" {
+  targets = [
+    { __path__ = "/var/log/peach/gateway/all-*.log", service = "peach-gateway", environment = "docker" },
+    { __path__ = "/var/log/peach/auth/all-*.log", service = "peach-auth", environment = "docker" },
+    { __path__ = "/var/log/peach/monitor/all-*.log", service = "peach-monitor", environment = "docker" },
+    { __path__ = "/var/log/peach/fileservice/all-*.log", service = "peach-fileservice", environment = "docker" },
+    { __path__ = "/var/log/peach/message/all-*.log", service = "peach-message", environment = "docker" },
+    { __path__ = "/var/log/peach/setting/all-*.log", service = "peach-setting", environment = "docker" },
+    { __path__ = "/var/log/peach/generator/all-*.log", service = "peach-generator", environment = "docker" },
+    { __path__ = "/var/log/peach/scheduled/all-*.log", service = "peach-scheduled", environment = "docker" },
+  ]
+  forward_to = [loki.write.peach_loki.receiver]
+
+  file_match {
+    enabled     = true
+    sync_period = "10s"
+  }
+}
+
+loki.write "peach_loki" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

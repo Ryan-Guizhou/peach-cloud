@@ -73,7 +73,7 @@ peach-satoken-autoconfigure/src/main/resources/META-INF/spring/org.springframewo
 | `SecurityContextHolder.clear()` | 清理当前线程用户上下文 |
 | `UserContextSupport` | 按 loginId 从 Redis Hash 读取当前用户缓存 |
 | `UserContextFilter` | 在非公开端点恢复当前用户上下文 |
-| `RequestIdFilter` | 传递或生成 `X-Request-Id` |
+| `RequestIdFilter` | 历史兼容类型，不再由 Sa-Token 自动注册；统一能力见 `peach-observability-starter` |
 
 ## Redis 用户上下文契约
 
@@ -105,7 +105,7 @@ Hash 字段定义在 `SatokenConstant`：
 ## Servlet 执行链路
 
 1. Gateway 对外部请求生成 `X-Request-Id`，对非公开端点校验登录态，并为已登录的非公开请求注入 Same-Token。
-2. 业务服务 `RequestIdFilter` 优先沿用合法请求 ID；缺失或非法时生成新 ID，并写入响应头。
+2. 业务服务由 `peach-observability-starter` 的 `RequestIdServletFilter` 校验或生成请求 ID，并写入响应头、请求属性和 MDC。
 3. `PeachSaTokenWebAutoConfiguration` 注册 Same-Token MVC 拦截器。公开端点直接放行；非公开端点执行 `SaSameUtil.checkCurrentRequestToken()`。
 4. `UserContextFilter` 对公开端点允许未登录放行；非公开端点使用 `StpUtil.getLoginIdDefaultNull()` 获取 loginId。
 5. loginId 为空或 Redis 用户上下文缺失时返回 `401`；缓存存在且 userId 匹配时写入 `SecurityContextHolder`。
@@ -115,7 +115,7 @@ Hash 字段定义在 `SatokenConstant`：
 
 | 顺序 | 组件 | 作用 |
 | --- | --- | --- |
-| `Ordered.HIGHEST_PRECEDENCE + 20` | `RequestIdFilter` | 生成或传递 `X-Request-Id` |
+| `Ordered.HIGHEST_PRECEDENCE + 10` | observability `RequestIdServletFilter` | 生成或传递 `X-Request-Id`，不属于 Sa-Token 自动配置 |
 | MVC 拦截器 | Same-Token `SaInterceptor` | 公开端点跳过；非公开端点校验 Same-Token |
 | `Ordered.HIGHEST_PRECEDENCE + 40` | `UserContextFilter` | 公开端点跳过；非公开端点恢复 `UserContext` |
 
@@ -130,8 +130,8 @@ Same-Token 和用户上下文过滤器共用 `peach.satoken.user-context.public-
 | `peach.satoken.same-token.enabled` | `true` | 启用 Servlet Same-Token 校验 |
 | `peach.satoken.same-token.log-path` | `true`，Nacos 示例为 `false` | 是否以 DEBUG 记录 Same-Token 路径 |
 | `peach.satoken.same-token.exclude-path-patterns` | `/error` | MVC 拦截器排除路径 |
-| `peach.satoken.request-id.enabled` | `true` | 启用请求 ID 过滤器 |
-| `peach.satoken.request-id.header-name` | `X-Request-Id` | 与 Gateway/OpenFeign 一致的请求头 |
+| `peach.observability.request-id.enabled` | `true` | 启用统一请求 ID 过滤器 |
+| `peach.observability.request-id.header-name` | `X-Request-Id` | 与 Gateway/OpenFeign 一致的请求头 |
 | `peach.satoken.user-context.enabled` | `true` | 启用 Redis 用户上下文恢复过滤器 |
 | `peach.satoken.user-context.public-endpoints` | 源码默认列表 / Nacos 可覆盖 | 允许未登录访问且跳过 Same-Token 的公开端点 |
 

@@ -2,9 +2,11 @@
 <configuration scan="true" scanPeriod="60 seconds">
 
     <springProperty scope="context" name="LOG_DIR" source="logging.logback.dir" defaultValue="${user.dir}/logs"/>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="unknown-service"/>
+    <springProperty scope="context" name="APP_ENV" source="spring.profiles.active" defaultValue="default"/>
 
-    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"/>
-    <property name="CONSOLE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger{36} - %msg%n"/>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} level=%-5level service=${APP_NAME} env=${APP_ENV} requestId=%X{requestId:-} traceId=%X{traceId:-} spanId=%X{spanId:-} thread=[%thread] logger=%logger{50} message=%msg%n"/>
+    <property name="CONSOLE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} level=%highlight(%-5level) service=${APP_NAME} env=${APP_ENV} requestId=%X{requestId:-} traceId=%X{traceId:-} spanId=%X{spanId:-} thread=[%thread] logger=%logger{36} message=%msg%n"/>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder><pattern>${CONSOLE_LOG_PATTERN}</pattern></encoder>
@@ -17,7 +19,10 @@
             <maxHistory>10</maxHistory>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
-        <encoder><pattern>${LOG_PATTERN}</pattern></encoder>
+        <encoder class="org.springframework.boot.logging.logback.StructuredLogEncoder">
+            <format>logstash</format>
+            <charset>UTF-8</charset>
+        </encoder>
     </appender>
 
     <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">

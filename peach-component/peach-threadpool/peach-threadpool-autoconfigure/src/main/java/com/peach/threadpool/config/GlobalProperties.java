@@ -1,14 +1,24 @@
 package com.peach.threadpool.config;
 
 /**
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2026/1/5 17:51
+ * 线程池全局配置。
+ *
+ * <p>控制任务提交时需要捕获并在工作线程中恢复的上下文。所有上下文都会在任务完成后清理或
+ * 恢复，避免线程复用造成请求信息泄漏。</p>
  */
 public class GlobalProperties {
 
+    private boolean enableMdc = true;
+
     private boolean enableSecurityContext = true;
 
+    public boolean isEnableMdc() {
+        return enableMdc;
+    }
+
+    public void setEnableMdc(boolean enableMdc) {
+        this.enableMdc = enableMdc;
+    }
 
     public boolean isEnableSecurityContext() {
         return enableSecurityContext;

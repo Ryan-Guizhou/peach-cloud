@@ -7,6 +7,7 @@ import com.peach.rocket.codec.SecureJacksonMqMessageCodec;
 import com.peach.rocket.consumer.DynamicRocketMqConsumerRegistrar;
 import com.peach.rocket.consumer.MqConsumerInvoker;
 import com.peach.rocket.context.DefaultMqHeaderResolver;
+import com.peach.rocket.context.MqTraceContextPropagator;
 import com.peach.rocket.core.MqPublisher;
 import com.peach.rocket.error.DefaultMqErrorHandler;
 import com.peach.rocket.error.DefaultMqExceptionClassifier;
@@ -95,8 +96,10 @@ public class PeachRocketAutoConfigure {
 
     @Bean
     @ConditionalOnMissingBean
-    public DefaultMqHeaderResolver defaultMqHeaderResolver() {
-        return new DefaultMqHeaderResolver();
+    public DefaultMqHeaderResolver defaultMqHeaderResolver(
+            ObjectProvider<MqTraceContextPropagator> traceContextPropagatorProvider) {
+        return new DefaultMqHeaderResolver(traceContextPropagatorProvider.getIfAvailable(
+                () -> MqTraceContextPropagator.NOOP));
     }
 
     @Bean
@@ -130,9 +133,11 @@ public class PeachRocketAutoConfigure {
                                                MqIdempotentKeyResolver idempotentKeyResolver,
                                                MqErrorHandler errorHandler,
                                                MqExceptionClassifier exceptionClassifier,
-                                               PeachRocketProperties properties) {
+                                               PeachRocketProperties properties,
+                                               ObjectProvider<MqTraceContextPropagator> traceContextPropagatorProvider) {
         return new MqConsumerInvoker(codec, idempotentStore, idempotentKeyResolver,
-                                     errorHandler, exceptionClassifier, properties);
+                                     errorHandler, exceptionClassifier, properties,
+                                     traceContextPropagatorProvider.getIfAvailable(() -> MqTraceContextPropagator.NOOP));
     }
 
     @Bean

@@ -8,6 +8,25 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '20'))
     }
 
+    parameters {
+        string(
+            name: 'DEPLOY_SERVICES',
+            defaultValue: 'peach-gateway peach-auth peach-monitor peach-fileservice peach-message peach-setting peach-generator peach-scheduled peach-front',
+            description: '本次构建和部署的业务服务，使用空格或逗号分隔；可填写 all。',
+            trim: true
+        )
+        booleanParam(
+            name: 'DEPLOY_OBSERVABILITY',
+            defaultValue: true,
+            description: '是否部署 Prometheus、OpenTelemetry Collector、Tempo、Loki、Alloy 和 Grafana。'
+        )
+        booleanParam(
+            name: 'STOP_UNSELECTED_SERVICES',
+            defaultValue: false,
+            description: '是否停止本次未选择的业务服务；默认保留其当前运行状态。'
+        )
+    }
+
     environment {
         REGISTRY = 'localhost:5000'
         IMAGE_PREFIX = "${REGISTRY}/peach-cloud"
@@ -17,7 +36,8 @@ pipeline {
         DEPLOY_ROOT = '/var/jenkins_home/peach-cloud-deploy'
         DEPLOY_NETWORK = 'peach-cloud-runtime'
         DEVOPS_NETWORK = 'peach-devops'
-        SERVICES = 'peach-gateway peach-auth peach-monitor peach-fileservice peach-message peach-setting peach-generator peach-scheduled peach-front'
+        ALL_APPLICATION_SERVICES = 'peach-gateway peach-auth peach-monitor peach-fileservice peach-message peach-setting peach-generator peach-scheduled peach-front'
+        ALL_OBSERVABILITY_SERVICES = 'prometheus tempo otel-collector loki alloy grafana'
     }
 
     stages {
@@ -30,6 +50,35 @@ pipeline {
                         script: 'git rev-parse --short=12 HEAD',
                         returnStdout: true
                     ).trim()
+                }
+            }
+        }
+
+        stage('Resolve deployment targets') {
+            steps {
+                script {
+                    def allowed = env.ALL_APPLICATION_SERVICES.tokenize(' ')
+                    def requested = params.DEPLOY_SERVICES.split(/[\s,]+/)
+                            .findAll { it }
+                            .unique()
+                    if (requested.contains('all')) {
+                        requested = allowed
+                    }
+                    if (requested.isEmpty()) {
+                        error 'DEPLOY_SERVICES must contain at least one service or all.'
+                    }
+                    def invalid = requested - allowed
+                    if (!invalid.isEmpty()) {
+                        error "Unsupported DEPLOY_SERVICES value: ${invalid.join(', ')}"
+                    }
+                    env.SELECTED_SERVICES = requested.join(' ')
+                    env.UNSELECTED_SERVICES = (allowed - requested).join(' ')
+                    env.OBSERVABILITY_SERVICES = params.DEPLOY_OBSERVABILITY
+                            ? env.ALL_OBSERVABILITY_SERVICES
+                            : ''
+                    env.STOP_UNSELECTED = params.STOP_UNSELECTED_SERVICES.toString()
+                    echo "Selected application services: ${env.SELECTED_SERVICES}"
+                    echo "Deploy observability: ${params.DEPLOY_OBSERVABILITY}"
                 }
             }
         }
@@ -132,8 +181,6 @@ pipeline {
                             -Dpeach.nexus.url="$PEACH_NEXUS_URL" \
                             -Dfile.encoding=UTF-8 \
                             -Dsun.jnu.encoding=UTF-8 \
-                            -Duser.language=en \
-                            -Duser.country=US \
                             -Daether.connector.connectTimeout=10000 \
                             -Daether.connector.requestTimeout=60000 \
                             -Dmaven.wagon.http.connectionTimeout=10000 \
@@ -171,18 +218,25 @@ pipeline {
                           docker push "$IMAGE_PREFIX/$service:$IMAGE_TAG"
                         }
 
+                        is_selected() {
+                          case " $SELECTED_SERVICES " in
+                            *" $1 "*) return 0 ;;
+                            *) return 1 ;;
+                          esac
+                        }
+
                         set -a
                         . "$DEPLOY_ENV_FILE"
                         set +a
 
-                        build_image peach-gateway peach-gateway/peach-gateway-launch/target/peach-gateway-launch-1.0.0-SNAPSHOT.jar "Peach Gateway" "Peach Cloud gateway service"
-                        build_image peach-auth peach-auth/peach-auth-launch/target/peach-auth-launch-1.0.0-SNAPSHOT.jar "Peach Auth" "Peach Cloud authentication and authorization service"
-                        build_image peach-monitor peach-monitor/peach-monitor-launch/target/peach-monitor-launch-1.0.0-SNAPSHOT.jar "Peach Monitor" "Peach Cloud monitoring service"
-                        build_image peach-fileservice peach-fileservice/peach-fileservice-launch/target/peach-fileservice-launch-1.0.0-SNAPSHOT.jar "Peach Fileservice" "Peach Cloud file service"
-                        build_image peach-message peach-message/peach-message-launch/target/peach-message-launch-1.0.0-SNAPSHOT.jar "Peach Message" "Peach Cloud message service"
-                        build_image peach-setting peach-setting/peach-setting-launch/target/peach-setting-launch-1.0.0-SNAPSHOT.jar "Peach Setting" "Peach Cloud setting service"
-                        build_image peach-generator peach-generator/peach-generator-launch/target/peach-generator-launch-1.0.0-SNAPSHOT.jar "Peach Generator" "Peach Cloud code generator service"
-                        build_image peach-scheduled peach-scheduled/peach-scheduled-launch/target/peach-scheduled-launch-1.0.0-SNAPSHOT.jar "Peach Scheduled" "Peach Cloud scheduled task service"
+                        if is_selected peach-gateway; then build_image peach-gateway peach-gateway/peach-gateway-launch/target/peach-gateway-launch-1.0.0-SNAPSHOT.jar "Peach Gateway" "Peach Cloud gateway service"; fi
+                        if is_selected peach-auth; then build_image peach-auth peach-auth/peach-auth-launch/target/peach-auth-launch-1.0.0-SNAPSHOT.jar "Peach Auth" "Peach Cloud authentication and authorization service"; fi
+                        if is_selected peach-monitor; then build_image peach-monitor peach-monitor/peach-monitor-launch/target/peach-monitor-launch-1.0.0-SNAPSHOT.jar "Peach Monitor" "Peach Cloud monitoring service"; fi
+                        if is_selected peach-fileservice; then build_image peach-fileservice peach-fileservice/peach-fileservice-launch/target/peach-fileservice-launch-1.0.0-SNAPSHOT.jar "Peach Fileservice" "Peach Cloud file service"; fi
+                        if is_selected peach-message; then build_image peach-message peach-message/peach-message-launch/target/peach-message-launch-1.0.0-SNAPSHOT.jar "Peach Message" "Peach Cloud message service"; fi
+                        if is_selected peach-setting; then build_image peach-setting peach-setting/peach-setting-launch/target/peach-setting-launch-1.0.0-SNAPSHOT.jar "Peach Setting" "Peach Cloud setting service"; fi
+                        if is_selected peach-generator; then build_image peach-generator peach-generator/peach-generator-launch/target/peach-generator-launch-1.0.0-SNAPSHOT.jar "Peach Generator" "Peach Cloud code generator service"; fi
+                        if is_selected peach-scheduled; then build_image peach-scheduled peach-scheduled/peach-scheduled-launch/target/peach-scheduled-launch-1.0.0-SNAPSHOT.jar "Peach Scheduled" "Peach Cloud scheduled task service"; fi
                     '''
                 }
             }
@@ -195,6 +249,11 @@ pipeline {
                     set -a
                     . "$DEPLOY_ENV_FILE"
                     set +a
+
+                    case " $SELECTED_SERVICES " in
+                      *" peach-front "*) ;;
+                      *) echo "Skipping frontend image because peach-front is not selected"; exit 0 ;;
+                    esac
 
                     docker run --rm \
                       --user "$(id -u):$(id -g)" \
@@ -225,9 +284,25 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
                     sh '''
+                        set -eu
+                        set -a
+                        . "$DEPLOY_ENV_FILE"
+                        set +a
+
+                        if [ -n "$OBSERVABILITY_SERVICES" ]; then
+                          case "${GRAFANA_ADMIN_PASSWORD:-}" in
+                            ""|change_me_*)
+                              echo "GRAFANA_ADMIN_PASSWORD must be set to a non-placeholder value" >&2
+                              exit 1
+                              ;;
+                          esac
+                        fi
+
                         mkdir -p "$DEPLOY_ROOT/deploy/runtime/logs/nginx" "$DEPLOY_ROOT/sql"
                         cp -R deploy/docker deploy/nacos "$DEPLOY_ROOT/deploy/"
                         cp deploy-pipline/docker-compose.deploy.yml "$DEPLOY_ROOT/deploy/docker-compose.yml"
+                        rm -rf "$DEPLOY_ROOT/deploy/observability"
+                        cp -R deploy-pipline/observability "$DEPLOY_ROOT/deploy/observability"
                         cp deploy-pipline/import-nacos.sh "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"
                         chmod +x "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"
                         cp sql/ALL_TABLE_CREATE.sql sql/INIT.sql "$DEPLOY_ROOT/sql/"
@@ -236,7 +311,13 @@ pipeline {
                         export PEACH_IMAGE_TAG="$IMAGE_TAG"
                         export PEACH_ENV_FILE="$DEPLOY_ENV_FILE"
                         export NACOS_ADDR='http://nacos:8848'
-                        docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" pull $SERVICES
+                        if [ -z "$OBSERVABILITY_SERVICES" ]; then
+                          export MANAGEMENT_OTLP_TRACING_EXPORT_ENABLED=false
+                        fi
+                        docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" pull $SELECTED_SERVICES
+                        if [ -n "$OBSERVABILITY_SERVICES" ]; then
+                          docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" pull $OBSERVABILITY_SERVICES
+                        fi
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" up -d mysql redis nacos
                         docker network inspect "$DEPLOY_NETWORK" >/dev/null
                         docker network connect "$DEPLOY_NETWORK" jenkins 2>/dev/null || true
@@ -264,7 +345,16 @@ pipeline {
                         fi
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" exec -T mysql sh -c 'mysql --default-character-set=utf8mb4 -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < /tmp/INIT.sql'
                         sh "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"
-                        docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" up -d --no-build $SERVICES
+                        if [ "$STOP_UNSELECTED" = "true" ] && [ -n "$UNSELECTED_SERVICES" ]; then
+                          docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" stop $UNSELECTED_SERVICES
+                        fi
+                        if [ "$STOP_UNSELECTED" = "true" ] && [ -z "$OBSERVABILITY_SERVICES" ]; then
+                          docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" stop $ALL_OBSERVABILITY_SERVICES
+                        fi
+                        docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" up -d --no-build --no-deps $SELECTED_SERVICES
+                        if [ -n "$OBSERVABILITY_SERVICES" ]; then
+                          docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" up -d --no-build $OBSERVABILITY_SERVICES
+                        fi
                         docker compose --env-file "$DEPLOY_ENV_FILE" -f "$DEPLOY_ROOT/deploy/docker-compose.yml" ps
                     '''
                 }

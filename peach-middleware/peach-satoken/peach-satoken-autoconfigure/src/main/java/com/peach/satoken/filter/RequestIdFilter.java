@@ -13,7 +13,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * 请求ID过滤器（用于业务服务链路追踪）。
+ * Sa-Token 历史请求 ID 过滤器。
  *
  * <p>该过滤器在每个请求中执行一次，负责处理请求ID（Request ID）：</p>
  * <ul>
@@ -25,11 +25,15 @@ import java.util.regex.Pattern;
  *
  * <p><b>格式校验：</b>使用正则 {@code ^[A-Za-z0-9_-]{8,64}$}，确保ID安全且长度合理。</p>
  *
+ * @deprecated 请求 ID 已统一由 {@code peach-observability-starter} 提供。该类型不再自动注册，
+ * 仅为已有手工实例化代码保留兼容。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/10/10 15:30
  */
 @Slf4j
+@Deprecated(forRemoval = false, since = "1.0.0")
 public class RequestIdFilter extends OncePerRequestFilter {
 
     private static final Pattern REQUEST_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]{8,64}$");
@@ -77,8 +81,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
                 log.debug("Using request ID from header '{}': {}", headerName, requestId);
                 return requestId;
             } else {
-                log.warn("Invalid request ID format in header '{}': '{}', will generate new one",
-                        headerName, requestId);
+                log.warn("Invalid request ID format in header '{}', generating a replacement", headerName);
             }
         } else {
             log.trace("No request ID found in header '{}', generating new one", headerName);

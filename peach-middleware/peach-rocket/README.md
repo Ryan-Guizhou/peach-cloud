@@ -32,6 +32,7 @@ artifactId：`peach-rocket`
 | `MqIdempotentStore` | 消费幂等 SPI |
 | `MqOutboxStore` | Outbox 存储 SPI |
 | `MqPayloadEncryptor`、`MqEncryptionPolicy`、`MqKeyProvider` | payload 加密 SPI |
+| `MqTraceContextPropagator` | 可选的 MQ 链路上下文传播 SPI |
 
 ## 接入方式
 
@@ -76,11 +77,15 @@ public class OrderCreatedEvent {
     private String orderId;
 }
 
-@Resource
-private MqPublisher mqPublisher;
+@Service
+@RequiredArgsConstructor
+public class OrderEventPublisher {
 
-public void publish(OrderCreatedEvent event) {
-    mqPublisher.publish(event);
+    private final MqPublisher mqPublisher;
+
+    public void publish(OrderCreatedEvent event) {
+        mqPublisher.publish(event);
+    }
 }
 ```
 
@@ -103,6 +108,7 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 - 错误处理：`MqErrorHandler`、`MqExceptionClassifier`。
 - 加密：`MqKeyProvider`、`MqPayloadEncryptor`、`MqEncryptionPolicy`。
 - Outbox：`MqOutboxStore`、`MqOutboxPublisher`、`MqOutboxReplayService`。
+- 链路上下文：`MqTraceContextPropagator`；未接入 Tracing 时默认使用空实现。
 
 生产环境优先通过 `@Bean` 覆盖内存幂等、内存 Outbox 等默认实现。
 
@@ -125,6 +131,7 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 - Outbox 是可靠投递机制，不替代业务最终一致性状态机。
 - 失败重试可能重复调用外部系统，消费者必须具备幂等语义。
 - RocketMQ NameServer、Broker 和控制台不由本模块部署。
+- 引入 `peach-observability-starter` 后，标准 Trace Context 会自动写入消息头，消费端恢复父上下文并创建 Consumer Span；不要在业务代码手工设置 `traceparent`。
 
 ## 构建与验证
 

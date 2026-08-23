@@ -1,42 +1,115 @@
 package com.peach.threadpool.core;
 
+import io.micrometer.context.ContextSnapshot;
+import org.slf4j.MDC;
+
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2026/1/4 19:16
+ * 异步任务上下文包装器。
+ *
+ * <p>在任务提交线程捕获 Micrometer 上下文、MDC 和可选的 Spring Security 上下文，在工作
+ * 线程执行期间恢复，并在任务结束后还原工作线程原有状态。该行为保证 requestId、traceId、
+ * spanId 等关联字段不会因为线程切换丢失，也不会在线程复用时泄漏到后续任务。</p>
  */
 public class TaskWrapper {
 
+    private final boolean enableMdc;
     private final boolean enableSecurity;
 
-    public TaskWrapper(boolean enableSecurity) {
+    /**
+     * 创建任务上下文包装器。
+     *
+     * @param enableMdc 是否传播 Micrometer ThreadLocal 和 MDC 上下文
+     * @param enableSecurity 是否传播 Spring Security 上下文
+     */
+    public TaskWrapper(boolean enableMdc, boolean enableSecurity) {
+        this.enableMdc = enableMdc;
         this.enableSecurity = enableSecurity;
     }
 
+    /**
+     * 包装 Runnable 任务。
+     *
+     * @param delegate 原始任务
+     * @return 带上下文传播能力的任务
+     */
     public Runnable wrap(Runnable delegate) {
-        Object sec = captureSecurity();
+        ContextSnapshot snapshot = captureContextSnapshot();
+        Map<String, String> mdc = captureMdc();
+        Object securityContext = captureSecurity();
         return () -> {
-            try {
-                applySecurity(sec);
+            Map<String, String> previousMdc = MDC.getCopyOfContextMap();
+            Object previousSecurityContext = captureSecurity();
+            try (ContextSnapshot.Scope ignored = setThreadLocals(snapshot)) {
+                applyMdc(mdc);
+                applySecurity(securityContext);
                 delegate.run();
             } finally {
-                clearSecurity();
+                restoreMdc(previousMdc);
+                restoreSecurity(previousSecurityContext);
             }
         };
     }
 
+    /**
+     * 包装 Callable 任务。
+     *
+     * @param delegate 原始任务
+     * @param <V> 返回值类型
+     * @return 带上下文传播能力的任务
+     */
     public <V> Callable<V> wrap(Callable<V> delegate) {
-        Object sec = captureSecurity();
+        ContextSnapshot snapshot = captureContextSnapshot();
+        Map<String, String> mdc = captureMdc();
+        Object securityContext = captureSecurity();
         return () -> {
-            try {
-                applySecurity(sec);
+            Map<String, String> previousMdc = MDC.getCopyOfContextMap();
+            Object previousSecurityContext = captureSecurity();
+            try (ContextSnapshot.Scope ignored = setThreadLocals(snapshot)) {
+                applyMdc(mdc);
+                applySecurity(securityContext);
                 return delegate.call();
             } finally {
-                clearSecurity();
+                restoreMdc(previousMdc);
+                restoreSecurity(previousSecurityContext);
             }
         };
+    }
+
+    private ContextSnapshot captureContextSnapshot() {
+        return enableMdc ? ContextSnapshot.captureAll() : null;
+    }
+
+    private ContextSnapshot.Scope setThreadLocals(ContextSnapshot snapshot) {
+        return snapshot == null ? null : snapshot.setThreadLocals();
+    }
+
+    private Map<String, String> captureMdc() {
+        return enableMdc ? MDC.getCopyOfContextMap() : null;
+    }
+
+    private void applyMdc(Map<String, String> context) {
+        if (!enableMdc) {
+            return;
+        }
+        if (context == null || context.isEmpty()) {
+            MDC.clear();
+        } else {
+            MDC.setContextMap(context);
+        }
+    }
+
+    private void restoreMdc(Map<String, String> context) {
+        if (!enableMdc) {
+            return;
+        }
+        if (context == null || context.isEmpty()) {
+            MDC.clear();
+        } else {
+            MDC.setContextMap(context);
+        }
     }
 
     private Object captureSecurity() {
@@ -63,8 +136,12 @@ public class TaskWrapper {
         }
     }
 
-    private void clearSecurity() {
+    private void restoreSecurity(Object context) {
         if (!enableSecurity) {
+            return;
+        }
+        if (context != null) {
+            applySecurity(context);
             return;
         }
         try {

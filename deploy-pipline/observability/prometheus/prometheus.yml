@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: docker
+
+scrape_configs:
+  - job_name: peach-cloud-services
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - peach-gateway:18080
+          - peach-auth:18081
+          - peach-monitor:18082
+          - peach-fileservice:18083
+          - peach-message:18084
+          - peach-setting:18085
+          - peach-generator:18086
+          - peach-scheduled:18087
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  - job_name: otel-collector
+    static_configs:
+      - targets: ["otel-collector:8888"]

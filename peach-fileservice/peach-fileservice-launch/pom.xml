@@ -22,6 +22,11 @@
 
         <dependency>
             <groupId>com.peach</groupId>
+            <artifactId>peach-observability-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.peach</groupId>
             <artifactId>peach-fileservice-rest</artifactId>
         </dependency>
 

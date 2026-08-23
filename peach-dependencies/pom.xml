@@ -543,6 +543,18 @@
                 <version>${revision}</version>
             </dependency>
 
+            <!-- ==================== peach-component / peach-observability ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-observability-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-observability-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
             <!-- ==================== peach-component / peach-code ==================== -->
             <dependency>
                 <groupId>com.peach</groupId>

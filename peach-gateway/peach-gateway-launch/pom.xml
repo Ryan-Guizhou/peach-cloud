@@ -20,6 +20,10 @@
     <dependencies>
         <dependency>
             <groupId>com.peach</groupId>
+            <artifactId>peach-observability-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
             <artifactId>peach-gateway-core</artifactId>
         </dependency>
         <dependency>

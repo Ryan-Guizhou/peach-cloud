@@ -4,8 +4,6 @@ import cn.dev33.satoken.context.SaHolder;
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.same.SaSameUtil;
 import com.peach.satoken.config.PeachSaTokenProperties;
-import com.peach.satoken.filter.RequestIdFilter;
-import com.peach.satoken.config.RequestIdProperties;
 import com.peach.satoken.filter.UserContextFilter;
 import com.peach.satoken.config.UserContextProperties;
 import com.peach.satoken.security.SatokenEndpointMatcher;
@@ -28,8 +26,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 /**
  * Sa-Token Servlet 自动配置。
  *
- * <p>负责注册业务服务侧 Same-Token 拦截器、请求 ID 过滤器和当前用户上下文恢复过滤器。
- * 该配置只在 Servlet Web 应用中生效，响应式网关不依赖该自动配置。</p>
+ * <p>负责注册业务服务侧 Same-Token 拦截器和当前用户上下文恢复过滤器。请求 ID 已统一由
+ * {@code peach-observability-starter} 管理，Sa-Token 不再注册重复过滤器。该配置只在
+ * Servlet Web 应用中生效，响应式网关不依赖该自动配置。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -39,8 +38,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @AutoConfiguration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnClass({SaInterceptor.class, WebMvcConfigurer.class})
-@EnableConfigurationProperties({PeachSaTokenProperties.class, RequestIdProperties.class,
-        UserContextProperties.class})
+@EnableConfigurationProperties({PeachSaTokenProperties.class, UserContextProperties.class})
 public class PeachSaTokenWebAutoConfiguration {
 
     /**
@@ -81,35 +79,6 @@ public class PeachSaTokenWebAutoConfiguration {
                         .excludePathPatterns(properties.getSameToken().getExcludePathPatterns());
             }
         };
-    }
-
-    /**
-     * 创建请求 ID 过滤器。
-     *
-     * @param properties 请求 ID 配置
-     * @return 请求 ID 过滤器
-     */
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "peach.satoken.request-id", name = "enabled",
-            havingValue = "true", matchIfMissing = true)
-    public RequestIdFilter requestIdFilter(RequestIdProperties properties) {
-        return new RequestIdFilter(properties);
-    }
-
-    /**
-     * 注册请求 ID 过滤器。
-     *
-     * @param filter 请求 ID 过滤器
-     * @return Servlet 过滤器注册对象
-     */
-    @Bean
-    @ConditionalOnBean(RequestIdFilter.class)
-    public FilterRegistrationBean<RequestIdFilter> requestIdFilterRegistration(RequestIdFilter filter) {
-        FilterRegistrationBean<RequestIdFilter> registration = new FilterRegistrationBean<>(filter);
-        registration.setName("peachRequestIdFilter");
-        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 20);
-        return registration;
     }
 
     /**

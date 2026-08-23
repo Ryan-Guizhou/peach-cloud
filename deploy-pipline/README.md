@@ -10,6 +10,7 @@
 | [`docs/local-development.md`](docs/local-development.md) | **本地 Maven 依赖、刷新缓存、IDEA、Windows 命令** |
 | [`docs/nginx-architecture.md`](docs/nginx-architecture.md) | 业务 Nginx 与 DevOps 子域分层 |
 | [`maven/README.md`](maven/README.md) | Nexus 初始化、settings id 对应关系 |
+| [`observability/README.md`](observability/README.md) | Prometheus、Tempo、Loki、Alloy、Grafana 部署和验证 |
 
 原有 `deploy/` 目录仍保留本地 Docker Desktop 部署方式；本方案不要求修改 `deploy/.env` 或 `deploy/docker-compose.yml`。
 
@@ -33,8 +34,29 @@
 | `deploy-pipline/docker-compose.deploy.yml` | 流水线专用运行 Compose，只拉 Registry 镜像，不本地构建 |
 | `deploy-pipline/import-nacos.sh` | 流水线专用 Nacos 配置导入脚本，支持 Jenkins Secret file；会导入 `.yml`、`.yaml` 和 `.json` |
 | `deploy-pipline/peach-deploy.env.example` | Jenkins Secret file 的配置模板 |
+| `deploy-pipline/observability/` | 可观测性组件配置和 Grafana 数据源预配置 |
 
-流水线会推送这些镜像：
+## 选择部署的服务
+
+Jenkins 构建参数提供受白名单约束的部署开关：
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `DEPLOY_SERVICES` | 全部 8 个后端服务和前端 | 使用空格或逗号分隔，也可填写 `all`；未知服务会直接终止流水线 |
+| `DEPLOY_OBSERVABILITY` | `true` | 部署 Prometheus、Collector、Tempo、Loki、Alloy 和 Grafana |
+| `STOP_UNSELECTED_SERVICES` | `false` | 为 `true` 时停止未选择的业务服务；关闭 observability 时也停止已有可观测性容器 |
+
+例如，只发布网关、认证和前端：
+
+```text
+DEPLOY_SERVICES=peach-gateway peach-auth peach-front
+DEPLOY_OBSERVABILITY=true
+STOP_UNSELECTED_SERVICES=true
+```
+
+流水线只构建和推送被选择服务的镜像，部署时使用 `--no-deps` 启动这些服务；MySQL、Redis、Nacos 仍作为公共基础设施启动。可观测性组件使用独立 Compose profile，也可以按 [`observability/README.md`](observability/README.md) 手工启动。
+
+流水线根据 `DEPLOY_SERVICES` 推送以下镜像中的选中项：
 
 ```text
 localhost:5000/peach-cloud/peach-gateway:<git-sha>
@@ -357,9 +379,9 @@ SSL verification: 当前 HTTP 内网地址不需要；改 HTTPS 后必须开启�
 | Checkout | 从 GitLab 拉取触发提交，计算 12 位短 SHA |
 | Build CI image | 通过 Docker Desktop 构建 `peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22`（Maven 3.9.11 + JDK 21 + Node 22） |
 | Maven package | 从 `settings.xml` 渲染 `settings.generated.xml`，按 Nexus → 阿里云顺序解析依赖，执行 `mvn -B -Pdocker -Dpeach.nexus.url=${PEACH_NEXUS_URL:-http://nexus:8081} -DskipTests clean package` |
-| Build and push images | 构建并推送 8 个后端镜像 |
-| Build frontend | 构建前端 dist，打包并推送 `peach-front` 镜像 |
-| Deploy | 同步专用 Compose、Nacos 脚本和 SQL 到 Jenkins 持久目录，在本机 Docker Desktop 拉取镜像并启动容器 |
+| Build and push images | 只构建并推送 `DEPLOY_SERVICES` 选中的后端镜像 |
+| Build frontend | 仅选择 `peach-front` 时构建前端 dist 并推送镜像 |
+| Deploy | 同步 Compose、观测组件配置、Nacos 脚本和 SQL，启动选中服务及可选观测栈 |
 
 Deploy 阶段会把 `deploy/nacos/config` 同步到 Jenkins 持久目录，并通过 `deploy-pipline/import-nacos.sh` 导入 `.yml`、`.yaml` 和 `.json`。以下两个 Sentinel 规则文件也会作为 Nacos 配置导入：
 
@@ -395,7 +417,7 @@ curl http://peach_cloud.peachsoft.com/
 curl http://localhost:5000/v2/_catalog
 ```
 
-Registry UI 中应看到 9 个镜像仓库：8 个后端服务和 `peach-front`。
+Registry UI 中应看到本次选择服务对应的镜像仓库；历史构建产生的其他仓库不会自动删除。
 
 ## 回滚
 

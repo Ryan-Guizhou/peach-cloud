@@ -131,6 +131,8 @@ peach:
 # 响应式配置
 spring.main:
     web-application-type: reactive
+spring.reactor:
+    context-propagation: auto
 
 # 网关路由配置
 spring.cloud:

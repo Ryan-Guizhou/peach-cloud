@@ -22,7 +22,7 @@ artifactId：`peach-threadpool`
 | 对象 | 说明 |
 | --- | --- |
 | `ThreadPoolProperties` | 绑定 `peach.threadpool` 配置 |
-| `GlobalProperties` | SecurityContext 传递开关，当前参考默认值为 `true` |
+| `GlobalProperties` | MDC/Micrometer 与 SecurityContext 传递开关，默认值均为 `true` |
 | `PoolProperties` | 单个线程池参数 |
 | `ThreadPoolManager` | 获取、提交和执行任务 |
 | `TaskWrapper` | 任务上下文包装 |
@@ -44,6 +44,7 @@ artifactId：`peach-threadpool`
 peach:
   threadpool:
     global:
+      enable-mdc: true
       enable-security-context: true
     pools:
       - type: IO
@@ -58,11 +59,15 @@ peach:
 ## 使用示例
 
 ```java
-@Resource
-private ThreadPoolManager threadPoolManager;
+@Service
+@RequiredArgsConstructor
+public class AsyncTaskService {
 
-public void submitTask(Runnable task) {
-    threadPoolManager.execute(PoolType.IO, task);
+    private final ThreadPoolManager threadPoolManager;
+
+    public void submitTask(Runnable task) {
+        threadPoolManager.execute(PoolType.IO, task);
+    }
 }
 ```
 
@@ -82,11 +87,13 @@ public CompletableFuture<String> loadRemote() {
 - 需要真正异步返回时优先使用 `CompletableFuture`，并检查调用链是否符合预期。
 - `timeoutMs > 0` 限制等待结果的时间，不等于可靠取消底层任务。
 - 拒绝策略支持 `ABORT`、`CALLER_RUNS`、`DISCARD`、`DISCARD_OLDEST`。
+- `enable-mdc=true` 时会传播 Micrometer ThreadLocal 与完整 MDC，包括 requestId、traceId 和 spanId；任务完成后恢复工作线程原上下文。
 
 ## 边界与限制
 
 - IO 任务不要误用 CPU 池，CPU 密集任务不要无限扩大线程数。
 - 队列容量过大可能掩盖过载并导致延迟堆积。
+- 关闭 MDC/Micrometer 传播前，需要确认异步 Trace 和日志关联不受影响。
 - 关闭 SecurityContext 传递前，需要确认权限上下文不受影响。
 - 自调用不会经过 Spring AOP，注解可能不生效。
 
@@ -105,6 +112,7 @@ mvn -pl peach-component/peach-threadpool -am clean package -DskipTests -Pdevelop
 | 注解不生效 | 是否标在方法上；调用是否经过 Spring 代理 | 避免自调用，确认 Bean 被 Spring 管理 |
 | 调用线程仍在等待 | 方法是否普通返回值 | 使用 `CompletableFuture` 或直接提交任务 |
 | 队列堆积 | `queueCapacity`、线程数、任务耗时 | 调整池参数，增加监控和拒绝策略 |
+| 异步日志缺少 requestId/traceId | `enable-mdc` 是否开启；任务是否通过 `ThreadPoolManager` 提交 | 开启上下文传播，不要绕过受管线程池 |
 | 权限上下文丢失 | SecurityContext 传递是否开启 | 检查 `enable-security-context` |
 
 

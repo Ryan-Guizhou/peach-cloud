@@ -6,6 +6,7 @@ import com.peach.rocket.codec.MqMessageCodec;
 import com.peach.rocket.core.MqConsumeContext;
 import com.peach.rocket.core.MqMessageEnvelope;
 import com.peach.rocket.core.MqMessageHandler;
+import com.peach.rocket.context.MqTraceContextPropagator;
 import com.peach.rocket.error.MqErrorHandler;
 import com.peach.rocket.error.MqExceptionClassifier;
 import com.peach.rocket.error.MqFailureAction;
@@ -36,16 +37,38 @@ public class MqConsumerInvoker {
     private final MqErrorHandler errorHandler;
     private final MqExceptionClassifier exceptionClassifier;
     private final PeachRocketProperties properties;
+    private final MqTraceContextPropagator traceContextPropagator;
 
     public MqConsumerInvoker(MqMessageCodec codec, MqIdempotentStore idempotentStore,
                              MqIdempotentKeyResolver idempotentKeyResolver, MqErrorHandler errorHandler,
                              MqExceptionClassifier exceptionClassifier, PeachRocketProperties properties) {
+        this(codec, idempotentStore, idempotentKeyResolver, errorHandler, exceptionClassifier, properties,
+                MqTraceContextPropagator.NOOP);
+    }
+
+    /**
+     * 创建使用空链路传播器的 MQ 消费调用器。
+     *
+     * @param codec 消息编解码器
+     * @param idempotentStore 幂等存储
+     * @param idempotentKeyResolver 幂等键解析器
+     * @param errorHandler 消费异常处理器
+     * @param exceptionClassifier 异常分类器
+     * @param properties RocketMQ 配置
+     */
+    public MqConsumerInvoker(MqMessageCodec codec, MqIdempotentStore idempotentStore,
+                             MqIdempotentKeyResolver idempotentKeyResolver, MqErrorHandler errorHandler,
+                             MqExceptionClassifier exceptionClassifier, PeachRocketProperties properties,
+                             MqTraceContextPropagator traceContextPropagator) {
         this.codec = codec;
         this.idempotentStore = idempotentStore;
         this.idempotentKeyResolver = idempotentKeyResolver;
         this.errorHandler = errorHandler;
         this.exceptionClassifier = exceptionClassifier;
         this.properties = properties;
+        this.traceContextPropagator = traceContextPropagator == null
+                ? MqTraceContextPropagator.NOOP
+                : traceContextPropagator;
     }
 
     /**
@@ -80,6 +103,9 @@ public class MqConsumerInvoker {
                 reconsumeTimes,                                            // 重试次数
                 envelope.getHeaders()                                      // 自定义 Header
         );
+
+        try (MqTraceContextPropagator.MqTraceScope traceScope = traceContextPropagator
+                .startConsumerSpan(context.getTopic(), context.getHeaders())) {
 
         // ==================== 3. 幂等性处理 ====================
         // 3.1 解析幂等 Key（默认为 messageId，也可通过 SpEL 表达式自定义）
@@ -132,6 +158,7 @@ public class MqConsumerInvoker {
                     context.getMessageId(), reconsumeTimes, System.currentTimeMillis() - start);
 
         } catch (RuntimeException ex) {
+            traceScope.error(ex);
             // ==================== 5. 异常处理 ====================
 
             // 5.1 处理失败：标记幂等记录为失败状态
@@ -158,6 +185,7 @@ public class MqConsumerInvoker {
                     context.getMessageId(), ex.getClass().getName());
             // 注意：这里不再抛出异常，相当于告诉 RocketMQ 消息已消费成功
             // 但业务上该消息实际处理失败了（适用于非关键业务或已记录告警的场景）
+        }
         }
     }
 
@@ -186,18 +214,17 @@ public class MqConsumerInvoker {
         // 遍历该类实现的所有接口
         for (Type type : targetClass.getGenericInterfaces()) {
             // 判断接口是否带泛型参数（ParameterizedType）
-            if (type instanceof ParameterizedType) {
-                ParameterizedType parameterizedType = (ParameterizedType) type;
+            if (type instanceof ParameterizedType parameterizedType) {
                 Type raw = parameterizedType.getRawType();
 
                 // 判断原始类型是否为 MqMessageHandler 或其子类
-                if (raw instanceof Class && MqMessageHandler.class.isAssignableFrom((Class<?>) raw)) {
+                if (raw instanceof Class<?> rawClass && MqMessageHandler.class.isAssignableFrom(rawClass)) {
                     // 获取 MqMessageHandler 的第一个泛型参数（即 Payload 类型）
                     Type actualType = parameterizedType.getActualTypeArguments()[0];
 
                     // 如果泛型参数是具体的 Class，直接返回
-                    if (actualType instanceof Class) {
-                        return (Class<?>) actualType;
+                    if (actualType instanceof Class<?> actualClass) {
+                        return actualClass;
                     }
                     // 注意：如果泛型参数也是泛型（如 List<Order>），这里会返回 null
                     // 当前实现不支持嵌套泛型，默认回退到 Map.class

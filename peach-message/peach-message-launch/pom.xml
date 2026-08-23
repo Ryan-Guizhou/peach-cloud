@@ -20,6 +20,11 @@
     <dependencies>
 
         <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-observability-starter</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
