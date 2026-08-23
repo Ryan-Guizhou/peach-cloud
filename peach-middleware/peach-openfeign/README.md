@@ -103,7 +103,7 @@ public interface MessageFeignClient {
 - `feign.sentinel.rules`：Feign 客户端级/方法级熔断规则，随 `peach-openfeign.yml` 下发。
 - `spring.cloud.sentinel.datasource`：从 Nacos 加载 flow/degrade JSON。生产环境以 Sentinel 控制台实际资源名为准校准规则。
 
-当前规则由 `peach-openfeign.yml` 中的 `spring.cloud.sentinel.datasource` 接入 Nacos；生产阈值以 Nacos 动态规则为准。
+当前规则由 `peach-openfeign.yml` 中的 `spring.cloud.sentinel.datasource` 接入 Nacos；每个 Nacos 数据源必须显式配置 `server-addr` 和 `namespace`。仓库模板优先读取 `SPRING_CLOUD_NACOS_CONFIG_*`，并回退到 `NACOS_*`，避免 Sentinel 创建的独立 Nacos Client 使用 `127.0.0.1:8848`。生产阈值以 Nacos 动态规则为准。
 
 ## 运行机制
 
@@ -162,6 +162,7 @@ git diff --check
 | 调用被限流 | `peach-openfeign-sentinel-flow-rules.json`、Sentinel 控制台 | 调整 QPS 或拆分热点接口 |
 | 调用被熔断 | `peach-openfeign-sentinel-degrade-rules.json`、下游错误率/慢调用 | 降低下游错误率，适当调整熔断窗口 |
 | 启动时报 `Failed to introspect ... NacosDataSourceFactoryBean` | 运行包是否包含 `sentinel-datasource-nacos` | `peach-openfeign-starter` 已显式依赖 `com.alibaba.csp:sentinel-datasource-nacos`；重新 Maven 打包并重建业务镜像 |
+| 持续出现 `Client not connected, current status:STARTING`，且日志连接 `127.0.0.1:9848` | `spring.cloud.sentinel.datasource.*.nacos.server-addr` 是否缺失 | 重新导入 `peach-openfeign.yml`，确认容器已设置 `SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR` 或 `NACOS_SERVER_ADDR`，然后重启受影响服务 |
 | 写请求未重试 | `peach.openfeign.retry.methods` | 确认接口幂等后显式加入方法白名单 |
 | 文件调用超时 | `fileFeignClient` 超时配置、文件大小 | 小文件可调读超时，大文件改对象存储直传 |
 | 下游错误暴露给前端 | `peach.openfeign.exception.expose-remote-message` | 生产保持 `false` |

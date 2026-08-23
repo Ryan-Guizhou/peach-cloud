@@ -83,12 +83,16 @@ spring:
       datasource:
         peach-openfeign-flow:
           nacos:
+            server-addr: ${SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR:${NACOS_SERVER_ADDR:127.0.0.1:8848}}
+            namespace: ${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:${NACOS_NAMESPACE_ID:peach-cloud}}
             data-id: peach-openfeign-sentinel-flow-rules
             group-id: PEACH-CLOUD
             data-type: json
             rule-type: flow
         peach-openfeign-degrade:
           nacos:
+            server-addr: ${SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR:${NACOS_SERVER_ADDR:127.0.0.1:8848}}
+            namespace: ${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:${NACOS_NAMESPACE_ID:peach-cloud}}
             data-id: peach-openfeign-sentinel-degrade-rules
             group-id: PEACH-CLOUD
             data-type: json

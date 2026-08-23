@@ -230,7 +230,7 @@ peach-openfeign-sentinel-flow-rules.json
 peach-openfeign-sentinel-degrade-rules.json
 ```
 
-这两个 Data ID 必须和 `peach-openfeign.yml` 中的 `spring.cloud.sentinel.datasource.*.nacos.data-id` 保持一致，否则服务启动后无法从 Nacos 拉取 Feign 限流和熔断规则。
+这两个 Data ID 必须和 `peach-openfeign.yml` 中的 `spring.cloud.sentinel.datasource.*.nacos.data-id` 保持一致，否则服务启动后无法从 Nacos 拉取 Feign 限流和熔断规则。Sentinel 会为每个数据源创建独立 Nacos Client，因此模板同时通过 `SPRING_CLOUD_NACOS_CONFIG_*` / `NACOS_*` 显式传递服务地址和 namespace，不能省略。
 
 补导 MySQL 种子数据：
 
@@ -277,6 +277,7 @@ peach-openfeign-sentinel-degrade-rules.json
 | MySQL 表名大小写异常 | `lower_case_table_names` 是否为 `1` | 该参数必须在数据目录初始化前生效；数据可丢时重建 |
 | 初始化菜单、用户、租户缺失 | `sql/INIT.sql` 是否导入 | 执行 `./peach.sh mysql:init` |
 | Nacos 配置为空 | namespace、group 是否与 `.env` 一致 | 执行 `./peach.sh nacos:import`，再重启相关服务 |
+| 业务日志持续出现 `Client not connected, current status:STARTING`，并连接 `127.0.0.1:9848` | Sentinel Nacos 数据源是否缺少 `server-addr` | 重新导入最新 `peach-openfeign.yml`，确认服务容器中的 `NACOS_SERVER_ADDR` 正确，然后重启对应服务 |
 | PowerShell 导入提示私密文件不存在或字段缺失 | `nacos/import-nacos.private.json` 是否存在、字段名是否与模板占位符一致 | 创建或补全私密文件；不要将其提交到 Git |
 | PowerShell 导入后配置无法解析 | 私密值是否含 YAML 无引号不支持的字符 | 使用符合 YAML 无引号标量语法的值，或调整脚本的引号处理策略 |
 | 业务服务退出 | Nacos、MySQL、Redis 地址和密码是否一致 | 执行 `./peach.sh logs <service>` |

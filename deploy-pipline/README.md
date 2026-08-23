@@ -397,7 +397,7 @@ peach-openfeign-sentinel-flow-rules.json
 peach-openfeign-sentinel-degrade-rules.json
 ```
 
-它们的 Data ID 必须和 `peach-openfeign.yml` 中的 `spring.cloud.sentinel.datasource.*.nacos.data-id` 保持一致。
+它们的 Data ID 必须和 `peach-openfeign.yml` 中的 `spring.cloud.sentinel.datasource.*.nacos.data-id` 保持一致。Sentinel Nacos 数据源使用独立客户端，`peach-openfeign.yml` 会通过流水线注入的 `SPRING_CLOUD_NACOS_CONFIG_*` / `NACOS_*` 显式传递服务地址和 namespace。
 
 部署目录固定为：
 
@@ -455,6 +455,7 @@ Registry UI 中应看到本次选择服务对应的镜像仓库；历史构建�
 | Webhook 无法访问 Jenkins | GitLab outbound policy 和 Docker 网络 | 确认服务都在 `peach-devops` 网络，只放行 Jenkins 地址 |
 | 主机访问不到 Peach Cloud | `DEVOPS_HTTP_PORT`、hosts 解析、运行网络和 `peach-front` 容器状态 | 检查 hosts 是否指向 `127.0.0.1`，检查 `peach-devops-nginx` 是否已连接到 `peach-cloud-runtime`，检查 `peach-front` 是否运行 |
 | Nacos 代理 502 | Peach Cloud 运行 Compose 是否已启动 Nacos | Jenkins 完成 Deploy 后，`peach-front` 才能代理 `/nacos/`；DevOps 入口用 `nacos.peachsoft.com` |
+| 业务日志持续出现 `Client not connected, current status:STARTING`，并连接 `127.0.0.1:9848` | 部署到 Nacos 的 `peach-openfeign.yml` 是否包含 Sentinel 数据源地址 | 重新执行 Deploy 导入最新配置并重启受影响服务；同时确认 Secret file 中 `NACOS_SERVER_ADDR` 指向 Compose 服务名而不是 localhost |
 | `import-nacos.sh: Permission denied` | Jenkins 工作区或 GitLab 仓库未保留 shell 脚本执行位 | 当前 Jenkinsfile 会在复制后执行 `chmod +x`，并通过 `sh import-nacos.sh` 调用；更新流水线后重新构建 |
 | MySQL 密码修改后仍认证失败 | 持久数据目录已有旧密码 | 使用旧密码；只有确认数据可丢时再清理数据 |
 
