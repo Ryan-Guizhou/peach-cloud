@@ -10,14 +10,11 @@
     </typeAliases>
     <plugins>
         <plugin interceptor="com.github.pagehelper.PageInterceptor">
-            <property name="helperDialect" value="postgresql" />
+            <property name="helperDialect" value="mysql" />
             <property name="autoRuntimeDialect" value="false" />
             <property name="reasonable" value="true" />
             <property name="supportMethodsArguments" value="false" />
             <property name="closeConn" value="false" />
-        </plugin>
-        <plugin interceptor="com.peach.setting.config.SqlCostInterceptor">
-            <property name="longQueryTime" value="3000" />
         </plugin>
     </plugins>
     <databaseIdProvider type="DB_VENDOR">

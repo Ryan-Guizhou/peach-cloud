@@ -20,6 +20,7 @@ spring:
       - optional:nacos:peach-common.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-openfeign.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-satoken.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
+      - optional:nacos:peach-redis.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-datasource.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:peach-knife4j.yml?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
       - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}?group=${spring.cloud.nacos.config.group}&namespace=${spring.cloud.nacos.config.namespace}
@@ -66,7 +67,7 @@ peach:
     enabled: true
     app-name: peach-scheduler
     topic:
-      auto-create: false
+      auto-create: ${PEACH_ROCKET_TOPIC_AUTO_CREATE:true}
     consumer:
       dynamic-register: true
       enable-idempotent: true

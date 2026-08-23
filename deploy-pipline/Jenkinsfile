@@ -79,7 +79,37 @@ pipeline {
                     try {
                         withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
                             sh '''
+                                set -eu
                                 test -s "$DEPLOY_ENV_FILE"
+
+                                set -a
+                                . "$DEPLOY_ENV_FILE"
+                                set +a
+
+                                if [ -z "${PEACH_LOG_ROOT:-}" ]; then
+                                  echo "PEACH_LOG_ROOT must be set in the Jenkins Secret file." >&2
+                                  exit 1
+                                fi
+                                case "$PEACH_LOG_ROOT" in
+                                  /var/jenkins_home/*)
+                                    echo "PEACH_LOG_ROOT must be a Docker host path, not a Jenkins container path: $PEACH_LOG_ROOT" >&2
+                                    exit 1
+                                    ;;
+                                  /*)
+                                    ;;
+                                  *)
+                                    echo "PEACH_LOG_ROOT must be an absolute path visible to the Docker daemon: $PEACH_LOG_ROOT" >&2
+                                    exit 1
+                                    ;;
+                                esac
+                                case "$PEACH_LOG_ROOT" in
+                                  */deploy-pipline/pipline/runtime)
+                                    ;;
+                                  *)
+                                    echo "PEACH_LOG_ROOT must point to deploy-pipline/pipline/runtime: $PEACH_LOG_ROOT" >&2
+                                    exit 1
+                                    ;;
+                                esac
                             '''
                         }
                     } catch (err) {
@@ -279,7 +309,7 @@ pipeline {
                         . "$DEPLOY_ENV_FILE"
                         set +a
 
-                        mkdir -p "$DEPLOY_ROOT/deploy/runtime/logs/nginx" "$DEPLOY_ROOT/sql"
+                        mkdir -p "$DEPLOY_ROOT/sql"
                         cp -R deploy/docker deploy/nacos "$DEPLOY_ROOT/deploy/"
                         cp deploy-pipline/docker-compose.deploy.yml "$DEPLOY_ROOT/deploy/docker-compose.yml"
                         cp deploy-pipline/import-nacos.sh "$DEPLOY_ROOT/deploy/nacos/import-nacos.sh"

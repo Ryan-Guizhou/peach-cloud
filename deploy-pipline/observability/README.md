@@ -51,7 +51,7 @@ Compose 已向业务服务注入以下配置：
 - OTLP HTTP Trace 地址为 `http://otel-collector:4318/v1/traces`。
 - 默认采样率为 `0.1`，可使用 `MANAGEMENT_TRACING_SAMPLING_PROBABILITY` 调整。
 - `ALL_FILE` 必须保持 Logstash JSON 输出，Alloy 只读取该文件，避免重复采集 INFO/WARN/ERROR 分文件。
-- DevOps Compose 与业务部署必须使用相同的 `PEACH_LOG_ROOT`。业务容器写入该宿主目录，Alloy 以只读方式挂载同一目录。
+- DevOps Compose 与业务部署必须使用相同的 `PEACH_LOG_ROOT`，并统一指向仓库内的 `deploy-pipline/pipline/runtime`。业务容器写入该宿主目录，Alloy 以只读方式挂载同一目录。
 
 ## 数据和容量边界
 

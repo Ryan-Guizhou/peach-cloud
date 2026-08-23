@@ -151,6 +151,7 @@ public class PeachRocketAutoConfigure {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnClass(name = "org.apache.rocketmq.tools.admin.DefaultMQAdminExt")
     @ConditionalOnProperty(prefix = "peach.rocket.topic", name = "auto-create", havingValue = "true")
     public RocketMqTopicAdmin rocketMqTopicAdmin(RocketMQProperties rocketMQProperties,
                                                  PeachRocketProperties properties,

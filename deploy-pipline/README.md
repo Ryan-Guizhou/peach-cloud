@@ -206,7 +206,7 @@ File: 基于 deploy-pipline/peach-deploy.env.example 复制并修改后的 env �
 至少确认这些变量：
 
 ```dotenv
-PEACH_LOG_ROOT=/host_mnt/c/path/to/peach-cloud/runtime/logs
+PEACH_LOG_ROOT=/host_mnt/c/path/to/peach-cloud/deploy-pipline/pipline/runtime
 MYSQL_ROOT_PASSWORD=change_me_mysql_root_password
 MYSQL_DATABASE=peach_cloud
 REDIS_PASSWORD=change_me_redis_password
@@ -408,7 +408,9 @@ peach-openfeign-sentinel-degrade-rules.json
 
 该目录位于 Jenkins 持久卷，只保存部署脚本、Nacos 配置和 SQL。MySQL、Redis、Nacos 数据及上传文件继续使用 Docker named volumes；基础设施和业务日志通过 `PEACH_LOG_ROOT` 绑定到 Docker 宿主目录，不随 Jenkins workspace 清理。
 
-Docker Desktop 场景中，Jenkins 通过 Docker socket 调用宿主引擎，不能把 `/var/jenkins_home/...` 当作 bind mount 源目录。`PEACH_LOG_ROOT` 必须填写 Docker 引擎可见的绝对路径。例如仓库位于 `C:\work\peach-cloud` 时填写 `/host_mnt/c/work/peach-cloud/runtime/logs`。DevOps Compose 和 Jenkins Secret file 必须使用同一个值，Alloy 才能直接读取业务日志。
+Docker Desktop 场景中，Jenkins 通过 Docker socket 调用宿主引擎，不能把 `/var/jenkins_home/...` 当作 bind mount 源目录。`PEACH_LOG_ROOT` 必须填写 Docker 引擎可见的绝对路径，并统一指向仓库内的 `deploy-pipline/pipline/runtime`。例如仓库位于 `C:\work\peach-cloud` 时填写 `/host_mnt/c/work/peach-cloud/deploy-pipline/pipline/runtime`。DevOps Compose 和 Jenkins Secret file 必须使用同一个值，Alloy 才能直接读取业务日志。
+
+RocketMQ NameServer 和单节点 Broker 与 Jenkins、可观测性组件一起由 DevOps Compose 启动，业务部署中的 `peach-scheduled` 通过 `rocketmq-namesrv:9876` 访问。Broker 消息数据保存在 `peach-rocketmq-store` named volume，NameServer/Broker 日志写入 `${PEACH_LOG_ROOT}/rocketmq`。当前部署已由平台授权自动创建 Topic：Broker 开启 `autoCreateTopicEnable`，Peach Rocket 通过 `PEACH_ROCKET_TOPIC_AUTO_CREATE=true` 扫描显式 Topic、消费者和事务处理器并执行幂等创建。生产环境仍应限制 Broker 管理端口和环境变量修改权限。
 
 ## 验证
 
@@ -459,7 +461,8 @@ Registry UI 中应看到本次选择服务对应的镜像仓库；历史构建�
 | 主机访问不到 Peach Cloud | `DEVOPS_HTTP_PORT`、hosts 解析、运行网络和 `peach-front` 容器状态 | 检查 hosts 是否指向 `127.0.0.1`，检查 `peach-devops-nginx` 是否已连接到 `peach-cloud-runtime`，检查 `peach-front` 是否运行 |
 | Nacos 代理 502 | Peach Cloud 运行 Compose 是否已启动 Nacos | Jenkins 完成 Deploy 后，`peach-front` 才能代理 `/nacos/`；DevOps 入口用 `nacos.peachsoft.com` |
 | 业务日志持续出现 `Client not connected, current status:STARTING`，并连接 `127.0.0.1:9848` | 部署到 Nacos 的 `peach-openfeign.yml` 是否包含 Sentinel 数据源地址 | 重新执行 Deploy 导入最新配置并重启受影响服务；同时确认 Secret file 中 `NACOS_SERVER_ADDR` 指向 Compose 服务名而不是 localhost |
-| Compose 提示 `PEACH_LOG_ROOT` 未设置或日志目录为空 | DevOps 启动环境与 Jenkins Secret file 是否使用同一宿主绝对路径 | Docker Desktop 使用 `/host_mnt/<drive>/.../runtime/logs`，不要使用 Jenkins 容器内的 `/var/jenkins_home/...` |
+| Compose 提示 `PEACH_LOG_ROOT` 未设置或日志目录为空 | DevOps 启动环境与 Jenkins Secret file 是否统一指向仓库日志目录 | Docker Desktop 使用 `/host_mnt/<drive>/.../deploy-pipline/pipline/runtime`，不要使用 Jenkins 容器内的 `/var/jenkins_home/...` |
+| `peach-scheduled` 无法连接 `rocketmq-namesrv:9876` | DevOps 栈中的 NameServer、Broker 是否已启动 | 先启动或更新 DevOps Compose，再重新部署 scheduled；不要通过关闭可靠消息配置绕过生产依赖 |
 | `import-nacos.sh: Permission denied` | Jenkins 工作区或 GitLab 仓库未保留 shell 脚本执行位 | 当前 Jenkinsfile 会在复制后执行 `chmod +x`，并通过 `sh import-nacos.sh` 调用；更新流水线后重新构建 |
 | MySQL 密码修改后仍认证失败 | 持久数据目录已有旧密码 | 使用旧密码；只有确认数据可丢时再清理数据 |
 

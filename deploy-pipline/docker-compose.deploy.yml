@@ -29,6 +29,7 @@ x-common-env: &common-env
   MANAGEMENT_TRACING_SAMPLING_PROBABILITY: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:-0.1}
   MANAGEMENT_OTLP_TRACING_EXPORT_ENABLED: ${MANAGEMENT_OTLP_TRACING_EXPORT_ENABLED:-true}
   MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://otel-collector:4318/v1/traces}
+  PEACH_ROCKET_TOPIC_AUTO_CREATE: ${PEACH_ROCKET_TOPIC_AUTO_CREATE:-true}
 
 services:
   mysql:
@@ -297,6 +298,7 @@ services:
       <<: *common-env
       SERVER_PORT: ${SCHEDULED_PORT:-18087}
       SPRING_APPLICATION_NAME: peach-scheduled
+      ROCKETMQ_NAME_SERVER: ${ROCKETMQ_NAME_SERVER:-rocketmq-namesrv:9876}
     volumes:
       - type: bind
         source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/peach-scheduled
@@ -322,7 +324,7 @@ services:
       GATEWAY_PORT: ${GATEWAY_PORT:-18080}
     volumes:
       - type: bind
-        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/nginx
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/nginx/business
         target: /var/log/nginx
         bind:
           create_host_path: true

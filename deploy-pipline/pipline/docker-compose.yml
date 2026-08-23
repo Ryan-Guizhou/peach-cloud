@@ -108,7 +108,11 @@ services:
 
     volumes:
       - gitlab-config:/etc/gitlab
-      - gitlab-logs:/var/log/gitlab
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/gitlab
+        target: /var/log/gitlab
+        bind:
+          create_host_path: true
       - gitlab-data:/var/opt/gitlab
 
     shm_size: "256m"
@@ -145,6 +149,66 @@ services:
     volumes:
       - nexus-data:/nexus-data
 
+    networks:
+      - devops
+
+  # ============================================================
+  # RocketMQ infrastructure (started before scheduled service)
+  # ============================================================
+  rocketmq-namesrv:
+    image: apache/rocketmq:${ROCKETMQ_VERSION:-5.3.1}
+    container_name: peach-rocketmq-namesrv
+    hostname: rocketmq-namesrv
+    restart: unless-stopped
+    command: sh mqnamesrv
+    environment:
+      JAVA_OPT_EXT: "-server -Xms256m -Xmx256m -Xmn128m -Duser.home=/home/rocketmq"
+    ports:
+      - "127.0.0.1:${ROCKETMQ_NAMESRV_HOST_PORT:-9876}:9876"
+    volumes:
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/rocketmq/namesrv
+        target: /home/rocketmq/logs
+        bind:
+          create_host_path: true
+    networks:
+      - devops
+
+  rocketmq-volume-init:
+    image: apache/rocketmq:${ROCKETMQ_VERSION:-5.3.1}
+    container_name: peach-rocketmq-volume-init
+    user: "0:0"
+    restart: "no"
+    command: sh -c "chown -R 3000:3000 /home/rocketmq/store"
+    volumes:
+      - rocketmq-store:/home/rocketmq/store
+    networks:
+      - devops
+
+  rocketmq-broker:
+    image: apache/rocketmq:${ROCKETMQ_VERSION:-5.3.1}
+    container_name: peach-rocketmq-broker
+    hostname: rocketmq-broker
+    restart: unless-stopped
+    command: sh mqbroker -c ../conf/broker.conf
+    environment:
+      NAMESRV_ADDR: rocketmq-namesrv:9876
+      JAVA_OPT_EXT: "-server -Xms256m -Xmx512m -Duser.home=/home/rocketmq"
+    ports:
+      - "127.0.0.1:${ROCKETMQ_BROKER_HOST_PORT:-10911}:10911"
+    volumes:
+      - ../rocketmq/broker.conf:/home/rocketmq/rocketmq-${ROCKETMQ_VERSION:-5.3.1}/conf/broker.conf:ro
+      - rocketmq-store:/home/rocketmq/store
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/rocketmq/broker
+        target: /home/rocketmq/logs
+        bind:
+          create_host_path: true
+    depends_on:
+      rocketmq-namesrv:
+        condition: service_started
+      rocketmq-volume-init:
+        condition: service_completed_successfully
     networks:
       - devops
 
@@ -388,6 +452,11 @@ services:
 
     volumes:
       - ./nginx/devops.conf:/etc/nginx/conf.d/default.conf:ro
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT to an absolute Docker host path}/nginx/devops
+        target: /var/log/nginx
+        bind:
+          create_host_path: true
 
     depends_on:
       - gitlab
@@ -416,9 +485,6 @@ volumes:
   gitlab-config:
     name: peach-gitlab-config
 
-  gitlab-logs:
-    name: peach-gitlab-logs
-
   gitlab-data:
     name: peach-gitlab-data
 
@@ -441,6 +507,8 @@ volumes:
     name: peach-alloy-data
   grafana-data:
     name: peach-grafana-data
+  rocketmq-store:
+    name: peach-rocketmq-store
 
 # ==============================================================
 # Docker Network
