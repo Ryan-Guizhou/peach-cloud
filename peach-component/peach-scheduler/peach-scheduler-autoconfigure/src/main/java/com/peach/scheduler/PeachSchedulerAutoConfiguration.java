@@ -36,6 +36,7 @@ public class PeachSchedulerAutoConfiguration {
      * 创建相关对象。
      */
     public PeachSchedulerAutoConfiguration() {
+        // Intentionally empty.
     }
 
     /**

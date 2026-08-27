@@ -34,10 +34,7 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
     @Override
     public void markSuccess(MqIdempotentContext context) {
         String key = storageKey(context);
-        Record old = records.get(key);
-        if (old != null) {
-            records.put(key, new Record(Status.SUCCESS, old.getExpiresAt()));
-        }
+        records.computeIfPresent(key, (k, old) -> new Record(Status.SUCCESS, old.getExpiresAt()));
     }
 
     @Override
@@ -47,8 +44,8 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
 
     @Override
     public boolean isSuccess(MqIdempotentContext context) {
-        Record record = records.get(storageKey(context));
-        return record != null && record.getStatus() == Status.SUCCESS && record.getExpiresAt().isAfter(Instant.now());
+        Record storedRecord = records.get(storageKey(context));
+        return storedRecord != null && storedRecord.getStatus() == Status.SUCCESS && storedRecord.getExpiresAt().isAfter(Instant.now());
     }
 
     private void cleanupExpired() {

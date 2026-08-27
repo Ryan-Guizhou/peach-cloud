@@ -20,9 +20,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class CaptchaServiceFactory {
 
-    public static final Map<String, CaptchaCacheService> PROVIDERS = new ConcurrentHashMap<>();
+    private CaptchaServiceFactory() {
+        throw new IllegalStateException("Utility class");
+    }
 
-    public static final Map<String, CaptchaService> INSTANCES = new ConcurrentHashMap<>();
+    protected static final Map<String, CaptchaCacheService> PROVIDERS = new ConcurrentHashMap<>();
+
+    protected static final Map<String, CaptchaService> INSTANCES = new ConcurrentHashMap<>();
 
     static {
         ServiceLoader<CaptchaCacheProvider> cacheProvider = ServiceLoader.load(CaptchaCacheProvider.class);

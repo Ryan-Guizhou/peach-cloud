@@ -25,7 +25,7 @@ public class Response implements Serializable {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "返回数据")
-    private Object data;
+    private transient Object data;
 
     public String getCode() {
         return code;
@@ -112,8 +112,9 @@ public class Response implements Serializable {
 
     public static Response commonResponse(boolean status, String msg, Object data) {
         Response res = Response.success();
-        if (status == false)
+        if (!status) {
             res = Response.fail();
+        }
         if (StringUtil.isNotEmpty(msg))
             res.setMsg(msg);
         if (null != data)

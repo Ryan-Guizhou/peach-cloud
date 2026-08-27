@@ -40,6 +40,8 @@ import java.util.Locale;
 @Component
 public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
 
+    private static final String PATH_SEPARATOR = "/";
+
     private final GatewaySaTokenProperties properties;
 
     private final ReactiveStringRedisTemplate redisTemplate;
@@ -77,7 +79,7 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
                             ? chain.filter(exchange)
                             : handlePermissionError(exchange, method, path))
                     .doFinally(signal -> SaReactorSyncHolder.clearContext());
-        } catch (Throwable e) {
+        } catch (Exception e) {
             SaReactorSyncHolder.clearContext();
             return handleAuthenticationError(exchange, method, path, e);
         }
@@ -128,8 +130,8 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
             return "";
         }
         String normalizedPath = path.trim();
-        if (!normalizedPath.startsWith("/")) {
-            normalizedPath = "/" + normalizedPath;
+        if (!normalizedPath.startsWith(PATH_SEPARATOR)) {
+            normalizedPath = PATH_SEPARATOR + normalizedPath;
         }
         return method.trim().toUpperCase(Locale.ENGLISH) + ":" + normalizedPath;
     }
@@ -156,11 +158,11 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
             return false;
         }
         String normalizedPath = path.trim();
-        if (!normalizedPath.startsWith("/")) {
-            normalizedPath = "/" + normalizedPath;
+        if (!normalizedPath.startsWith(PATH_SEPARATOR)) {
+            normalizedPath = PATH_SEPARATOR + normalizedPath;
         }
-        if (!resourcePath.startsWith("/")) {
-            resourcePath = "/" + resourcePath;
+        if (!resourcePath.startsWith(PATH_SEPARATOR)) {
+            resourcePath = PATH_SEPARATOR + resourcePath;
         }
         return pathMatcher.match(resourcePath, normalizedPath);
     }
@@ -200,8 +202,7 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
     }
 
     private String resolveAuthenticationRejectDetail(ServerWebExchange exchange, Throwable e) {
-        if (e instanceof NotLoginException) {
-            NotLoginException notLoginException = (NotLoginException) e;
+        if (e instanceof NotLoginException notLoginException) {
             String tokenName = StpUtil.getTokenName();
             boolean configuredHeaderExists = exchange.getRequest().getHeaders().containsKey(tokenName);
             boolean authorizationHeaderExists = exchange.getRequest().getHeaders().containsKey("Authorization");

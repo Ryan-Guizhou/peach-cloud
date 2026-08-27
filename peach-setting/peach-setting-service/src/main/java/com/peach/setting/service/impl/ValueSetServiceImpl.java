@@ -1,8 +1,9 @@
 package com.peach.setting.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.PageResult;
@@ -50,7 +51,7 @@ public class ValueSetServiceImpl implements IValueSetService {
     @Override
     public PageResult<ValueSetVO> pageList(ValueSetQO qo) {
         fillCurrentTenantOrg(qo);
-        PageInfo<ValueSetVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
+        PageInfo<ValueSetVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> valueSetDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
     }
@@ -70,7 +71,7 @@ public class ValueSetServiceImpl implements IValueSetService {
     public void save(ValueSetDTO data) {
         ValueSetDO valueSetDO = new ValueSetDO();
         BeanUtils.copyProperties(data, valueSetDO);
-        valueSetDO.setId(IDGeneratorUtil.UUID());
+        valueSetDO.setId(IDGeneratorUtil.generateUuid());
         valueSetDO.fillCreateTime();
         valueSetDao.insert(valueSetDO);
     }
@@ -107,7 +108,7 @@ public class ValueSetServiceImpl implements IValueSetService {
     @Override
     public PageResult<ValueSetItemVO> itemPageList(ValueSetItemQO qo) {
         fillCurrentTenantOrg(qo);
-        PageInfo<ValueSetItemVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
+        PageInfo<ValueSetItemVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> valueSetItemDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
     }
@@ -130,7 +131,7 @@ public class ValueSetServiceImpl implements IValueSetService {
     public void saveItem(ValueSetItemDTO data) {
         ValueSetItemDO valueSetItemDO = new ValueSetItemDO();
         BeanUtils.copyProperties(data, valueSetItemDO);
-        valueSetItemDO.setId(IDGeneratorUtil.UUID());
+        valueSetItemDO.setId(IDGeneratorUtil.generateUuid());
         valueSetItemDO.fillCreateTime();
         valueSetItemDao.insert(valueSetItemDO);
     }

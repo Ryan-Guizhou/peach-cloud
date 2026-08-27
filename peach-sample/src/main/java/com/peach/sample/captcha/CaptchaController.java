@@ -27,14 +27,12 @@ public class CaptchaController {
 
     @PostMapping("/get")
     public Response getCaptch(@RequestBody CaptchaVO captchaVO) {
-        Response response = captchaService.get(captchaVO);
-        return response;
+        return captchaService.get(captchaVO);
     }
 
     @PostMapping("/check")
     public Response checkCaptch(@RequestBody CaptchaVO captchaVO) {
-        Response response = captchaService.check(captchaVO);
-        return response;
+        return captchaService.check(captchaVO);
     }
 
 }

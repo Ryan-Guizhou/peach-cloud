@@ -1,5 +1,6 @@
 package com.peach.fileservice.config;
 
+import com.peach.common.constant.PubCommonConst;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
@@ -55,12 +56,12 @@ public class OpenApiConfig {
         OpenAPI openAPI = new OpenAPI()
                 .info(createApiInfo())
                 // 全局安全要求（所有接口默认需要 Token）
-                .addSecurityItem(new SecurityRequirement().addList("Authorization"))
+                .addSecurityItem(new SecurityRequirement().addList(PubCommonConst.KNIFE4J_AUTHORIZATION_HEADER))
                 // 安全方案定义
                 .components(new Components()
-                        .addSecuritySchemes("Authorization",
+                        .addSecuritySchemes(PubCommonConst.KNIFE4J_AUTHORIZATION_HEADER,
                                 new SecurityScheme()
-                                        .name("Authorization")
+                                        .name(PubCommonConst.KNIFE4J_AUTHORIZATION_HEADER)
                                         .type(SecurityScheme.Type.APIKEY)
                                         .in(SecurityScheme.In.HEADER)
                                         .description("Sa-Token 登录凭证")
@@ -75,7 +76,7 @@ public class OpenApiConfig {
                                 .in(SecurityScheme.In.HEADER)
                                 .description("Referer 引用来源"))
                 );
-        if (serverUrl != null && serverUrl.trim().length() > 0) {
+        if (serverUrl != null && !serverUrl.trim().isEmpty()) {
             openAPI.servers(List.of(new Server()
                     .url(serverUrl.trim())
                     .description(serverDescription)));

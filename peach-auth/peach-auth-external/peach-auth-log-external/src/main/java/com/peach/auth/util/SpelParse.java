@@ -1,8 +1,11 @@
 package com.peach.auth.util;
 
+import org.springframework.lang.Nullable;
+
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.expression.Expression;
+import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.EvaluationException;
+import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -21,7 +24,7 @@ import java.util.regex.Pattern;
 public class SpelParse {
 
     private static final int MAX_EXPRESSION_LENGTH = 512;
-    private static final Pattern VARIABLE_NAME = Pattern.compile("p[0-9]{1,3}");
+    private static final Pattern VARIABLE_NAME = Pattern.compile("p\\d{1,3}");
     private static final ExpressionParser PARSER = new SpelExpressionParser();
 
     private final StandardEvaluationContext context;
@@ -31,7 +34,7 @@ public class SpelParse {
      */
     private SpelParse() {
         context = new StandardEvaluationContext();
-        context.setBeanResolver(null);
+        context.setBeanResolver(SpelParse::denyBeanAccess);
         context.setTypeLocator(typeName -> {
             throw new EvaluationException("日志表达式不允许访问类型");
         });
@@ -78,5 +81,9 @@ public class SpelParse {
      */
     public static SpelParse create() {
         return new SpelParse();
+    }
+
+    private static Object denyBeanAccess(EvaluationContext evaluationContext, @Nullable String beanName) {
+        throw new EvaluationException("日志表达式不允许访问 Bean");
     }
 }

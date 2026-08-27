@@ -26,13 +26,14 @@ public class DemoCleanupJob implements JobHandler {
      * 创建相关对象。
      */
     public DemoCleanupJob() {
+        // Intentionally empty.
     }
     /**
      * 继承接口定义。
      */
     @Override
     public JobResult execute(JobContext context) {
-        log.info("Demo scheduler handler executed, executionId={}, jobCode={}", context.getExecutionId(), context.getJobCode());
+        log.info("Demo scheduler handler executed, executionId={}, jobCode={}", context.executionId(), context.jobCode());
         return JobResult.success();
     }
 }

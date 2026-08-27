@@ -1,5 +1,7 @@
 package com.peach.auth.service.impl;
 
+import jakarta.annotation.Nullable;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Indexed;
@@ -33,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Indexed
@@ -93,8 +96,7 @@ public class UserProfileServiceImpl implements IUserProfileService {
         if (affected != 1) {
             throw new IllegalStateException("个人资料更新失败");
         }
-        stringRedisTemplate.opsForHash().put(SatokenConstant.USER_PROFILE_CACHE_PREFIX + userId,
-                SatokenConstant.USER_PROFILE_FIELD_USER_NAME, userName);
+        putProfileCacheField(userId, SatokenConstant.USER_PROFILE_FIELD_USER_NAME, Objects.requireNonNull(userName));
         return getCurrentProfile();
     }
 
@@ -120,7 +122,7 @@ public class UserProfileServiceImpl implements IUserProfileService {
             }
 
             UserAvatarHistoryDO historyDO = new UserAvatarHistoryDO();
-            historyDO.setAvatarHistoryId(IDGeneratorUtil.UUID());
+            historyDO.setAvatarHistoryId(IDGeneratorUtil.generateUuid());
             historyDO.setUserId(userId);
             historyDO.setFileId(uploaded.getFileId());
             historyDO.setSortNo(1);
@@ -297,5 +299,11 @@ public class UserProfileServiceImpl implements IUserProfileService {
             throw new IllegalStateException("当前用户上下文不存在");
         }
         return userId;
+    }
+
+    private void putProfileCacheField(String userId, String field, @Nullable String value) {
+        if (value != null) {
+            stringRedisTemplate.opsForHash().put(SatokenConstant.USER_PROFILE_CACHE_PREFIX + userId, field, value);
+        }
     }
 }

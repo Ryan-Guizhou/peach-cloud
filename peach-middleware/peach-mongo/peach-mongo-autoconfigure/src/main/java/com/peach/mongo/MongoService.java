@@ -172,7 +172,7 @@ public class MongoService<T> implements IMongoService<T>{
     @Override
     public PageInfo<T> findPage(String collectionName, Document query, Document sort, Document projection, Integer pageNum, Integer pageSize, Class<T> clazz) {
         PageInfo<Document> pageInfo = findPage(collectionName, query, sort, projection, pageNum, pageSize);
-        return PageInfo.of(pageInfo.getList().stream().map(document -> document.toJson()).map(json -> JSON.parseObject(json, clazz)).toList(), pageInfo.getNavigatePages());
+        return PageInfo.of(pageInfo.getList().stream().map(Document::toJson).map(json -> JSON.parseObject(json, clazz)).toList(), pageInfo.getNavigatePages());
     }
 
     @Override

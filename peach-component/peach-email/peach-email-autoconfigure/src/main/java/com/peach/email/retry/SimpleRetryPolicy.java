@@ -35,12 +35,6 @@ public class SimpleRetryPolicy implements RetryPolicy{
 
     @Override
     public boolean isRetryable(Throwable error) {
-        if (error instanceof SendFailedException) {
-            return false; // 地址/内容错误通常不可重试
-        }
-        if (error instanceof MessagingException){
-            return true; // 网络/连接错误可重试
-        }
-        return true;
+        return !(error instanceof SendFailedException);
     }
 }

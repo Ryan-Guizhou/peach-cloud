@@ -27,6 +27,7 @@ public class JobDefinition {
      * 创建相关对象。
      */
     public JobDefinition() {
+        // Intentionally empty.
     }
 
     /**

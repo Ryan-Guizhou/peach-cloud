@@ -39,6 +39,7 @@ public class SchedulerRocketJdbcAutoConfiguration {
      * 创建调度 RocketMQ JDBC 存储自动配置。
      */
     public SchedulerRocketJdbcAutoConfiguration() {
+        // Intentionally empty.
     }
 
     /**

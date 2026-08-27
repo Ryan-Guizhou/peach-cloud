@@ -80,7 +80,7 @@ public class SegmentedBloomFilterService implements BloomFilterService {
         if (values == null || values.isEmpty()) return;
         String ns = resolveNamespace(namespace);
         RBloomFilter<Object> tail = getOrCreateTail(ns);
-        values.stream().forEach(x->tail.add(x));
+        values.forEach(tail::add);
         // approximate count increment
         incrementCount(ns, values.size());
         ensureScaleIfNeeded(ns);
@@ -176,8 +176,7 @@ public class SegmentedBloomFilterService implements BloomFilterService {
                 lock.unlock();
             }
         }
-        String tailName = segs.get(segs.size() - 1);
-        return getBloomFilterCached(tailName);
+        return getBloomFilterCached(segs.get(segs.size() - 1));
     }
 
     /**
@@ -187,12 +186,10 @@ public class SegmentedBloomFilterService implements BloomFilterService {
     private List<RBloomFilter<Object>> allSegments(String ns) {
         List<String> names;
         if (props.isEnableLocalCache()) {
-            names = segCache.get(ns);
-            if (names == null) {
-                RList<String> rlist = redisson.getList(keyNaming.segmentsKey(props.getKeyPrefix(), ns));
-                names = new ArrayList<>(rlist.readAll());
-                segCache.put(ns, names);
-            }
+            names = segCache.computeIfAbsent(ns, key -> {
+                RList<String> rlist = redisson.getList(keyNaming.segmentsKey(props.getKeyPrefix(), key));
+                return new ArrayList<>(rlist.readAll());
+            });
         } else {
             RList<String> rlist = redisson.getList(keyNaming.segmentsKey(props.getKeyPrefix(), ns));
             names = new ArrayList<>(rlist.readAll());
@@ -206,7 +203,6 @@ public class SegmentedBloomFilterService implements BloomFilterService {
         String segmentsKey = keyNaming.segmentsKey(props.getKeyPrefix(), ns);
         RList<String> segs = redisson.getList(segmentsKey);
         if (segs.isEmpty()) return;
-        String tailName = segs.get(segs.size() - 1);
         incrementCount(ns, 1);
         ensureScaleIfNeeded(ns);
     }
@@ -235,7 +231,6 @@ public class SegmentedBloomFilterService implements BloomFilterService {
         RList<String> segs = redisson.getList(segmentsKey);
         if (segs.isEmpty()) return;
         String tailName = segs.get(segs.size() - 1);
-        RBloomFilter<Object> tail = getBloomFilterCached(tailName);
         // read real capacity from capacity map
         RMap<String, Long> capMap = redisson.getMap(keyNaming.capacityMapKey(props.getKeyPrefix(), ns));
         Long capacity = capMap.get(tailName);
@@ -347,7 +342,7 @@ public class SegmentedBloomFilterService implements BloomFilterService {
             sList.add(ss);
             totalCap += cap;
             totalCnt += cnt;
-            productOneMinusFpp *= (1.0d - Math.max(0.0d, Math.min(1.0d, fpp)));
+            productOneMinusFpp *= (1.0d - Math.clamp(fpp, 0.0d, 1.0d));
         }
 
         out.segmentStatuses = sList;

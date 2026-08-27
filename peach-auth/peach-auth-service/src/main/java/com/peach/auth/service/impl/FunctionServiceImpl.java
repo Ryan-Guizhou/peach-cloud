@@ -1,8 +1,9 @@
 package com.peach.auth.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dto.FunctionDTO;
 import com.peach.auth.dao.FunctionDao;
@@ -34,9 +35,8 @@ public class FunctionServiceImpl implements IFunctionService {
 
     @Override
     public PageInfo<FunctionVO> pageList(FunctionQO functionQO) {
-        PageInfo<FunctionVO> pageInfo = PageHelper.startPage(functionQO.getPageNum(), functionQO.getPageSize())
+        return PageMethod.startPage(functionQO.getPageNum(), functionQO.getPageSize())
                 .doSelectPageInfo(() -> functionDao.select(new FunctionDO()));
-        return pageInfo;
     }
 
     @Override

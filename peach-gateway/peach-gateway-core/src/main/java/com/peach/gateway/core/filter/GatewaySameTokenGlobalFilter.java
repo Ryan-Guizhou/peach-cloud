@@ -68,7 +68,7 @@ public class GatewaySameTokenGlobalFilter implements GlobalFilter, Ordered {
                     .build();
             return chain.filter(exchange.mutate().request(request).build())
                     .doFinally(signal -> SaReactorSyncHolder.clearContext());
-        } catch (Throwable e) {
+        } catch (Exception e) {
             SaReactorSyncHolder.clearContext();
             String requestId = exchange.getRequest().getHeaders().getFirst(GatewayConstant.REQUEST_ID_HEADER);
             log.warn("Gateway same-token relay failed, requestId={}, method={}, path={}, reason={}",

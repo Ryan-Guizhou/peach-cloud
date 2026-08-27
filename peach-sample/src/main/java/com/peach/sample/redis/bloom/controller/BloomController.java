@@ -1,5 +1,7 @@
 package com.peach.sample.redis.bloom.controller;
 
+import lombok.extern.slf4j.Slf4j;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Indexed;
@@ -18,11 +20,14 @@ import java.util.Map;
  * @Version 1.0.0
  * @CreateTime 2025/12/8 15:20
  */
+@Slf4j
 @Indexed
 @RestController
 @RequestMapping("/bloom")
 @RequiredArgsConstructor
 public class BloomController {
+    private static final String SAMPLE_ORDER_KEY = "order";
+
 
         private final BloomFilterService bloomFilterService;
 
@@ -32,7 +37,7 @@ public class BloomController {
             bloomFilterService.add("user", i);
         }
         for (int i = 100; i > 0; i--) {
-            bloomFilterService.add("order", i);
+            bloomFilterService.add(SAMPLE_ORDER_KEY, i);
         }
     }
 
@@ -40,9 +45,9 @@ public class BloomController {
     @GetMapping("/mightContain")
     public Map demo(Integer id) {
         boolean b = bloomFilterService.mightContain("user", id);
-        System.out.println( b);
-        boolean b1 = bloomFilterService.mightContain("order", id);
-        System.out.println("b1 = " + b1);
+        log.info("{}",  b);
+        boolean b1 = bloomFilterService.mightContain(SAMPLE_ORDER_KEY, id);
+        log.info("{}", "b1 = " + b1);
         Map<String,Object> map = new HashMap<>();
         map.put("b",b);
         map.put("b1",b1);
@@ -52,8 +57,8 @@ public class BloomController {
     @GetMapping("/status")
     public void status(){
         BloomStatus user = bloomFilterService.status("user");
-        System.out.println( user.toDetailedString());
-        BloomStatus order = bloomFilterService.status("order");
-        System.out.println(order.toDetailedString());
+        log.info("{}", user.toDetailedString());
+        BloomStatus order = bloomFilterService.status(SAMPLE_ORDER_KEY);
+        log.info("{}", order.toDetailedString());
     }
 }

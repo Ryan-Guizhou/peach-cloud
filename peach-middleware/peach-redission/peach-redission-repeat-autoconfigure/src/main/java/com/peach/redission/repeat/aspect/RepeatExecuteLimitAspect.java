@@ -10,9 +10,11 @@ import com.peach.redission.distrbutedlock.locker.DistributedLocker;
 import com.peach.redission.distrbutedlock.locker.LockType;
 import com.peach.redission.distrbutedlock.manage.DistrbutedLockerFactory;
 import com.peach.redission.repeat.annoation.RepeatLimit;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.stereotype.Indexed;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -23,6 +25,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * @CreateTime 2025/12/4 17:29
  * @Description 防重放切面
  */
+@Slf4j
+@Indexed
 @Aspect
 public class RepeatExecuteLimitAspect {
 
@@ -53,19 +57,19 @@ public class RepeatExecuteLimitAspect {
         String message = repeatLimit.message();
         Object obj;
 
-        LockInfoHandle lockHandle = lockInfoHandleFactory.getLockHandle(LockInfoType.REPEAT_EXCUTED);
+        LockInfoHandle lockHandle = lockInfoHandleFactory.getLockHandle(LockInfoType.REPEAT_EXECUTED);
         String lockName = lockHandle.getLockName(joinPoint, repeatLimit.name(), repeatLimit.keys());
         String repeatFlagName = PREFIX_NAME + lockName;
         String flagObject = redissionDataHandle.get(repeatFlagName);
         if (SUCCESS_FLAG.equals(flagObject)){
-            throw new RuntimeException(message);
+            throw new IllegalStateException(message);
         }
 
         // 获取本地锁
         ReentrantLock localLock = localCacheLock.getLock(lockName, true);
         boolean lockFlag = localLock.tryLock();
         if (!lockFlag){
-            throw new RuntimeException(message);
+            throw new IllegalStateException(message);
         }
 
         // 分布式锁
@@ -76,14 +80,14 @@ public class RepeatExecuteLimitAspect {
                 try {
                     flagObject = redissionDataHandle.get(repeatFlagName);
                     if (SUCCESS_FLAG.equals(flagObject)) {
-                        throw new RuntimeException(message);
+                        throw new IllegalStateException(message);
                     }
                     obj = joinPoint.proceed();
                     if (durationTime > 0) {
                         try {
                             redissionDataHandle.set(repeatFlagName,SUCCESS_FLAG,durationTime,TimeUnit.SECONDS);
-                        }catch (Exception e) {
-
+                        } catch (Exception e) {
+                            log.warn("Failed to store repeat execution flag: {}", repeatFlagName, e);
                         }
                     }
                     return obj;
@@ -91,7 +95,7 @@ public class RepeatExecuteLimitAspect {
                     distrbutedLocker.unlock(lockName);
                 }
             }else {
-                throw new RuntimeException(message);
+                throw new IllegalStateException(message);
             }
         }finally {
             localLock.unlock();

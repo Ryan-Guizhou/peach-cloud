@@ -1,5 +1,7 @@
 package com.peach.rocket.producer;
 
+import java.time.ZoneId;
+
 import com.peach.rocket.annotation.MqEvent;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.codec.MqMessageCodec;
@@ -188,7 +190,7 @@ public class RocketMqPublisher implements MqPublisher {
         envelope.setPayloadType(payload.getClass().getName());
         envelope.setPayload(payload);
         envelope.setHeaders(headerResolver.resolve(options.getHeaders()));
-        envelope.setCreatedAt(LocalDateTime.now());
+        envelope.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
         MessageBuilder<byte[]> builder = MessageBuilder.withPayload(codec.encode(envelope));
         if (StringUtils.hasText(route.getKey())) {
             builder.setHeader(MessageConst.PROPERTY_KEYS, route.getKey());

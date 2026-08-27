@@ -102,6 +102,7 @@ public class UploadObjectRequest extends StorageObjectRequest {
             return this;
         }
 
+        @Override
         public UploadObjectRequest build() {
             validate();
             if (content == null) {

@@ -44,7 +44,7 @@ public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceSer
     public CloudStorageInstanceVO add(CloudStorageInstanceSaveDTO data) {
         validateSaveRequest(data, false);
         CloudStorageInstanceDO instanceDO = buildForSave(data, null);
-        instanceDO.setInstanceId(IDGeneratorUtil.UUID());
+        instanceDO.setInstanceId(IDGeneratorUtil.generateUuid());
         instanceDO.fillCreateTime();
         cloudStorageInstanceDao.insert(instanceDO);
         return selectById(instanceDO.getInstanceId());
@@ -56,7 +56,7 @@ public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceSer
         validateSaveRequest(data, true);
         CloudStorageInstanceVO stored = cloudStorageInstanceDao.selectById(data.getInstanceId());
         if (stored == null) {
-            throw new RuntimeException("cloud storage instance not found");
+            throw new IllegalArgumentException("cloud storage instance not found");
         }
         CloudStorageInstanceDO instanceDO = buildForSave(data, stored);
         instanceDO.setInstanceId(data.getInstanceId());
@@ -155,7 +155,7 @@ public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceSer
     private CloudStorageInstanceVO requireById(String instanceId) {
         CloudStorageInstanceVO instanceVO = cloudStorageInstanceDao.selectById(instanceId);
         if (instanceVO == null) {
-            throw new RuntimeException("cloud storage instance not found");
+            throw new IllegalArgumentException("cloud storage instance not found");
         }
         instanceVO.setSecretKeyMasked(maskSecret(instanceVO.getSecretKey()));
         instanceVO.setSecretKey(null);
@@ -164,22 +164,22 @@ public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceSer
 
     private void validateSaveRequest(CloudStorageInstanceSaveDTO data, boolean update) {
         if (data == null) {
-            throw new RuntimeException("request data is empty");
+            throw new IllegalArgumentException("request data is empty");
         }
         if (update && StringUtil.isBlank(data.getInstanceId())) {
-            throw new RuntimeException("instanceId is empty");
+            throw new IllegalArgumentException("instanceId is empty");
         }
     }
 
     private List<CloudStorageInstanceVO> sanitize(List<CloudStorageInstanceVO> records) {
         List<CloudStorageInstanceVO> result = new ArrayList<CloudStorageInstanceVO>();
-        for (CloudStorageInstanceVO record : records) {
-            if (record == null) {
+        for (CloudStorageInstanceVO instanceVo : records) {
+            if (instanceVo == null) {
                 continue;
             }
-            record.setSecretKeyMasked(maskSecret(record.getSecretKey()));
-            record.setSecretKey(null);
-            result.add(record);
+            instanceVo.setSecretKeyMasked(maskSecret(instanceVo.getSecretKey()));
+            instanceVo.setSecretKey(null);
+            result.add(instanceVo);
         }
         return result;
     }

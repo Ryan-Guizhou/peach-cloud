@@ -1,5 +1,7 @@
 package com.peach.scheduler.rocket.jdbc;
 
+import java.time.ZoneId;
+
 import org.springframework.stereotype.Indexed;
 
 import com.peach.rocket.outbox.MqOutboxEvent;
@@ -60,7 +62,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
      */
     @Override
     public void save(MqOutboxEvent event) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         jdbcTemplate.update(INSERT_SQL,
                 event.getMessageId(),
                 event.getTopic(),
@@ -80,7 +82,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
      */
     @Override
     public List<MqOutboxEvent> findPending(int batchSize) {
-        int boundedBatch = Math.max(1, Math.min(batchSize, MAX_BATCH_SIZE));
+        int boundedBatch = Math.clamp(batchSize, 1, MAX_BATCH_SIZE);
         recoverStaleClaims();
         jdbcTemplate.update(
                 "UPDATE MQ_OUTBOX_EVENT SET STATUS=?,CLAIMED_BY=?,CLAIMED_AT=NOW(3),UPDATED_AT=NOW(3) "

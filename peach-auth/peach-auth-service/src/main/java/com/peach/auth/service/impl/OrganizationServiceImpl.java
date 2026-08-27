@@ -1,8 +1,9 @@
 package com.peach.auth.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dao.OrganizationDao;
 import com.peach.auth.dto.OrganizationDTO;
@@ -38,7 +39,7 @@ public class OrganizationServiceImpl implements IOrganizationService {
 
     @Override
     public PageInfo<OrganizationVO> pageList(OrganizationQO organizationQO) {
-        return PageHelper.startPage(organizationQO.getPageNum(), organizationQO.getPageSize())
+        return PageMethod.startPage(organizationQO.getPageNum(), organizationQO.getPageSize())
                 .doSelectPageInfo(() -> organizationDao.selectByQO(organizationQO));
     }
 

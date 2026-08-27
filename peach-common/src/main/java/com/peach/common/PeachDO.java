@@ -43,6 +43,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Data
 public class PeachDO implements Serializable {
 
+    private static final String CURRENT_USER_ID_FIELD = "currentUserId";
+
+
     private static final long serialVersionUID = 1L;
 
     /**
@@ -267,40 +270,6 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * 为当前实体设置主键 ID。
-     *
-     * <p>
-     * 该方法会查找当前类或父类中带有 {@link Id} 注解的字段，并为其赋值 UUID。
-     * </p>
-     *
-     * <p>
-     * 注意：
-     * <ul>
-     *     <li>如果当前实体已经有 ID，则不会覆盖。</li>
-     *     <li>如果实体类及其父类都没有 {@link Id} 注解字段，则会抛出异常。</li>
-     * </ul>
-     * </p>
-     *
-     * @param <E> 当前实体类型
-     * @return 当前对象
-     */
-    @SuppressWarnings("unchecked")
-//    public <E extends PeachDO> E setEntityId() {
-//        try {
-//            Field idField = initIdField(this.getClass());
-//            Object currentValue = idField.get(this);
-//
-//            if (currentValue == null || StringUtil.isEmpty(currentValue.toString())) {
-//                idField.set(this, IDGeneratorUtil.UUID());
-//            }
-//
-//            return (E) this;
-//        } catch (Exception e) {
-//            throw new RuntimeException("Set entity id failed, class: " + this.getClass().getName(), e);
-//        }
-//    }
-
-    /**
      * Fill create audit fields.
      *
      * @param creatorId creator id
@@ -319,7 +288,7 @@ public class PeachDO implements Serializable {
      * </p>
      */
     public void fillCreateTime() {
-        fillCreateTime(currentContextValue("currentUserId"));
+        fillCreateTime(currentContextValue(CURRENT_USER_ID_FIELD));
         fillCurrentTenantOrg();
         requireTenantOrgIfPresent();
     }
@@ -331,7 +300,7 @@ public class PeachDO implements Serializable {
      * @param orgId    organization id
      */
     public void fillCreateTime(String tenantId, String orgId) {
-        fillCreateTime(currentContextValue("currentUserId"));
+        fillCreateTime(currentContextValue(CURRENT_USER_ID_FIELD));
         fillTenantOrg(tenantId, orgId);
     }
 
@@ -349,7 +318,7 @@ public class PeachDO implements Serializable {
      * Fill modify audit fields from current user context.
      */
     public void fillModifyTime() {
-        fillModifyTime(currentContextValue("currentUserId"));
+        fillModifyTime(currentContextValue(CURRENT_USER_ID_FIELD));
     }
 
     /**
@@ -469,9 +438,7 @@ public class PeachDO implements Serializable {
                 return null;
             }
             return value.toString();
-        } catch (ClassNotFoundException e) {
-            return null;
-        } catch (NoSuchMethodException e) {
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
             return null;
         } catch (Exception e) {
             throw new RuntimeException("Get current security context failed, method: " + methodName, e);
@@ -509,20 +476,6 @@ public class PeachDO implements Serializable {
             throw new IllegalArgumentException("field must not be empty");
         }
     }
-
-    /**
-     * 初始化并缓存实体主键字段。
-     *
-     * @param clazz 实体 Class
-     * @return 主键字段
-     */
-//    private static Field initIdField(Class<?> clazz) {
-//        return ID_FIELD_CACHE.computeIfAbsent(clazz, key -> {
-//            Field idField = getIdField(key);
-//            idField.setAccessible(true);
-//            return idField;
-//        });
-//    }
 
     /**
      * 从当前类及其父类中查找带有 {@link Id} 注解的字段。

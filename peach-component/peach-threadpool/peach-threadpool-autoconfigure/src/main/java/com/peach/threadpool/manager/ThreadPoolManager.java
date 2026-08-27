@@ -97,8 +97,8 @@ public class ThreadPoolManager {
      * @param task 待执行任务
      * @return 任务 Future
      */
-    public Future<?> submit(PoolType poolType, Runnable task) {
-        return get(poolType).submit(wrapper.wrap(task));
+    public Future<Void> submit(PoolType poolType, Runnable task) {
+        return get(poolType).submit(wrapper.wrap(task), null);
     }
 
     /**

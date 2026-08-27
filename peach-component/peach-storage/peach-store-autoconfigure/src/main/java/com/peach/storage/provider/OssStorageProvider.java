@@ -46,8 +46,10 @@ import com.peach.enums.StorageType;
 import com.peach.storage.spi.StorageProvider;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -193,11 +195,9 @@ public class OssStorageProvider implements StorageProvider {
         try {
             ListObjectsRequest listRequest = new ListObjectsRequest(bucketName(config, request.getBucketName()));
             Optional.ofNullable(request.getPrefix())
-                            .ifPresent(prefix -> listRequest.setPrefix(buildObjectKey(config,prefix)));
-            Optional.ofNullable(request.getContinuationToken())
-                            .ifPresent(continuationToken -> listRequest.setMarker(continuationToken));
-            Optional.ofNullable(resolveDelimiter(request))
-                            .ifPresent(delimiter -> listRequest.setDelimiter(delimiter));
+                    .ifPresent(prefix -> listRequest.setPrefix(buildObjectKey(config, prefix)));
+            Optional.ofNullable(request.getContinuationToken()).ifPresent(listRequest::setMarker);
+            Optional.ofNullable(resolveDelimiter(request)).ifPresent(listRequest::setDelimiter);
             listRequest.setMaxKeys(request.getMaxKeys());
             ObjectListing listing = client.listObjects(listRequest);
             List<ObjectInfo> items = new ArrayList<>();
@@ -244,9 +244,16 @@ public class OssStorageProvider implements StorageProvider {
             String postPolicy = client.generatePostPolicy(expiration, policyConditions);
             String encodedPolicy = BinaryUtil.toBase64String(postPolicy.getBytes("UTF-8"));
             String signature = client.calculatePostSignature(postPolicy);
-            return new FrontendUploadTokenResult(name(), actualBucket, rawObjectKey(request.getObjectKey()),
-                    resolveOssPostHost(actualBucket), config.getAccessKey(), encodedPolicy, signature,
-                    expiration.toInstant());
+            return FrontendUploadTokenResult.builder()
+                    .providerName(name())
+                    .bucketName(actualBucket)
+                    .objectKey(rawObjectKey(request.getObjectKey()))
+                    .host(resolveOssPostHost(actualBucket))
+                    .accessKeyId(config.getAccessKey())
+                    .policy(encodedPolicy)
+                    .signature(signature)
+                    .expiresAt(expiration.toInstant())
+                    .build();
         } catch (Exception ex) {
             throw toStorageException("Failed to create OSS frontend upload token: " + request.getObjectKey(), ex);
         }
@@ -362,7 +369,7 @@ public class OssStorageProvider implements StorageProvider {
      * @return 配置完成的 OSS 对象元数据
      * @throws Exception 获取内容长度时发生异常
      */
-    private ObjectMetadata buildMetadata(UploadObjectRequest request) throws Exception {
+    private ObjectMetadata buildMetadata(UploadObjectRequest request) throws IOException {
         ObjectMetadata metadata = buildBaseMetadata(request.getContentType(), request.getMetadata());
         long length = request.getContent().length();
         if (length >= 0) {

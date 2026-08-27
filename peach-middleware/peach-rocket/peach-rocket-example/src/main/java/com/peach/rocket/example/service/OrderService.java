@@ -1,5 +1,7 @@
 package com.peach.rocket.example.service;
 
+import java.time.ZoneId;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Indexed;
@@ -35,14 +37,14 @@ public class OrderService {
         OrderCreatedEvent createdEvent = new OrderCreatedEvent();
         createdEvent.setOrderId(10001L);
         createdEvent.setAmount(new BigDecimal("99.90"));
-        createdEvent.setCreatedAt(LocalDateTime.now());
+        createdEvent.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
         mqPublisher.publish(createdEvent);
         mqPublisher.publishAsync(createdEvent);
         mqPublisher.publishDelay(createdEvent, MqDelay.duration(Duration.ofSeconds(10)));
 
         OrderPaidEvent paidEvent = new OrderPaidEvent();
         paidEvent.setOrderId(10001L);
-        paidEvent.setPaidAt(LocalDateTime.now());
+        paidEvent.setPaidAt(LocalDateTime.now(ZoneId.systemDefault()));
         mqPublisher.publishOrderly(paidEvent, String.valueOf(paidEvent.getOrderId()));
         log.info("[example-order-service] demo messages published. orderId={}", createdEvent.getOrderId());
     }

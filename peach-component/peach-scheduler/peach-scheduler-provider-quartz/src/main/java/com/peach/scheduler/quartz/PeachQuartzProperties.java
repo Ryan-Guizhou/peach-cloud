@@ -24,6 +24,7 @@ public class PeachQuartzProperties {
      * 创建默认 Quartz Provider 配置。
      */
     public PeachQuartzProperties() {
+        // Intentionally empty.
     }
 
     /**

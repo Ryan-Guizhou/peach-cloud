@@ -1,8 +1,9 @@
 package com.peach.auth.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dao.AuthLogDao;
 import com.peach.auth.entity.AuthLogDO;
@@ -33,17 +34,17 @@ public class AuthLogServiceImpl implements IAuthLogService {
 
     @Override
     public PageInfo<AuthLogVO> pageList(AuthLogQO authLogQO) {
-        return PageHelper.startPage(authLogQO.getPageNum(), authLogQO.getPageSize())
+        return PageMethod.startPage(authLogQO.getPageNum(), authLogQO.getPageSize())
                 .doSelectPageInfo(() -> authLogDao.select(buildQuery(authLogQO)));
     }
 
     @Override
-    public void record(AuthLogDO authLogDO) {
+    public void saveLog(AuthLogDO authLogDO) {
         if (authLogDO == null) {
             return;
         }
         if (StringUtil.isBlank(authLogDO.getLogId())) {
-            authLogDO.setLogId(IDGeneratorUtil.UUID());
+            authLogDO.setLogId(IDGeneratorUtil.generateUuid());
         }
         if (StringUtil.isBlank(authLogDO.getOperatTime())) {
             authLogDO.setOperatTime(DateUtil.nowTime());

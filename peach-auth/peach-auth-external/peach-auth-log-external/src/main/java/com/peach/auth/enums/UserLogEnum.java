@@ -5,27 +5,26 @@ package com.peach.auth.enums;
  * @Version 1.0.0
  * @CreateTime 2026/1/18 17:57
  */
-public interface UserLogEnum {
+public final class UserLogEnum {
+
+    private UserLogEnum() {
+        throw new IllegalStateException("Utility class");
+    }
+
+    public static final String UNKNOWN_VALUE = "UNKNOWN";
 
     /**
      * 模块枚举
      */
-    enum Module implements UserLogEnum{
+    public enum Module {
         USERSERVICE("USERSERVICE", "用户服务"),
-
-        FILESERVICE("FILESERVICE","文件服务"),
-
-        MONIORSERVICE("MONIORSERVICE","监控服务"),
-
-        SCHEDULESERVICE("SCHEDULESERVICE","定时任务模块"),
-
-        SYSCONFIG("SYSCONFIG","系统配置"),
-
-        SETTING("SETTING","系统设置"),
-
-        DEFAULT("UNKNOWN","未知"),
-        GENERATOR("GENERATOR","未知"),
-        ;
+        FILESERVICE("FILESERVICE", "文件服务"),
+        MONIORSERVICE("MONIORSERVICE", "监控服务"),
+        SCHEDULESERVICE("SCHEDULESERVICE", "定时任务模块"),
+        SYSCONFIG("SYSCONFIG", "系统配置"),
+        SETTING("SETTING", "系统设置"),
+        DEFAULT(UNKNOWN_VALUE, "未知"),
+        GENERATOR("GENERATOR", "未知");
 
         private final String moduleCode;
 
@@ -57,19 +56,12 @@ public interface UserLogEnum {
     /**
      * 操作类型枚举
      */
-    enum OptType implements UserLogEnum {
-
-
+    public enum OptType {
         DELETE("DELETE", "删除"),
-
         SELECT("SELECT", "查询"),
-
         INSERT("INSERT", "新增"),
-
         UPDATE("UPDATE", "更新"),
-
-        DEFAULT("UNKNOWN", "未知"),
-        ;
+        DEFAULT(UNKNOWN_VALUE, "未知");
 
         private final String optTypeCode;
 
@@ -88,7 +80,7 @@ public interface UserLogEnum {
             return optTypeName;
         }
 
-        public OptType getOptTypeEnumByOptTypeCode(String optTypeCode) {
+        public static OptType getOptTypeEnumByOptTypeCode(String optTypeCode) {
             for (OptType optTypeEnum : OptType.values()) {
                 if (optTypeEnum.getOptTypeCode().equals(optTypeCode)) {
                     return optTypeEnum;
@@ -101,18 +93,12 @@ public interface UserLogEnum {
     /**
      * 日志级别枚举
      */
-    enum LogLevel implements UserLogEnum {
-
+    public enum LogLevel {
         INFO("INFO", "INFO"),
-
         DEBUG("DEBUG", "DEBUG"),
-
         WARN("WARN", "WARN"),
-
         ERROR("ERROR", "ERROR"),
-
-        DEFAULT("UNKNOWN", "未知"),
-        ;
+        DEFAULT(UNKNOWN_VALUE, "未知");
 
         private final String logLevelCode;
 
@@ -131,7 +117,7 @@ public interface UserLogEnum {
             return logLevelName;
         }
 
-        public LogLevel getLogLevelEnumByLogLevelCode(String logLevelCode) {
+        public static LogLevel getLogLevelEnumByLogLevelCode(String logLevelCode) {
             for (LogLevel logLevelEnum : LogLevel.values()) {
                 if (logLevelEnum.getLogLevelCode().equals(logLevelCode)) {
                     return logLevelEnum;

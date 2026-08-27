@@ -15,6 +15,7 @@ import org.redisson.api.RedissonClient;
 
 import javax.crypto.Cipher;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -36,6 +37,10 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public class RsaPasswordUtil {
+
+    private RsaPasswordUtil() {
+        throw new IllegalStateException("Utility class");
+    }
 
     /**
      * 存储RSA密钥的缓存key
@@ -59,9 +64,14 @@ public class RsaPasswordUtil {
 
 
     /**
-     * RSA 加密算法
+     * RSA 密钥算法
      */
-    private static final String AlgorithmType = "RSA";
+    private static final String ALGORITHM_TYPE = "RSA";
+
+    /**
+     * RSA-OAEP（SHA-256）填充，与前端 Web Crypto {@code RSA-OAEP} 对齐。
+     */
+    private static final String CIPHER_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
 
 
     /**
@@ -98,7 +108,7 @@ public class RsaPasswordUtil {
             decryptPassword = decrypt(password);
         } catch (Exception e) {
             log.error("解密失败");
-            throw new RuntimeException(e);
+            throw new IllegalStateException("RSA initialization failed", e);
         }
         return decryptPassword;
     }
@@ -114,7 +124,7 @@ public class RsaPasswordUtil {
     }
 
 
-    public static String encrypt(String plainText) throws Exception {
+    public static String encrypt(String plainText) throws GeneralSecurityException {
         Cipher cipher = initCipher(1, getPublicKey());
         byte[] bytes = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
         return byteToHex(bytes);
@@ -134,7 +144,7 @@ public class RsaPasswordUtil {
     }
 
 
-    public static String decrypt(String cipherText) throws Exception {
+    public static String decrypt(String cipherText) throws GeneralSecurityException {
         Cipher cipher = initCipher(2, getPrivateKey());
         byte[] bytes = hexToByte(cipherText);
         return new String(cipher.doFinal(bytes), StandardCharsets.UTF_8);
@@ -184,6 +194,9 @@ public class RsaPasswordUtil {
                 rsaInfo.put(PUBLIC_KEY, publicKey);
                 log.info("Initialization of system login rsa successful");
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Initialization of system login rsa interrupted", e);
         } catch (Exception e) {
             log.error("Initialization of system login rsa error:", e);
         } finally {
@@ -199,8 +212,8 @@ public class RsaPasswordUtil {
      * @return
      * @throws Exception
      */
-    private static Cipher initCipher(int mode, Key key) throws Exception{
-        Cipher cipher = Cipher.getInstance(AlgorithmType);
+    private static Cipher initCipher(int mode, Key key) throws GeneralSecurityException {
+        Cipher cipher = Cipher.getInstance(CIPHER_TRANSFORMATION);
         cipher.init(mode, key);
         return cipher;
     }
@@ -212,7 +225,7 @@ public class RsaPasswordUtil {
      */
     private static PrivateKey getPrivateKey() throws NoSuchAlgorithmException, InvalidKeySpecException {
         // 获取密钥工厂
-        KeyFactory keyFactory = KeyFactory.getInstance(AlgorithmType);
+        KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_TYPE);
         // 构建密钥规范 进行 Base64 解码
         byte[] decode = Base64.getDecoder().decode(getRsaInfo().get(PRIVATE_KEY));
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(decode);
@@ -227,11 +240,10 @@ public class RsaPasswordUtil {
      */
     private static PublicKey getPublicKey() throws NoSuchAlgorithmException, InvalidKeySpecException {
         // 获取密钥工厂
-        KeyFactory keyFactory = KeyFactory.getInstance(AlgorithmType);
+        KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_TYPE);
         // 构建密钥规范 进行 Base64 解码
         byte[] decode = Base64.getDecoder().decode(getRsaInfo().get(PUBLIC_KEY));
         X509EncodedKeySpec spec = new X509EncodedKeySpec(decode);
-        // 生成私钥
         return keyFactory.generatePublic(spec);
     }
 

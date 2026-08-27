@@ -83,9 +83,7 @@ public class DelayConsumerQueue extends DelayBaseQueue{
                         assert blockingQueue != null;
                         String content = blockingQueue.take();
                         log.debug("Received message from queue for topic: {}", getTopicName());
-                        executeTaskThreadPool.execute(() -> {
-                            processMessageWithRetry(content);
-                        });
+                        executeTaskThreadPool.execute(() -> processMessageWithRetry(content));
                     } catch (InterruptedException e) {
                         log.warn("Consumer listener interrupted for topic: {}", getTopicName());
                         destroy(executeTaskThreadPool);

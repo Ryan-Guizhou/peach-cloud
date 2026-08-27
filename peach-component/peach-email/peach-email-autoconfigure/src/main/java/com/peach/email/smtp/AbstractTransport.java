@@ -41,15 +41,9 @@ public abstract class AbstractTransport implements EmailTransport {
             }else {
                 props.put(EmailConstant.MAIL_STMP_STARTTLS_ENABLE, EmailConstant.DEFAULT_MAIL_STMP_STARTTLS_ENABLE);
             }
-            if (!props.containsKey(EmailConstant.MAIL_STMP_CONNECTIONTIMEOUT)) {
-                props.put(EmailConstant.MAIL_STMP_CONNECTIONTIMEOUT, EmailConstant.DEFAULT_MAIL_STMP_CONNECTIONTIMEOUT);
-            }
-            if (!props.containsKey(EmailConstant.MAIL_STMP_TIMEOUT)) {
-                props.put(EmailConstant.MAIL_STMP_TIMEOUT, EmailConstant.DEFAULT_MAIL_STMP_TIMEOUT);
-            }
-            if (!props.containsKey(EmailConstant.MAIL_STMP_WRITETIMEOUE)) {
-                props.put(EmailConstant.MAIL_STMP_WRITETIMEOUE, EmailConstant.DEFAULT_MAIL_STMP_WRITETIMEOUE);
-            }
+            props.computeIfAbsent(EmailConstant.MAIL_STMP_CONNECTIONTIMEOUT, k -> EmailConstant.DEFAULT_MAIL_STMP_CONNECTIONTIMEOUT);
+            props.computeIfAbsent(EmailConstant.MAIL_STMP_TIMEOUT, k -> EmailConstant.DEFAULT_MAIL_STMP_TIMEOUT);
+            props.computeIfAbsent(EmailConstant.MAIL_STMP_WRITETIMEOUE, k -> EmailConstant.DEFAULT_MAIL_STMP_WRITETIMEOUE);
             if (context.getExtra() != null) {
                 props.putAll(context.getExtra());
             }

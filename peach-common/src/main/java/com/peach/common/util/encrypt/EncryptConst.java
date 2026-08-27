@@ -5,11 +5,15 @@ package com.peach.common.util.encrypt;
  * @Version 1.0.0
  * @CreateTime 2025/12/30 16:11
  */
-public interface EncryptConst {
+public final class EncryptConst {
 
-    String AES = "AES";
+    private EncryptConst() {
+        throw new IllegalStateException("Utility class");
+    }
 
-    String RSA = "RSA";
+    public static final String AES = "AES";
 
-    String DES = "DES";
+    public static final String RSA = "RSA";
+
+    public static final String DES = "DES";
 }

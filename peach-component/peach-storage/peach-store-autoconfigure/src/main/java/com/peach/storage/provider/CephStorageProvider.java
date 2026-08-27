@@ -1,6 +1,7 @@
 package com.peach.storage.provider;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -44,10 +45,11 @@ import com.peach.response.UploadPartResult;
 import com.peach.response.UploadResult;
 import com.peach.storage.spi.StorageProvider;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -333,9 +335,18 @@ public class CephStorageProvider implements StorageProvider {
         client.shutdown();
     }
 
+    /**
+     * 创建 Ceph S3 兼容客户端。
+     *
+     * <p>已显式 {@code Protocol.HTTPS}；Sonar S6263 已在根 {@code pom.xml} 多条件忽略。</p>
+     *
+     * @param config 存储提供者配置
+     * @return Ceph S3 客户端
+     */
     private AmazonS3 createClient(StorageProperties.StorageProvider config) {
         BasicAWSCredentials credentials = new BasicAWSCredentials(config.getAccessKey(), config.getSecretKey());
         ClientConfiguration clientConfiguration = new ClientConfiguration();
+        clientConfiguration.setProtocol(Protocol.HTTPS);
         clientConfiguration.setSignerOverride("AWSS3V4SignerType");
         return AmazonS3ClientBuilder.standard()
                 .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
@@ -347,7 +358,7 @@ public class CephStorageProvider implements StorageProvider {
                 .build();
     }
 
-    private ObjectMetadata buildMetadata(UploadObjectRequest request) throws Exception {
+    private ObjectMetadata buildMetadata(UploadObjectRequest request) throws IOException {
         ObjectMetadata metadata = new ObjectMetadata();
         long length = request.getContent().length();
         if (length >= 0) {
@@ -378,12 +389,7 @@ public class CephStorageProvider implements StorageProvider {
         for (Part part : parts) {
             partETags.add(new PartETag(part.getPartNumber(), part.getETag()));
         }
-        Collections.sort(partETags, new Comparator<PartETag>() {
-            @Override
-            public int compare(PartETag left, PartETag right) {
-                return Integer.compare(left.getPartNumber(), right.getPartNumber());
-            }
-        });
+        partETags.sort(Comparator.comparingInt(PartETag::getPartNumber));
         return partETags;
     }
 

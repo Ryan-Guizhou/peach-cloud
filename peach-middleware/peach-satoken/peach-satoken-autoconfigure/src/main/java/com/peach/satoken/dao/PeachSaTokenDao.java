@@ -11,6 +11,7 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
+import com.peach.common.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -19,6 +20,7 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import jakarta.annotation.PostConstruct;
+
 import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -46,17 +48,17 @@ public class PeachSaTokenDao implements SaTokenDao {
     /**
      * 时间格式化器。
      */
-    public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    public static final DateTimeFormatter TIME_FORMATTER = DateUtil.TIME_ONLY_FORMATTER;
 
     /**
      * 日期格式化器。
      */
-    public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    public static final DateTimeFormatter DATE_FORMATTER = DateUtil.LOCAL_DATE_FORMATTER;
 
     /**
      * 日期时间格式化器。
      */
-    public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    public static final DateTimeFormatter DATE_TIME_FORMATTER = DateUtil.LOCAL_DATE_TIME_FORMATTER;
 
     private final JedisConnectionFactory jedisConnectionFactory;
 
@@ -90,6 +92,7 @@ public class PeachSaTokenDao implements SaTokenDao {
      * 初始化 Redis 模板和 Jackson 序列化配置。
      */
     @PostConstruct
+    @Override
     public void init() {
         if (initialized) {
             return;

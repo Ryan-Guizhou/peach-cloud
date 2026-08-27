@@ -4,7 +4,6 @@ import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -41,7 +40,7 @@ public final class MemoryCacheUtil {
      */
     private static final Integer TWO = 2;
 
-    private static ScheduledExecutorService scheduledExecutor;
+    private static ScheduledExecutorService cacheCleaner;
 
     /**
      * 初始化
@@ -51,28 +50,21 @@ public final class MemoryCacheUtil {
     public static void init(int cacheMaxNumber, long second) {
         CACHE_MAX_NUMBER = cacheMaxNumber;
         if (second > 0L) {
-            scheduledExecutor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    return new Thread(r,"thd-captcha-cache-clean");
-                }
-            },new ThreadPoolExecutor.CallerRunsPolicy());
-            scheduledExecutor.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    refresh();
-                }
-            },10,second, TimeUnit.SECONDS);
+            cacheCleaner = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "thd-captcha-cache-clean"),
+                    new ThreadPoolExecutor.CallerRunsPolicy());
+            cacheCleaner.scheduleAtFixedRate(MemoryCacheUtil::refresh, 10, second, TimeUnit.SECONDS);
 
-            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    if(Objects.nonNull(scheduledExecutor)){
-                        clear();
-                        scheduledExecutor.shutdownNow();
-                    }
-                }
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                clear();
+                shutdownCacheCleaner();
             }));
+        }
+    }
+
+    private static void shutdownCacheCleaner() {
+        if (cacheCleaner != null) {
+            cacheCleaner.shutdownNow();
+            cacheCleaner = null;
         }
     }
 

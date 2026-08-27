@@ -36,14 +36,35 @@ public class AnnotationMqRouteResolver implements MqRouteResolver {
             throw new MqException("MQ payload must not be null");
         }
         MqEvent event = payload.getClass().getAnnotation(MqEvent.class);
-        String topic = StringUtils.hasText(options.getTopic()) ? options.getTopic() : event == null ? null : event.topic();
+        String topic = resolveTopic(options, event);
         if (!StringUtils.hasText(topic)) {
             throw new MqException("MQ topic must not be blank");
         }
-        String tag = StringUtils.hasText(options.getTag()) ? options.getTag() : event == null ? null : event.tag();
-        String keyExpression = StringUtils.hasText(options.getKey()) ? options.getKey() : event == null ? null : event.key();
+        String tag = resolveTag(options, event);
+        String keyExpression = resolveKeyExpression(options, event);
         String key = resolveKey(payload, keyExpression);
         return new MqRoute(RocketMqNaming.normalizeTopic(topic, properties), tag, key);
+    }
+
+    private String resolveTopic(MqSendOptions options, MqEvent event) {
+        if (StringUtils.hasText(options.getTopic())) {
+            return options.getTopic();
+        }
+        return event == null ? null : event.topic();
+    }
+
+    private String resolveTag(MqSendOptions options, MqEvent event) {
+        if (StringUtils.hasText(options.getTag())) {
+            return options.getTag();
+        }
+        return event == null ? null : event.tag();
+    }
+
+    private String resolveKeyExpression(MqSendOptions options, MqEvent event) {
+        if (StringUtils.hasText(options.getKey())) {
+            return options.getKey();
+        }
+        return event == null ? null : event.key();
     }
 
     private String resolveKey(Object payload, String keyExpression) {

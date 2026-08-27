@@ -51,7 +51,7 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
     /**
      * Whether font color is random / 点选文字字体颜色是否随机
      */
-    private boolean fontColorRandom = Boolean.TRUE;
+    private boolean fontColorRandom = true;
 
     /**
      * Initialize configuration / 初始化配置
@@ -60,9 +60,9 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
     @Override
     public void init(Properties config) {
         super.init(config);
-        CLICK_WORD_FRONT_STR = config.getProperty(CaptchaPropertiesConst.CAPTCHA_FONT_TYPE, "SourceHanSansCN-Normal.otf");
+        applyClickWordFontType(config);
         try {
-            int size = Integer.valueOf(config.getProperty(CaptchaPropertiesConst.CAPTCHA_FONT_SIZE, HAN_ZI_SIZE + ""));
+            int size = Integer.parseInt(config.getProperty(CaptchaPropertiesConst.CAPTCHA_FONT_SIZE, HAN_ZI_SIZE + ""));
 
             if (CLICK_WORD_FRONT_STR.toLowerCase().endsWith(".ttf")
                     || CLICK_WORD_FRONT_STR.toLowerCase().endsWith(".ttc")
@@ -71,13 +71,17 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
                                 getClass().getResourceAsStream("/fonts/" + CLICK_WORD_FRONT_STR))
                         .deriveFont(Font.BOLD, size);
             } else {
-                int style = Integer.valueOf(config.getProperty(CaptchaPropertiesConst.CAPTCHA_FONT_STYLE, Font.BOLD + ""));
+                int style = Integer.parseInt(config.getProperty(CaptchaPropertiesConst.CAPTCHA_FONT_STYLE, Font.BOLD + ""));
                 this.clickWordFont = new Font(CLICK_WORD_FRONT_STR, style, size);
             }
         } catch (Exception ex) {
             log.error("load font error:{}", ex.getMessage());
         }
-        this.wordTotalCount = Integer.valueOf(config.getProperty(CaptchaPropertiesConst.CAPTCHA_WORD_COUNT, "4"));
+        this.wordTotalCount = Integer.parseInt(config.getProperty(CaptchaPropertiesConst.CAPTCHA_WORD_COUNT, "4"));
+    }
+
+    private static void applyClickWordFontType(Properties config) {
+        CLICK_WORD_FRONT_STR = config.getProperty(CaptchaPropertiesConst.CAPTCHA_FONT_TYPE, "SourceHanSansCN-Normal.otf");
     }
 
     /**
@@ -138,7 +142,7 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
         List<PointVO> userPoints = new ArrayList<>();
         try {
             // Parse cached points (including independent secret key for each point) / 解析缓存中的点（包含每个点的独立密钥）
-            cachePoints = JsonUtil.parseArray(s, PointVO.class);
+            cachePoints = JsonUtil.parseArray(s);
 
             // 3. Parse coordinate data submitted by frontend / 解析前端提交的坐标数据
             // Frontend pointJson should be a JSON array of encrypted strings / 前端传来的 pointJson 应该是一个包含多个加密字符串的 JSON 数组
@@ -230,7 +234,7 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
             boolean overlap = false;
             for (PointVO p : existPoints) {
                 // Distance check to prevent overlap / 距离判断，防止重叠
-                if (Math.sqrt(Math.pow(x - p.getX(), 2) + Math.pow(y - p.getY(), 2)) < HAN_ZI_SIZE * 1.5) {
+                if (Math.sqrt(Math.pow((double) x - p.getX(), 2) + Math.pow((double) y - p.getY(), 2)) < HAN_ZI_SIZE * 1.5) {
                     overlap = true;
                     break;
                 }
@@ -282,8 +286,8 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
         graphics.drawImage(backgroundImage, 0, 0, null);
         
         // Draw watermark / 绘制水印
-        if (this.WARK_MARK_FRONT != null) {
-             graphics.setFont(WARK_MARK_FRONT);
+        if (this.waterMarkFont != null) {
+             graphics.setFont(waterMarkFont);
              graphics.setColor(Color.white);
              graphics.drawString(WATER_MARK, width - getEnOrChLength(WATER_MARK), height - (HAN_ZI_SIZE / 2) + 7);
         }
@@ -341,7 +345,7 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
 
         // Calculate center coordinates for clicked characters and assign independent key / 计算需要点击的汉字的中心坐标，并为每个点分配独立的密钥
         String secretKey = AesUtil.getKey();
-        if (this.CAPTCHA_AES_STATUS){
+        if (CAPTCHA_AES_STATUS){
             secretKey = AesUtil.getKey();
         }
         for (Integer index : checkIndices) {

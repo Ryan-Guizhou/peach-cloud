@@ -14,17 +14,21 @@ import java.util.Objects;
  */
 public final class StorageValidationSupport {
 
+    private static final String UNKNOWN_PROVIDER_LABEL = "unkonw";
+
+
     private StorageValidationSupport() {
+        throw new IllegalStateException("Utility class");
     }
 
     public static void requireLocalRootPath(String name, StorageProperties.StorageProvider config) {
         requireText(name, config.getRootPath(), "root-path",
-                Objects.isNull(config.getType()) ? "unkonw" : config.getType().name());
+                Objects.isNull(config.getType()) ? UNKNOWN_PROVIDER_LABEL : config.getType().name());
     }
 
     public static void requireObjectStorageConfig(String name, StorageProperties.StorageProvider config,
                                                   boolean regionRequired) {
-        String type = Objects.isNull(config.getType()) ? "unkonw" : config.getType().name();
+        String type = Objects.isNull(config.getType()) ? UNKNOWN_PROVIDER_LABEL : config.getType().name();
         requireText(name, config.getBucketName(), "bucket-name", type);
         requireText(name, config.getEndpoint(), "endpoint", type);
         requireText(name, config.getAccessKey(), "access-key", type);
@@ -35,7 +39,7 @@ public final class StorageValidationSupport {
     }
 
     public static void requireSftpConfig(String name, StorageProperties.StorageProvider config) {
-        String type = Objects.isNull(config.getType()) ? "unkonw" : config.getType().name();
+        String type = Objects.isNull(config.getType()) ? UNKNOWN_PROVIDER_LABEL : config.getType().name();
         requireText(name, config.getEndpoint(), "endpoint", type);
         requireText(name, config.getAccessKey(), "access-key", type);
         requireText(name, config.getRootPath(), "root-path", type);

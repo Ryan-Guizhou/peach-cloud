@@ -4,6 +4,7 @@ import com.peach.common.response.StatusEnum;
 import com.peach.common.util.StringUtil;
 import com.peach.common.util.language.MultiLanguage;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.Optional;
 
@@ -13,6 +14,7 @@ import java.util.Optional;
  * @CreateTime 2025/12/11 9:39
  */
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class BusinessException extends RuntimeException {
 
     private final String code;
@@ -42,6 +44,7 @@ public class BusinessException extends RuntimeException {
         this.language = language;
     }
 
+    @Override
     public String toString(){
         return Optional.ofNullable(language)
                 .filter(StringUtil::isNotBlank)

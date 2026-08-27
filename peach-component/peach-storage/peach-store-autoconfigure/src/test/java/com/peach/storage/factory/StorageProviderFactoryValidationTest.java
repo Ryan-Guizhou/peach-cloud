@@ -18,8 +18,16 @@ class StorageProviderFactoryValidationTest {
         provider.setAccessKey("ak");
         provider.setSecretKey("sk");
 
-        assertThrows(IllegalStateException.class, () -> new S3StorageProviderFactory().validate("s3", provider));
-        assertThrows(IllegalStateException.class, () -> new CephStorageProviderFactory().validate("ceph", provider));
+        assertThrows(IllegalStateException.class, () -> validateS3Factory("s3", provider));
+        assertThrows(IllegalStateException.class, () -> validateCephFactory("ceph", provider));
+    }
+
+    private static void validateS3Factory(String name, StorageProperties.StorageProvider provider) {
+        new S3StorageProviderFactory().validate(name, provider);
+    }
+
+    private static void validateCephFactory(String name, StorageProperties.StorageProvider provider) {
+        new CephStorageProviderFactory().validate(name, provider);
     }
 
     @Test
@@ -30,7 +38,11 @@ class StorageProviderFactoryValidationTest {
         provider.setAccessKey("ak");
         provider.setSecretKey("sk");
 
-        assertThrows(IllegalStateException.class, () -> new OssStorageProviderFactory().validate("oss", provider));
+        assertThrows(IllegalStateException.class, () -> validateOssFactory("oss", provider));
+    }
+
+    private static void validateOssFactory(String name, StorageProperties.StorageProvider provider) {
+        new OssStorageProviderFactory().validate(name, provider);
     }
 
     @Test

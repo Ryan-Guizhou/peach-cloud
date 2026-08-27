@@ -103,13 +103,4 @@ public class UserContextFilter extends OncePerRequestFilter {
     private boolean isPublic(String method, String path) {
         return endpointMatcher.matches(properties.getPublicEndpoints(), method, path);
     }
-
-    private String resolveToken(HttpServletRequest request) {
-        String tokenName = StpUtil.getTokenName();
-        String token = request.getHeader(tokenName);
-        if (token != null && !token.isBlank()) {
-            return token;
-        }
-        return request.getParameter(tokenName);
-    }
 }

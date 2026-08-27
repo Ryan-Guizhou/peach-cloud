@@ -2,8 +2,8 @@ package com.peach.email.autoconfigure;
 
 
 import org.springframework.stereotype.Indexed;
-import com.peach.email.Idempotency.IdempotencyStore;
-import com.peach.email.Idempotency.SimpleIdempotencyStore;
+import com.peach.email.idempotency.IdempotencyStore;
+import com.peach.email.idempotency.SimpleIdempotencyStore;
 import com.peach.email.constant.EmailConstant;
 import com.peach.email.core.EmailContext;
 import com.peach.email.retry.RetryPolicy;

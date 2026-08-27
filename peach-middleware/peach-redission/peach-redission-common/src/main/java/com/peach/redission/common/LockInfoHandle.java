@@ -1,6 +1,5 @@
 package com.peach.redission.common;
 
-import org.aopalliance.intercept.Joinpoint;
 import org.aspectj.lang.JoinPoint;
 
 /**

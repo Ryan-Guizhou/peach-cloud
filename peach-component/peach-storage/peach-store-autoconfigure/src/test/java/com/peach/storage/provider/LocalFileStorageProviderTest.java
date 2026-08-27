@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -81,7 +82,7 @@ class LocalFileStorageProviderTest {
     }
 
     @Test
-    void shouldSupportBatchDeleteCopyAndMove() throws Exception {
+    void shouldSupportBatchDeleteCopyAndMove() {
         LocalFileStorageProvider provider = new LocalFileStorageProvider(localConfig());
 
         provider.upload(UploadObjectRequest.builder()
@@ -122,7 +123,7 @@ class LocalFileStorageProviderTest {
     }
 
     @Test
-    void shouldTreatBucketNameAsAliasForBucketlessProvider() throws Exception {
+    void shouldTreatBucketNameAsAliasForBucketlessProvider() {
         LocalFileStorageProvider provider = new LocalFileStorageProvider(localConfig());
 
         UploadResult result = provider.upload(UploadObjectRequest.builder()
@@ -156,7 +157,7 @@ class LocalFileStorageProviderTest {
         return provider;
     }
 
-    private String readText(InputStream inputStream) throws Exception {
+    private String readText(InputStream inputStream) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[256];
         int read;

@@ -32,6 +32,7 @@ public class PeachSchedulerProperties {
      * 创建默认 Scheduler 配置。
      */
     public PeachSchedulerProperties() {
+        // Intentionally empty.
     }
 
     /**
@@ -94,6 +95,7 @@ public class PeachSchedulerProperties {
          * 创建默认业务执行器配置。
          */
         public Executor() {
+            // Intentionally empty.
         }
 
         /**

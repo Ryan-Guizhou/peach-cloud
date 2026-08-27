@@ -14,9 +14,8 @@ public interface ConsumerTask {
      * 当延迟时间到达后，此方法会被调用以处理消息内容
      * 
      * @param content 消息内容，通常是JSON格式的字符串
-     * @throws Exception 处理过程中可能抛出的异常
      */
-    void execute(String content) throws Exception;
+    void execute(String content);
 
     /**
      * 获取消费者任务主题

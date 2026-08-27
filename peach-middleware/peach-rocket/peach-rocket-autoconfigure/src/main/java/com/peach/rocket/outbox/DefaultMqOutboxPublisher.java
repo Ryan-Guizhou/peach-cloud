@@ -1,5 +1,7 @@
 package com.peach.rocket.outbox;
 
+import java.time.ZoneId;
+
 import com.peach.rocket.codec.MqMessageCodec;
 import com.peach.rocket.context.DefaultMqHeaderResolver;
 import com.peach.rocket.core.MqMessageEnvelope;
@@ -42,7 +44,7 @@ public class DefaultMqOutboxPublisher implements MqOutboxPublisher {
         envelope.setPayloadType(payload.getClass().getName());
         envelope.setPayload(payload);
         envelope.setHeaders(headerResolver.resolve(actualOptions.getHeaders()));
-        envelope.setCreatedAt(LocalDateTime.now());
+        envelope.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
         MqOutboxEvent event = new MqOutboxEvent();
         event.setMessageId(envelope.getMessageId());
         event.setBody(codec.encode(envelope));
@@ -51,8 +53,8 @@ public class DefaultMqOutboxPublisher implements MqOutboxPublisher {
         event.setBusinessKey(route.getKey());
         event.setOptions(actualOptions);
         event.setStatus(MqOutboxStatus.INIT);
-        event.setCreatedAt(LocalDateTime.now());
-        event.setUpdatedAt(LocalDateTime.now());
+        event.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
+        event.setUpdatedAt(LocalDateTime.now(ZoneId.systemDefault()));
         outboxStore.save(event);
         return event.getMessageId();
     }

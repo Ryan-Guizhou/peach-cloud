@@ -32,7 +32,7 @@ public class MqOutboxDispatcher {
         List<MqOutboxEvent> events = outboxStore.findPending(properties.getOutbox().getBatchSize());
         for (MqOutboxEvent event : events) {
             try {
-                String destination = event.getTag() == null || event.getTag().length() == 0 ? event.getTopic() : event.getTopic() + ":" + event.getTag();
+                String destination = event.getTag() == null || event.getTag().isEmpty() ? event.getTopic() : event.getTopic() + ":" + event.getTag();
                 rocketMQTemplate.syncSend(destination, MessageBuilder.withPayload(event.getBody()).build());
                 outboxStore.markSent(event.getMessageId());
                 log.info("[mq-outbox] message sent. messageId={} topic={} tag={}", event.getMessageId(), event.getTopic(), event.getTag());

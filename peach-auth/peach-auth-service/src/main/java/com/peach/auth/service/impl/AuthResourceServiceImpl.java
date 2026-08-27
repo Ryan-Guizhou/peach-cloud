@@ -1,9 +1,10 @@
 package com.peach.auth.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
 import cn.dev33.satoken.stp.StpUtil;
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dao.AuthResourceDao;
 import com.peach.auth.dto.RoleResourceAuthDTO;
@@ -45,7 +46,7 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
 
     @Override
     public PageInfo<AuthResourceVO> pageList(AuthResourceQO authResourceQO) {
-        return PageHelper.startPage(authResourceQO.getPageNum(), authResourceQO.getPageSize())
+        return PageMethod.startPage(authResourceQO.getPageNum(), authResourceQO.getPageSize())
                 .doSelectPageInfo(() -> authResourceDao.select(buildQuery(authResourceQO)));
     }
 
@@ -68,7 +69,7 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
         if (!CollectionUtils.isEmpty(roleResourceAuthDTO.getResourceList())) {
             for (RoleResourceAuthDTO.RoleResourceItemDTO itemDTO : roleResourceAuthDTO.getResourceList()) {
                 AuthResourceDO authResourceDO = new AuthResourceDO();
-                authResourceDO.setResourceId(IDGeneratorUtil.UUID());
+                authResourceDO.setResourceId(IDGeneratorUtil.generateUuid());
                 authResourceDO.setTenantId(roleResourceAuthDTO.getTenantId());
                 authResourceDO.setOrgId(roleResourceAuthDTO.getOrgId());
                 authResourceDO.setPartyCode(roleResourceAuthDTO.getPartyCode());
@@ -115,7 +116,7 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
         authLogDO.setAuthDescribe("角色资源授权，角色编码：" + roleResourceAuthDTO.getPartyCode()
                 + "，资源数量：" + resourceCount);
         authLogDO.setOperatTime(DateUtil.nowTime());
-        authLogService.record(authLogDO);
+        authLogService.saveLog(authLogDO);
     }
 
     private String currentOperator() {

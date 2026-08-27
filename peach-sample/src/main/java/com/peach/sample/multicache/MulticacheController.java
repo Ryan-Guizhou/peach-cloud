@@ -37,8 +37,7 @@ public class MulticacheController {
      */
     @GetMapping("/put/{userId}")
     public MulticacheService.UserDO put(@PathVariable("userId") String userId) {
-        MulticacheService.UserDO user = multicacheService.getUser(userId,"shu");
-        return user;
+        return multicacheService.getUser(userId, "shu");
     }
 
     /**
@@ -76,8 +75,7 @@ public class MulticacheController {
      */
     @GetMapping("/manager/put/{userId}")
     public MulticacheService.UserDO managerPut(@PathVariable("userId") String userId) {
-        MulticacheService.UserDO user = multicacheService.getManagerUser(userId,"shu");
-        return user;
+        return multicacheService.getManagerUser(userId, "shu");
     }
 
     /**
@@ -99,7 +97,11 @@ public class MulticacheController {
      */
     @GetMapping("/manager1/evict/{userId}")
     public boolean managerEvict1(@PathVariable("userId") String userId) {
-        multiCacheManagerService.getCache("userCache"+":"+userId).evict(userId+"-"+"shu");
+        var cache = multiCacheManagerService.getCache("userCache" + ":" + userId);
+        if (cache == null) {
+            return false;
+        }
+        cache.evict(userId + "-" + "shu");
         return true;
     }
 }

@@ -40,7 +40,7 @@ public class StorageObjectRequest {
         return objectKey;
     }
 
-    public static Builder<?> builder() {
+    public static Builder builder() {
         return new Builder<>();
     }
 

@@ -26,6 +26,7 @@ public class DemoSchedulerIntegrationConfiguration {
      * 创建相关对象。
      */
     public DemoSchedulerIntegrationConfiguration() {
+        // Intentionally empty.
     }
 
     /**

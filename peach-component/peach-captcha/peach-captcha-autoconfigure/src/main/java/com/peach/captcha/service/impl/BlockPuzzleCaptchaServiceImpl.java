@@ -7,6 +7,7 @@ import com.peach.captcha.util.AesUtil;
 import com.peach.captcha.util.CaptchaImageUtil;
 import com.peach.captcha.util.JsonUtil;
 import com.peach.captcha.util.RandomUtils;
+import com.peach.common.util.PeachSecureRandom;
 import com.peach.common.keymanager.RedisKeyBuild;
 import com.peach.common.keymanager.RedisKeyManage;
 import com.peach.common.response.Response;
@@ -26,8 +27,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @Author Mr Shu
@@ -36,12 +35,6 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 @Slf4j
 public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
-
-
-    @Override
-    public void init(Properties config) {
-        super.init(config);
-    }
 
     @Override
     public Response get(CaptchaVO captchaVO) {
@@ -60,7 +53,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         int height = originalSlidingImage.getHeight();
         int width = originalSlidingImage.getWidth();
         graphics.setColor(Color.white);
-        graphics.setFont(WARK_MARK_FRONT);
+        graphics.setFont(waterMarkFont);
         graphics.drawString(WATER_MARK, width - getEnOrChLength(WATER_MARK), height - (HAN_ZI_SIZE / 2) + 7);
 
         String slidingBlockString = CaptchaImageUtil.getSlidingBlockString();
@@ -214,10 +207,10 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
             byte[] oriCopyImages = oriImagesOs.toByteArray();
             Base64.Encoder encoder = Base64.getEncoder();
             // 抠图之后的图
-            dataVO.setSlidingOriginalImageBase64(encoder.encodeToString(oriCopyImages).replaceAll("\r|\n", ""));
+            dataVO.setSlidingOriginalImageBase64(encoder.encodeToString(oriCopyImages).replaceAll("[\\r\\n]", ""));
             //point信息不传到前端，只做后端check校验
             // 滑块
-            dataVO.setNewSlidingBlockingImageBase64(encoder.encodeToString(jigsawImages).replaceAll("\r|\n", ""));
+            dataVO.setNewSlidingBlockingImageBase64(encoder.encodeToString(jigsawImages).replaceAll("[\\r\\n]", ""));
             dataVO.setToken(RandomUtils.getUuid());
             dataVO.setSecretKey(point.getSecretKey());
             //将坐标信息存入redis中
@@ -411,7 +404,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
     }
 
     private static PointVO generateSlidingPoint(int slidingOriginalWidth, int slidingOriginalHeight, int slidingBlockingWidth, int slidingBlockingHeight) {
-        Random random = ThreadLocalRandom.current();
+        var random = PeachSecureRandom.get();
         int widthDifference = slidingOriginalWidth - slidingBlockingWidth;
         int heightDifference = slidingOriginalHeight - slidingBlockingHeight;
         int x = widthDifference <= 0 ? 5 : random.nextInt(slidingOriginalWidth - slidingBlockingWidth - 100) + 100;

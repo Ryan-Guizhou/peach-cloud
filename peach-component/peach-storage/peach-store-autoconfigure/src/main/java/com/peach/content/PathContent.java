@@ -1,8 +1,10 @@
 package com.peach.content;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 基于 {@link Path} 的上传内容。
@@ -15,7 +17,7 @@ public class PathContent implements UploadContent {
 
     private final Path path;
 
-    private volatile InputStream currentStream;
+    private final AtomicReference<InputStream> currentStream = new AtomicReference<>();
 
     public PathContent(Path path) {
         if (path == null || !Files.exists(path) || !Files.isRegularFile(path)) {
@@ -25,24 +27,22 @@ public class PathContent implements UploadContent {
     }
 
     @Override
-    public InputStream read() throws Exception {
-        currentStream = Files.newInputStream(path);
-        return currentStream;
+    public InputStream read() throws IOException {
+        InputStream stream = Files.newInputStream(path);
+        currentStream.set(stream);
+        return stream;
     }
 
     @Override
-    public long length() throws Exception {
+    public long length() throws IOException {
         return Files.size(path);
     }
 
     @Override
-    public void close() throws Exception {
-        if (currentStream != null) {
-            try {
-                currentStream.close();
-            } finally {
-                currentStream = null;
-            }
+    public void close() throws IOException {
+        InputStream stream = currentStream.getAndSet(null);
+        if (stream != null) {
+            stream.close();
         }
     }
 }

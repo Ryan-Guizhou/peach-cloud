@@ -1,6 +1,6 @@
 package com.peach.email.service;
 
-import com.peach.email.Idempotency.IdempotencyStore;
+import com.peach.email.idempotency.IdempotencyStore;
 import com.peach.email.constant.EmailConstant;
 import com.peach.email.core.EmailContext;
 import com.peach.email.core.EmailMessage;
@@ -39,8 +39,7 @@ public class EmailSendService {
     }
 
     public SendResult send(String providerName,EmailMessage message) {
-        SendResult result = router.send(providerName, message);
-        return result;
+        return router.send(providerName, message);
     }
 
 
@@ -71,7 +70,7 @@ public class EmailSendService {
             SendResult r = sendWithRetry(t, c, message);
             if (r != null && r.isSuccess()) {
                 if (idempotencyStore != null) {
-                    idempotencyStore.record(message.getIdempotencyKey(), r);
+                    idempotencyStore.storeSendResult(message.getIdempotencyKey(), r);
                 }
                 return new SendResult(name, r.getMessageId(), System.currentTimeMillis() - start, true, null);
             } else if (r != null) {
@@ -102,7 +101,8 @@ public class EmailSendService {
             try {
                 Thread.sleep(retryPolicy.computeDelayMillis(attempts));
             } catch (InterruptedException ignored) {
-                throw new RuntimeException("sendWithRetry Interrupted");
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("sendWithRetry interrupted");
             }
         }
         return new SendResult(t.getName(), null, EmailConstant.DEFAULT_DURATION_MILLIS,

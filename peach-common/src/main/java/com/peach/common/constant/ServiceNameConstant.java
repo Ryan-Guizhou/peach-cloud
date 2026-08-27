@@ -6,17 +6,28 @@ package com.peach.common.constant;
  * @CreateTime 2026/1/18 17:21
  * @Description 服务名称常量
  */
-public interface ServiceNameConstant {
+public final class ServiceNameConstant {
 
-    String AUTH_SERVICE = "peach-auth";
+    private ServiceNameConstant() {
+        throw new IllegalStateException("Utility class");
+    }
 
-    String MONITOR_SERVICE = "peach-monitor";
+    public static final String AUTH_SERVICE = "peach-auth";
 
-    String FILE_SERVICE = "peach-fileservice";
+    public static final String MONITOR_SERVICE = "peach-monitor";
 
-    String MESSAGE_SERVICE = "peach-message";
+    public static final String FILE_SERVICE = "peach-fileservice";
 
-    String SETTING_SERVICE = "peach-setting";
+    public static final String MESSAGE_SERVICE = "peach-message";
+
+    public static final String SETTING_SERVICE = "peach-setting";
+
+    public static final String GENERAOTR_SERVICE = "peach-generator";
+
+    public static final String SCHEDULED_SERVICE = "peach-scheduled";
+
+
+
 
 
 }

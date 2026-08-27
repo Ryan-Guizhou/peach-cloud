@@ -5,17 +5,21 @@ package com.peach.redis.bloom.constant;
  * @Version 1.0.0
  * @CreateTime 2025/11/27 15:17
  */
-public interface KeyConstant {
+public final class KeyConstant {
 
-    String SEGMENT_KEY = "{0}:{1}:segments";
+    private KeyConstant() {
+        throw new IllegalStateException("Utility class");
+    }
 
-    String LOCK_KEY = "{0}:{1}:lock";
+    public static final String SEGMENT_KEY = "{0}:{1}:segments";
 
-    String SEGMENT_NAME_KEY = "{0}:{1}:segment{2}";
+    public static final String LOCK_KEY = "{0}:{1}:lock";
 
-    String SEGMENT_COUNT_KEY = "{0}:{1}:count";
+    public static final String SEGMENT_NAME_KEY = "{0}:{1}:segment{2}";
 
-    String CAPACITY_MAP_KEY = "{0}:{1}:capacity";
+    public static final String SEGMENT_COUNT_KEY = "{0}:{1}:count";
 
-    String FPP_MAP_KEY = "{0}:{1}:fpp";
+    public static final String CAPACITY_MAP_KEY = "{0}:{1}:capacity";
+
+    public static final String FPP_MAP_KEY = "{0}:{1}:fpp";
 }

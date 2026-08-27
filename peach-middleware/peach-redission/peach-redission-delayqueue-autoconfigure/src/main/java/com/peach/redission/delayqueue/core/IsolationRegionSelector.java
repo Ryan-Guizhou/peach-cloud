@@ -34,13 +34,6 @@ public class IsolationRegionSelector {
 	 * @return 隔离区域索引
 	 */
 	public int getIndex() {
-		int cur = count.getAndUpdate(current -> {
-			if (current >= thresholdValue - 1) {
-				return 0; // 重置为0而不是1，更符合索引习惯
-			} else {
-				return current + 1;
-			}
-		});
-		return cur;
+		return count.getAndUpdate(current -> current >= thresholdValue - 1 ? 0 : current + 1);
 	}
 }

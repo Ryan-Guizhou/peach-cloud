@@ -1,6 +1,7 @@
 package com.peach.threadpool.core;
 
 import io.micrometer.context.ContextSnapshot;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 
 import java.util.Map;
@@ -13,7 +14,11 @@ import java.util.concurrent.Callable;
  * 线程执行期间恢复，并在任务结束后还原工作线程原有状态。该行为保证 requestId、traceId、
  * spanId 等关联字段不会因为线程切换丢失，也不会在线程复用时泄漏到后续任务。</p>
  */
+@Slf4j
 public class TaskWrapper {
+
+    private static final String SECURITY_CONTEXT_HOLDER_CLASS = "org.springframework.security.core.context.SecurityContextHolder";
+
 
     private final boolean enableMdc;
     private final boolean enableSecurity;
@@ -102,14 +107,7 @@ public class TaskWrapper {
     }
 
     private void restoreMdc(Map<String, String> context) {
-        if (!enableMdc) {
-            return;
-        }
-        if (context == null || context.isEmpty()) {
-            MDC.clear();
-        } else {
-            MDC.setContextMap(context);
-        }
+        applyMdc(context);
     }
 
     private Object captureSecurity() {
@@ -117,10 +115,10 @@ public class TaskWrapper {
             return null;
         }
         try {
-            Class<?> holder = Class.forName("org.springframework.security.core.context.SecurityContextHolder");
-            Object context = holder.getMethod("getContext").invoke(null);
-            return context;
-        } catch (Throwable ignored) {
+            Class<?> holder = Class.forName(SECURITY_CONTEXT_HOLDER_CLASS);
+            return holder.getMethod("getContext").invoke(null);
+        } catch (Exception ex) {
+            log.warn("Failed to read Spring Security context", ex);
             return null;
         }
     }
@@ -130,9 +128,10 @@ public class TaskWrapper {
             return;
         }
         try {
-            Class<?> holder = Class.forName("org.springframework.security.core.context.SecurityContextHolder");
+            Class<?> holder = Class.forName(SECURITY_CONTEXT_HOLDER_CLASS);
             holder.getMethod("setContext", Class.forName("org.springframework.security.core.context.SecurityContext")).invoke(null, context);
-        } catch (Throwable ignored) {
+        } catch (Exception ex) {
+            log.warn("Failed to apply Spring Security context", ex);
         }
     }
 
@@ -145,9 +144,10 @@ public class TaskWrapper {
             return;
         }
         try {
-            Class<?> holder = Class.forName("org.springframework.security.core.context.SecurityContextHolder");
+            Class<?> holder = Class.forName(SECURITY_CONTEXT_HOLDER_CLASS);
             holder.getMethod("clearContext").invoke(null);
-        } catch (Throwable ignored) {
+        } catch (Exception ex) {
+            log.warn("Failed to clear Spring Security context", ex);
         }
     }
 }

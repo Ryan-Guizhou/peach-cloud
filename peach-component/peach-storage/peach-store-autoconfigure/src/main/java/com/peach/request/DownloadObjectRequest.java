@@ -30,6 +30,7 @@ public class DownloadObjectRequest extends StorageObjectRequest {
             return this;
         }
 
+        @Override
         public DownloadObjectRequest build() {
             validate();
             return new DownloadObjectRequest(this);

@@ -26,7 +26,7 @@ public class CacheMessage implements Serializable {
     /**
      * 缓存key
      */
-    private Object key;
+    private transient Object key;
 
     /**
      * 消息发起者

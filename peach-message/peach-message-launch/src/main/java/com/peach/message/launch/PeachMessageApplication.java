@@ -15,6 +15,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import java.io.IOException;
+
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -39,7 +41,7 @@ import java.util.Properties;
 @ComponentScan("com.peach")
 @MapperScan(basePackages = {"com.peach.*.dao"},
         annotationClass = MybatisDao.class,
-        sqlSessionFactoryRef = "mybatis-session")
+        sqlSessionFactoryRef = "mybatisSession")
 public class PeachMessageApplication {
     public static void main(String[] args) {
         SpringApplication.run(PeachMessageApplication.class, args);
@@ -55,9 +57,9 @@ public class PeachMessageApplication {
     }
 
     @Primary
-    @Bean("mybatis-session")
+    @Bean("mybatisSession")
     public SqlSessionFactoryBean sqlSessionFactoryBean(@Qualifier("dataSource") DataSource dataSource,
-                                                       DatabaseIdProvider databaseIdProvider) throws Exception {
+                                                       DatabaseIdProvider databaseIdProvider) throws IOException {
         SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
         sqlSessionFactoryBean.setDataSource(dataSource);
         sqlSessionFactoryBean.setDatabaseIdProvider(databaseIdProvider);

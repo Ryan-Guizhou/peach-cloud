@@ -40,11 +40,11 @@ import com.peach.response.UploadResult;
 import com.peach.storage.spi.StorageProvider;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -188,12 +188,9 @@ public class BosStorageProvider implements StorageProvider {
         try {
             ListObjectsRequest listRequest = new ListObjectsRequest(actualBucket);
             listRequest.setMaxKeys(request.getMaxKeys());
-            Optional.ofNullable(request.getPrefix())
-                            .ifPresent(prefix -> listRequest.setPrefix(request.getPrefix()));
-            Optional.ofNullable(request.getContinuationToken())
-                            .ifPresent(continuationToken -> listRequest.setMarker(continuationToken));
-            Optional.ofNullable(resolveDelimiter(request))
-                            .ifPresent(delimiter -> listRequest.setDelimiter(delimiter));
+            Optional.ofNullable(request.getPrefix()).ifPresent(listRequest::setPrefix);
+            Optional.ofNullable(request.getContinuationToken()).ifPresent(listRequest::setMarker);
+            Optional.ofNullable(resolveDelimiter(request)).ifPresent(listRequest::setDelimiter);
 
             ListObjectsResponse listing = client.listObjects(listRequest);
             List<ObjectInfo> items = new ArrayList<>();
@@ -218,14 +215,14 @@ public class BosStorageProvider implements StorageProvider {
     public PresignedUrlResult generatePresignedUrl(PresignedUrlRequest request) {
         String actualBucket = bucketName(config, request.getBucketName());
         String actualObjectKey = buildObjectKey(config, request.getObjectKey());
-        Date expires = new Date(System.currentTimeMillis() + request.getExpireSeconds() * 1000L);
+        Instant expiresAt = Instant.now().plusSeconds(request.getExpireSeconds());
         try {
             GeneratePresignedUrlRequest urlRequest = new GeneratePresignedUrlRequest(actualBucket, actualObjectKey,
                     HttpMethodName.GET);
             urlRequest.setExpiration((int) request.getExpireSeconds());
             String url = client.generatePresignedUrl(urlRequest).toString();
             return new PresignedUrlResult(name(), actualBucket, rawObjectKey(request.getObjectKey()), url,
-                    expires.toInstant());
+                    expiresAt);
         } catch (Exception ex) {
             throw toStorageException("Failed to generate BOS presigned url: " + request.getObjectKey(), ex);
         }
@@ -328,7 +325,7 @@ public class BosStorageProvider implements StorageProvider {
         return new BosClient(clientConfiguration);
     }
 
-    private ObjectMetadata buildMetadata(UploadObjectRequest request) throws Exception {
+    private ObjectMetadata buildMetadata(UploadObjectRequest request) throws IOException {
         ObjectMetadata metadata = new ObjectMetadata();
         long length = request.getContent().length();
         if (length >= 0) {
@@ -346,7 +343,7 @@ public class BosStorageProvider implements StorageProvider {
     private ObjectMetadata buildMetadata(InitiateMultipartUploadRequest request) {
         ObjectMetadata metadata = new ObjectMetadata();
         Optional.ofNullable(request.getContentType())
-                .ifPresent(contentType -> metadata.setContentType(contentType));
+                .ifPresent(metadata::setContentType);
         for (Map.Entry<String, String> entry : request.getMetadata().entrySet()) {
             metadata.addUserMetadata(entry.getKey(), entry.getValue());
         }

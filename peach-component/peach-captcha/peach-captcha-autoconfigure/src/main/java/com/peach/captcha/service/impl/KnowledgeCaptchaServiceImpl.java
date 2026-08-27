@@ -21,8 +21,8 @@ import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import com.peach.common.util.PeachSecureRandom;
 import java.util.Properties;
-import java.util.Random;
 
 /**
  * 知识/常识验证码服务实现类
@@ -37,7 +37,8 @@ public class KnowledgeCaptchaServiceImpl extends AbstractCacheService {
     private static final int IMAGE_WIDTH = 200;
 
     private static final int IMAGE_HEIGHT = 60;
-    
+
+    private static final java.security.SecureRandom RANDOM = PeachSecureRandom.get();
     // 简单的内置题库
     private static Map<String, String> QUESTION_BANK = new HashMap<>();
 
@@ -47,20 +48,14 @@ public class KnowledgeCaptchaServiceImpl extends AbstractCacheService {
             if (stream == null) {
                 log.error("knowledge.json not found in classpath");
             } else {
-                ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-                QUESTION_BANK = OBJECT_MAPPER.readValue(stream, Map.class);
+                ObjectMapper objectMapper = new ObjectMapper();
+                QUESTION_BANK = objectMapper.readValue(stream, Map.class);
             }
         } catch (Exception e) {
             log.error("Failed to parse knowledge.json", e);
         }
     }
-
-    @Override
-    public void init(Properties config) {
-        super.init(config);
-    }
-
-    @Override
+@Override
     public Response get(CaptchaVO captchaVO) {
         Response response = super.get(captchaVO);
         if (!validatedReq(response)) {
@@ -183,18 +178,9 @@ public class KnowledgeCaptchaServiceImpl extends AbstractCacheService {
         if (user == null) {
             return false;
         }
-        // 简单相等
-        if (right.equals(user)) {
-            return true;
-        }
-        // 包含关系 (例如 right="北京", user="北京市")
-        if (user.contains(right) && user.length() < right.length() + 2){
-            return true;
-        }
-        if (right.contains(user) && right.length() < user.length() + 2) {
-            return true;
-        }
-        return false;
+        return right.equals(user)
+                || (user.contains(right) && user.length() < right.length() + 2)
+                || (right.contains(user) && right.length() < user.length() + 2);
     }
 
     private BufferedImage generateImage(String text) {
@@ -213,7 +199,7 @@ public class KnowledgeCaptchaServiceImpl extends AbstractCacheService {
 
         // 绘制文字
         g2d.setColor(Color.DARK_GRAY);
-        Font font = this.WARK_MARK_FRONT != null ? this.WARK_MARK_FRONT.deriveFont(Font.BOLD, 22f) : new Font("SansSerif", Font.BOLD, 22);
+        Font font = this.waterMarkFont != null ? this.waterMarkFont.deriveFont(Font.BOLD, 22f) : new Font("SansSerif", Font.BOLD, 22);
         g2d.setFont(font);
 
         FontMetrics fm = g2d.getFontMetrics();
@@ -229,12 +215,11 @@ public class KnowledgeCaptchaServiceImpl extends AbstractCacheService {
     
     private void drawInterference(Graphics2D g) {
         g.setColor(new Color(200, 200, 200));
-        Random random = new Random();
         for (int i = 0; i < 10; i++) {
-            int x1 = random.nextInt(IMAGE_WIDTH);
-            int y1 = random.nextInt(IMAGE_HEIGHT);
-            int x2 = random.nextInt(IMAGE_WIDTH);
-            int y2 = random.nextInt(IMAGE_HEIGHT);
+            int x1 = RANDOM.nextInt(IMAGE_WIDTH);
+            int y1 = RANDOM.nextInt(IMAGE_HEIGHT);
+            int x2 = RANDOM.nextInt(IMAGE_WIDTH);
+            int y2 = RANDOM.nextInt(IMAGE_HEIGHT);
             g.drawLine(x1, y1, x2, y2);
         }
     }

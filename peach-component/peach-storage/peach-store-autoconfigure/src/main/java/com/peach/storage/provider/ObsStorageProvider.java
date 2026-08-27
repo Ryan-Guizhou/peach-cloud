@@ -38,6 +38,7 @@ import com.peach.enums.StorageType;
 import com.peach.storage.spi.StorageProvider;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -183,12 +184,9 @@ public class ObsStorageProvider implements StorageProvider {
         try {
             ListObjectsRequest listRequest = new ListObjectsRequest(bucketName(config, request.getBucketName()));
             listRequest.setMaxKeys(request.getMaxKeys());
-            Optional.ofNullable(request.getPrefix())
-                    .ifPresent(prefix -> listRequest.setPrefix(prefix));
-            Optional.ofNullable(request.getContinuationToken())
-                    .ifPresent(continuationToken -> listRequest.setMarker(continuationToken));
-            Optional.ofNullable(resolveDelimiter(request))
-                    .ifPresent(delimiter -> listRequest.setDelimiter(delimiter));
+            Optional.ofNullable(request.getPrefix()).ifPresent(listRequest::setPrefix);
+            Optional.ofNullable(request.getContinuationToken()).ifPresent(listRequest::setMarker);
+            Optional.ofNullable(resolveDelimiter(request)).ifPresent(listRequest::setDelimiter);
             ObjectListing listing = client.listObjects(listRequest);
             List<ObjectInfo> items = new ArrayList<>();
             for (ObsObject object : listing.getObjects()) {
@@ -329,7 +327,7 @@ public class ObsStorageProvider implements StorageProvider {
      * @return 配置完成的 OBS 对象元数据
      * @throws Exception 获取内容长度时发生异常
      */
-    private ObjectMetadata buildMetadata(UploadObjectRequest request) throws Exception {
+    private ObjectMetadata buildMetadata(UploadObjectRequest request) throws IOException {
         ObjectMetadata metadata = buildBaseMetadata(request.getContentType(), request.getMetadata());
         long length = request.getContent().length();
         if (length >= 0) {

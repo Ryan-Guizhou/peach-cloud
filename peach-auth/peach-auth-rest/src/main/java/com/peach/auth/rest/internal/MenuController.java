@@ -1,12 +1,13 @@
 package com.peach.auth.rest.internal;
 
+import com.peach.common.PeachGroup;
+
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.dto.MenuDTO;
 import com.peach.auth.enums.UserLogEnum;
-import com.peach.auth.group.MenuGroup;
 import com.peach.auth.qo.MenuQO;
 import com.peach.auth.service.IMenuService;
 import com.peach.auth.vo.MenuVO;
@@ -63,7 +64,7 @@ public class MenuController {
     @Operation(summary = "新增菜单")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增菜单信息,菜单信息:['+#p0+']'")
-    public Response add(@Validated({MenuGroup.insertGroup.class}) @RequestBody MenuDTO menuDTO) {
+    public Response add(@Validated({PeachGroup.InsertGroup.class}) @RequestBody MenuDTO menuDTO) {
         menuService.add(menuDTO);
         return Response.success();
     }
@@ -81,7 +82,7 @@ public class MenuController {
     @Operation(summary = "更新菜单")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'更新菜单信息,菜单信息:['+#p0+']'")
-    public Response update(@Validated({MenuGroup.updateGroup.class}) @RequestBody MenuDTO menuDTO) {
+    public Response update(@Validated({PeachGroup.UpdateGroup.class}) @RequestBody MenuDTO menuDTO) {
         menuService.update(menuDTO);
         return Response.success();
     }

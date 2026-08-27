@@ -5,10 +5,14 @@ package com.peach.threadpool.constant;
  * @Version 1.0.0
  * @CreateTime 2026/1/5 17:51
  */
-public interface ThreadConstant {
+public final class ThreadConstant {
 
-    String THREAD_POOL_CONFIG_PREFIX = "peach.threadpool";
+    private ThreadConstant() {
+        throw new IllegalStateException("Utility class");
+    }
 
-    String THREAD_POOL_NAME_PREFIX = "peach-pool-";
+    public static final String THREAD_POOL_CONFIG_PREFIX = "peach.threadpool";
+
+    public static final String THREAD_POOL_NAME_PREFIX = "peach-pool-";
 
 }

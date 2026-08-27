@@ -1,8 +1,9 @@
 package com.peach.message.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.PageResult;
@@ -23,11 +24,13 @@ import com.peach.message.vo.SiteMessageVO;
 import com.peach.satoken.context.SecurityContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,9 +51,28 @@ public class MessageServiceImpl implements IMessageService {
 
         private final IWebSocketPushService webSocketPushService;
 
+        private final ObjectProvider<IMessageService> self;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Response publish(MessagePublishDTO data) {
+        Response validationError = validatePublishRequest(data);
+        if (validationError != null) {
+            return validationError;
+        }
+        boolean persistent = data.getPersistent() == null || data.getPersistent();
+        boolean realtime = data.getRealtime() == null || data.getRealtime();
+        List<SiteMessageDO> messages = buildPersistentMessages(data, persistent);
+        if (!messages.isEmpty()) {
+            siteMessageDao.batchInsert(messages);
+        }
+        if (realtime) {
+            dispatchRealtimeNotifications(data, messages);
+        }
+        return Response.success(messages);
+    }
+
+    private Response validatePublishRequest(MessagePublishDTO data) {
         MessageEnum.ReceiverType receiverType = data.getReceiverType() == null
                 ? MessageEnum.ReceiverType.USER : data.getReceiverType();
         if (!MessageEnum.ReceiverType.USER.equals(receiverType)) {
@@ -59,56 +81,62 @@ public class MessageServiceImpl implements IMessageService {
         if (data.getReceiverIds() == null || data.getReceiverIds().isEmpty()) {
             return Response.paramError("接收人ID列表不能为空");
         }
-        boolean persistent = data.getPersistent() == null || data.getPersistent();
-        boolean realtime = data.getRealtime() == null || data.getRealtime();
-        List<SiteMessageDO> messages = new ArrayList<SiteMessageDO>();
+        return null;
+    }
+
+    private List<SiteMessageDO> buildPersistentMessages(MessagePublishDTO data, boolean persistent) {
+        List<SiteMessageDO> messages = new ArrayList<>();
+        if (!persistent) {
+            return messages;
+        }
         for (String receiverId : data.getReceiverIds()) {
-            if (StringUtils.isNotBlank(receiverId) && persistent) {
+            if (StringUtils.isNotBlank(receiverId)) {
                 messages.add(buildSiteMessage(data, receiverId));
             }
         }
+        return messages;
+    }
+
+    private void dispatchRealtimeNotifications(MessagePublishDTO data, List<SiteMessageDO> messages) {
         if (!messages.isEmpty()) {
-            siteMessageDao.batchInsert(messages);
+            for (SiteMessageDO message : messages) {
+                pushMessageCreated(message.getReceiverId(), data, message);
+                pushUnreadCountChanged(message.getReceiverId(), null, message.getMessageType());
+            }
+            return;
         }
-        if (realtime) {
-            if (!messages.isEmpty()) {
-                for (SiteMessageDO message : messages) {
-                    pushMessageCreated(message.getReceiverId(), data, message);
-                    pushUnreadCountChanged(message.getReceiverId(), null, message.getMessageType());
-                }
-            } else {
-                for (String receiverId : data.getReceiverIds()) {
-                    if (StringUtils.isNotBlank(receiverId)) {
-                        pushMessageCreated(receiverId, data, null);
-                    }
-                }
+        for (String receiverId : data.getReceiverIds()) {
+            if (StringUtils.isNotBlank(receiverId)) {
+                pushMessageCreated(receiverId, data, null);
             }
         }
-        return Response.success(messages);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Response publishMessage(MessagePublishDTO data) {
         fillMessageCategory(data, MessageEnum.MessageCategory.MESSAGE, MessageEnum.MessageSourceType.MESSAGE);
-        return publish(data);
+        return self.getObject().publish(data);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Response publishAnnouncement(MessagePublishDTO data) {
         fillMessageCategory(data, MessageEnum.MessageCategory.ANNOUNCEMENT, MessageEnum.MessageSourceType.ANNOUNCEMENT);
-        return publish(data);
+        return self.getObject().publish(data);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Response publishTodo(MessagePublishDTO data) {
         fillMessageCategory(data, MessageEnum.MessageCategory.TODO, MessageEnum.MessageSourceType.TODO);
-        return publish(data);
+        return self.getObject().publish(data);
     }
 
     @Override
     public Response pageList(SiteMessageQO qo) {
         fillCurrentTenantOrg(qo);
-        PageInfo<SiteMessageVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
+        PageInfo<SiteMessageVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> siteMessageDao.selectByQO(qo));
         return Response.success(new PageResult<SiteMessageVO>(pageInfo.getList(), pageInfo.getTotal()));
     }
@@ -150,7 +178,7 @@ public class MessageServiceImpl implements IMessageService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Response readAll(String receiverId) {
-        return readAll(receiverId, null, null);
+        return self.getObject().readAll(receiverId, null, null);
     }
 
     @Override
@@ -172,21 +200,24 @@ public class MessageServiceImpl implements IMessageService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Response revokeMessage(MessageRevokeDTO data) {
         data.setSourceType(MessageEnum.MessageSourceType.MESSAGE.getCode());
-        return revoke(data);
+        return self.getObject().revoke(data);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Response revokeAnnouncement(MessageRevokeDTO data) {
         data.setSourceType(MessageEnum.MessageSourceType.ANNOUNCEMENT.getCode());
-        return revoke(data);
+        return self.getObject().revoke(data);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Response revokeTodo(MessageRevokeDTO data) {
         data.setSourceType(MessageEnum.MessageSourceType.TODO.getCode());
-        return revoke(data);
+        return self.getObject().revoke(data);
     }
 
     private void fillMessageCategory(MessagePublishDTO data,
@@ -205,8 +236,8 @@ public class MessageServiceImpl implements IMessageService {
 
     private SiteMessageDO buildSiteMessage(MessagePublishDTO data, String receiverId) {
         SiteMessageDO message = new SiteMessageDO();
-        message.setId(IDGeneratorUtil.UUID());
-        message.setMessageCode(IDGeneratorUtil.UUID());
+        message.setId(IDGeneratorUtil.generateUuid());
+        message.setMessageCode(IDGeneratorUtil.generateUuid());
         message.setReceiverId(receiverId);
         message.setTitleMessageKey(StringUtils.defaultIfBlank(data.getTitleMessageKey(), data.getTitle()));
         message.setContentMessageKey(StringUtils.defaultIfBlank(data.getContentMessageKey(), data.getContent()));
@@ -235,15 +266,15 @@ public class MessageServiceImpl implements IMessageService {
         webSocketPushService.pushToUser(receiverId, MessageEnum.WebSocketEventType.MESSAGE_CREATED.getCode(), payload);
     }
 
-    private void pushUnreadCountChanged(String receiverId) {
-        pushUnreadCountChanged(receiverId, null, null);
-    }
-
     private void pushUnreadCountChanged(String receiverId, String messageCategory, String messageType) {
-        Map<String, Object> payload = new HashMap<String, Object>();
+        if (StringUtils.isBlank(receiverId)) {
+            return;
+        }
+        long count = siteMessageDao.countUnread(receiverId, resolveMessageTypes(messageCategory), messageType);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("count", count);
         payload.put("messageCategory", messageCategory);
         payload.put("messageType", messageType);
-        payload.put("count", siteMessageDao.countUnread(receiverId, resolveMessageTypes(messageCategory), messageType));
         webSocketPushService.pushToUser(receiverId, MessageEnum.WebSocketEventType.UNREAD_COUNT_CHANGED.getCode(), payload);
     }
 
@@ -270,12 +301,12 @@ public class MessageServiceImpl implements IMessageService {
 
     private List<String> resolveMessageTypes(String messageCategory) {
         if (StringUtils.isBlank(messageCategory)) {
-            return null;
+            return Collections.emptyList();
         }
         try {
             return MessageCategoryConfig.getTypes(MessageEnum.MessageCategory.valueOf(messageCategory));
         } catch (Exception e) {
-            return null;
+            return Collections.emptyList();
         }
     }
 }

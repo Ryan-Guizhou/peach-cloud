@@ -23,6 +23,7 @@ public class JobRegistry {
      * 创建相关对象。
      */
     public JobRegistry() {
+        // Intentionally empty.
     }
 
     private final Map<String, JobHandler> handlers = new LinkedHashMap<String, JobHandler>();

@@ -4,7 +4,7 @@ import org.springframework.stereotype.Indexed;
 import com.peach.redission.distrbutedlock.annoation.DistrbutedLock;
 import com.peach.redission.distrbutedlock.locker.LockType;
 import com.peach.redission.repeat.annoation.RepeatLimit;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 /**
  * @Author Mr Shu
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
  * @CreateTime 2025/12/29 10:27
  */
 @Indexed
-@Component
+@Service
 public class DistributedService {
 
     @DistrbutedLock(name = "distributedLock", keys = {"#p0.id","#p0.name"}, lockType = LockType.FAIR)

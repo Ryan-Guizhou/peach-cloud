@@ -1,6 +1,11 @@
 package com.peach.common.util;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
+
+import lombok.extern.slf4j.Slf4j;
 
 import com.peach.common.constant.PubCommonConst;
 import org.springframework.util.ObjectUtils;
@@ -15,8 +20,6 @@ import java.net.URLEncoder;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -26,9 +29,10 @@ import java.util.regex.Pattern;
 /**
  * @Author Mr Shu
  * @Version 1.0.0
- * @Description // 字符串工具
+ * @Description 字符串工具；Date 格式化方法保留以兼容存量调用方。
  * @CreateTime 2025/10/14 15:51
- */
+  */
+@Slf4j
 public final class StringUtil implements Serializable {
 
     private static final long serialVersionUID = 2143367839995921470L;
@@ -131,13 +135,9 @@ public final class StringUtil implements Serializable {
 
     public static boolean isEmpty(Object value) {
         String valueString = nullToEmpty(value);
-        if (null == valueString) {
-            return true;
-        }
-        if ("null".equalsIgnoreCase(valueString) || "".equals(valueString)) {
-            return true;
-        }
-        return false;
+        return null == valueString
+                || "null".equalsIgnoreCase(valueString)
+                || valueString.isEmpty();
     }
 
     public static boolean isNotEmpty(String value) {
@@ -161,7 +161,7 @@ public final class StringUtil implements Serializable {
      */
     public static boolean isNotEmpty(String... values) {
         boolean res = true;
-        if (values != null || values.length == 0) {
+        if (values == null || values.length == 0) {
             return Boolean.FALSE;
         }
         for (String value : values) {
@@ -187,8 +187,8 @@ public final class StringUtil implements Serializable {
      */
     public static String getUUID() {
         String uuid = UUID.randomUUID().toString();
-        uuid = uuid.replaceAll("-", "");
-        return uuid;// StringUtil.nullToEmpty(UUID.randomUUID().toString());
+        uuid = uuid.replace("-", "");
+        return uuid;
     }
 
     public static String formateNum(String valueString) {
@@ -204,12 +204,11 @@ public final class StringUtil implements Serializable {
      * @return 格式化后的金额（不包含千分位逗号显示，例如：1234.00）
      */
     public static BigDecimal formateNumToDecimal(String valueString) {
-        BigDecimal bigDecimal = toBigDecimal(valueString);
-        return bigDecimal;
+        return toBigDecimal(valueString);
     }
 
     public static BigDecimal toBigDecimal(String value) {
-        BigDecimal decimal = new BigDecimal(Double.valueOf("0").doubleValue());
+        BigDecimal decimal = BigDecimal.ZERO;
         decimal = decimal.setScale(2, RoundingMode.HALF_UP);
         if (null == value) {
             return decimal;
@@ -217,10 +216,7 @@ public final class StringUtil implements Serializable {
         if ("null".equalsIgnoreCase(value) || "".equals(value.trim())) {
             return decimal;
         }
-        NumberFormat format = new DecimalFormat("0.00");
-        BigDecimal bigDecimal = new BigDecimal(Double.valueOf(value).doubleValue());
-        BigDecimal res = new BigDecimal(format.format(bigDecimal));
-        return res;
+        return new BigDecimal(value).setScale(2, RoundingMode.HALF_UP);
     }
 
     /**
@@ -229,8 +225,10 @@ public final class StringUtil implements Serializable {
      * @describe 日期转换成字符串
      */
     public static String dateToString(Timestamp timestamp) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");// 定义格式，不显示毫秒
-        return df.format(timestamp);
+        if (timestamp == null) {
+            return EMPTY;
+        }
+        return timestamp.toLocalDateTime().toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     }
 
     /**
@@ -252,7 +250,7 @@ public final class StringUtil implements Serializable {
      * @return
      * @describe AREM_HOUSE_COLLECT --> AremHouseCollect
      */
-    public static String getUpperHeadStrNo_(String originStr) {
+    public static String getUpperHeadStrNoUnderscore(String originStr) {
         String[] chars = StringUtil.stringToArray(originStr);
         StringBuffer target = new StringBuffer();
         for (int j = 0; j < chars.length; j++) {
@@ -273,7 +271,7 @@ public final class StringUtil implements Serializable {
      * @return
      * @describe AREM_HOUSE_COLLECT --> aremHouseCollect
      */
-    public static String getLowerHeadStrNo_(String originStr) {
+    public static String getLowerHeadStrNoUnderscore(String originStr) {
         String[] chars = StringUtil.stringToArray(originStr);
         StringBuffer target = new StringBuffer();
         for (int j = 0; j < chars.length; j++) {
@@ -294,9 +292,11 @@ public final class StringUtil implements Serializable {
      * @return
      * @describe Date类型转字符串
      */
-    public static String dateToString(Date date) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");// 定义格式，不显示毫秒
-        return df.format(date);
+    public static String dateToString(LocalDate date) {
+        if (date == null) {
+            return EMPTY;
+        }
+        return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     }
 
     /**
@@ -305,9 +305,11 @@ public final class StringUtil implements Serializable {
      * @author jiangyx
      * @describe 将长时间格式时间转换为字符串 yyyy-MM-dd HH:mm:ss
      */
-    public static String dateToStrLong(Date date) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        return df.format(date);
+    public static String dateToStrLong(LocalDateTime date) {
+        if (date == null) {
+            return EMPTY;
+        }
+        return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
     /**
@@ -320,7 +322,7 @@ public final class StringUtil implements Serializable {
      */
     public static String celanIllegalChar(String str) {
         if (str != null) {
-            Pattern pattern = Pattern.compile("\\t|\r|\n");
+            Pattern pattern = Pattern.compile("[\t\r\n]");
             Matcher m = pattern.matcher(str);
             return m.replaceAll("");
         }
@@ -333,11 +335,11 @@ public final class StringUtil implements Serializable {
      */
     public static String strTransHump(String str) {
         String[] split = str.split("_");
-        String resStr = split[0].toLowerCase();
+        StringBuilder resBuilder = new StringBuilder(split[0].toLowerCase());
         for (int i = 1; i < split.length; i++) {
-            resStr += split[i].substring(0, 1).toUpperCase() + split[i].substring(1, split[i].length()).toLowerCase();
+            resBuilder.append(split[i].substring(0, 1).toUpperCase()).append(split[i].substring(1).toLowerCase());
         }
-        return resStr;
+        return resBuilder.toString();
     }
 
     /**
@@ -349,7 +351,7 @@ public final class StringUtil implements Serializable {
     public static String replaceBlank(String str) {
         String dest = "";
         if (str != null) {
-            Pattern p = Pattern.compile("\\s*|\t|\r|\n");
+            Pattern p = Pattern.compile("\\s*");
             Matcher m = p.matcher(str);
             dest = m.replaceAll("");
         }
@@ -380,7 +382,7 @@ public final class StringUtil implements Serializable {
     public static String lineToHumpOthersNoChange(String str) {
         StringBuffer sb = new StringBuffer();
         if (str.contains("_")){
-            //    str = str.toLowerCase();
+            
             Matcher matcher = linePattern.matcher(str);
             while (matcher.find()) {
                 matcher.appendReplacement(sb, matcher.group(1).toUpperCase());
@@ -422,17 +424,17 @@ public final class StringUtil implements Serializable {
         String str = Integer.toString(number);
         String[] s1 = {"零", "一", "二", "三", "四", "五", "六", "七", "八", "九"};
         String[] s2 = {"十", "百", "千", "万", "十", "百", "千", "亿", "十", "百", "千"};
-        String result = "";
+        StringBuilder resultBuilder = new StringBuilder();
         int n = str.length();
         for (int i = 0; i < n; i++) {
             int num = str.charAt(i) - '0';
             if (i != n - 1 && num != 0) {
-                result += s1[num] + s2[n - 2 - i];
+                resultBuilder.append(s1[num]).append(s2[n - 2 - i]);
             } else {
-                result += s1[num];
+                resultBuilder.append(s1[num]);
             }
         }
-        return result;
+        return resultBuilder.toString();
     }
 
     public static String buildCodeName(String code, String name) {
@@ -456,7 +458,7 @@ public final class StringUtil implements Serializable {
         try {
             str = URLDecoder.decode(str, PubCommonConst.UTF_8);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.debug("URL decode failed", e);
         }
         return str;
     }
@@ -465,7 +467,7 @@ public final class StringUtil implements Serializable {
         try {
             str = URLEncoder.encode(str, PubCommonConst.UTF_8);
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            log.debug("URL encode failed", e);
         }
         return str;
     }
@@ -543,11 +545,9 @@ public final class StringUtil implements Serializable {
         String finalValue = defalutValue;
         try {
             if (null != value) {
-                if (value instanceof BigDecimal) {
-                    BigDecimal temp = (BigDecimal) value;
+                if (value instanceof BigDecimal temp) {
                     finalValue = temp.toString();
-                } else if (value instanceof Integer) {
-                    Integer temp = (Integer) value;
+                } else if (value instanceof Integer temp) {
                     finalValue = temp.toString();
                 } else if (value instanceof String) {
                     finalValue = value.toString();

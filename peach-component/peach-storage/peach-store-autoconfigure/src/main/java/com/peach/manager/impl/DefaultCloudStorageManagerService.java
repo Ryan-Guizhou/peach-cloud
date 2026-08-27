@@ -360,35 +360,12 @@ public class DefaultCloudStorageManagerService implements CloudStorageManagerSer
 
         // 基于 continuationToken 进行分页截取
         List<ObjectInfo> pageItems = new ArrayList<>();
-        String continuationToken = request.getContinuationToken();
-        boolean started = continuationToken == null || continuationToken.isBlank();
+        int startIndex = findPageStartIndex(allObjects, request.getContinuationToken());
+        int endIndex = Math.min(startIndex + request.getMaxKeys(), allObjects.size());
+        pageItems.addAll(allObjects.subList(startIndex, endIndex));
 
-        for (ObjectInfo objectInfo : allObjects) {
-            // 定位到 continuationToken 之后的位置
-            if (!started) {
-                if (objectInfo.getObjectKey().compareTo(continuationToken) > 0) {
-                    started = true;
-                } else {
-                    continue;
-                }
-            }
-            // 达到最大数量则停止
-            if (pageItems.size() >= request.getMaxKeys()) {
-                break;
-            }
-            pageItems.add(objectInfo);
-        }
-
-        // 判断是否还有下一页
-        boolean truncated = false;
-        String nextContinuationToken = null;
-        if (!pageItems.isEmpty()) {
-            int lastIndex = allObjects.indexOf(pageItems.get(pageItems.size() - 1));
-            if (lastIndex >= 0 && lastIndex < allObjects.size() - 1) {
-                truncated = true;
-                nextContinuationToken = pageItems.get(pageItems.size() - 1).getObjectKey();
-            }
-        }
+        boolean truncated = endIndex < allObjects.size();
+        String nextContinuationToken = pageItems.isEmpty() ? null : pageItems.get(pageItems.size() - 1).getObjectKey();
 
         return ListObjectsResult.builder()
                 .providerName(storageProvider.name())
@@ -685,5 +662,17 @@ public class DefaultCloudStorageManagerService implements CloudStorageManagerSer
             return null;
         }
         return StoragePathUtil.normalizeObjectKey(path);
+    }
+
+    private static int findPageStartIndex(List<ObjectInfo> allObjects, String continuationToken) {
+        if (continuationToken == null || continuationToken.isBlank()) {
+            return 0;
+        }
+        for (int i = 0; i < allObjects.size(); i++) {
+            if (allObjects.get(i).getObjectKey().compareTo(continuationToken) > 0) {
+                return i;
+            }
+        }
+        return allObjects.size();
     }
 }

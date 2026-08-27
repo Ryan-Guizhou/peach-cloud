@@ -118,7 +118,7 @@ public final class CaptchaImageUtil {
      * @return Map<String,String> 图片资源文件映射 / Image resource file map
      */
     private static Map<String,String> getResourcesImagesFile(String path){
-        Map<String,String> imagesMap = new HashMap<>(64);
+        Map<String,String> imagesMap = HashMap.newHashMap(64);
         if (StringUtil.isBlank(path)){
             return imagesMap;
         }
@@ -145,7 +145,7 @@ public final class CaptchaImageUtil {
      * @return Map<String,String> 自定义图片资源文件映射 / Custom image resource file map
      */
     private static Map<String,String> getCustomImagesFile(String customPath){
-        Map<String,String> imagesMap = new HashMap<>(64);
+        Map<String,String> imagesMap = HashMap.newHashMap(64);
         if (StringUtil.isBlank(customPath)){
             return imagesMap;
         }
@@ -264,8 +264,7 @@ public final class CaptchaImageUtil {
             return null;
         }
         Integer randomInt = RandomUtils.getRandomInt(0, strings.length);
-        String s = SLIDING_BLOCK_CACHE_MAP.get(strings[randomInt]);
-        return s;
+        return SLIDING_BLOCK_CACHE_MAP.get(strings[randomInt]);
     }
 
     /**
@@ -278,8 +277,7 @@ public final class CaptchaImageUtil {
             return null;
         }
         Integer randomInt = RandomUtils.getRandomInt(0, strings.length);
-        String s = ROTATE_BLOCK_CACHE_MAP.get(strings[randomInt]);
-        return s;
+        return ROTATE_BLOCK_CACHE_MAP.get(strings[randomInt]);
     }
 
 }

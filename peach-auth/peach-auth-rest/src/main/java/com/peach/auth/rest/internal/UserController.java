@@ -1,12 +1,13 @@
 package com.peach.auth.rest.internal;
 
+import com.peach.common.PeachGroup;
+
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.dto.UserDTO;
 import com.peach.auth.enums.UserLogEnum;
-import com.peach.auth.group.UserGroup;
 import com.peach.auth.qo.UserQO;
 import com.peach.auth.service.IUserService;
 import com.peach.auth.vo.UserVO;
@@ -63,7 +64,7 @@ public class UserController {
     @PostMapping("/add")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增用户信息,用户信息:['+#p0+']'")
-    public Response add(@Validated({UserGroup.insertGroup.class}) @RequestBody UserDTO userDTO) {
+    public Response add(@Validated({PeachGroup.InsertGroup.class}) @RequestBody UserDTO userDTO) {
         userService.add(userDTO);
         return Response.success();
     }
@@ -81,7 +82,7 @@ public class UserController {
     @PostMapping("/update")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'更新用户信息,用户信息:['+#p0+']'")
-    public Response update(@Validated({UserGroup.updateGroup.class}) @RequestBody UserDTO userDTO) {
+    public Response update(@Validated({PeachGroup.UpdateGroup.class}) @RequestBody UserDTO userDTO) {
         userService.update(userDTO);
         return Response.success();
     }

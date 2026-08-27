@@ -27,6 +27,7 @@ public class CopyObjectRequest extends StorageTransferRequest {
     public static class Builder extends StorageTransferRequest.Builder<Builder> {
         @Override
         protected Builder self() { return this; }
+        @Override
         public CopyObjectRequest build() { validate(); return new CopyObjectRequest(this); }
     }
 }

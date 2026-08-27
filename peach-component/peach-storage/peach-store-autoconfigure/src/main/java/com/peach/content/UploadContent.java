@@ -2,6 +2,7 @@ package com.peach.content;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -23,28 +24,28 @@ public interface UploadContent extends AutoCloseable {
      * 打开内容输入流。
      *
      * @return 输入流
-     * @throws Exception 打开失败时抛出
+     * @throws IOException 打开失败时抛出
      */
-    InputStream read() throws Exception;
+    InputStream read() throws IOException;
 
     /**
      * 内容长度，未知时返回 -1。
      *
      * @return 内容长度
-     * @throws Exception 读取长度失败时抛出
+     * @throws IOException 读取长度失败时抛出
      */
-    default long length() throws Exception {
+    default long length() throws IOException {
         return -1L;
     }
 
     /**
      * 关闭上传内容持有的资源。
      *
-     * @throws Exception 关闭资源失败时抛出
+     * @throws IOException 关闭资源失败时抛出
      */
     @Override
-    default void close() throws Exception {
-
+    default void close() throws IOException {
+        // Default implementation has no resources to close.
     }
 
     /**

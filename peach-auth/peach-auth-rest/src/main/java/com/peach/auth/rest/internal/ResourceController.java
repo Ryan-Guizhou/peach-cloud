@@ -1,12 +1,13 @@
 package com.peach.auth.rest.internal;
 
+import com.peach.common.PeachGroup;
+
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.dto.ResourceDTO;
 import com.peach.auth.enums.UserLogEnum;
-import com.peach.auth.group.ResourceGroup;
 import com.peach.auth.qo.ResourceQO;
 import com.peach.auth.service.IResouceService;
 import com.peach.auth.vo.ResourceVO;
@@ -63,7 +64,7 @@ public class ResourceController {
     @Operation(summary = "新增资源")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增资源信息,资源信息:['+#p0+']'")
-    public Response add(@Validated({ResourceGroup.insertGroup.class}) @RequestBody ResourceDTO resourceDTO) {
+    public Response add(@Validated({PeachGroup.InsertGroup.class}) @RequestBody ResourceDTO resourceDTO) {
         resourceService.add(resourceDTO);
         return Response.success();
     }
@@ -81,7 +82,7 @@ public class ResourceController {
     @Operation(summary = "更新资源")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'更新资源信息,资源信息:['+#p0+']'")
-    public Response update(@Validated({ResourceGroup.updateGroup.class}) @RequestBody ResourceDTO resourceDTO) {
+    public Response update(@Validated({PeachGroup.UpdateGroup.class}) @RequestBody ResourceDTO resourceDTO) {
         resourceService.update(resourceDTO);
         return Response.success();
     }

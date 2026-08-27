@@ -32,6 +32,12 @@
         <!-- 本地：nexus.peachsoft.com 直连 Nexus；CI：-Dpeach.nexus.url=http://nexus:8081 -->
         <peach.nexus.url>http://nexus.peachsoft.com</peach.nexus.url>
         <peach.aliyun.maven.url>https://maven.aliyun.com/repository/public</peach.aliyun.maven.url>
+
+
+        <sonar.host.url>http://localhost:9100</sonar.host.url>
+        <sonar.projectKey>peach-cloud</sonar.projectKey>
+        <sonar.projectName>Peach Cloud</sonar.projectName>
+        <sonar-maven-plugin.version>5.7.0.6970</sonar-maven-plugin.version>
     </properties>
 
     <modules>
@@ -411,6 +417,11 @@
                         </fileset>
                     </filesets>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar-maven-plugin.version}</version>
             </plugin>
         </plugins>
     </build>

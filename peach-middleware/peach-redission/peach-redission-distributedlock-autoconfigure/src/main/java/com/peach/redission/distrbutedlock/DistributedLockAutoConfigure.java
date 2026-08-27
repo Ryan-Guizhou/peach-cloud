@@ -16,9 +16,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 
 /**
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2025/12/26 9:30
+ * 分布式锁自动配置。
+ *
+ * <p>注册 {@link LockInfoHandle} Bean 名 {@value LockInfoType#DISTRIBUTE}，供
+ * {@link LockInfoHandleFactory#getLockHandle(String)} 按类型字符串解析。</p>
+ *
+ * @author Mr Shu
+ * @version 1.0.0
+ * @since 2025/12/26
  */
 @AutoConfiguration
 @AutoConfigureAfter(RedisConfig.class)
@@ -26,29 +31,30 @@ public class DistributedLockAutoConfigure {
 
 
     @Bean(LockInfoType.DISTRIBUTE)
-    public LockInfoHandle lockInfoHandle(){
+    public LockInfoHandle distributedLockInfoHandle() {
         return new DistributedLockInfoHandle();
     }
 
     @Bean
     @ConditionalOnBean(RedissonClient.class)
     @ConditionalOnMissingBean(DistrbutedLockerManager.class)
-    public DistrbutedLockerManager distrbutedLockerManager(RedissonClient redissonClient){
+    public DistrbutedLockerManager distrbutedLockerManager(RedissonClient redissonClient) {
         return new DistrbutedLockerManager(redissonClient);
     }
 
     @Bean
     @ConditionalOnBean(DistrbutedLockerManager.class)
     @ConditionalOnMissingBean(DistrbutedLockerFactory.class)
-    public DistrbutedLockerFactory distrbutedLockFactory(DistrbutedLockerManager distrbutedLockerManager){
+    public DistrbutedLockerFactory distrbutedLockFactory(DistrbutedLockerManager distrbutedLockerManager) {
         return new DistrbutedLockerFactory(distrbutedLockerManager);
     }
 
     @Bean
     @ConditionalOnBean(DistrbutedLockerManager.class)
     @ConditionalOnMissingBean(DistrbutedLockAspect.class)
-    public DistrbutedLockAspect distrbutedLockAspect(LockInfoHandleFactory lockInfoHandleFactory, DistrbutedLockerFactory distrbutedLockFactory){
-        return new DistrbutedLockAspect(lockInfoHandleFactory,distrbutedLockFactory);
+    public DistrbutedLockAspect distrbutedLockAspect(LockInfoHandleFactory lockInfoHandleFactory,
+                                                     DistrbutedLockerFactory distrbutedLockFactory) {
+        return new DistrbutedLockAspect(lockInfoHandleFactory, distrbutedLockFactory);
     }
 
 

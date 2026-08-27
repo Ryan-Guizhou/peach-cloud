@@ -1,8 +1,9 @@
 package com.peach.auth.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.validate.CommonValidator;
 import com.peach.auth.dao.RouterDao;
@@ -78,9 +79,8 @@ public class RouterServiceImpl implements IRouterService {
 
     @Override
     public PageInfo<RouterVO> pageList(RouterQO routerQO) {
-        PageInfo<RouterVO> pageInfo = PageHelper.startPage(routerQO.getPageNum(), routerQO.getPageSize())
+        return PageMethod.startPage(routerQO.getPageNum(), routerQO.getPageSize())
                 .doSelectPageInfo(() -> routerDao.selectByQO(routerQO));
-        return pageInfo;
     }
 
     @Override

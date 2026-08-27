@@ -17,12 +17,16 @@ import java.util.stream.Collectors;
  */
 public class ValidationException extends RuntimeException{
 
-    private final Set<CommonValidator.ValidationDetail> fieldErrors;
+    private final transient Set<CommonValidator.ValidationDetail> fieldErrors;
 
     // 保留一个主要构造方法，避免冲突
     public ValidationException(String message, Set<CommonValidator.ValidationDetail> fieldErrors) {
         super(message);
         this.fieldErrors = fieldErrors != null ? new HashSet<>(fieldErrors) : Set.of();
+    }
+
+    public Set<CommonValidator.ValidationDetail> getFieldErrors() {
+        return fieldErrors;
     }
 
     // 从ConstraintViolation创建

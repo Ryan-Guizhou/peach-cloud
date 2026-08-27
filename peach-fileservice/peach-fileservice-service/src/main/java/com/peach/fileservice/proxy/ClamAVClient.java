@@ -139,7 +139,7 @@ public class ClamAVClient {
   private byte[] assertSizeLimit(byte[] reply) {
     String r = new String(reply, StandardCharsets.US_ASCII);
     if (r.startsWith("INSTREAM size limit exceeded.")) 
-    	throw new RuntimeException("Clamd size limit exceeded. Full reply from server: " + r);
+    	throw new IllegalStateException("Clamd size limit exceeded. Full reply from server: " + r);
     return reply;
   }
 

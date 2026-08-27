@@ -97,7 +97,7 @@ public class CloudStorageBrowserServiceImpl implements ICloudStorageBrowserServi
     @Override
     public CloudStorageUploadVO upload(String instanceId, String targetPath, MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new RuntimeException("upload file is empty");
+            throw new IllegalArgumentException("upload file is empty");
         }
         StorageProperties.StorageProvider providerConfig = providerConfig(instanceId);
         String objectKey = buildTargetObjectKey(targetPath, file.getOriginalFilename());
@@ -116,7 +116,7 @@ public class CloudStorageBrowserServiceImpl implements ICloudStorageBrowserServi
             uploadVO.setUrl(result.getUrl());
             return uploadVO;
         } catch (Exception ex) {
-            throw new RuntimeException("Failed to upload file", ex);
+            throw new IllegalStateException("Failed to upload file", ex);
         }
     }
 
@@ -144,10 +144,10 @@ public class CloudStorageBrowserServiceImpl implements ICloudStorageBrowserServi
     private CloudStorageInstanceVO requireEnabledInstance(String instanceId) {
         CloudStorageInstanceVO instanceVO = cloudStorageInstanceDao.selectById(instanceId);
         if (instanceVO == null) {
-            throw new RuntimeException("cloud storage instance not found");
+            throw new IllegalArgumentException("cloud storage instance not found");
         }
         if (!Integer.valueOf(1).equals(instanceVO.getEnabled())) {
-            throw new RuntimeException("cloud storage instance is disabled");
+            throw new IllegalStateException("cloud storage instance is disabled");
         }
         return instanceVO;
     }
@@ -178,7 +178,7 @@ public class CloudStorageBrowserServiceImpl implements ICloudStorageBrowserServi
 
     private String buildTargetObjectKey(String targetPath, String originalFilename) {
         if (StringUtil.isBlank(originalFilename)) {
-            throw new RuntimeException("original file name is empty");
+            throw new IllegalArgumentException("original file name is empty");
         }
         if (StringUtil.isBlank(targetPath)) {
             return originalFilename;

@@ -31,6 +31,10 @@ import java.util.Properties;
 @Slf4j
 public abstract class AbstractCacheService implements CaptchaService {
 
+    private static final String DEFAULT_FONT_FILE = "WenQuanZhengHei.ttf";
+
+    private static final String MEMORY_CACHE_TYPE = "MEMORY";
+
     /**
      * 频率限制处理器 / Frequency limiting processor
      */
@@ -69,12 +73,12 @@ public abstract class AbstractCacheService implements CaptchaService {
     /**
      * 水印字体 / Watermark font
      */
-    protected static String WATER_MARK_STR = "WenQuanZhengHei.ttf";
+    protected static String WATER_MARK_STR = DEFAULT_FONT_FILE;
 
     /**
      * 水印字体 / Watermark font
      */
-    protected Font WARK_MARK_FRONT;
+    protected Font waterMarkFont;
 
     /**
      * 滑动误差偏移量 / Slide error offset
@@ -84,17 +88,17 @@ public abstract class AbstractCacheService implements CaptchaService {
     /**
      * aes加密开关 / AES encryption switch
      */
-    protected static Boolean CAPTCHA_AES_STATUS = true;
+    protected static boolean CAPTCHA_AES_STATUS = true;
 
     /**
      * 点选文字验证码的文字字体(宋体) / Point selection text verification code font (songti)
      */
-    protected static String CLICK_WORD_FRONT_STR = "WenQuanZhengHei.ttf";
+    protected static String CLICK_WORD_FRONT_STR = DEFAULT_FONT_FILE;
 
     /**
      * 缓存MEMORY/REDIS / Cache MEMORY/REDIS
      */
-    protected static String CACHE_TYPE = "MEMORY";
+    protected static String CACHE_TYPE = MEMORY_CACHE_TYPE;
 
     /**
      * 滑块干扰项(0/1/2) / Slide interference items (0/1/2)
@@ -118,28 +122,40 @@ public abstract class AbstractCacheService implements CaptchaService {
                 config.getProperty(CaptchaPropertiesConst.ORIGINAL_PATH_PIC_CLICK),
                 config.getProperty(CaptchaPropertiesConst.ORIGINAL_PATH_ROTATE));
 
-        WATER_MARK = config.getProperty(CaptchaPropertiesConst.CAPTCHA_WATER_MARK, "PEACHSOFT");
-        SLIP_OFFSET = config.getProperty(CaptchaPropertiesConst.CAPTCHA_SLIP_OFFSET, "5");
-        WATER_MARK_STR = config.getProperty(CaptchaPropertiesConst.CAPTCHA_WATER_FONT, "WenQuanZhengHei.ttf");
-        CAPTCHA_AES_STATUS = Boolean.parseBoolean(config.getProperty(CaptchaPropertiesConst.CAPTCHA_AES_STATUS, "true"));
-        CLICK_WORD_FRONT_STR = config.getProperty(CaptchaPropertiesConst.CAPTCHA_FONT_TYPE, "WenQuanZhengHei.ttf");
-        CACHE_TYPE = config.getProperty(CaptchaPropertiesConst.CAPTCHA_CACHETYPE, "MEMORY");
-        INTERFERENCE_OPTIONS = Integer.parseInt(config.getProperty(CaptchaPropertiesConst.CAPTCHA_INTERFERENCE_OPTIONS, "0"));
+        applyStaticConfig(config);
 
         // 部署在linux中，如果没有安装中文字段，水印和点选文字，中文无法显示，
         // 通过加载resources下的font字体解决，无需在linux中安装字体
         loadWaterMarkFont();
-        if ("MEMORY".equals(CACHE_TYPE)) {
+        if (MEMORY_CACHE_TYPE.equals(CACHE_TYPE)) {
             MemoryCacheUtil.init(Integer.parseInt(config.getProperty(CaptchaPropertiesConst.CAPTCHA_CACAHE_MAX_NUMBER, "1000")),
                     Long.parseLong(config.getProperty(CaptchaPropertiesConst.CAPTCHA_TIMING_CLEAR_SECOND, "180")));
         }
-        if (ONE.equals(config.getProperty(CaptchaPropertiesConst.REQ_FREQUENCY_LIMIT_ENABLE, ZERO)) && frequencyLimitHandler == null){
-            synchronized (this){
-                if (frequencyLimitHandler == null){
-                    frequencyLimitHandler = new DefaultFrequencyLimitHandler(config, getCacheService(CACHE_TYPE));
-                }
+        if (ONE.equals(config.getProperty(CaptchaPropertiesConst.REQ_FREQUENCY_LIMIT_ENABLE, ZERO))) {
+            initFrequencyLimitHandler(config);
+        }
+    }
+
+    private static void initFrequencyLimitHandler(Properties config) {
+        if (frequencyLimitHandler != null) {
+            return;
+        }
+        synchronized (AbstractCacheService.class) {
+            if (frequencyLimitHandler == null) {
+                frequencyLimitHandler = new DefaultFrequencyLimitHandler(config,
+                        CaptchaServiceFactory.getCaptchaCacheService(CACHE_TYPE));
             }
         }
+    }
+
+    private static void applyStaticConfig(Properties config) {
+        WATER_MARK = config.getProperty(CaptchaPropertiesConst.CAPTCHA_WATER_MARK, "PEACHSOFT");
+        SLIP_OFFSET = config.getProperty(CaptchaPropertiesConst.CAPTCHA_SLIP_OFFSET, "5");
+        WATER_MARK_STR = config.getProperty(CaptchaPropertiesConst.CAPTCHA_WATER_FONT, DEFAULT_FONT_FILE);
+        CAPTCHA_AES_STATUS = Boolean.parseBoolean(config.getProperty(CaptchaPropertiesConst.CAPTCHA_AES_STATUS, "true"));
+        CLICK_WORD_FRONT_STR = config.getProperty(CaptchaPropertiesConst.CAPTCHA_FONT_TYPE, DEFAULT_FONT_FILE);
+        CACHE_TYPE = config.getProperty(CaptchaPropertiesConst.CAPTCHA_CACHETYPE, MEMORY_CACHE_TYPE);
+        INTERFERENCE_OPTIONS = Integer.parseInt(config.getProperty(CaptchaPropertiesConst.CAPTCHA_INTERFERENCE_OPTIONS, "0"));
     }
 
     /**
@@ -151,11 +167,11 @@ public abstract class AbstractCacheService implements CaptchaService {
         try {
             if (WATER_MARK_STR.toLowerCase().endsWith(TTF) || WATER_MARK_STR.toLowerCase().endsWith(TTC)
                     || WATER_MARK_STR.toLowerCase().endsWith(".otf")) {
-                this.WARK_MARK_FRONT = Font.createFont(Font.TRUETYPE_FONT,
+                this.waterMarkFont = Font.createFont(Font.TRUETYPE_FONT,
                                 getClass().getResourceAsStream("/fonts/" + WATER_MARK_STR))
-                        .deriveFont(Font.BOLD, HAN_ZI_SIZE / 2);
+                        .deriveFont(Font.BOLD, HAN_ZI_SIZE / 2f);
             } else {
-                this.WARK_MARK_FRONT = new Font(WATER_MARK_STR, Font.BOLD, HAN_ZI_SIZE / 2);
+                this.waterMarkFont = new Font(WATER_MARK_STR, Font.BOLD, HAN_ZI_SIZE / 2);
             }
 
         } catch (Exception e) {
@@ -164,21 +180,21 @@ public abstract class AbstractCacheService implements CaptchaService {
     }
 
     @Override
-    public Response get(CaptchaVO captchaVO) {
-        if (frequencyLimitHandler != null){
-            captchaVO.setClientUid(getValidateClientId(captchaVO));
-            return frequencyLimitHandler.validateGet(captchaVO);
+    public Response check(CaptchaVO captchaVO) {
+        return invokeFrequencyLimit(captchaVO, true);
+    }
+
+    private Response invokeFrequencyLimit(CaptchaVO captchaVO, boolean check) {
+        if (frequencyLimitHandler == null) {
+            return null;
         }
-        return null;
+        captchaVO.setClientUid(getValidateClientId(captchaVO));
+        return check ? frequencyLimitHandler.validateCheck(captchaVO) : frequencyLimitHandler.validateGet(captchaVO);
     }
 
     @Override
-    public Response check(CaptchaVO captchaVO) {
-        if (frequencyLimitHandler != null){
-            captchaVO.setClientUid(getValidateClientId(captchaVO));
-            return frequencyLimitHandler.validateGet(captchaVO);
-        }
-        return null;
+    public Response get(CaptchaVO captchaVO) {
+        return invokeFrequencyLimit(captchaVO, false);
     }
 
     @Override
@@ -205,12 +221,12 @@ public abstract class AbstractCacheService implements CaptchaService {
 
     protected String getValidateClientId(CaptchaVO captchaVO){
         if (StringUtil.isBlank(captchaVO.getBrowserInfo())) {
-            return Md5Util.md5(captchaVO.getBrowserInfo());
+            if (StringUtil.isNotBlank(captchaVO.getClientUid())){
+                return captchaVO.getClientUid();
+            }
+            return null;
         }
-        if (StringUtil.isNotBlank(captchaVO.getClientUid())){
-            return captchaVO.getClientUid();
-        }
-        return null;
+        return Md5Util.sha256Hex(captchaVO.getBrowserInfo());
     }
 
     /**
@@ -228,8 +244,12 @@ public abstract class AbstractCacheService implements CaptchaService {
      * @return 解密后的string / Decrypted string
      * @throws Exception 抛出异常 / Throw an exception
      */
-    protected  String decrypt(String point, String key) throws Exception {
-        return AesUtil.aesDecrypt(point, key);
+    protected String decrypt(String point, String key) {
+        try {
+            return AesUtil.aesDecrypt(point, key);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Captcha coordinate decryption failed", ex);
+        }
     }
 
     /**

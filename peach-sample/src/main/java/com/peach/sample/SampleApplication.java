@@ -1,8 +1,8 @@
 package com.peach.sample;
 
-import com.peach.email.Idempotency.IdempotencyStore;
+import com.peach.email.idempotency.IdempotencyStore;
 import com.peach.email.retry.RetryPolicy;
-import com.peach.sample.email.Idempotency.TTLIdempotencyStore;
+import com.peach.sample.email.idempotency.TTLIdempotencyStore;
 import com.peach.sample.email.retry.FixedDelayRetryPolicy;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;

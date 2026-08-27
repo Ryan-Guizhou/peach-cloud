@@ -35,7 +35,7 @@ public class WebSocketPushServiceImpl implements IWebSocketPushService {
             return;
         }
         if (message.getTraceId() == null) {
-            message.setTraceId(IDGeneratorUtil.UUID());
+            message.setTraceId(IDGeneratorUtil.generateUuid());
         }
         if (message.getTimestamp() == null) {
             message.setTimestamp(System.currentTimeMillis());

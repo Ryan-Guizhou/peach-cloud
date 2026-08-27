@@ -5,15 +5,19 @@ package com.peach.redission.common;
  * @Version 1.0.0
  * @CreateTime 2025/12/22 10:56
  */
-public interface LockInfoType {
+public final class LockInfoType {
+
+    private LockInfoType() {
+        throw new IllegalStateException("Utility class");
+    }
 
     /**
-     * 分布式锁
+     * 分布式锁 Bean 名；与 {@link com.peach.redission.distrbutedlock.lockinfo.impl.DistributedLockInfoHandle} 注册一致。
      */
-    String DISTRIBUTE = "DISTRIBUTED";
+    public static final String DISTRIBUTE = "distributedLockInfoHandle";
 
     /**
-     * 防重复、幂等锁
+     * 防重复、幂等锁 Bean 名。
      */
-    String REPEAT_EXCUTED = "REPEAT_EXCUTED";
+    public static final String REPEAT_EXECUTED = "repeatExecuted";
 }

@@ -1,5 +1,7 @@
 package com.peach.scheduler.service;
 
+import java.time.ZoneId;
+
 import org.springframework.stereotype.Indexed;
 
 import com.peach.scheduled.common.ExecutionEvent;
@@ -22,6 +24,10 @@ import org.springframework.scheduling.annotation.Scheduled;
  */
 @Indexed
 public class SchedulerRetryRecoveryService {
+    private static final String ERROR_MESSAGE_LEASE_EXPIRED = "Executor lease expired";
+
+    private static final String ERROR_TYPE_LEASE_EXPIRED = "LEASE_EXPIRED";
+
     private static final Logger log = LoggerFactory.getLogger(SchedulerRetryRecoveryService.class);
     private final SchedulerExecutionDao executionDao;
     private final SchedulerJobDao jobDao;
@@ -68,20 +74,22 @@ public class SchedulerRetryRecoveryService {
     }
 
     private void recoverExpired(int limit) {
-        List<SchedulerExecutionDO> expired = executionDao.selectExpiredRunning(LocalDateTime.now(), limit);
+        List<SchedulerExecutionDO> expired = executionDao.selectExpiredRunning(LocalDateTime.now(ZoneId.systemDefault()), limit);
         for (SchedulerExecutionDO execution : expired) {
             try {
                 SchedulerJobDO job = jobDao.selectById(execution.getJobId());
                 int maxAttempts = job == null || job.getMaxAttempts() == null ? 1 : Math.max(1, job.getMaxAttempts());
+                int retryIntervalSeconds = job == null || job.getRetryIntervalSeconds() == null
+                        ? 60 : Math.max(1, job.getRetryIntervalSeconds());
                 if (execution.getAttempt() >= maxAttempts) {
                     lifecycleService.scheduleRetry(execution.getExecutionId(), execution.getExecutorInstance(),
-                            LocalDateTime.now(), "LEASE_EXPIRED", "Executor lease expired");
+                            LocalDateTime.now(ZoneId.systemDefault()), ERROR_TYPE_LEASE_EXPIRED, ERROR_MESSAGE_LEASE_EXPIRED);
                     lifecycleService.transition(execution.getExecutionId(), ExecutionEvent.EXHAUST,
-                            "LEASE_EXPIRED", "Executor lease expired", "system");
+                            ERROR_TYPE_LEASE_EXPIRED, ERROR_MESSAGE_LEASE_EXPIRED, "system");
                 } else {
-                    int delay = job.getRetryIntervalSeconds() == null ? 60 : Math.max(1, job.getRetryIntervalSeconds());
+                    int delay = retryIntervalSeconds;
                     lifecycleService.scheduleRetry(execution.getExecutionId(), execution.getExecutorInstance(),
-                            LocalDateTime.now().plusSeconds(delay), "LEASE_EXPIRED", "Executor lease expired");
+                            LocalDateTime.now(ZoneId.systemDefault()).plusSeconds(delay), ERROR_TYPE_LEASE_EXPIRED, ERROR_MESSAGE_LEASE_EXPIRED);
                 }
             } catch (RuntimeException ex) {
                 log.error("Scheduler lease recovery failed, executionId={}, errorType={}",
@@ -91,7 +99,7 @@ public class SchedulerRetryRecoveryService {
     }
 
     private void dispatchDueRetries(int limit) {
-        List<SchedulerExecutionDO> due = executionDao.selectDueRetries(LocalDateTime.now(), limit);
+        List<SchedulerExecutionDO> due = executionDao.selectDueRetries(LocalDateTime.now(ZoneId.systemDefault()), limit);
         for (SchedulerExecutionDO execution : due) {
             try {
                 SchedulerJobDO job = jobDao.selectById(execution.getJobId());

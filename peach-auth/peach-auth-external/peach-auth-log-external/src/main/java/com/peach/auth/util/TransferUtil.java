@@ -24,11 +24,15 @@ import jakarta.servlet.http.HttpServletRequest;
 /**
  * @Author Mr Shu
  * @Version 1.0.0
- * @Description //TODO
+ * @Description
  * @CreateTime 2025/3/15 0:01
  */
 @Slf4j
 public class TransferUtil {
+
+    private TransferUtil() {
+        throw new IllegalStateException("Utility class");
+    }
 
 
     /**
@@ -57,7 +61,7 @@ public class TransferUtil {
 
         DiviceInfo diviceInfo = getDiviceInfo(request);
         UserOperLogVO userOperLogVO = new UserOperLogVO();
-        userOperLogVO.setId(IDGeneratorUtil.UUID());
+        userOperLogVO.setId(IDGeneratorUtil.generateUuid());
         userOperLogVO.setOptTypeCode(optTypeCode);
         userOperLogVO.setModuleCode(moduleCode);
         //从登录状态中获取
@@ -73,10 +77,10 @@ public class TransferUtil {
         userOperLogVO.setBrowser(diviceInfo.getBrowser());
         userOperLogVO.setOs(diviceInfo.getOs());
         userOperLogVO.setExecutionTime(executionTime);
-        userOperLogVO.setIsSuccess(response.isSuccess() + StringUtil.EMPTY);
+        userOperLogVO.setIsSuccess(Boolean.TRUE.equals(response.isSuccess()) ? PubCommonConst.STR_TRUE : PubCommonConst.STR_FALSE);
         userOperLogVO.setRequestMethod(requestMethod);
         userOperLogVO.setRequestUri(requestURI);
-        String errorMsg = response.isSuccess() == PubCommonConst.TRUE ? StringUtil.EMPTY : response.getMsg();
+        String errorMsg = response.isSuccess() ? StringUtil.EMPTY : response.getMsg();
         userOperLogVO.setErrorMsg(errorMsg);
         userOperLogVO.setResponseData(JSONUtil.toJsonStr(response.getData()));
         return userOperLogVO;
@@ -94,7 +98,6 @@ public class TransferUtil {
             if (content.contains("#p") && objects != null && objects.length > 0){
                 SpelParse spelParse = SpelParse.create();
                 for (int i = 0; i < objects.length; i ++) {
-                    Object object = objects[i];
                     spelParse.setVariable("p" + i, JSON.toJSON(objects[i]));
                 }
                 return spelParse.parseExpression(content);
@@ -112,8 +115,8 @@ public class TransferUtil {
      */
     private static HttpServletRequest getHttpServletRequest() {
         RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
-        if (attributes instanceof ServletRequestAttributes) {
-            return ((ServletRequestAttributes) attributes).getRequest();
+        if (attributes instanceof ServletRequestAttributes servletRequestAttributes) {
+            return servletRequestAttributes.getRequest();
         }
         return null;
     }

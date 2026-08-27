@@ -1,5 +1,7 @@
 package com.peach.common.loader;
 
+import java.net.URI;
+import java.net.URL;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
@@ -8,7 +10,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -97,20 +98,20 @@ public class CustomServiceLoader {
     private static <T> void loadStandardServices(Class<T> serviceClass, ClassLoader classLoader, List<T> providers) {
         try {
             ServiceLoader<T> standardLoader = ServiceLoader.load(serviceClass, classLoader);
-            // 使用迭代器而不是forEach，便于异常处理
             Iterator<T> iterator = standardLoader.iterator();
             while (iterator.hasNext()) {
-                try {
-                    T provider = iterator.next();
-                    providers.add(provider);
-                } catch (ServiceConfigurationError e) {
-                    // 单个服务加载失败不影响其他服务
-                    log.warn("Failed to load standard SPI service for {}", serviceClass.getName(), e);
-                }
+                addStandardProvider(serviceClass, iterator, providers);
             }
         } catch (Exception e) {
-            // 标准SPI加载失败不影响自定义路径加载
             log.warn("Failed to load standard SPI services for {}", serviceClass.getName(), e);
+        }
+    }
+
+    private static <T> void addStandardProvider(Class<T> serviceClass, Iterator<T> iterator, List<T> providers) {
+        try {
+            providers.add(iterator.next());
+        } catch (ServiceConfigurationError e) {
+            log.warn("Failed to load standard SPI service for {}", serviceClass.getName(), e);
         }
     }
 
@@ -131,14 +132,13 @@ public class CustomServiceLoader {
             Enumeration<URL> resources = classLoader.getResources(customPath);
 
             // 使用LinkedHashSet避免重复URL（有些类加载器可能返回重复项）
-            Set<URL> urlSet = new LinkedHashSet<>();
+            Set<URI> urlSet = new LinkedHashSet<>();
             while (resources.hasMoreElements()) {
-                urlSet.add(resources.nextElement());
+                urlSet.add(resources.nextElement().toURI());
             }
 
-            // 遍历所有URL
-            for (URL url : urlSet) {
-                loadFromUrl(serviceClass, url, classLoader, providers);
+            for (URI uri : urlSet) {
+                loadFromUri(serviceClass, uri, classLoader, providers);
             }
 
         } catch (IOException e) {
@@ -153,18 +153,18 @@ public class CustomServiceLoader {
     }
 
     /**
-     * 从单个URL加载服务配置
+     * 从单个 URI 加载服务配置
      *
      * @param serviceClass 服务接口类
-     * @param url 配置文件URL
+     * @param uri 配置文件 URI
      * @param classLoader 类加载器
      * @param providers 用于收集服务实例的列表
      * @param <T> 服务类型
      */
-    private static <T> void loadFromUrl(Class<T> serviceClass, URL url, ClassLoader classLoader, List<T> providers) {
+    private static <T> void loadFromUri(Class<T> serviceClass, URI uri, ClassLoader classLoader, List<T> providers) {
         // 使用try-with-resources确保资源关闭
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+                new InputStreamReader(uri.toURL().openStream(), StandardCharsets.UTF_8))) {
 
             String className;
             int lineNumber = 0;
@@ -178,11 +178,11 @@ public class CustomServiceLoader {
                 }
 
                 // 加载服务类
-                loadServiceClass(serviceClass, className, classLoader, providers, url, lineNumber);
+                loadServiceClass(serviceClass, className, classLoader, providers, uri, lineNumber);
             }
 
         } catch (IOException e) {
-            log.warn("Failed to read configuration from URL: {}", url, e);
+            log.warn("Failed to read configuration from URI: {}", uri, e);
         }
     }
 
@@ -193,13 +193,13 @@ public class CustomServiceLoader {
      * @param className 实现类全限定名
      * @param classLoader 类加载器
      * @param providers 用于收集服务实例的列表
-     * @param url 配置来源URL（用于错误信息）
+     * @param uri 配置来源 URI（用于错误信息）
      * @param lineNumber 配置行号（用于错误信息）
      * @param <T> 服务类型
      */
     private static <T> void loadServiceClass(Class<T> serviceClass, String className,
                                             ClassLoader classLoader, List<T> providers,
-                                            URL url, int lineNumber) {
+                                            URI uri, int lineNumber) {
         try {
             // 使用指定的类加载器加载类（不初始化）
             Class<?> clazz = Class.forName(className, false, classLoader);
@@ -209,23 +209,23 @@ public class CustomServiceLoader {
                 // 实例化服务（要求有无参构造器）
                 T provider = serviceClass.cast(clazz.getDeclaredConstructor().newInstance());
                 providers.add(provider);
-                log.debug("Successfully loaded service: {} from {}", className, url);
+                log.debug("Successfully loaded service: {} from {}", className, uri);
             } else {
                 log.warn("Class {} does not implement service interface {} (from {} line {})",
-                        className, serviceClass.getName(), url, lineNumber);
+                        className, serviceClass.getName(), uri, lineNumber);
             }
 
         } catch (ClassNotFoundException e) {
-            log.warn("Service class not found: {} (from {} line {})", className, url, lineNumber);
+            log.warn("Service class not found: {} (from {} line {})", className, uri, lineNumber);
         } catch (NoSuchMethodException e) {
             log.warn("Service class {} does not have a public no-arg constructor (from {} line {})",
-                    className, url, lineNumber);
+                    className, uri, lineNumber);
         } catch (SecurityException e) {
             log.warn("Security exception when loading service class: {} (from {} line {})",
-                    className, url, lineNumber, e);
+                    className, uri, lineNumber, e);
         } catch (Exception e) {
             log.warn("Failed to instantiate service class: {} (from {} line {})",
-                    className, url, lineNumber, e);
+                    className, uri, lineNumber, e);
         }
     }
 
@@ -277,7 +277,7 @@ public class CustomServiceLoader {
                 }
 
                 // 复用加载逻辑
-                loadServiceClass(serviceClass, className, loader, providers, configFile.toURI().toURL(), lineNumber);
+                loadServiceClass(serviceClass, className, loader, providers, configFile.toURI(), lineNumber);
             }
 
         } catch (Exception e) {

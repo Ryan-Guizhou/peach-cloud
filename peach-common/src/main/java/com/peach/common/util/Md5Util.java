@@ -1,12 +1,18 @@
 package com.peach.common.util;
 
+import lombok.extern.slf4j.Slf4j;
+
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2025/12/30 15:26
+ * 摘要工具类；新代码请使用 {@link #sha256Hex(String)}。
+ *
+ * @author Mr Shu
+ * @version 1.0.0
  */
+@Slf4j
 public final class Md5Util {
 
     private Md5Util() {
@@ -14,32 +20,27 @@ public final class Md5Util {
     }
 
     /**
-     * 获取指定字符串的md5值
+     * 获取指定字符串的 SHA-256 摘要，用于需要抗碰撞的路径。
+     *
      * @param dataStr 明文
-     * @return String
+     * @return SHA-256 十六进制字符串
      */
-    public static String md5(String dataStr) {
+    public static String sha256Hex(String dataStr) {
         try {
-            MessageDigest m = MessageDigest.getInstance("MD5");
-            m.update(dataStr.getBytes("UTF8"));
-            byte[] s = m.digest();
-            StringBuilder result = new StringBuilder();
-            for (int i = 0; i < s.length; i++) {
-                result.append(Integer.toHexString((0x000000FF & s[i]) | 0xFFFFFF00).substring(6));
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] digestBytes = digest.digest(dataStr.getBytes(StandardCharsets.UTF_8));
+            StringBuilder result = new StringBuilder(digestBytes.length * 2);
+            for (byte digestByte : digestBytes) {
+                String hex = Integer.toHexString(digestByte & 0xFF);
+                if (hex.length() == 1) {
+                    result.append('0');
+                }
+                result.append(hex);
             }
             return result.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            log.error("");
+            throw new IllegalStateException("SHA-256 algorithm is not available", e);
         }
-        return "";
-    }
-
-    /**
-     * 获取指定字符串的md5值, md5(str+salt)
-     * @param dataStr 明文
-     * @return String
-     */
-    public static String md5WithSalt(String dataStr,String salt) {
-        return md5(dataStr + salt);
     }
 }

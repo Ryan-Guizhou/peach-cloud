@@ -26,6 +26,9 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+
+
     @Value("${peach.openapi.title:PEACH-CLOUD 设置中心 API}")
     private String title;
 
@@ -54,11 +57,11 @@ public class OpenApiConfig {
     public OpenAPI completeOpenApi() {
         OpenAPI openAPI = new OpenAPI()
                 .info(createApiInfo())
-                .addSecurityItem(new SecurityRequirement().addList("Authorization"))
+                .addSecurityItem(new SecurityRequirement().addList(AUTHORIZATION_HEADER))
                 .components(new Components()
-                        .addSecuritySchemes("Authorization",
+                        .addSecuritySchemes(AUTHORIZATION_HEADER,
                                 new SecurityScheme()
-                                        .name("Authorization")
+                                        .name(AUTHORIZATION_HEADER)
                                         .type(SecurityScheme.Type.APIKEY)
                                         .in(SecurityScheme.In.HEADER)
                                         .description("Sa-Token 认证"))
@@ -74,7 +77,7 @@ public class OpenApiConfig {
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
                                 .description("Referer 来源头")));
-        if (serverUrl != null && serverUrl.trim().length() > 0) {
+        if (serverUrl != null && !serverUrl.trim().isEmpty()) {
             openAPI.servers(List.of(new Server()
                     .url(serverUrl.trim())
                     .description(serverDescription)));

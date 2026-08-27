@@ -30,6 +30,7 @@ public class DeleteObjectRequest extends StorageObjectRequest {
             return this;
         }
 
+        @Override
         public DeleteObjectRequest build() {
             validate();
             return new DeleteObjectRequest(this);

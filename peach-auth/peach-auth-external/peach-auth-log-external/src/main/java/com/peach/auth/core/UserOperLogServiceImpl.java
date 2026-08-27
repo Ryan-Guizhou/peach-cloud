@@ -1,5 +1,7 @@
 package com.peach.auth.core;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,7 +11,6 @@ import com.peach.auth.entity.UserOperLogDO;
 import com.peach.auth.qo.UserOperLogQO;
 import com.peach.auth.vo.UserOperLogVO;
 import com.peach.common.util.PeachCollectionUtil;
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.ExecutorType;
@@ -39,7 +40,7 @@ public class UserOperLogServiceImpl implements IUserOperLogService {
 
     @Override
     public PageInfo<UserOperLogVO> pageList(UserOperLogQO userOperLogQO) {
-        return PageHelper.startPage(userOperLogQO.getPageNum(), userOperLogQO.getPageSize())
+        return PageMethod.startPage(userOperLogQO.getPageNum(), userOperLogQO.getPageSize())
                 .doSelectPageInfo(() -> userOperLogDao.select(buildQuery(userOperLogQO)));
     }
 
@@ -51,7 +52,7 @@ public class UserOperLogServiceImpl implements IUserOperLogService {
 
     @Override
     public void batchInsert(List<UserOperLogVO> userOperLogVOList) {
-        if (PeachCollectionUtil.isEmpty(userOperLogVOList)) {
+        if (org.springframework.util.CollectionUtils.isEmpty(userOperLogVOList)) {
             return;
         }
 

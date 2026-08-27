@@ -1,5 +1,7 @@
 package com.peach.rocket.transaction;
 
+import java.time.ZoneId;
+
 import com.peach.rocket.annotation.MqEvent;
 import com.peach.rocket.annotation.MqTransaction;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
@@ -170,7 +172,7 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         }
 
         // 构建事务参数对象，传递给 TransactionListener
-        TransactionArgument argument = new TransactionArgument(transactionKey, route, payload.getClass(), payload);
+        TransactionArgument argument = new TransactionArgument(transactionKey, route, payload);
 
         try {
             // 发送事务消息
@@ -273,7 +275,7 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         }
 
         // 注册处理器适配器
-        handlers.put(key, new TransactionHandlerAdapter(handler, resolvePayloadType(handler), topic, tag));
+        handlers.put(key, new TransactionHandlerAdapter(handler, resolvePayloadType(handler)));
 
         log.info("[mq-transaction] handler registered. topic={} tag={} handler={}",
                 topic, tag, targetClass.getName());
@@ -301,7 +303,7 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         envelope.setPayloadType(payload.getClass().getName());
         envelope.setPayload(payload);
         envelope.setHeaders(headerResolver.resolve(options.getHeaders()));
-        envelope.setCreatedAt(LocalDateTime.now());
+        envelope.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
         return envelope;
     }
 
@@ -317,80 +319,22 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         return event == null ? 1 : event.version();
     }
 
-    /**
-     * 查找匹配的事务处理器。
-     * 优先精确匹配 Topic + Tag，若未找到则尝试使用 Tag 为 * 的通配处理器。
-     *
-     * @param topic Topic 名称
-     * @param tag   Tag 名称
-     * @return 事务处理器适配器，可能为 null
-     */
-    private TransactionHandlerAdapter findHandler(String topic, String tag) {
-        // 优先精确匹配
-        TransactionHandlerAdapter exact = handlers.get(handlerKey(topic, tag));
-        // 若未找到，尝试匹配通配 Tag
-        return exact == null ? handlers.get(handlerKey(topic, "*")) : exact;
-    }
-
-    /**
-     * 构建处理器 Key。
-     * 格式：topic||tag，tag 为空时使用 *。
-     *
-     * @param topic Topic 名称
-     * @param tag   Tag 名称
-     * @return 处理器 Key
-     */
-    private String handlerKey(String topic, String tag) {
-        return topic + "||" + (StringUtils.hasText(tag) ? tag : "*");
-    }
-
-    /**
-     * 解析事务处理器的泛型参数，获取 Payload 类型。
-     *
-     * @param handler 事务处理器
-     * @return Payload 类型
-     */
-    private Class<?> resolvePayloadType(MqTransactionHandler<?> handler) {
-        ResolvableType type = ResolvableType.forClass(AopUtils.getTargetClass(handler))
-                .as(MqTransactionHandler.class);
-        Class<?> resolved = type.getGeneric(0).resolve();
-        return resolved == null ? Object.class : resolved;
-    }
-
-    /**
-     * 将内部事务状态转换为 RocketMQ 事务状态。
-     *
-     * @param state 内部事务状态
-     * @return RocketMQ 事务状态
-     */
-    private LocalTransactionState toRocketState(MqLocalTransactionState state) {
-        if (state == MqLocalTransactionState.COMMIT) {
-            return LocalTransactionState.COMMIT_MESSAGE;
-        }
-        if (state == MqLocalTransactionState.ROLLBACK) {
-            return LocalTransactionState.ROLLBACK_MESSAGE;
-        }
-        return LocalTransactionState.UNKNOW;
-    }
-
-    /**
-     * 判断发送结果是否成功。
-     *
-     * @param result 发送结果
-     * @return true 表示发送成功
-     */
-    private boolean isSendOk(SendResult result) {
-        return result != null && result.getSendStatus() == SendStatus.SEND_OK;
-    }
-
-    // ==================== 内部类 ====================
-
-    /**
-     * 委托事务监听器。
-     * 实现 RocketMQ 的 {@link TransactionListener} 接口，
-     * 将执行和回查委托给注册的 {@link MqTransactionHandler}。
-     */
     private final class DelegatingTransactionListener implements TransactionListener {
+
+        private TransactionHandlerAdapter findHandler(String topic, String tag) {
+            TransactionHandlerAdapter exact = handlers.get(handlerKey(topic, tag));
+            return exact == null ? handlers.get(handlerKey(topic, "*")) : exact;
+        }
+
+        private LocalTransactionState toRocketState(MqLocalTransactionState state) {
+            if (state == MqLocalTransactionState.COMMIT) {
+                return LocalTransactionState.COMMIT_MESSAGE;
+            }
+            if (state == MqLocalTransactionState.ROLLBACK) {
+                return LocalTransactionState.ROLLBACK_MESSAGE;
+            }
+            return LocalTransactionState.UNKNOW;
+        }
 
         /**
          * 执行本地事务。
@@ -403,16 +347,16 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         @Override
         public LocalTransactionState executeLocalTransaction(Message message, Object arg) {
             TransactionArgument argument = (TransactionArgument) arg;
-            TransactionHandlerAdapter adapter = findHandler(argument.getRoute().getTopic(),
-                    argument.getRoute().getTag());
+            TransactionHandlerAdapter adapter = findHandler(argument.route().getTopic(),
+                    argument.route().getTag());
 
             if (adapter == null) {
                 log.warn("[mq-transaction] no handler found on execute. topic={} tag={}",
-                        argument.getRoute().getTopic(), argument.getRoute().getTag());
+                        argument.route().getTopic(), argument.route().getTag());
                 return LocalTransactionState.UNKNOW;
             }
 
-            return toRocketState(adapter.execute(argument.getPayload(), argument.getTransactionKey()));
+            return toRocketState(adapter.execute(argument.payload(), argument.transactionKey()));
         }
 
         /**
@@ -445,41 +389,25 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
     }
 
     /**
-     * 事务参数对象。
-     * 在发送事务消息时传递给 TransactionListener。
+     * 构建处理器 Key。
+     * 格式：topic||tag，tag 为空时使用 *。
      */
-    private static final class TransactionArgument {
+    private String handlerKey(String topic, String tag) {
+        return topic + "||" + (StringUtils.hasText(tag) ? tag : "*");
+    }
 
-        /** 事务唯一标识 */
-        private final String transactionKey;
+    private Class<?> resolvePayloadType(MqTransactionHandler<?> handler) {
+        ResolvableType type = ResolvableType.forClass(AopUtils.getTargetClass(handler))
+                .as(MqTransactionHandler.class);
+        Class<?> resolved = type.getGeneric(0).resolve();
+        return resolved == null ? Object.class : resolved;
+    }
 
-        /** 消息路由信息 */
-        private final MqRoute route;
+    private boolean isSendOk(SendResult result) {
+        return result != null && result.getSendStatus() == SendStatus.SEND_OK;
+    }
 
-        /** 消息体类型 */
-        private final Class<?> payloadType;
-
-        /** 消息体 */
-        private final Object payload;
-
-        private TransactionArgument(String transactionKey, MqRoute route, Class<?> payloadType, Object payload) {
-            this.transactionKey = transactionKey;
-            this.route = route;
-            this.payloadType = payloadType;
-            this.payload = payload;
-        }
-
-        private String getTransactionKey() {
-            return transactionKey;
-        }
-
-        private MqRoute getRoute() {
-            return route;
-        }
-
-        private Object getPayload() {
-            return payload;
-        }
+    private record TransactionArgument(String transactionKey, MqRoute route, Object payload) {
     }
 
     /**
@@ -494,18 +422,9 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         /** Payload 类型 */
         private final Class<?> payloadType;
 
-        /** 绑定的 Topic */
-        private final String topic;
-
-        /** 绑定的 Tag */
-        private final String tag;
-
-        private TransactionHandlerAdapter(MqTransactionHandler handler, Class<?> payloadType,
-                                          String topic, String tag) {
+        private TransactionHandlerAdapter(MqTransactionHandler handler, Class<?> payloadType) {
             this.handler = handler;
             this.payloadType = payloadType;
-            this.topic = topic;
-            this.tag = tag;
         }
 
         /**

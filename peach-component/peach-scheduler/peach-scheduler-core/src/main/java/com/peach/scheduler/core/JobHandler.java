@@ -16,7 +16,6 @@ public interface JobHandler {
      *
      * @param context 参数说明
      * @return 返回结果
-     * @throws Exception 异常说明
      */
-    JobResult execute(JobContext context) throws Exception;
+    JobResult execute(JobContext context);
 }

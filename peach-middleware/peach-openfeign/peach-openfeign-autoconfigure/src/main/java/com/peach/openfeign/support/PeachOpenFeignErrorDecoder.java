@@ -7,18 +7,13 @@ import com.peach.openfeign.exception.PeachFeignTimeoutException;
 import feign.FeignException;
 import feign.Request;
 import feign.Response;
-import feign.RetryableException;
 import feign.codec.ErrorDecoder;
 
 /**
  * Peach OpenFeign 错误解码器。
  *
  * <p>将下游 HTTP 错误转换为模块统一异常，并对配置允许重试的状态码抛出
- * Feign 标准 {@link RetryableException} 交给重试器处理。</p>
- *
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2026/8/12 15:30
+ * Feign 标准 {@link feign.RetryableException} 交给重试器处理。</p>
  */
 public class PeachOpenFeignErrorDecoder implements ErrorDecoder {
 
@@ -59,20 +54,6 @@ public class PeachOpenFeignErrorDecoder implements ErrorDecoder {
         Exception decoded = defaultDecoder.decode(methodKey, response);
         return new PeachFeignRemoteException(resolveClientName(methodKey), methodKey, status, response.reason(),
                 "Feign remote call failed", decoded);
-    }
-
-    /**
-     * 携带已分类异常的 Feign 重试异常。
-     *
-     * <p>Feign 的 {@link feign.Retryer} 只识别 {@link RetryableException}。这里把业务语义异常作为 cause
-     * 传给重试器，便于重试耗尽后继续保留 429、超时或服务不可用语义。</p>
-     */
-    static class PeachFeignRetryableException extends RetryableException {
-
-        PeachFeignRetryableException(int status, String message, Request.HttpMethod httpMethod, Request request,
-                                     Throwable cause) {
-            super(status, message, httpMethod, cause, (Long)null, request);
-        }
     }
 
     private String resolveClientName(String methodKey) {

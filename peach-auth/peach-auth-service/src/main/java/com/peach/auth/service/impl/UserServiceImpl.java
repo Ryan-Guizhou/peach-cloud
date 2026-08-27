@@ -1,10 +1,13 @@
 package com.peach.auth.service.impl;
 
+import java.time.ZoneId;
+
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.ObjectUtil;
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.LoginInfo;
 import com.peach.auth.common.RsaPasswordUtil;
@@ -89,7 +92,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public PageInfo<UserVO> pageList(UserQO userQO) {
-        return PageHelper.startPage(userQO.getPageNum(), userQO.getPageSize())
+        return PageMethod.startPage(userQO.getPageNum(), userQO.getPageSize())
                 .doSelectPageInfo(() -> userDao.selectByQO(userQO));
     }
 
@@ -162,7 +165,7 @@ public class UserServiceImpl implements IUserService {
         loginInfo.setOrgId(currentUserOrg.getOrgId());
         loginInfo.setOrgCode(currentUserOrg.getOrgCode());
         loginInfo.setOrgName(currentUserOrg.getOrgName());
-        loginInfo.setIsDefaultPwd(userVO.getIsModify() == null ? null : (userVO.getIsModify() == 0 ? 1 : 0));
+        loginInfo.setIsDefaultPwd(resolveIsDefaultPwd(userVO.getIsModify()));
         loginInfo.setUserOrgList(userOrgList);
         loginInfo.setRoleList(roleList);
         loginInfo.setMenuList(menuList);
@@ -219,7 +222,7 @@ public class UserServiceImpl implements IUserService {
         loginInfo.setOrgId(currentUserOrg.getOrgId());
         loginInfo.setOrgCode(currentUserOrg.getOrgCode());
         loginInfo.setOrgName(currentUserOrg.getOrgName());
-        loginInfo.setIsDefaultPwd(userVO.getIsModify() == null ? null : (userVO.getIsModify() == 0 ? 1 : 0));
+        loginInfo.setIsDefaultPwd(resolveIsDefaultPwd(userVO.getIsModify()));
         loginInfo.setUserOrgList(userOrgDao.selectByUserId(userId));
         loginInfo.setRoleList(roleList);
         loginInfo.setMenuList(menuList);
@@ -236,7 +239,7 @@ public class UserServiceImpl implements IUserService {
         initVO.setSystemName("Peach Cloud DataOS");
         initVO.setSystemDescription("面向租户与机构的数据治理、权限和业务协同平台");
         initVO.setAppId(INIT_APP_ID);
-        initVO.setFiscal(LocalDate.now().getYear());
+        initVO.setFiscal(LocalDate.now(ZoneId.systemDefault()).getYear());
         initVO.setPublicKey(RsaPasswordUtil.getPublicKeyBase64());
         initVO.setEncryptionAlgorithm("RSAES-PKCS1-v1_5");
         return initVO;
@@ -291,34 +294,46 @@ public class UserServiceImpl implements IUserService {
         }
     }
 
+    private Integer resolveIsDefaultPwd(Integer isModify) {
+        if (isModify == null) {
+            return null;
+        }
+        return isModify == 0 ? 1 : 0;
+    }
+
     private List<AuthResourceVO> selectResources(List<RoleVO> roleList, String tenantId, String orgId, Integer fiscal) {
         Map<String, AuthResourceVO> resourceMap = new LinkedHashMap<>();
         if (CollectionUtils.isEmpty(roleList)) {
             return List.of();
         }
         for (RoleVO role : roleList) {
-            if (role == null || StringUtil.isBlank(role.getRoleCode())) {
-                continue;
-            }
-            AuthResourceDO query = new AuthResourceDO();
-            query.setTenantId(tenantId);
-            query.setOrgId(orgId);
-            query.setPartyCode(role.getRoleCode());
-            query.setFiscal(fiscal);
-            query.setIsDelete(PubCommonConst.LOGIC_FLASE);
-            List<AuthResourceVO> resources = authResourceDao.select(query);
-            if (CollectionUtils.isEmpty(resources)) {
-                continue;
-            }
-            for (AuthResourceVO resource : resources) {
-                if (resource == null || StringUtil.isBlank(resource.getResourceCode())) {
-                    continue;
-                }
-                String key = resource.getOpType() + ":" + resource.getResourceCode();
-                resourceMap.put(key, resource);
-            }
+            mergeResourcesFromRole(resourceMap, role, tenantId, orgId, fiscal);
         }
         return new ArrayList<>(resourceMap.values());
+    }
+
+    private void mergeResourcesFromRole(Map<String, AuthResourceVO> resourceMap, RoleVO role,
+                                        String tenantId, String orgId, Integer fiscal) {
+        if (role == null || StringUtil.isBlank(role.getRoleCode())) {
+            return;
+        }
+        AuthResourceDO query = new AuthResourceDO();
+        query.setTenantId(tenantId);
+        query.setOrgId(orgId);
+        query.setPartyCode(role.getRoleCode());
+        query.setFiscal(fiscal);
+        query.setIsDelete(PubCommonConst.LOGIC_FLASE);
+        List<AuthResourceVO> resources = authResourceDao.select(query);
+        if (CollectionUtils.isEmpty(resources)) {
+            return;
+        }
+        for (AuthResourceVO resource : resources) {
+            if (resource == null || StringUtil.isBlank(resource.getResourceCode())) {
+                continue;
+            }
+            String key = resource.getOpType() + ":" + resource.getResourceCode();
+            resourceMap.put(key, resource);
+        }
     }
 
     private List<String> buildPermissionList(List<AuthResourceVO> resourceList) {
@@ -335,40 +350,11 @@ public class UserServiceImpl implements IUserService {
     }
 
     private List<MenuVO> selectMenus(List<RoleVO> roleList, String tenantId, String orgId, Integer fiscal) {
-        Set<String> funcCodeSet = new LinkedHashSet<>();
-        if (!CollectionUtils.isEmpty(roleList)) {
-            for (RoleVO roleVO : roleList) {
-                if (roleVO == null || StringUtil.isBlank(roleVO.getRoleCode())) {
-                    continue;
-                }
-                AuthFunctionDO authFunctionVOQO = new AuthFunctionDO();
-                authFunctionVOQO.setTenantId(tenantId);
-                authFunctionVOQO.setOrgId(orgId);
-                authFunctionVOQO.setFiscal(fiscal);
-                authFunctionVOQO.setPartyCode(roleVO.getRoleCode());
-                authFunctionVOQO.setIsDelete(PubCommonConst.LOGIC_FLASE);
-                List<AuthFunctionVO> authFunctionVOList = authFunctionDao.select(authFunctionVOQO);
-                if (CollectionUtils.isEmpty(authFunctionVOList)) {
-                    continue;
-                }
-                for (AuthFunctionVO authFunctionVO : authFunctionVOList) {
-                    if (authFunctionVO != null && StringUtil.isNotBlank(authFunctionVO.getFuncCode())) {
-                        funcCodeSet.add(authFunctionVO.getFuncCode());
-                    }
-                }
-            }
-        }
-
+        Set<String> funcCodeSet = collectFuncCodesFromRoles(roleList, tenantId, orgId, fiscal);
         Map<String, MenuVO> menuMap = new LinkedHashMap<>();
         if (!funcCodeSet.isEmpty()) {
             for (String funcCode : funcCodeSet) {
-                MenuDO menuDO = new MenuDO();
-                menuDO.setAppId(INIT_APP_ID);
-                menuDO.setTenantId(tenantId);
-                menuDO.setFuncCode(funcCode);
-                menuDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
-                menuDO.setIsShow(1);
-                menuDO.setIsDisable(0);
+                MenuDO menuDO = buildMenuQuery(tenantId, funcCode);
                 List<MenuVO> menuVOList = menuDao.select(menuDO);
                 if (CollectionUtils.isEmpty(menuVOList)) {
                     continue;
@@ -386,37 +372,11 @@ public class UserServiceImpl implements IUserService {
     }
 
     private List<RouterVO> selectRouters(List<RoleVO> roleList, String tenantId, String orgId, Integer fiscal) {
-        Set<String> routerCodeSet = new LinkedHashSet<>();
-        if (!CollectionUtils.isEmpty(roleList)) {
-            for (RoleVO roleVO : roleList) {
-                if (roleVO == null || StringUtil.isBlank(roleVO.getRoleCode())) {
-                    continue;
-                }
-                AuthFunctionDO authFunctionVOQO = new AuthFunctionDO();
-                authFunctionVOQO.setTenantId(tenantId);
-                authFunctionVOQO.setOrgId(orgId);
-                authFunctionVOQO.setFiscal(fiscal);
-                authFunctionVOQO.setPartyCode(roleVO.getRoleCode());
-                authFunctionVOQO.setIsDelete(PubCommonConst.LOGIC_FLASE);
-                List<AuthFunctionVO> authFunctionVOList = authFunctionDao.select(authFunctionVOQO);
-                if (CollectionUtils.isEmpty(authFunctionVOList)) {
-                    continue;
-                }
-                for (AuthFunctionVO authFunctionVO : authFunctionVOList) {
-                    if (authFunctionVO != null && StringUtil.isNotBlank(authFunctionVO.getFuncCode())) {
-                        routerCodeSet.add(authFunctionVO.getFuncCode());
-                    }
-                }
-            }
-        }
-
+        Set<String> routerCodeSet = collectFuncCodesFromRoles(roleList, tenantId, orgId, fiscal);
         Map<String, RouterVO> routerMap = new LinkedHashMap<>();
         if (!routerCodeSet.isEmpty()) {
             for (String routerCode : routerCodeSet) {
-                RouterDO routerDO = new RouterDO();
-                routerDO.setAppId(INIT_APP_ID);
-                routerDO.setTenantId(tenantId);
-                routerDO.setRouterCode(routerCode);
+                RouterDO routerDO = buildRouterQuery(tenantId, routerCode);
                 List<RouterVO> routerVOList = routerDao.select(routerDO);
                 if (CollectionUtils.isEmpty(routerVOList)) {
                     continue;
@@ -433,35 +393,109 @@ public class UserServiceImpl implements IUserService {
         return List.of();
     }
 
+    private Set<String> collectFuncCodesFromRoles(List<RoleVO> roleList, String tenantId, String orgId, Integer fiscal) {
+        Set<String> funcCodeSet = new LinkedHashSet<>();
+        if (CollectionUtils.isEmpty(roleList)) {
+            return funcCodeSet;
+        }
+        for (RoleVO roleVO : roleList) {
+            addFuncCodesFromRole(funcCodeSet, roleVO, tenantId, orgId, fiscal);
+        }
+        return funcCodeSet;
+    }
+
+    private void addFuncCodesFromRole(Set<String> funcCodeSet, RoleVO roleVO,
+                                      String tenantId, String orgId, Integer fiscal) {
+        if (roleVO == null || StringUtil.isBlank(roleVO.getRoleCode())) {
+            return;
+        }
+        AuthFunctionDO authFunctionVOQO = new AuthFunctionDO();
+        authFunctionVOQO.setTenantId(tenantId);
+        authFunctionVOQO.setOrgId(orgId);
+        authFunctionVOQO.setFiscal(fiscal);
+        authFunctionVOQO.setPartyCode(roleVO.getRoleCode());
+        authFunctionVOQO.setIsDelete(PubCommonConst.LOGIC_FLASE);
+        List<AuthFunctionVO> authFunctionVOList = authFunctionDao.select(authFunctionVOQO);
+        if (CollectionUtils.isEmpty(authFunctionVOList)) {
+            return;
+        }
+        for (AuthFunctionVO authFunctionVO : authFunctionVOList) {
+            if (authFunctionVO != null && StringUtil.isNotBlank(authFunctionVO.getFuncCode())) {
+                funcCodeSet.add(authFunctionVO.getFuncCode());
+            }
+        }
+    }
+
+    private MenuDO buildMenuQuery(String tenantId, String funcCode) {
+        MenuDO menuDO = new MenuDO();
+        menuDO.setAppId(INIT_APP_ID);
+        menuDO.setTenantId(tenantId);
+        menuDO.setFuncCode(funcCode);
+        menuDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
+        menuDO.setIsShow(1);
+        menuDO.setIsDisable(0);
+        return menuDO;
+    }
+
+    private RouterDO buildRouterQuery(String tenantId, String routerCode) {
+        RouterDO routerDO = new RouterDO();
+        routerDO.setAppId(INIT_APP_ID);
+        routerDO.setTenantId(tenantId);
+        routerDO.setRouterCode(routerCode);
+        return routerDO;
+    }
+
     private UserOrgVO resolveUserOrg(LoginDTO loginDTO, UserVO userVO, List<UserOrgVO> userOrgList) {
-        if (StringUtil.isNotBlank(loginDTO.getTenantId()) || StringUtil.isNotBlank(loginDTO.getOrgId())) {
-            for (UserOrgVO userOrgVO : userOrgList) {
-                boolean tenantMatch = StringUtil.isBlank(loginDTO.getTenantId())
-                        || loginDTO.getTenantId().equals(userOrgVO.getTenantId());
-                boolean orgMatch = StringUtil.isBlank(loginDTO.getOrgId())
-                        || loginDTO.getOrgId().equals(userOrgVO.getOrgId());
-                if (tenantMatch && orgMatch) {
-                    return userOrgVO;
-                }
+        UserOrgVO matched = matchUserOrgByLoginSelection(loginDTO, userOrgList);
+        if (matched != null) {
+            return matched;
+        }
+        matched = matchUserOrgByDefaultOrgId(userVO, userOrgList);
+        if (matched != null) {
+            return matched;
+        }
+        matched = matchDefaultUserOrg(userOrgList);
+        if (matched != null) {
+            return matched;
+        }
+        return userOrgList.get(0);
+    }
+
+    private UserOrgVO matchUserOrgByLoginSelection(LoginDTO loginDTO, List<UserOrgVO> userOrgList) {
+        if (StringUtil.isBlank(loginDTO.getTenantId()) && StringUtil.isBlank(loginDTO.getOrgId())) {
+            return null;
+        }
+        for (UserOrgVO userOrgVO : userOrgList) {
+            boolean tenantMatch = StringUtil.isBlank(loginDTO.getTenantId())
+                    || loginDTO.getTenantId().equals(userOrgVO.getTenantId());
+            boolean orgMatch = StringUtil.isBlank(loginDTO.getOrgId())
+                    || loginDTO.getOrgId().equals(userOrgVO.getOrgId());
+            if (tenantMatch && orgMatch) {
+                return userOrgVO;
             }
         }
+        return null;
+    }
 
-        if (StringUtil.isNotBlank(userVO.getDefaultOrgId())) {
-            for (UserOrgVO userOrgVO : userOrgList) {
-                boolean orgMatch = StringUtil.isBlank(userVO.getDefaultOrgId())
-                        || userVO.getDefaultOrgId().equals(userOrgVO.getOrgId());
-                if (orgMatch) {
-                    return userOrgVO;
-                }
+    private UserOrgVO matchUserOrgByDefaultOrgId(UserVO userVO, List<UserOrgVO> userOrgList) {
+        if (StringUtil.isBlank(userVO.getDefaultOrgId())) {
+            return null;
+        }
+        for (UserOrgVO userOrgVO : userOrgList) {
+            if (userVO.getDefaultOrgId().equals(userOrgVO.getOrgId())) {
+                return userOrgVO;
             }
         }
+        return null;
+    }
 
+    private UserOrgVO matchDefaultUserOrg(List<UserOrgVO> userOrgList) {
         for (UserOrgVO userOrgVO : userOrgList) {
             if (userOrgVO.getIsDefault() != null && userOrgVO.getIsDefault() == 1) {
                 return userOrgVO;
             }
         }
-        return userOrgList.get(0);
+        return null;
     }
 
     @Override

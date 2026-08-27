@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Indexed;
 import com.peach.redission.delayqueue.context.DelayQueueContext;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,7 +24,7 @@ public class AdobeController {
         private final DelayQueueContext context;
 
 
-    @RequestMapping("/send")
+    @GetMapping("/send")
     public String send(){
         for (int i = 100000; i > 0; i--) {
             context.sendMessage("delay-demo-queue","发送信息"+i,10, TimeUnit.MILLISECONDS);

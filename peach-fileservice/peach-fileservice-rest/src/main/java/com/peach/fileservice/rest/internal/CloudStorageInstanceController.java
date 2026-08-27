@@ -50,7 +50,7 @@ public class CloudStorageInstanceController {
     @Operation(summary = "新增云存储实例")
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增云存储实例,实例名称:['+#p0.instanceName+']'")
-    public Response add(@Validated(PeachGroup.insertGroup.class) @RequestBody CloudStorageInstanceSaveDTO data) {
+    public Response add(@Validated(PeachGroup.InsertGroup.class) @RequestBody CloudStorageInstanceSaveDTO data) {
         log.info("新增云存储实例,实例名称={}", data.getInstanceName());
         return Response.success(cloudStorageService.add(data));
     }
@@ -59,7 +59,7 @@ public class CloudStorageInstanceController {
     @Operation(summary = "更新云存储实例")
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'更新云存储实例,实例ID:['+#p0.instanceId+'],实例名称:['+#p0.instanceName+']'")
-    public Response update(@Validated(PeachGroup.updateGroup.class) @RequestBody CloudStorageInstanceSaveDTO data) {
+    public Response update(@Validated(PeachGroup.UpdateGroup.class) @RequestBody CloudStorageInstanceSaveDTO data) {
         log.info("更新云存储实例,实例ID={},实例名称={}", data.getInstanceId(), data.getInstanceName());
         return Response.success(cloudStorageService.update(data));
     }
@@ -98,7 +98,7 @@ public class CloudStorageInstanceController {
     @Operation(summary = "测试云存储连通性")
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.SELECT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'测试云存储连通性,实例名称:['+#p0.instanceName+']'")
-    public Response testConnection(@Validated(PeachGroup.insertGroup.class) @RequestBody CloudStorageInstanceSaveDTO data) {
+    public Response testConnection(@Validated(PeachGroup.InsertGroup.class) @RequestBody CloudStorageInstanceSaveDTO data) {
         log.info("测试云存储连通性,实例名称={}", data.getInstanceName());
         return Response.success(cloudStorageService.testConnection(data));
     }

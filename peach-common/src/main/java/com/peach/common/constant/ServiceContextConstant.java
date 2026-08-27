@@ -6,15 +6,24 @@ package com.peach.common.constant;
  * @CreateTime 2026/8/12 16:52
  * @Description 业务服务的fegin上下文
  */
-public interface ServiceContextConstant {
+public final class ServiceContextConstant {
 
-    String AUTH_SERVICE_CONTEXT = "authFeignClient";
+    private ServiceContextConstant() {
+        throw new IllegalStateException("Utility class");
+    }
 
-    String MONITOR_SERVICE_CONTEXT = "monitorFeignClient";
+    public static final String AUTH_SERVICE_CONTEXT = "authFeignClient";
 
-    String FILE_SERVICE_CONTEXT = "fileFeignClient";
+    public static final String MONITOR_SERVICE_CONTEXT = "monitorFeignClient";
 
-    String MESSAGE_SERVICE_CONTEXT = "messageFeignClient";
+    public static final String FILE_SERVICE_CONTEXT = "fileFeignClient";
 
-    String SETTING_SERVICE_CONTEXT = "settingFeginClient";
+    public static final String MESSAGE_SERVICE_CONTEXT = "messageFeignClient";
+
+    public static final String SETTING_SERVICE_CONTEXT = "settingFeginClient";
+
+    public static final String GENERATOR_SERVICE_CONTEXT = "generatorFeginClient";
+
+    public static final String SCHEDULED_SERVICE_CONTEXT = "scheduledFeginClient";
+
 }

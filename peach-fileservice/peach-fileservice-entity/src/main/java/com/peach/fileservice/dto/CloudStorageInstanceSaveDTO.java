@@ -20,15 +20,15 @@ public class CloudStorageInstanceSaveDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "存储实例ID")
-    @NotBlank(groups = PeachGroup.updateGroup.class, message = "存储实例ID不能为空")
+    @NotBlank(groups = PeachGroup.UpdateGroup.class, message = "存储实例ID不能为空")
     private String instanceId;
 
     @Schema(description = "存储实例名称", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(groups = {PeachGroup.insertGroup.class, PeachGroup.updateGroup.class}, message = "存储实例名称不能为空")
+    @NotBlank(groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class}, message = "存储实例名称不能为空")
     private String instanceName;
 
     @Schema(description = "存储类型", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotBlank(groups = {PeachGroup.insertGroup.class, PeachGroup.updateGroup.class}, message = "存储类型不能为空")
+    @NotBlank(groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class}, message = "存储类型不能为空")
     private String storeType;
 
     @Schema(description = "访问节点地址")

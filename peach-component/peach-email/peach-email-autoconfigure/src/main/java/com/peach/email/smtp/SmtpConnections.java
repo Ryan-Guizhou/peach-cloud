@@ -1,5 +1,7 @@
 package com.peach.email.smtp;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * @Author Mr Shu
  * @Version 1.0.0
@@ -7,15 +9,18 @@ package com.peach.email.smtp;
  */
 public final class SmtpConnections {
 
-    private static volatile SmtpConnectionProvider provider = new SimpleSmtpConnectionProvider();
+    private SmtpConnections() {
+        throw new IllegalStateException("Utility class");
+    }
 
-    private SmtpConnections() {}
+    private static final AtomicReference<SmtpConnectionProvider> PROVIDER =
+            new AtomicReference<>(new SimpleSmtpConnectionProvider());
 
     public static SmtpConnectionProvider getProvider() {
-        return provider;
+        return PROVIDER.get();
     }
 
     public static void setProvider(SmtpConnectionProvider provider) {
-        SmtpConnections.provider = provider;
+        PROVIDER.set(provider);
     }
 }

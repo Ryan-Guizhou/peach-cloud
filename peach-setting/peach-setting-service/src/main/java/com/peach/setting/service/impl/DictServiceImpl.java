@@ -1,8 +1,9 @@
 package com.peach.setting.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.PageResult;
@@ -50,7 +51,7 @@ public class DictServiceImpl implements IDictService {
     @Override
     public PageResult<DictTypeVO> typePageList(DictTypeQO qo) {
         fillCurrentTenantOrg(qo);
-        PageInfo<DictTypeVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
+        PageInfo<DictTypeVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> dictTypeDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
     }
@@ -70,7 +71,7 @@ public class DictServiceImpl implements IDictService {
     public void saveType(DictTypeDTO data) {
         DictTypeDO dictTypeDO = new DictTypeDO();
         BeanUtils.copyProperties(data, dictTypeDO);
-        dictTypeDO.setId(IDGeneratorUtil.UUID());
+        dictTypeDO.setId(IDGeneratorUtil.generateUuid());
         dictTypeDO.fillCreateTime();
         dictTypeDao.insert(dictTypeDO);
     }
@@ -107,7 +108,7 @@ public class DictServiceImpl implements IDictService {
     @Override
     public PageResult<DictItemVO> itemPageList(DictItemQO qo) {
         fillCurrentTenantOrg(qo);
-        PageInfo<DictItemVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
+        PageInfo<DictItemVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> dictItemDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
     }
@@ -130,7 +131,7 @@ public class DictServiceImpl implements IDictService {
     public void saveItem(DictItemDTO data) {
         DictItemDO dictItemDO = new DictItemDO();
         BeanUtils.copyProperties(data, dictItemDO);
-        dictItemDO.setId(IDGeneratorUtil.UUID());
+        dictItemDO.setId(IDGeneratorUtil.generateUuid());
         dictItemDO.fillCreateTime();
         dictItemDao.insert(dictItemDO);
     }

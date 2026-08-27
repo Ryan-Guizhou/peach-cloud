@@ -2,15 +2,17 @@
 
 package com.peach.redis.common.tool;
 
-import org.springframework.stereotype.Indexed;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
+import jakarta.annotation.Nullable;
+import org.springframework.stereotype.Indexed;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.ListOperations;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -35,19 +37,18 @@ import java.util.concurrent.TimeUnit;
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:39
- */
+  */
 @Slf4j
 @Indexed
 @Repository("redisDao")
 public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implements RedisDao {
 
-    //最大重试次数
-    private static final Integer tryTimes = 3;
+    private static final Integer TRY_TIMES = 3;
+
+    private static final String REDIS_OPERATION_FAILED = "Redis operation failed";
 
     @Value("${peach.redis.mode:standalone}")
     private String redisMode;
-    private static final int USE_SCAN_COMMAND = 1;
-
     public RedisDaoImpl(RedisTemplate<?, ?> redisTemplate) {
         super(toObjectTemplate(redisTemplate));
     }
@@ -132,7 +133,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     public boolean delete(final Object key) {
         Integer retryNum = 1;
         boolean flag = false;
-        while (retryNum <= tryTimes) {
+        while (retryNum <= TRY_TIMES) {
             try {
                 flag = Boolean.TRUE.equals(redisTemplate.delete(key));
                 if (flag) {
@@ -151,7 +152,6 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     public long deletePattern(final Object pattern, final Integer count) {
         Set<Object> keys = scan(String.valueOf(pattern), count);
         if ((keys != null ? keys.size() : 0) > 0) {
-//            return redisTemplate.delete(keys);
             return delete(keys);
         } else {
             return 0;
@@ -167,7 +167,6 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
 
     @Override
     public long delete(final Set keys) {
-//        return redisTemplate.delete(keys);
         long size = 0;
         Set<Object> deleteKeys = new HashSet<>();
         for (Object key : keys) {
@@ -181,7 +180,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
                 deleteKeys.clear();
             }
         }
-        if (deleteKeys.size() > 0) {
+        if (!deleteKeys.isEmpty()) {
             Long count = redisTemplate.delete(deleteKeys);
             if (count == null) {
                 count = 0L;
@@ -200,7 +199,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             operations.set(key, value);
             result = true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.debug(REDIS_OPERATION_FAILED, e);
         }
         return result;
     }
@@ -214,7 +213,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             redisTemplate.expire(key, expireTime, TimeUnit.SECONDS);
             result = true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.debug(REDIS_OPERATION_FAILED, e);
         }
         return result;
     }
@@ -226,7 +225,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             redisTemplate.opsForValue().set(key, value, expire);
             result = true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.debug(REDIS_OPERATION_FAILED, e);
         }
         return result;
     }
@@ -238,7 +237,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             redisTemplate.expire(key, expireTime, TimeUnit.SECONDS);
             result = true;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.debug(REDIS_OPERATION_FAILED, e);
         }
         return result;
     }
@@ -302,7 +301,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     }
 
     @Override
-    public List<?> lRange(Object k, long start, long end) {
+    public List<Object> lRange(Object k, long start, long end) {
         ListOperations<Object, Object> list = redisTemplate.opsForList();
         return list.range(k, start, end);
     }
@@ -383,15 +382,28 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
 
     @Override
     public long lRemove(Object k, long count) {
-        ListOperations<Object, Object> list = redisTemplate.opsForList();
-        Long size = list.remove(k, 0, null);
-        return size == null ? 0 : size;
+        return removeListElements(k, count, null);
     }
 
     @Override
-    public long lRemove(Object k, long count, Object v) {
-        ListOperations<Object, Object> list = redisTemplate.opsForList();
-        Long size = list.remove(k, count, v);
+    public long lRemove(Object k, long count, @Nullable Object v) {
+        if (v == null) {
+            return lRemove(k, count);
+        }
+        return removeListElements(k, count, v);
+    }
+
+    /**
+     * 通过 {@link RedisCallback} 执行 LREM；{@code null} 值表示匹配 Redis 列表中的 null 元素。
+     */
+    private long removeListElements(Object k, long count, @Nullable Object value) {
+        Long size = redisTemplate.execute((RedisCallback<Long>) connection -> {
+            @SuppressWarnings("unchecked")
+            byte[] rawKey = ((org.springframework.data.redis.serializer.RedisSerializer<Object>) redisTemplate.getKeySerializer()).serialize(k);
+            byte[] rawValue = value == null ? null
+                    : ((org.springframework.data.redis.serializer.RedisSerializer<Object>) redisTemplate.getValueSerializer()).serialize(value);
+            return connection.listCommands().lRem(rawKey, count, rawValue);
+        });
         return size == null ? 0 : size;
     }
 
@@ -599,8 +611,6 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
 
     @Override
     public Set<Object> keys(String matchKey) {
-//        return redisTemplate.keys(matchKey);
-//        NacosBaseConfig config = SpringUtil.getBean(NacosBaseConfig.class);
         return scan(matchKey, null);
     }
 
@@ -615,7 +625,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
         try {
             redisTemplate.convertAndSend(channel, message);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.debug(REDIS_OPERATION_FAILED, e);
         }
     }
 
@@ -630,7 +640,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
         try {
             redisTemplate.convertAndSend(channel, message);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.debug(REDIS_OPERATION_FAILED, e);
         }
     }
 
@@ -639,17 +649,17 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
         try {
             redisTemplate.expire(k, timeout, TimeUnit.SECONDS);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.debug(REDIS_OPERATION_FAILED, e);
         }
     }
 
     @Override
     public long increaseNum(String key, long fromIndex) {
         if (fromIndex < 0) {
-            throw new RuntimeException("fromIndex不能小于0");
+            throw new IllegalArgumentException("fromIndex不能小于0");
         }
         if (StringUtils.isBlank(key)) {
-            throw new RuntimeException("key不能为空");
+            throw new IllegalArgumentException("key不能为空");
         }
         Long increment = redisTemplate.opsForValue().increment(key, fromIndex);
         return increment == null ? 0 : increment;
@@ -658,10 +668,10 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     @Override
     public long decreaseNum(String key, long decIndex) {
         if (decIndex < 0) {
-            throw new RuntimeException("decIndex不能小于0");
+            throw new IllegalArgumentException("decIndex不能小于0");
         }
         if (StringUtils.isBlank(key)) {
-            throw new RuntimeException("key不能为空");
+            throw new IllegalArgumentException("key不能为空");
         }
         Long decrement = redisTemplate.opsForValue().decrement(key, decIndex);
         return decrement == null ? 0 : decrement;

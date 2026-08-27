@@ -10,32 +10,60 @@ class StorageRequestValidationTest {
 
     @Test
     void shouldRejectBlankObjectKey() {
-        assertThrows(StorageException.class, () -> DownloadObjectRequest.builder().objectKey(" ").build());
-        assertThrows(StorageException.class, () -> HeadObjectRequest.builder().objectKey("").build());
-        assertThrows(StorageException.class, () -> UploadObjectRequest.builder()
-                .objectKey(null)
-                .content(UploadContent.of("demo"))
-                .build());
+        assertThrows(StorageException.class, () -> buildDownloadWithBlankKey());
+        assertThrows(StorageException.class, () -> buildHeadWithEmptyKey());
+        assertThrows(StorageException.class, () -> buildUploadWithNullKey());
     }
 
     @Test
     void shouldRejectMissingUploadContent() {
-        assertThrows(StorageException.class, () -> UploadObjectRequest.builder()
-                .objectKey("docs/a.txt")
-                .build());
+        assertThrows(StorageException.class, () -> buildUploadWithoutContent());
     }
 
     @Test
     void shouldRejectNonPositiveExpireSeconds() {
-        assertThrows(StorageException.class, () -> PresignedUrlRequest.builder()
-                .objectKey("docs/a.txt")
-                .expireSeconds(0)
-                .build());
+        assertThrows(StorageException.class, () -> buildPresignedWithZeroExpire());
     }
 
     @Test
     void shouldRejectInvalidListRequest() {
-        assertThrows(StorageException.class, () -> ListObjectsRequest.builder().maxKeys(0).build());
-        assertThrows(StorageException.class, () -> ListObjectsRequest.builder().delimiter(" ").build());
+        assertThrows(StorageException.class, () -> buildListWithZeroMaxKeys());
+        assertThrows(StorageException.class, () -> buildListWithBlankDelimiter());
+    }
+
+    private static void buildDownloadWithBlankKey() {
+        DownloadObjectRequest.builder().objectKey(" ").build();
+    }
+
+    private static void buildHeadWithEmptyKey() {
+        HeadObjectRequest.builder().objectKey("").build();
+    }
+
+    private static void buildUploadWithNullKey() {
+        UploadObjectRequest.builder()
+                .objectKey(null)
+                .content(UploadContent.of("demo"))
+                .build();
+    }
+
+    private static void buildUploadWithoutContent() {
+        UploadObjectRequest.builder()
+                .objectKey("docs/a.txt")
+                .build();
+    }
+
+    private static void buildPresignedWithZeroExpire() {
+        PresignedUrlRequest.builder()
+                .objectKey("docs/a.txt")
+                .expireSeconds(0)
+                .build();
+    }
+
+    private static void buildListWithZeroMaxKeys() {
+        ListObjectsRequest.builder().maxKeys(0).build();
+    }
+
+    private static void buildListWithBlankDelimiter() {
+        ListObjectsRequest.builder().delimiter(" ").build();
     }
 }

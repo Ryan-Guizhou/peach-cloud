@@ -76,12 +76,12 @@ public class BloomFilterAutoConfiguration {
     private <T> String getImplementationName(T implementation) {
         String className = implementation.getClass().getSimpleName();
 
-        if (implementation instanceof CodecProvider) {
-            return String.format("%s(%s)", className, ((CodecProvider) implementation).getName());
-        } else if (implementation instanceof KeyNamingStrategy) {
-            return String.format("%s(%s)", className, ((KeyNamingStrategy) implementation).getName());
-        } else if (implementation instanceof BloomScalePolicy) {
-            return String.format("%s(%s)", className, ((BloomScalePolicy) implementation).getName());
+        if (implementation instanceof CodecProvider codecProvider) {
+            return String.format("%s(%s)", className, codecProvider.getName());
+        } else if (implementation instanceof KeyNamingStrategy keyNamingStrategy) {
+            return String.format("%s(%s)", className, keyNamingStrategy.getName());
+        } else if (implementation instanceof BloomScalePolicy bloomScalePolicy) {
+            return String.format("%s(%s)", className, bloomScalePolicy.getName());
         }
 
         return className;

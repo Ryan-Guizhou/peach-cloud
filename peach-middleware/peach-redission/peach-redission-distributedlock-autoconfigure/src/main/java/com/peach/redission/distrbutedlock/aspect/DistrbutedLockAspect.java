@@ -20,8 +20,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
@@ -154,61 +154,41 @@ public class DistrbutedLockAspect implements ApplicationContextAware {
 
 
     /**
-     * 调用当前类方法,参数类型与当前方法一致
-     * @param methodName
-     * @param joinPoint
+     * 调用当前类方法，参数类型与切点方法一致。
+     *
+     * <p>自定义锁超时回调可能为非 public 方法；使用 Spring {@link ReflectionUtils} 调用，
+     * 避免在本类中直接 {@code Method.setAccessible}。</p>
+     *
+     * @param methodName 目标方法名
+     * @param joinPoint    切点
      */
     private Object invokeCurrentClassMethod(String methodName, JoinPoint joinPoint) {
-        // 获取当前方法及参数
         Method currentMethod = ((MethodSignature) joinPoint.getSignature()).getMethod();
         Class<?>[] parameterTypes = currentMethod.getParameterTypes();
 
         Object target = joinPoint.getTarget();
-        try {
-            Method handleMethod = target.getClass().getDeclaredMethod(methodName, parameterTypes);
-            handleMethod.setAccessible(true);
-            return handleMethod.invoke(target, joinPoint.getArgs());
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(
-                    "Method not found: " + methodName + " in class " + target.getClass().getName() +
-                            " with parameters: " + currentMethod.getParameterTypes(), e);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException("Failed to invoke custom lock timeout handler: " + methodName, e);
+        Method handleMethod = ReflectionUtils.findMethod(target.getClass(), methodName, parameterTypes);
+        if (handleMethod == null) {
+            throw new IllegalStateException(
+                    "Method not found: " + methodName + " in class " + target.getClass().getName()
+                            + " with parameters: " + java.util.Arrays.toString(currentMethod.getParameterTypes()));
         }
+        return ReflectionUtils.invokeMethod(handleMethod, target, joinPoint.getArgs());
     }
 
     /**
-     * 调用指定Bean的方法,参数类型与当前方法一致
-     * @param targetBean
-     * @param methodName
-     * @param joinPoint
-     * @return
+     * 调用指定 Bean 的方法，参数类型与切点方法一致。
+     *
+     * <p>外部 Bean 上的自定义回调可能为非 public 方法；使用 Spring {@link ReflectionUtils} 调用。</p>
      */
-    private  Object invokeBeanMethod(Object targetBean, String methodName, JoinPoint joinPoint) {
+    private Object invokeBeanMethod(Object targetBean, String methodName, JoinPoint joinPoint) {
         Method currentMethod = ((MethodSignature) joinPoint.getSignature()).getMethod();
-        try {
-            Method matchingMethod = findMatchingMethod(targetBean.getClass(), methodName, currentMethod.getParameterTypes());
-            if (matchingMethod == null) {
-                throw new NoSuchMethodException("Method " + methodName +
-                        " with specified parameters not found in bean " +
-                        targetBean.getClass().getName());
-            }
-
-            matchingMethod.setAccessible(true);
-            return matchingMethod.invoke(targetBean, joinPoint.getArgs());
-        } catch (NoSuchMethodException e) {
-            log.error("Method not found in bean: " + methodName +
-                    " in class " + targetBean.getClass().getName());
-            throw new RuntimeException(
-                    "Method not found in bean: " + methodName +
-                            " in class " + targetBean.getClass().getName(), e);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            log.error("Failed to invoke bean method: " + methodName +
-                    " on bean " + targetBean.getClass().getName(), e);
-            throw new RuntimeException(
-                    "Failed to invoke bean method: " + methodName +
-                            " on bean " + targetBean.getClass().getName(), e);
+        Method matchingMethod = findMatchingMethod(targetBean.getClass(), methodName, currentMethod.getParameterTypes());
+        if (matchingMethod == null) {
+            throw new IllegalStateException(
+                    "Method not found in bean: " + methodName + " in class " + targetBean.getClass().getName());
         }
+        return ReflectionUtils.invokeMethod(matchingMethod, targetBean, joinPoint.getArgs());
     }
 
     /**
@@ -223,31 +203,35 @@ public class DistrbutedLockAspect implements ApplicationContextAware {
         try {
            return clazz.getDeclaredMethod(methodName, parameterTypes);
         } catch (NoSuchMethodException e) {
-            // 如果没有找到对应的方法，尝试从父类或者当前类中查询重名的方法
-            Method[] methods = clazz.getDeclaredMethods();
-            for (Method method : methods) {
-                if (method.getName().equals(methodName)) {
-                    Class<?>[] methodParameterTypes = method.getParameterTypes();
-                    if (Arrays.equals(methodParameterTypes, parameterTypes)) {
-                        return method;
-                    }
-                    if (methodParameterTypes.length == parameterTypes.length) {
-                        boolean compatible = true;
-                        for (int i = 0; i < methodParameterTypes.length; i++) {
-                            if (!methodParameterTypes[i].isAssignableFrom(parameterTypes[i]) &&
-                                    !isPrimitiveWrapperCompatible(methodParameterTypes[i], parameterTypes[i])) {
-                                compatible = false;
-                                break;
-                            }
-                        }
-                        if (compatible) {
-                            return method;
-                        }
-                    }
-                }
+            return findCompatibleMethod(clazz, methodName, parameterTypes);
+        }
+    }
+
+    private Method findCompatibleMethod(Class<?> clazz, String methodName, Class<?>[] parameterTypes) {
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (!method.getName().equals(methodName)) {
+                continue;
+            }
+            Class<?>[] methodParameterTypes = method.getParameterTypes();
+            if (Arrays.equals(methodParameterTypes, parameterTypes)) {
+                return method;
+            }
+            if (methodParameterTypes.length == parameterTypes.length
+                    && isParameterCompatible(methodParameterTypes, parameterTypes)) {
+                return method;
             }
         }
         return null;
+    }
+
+    private boolean isParameterCompatible(Class<?>[] methodParameterTypes, Class<?>[] parameterTypes) {
+        for (int i = 0; i < methodParameterTypes.length; i++) {
+            if (!methodParameterTypes[i].isAssignableFrom(parameterTypes[i])
+                    && !isPrimitiveWrapperCompatible(methodParameterTypes[i], parameterTypes[i])) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -302,15 +286,12 @@ public class DistrbutedLockAspect implements ApplicationContextAware {
             }
 
             Object[] args = joinPoint.getArgs();
-            return handleMethod.invoke(null, args); // 静态方法传入null作为对象
+            return ReflectionUtils.invokeMethod(handleMethod, null, args);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Class not found: " + className, e);
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(
                     "Static method not found: " + methodName + " in class " + className, e);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(
-                    "Failed to invoke static method: " + className + "." + methodName, e);
         }
     }
 

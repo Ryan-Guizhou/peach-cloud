@@ -16,7 +16,7 @@ public enum LockType {
     /**
      * 写锁
      */
-    WRITE,
+    WRITE;
 
     LockType() {
     }

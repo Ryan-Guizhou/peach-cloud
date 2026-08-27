@@ -7,36 +7,35 @@ package com.peach.common.keymanager;
  */
 public enum RedisKeyManage {
 
-    CAPTCHA_REQ_LIMIT("PEACH:CAPTCHA:REQ:LIMIT:{0}-{1}", "用户请求验证码的次数", "请求次数", "CAPTCHA", "Ryan"),
-    RUNNING_CAPTCHA("PEACH:CAPTCHA:RUNNING:{0}", "一次验证码的一次性token", "验证码有效期(秒数,默认120s)", "CAPTCHA", "Ryan"),
-    RUNNING_CAPTCHA_SECOND("PEACH:CAPTCHA:RUNNING:SECOND:{0}", "二次校验验证码的一次性token", "验证码有效期(秒数,默认120s)", "CAPTCHA", "Ryan"),
+    CAPTCHA_REQ_LIMIT("PEACH:CAPTCHA:REQ:LIMIT:{0}-{1}", "用户请求验证码的次数", "请求次数", RedisKeyManageConstants.CAPTCHA, "Ryan"),
+    RUNNING_CAPTCHA("PEACH:CAPTCHA:RUNNING:{0}", "一次验证码的一次性token", "验证码有效期(秒数,默认120s)", RedisKeyManageConstants.CAPTCHA, "Ryan"),
+    RUNNING_CAPTCHA_SECOND("PEACH:CAPTCHA:RUNNING:SECOND:{0}", "二次校验验证码的一次性token", "验证码有效期(秒数,默认120s)", RedisKeyManageConstants.CAPTCHA, "Ryan"),
     ;
 
     /**
      * key值
-     * */
+     */
     private final String key;
 
     /**
      * key的说明
-     * */
+     */
     private final String keyIntroduce;
 
     /**
      * value的说明
-     * */
+     */
     private final String valueIntroduce;
 
     /**
-     * 模块代码
-     * */
+     * module代码
+     */
     private final String moduleCode;
 
     /**
      * 作者
      */
     private final String author;
-
 
     RedisKeyManage(String key, String keyIntroduce, String valueIntroduce, String moduleCode, String author) {
         this.key = key;

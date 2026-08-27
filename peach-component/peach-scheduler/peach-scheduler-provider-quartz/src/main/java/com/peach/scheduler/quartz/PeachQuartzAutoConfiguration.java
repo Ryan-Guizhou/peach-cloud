@@ -26,6 +26,7 @@ public class PeachQuartzAutoConfiguration {
      * 创建相关对象。
      */
     public PeachQuartzAutoConfiguration() {
+        // Intentionally empty.
     }
 
     /**

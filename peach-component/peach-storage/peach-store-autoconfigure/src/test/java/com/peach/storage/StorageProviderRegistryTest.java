@@ -16,10 +16,14 @@ class StorageProviderRegistryTest {
 
     @Test
     void shouldRejectDuplicateProviderNames() {
-        assertThrows(RuntimeException.class, () -> new StorageProviderRegistry(Arrays.asList(
+        assertThrows(RuntimeException.class, StorageProviderRegistryTest::createDuplicateProviders);
+    }
+
+    private static void createDuplicateProviders() {
+        new StorageProviderRegistry(Arrays.asList(
                 new TestProvider("primary"),
                 new TestProvider("primary")
-        )));
+        ));
     }
 
     @Test

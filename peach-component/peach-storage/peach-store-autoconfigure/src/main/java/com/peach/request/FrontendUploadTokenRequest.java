@@ -75,6 +75,7 @@ public class FrontendUploadTokenRequest extends StorageObjectRequest {
             return this;
         }
 
+        @Override
         public FrontendUploadTokenRequest build() {
             validate();
             if (expireSeconds <= 0) {

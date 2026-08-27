@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  */
 public class CompositeContainer<T>{
 
-    private final Map<String, AbstractComposite<T>> allCompositeInterfaceMap = new HashMap<>();
+    private final Map<String, AbstractComposite<T>> allCompositeInterfaceMap = HashMap.newHashMap(0);
 
 
     public void init(ConfigurableApplicationContext context){
@@ -80,7 +80,7 @@ public class CompositeContainer<T>{
         Map<Integer, Map<Integer, AbstractComposite>> groupedByTier = new TreeMap<>();
 
         for (AbstractComposite component : components) {
-            groupedByTier.computeIfAbsent(component.executeTier(), k -> new HashMap<>(16))
+            groupedByTier.computeIfAbsent(component.executeTier(), k -> HashMap.newHashMap(16))
                     .put(component.executeOrder(), component);
         }
 

@@ -1,6 +1,6 @@
-package com.peach.sample.email.Idempotency;
+package com.peach.sample.email.idempotency;
 
-import com.peach.email.Idempotency.IdempotencyStore;
+import com.peach.email.idempotency.IdempotencyStore;
 import com.peach.email.core.SendResult;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,7 +24,7 @@ public class TTLIdempotencyStore implements IdempotencyStore {
 
     private final long ttlMillis; // 记录有效期，单位毫秒
 
-    private static final long DEFAULT_TTL_MILLIS = 1000 * 60 * 5;
+    private static final long DEFAULT_TTL_MILLIS = 1000L * 60 * 5;
 
     public TTLIdempotencyStore() {
         this(DEFAULT_TTL_MILLIS);
@@ -42,7 +42,7 @@ public class TTLIdempotencyStore implements IdempotencyStore {
     @Override
     public boolean exists(String key) {
         return Optional.ofNullable(key)
-                .filter(k -> Objects.nonNull(k))
+                .filter(Objects::nonNull)
                 .map(k -> {
                     Entry entry = store.get(k);
                     if (entry == null){
@@ -58,25 +58,22 @@ public class TTLIdempotencyStore implements IdempotencyStore {
     }
 
     @Override
-    public void record(String key, SendResult result) {
+    public void storeSendResult(String key, SendResult result) {
         Optional.ofNullable(key)
-                .filter(k -> Objects.nonNull(k))
+                .filter(Objects::nonNull)
                 .flatMap(k -> Optional.ofNullable(result))
                 .filter(SendResult::isSuccess) // 可选，只记录成功
-                .ifPresent(r -> store.put(key, new Entry(r, Instant.now().toEpochMilli())));
+                .ifPresent(r -> store.put(key, new Entry(Instant.now().toEpochMilli())));
     }
 
     /**
-     * 存储实体，记录结果和时间戳
+     * 存储实体，记录时间戳
      */
     private static class Entry {
 
-        private final SendResult result;
-
         private final long timestamp;
 
-        public Entry(SendResult result, long timestamp) {
-            this.result = result;
+        Entry(long timestamp) {
             this.timestamp = timestamp;
         }
     }

@@ -1,19 +1,17 @@
 package com.peach.gateway.core;
 
 import cn.dev33.satoken.strategy.SaStrategy;
+import com.peach.common.constant.SaTokenConstant;
+import com.peach.common.util.Md5Util;
+import com.peach.common.util.PeachSecureRandom;
 import com.peach.gateway.core.config.GatewaySaTokenProperties;
-import com.peach.gateway.core.constant.GatewayConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Indexed;
 
 import jakarta.annotation.PostConstruct;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 网关侧 Sa-Token token 策略配置。
@@ -58,35 +56,17 @@ public class GatewaySaTokenStrategyConfiguration {
             return;
         }
         SaStrategy.instance.createToken = (loginId, loginType) -> {
-            int random = ThreadLocalRandom.current().nextInt(0, 9999);
+            int random = PeachSecureRandom.get().nextInt(10_000);
             String signKey;
             try {
-                signKey = MessageFormat.format(GatewayConstant.TOKEN_INCLUDE_USER,
+                signKey = MessageFormat.format(SaTokenConstant.TOKEN_INCLUDE_USER,
                         System.currentTimeMillis(), random, String.valueOf(loginId));
             } catch (Exception e) {
                 log.error("Gateway Sa-Token token seed creation failed", e);
-                signKey = MessageFormat.format(GatewayConstant.TOKEN_NOT_INCLUDE_USER,
+                signKey = MessageFormat.format(SaTokenConstant.TOKEN_NOT_INCLUDE_USER,
                         System.currentTimeMillis(), random);
             }
-            return sha256Hex(signKey);
+            return Md5Util.sha256Hex(signKey);
         };
-    }
-
-    private String sha256Hex(String value) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] bytes = digest.digest(value.getBytes(StandardCharsets.UTF_8));
-            StringBuilder builder = new StringBuilder(bytes.length * 2);
-            for (byte item : bytes) {
-                String hex = Integer.toHexString(item & 0xff);
-                if (hex.length() == 1) {
-                    builder.append('0');
-                }
-                builder.append(hex);
-            }
-            return builder.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 algorithm is not available", e);
-        }
     }
 }

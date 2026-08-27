@@ -316,12 +316,16 @@ public class MinioStorageProvider implements StorageProvider {
                 host = host + "/";
             }
             host = host + actualBucket;
-            return new FrontendUploadTokenResult(name(), actualBucket, rawObjectKey(request.getObjectKey()),
-                    host,
-                    config.getAccessKey(),
-                    formData.get("policy"),
-                    firstText(formData.get("x-amz-signature"), formData.get("signature")),
-                    Instant.now().plusSeconds(request.getExpireSeconds()));
+            return FrontendUploadTokenResult.builder()
+                    .providerName(name())
+                    .bucketName(actualBucket)
+                    .objectKey(rawObjectKey(request.getObjectKey()))
+                    .host(host)
+                    .accessKeyId(config.getAccessKey())
+                    .policy(formData.get("policy"))
+                    .signature(firstText(formData.get("x-amz-signature"), formData.get("signature")))
+                    .expiresAt(Instant.now().plusSeconds(request.getExpireSeconds()))
+                    .build();
         } catch (Exception ex) {
             throw toStorageException("Failed to " + "create MinIO frontend upload token: "
                     + request.getObjectKey(), ex);

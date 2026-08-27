@@ -31,6 +31,7 @@ public class CommonException extends RuntimeException {
     }
 
 
+    @Override
     public String toString(){
         return Optional.ofNullable(language)
                 .filter(StringUtil::isNotBlank)

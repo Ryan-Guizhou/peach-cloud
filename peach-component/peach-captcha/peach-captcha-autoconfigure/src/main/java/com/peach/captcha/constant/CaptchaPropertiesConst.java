@@ -6,105 +6,109 @@ package com.peach.captcha.constant;
  * @CreateTime 2026/1/20 19:18
  * @Description 验证码配置属性常量
  */
-public interface CaptchaPropertiesConst {
+public final class CaptchaPropertiesConst {
+
+    private CaptchaPropertiesConst() {
+        throw new IllegalStateException("Utility class");
+    }
 
     /**
      *滑块底图路径
      */
-    String ORIGINAL_PATH_SILIDER = "captcha.captcha-original-path.silider";
+    public static final String ORIGINAL_PATH_SILIDER = "captcha.captcha-original-path.silider";
 
     /***
      *点选底图路径
      */
-    String ORIGINAL_PATH_PIC_CLICK = "captcha.captcha-original-path.pic-click";
+    public static final String ORIGINAL_PATH_PIC_CLICK = "captcha.captcha-original-path.pic-click";
 
     /***
      *旋转底图路径
      */
-    String ORIGINAL_PATH_ROTATE = "captcha.captcha-original-path.rotate";
+    public static final String ORIGINAL_PATH_ROTATE = "captcha.captcha-original-path.rotate";
 
     /**
      * 缓存local/redis...
      */
-    String CAPTCHA_CACHETYPE = "captcha.cacheType";
+    public static final String CAPTCHA_CACHETYPE = "captcha.cacheType";
 
     /**
      * 右下角水印文字(我的水印)
      */
-    String CAPTCHA_WATER_MARK = "captcha.water.mark";
+    public static final String CAPTCHA_WATER_MARK = "captcha.water.mark";
 
     /**
      * 点选文字验证码的文字字体(宋体)
      */
-    String CAPTCHA_FONT_TYPE = "captcha.font.type";
-    String CAPTCHA_FONT_STYLE = "captcha.font.style";
-    String CAPTCHA_FONT_SIZE = "captcha.font.size";
+    public static final String CAPTCHA_FONT_TYPE = "captcha.font.type";
+    public static final String CAPTCHA_FONT_STYLE = "captcha.font.style";
+    public static final String CAPTCHA_FONT_SIZE = "captcha.font.size";
 
     /**
      * 验证码类型default两种都实例化。
      */
-    String CAPTCHA_TYPE = "captcha.type";
+    public static final String CAPTCHA_TYPE = "captcha.type";
 
     /**
      * 滑动干扰项(0/1/2)
      */
-    String CAPTCHA_INTERFERENCE_OPTIONS = "captcha.interference.options";
+    public static final String CAPTCHA_INTERFERENCE_OPTIONS = "captcha.interference.options";
 
     /**
      * 滑动误差偏移量
      */
-    String CAPTCHA_SLIP_OFFSET = "captcha.slip.offset";
+    public static final String CAPTCHA_SLIP_OFFSET = "captcha.slip.offset";
 
     /**
      * aes加密开关
      */
-    String CAPTCHA_AES_STATUS = "captcha.aes.status";
+    public static final String CAPTCHA_AES_STATUS = "captcha.aes.status";
 
     /**
      * 右下角水印字体(宋体)
      */
-    String CAPTCHA_WATER_FONT = "captcha.water.font";
+    public static final String CAPTCHA_WATER_FONT = "captcha.water.font";
 
     /**
      * local缓存的阈值
      */
-    String CAPTCHA_CACAHE_MAX_NUMBER = "captcha.cache.number";
+    public static final String CAPTCHA_CACAHE_MAX_NUMBER = "captcha.cache.number";
 
     /**
      * 定时清理过期local缓存，秒
      */
-    String CAPTCHA_TIMING_CLEAR_SECOND = "captcha.timing.clear";
+    public static final String CAPTCHA_TIMING_CLEAR_SECOND = "captcha.timing.clear";
 
     /**
      * 接口限流开关 0禁用 1启用
      */
-    String REQ_FREQUENCY_LIMIT_ENABLE = "captcha.req.frequency.limit.enable";
+    public static final String REQ_FREQUENCY_LIMIT_ENABLE = "captcha.req.frequency.limit.enable";
 
     /**
      * get 接口 一分钟请求次数限制
      */
-    String REQ_GET_MINUTE_LIMIT = "captcha.req.get.minute.limit";
+    public static final String REQ_GET_MINUTE_LIMIT = "captcha.req.get.minute.limit";
 
     /**
      * 验证失败后，get接口锁定时间
      */
-    String REQ_GET_LOCK_LIMIT = "captcha.req.get.lock.limit";
+    public static final String REQ_GET_LOCK_LIMIT = "captcha.req.get.lock.limit";
     /**
      * 验证失败后，get接口锁定时间
      */
-    String REQ_GET_LOCK_SECONDS = "captcha.req.get.lock.seconds";
+    public static final String REQ_GET_LOCK_SECONDS = "captcha.req.get.lock.seconds";
 
     /**
      * verify 接口 一分钟请求次数限制
      */
-    String REQ_VALIDATE_MINUTE_LIMIT = "captcha.req.verify.minute.limit";
+    public static final String REQ_VALIDATE_MINUTE_LIMIT = "captcha.req.verify.minute.limit";
     /**
      * check接口 一分钟请求次数限制
      */
-    String REQ_CHECK_MINUTE_LIMIT = "captcha.req.check.minute.limit";
+    public static final String REQ_CHECK_MINUTE_LIMIT = "captcha.req.check.minute.limit";
 
     /***
      * 点选文字个数
      */
-    String CAPTCHA_WORD_COUNT = "captcha.word.count";
+    public static final String CAPTCHA_WORD_COUNT = "captcha.word.count";
 }

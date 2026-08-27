@@ -75,7 +75,7 @@ public class OpenApiConfig {
                                 .in(SecurityScheme.In.HEADER)
                                 .description("Referer 引用来源"))
                 );
-        if (serverUrl != null && serverUrl.trim().length() > 0) {
+        if (serverUrl != null && !serverUrl.trim().isEmpty()) {
             openAPI.servers(List.of(new Server()
                     .url(serverUrl.trim())
                     .description(serverDescription)));

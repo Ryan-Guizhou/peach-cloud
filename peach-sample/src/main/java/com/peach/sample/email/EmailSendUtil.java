@@ -29,32 +29,34 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class EmailSendUtil {
+    private static final String LOGO_CID = "logoCid";
 
-        private final EmailSendService EmailSendService;
+    private static final String SAMPLE_RECIPIENT = "445623047@qq.com";
 
-        private final TemplateManager templateManager;
+    private final EmailSendService emailSendService;
+
+    private final TemplateManager templateManager;
 
     public SendResult sendSimple() {
-        EmailMessage message = EmailMessage.builder().from("445623047@qq.com")
+        EmailMessage message = EmailMessage.builder().from(SAMPLE_RECIPIENT)
                 .to(Arrays.asList("517651412@qq.com"))
                 .subject("测试")
                 .text("测试")
-                .cc(Arrays.asList("445623047@qq.com"))
+                .cc(Arrays.asList(SAMPLE_RECIPIENT))
                 .html("<h1>测试</h1>")
                 .build();
-        SendResult sendResult = EmailSendService.sendAuto(message);
-        return sendResult;
+        return emailSendService.sendAuto(message);
     }
 
     public SendResult sendComplex() throws IOException {
         Map<String,Object> data = new HashMap<String,Object>();
         data.put("name", "示例用户");
-        data.put("logoCid", "logoCid");
+        data.put(LOGO_CID, LOGO_CID);
         String html = templateManager.renderById("qq_complex", data);
 
         List<InlineResource> inlines = new ArrayList<InlineResource>();
         if (Files.exists(Paths.get("C:\\Users\\pc\\Downloads\\logo.jpg"))) {
-            inlines.add(new InlineResource("logoCid", "image/png", Files.readAllBytes(Paths.get("logo.png")), null));
+            inlines.add(new InlineResource(LOGO_CID, "image/png", Files.readAllBytes(Paths.get("logo.png")), null));
         }
 
         List<Attachment> atts = new ArrayList<Attachment>();
@@ -63,18 +65,17 @@ public class EmailSendUtil {
         }
 
         EmailMessage.Builder b = EmailMessage.builder()
-                .from("445623047@qq.com")
+                .from(SAMPLE_RECIPIENT)
                 .to(Arrays.asList("huanhuanshu48@gmail.com"))
                 .subject("QQ复杂邮件示例")
                 .text("文本降级内容")
                 .html(html)
                 .inlineResources(inlines)
                 .attachments(atts)
-                .idempotencyKey("demo-" + "445623047@qq.com");
+                .idempotencyKey("demo-" + SAMPLE_RECIPIENT);
 
 
         EmailMessage message = b.build();
-        SendResult r = EmailSendService.sendAuto(message);
-        return r;
+        return emailSendService.sendAuto(message);
     }
 }

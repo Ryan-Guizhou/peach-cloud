@@ -5,12 +5,16 @@ package com.peach.redis.stream.constant;
  * @Version 1.0.0
  * @CreateTime 2025/12/18 16:12
  */
-public interface RedisStreamContant {
+public final class RedisStreamContant {
 
-    String GROUP = "group";
+    private RedisStreamContant() {
+        throw new IllegalStateException("Utility class");
+    }
 
-    String BROADCAST = "broadcast";
+    public static final String GROUP = "group";
 
-    String REDIS_STREAM_PREFIX = "peach.redis.stream";
+    public static final String BROADCAST = "broadcast";
+
+    public static final String REDIS_STREAM_PREFIX = "peach.redis.stream";
 
 }

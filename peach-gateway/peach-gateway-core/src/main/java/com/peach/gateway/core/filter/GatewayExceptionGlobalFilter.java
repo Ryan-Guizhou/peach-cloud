@@ -46,7 +46,7 @@ public class GatewayExceptionGlobalFilter implements GlobalFilter, Ordered {
         try {
             return chain.filter(exchange)
                     .onErrorResume(e -> handle(exchange, e));
-        } catch (Throwable e) {
+        } catch (Exception e) {
             return handle(exchange, e);
         }
     }
@@ -102,8 +102,8 @@ public class GatewayExceptionGlobalFilter implements GlobalFilter, Ordered {
                 || e instanceof SameTokenInvalidException) {
             return HttpStatus.FORBIDDEN;
         }
-        if (e instanceof ResponseStatusException) {
-            return HttpStatus.valueOf(((ResponseStatusException) e).getStatusCode().value());
+        if (e instanceof ResponseStatusException responseStatusException) {
+            return HttpStatus.valueOf(responseStatusException.getStatusCode().value());
         }
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }

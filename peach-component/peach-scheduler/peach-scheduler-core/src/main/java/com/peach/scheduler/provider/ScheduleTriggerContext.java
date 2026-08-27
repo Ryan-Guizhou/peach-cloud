@@ -19,6 +19,7 @@ public class ScheduleTriggerContext {
      * 创建相关对象。
      */
     public ScheduleTriggerContext() {
+        // Intentionally empty.
     }
     /**
      * 获取相关数据。

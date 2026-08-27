@@ -1,7 +1,6 @@
 package com.peach.common.util;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -30,11 +29,11 @@ public final class PeachCollectionUtil extends CollectionUtils {
     }
 
     public static boolean isNotEmpty(Collection<?> collection) {
-        return !isEmpty(collection);
+        return !CollectionUtils.isEmpty(collection);
     }
 
     public static boolean isNotEmpty(Map<?, ?> map) {
-        return !isEmpty(map);
+        return !CollectionUtils.isEmpty(map);
     }
 
     public static Map map(Object object) {
@@ -45,8 +44,8 @@ public final class PeachCollectionUtil extends CollectionUtils {
         try {
             Map map;
             if (object instanceof LinkedHashMap){
-                String json = JSONObject.toJSONString(object);
-                map = (Map) JSONObject.parse(json);
+                String json = JSON.toJSONString(object);
+                map = (Map) JSON.parse(json);
             }else{
                 map = PropertyUtils.describe(object);
             }
@@ -190,9 +189,7 @@ public final class PeachCollectionUtil extends CollectionUtils {
     public static Map<String, Object> transJsonToMap( String printPrjContent ) {
         Map tempPrj = JSON.parseObject(printPrjContent);
         Map<String, Object> res = Maps.newHashMap();
-        tempPrj.forEach(( o, o2 ) -> {
-            res.put(o.toString(), o2);
-        });
+        tempPrj.forEach((o, o2) -> res.put(o.toString(), o2));
         return res;
     }
     /**
@@ -219,8 +216,7 @@ public final class PeachCollectionUtil extends CollectionUtils {
      * @return
      */
     public static <T> T  convertToObject(Object object,Class<T> tClass){
-        T tarObj = MAPPER.convertValue(object, tClass);
-        return tarObj;
+        return MAPPER.convertValue(object, tClass);
     }
 
     /**
@@ -229,9 +225,7 @@ public final class PeachCollectionUtil extends CollectionUtils {
      * @return
      */
     public static List<String> sortCodes(List<String> codes) {
-        codes.sort(( o1, o2 ) -> {
-            return Integer.compare(o1.compareTo(o2), 0);
-        });
+        codes.sort((o1, o2) -> Integer.compare(o1.compareTo(o2), 0));
         return codes;
     }
 
@@ -249,7 +243,7 @@ public final class PeachCollectionUtil extends CollectionUtils {
         //如果存在下级就继续匹配
         if (PeachCollectionUtil.isNotEmpty(resCodes)) {
             //暂时将第一个节点作为结果
-            resCode = resCodes.stream().findFirst().get();
+            resCode = resCodes.getFirst();
             //如果存在多个节点递归继续匹配
             if (resCodes.size() > 1) {
                 resCode = getFirstLeafCode(srcCode,resCode, sortedCodes);

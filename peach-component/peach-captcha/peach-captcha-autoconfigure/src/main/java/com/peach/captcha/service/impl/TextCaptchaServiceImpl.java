@@ -17,8 +17,8 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import com.peach.common.util.PeachSecureRandom;
 import java.util.Properties;
-import java.util.Random;
 
 /**
  * Text/Arithmetic Captcha Service Implementation
@@ -33,13 +33,8 @@ public class TextCaptchaServiceImpl extends AbstractCacheService {
 
     private static final int IMAGE_WIDTH = 160;
     private static final int IMAGE_HEIGHT = 60;
-
-    @Override
-    public void init(Properties config) {
-        super.init(config);
-    }
-
-    @Override
+    private static final java.security.SecureRandom RANDOM = PeachSecureRandom.get();
+@Override
     public Response get(CaptchaVO captchaVO) {
         Response response = super.get(captchaVO);
         if (!validatedReq(response)) {
@@ -196,10 +191,9 @@ public class TextCaptchaServiceImpl extends AbstractCacheService {
             }
 
             // Check if text fits / 检查文本是否合适
-            font = this.WARK_MARK_FRONT != null ? this.WARK_MARK_FRONT.deriveFont(Font.BOLD, (float)fontSize) : new Font("Arial", Font.BOLD, fontSize);
+            font = this.waterMarkFont != null ? this.waterMarkFont.deriveFont(Font.BOLD, fontSize) : new Font("Arial", Font.BOLD, fontSize);
             g2d.setFont(font);
             fm = g2d.getFontMetrics();
-            int textWidth = fm.stringWidth(displayText);
 
             // If text fits with current font or can be scaled down effectively
             // Check against minimum font size (12) / 检查最小字体大小(12)
@@ -234,7 +228,7 @@ public class TextCaptchaServiceImpl extends AbstractCacheService {
         // Reduce font size if text is too wide / 如果文字太宽则缩小字体
         while (textWidth > IMAGE_WIDTH - 20 && fontSize > 12) {
             fontSize -= 2;
-            font = font.deriveFont(Font.BOLD, (float)fontSize);
+            font = font.deriveFont(Font.BOLD, fontSize);
             g2d.setFont(font);
             fm = g2d.getFontMetrics();
             textWidth = fm.stringWidth(displayText);
@@ -258,7 +252,7 @@ public class TextCaptchaServiceImpl extends AbstractCacheService {
      * @return Object[]{displayText, answer}
      */
     private Object[] generateContent() {
-        boolean isMath = new Random().nextBoolean();
+        boolean isMath = RANDOM.nextBoolean();
         String displayText;
         String answer;
 
@@ -266,21 +260,27 @@ public class TextCaptchaServiceImpl extends AbstractCacheService {
             // Arithmetic / 算术
             int num1 = RandomUtils.getRandomInt(1, 20);
             int num2 = RandomUtils.getRandomInt(1, 20);
-            int operator = RandomUtils.getRandomInt(0, 3); // 0:+, 1:-, 2:*
-            
-            if (operator == 0) {
-                displayText = num1 + " + " + num2 + " = ?";
-                answer = String.valueOf(num1 + num2);
-            } else if (operator == 1) {
-                if (num1 < num2) { int temp = num1; num1 = num2; num2 = temp; }
-                displayText = num1 + " - " + num2 + " = ?";
-                answer = String.valueOf(num1 - num2);
-            } else {
-                // Multiplication / 乘法
-                num1 = RandomUtils.getRandomInt(1, 10);
-                num2 = RandomUtils.getRandomInt(1, 10);
-                displayText = num1 + " * " + num2 + " = ?";
-                answer = String.valueOf(num1 * num2);
+            int operator = RandomUtils.getRandomInt(0, 3);
+            switch (operator) {
+                case 0 -> {
+                    displayText = num1 + " + " + num2 + " = ?";
+                    answer = String.valueOf(num1 + num2);
+                }
+                case 1 -> {
+                    if (num1 < num2) {
+                        int temp = num1;
+                        num1 = num2;
+                        num2 = temp;
+                    }
+                    displayText = num1 + " - " + num2 + " = ?";
+                    answer = String.valueOf(num1 - num2);
+                }
+                default -> {
+                    num1 = RandomUtils.getRandomInt(1, 10);
+                    num2 = RandomUtils.getRandomInt(1, 10);
+                    displayText = num1 + " * " + num2 + " = ?";
+                    answer = String.valueOf(num1 * num2);
+                }
             }
         } else {
             // Character / 字符
@@ -310,11 +310,10 @@ public class TextCaptchaServiceImpl extends AbstractCacheService {
      * @param image BufferedImage
      */
     private void drawNoise(BufferedImage image) {
-        Random random = new Random();
         for (int i = 0; i < 50; i++) {
-            int x = random.nextInt(IMAGE_WIDTH);
-            int y = random.nextInt(IMAGE_HEIGHT);
-            image.setRGB(x, y, new Color(random.nextInt(255), random.nextInt(255), random.nextInt(255)).getRGB());
+            int x = RANDOM.nextInt(IMAGE_WIDTH);
+            int y = RANDOM.nextInt(IMAGE_HEIGHT);
+            image.setRGB(x, y, new Color(RANDOM.nextInt(255), RANDOM.nextInt(255), RANDOM.nextInt(255)).getRGB());
         }
     }
 }

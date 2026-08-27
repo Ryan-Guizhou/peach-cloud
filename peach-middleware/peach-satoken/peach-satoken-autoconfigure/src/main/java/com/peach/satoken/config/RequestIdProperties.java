@@ -19,5 +19,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class RequestIdProperties {
 
     private boolean enabled = true;
+
     private String headerName = "X-Request-Id";
 }

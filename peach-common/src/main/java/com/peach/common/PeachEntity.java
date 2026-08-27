@@ -6,6 +6,7 @@ import lombok.Data;
 import org.apache.commons.beanutils.BeanUtils;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 /**
@@ -27,17 +28,16 @@ public class PeachEntity implements Serializable {
         try {
             BeanUtils.copyProperties(this, source);
             return (T) this;
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
+        } catch (IllegalAccessException | InvocationTargetException ex) {
+            throw new IllegalStateException("Failed to clone entity properties", ex);
         }
     }
 
-    public static <T extends PeachEntity> T create(Class<T> c) throws RuntimeException {
+    public static <T extends PeachEntity> T create(Class<T> c) {
         try {
-            T t = c.getDeclaredConstructor().newInstance();
-            return t;
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
+            return c.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException("Failed to instantiate entity", ex);
         }
     }
 }

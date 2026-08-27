@@ -66,7 +66,7 @@ public class PointVO implements Serializable {
     }
 
     public PointVO parse(String jsonStr) {
-        Map<String, Object> m = new HashMap(64);
+        Map<String, Object> m = HashMap.newHashMap(64);
         Arrays.stream(jsonStr
                 .replaceFirst(",\\{", "\\{")
                 .replaceFirst("\\{", "")
@@ -75,7 +75,7 @@ public class PointVO implements Serializable {
                 .split(",")).forEach(item -> {
             m.put(item.split(":")[0], item.split(":")[1]);
         });
-        //PointVO d = new PointVO();
+
         setX(Double.valueOf(String.valueOf(m.getOrDefault("x","0"))).intValue());
         setY(Double.valueOf(String.valueOf(m.getOrDefault("y","0"))).intValue());
         setSecretKey(String.valueOf(m.getOrDefault("secretKey", "")));

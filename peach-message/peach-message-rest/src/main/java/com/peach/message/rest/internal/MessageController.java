@@ -39,6 +39,8 @@ import jakarta.validation.constraints.NotBlank;
 @RequiredArgsConstructor
 public class MessageController {
 
+    private static final String USER_NOT_LOGGED_IN_MESSAGE = "当前用户未登录";
+
         private final IMessageService messageService;
 
     @GetMapping("/query")
@@ -48,7 +50,7 @@ public class MessageController {
                           @RequestParam(value = "readFlag", required = false) Integer readFlag) {
         String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
-            return Response.businessResponse("当前用户未登录");
+            return Response.businessResponse(USER_NOT_LOGGED_IN_MESSAGE);
         }
         SiteMessageQO qo = new SiteMessageQO();
         qo.setPageNum(pageNum);
@@ -96,7 +98,7 @@ public class MessageController {
     public Response queryUnreadCount() {
         String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
-            return Response.businessResponse("当前用户未登录");
+            return Response.businessResponse(USER_NOT_LOGGED_IN_MESSAGE);
         }
         return messageService.unreadCount(userId);
     }
@@ -124,7 +126,7 @@ public class MessageController {
     public Response read(@NotBlank(message = "消息ID不能为空") @PathVariable String messageId) {
         String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
-            return Response.businessResponse("当前用户未登录");
+            return Response.businessResponse(USER_NOT_LOGGED_IN_MESSAGE);
         }
         MessageReadDTO data = new MessageReadDTO();
         data.setMessageId(messageId);
@@ -137,7 +139,7 @@ public class MessageController {
     public Response readAll() {
         String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
-            return Response.businessResponse("当前用户未登录");
+            return Response.businessResponse(USER_NOT_LOGGED_IN_MESSAGE);
         }
         return messageService.readAll(userId);
     }
@@ -163,7 +165,7 @@ public class MessageController {
     private Response queryByCategory(String messageCategory, String messageType, Integer pageNum, Integer pageSize, Integer readFlag) {
         String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
-            return Response.businessResponse("当前用户未登录");
+            return Response.businessResponse(USER_NOT_LOGGED_IN_MESSAGE);
         }
         SiteMessageQO qo = new SiteMessageQO();
         qo.setPageNum(pageNum);
@@ -178,7 +180,7 @@ public class MessageController {
     private Response queryUnreadCountByCategory(String messageCategory, String messageType) {
         String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
-            return Response.businessResponse("当前用户未登录");
+            return Response.businessResponse(USER_NOT_LOGGED_IN_MESSAGE);
         }
         return messageService.unreadCount(userId, messageCategory, messageType);
     }
@@ -186,7 +188,7 @@ public class MessageController {
     private Response readAllByCategory(String messageCategory, String messageType) {
         String userId = SecurityContextHolder.currentUserId();
         if (StringUtils.isBlank(userId)) {
-            return Response.businessResponse("当前用户未登录");
+            return Response.businessResponse(USER_NOT_LOGGED_IN_MESSAGE);
         }
         return messageService.readAll(userId, messageCategory, messageType);
     }

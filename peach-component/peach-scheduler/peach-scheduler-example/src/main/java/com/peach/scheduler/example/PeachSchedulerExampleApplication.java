@@ -20,6 +20,7 @@ public class PeachSchedulerExampleApplication {
      * 创建 Scheduler 示例应用入口。
      */
     public PeachSchedulerExampleApplication() {
+        // Intentionally empty.
     }
 
     /**

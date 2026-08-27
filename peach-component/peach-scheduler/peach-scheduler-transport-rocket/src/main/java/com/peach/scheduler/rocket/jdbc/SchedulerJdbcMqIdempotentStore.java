@@ -1,5 +1,7 @@
 package com.peach.scheduler.rocket.jdbc;
 
+import java.time.ZoneId;
+
 import org.springframework.stereotype.Indexed;
 
 import com.peach.rocket.idempotent.MqIdempotentContext;
@@ -58,7 +60,7 @@ public class SchedulerJdbcMqIdempotentStore implements MqIdempotentStore {
                 return false;
             }
             Duration expire = context.getExpire() == null ? Duration.ofHours(24) : context.getExpire();
-            LocalDateTime staleBefore = LocalDateTime.now().minus(expire);
+            LocalDateTime staleBefore = LocalDateTime.now(ZoneId.systemDefault()).minus(expire);
             return jdbcTemplate.update(
                     "UPDATE MQ_CONSUME_RECORD SET STATUS='PROCESSING',CONSUME_COUNT=CONSUME_COUNT+1,"
                             + "LAST_ERROR=NULL,UPDATED_AT=NOW(3) WHERE IDEMPOTENT_KEY=? AND CONSUMER_GROUP=? "

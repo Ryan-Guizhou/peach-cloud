@@ -163,13 +163,7 @@ public class DefaultFrequencyLimitHandler implements FrequencyLimitHandler {
      * @return
      */
     private boolean validateParams(CaptchaVO captchaVO){
-        if (captchaVO == null) {
-            return false;
-        }
-        if (StringUtil.isBlank(captchaVO.getClientUid())){
-            return false;
-        }
-        return true;
+        return captchaVO != null && !StringUtil.isBlank(captchaVO.getClientUid());
     }
 
 }

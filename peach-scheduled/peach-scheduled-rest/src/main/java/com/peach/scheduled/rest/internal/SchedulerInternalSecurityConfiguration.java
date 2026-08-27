@@ -30,6 +30,7 @@ public class SchedulerInternalSecurityConfiguration {
      * 创建 Scheduler 内部接口安全配置。
      */
     public SchedulerInternalSecurityConfiguration() {
+        // Intentionally empty.
     }
 
     /**

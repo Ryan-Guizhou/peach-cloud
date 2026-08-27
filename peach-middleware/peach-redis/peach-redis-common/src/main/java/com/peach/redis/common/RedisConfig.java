@@ -5,6 +5,7 @@ package com.peach.redis.common;
 
 import org.springframework.stereotype.Indexed;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -54,7 +55,11 @@ import java.util.stream.IntStream;
 @Data
 @Indexed
 @Configuration
-public class RedisConfig<K, V> {
+public class RedisConfig {
+    private static final String REDIS_SSL_SCHEME = "rediss://";
+
+    private static final String REDIS_SCHEME = "redis://";
+
 
     @Value("${peach.redis.mode}")
     private String mode;
@@ -192,11 +197,11 @@ public class RedisConfig<K, V> {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(jedisConnectionFactory);
         //序列化和反序列化redis的value值
-        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
         ObjectMapper mapper = new ObjectMapper();
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        mapper.activateDefaultTyping(mapper.getPolymorphicTypeValidator(), ObjectMapper.DefaultTyping.NON_FINAL);
-        serializer.setObjectMapper(mapper);
+        mapper.activateDefaultTyping(mapper.getPolymorphicTypeValidator(), ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY);
+        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(mapper, Object.class);
         template.setHashValueSerializer(serializer);
         template.setHashKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(serializer);
@@ -327,7 +332,7 @@ public class RedisConfig<K, V> {
         }
 
         RedisNode node = iterator.next();
-        String address = "redis://" + node.getHost() + ":" + node.getPort();
+        String address = REDIS_SCHEME + node.getHost() + ":" + node.getPort();
 
         SingleServerConfig serverConfig = config.useSingleServer()
                 .setAddress(address)
@@ -348,7 +353,7 @@ public class RedisConfig<K, V> {
         }
 
         if (sslEnable) {
-            serverConfig.setAddress("rediss://" + node.getHost() + ":" + node.getPort());
+            serverConfig.setAddress(REDIS_SSL_SCHEME + node.getHost() + ":" + node.getPort());
         }
 
         return config;
@@ -357,7 +362,7 @@ public class RedisConfig<K, V> {
     private Config configureSentinelServers(Config config) {
         Set<RedisNode> nodes = getNodes(host);
         String[] sentinelAddresses = nodes.stream()
-                .map(node -> "redis://" + node.getHost() + ":" + node.getPort())
+                .map(node -> REDIS_SCHEME + node.getHost() + ":" + node.getPort())
                 .toArray(String[]::new);
 
         SentinelServersConfig serverConfig = config.useSentinelServers()
@@ -382,7 +387,7 @@ public class RedisConfig<K, V> {
 
         if (sslEnable) {
             String[] sslAddresses = nodes.stream()
-                    .map(node -> "rediss://" + node.getHost() + ":" + node.getPort())
+                    .map(node -> REDIS_SSL_SCHEME + node.getHost() + ":" + node.getPort())
                     .toArray(String[]::new);
             serverConfig.addSentinelAddress(sslAddresses);
         }
@@ -393,7 +398,7 @@ public class RedisConfig<K, V> {
     private Config configureClusterServers(Config config) {
         Set<RedisNode> nodes = getNodes(host);
         String[] nodeAddresses = nodes.stream()
-                .map(node -> "redis://" + node.getHost() + ":" + node.getPort())
+                .map(node -> REDIS_SCHEME + node.getHost() + ":" + node.getPort())
                 .toArray(String[]::new);
 
         ClusterServersConfig serverConfig = config.useClusterServers()
@@ -417,7 +422,7 @@ public class RedisConfig<K, V> {
 
         if (sslEnable) {
             String[] sslAddresses = nodes.stream()
-                    .map(node -> "rediss://" + node.getHost() + ":" + node.getPort())
+                    .map(node -> REDIS_SSL_SCHEME + node.getHost() + ":" + node.getPort())
                     .toArray(String[]::new);
             serverConfig.addNodeAddress(sslAddresses);
         }

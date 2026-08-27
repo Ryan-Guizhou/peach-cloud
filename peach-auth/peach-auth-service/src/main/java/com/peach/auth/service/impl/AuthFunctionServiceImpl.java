@@ -1,9 +1,10 @@
 package com.peach.auth.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
 import cn.dev33.satoken.stp.StpUtil;
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dao.AuthFunctionDao;
 import com.peach.auth.dto.RoleFunctionAuthDTO;
@@ -45,7 +46,7 @@ public class AuthFunctionServiceImpl implements IAuthFunctionService {
 
     @Override
     public PageInfo<AuthFunctionVO> pageList(AuthFunctionQO authFunctionQO) {
-        return PageHelper.startPage(authFunctionQO.getPageNum(), authFunctionQO.getPageSize())
+        return PageMethod.startPage(authFunctionQO.getPageNum(), authFunctionQO.getPageSize())
                 .doSelectPageInfo(() -> authFunctionDao.select(buildQuery(authFunctionQO)));
     }
 
@@ -71,7 +72,7 @@ public class AuthFunctionServiceImpl implements IAuthFunctionService {
                     continue;
                 }
                 AuthFunctionDO authFunctionDO = new AuthFunctionDO();
-                authFunctionDO.setId(IDGeneratorUtil.UUID());
+                authFunctionDO.setId(IDGeneratorUtil.generateUuid());
                 authFunctionDO.setTenantId(roleFunctionAuthDTO.getTenantId());
                 authFunctionDO.setOrgId(roleFunctionAuthDTO.getOrgId());
                 authFunctionDO.setPartyCode(roleFunctionAuthDTO.getPartyCode());
@@ -117,7 +118,7 @@ public class AuthFunctionServiceImpl implements IAuthFunctionService {
         authLogDO.setAuthDescribe("角色功能授权，角色编码：" + roleFunctionAuthDTO.getPartyCode()
                 + "，功能数量：" + functionCount);
         authLogDO.setOperatTime(DateUtil.nowTime());
-        authLogService.record(authLogDO);
+        authLogService.saveLog(authLogDO);
     }
 
     private String currentOperator() {

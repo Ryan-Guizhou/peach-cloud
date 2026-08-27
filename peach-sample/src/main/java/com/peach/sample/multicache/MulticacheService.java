@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import java.io.Serializable;
@@ -22,11 +22,11 @@ import java.util.Map;
  */
 @Slf4j
 @Indexed
-@Component
+@Service
 @RequiredArgsConstructor
 public class MulticacheService {
 
-    public static final Map<String,UserDO> USER_DB_MAP = new HashMap<>();
+    protected static final Map<String,UserDO> USER_DB_MAP = new HashMap<>();
 
     @PostConstruct
     public void init() {
@@ -53,6 +53,9 @@ public class MulticacheService {
     public UserDO getManagerUser(String id,String name) {
         String cacheName = "userCache"+":"+id;
         Cache userCache = multiCacheManager.getCache(cacheName);
+        if (userCache == null) {
+            return USER_DB_MAP.getOrDefault(id, null);
+        }
         Cache.ValueWrapper valueWrapper = userCache.get(cacheName +":"+id+"-"+name);
         if (valueWrapper != null) {
             return (UserDO) valueWrapper.get();
@@ -64,7 +67,7 @@ public class MulticacheService {
 
     @CacheEvict(value = "userCache", key="#id+'-'+#name",cacheResolver = "dynamicCacheResolver")
     public void evict(String id, String name) {
-
+        // Intentionally empty: cache eviction handled by annotation.
     }
 
     public void managerEvict(String id, String name) {

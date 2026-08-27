@@ -136,6 +136,7 @@ public abstract class AbstractWrapperFilter extends OncePerRequestFilter {
 
                 @Override
                 public void setReadListener(ReadListener readListener) {
+                    // Intentionally empty.
                 }
 
                 @Override

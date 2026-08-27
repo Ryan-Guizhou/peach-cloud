@@ -89,7 +89,7 @@ public class Attachment {
     /**
      * 附件类型：内部嵌套或附件
      */
-    public static enum AttachmentType{
+    public enum AttachmentType{
         INLINE("inline","内部嵌套"),
         ATTACHMENT("attachment","附件");
 

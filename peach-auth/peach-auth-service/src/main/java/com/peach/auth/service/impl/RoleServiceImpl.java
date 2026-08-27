@@ -1,9 +1,10 @@
 
 package com.peach.auth.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dao.RoleDao;
 import com.peach.auth.dto.RoleDTO;
@@ -35,9 +36,8 @@ public class RoleServiceImpl implements IRoleService {
 
     @Override
     public PageInfo<RoleVO> pageList(RoleQO roleQO) {
-        PageInfo<RoleVO> pageInfo = PageHelper.startPage(roleQO.getPageNum(), roleQO.getPageSize())
+        return PageMethod.startPage(roleQO.getPageNum(), roleQO.getPageSize())
                 .doSelectPageInfo(() -> roleDao.selectByQO(roleQO));
-        return pageInfo;
     }
 
     @Override

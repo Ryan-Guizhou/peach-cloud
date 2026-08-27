@@ -95,13 +95,8 @@ public class ProviderRouter {
         List<String> names = new ArrayList<String>();
         if (candidates == null || candidates.isEmpty()) names.addAll(transports.keySet());
         else names.addAll(candidates);
-        Collections.sort(names, new Comparator<String>() {
-            public int compare(String a, String b) {
-                int pa = priorities.containsKey(a) ? priorities.get(a) : 100;
-                int pb = priorities.containsKey(b) ? priorities.get(b) : 100;
-                return Integer.compare(pa, pb);
-            }
-        });
+        Collections.sort(names, Comparator.comparingInt(name ->
+                priorities.containsKey(name) ? priorities.get(name) : 100));
         return names;
     }
 }

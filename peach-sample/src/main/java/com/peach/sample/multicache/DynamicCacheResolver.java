@@ -29,9 +29,7 @@ public class DynamicCacheResolver extends SimpleCacheResolver {
     public Collection<String> getCacheNames(CacheOperationInvocationContext<?> context) {
         String id = (String) context.getArgs()[0];
         List<String> caches = new ArrayList<>();
-        context.getOperation().getCacheNames().forEach(cacheName -> {
-            caches.add(cacheName + ":" +id);
-        });
+        context.getOperation().getCacheNames().forEach(cacheName -> caches.add(cacheName + ":" +id));
         return caches;
     }
 }

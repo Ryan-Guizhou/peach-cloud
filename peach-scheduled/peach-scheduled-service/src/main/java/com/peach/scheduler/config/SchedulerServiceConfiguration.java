@@ -31,6 +31,7 @@ import com.peach.scheduler.statemachine.ExecutionStateMachineFactory;
 import com.peach.scheduler.statemachine.JobStateMachineFactory;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -55,6 +56,7 @@ public class SchedulerServiceConfiguration {
      * 创建相关对象。
      */
     public SchedulerServiceConfiguration() {
+        // Intentionally empty.
     }
 
     /**
@@ -109,9 +111,10 @@ public class SchedulerServiceConfiguration {
             SchedulerExecutionDao executionDao,
             SchedulerExecutionAttemptDao executionAttemptDao,
             SchedulerStateLogDao stateLogDao,
-            ExecutionStateMachineFactory stateMachineFactory) {
+            ExecutionStateMachineFactory stateMachineFactory,
+            ObjectProvider<SchedulerExecutionLifecycleService> lifecycleServiceProvider) {
         return new SchedulerExecutionLifecycleService(
-                executionDao, executionAttemptDao, stateLogDao, stateMachineFactory);
+                executionDao, executionAttemptDao, stateLogDao, stateMachineFactory, lifecycleServiceProvider);
     }
 
     /**

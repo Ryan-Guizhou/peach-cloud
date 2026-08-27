@@ -181,16 +181,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
         return result;
     }
 
-    private void validate(SchedulerJobSaveDTO data) {
-        SchedulerHandlerDO handler = handlerDao.selectOne(data.getApplicationName(), data.getHandlerName());
-        if (handler == null || !"ONLINE".equals(handler.getStatus())) {
-            throw new IllegalArgumentException("Handler is not registered and online for target application");
-        }
-        ScheduleType type;
-        try { type = ScheduleType.valueOf(data.getScheduleType()); }
-        catch (RuntimeException ex) {
-            throw new IllegalArgumentException("Unsupported schedule type", ex);
-        }
+    private void validateScheduleType(SchedulerJobSaveDTO data, ScheduleType type) {
         if (type == ScheduleType.CRON && !CronExpression.isValidExpression(data.getCronExpression())) {
             throw new IllegalArgumentException("Invalid Quartz cron expression");
         }
@@ -200,10 +191,9 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
         if (type == ScheduleType.ONE_TIME && (data.getStartAt() == null || data.getStartAt().isBlank())) {
             throw new IllegalArgumentException("startAt is required for ONE_TIME schedule");
         }
-        try { ZoneId.of(data.getTimeZone()); }
-        catch (RuntimeException ex) {
-            throw new IllegalArgumentException("Invalid IANA time zone", ex);
-        }
+    }
+
+    private void validateExecutionPolicy(SchedulerJobSaveDTO data) {
         if (data.getTimeoutMs() == null || data.getTimeoutMs() < 1000L || data.getTimeoutMs() > 86400000L) {
             throw new IllegalArgumentException("timeoutMs must be between 1000 and 86400000");
         }
@@ -215,6 +205,26 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
                 || data.getRetryIntervalSeconds() > 86400) {
             throw new IllegalArgumentException("retryIntervalSeconds must be between 1 and 86400");
         }
+    }
+
+    private void validate(SchedulerJobSaveDTO data) {
+        SchedulerHandlerDO handler = handlerDao.selectOne(data.getApplicationName(), data.getHandlerName());
+        if (handler == null || !"ONLINE".equals(handler.getStatus())) {
+            throw new IllegalArgumentException("Handler is not registered and online for target application");
+        }
+        ScheduleType type;
+        try {
+            type = ScheduleType.valueOf(data.getScheduleType());
+        } catch (RuntimeException ex) {
+            throw new IllegalArgumentException("Unsupported schedule type", ex);
+        }
+        validateScheduleType(data, type);
+        try {
+            ZoneId.of(data.getTimeZone());
+        } catch (RuntimeException ex) {
+            throw new IllegalArgumentException("Invalid IANA time zone", ex);
+        }
+        validateExecutionPolicy(data);
         validateParameters(data.getParametersJson());
     }
 

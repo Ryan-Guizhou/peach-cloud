@@ -26,6 +26,7 @@ public class MoveObjectRequest extends StorageTransferRequest {
             return this;
         }
 
+        @Override
         public MoveObjectRequest build() {
             validate();
             return new MoveObjectRequest(this);

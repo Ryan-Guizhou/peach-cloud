@@ -18,7 +18,7 @@ public abstract class AbstractAppExecute {
 
     protected final ConfigurableApplicationContext context;
 
-    public AbstractAppExecute(ConfigurableApplicationContext context) {
+    protected AbstractAppExecute(ConfigurableApplicationContext context) {
         this.context = context;
     }
 

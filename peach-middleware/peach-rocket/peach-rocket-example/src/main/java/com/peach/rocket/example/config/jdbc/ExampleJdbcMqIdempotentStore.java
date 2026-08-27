@@ -1,5 +1,7 @@
 package com.peach.rocket.example.config.jdbc;
 
+import java.time.ZoneId;
+
 import com.peach.rocket.idempotent.MqIdempotentContext;
 import com.peach.rocket.idempotent.MqIdempotentStore;
 import java.sql.Timestamp;
@@ -15,6 +17,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * @since 2026/6/26
  */
 public class ExampleJdbcMqIdempotentStore implements MqIdempotentStore {
+    private static final String SQL_UPDATE_PREFIX = "UPDATE ";
+
+    private static final String STATUS_PROCESSING = "PROCESSING";
+
 
     /**
      * 示例幂等表名。
@@ -29,21 +35,21 @@ public class ExampleJdbcMqIdempotentStore implements MqIdempotentStore {
 
     @Override
     public boolean tryStart(MqIdempotentContext context) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         try {
             jdbcTemplate.update("INSERT INTO " + TABLE_NAME
                             + " (idempotent_key, consumer_group, topic, tag, business_key, message_id, status, consume_count, created_at, updated_at)"
                             + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     context.getIdempotentKey(), context.getConsumerGroup(), context.getTopic(), context.getTag(),
-                    context.getBusinessKey(), context.getMessageId(), "PROCESSING", 1, Timestamp.valueOf(now), Timestamp.valueOf(now));
+                    context.getBusinessKey(), context.getMessageId(), STATUS_PROCESSING, 1, Timestamp.valueOf(now), Timestamp.valueOf(now));
             return true;
         } catch (DuplicateKeyException ex) {
             LocalDateTime timeoutBefore = now.minus(context.getExpire());
-            int updated = jdbcTemplate.update("UPDATE " + TABLE_NAME
+            int updated = jdbcTemplate.update(SQL_UPDATE_PREFIX + TABLE_NAME
                             + " SET status = ?, topic = ?, tag = ?, business_key = ?, message_id = ?, consume_count = consume_count + 1, updated_at = ?"
                             + " WHERE idempotent_key = ? AND consumer_group = ? AND (status = ? OR (status = ? AND updated_at < ?))",
-                    "PROCESSING", context.getTopic(), context.getTag(), context.getBusinessKey(), context.getMessageId(),
-                    Timestamp.valueOf(now), context.getIdempotentKey(), context.getConsumerGroup(), "FAILED", "PROCESSING",
+                    STATUS_PROCESSING, context.getTopic(), context.getTag(), context.getBusinessKey(), context.getMessageId(),
+                    Timestamp.valueOf(now), context.getIdempotentKey(), context.getConsumerGroup(), "FAILED", STATUS_PROCESSING,
                     Timestamp.valueOf(timeoutBefore));
             return updated == 1;
         }
@@ -51,14 +57,14 @@ public class ExampleJdbcMqIdempotentStore implements MqIdempotentStore {
 
     @Override
     public void markSuccess(MqIdempotentContext context) {
-        jdbcTemplate.update("UPDATE " + TABLE_NAME + " SET status = ?, updated_at = ? WHERE idempotent_key = ? AND consumer_group = ?",
-                "SUCCESS", Timestamp.valueOf(LocalDateTime.now()), context.getIdempotentKey(), context.getConsumerGroup());
+        jdbcTemplate.update(SQL_UPDATE_PREFIX + TABLE_NAME + " SET status = ?, updated_at = ? WHERE idempotent_key = ? AND consumer_group = ?",
+                "SUCCESS", Timestamp.valueOf(LocalDateTime.now(ZoneId.systemDefault())), context.getIdempotentKey(), context.getConsumerGroup());
     }
 
     @Override
     public void markFailed(MqIdempotentContext context) {
-        jdbcTemplate.update("UPDATE " + TABLE_NAME + " SET status = ?, updated_at = ? WHERE idempotent_key = ? AND consumer_group = ?",
-                "FAILED", Timestamp.valueOf(LocalDateTime.now()), context.getIdempotentKey(), context.getConsumerGroup());
+        jdbcTemplate.update(SQL_UPDATE_PREFIX + TABLE_NAME + " SET status = ?, updated_at = ? WHERE idempotent_key = ? AND consumer_group = ?",
+                "FAILED", Timestamp.valueOf(LocalDateTime.now(ZoneId.systemDefault())), context.getIdempotentKey(), context.getConsumerGroup());
     }
 
     @Override

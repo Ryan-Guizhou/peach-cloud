@@ -103,7 +103,7 @@ public class RedisStreamAutoConfig {
     }
     private void checkConsumerType(String consumerType){
         if ((!RedisStreamContant.GROUP.equals(consumerType)) && (!RedisStreamContant.BROADCAST.equals(consumerType))) {
-            throw new RuntimeException("checkConsumerType error");
+            throw new IllegalStateException("checkConsumerType error");
         }
     }
 }

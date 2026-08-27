@@ -26,6 +26,7 @@ public class HeadObjectRequest extends StorageObjectRequest {
             return this;
         }
 
+        @Override
         public HeadObjectRequest build() {
             validate();
             return new HeadObjectRequest(this);

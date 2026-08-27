@@ -3,6 +3,7 @@ package com.peach.email.smtp;
 import com.peach.email.core.EmailContext;
 
 import jakarta.mail.Session;
+import jakarta.mail.MessagingException;
 import jakarta.mail.Transport;
 
 /**
@@ -13,7 +14,7 @@ import jakarta.mail.Transport;
  */
 public interface SmtpConnectionProvider {
     /** 获取已连接的 Transport（可能为新建或复用） */
-    Transport acquire(Session session, EmailContext context) throws Exception;
+    Transport acquire(Session session, EmailContext context) throws MessagingException;
     /** 释放 Transport（可选择关闭或保留） */
     void release(Transport transport);
 }

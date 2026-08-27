@@ -131,10 +131,7 @@ public class WebSocketSessionManager {
             return;
         }
         CopyOnWriteArraySet<String> owned = sessionChannels.computeIfAbsent(sessionId, key -> new CopyOnWriteArraySet<String>());
-        for (String channel : channels) {
-            if (StringUtils.isBlank(channel)) {
-                continue;
-            }
+        for (String channel : channels.stream().filter(StringUtils::isNotBlank).toList()) {
             if (owned.size() >= MAX_CHANNELS_PER_SESSION) {
                 log.warn("WebSocket channel limit reached, sessionId={}", sessionId);
                 break;
@@ -153,19 +150,20 @@ public class WebSocketSessionManager {
         if (owned == null) {
             return;
         }
-        for (String channel : channels) {
-            if (StringUtils.isBlank(channel)) {
-                continue;
-            }
-            if (owned.remove(channel)) {
-                channelSessions.compute(channel, (key, sessionIds) -> {
-                    if (sessionIds == null) {
-                        return null;
-                    }
-                    sessionIds.remove(sessionId);
-                    return sessionIds.isEmpty() ? null : sessionIds;
-                });
-            }
+        for (String channel : channels.stream().filter(StringUtils::isNotBlank).toList()) {
+            removeOwnedChannel(sessionId, owned, channel);
+        }
+    }
+
+    private void removeOwnedChannel(String sessionId, CopyOnWriteArraySet<String> owned, String channel) {
+        if (owned.remove(channel)) {
+            channelSessions.compute(channel, (key, sessionIds) -> {
+                if (sessionIds == null) {
+                    return null;
+                }
+                sessionIds.remove(sessionId);
+                return sessionIds.isEmpty() ? null : sessionIds;
+            });
         }
     }
 

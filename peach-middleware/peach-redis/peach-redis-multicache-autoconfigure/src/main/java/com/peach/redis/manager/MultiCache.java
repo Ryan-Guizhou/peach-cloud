@@ -136,12 +136,15 @@ public class MultiCache extends AbstractValueAdaptingCache {
     public ValueWrapper putIfAbsent(Object key, Object value) {
         Object cacheKey = buildCacheKey(key);
         Object prevValue;
-        // 考虑使用分布式锁，或者将redis的setIfAbsent改为原子性操作
-        synchronized (key) {
+        ReentrantLock lock = keyLockMap.computeIfAbsent(key.toString(), ignored -> new ReentrantLock());
+        lock.lock();
+        try {
             prevValue = redisTemplate.opsForValue().get(cacheKey);
             if (prevValue == null) {
                 doPut(key, value);
             }
+        } finally {
+            lock.unlock();
         }
         return toValueWrapper(prevValue);
     }
@@ -244,10 +247,11 @@ public class MultiCache extends AbstractValueAdaptingCache {
     private void doPut(Object key, Object value) {
         Duration expire = getExpire();
         value = toStoreValue(value);
-        if (!expire.isNegative()) {
-            redisTemplate.opsForValue().set(buildCacheKey(key), value, expire);
+        Object cacheKey = buildCacheKey(key);
+        if (expire == null || expire.isNegative()) {
+            redisTemplate.opsForValue().set(cacheKey, value);
         } else {
-            redisTemplate.opsForValue().set(buildCacheKey(key), value);
+            redisTemplate.opsForValue().set(cacheKey, value, expire);
         }
         push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
         caffeineCache.put(key, value);

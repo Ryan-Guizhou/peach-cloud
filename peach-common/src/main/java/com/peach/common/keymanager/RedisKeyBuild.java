@@ -24,9 +24,7 @@ public final class RedisKeyBuild {
      * @return
      */
     public static RedisKeyBuild createRedisKey(RedisKeyManage redisKeyManage, Object... args){
-        String redisRelKey = MessageFormat.format(redisKeyManage.getKey(),args);
-        RedisKeyBuild redisKeyBuild = new RedisKeyBuild(redisRelKey);
-        return redisKeyBuild;
+        return new RedisKeyBuild(MessageFormat.format(redisKeyManage.getKey(), args));
     }
 
     public String getRealKey(){

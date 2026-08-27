@@ -121,7 +121,7 @@ public final class StoragePathUtil {
             if (segment == null || segment.isBlank()) {
                 continue; // 自动跳过空片段
             }
-            if (builder.length() > 0) {
+            if (!builder.isEmpty()) {
                 builder.append('/');
             }
             builder.append(segment);

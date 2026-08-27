@@ -12,7 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * @Author Mr Shu
  * @Version 1.0.0
- * @Description //TODO
+ * @Description
  * @CreateTime 2025/3/15 0:27
  */
 @Slf4j
@@ -20,20 +20,20 @@ public class UserOperLogQueue {
 
     private static final UserOperLogQueue INSTANCE = new UserOperLogQueue();
 
-    private final BlockingQueue<UserOperLogVO> userOperLogQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<UserOperLogVO> operLogQueue = new LinkedBlockingQueue<>();
 
     private UserOperLogQueue() {} // 私有构造函数
 
     public static UserOperLogQueue getInstance() {
         return INSTANCE;
     }
-    
+
     /**
      * 添加数据到队列中
      * @param userOperLog
      */
     public void addOperLogQueue(UserOperLogVO userOperLog) {
-        userOperLogQueue.add(userOperLog);
+        operLogQueue.add(userOperLog);
     }
 
     /**
@@ -42,11 +42,11 @@ public class UserOperLogQueue {
      */
     public List<UserOperLogVO> getAllUserOperLog() {
         List<UserOperLogVO> resultList = Lists.newArrayList();
-        if (PeachCollectionUtil.isEmpty(userOperLogQueue)){
+        if (PeachCollectionUtil.isEmpty(operLogQueue)){
             return resultList;
         }
-        userOperLogQueue.drainTo(resultList);
+        operLogQueue.drainTo(resultList);
         return resultList;
     }
-    
+
 }

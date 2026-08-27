@@ -1,12 +1,13 @@
 package com.peach.auth.rest.internal;
 
+import com.peach.common.PeachGroup;
+
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.dto.FunctionDTO;
 import com.peach.auth.enums.UserLogEnum;
-import com.peach.auth.group.FunctionGroup;
 import com.peach.auth.qo.FunctionQO;
 import com.peach.auth.service.IFunctionService;
 import com.peach.auth.vo.FunctionVO;
@@ -63,7 +64,7 @@ public class FunctionController {
     @Operation(summary = "新增功能")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增功能信息,功能信息:['+#p0+']'")
-    public Response add(@Validated({FunctionGroup.insertGroup.class}) @RequestBody FunctionDTO functionDTO) {
+    public Response add(@Validated({PeachGroup.InsertGroup.class}) @RequestBody FunctionDTO functionDTO) {
         functionService.add(functionDTO);
         return Response.success();
     }
@@ -81,7 +82,7 @@ public class FunctionController {
     @Operation(summary = "更新功能")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'更新功能信息,功能信息:['+#p0+']'")
-    public Response update(@Validated({FunctionGroup.updateGroup.class}) @RequestBody FunctionDTO functionDTO) {
+    public Response update(@Validated({PeachGroup.UpdateGroup.class}) @RequestBody FunctionDTO functionDTO) {
         functionService.update(functionDTO);
         return Response.success();
     }

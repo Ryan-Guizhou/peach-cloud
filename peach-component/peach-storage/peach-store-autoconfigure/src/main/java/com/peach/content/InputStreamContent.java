@@ -1,6 +1,7 @@
 package com.peach.content;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -38,7 +39,7 @@ public class InputStreamContent implements UploadContent {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         in.close();
     }
 }

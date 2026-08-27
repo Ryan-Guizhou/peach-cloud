@@ -14,6 +14,7 @@ public interface MqTraceContextPropagator {
     MqTraceContextPropagator NOOP = new MqTraceContextPropagator() {
         @Override
         public void inject(Map<String, String> headers) {
+            // Intentionally empty.
         }
 
         @Override
@@ -49,10 +50,12 @@ public interface MqTraceContextPropagator {
         MqTraceScope NOOP = new MqTraceScope() {
             @Override
             public void error(Throwable throwable) {
+                // Intentionally empty.
             }
 
             @Override
             public void close() {
+                // Intentionally empty.
             }
         };
 

@@ -2,6 +2,7 @@ package com.peach.monitor.service.impl;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Indexed;
 import com.peach.monitor.entity.monitor.MonitorSnapshotDTO;
 import com.peach.monitor.service.IMonitorRuntimeService;
@@ -33,6 +34,17 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
 
+    private static final String JSON_KEY_ADDRESS = "address";
+
+    private static final String JSON_KEY_MESSAGE = "message";
+
+    private static final String STATUS_NOT_CONFIGURED = "not_configured";
+
+    private static final String JSON_KEY_STATUS = "status";
+
+    private static final String JSON_KEY_ERROR = "error";
+
+
         private final Environment environment;
 
         private final ObjectProvider<DataSource> dataSourceProvider;
@@ -62,7 +74,7 @@ public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
         } catch (Exception e) {
             hostInfo.put("hostName", "unknown");
             hostInfo.put("hostAddress", "unknown");
-            hostInfo.put("error", e.getMessage());
+            hostInfo.put(JSON_KEY_ERROR, e.getMessage());
         }
 
         hostInfo.put("osName", System.getProperty("os.name"));
@@ -99,8 +111,8 @@ public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
         Map<String, Object> databaseInfo = new LinkedHashMap<String, Object>();
         DataSource dataSource = dataSourceProvider.getIfAvailable();
         if (dataSource == null) {
-            databaseInfo.put("status", "not_configured");
-            databaseInfo.put("message", "当前服务未注入 DataSource");
+            databaseInfo.put(JSON_KEY_STATUS, STATUS_NOT_CONFIGURED);
+            databaseInfo.put(JSON_KEY_MESSAGE, "当前服务未注入 DataSource");
             return databaseInfo;
         }
 
@@ -109,7 +121,7 @@ public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
             connection = dataSource.getConnection();
             DatabaseMetaData metaData = connection.getMetaData();
 
-            databaseInfo.put("status", "up");
+            databaseInfo.put(JSON_KEY_STATUS, "up");
             databaseInfo.put("productName", metaData.getDatabaseProductName());
             databaseInfo.put("productVersion", metaData.getDatabaseProductVersion());
             databaseInfo.put("driverName", metaData.getDriverName());
@@ -117,8 +129,8 @@ public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
             databaseInfo.put("username", metaData.getUserName());
             databaseInfo.put("active", validateConnection(connection));
         } catch (Exception e) {
-            databaseInfo.put("status", "down");
-            databaseInfo.put("error", e.getMessage());
+            databaseInfo.put(JSON_KEY_STATUS, "down");
+            databaseInfo.put(JSON_KEY_ERROR, e.getMessage());
         } finally {
             if (connection != null) {
                 try {
@@ -169,20 +181,26 @@ public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
         Map<String, Object> redisInfo = new LinkedHashMap<String, Object>();
         StringRedisTemplate stringRedisTemplate = stringRedisTemplateProvider.getIfAvailable();
         if (stringRedisTemplate == null) {
-            redisInfo.put("status", "not_configured");
-            redisInfo.put("message", "当前服务未注入 StringRedisTemplate");
+            redisInfo.put(JSON_KEY_STATUS, STATUS_NOT_CONFIGURED);
+            redisInfo.put(JSON_KEY_MESSAGE, "当前服务未注入 StringRedisTemplate");
             return redisInfo;
         }
 
         RedisConnection redisConnection = null;
         try {
-            redisConnection = stringRedisTemplate.getConnectionFactory().getConnection();
+            var connectionFactory = stringRedisTemplate.getConnectionFactory();
+            if (connectionFactory == null) {
+                redisInfo.put(JSON_KEY_STATUS, STATUS_NOT_CONFIGURED);
+                redisInfo.put(JSON_KEY_MESSAGE, "StringRedisTemplate has no connection factory");
+                return redisInfo;
+            }
+            redisConnection = connectionFactory.getConnection();
             String pingResult = redisConnection.ping();
-            redisInfo.put("status", "up");
+            redisInfo.put(JSON_KEY_STATUS, "up");
             redisInfo.put("ping", pingResult);
         } catch (Exception e) {
-            redisInfo.put("status", "down");
-            redisInfo.put("error", e.getMessage());
+            redisInfo.put(JSON_KEY_STATUS, "down");
+            redisInfo.put(JSON_KEY_ERROR, e.getMessage());
         } finally {
             if (redisConnection != null) {
                 try {
@@ -197,11 +215,12 @@ public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
 
     private Map<String, Object> buildNacosInfo() {
         Map<String, Object> nacosInfo = new LinkedHashMap<String, Object>();
-        String serverAddr = environment.getProperty("spring.cloud.nacos.discovery.server-addr",
-                environment.getProperty("spring.cloud.nacos.config.server-addr"));
-        if (serverAddr == null || serverAddr.trim().length() == 0) {
-            nacosInfo.put("status", "not_configured");
-            nacosInfo.put("message", "未配置 nacos server-addr");
+        String serverAddr = firstProperty(
+                "spring.cloud.nacos.discovery.server-addr",
+                "spring.cloud.nacos.config.server-addr");
+        if (!org.springframework.util.StringUtils.hasText(serverAddr)) {
+            nacosInfo.put(JSON_KEY_STATUS, STATUS_NOT_CONFIGURED);
+            nacosInfo.put(JSON_KEY_MESSAGE, "未配置 nacos server-addr");
             return nacosInfo;
         }
 
@@ -212,9 +231,9 @@ public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
             try {
                 port = Integer.parseInt(hostAndPort[1].trim());
             } catch (Exception e) {
-                nacosInfo.put("status", "down");
-                nacosInfo.put("address", serverAddr);
-                nacosInfo.put("error", "nacos端口配置非法: " + e.getMessage());
+                nacosInfo.put(JSON_KEY_STATUS, "down");
+                nacosInfo.put(JSON_KEY_ADDRESS, serverAddr);
+                nacosInfo.put(JSON_KEY_ERROR, "nacos端口配置非法: " + e.getMessage());
                 return nacosInfo;
             }
         }
@@ -222,12 +241,12 @@ public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
         Socket socket = new Socket();
         try {
             socket.connect(new InetSocketAddress(host, port), 1500);
-            nacosInfo.put("status", "up");
-            nacosInfo.put("address", host + ":" + port);
+            nacosInfo.put(JSON_KEY_STATUS, "up");
+            nacosInfo.put(JSON_KEY_ADDRESS, host + ":" + port);
         } catch (Exception e) {
-            nacosInfo.put("status", "down");
-            nacosInfo.put("address", host + ":" + port);
-            nacosInfo.put("error", e.getMessage());
+            nacosInfo.put(JSON_KEY_STATUS, "down");
+            nacosInfo.put(JSON_KEY_ADDRESS, host + ":" + port);
+            nacosInfo.put(JSON_KEY_ERROR, e.getMessage());
         } finally {
             try {
                 socket.close();
@@ -236,5 +255,11 @@ public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
             }
         }
         return nacosInfo;
+    }
+
+    @Nullable
+    private String firstProperty(String primaryKey, String fallbackKey) {
+        String value = environment.getProperty(primaryKey);
+        return value != null ? value : environment.getProperty(fallbackKey);
     }
 }

@@ -2,6 +2,7 @@ package com.peach.email.smtp;
 
 import com.peach.email.core.EmailContext;
 
+import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SimpleSmtpConnectionProvider implements SmtpConnectionProvider{
     @Override
-    public Transport acquire(Session session, EmailContext context) throws Exception {
+    public Transport acquire(Session session, EmailContext context) throws MessagingException {
         // 简单实现，直接返回新的连接
         Transport transport = session.getTransport("smtp");
         transport.connect(

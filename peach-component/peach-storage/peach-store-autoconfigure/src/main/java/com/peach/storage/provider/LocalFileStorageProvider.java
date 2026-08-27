@@ -26,6 +26,7 @@ import com.peach.util.StoragePathUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
@@ -357,35 +358,12 @@ public class LocalFileStorageProvider implements StorageProvider {
      * @return 分页后的对象列表结果
      */
     private ListObjectsResult slicePage(ListObjectsRequest request, List<ObjectInfo> allObjects) {
-        List<ObjectInfo> pageItems = new ArrayList<>();
-        String continuationToken = request.getContinuationToken();
-        boolean started = continuationToken == null || continuationToken.isBlank();
+        int startIndex = findPageStartIndex(allObjects, request.getContinuationToken());
+        int endIndex = Math.min(startIndex + request.getMaxKeys(), allObjects.size());
+        List<ObjectInfo> pageItems = new ArrayList<>(allObjects.subList(startIndex, endIndex));
 
-        for (ObjectInfo object : allObjects) {
-            if (!started) {
-                if (object.getObjectKey().compareTo(continuationToken) > 0) {
-                    started = true;
-                } else {
-                    continue;
-                }
-            }
-
-            if (pageItems.size() >= request.getMaxKeys()) {
-                break;
-            }
-
-            pageItems.add(object);
-        }
-
-        boolean truncated = false;
-        String nextContinuationToken = null;
-        if (!pageItems.isEmpty()) {
-            int lastIndex = allObjects.indexOf(pageItems.get(pageItems.size() - 1));
-            if (lastIndex >= 0 && lastIndex < allObjects.size() - 1) {
-                truncated = true;
-                nextContinuationToken = pageItems.get(pageItems.size() - 1).getObjectKey();
-            }
-        }
+        boolean truncated = endIndex < allObjects.size();
+        String nextContinuationToken = pageItems.isEmpty() ? null : pageItems.get(pageItems.size() - 1).getObjectKey();
 
         log.debug("Slice object page, bucket={}, prefix={}, maxKeys={}, returned={}, truncated={}",
                 bucketName(config, request.getBucketName()), request.getPrefix(), request.getMaxKeys(),
@@ -414,7 +392,7 @@ public class LocalFileStorageProvider implements StorageProvider {
      * @param target 目标路径
      * @throws Exception 创建目录失败时抛出
      */
-    private void ensureTargetParent(Path target) throws Exception {
+    private void ensureTargetParent(Path target) throws IOException {
         Path parent = target.getParent();
         if (parent != null) {
             Files.createDirectories(parent);
@@ -456,7 +434,7 @@ public class LocalFileStorageProvider implements StorageProvider {
      * @param overwrite 是否覆盖已有文件
      * @throws Exception 复制失败时抛出
      */
-    private void copyFile(Path source, Path target, boolean overwrite) throws Exception {
+    private void copyFile(Path source, Path target, boolean overwrite) throws IOException {
         if (Files.exists(target) && !overwrite) {
             log.warn("Target object already exists, target={}, overwrite={}", target, overwrite);
             throw new StorageException(StorageResultCode.BAD_REQUEST, "Target object already exists: " + target);
@@ -476,7 +454,7 @@ public class LocalFileStorageProvider implements StorageProvider {
      * @param overwrite 是否覆盖已有文件
      * @throws Exception 复制失败时抛出
      */
-    private void copyDirectory(Path source, Path target, boolean overwrite) throws Exception {
+    private void copyDirectory(Path source, Path target, boolean overwrite) throws IOException {
         try (Stream<Path> stream = Files.walk(source)) {
             for (Path path : stream.toList()) {
                 Path relative = source.relativize(path);
@@ -500,7 +478,7 @@ public class LocalFileStorageProvider implements StorageProvider {
      * @param path 文件或目录路径
      * @throws Exception 删除失败时抛出
      */
-    private void deletePath(Path path) throws Exception {
+    private void deletePath(Path path) throws IOException {
         if (!Files.exists(path)) {
             return;
         }
@@ -509,5 +487,17 @@ public class LocalFileStorageProvider implements StorageProvider {
                 Files.deleteIfExists(current);
             }
         }
+    }
+
+    private static int findPageStartIndex(List<ObjectInfo> allObjects, String continuationToken) {
+        if (continuationToken == null || continuationToken.isBlank()) {
+            return 0;
+        }
+        for (int i = 0; i < allObjects.size(); i++) {
+            if (allObjects.get(i).getObjectKey().compareTo(continuationToken) > 0) {
+                return i;
+            }
+        }
+        return allObjects.size();
     }
 }

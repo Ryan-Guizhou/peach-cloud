@@ -1,8 +1,9 @@
 package com.peach.setting.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.PageResult;
@@ -48,7 +49,7 @@ public class IpWhitelistServiceImpl implements IIpWhitelistService {
     @Override
     public PageResult<IpWhitelistVO> pageList(IpWhitelistQO qo) {
         fillCurrentTenantOrg(qo);
-        PageInfo<IpWhitelistVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
+        PageInfo<IpWhitelistVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> ipWhitelistDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
     }
@@ -63,7 +64,7 @@ public class IpWhitelistServiceImpl implements IIpWhitelistService {
     public void save(IpWhitelistDTO data) {
         IpWhitelistDO ipWhitelistDO = new IpWhitelistDO();
         BeanUtils.copyProperties(data, ipWhitelistDO);
-        ipWhitelistDO.setId(IDGeneratorUtil.UUID());
+        ipWhitelistDO.setId(IDGeneratorUtil.generateUuid());
         ipWhitelistDO.fillCreateTime();
         if (ipWhitelistDO.getStatus() == null) {
             ipWhitelistDO.setStatus(PubCommonConst.LOGIC_TRUE);

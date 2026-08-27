@@ -3,6 +3,7 @@ package com.peach.captcha.util;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StreamUtils;
 
+import java.nio.file.Files;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -152,7 +153,8 @@ public final class FileCopyUtil {
         try {
             File file = new File(fileUrl);
             if (file.isFile() && file.exists()) {
-                return file.delete();
+                Files.delete(file.toPath());
+                return true;
             }
             return false;
         } catch (Exception e) {

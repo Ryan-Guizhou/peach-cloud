@@ -5,18 +5,22 @@ package com.peach.redis.constant;
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:39
  */
-public interface RedisConstant {
+public final class RedisConstant {
+
+    private RedisConstant() {
+        throw new IllegalStateException("Utility class");
+    }
 
     /**
      * 单机
      */
-    String STANDALONE = "standalone";
+    public static final String STANDALONE = "standalone";
     /**
      * 哨兵模式
      */
-    String SENTINEL = "sentinel";
+    public static final String SENTINEL = "sentinel";
     /**
      * 集群模式
      */
-    String CLUSTER = "cluster";
+    public static final String CLUSTER = "cluster";
 }

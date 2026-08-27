@@ -1,4 +1,4 @@
-package com.peach.email.Idempotency;
+package com.peach.email.idempotency;
 
 import com.peach.email.core.SendResult;
 
@@ -21,5 +21,5 @@ public interface IdempotencyStore {
      * 保存幂等键
      * @param key 幂等键
      */
-    void record(String key, SendResult result);
+    void storeSendResult(String key, SendResult result);
 }

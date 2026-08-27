@@ -11,6 +11,10 @@ import java.util.UUID;
  * @CreateTime 2024/10/10 15:22
  */
 public class IDGeneratorUtil {
+
+    private IDGeneratorUtil() {
+        throw new IllegalStateException("Utility class");
+    }
     /**
      * 开始的索引值
      */
@@ -31,7 +35,7 @@ public class IDGeneratorUtil {
      */
     public static final Integer MAX_LENGTH = 32;
 
-    public static String UUID() {
+    public static String generateUuid() {
         String uuid = UUID.randomUUID().toString();
         String replace = uuid.replace(UUID_SEPARATOR, DEFAULE_SEPARATOR);
         return replace.substring(START_INDEX, MAX_LENGTH);

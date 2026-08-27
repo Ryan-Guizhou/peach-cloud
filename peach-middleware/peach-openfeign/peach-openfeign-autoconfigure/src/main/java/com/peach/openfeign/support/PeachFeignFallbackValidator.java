@@ -6,7 +6,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.openfeign.FeignClientFactoryBean;
 import org.springframework.core.env.Environment;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -131,9 +130,7 @@ public class PeachFeignFallbackValidator implements InitializingBean {
      * @return 若任一属性配置了有效类型（非 Void）则返回 {@code true}
      */
     private boolean hasFallback(FeignClientFactoryBean factoryBean) {
-        Class<?> fallback = readClass(factoryBean, "getFallback");
-        Class<?> fallbackFactory = readClass(factoryBean, "getFallbackFactory");
-        return isConfigured(fallback) || isConfigured(fallbackFactory);
+        return isConfigured(factoryBean.getFallback()) || isConfigured(factoryBean.getFallbackFactory());
     }
 
     /**
@@ -144,13 +141,13 @@ public class PeachFeignFallbackValidator implements InitializingBean {
      * @return 可读的服务名称
      */
     private String resolveClientName(FeignClientFactoryBean factoryBean) {
-        Object name = invokeObject(factoryBean, "getName");
-        if (name instanceof String value && !value.isBlank()) {
-            return value;
+        String name = factoryBean.getName();
+        if (name != null && !name.isBlank()) {
+            return name;
         }
-        Object contextId = invokeObject(factoryBean, "getContextId");
-        if (contextId instanceof String value && !value.isBlank()) {
-            return value;
+        String contextId = factoryBean.getContextId();
+        if (contextId != null && !contextId.isBlank()) {
+            return contextId;
         }
         return "unknown";
     }
@@ -163,39 +160,5 @@ public class PeachFeignFallbackValidator implements InitializingBean {
      */
     private boolean isConfigured(Class<?> clazz) {
         return clazz != null && !Void.TYPE.equals(clazz) && !Void.class.equals(clazz);
-    }
-
-    /**
-     * 通过反射调用 FeignClientFactoryBean 的指定 getter 方法，返回类型。
-     *
-     * @param factoryBean Feign 客户端工厂 Bean
-     * @param methodName  方法名（如 "getFallback"）
-     * @return 方法返回的 Class 对象，若异常则返回 null
-     */
-    private Class<?> readClass(FeignClientFactoryBean factoryBean, String methodName) {
-        Object value = invokeObject(factoryBean, methodName);
-        if (value instanceof Class) {
-            return (Class<?>) value;
-        }
-        return null;
-    }
-
-    /**
-     * 通用反射调用方法，用于获取 FeignClientFactoryBean 的某个属性。
-     *
-     * @param factoryBean Feign 客户端工厂 Bean
-     * @param methodName  方法名
-     * @return 方法返回值，若异常则返回 null
-     */
-    private Object invokeObject(FeignClientFactoryBean factoryBean, String methodName) {
-        try {
-            Method method = FeignClientFactoryBean.class.getDeclaredMethod(methodName);
-            method.setAccessible(true);
-            return method.invoke(factoryBean);
-        } catch (Exception ex) {
-            log.debug("[PeachFeign] Failed to invoke method '{}' on FeignClientFactoryBean: {}",
-                    methodName, ex.getMessage());
-        }
-        return null;
     }
 }

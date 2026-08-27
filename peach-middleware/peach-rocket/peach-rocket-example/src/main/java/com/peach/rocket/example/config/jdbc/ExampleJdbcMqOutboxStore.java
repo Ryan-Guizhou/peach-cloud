@@ -1,5 +1,7 @@
 package com.peach.rocket.example.config.jdbc;
 
+import java.time.ZoneId;
+
 import com.peach.rocket.outbox.MqOutboxEvent;
 import com.peach.rocket.outbox.MqOutboxStatus;
 import com.peach.rocket.outbox.MqOutboxStore;
@@ -20,6 +22,8 @@ import org.springframework.jdbc.core.RowMapper;
  * @since 2026/6/26
  */
 public class ExampleJdbcMqOutboxStore implements MqOutboxStore {
+    private static final String SQL_UPDATE_PREFIX = "UPDATE ";
+
 
     /**
      * 示例 Outbox 表名。
@@ -34,7 +38,7 @@ public class ExampleJdbcMqOutboxStore implements MqOutboxStore {
 
     @Override
     public void save(MqOutboxEvent event) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         jdbcTemplate.update("INSERT INTO " + TABLE_NAME
                         + " (message_id, topic, tag, business_key, payload, send_mode, status, retry_count, next_retry_time, created_at, updated_at)"
                         + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -52,20 +56,20 @@ public class ExampleJdbcMqOutboxStore implements MqOutboxStore {
 
     @Override
     public void markSent(String messageId) {
-        jdbcTemplate.update("UPDATE " + TABLE_NAME + " SET status = ?, sent_at = ?, updated_at = ? WHERE message_id = ?",
-                MqOutboxStatus.SENT.name(), Timestamp.valueOf(LocalDateTime.now()), Timestamp.valueOf(LocalDateTime.now()), messageId);
+        jdbcTemplate.update(SQL_UPDATE_PREFIX + TABLE_NAME + " SET status = ?, sent_at = ?, updated_at = ? WHERE message_id = ?",
+                MqOutboxStatus.SENT.name(), Timestamp.valueOf(LocalDateTime.now(ZoneId.systemDefault())), Timestamp.valueOf(LocalDateTime.now(ZoneId.systemDefault())), messageId);
     }
 
     @Override
     public void markFailed(String messageId) {
-        jdbcTemplate.update("UPDATE " + TABLE_NAME + " SET status = ?, retry_count = retry_count + 1, updated_at = ? WHERE message_id = ?",
-                MqOutboxStatus.RETRY.name(), Timestamp.valueOf(LocalDateTime.now()), messageId);
+        jdbcTemplate.update(SQL_UPDATE_PREFIX + TABLE_NAME + " SET status = ?, retry_count = retry_count + 1, updated_at = ? WHERE message_id = ?",
+                MqOutboxStatus.RETRY.name(), Timestamp.valueOf(LocalDateTime.now(ZoneId.systemDefault())), messageId);
     }
 
     @Override
     public boolean replay(String messageId) {
-        int updated = jdbcTemplate.update("UPDATE " + TABLE_NAME + " SET status = ?, retry_count = 0, updated_at = ? WHERE message_id = ? AND status = ?",
-                MqOutboxStatus.RETRY.name(), Timestamp.valueOf(LocalDateTime.now()), messageId, MqOutboxStatus.FAILED.name());
+        int updated = jdbcTemplate.update(SQL_UPDATE_PREFIX + TABLE_NAME + " SET status = ?, retry_count = 0, updated_at = ? WHERE message_id = ? AND status = ?",
+                MqOutboxStatus.RETRY.name(), Timestamp.valueOf(LocalDateTime.now(ZoneId.systemDefault())), messageId, MqOutboxStatus.FAILED.name());
         return updated == 1;
     }
 

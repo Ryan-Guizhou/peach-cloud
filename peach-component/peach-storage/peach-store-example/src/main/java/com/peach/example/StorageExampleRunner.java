@@ -28,10 +28,13 @@ import com.peach.response.UploadPartResult;
 import com.peach.response.UploadResult;
 import com.peach.storage.StorageTemplate;
 import com.peach.storage.spi.StorageProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -39,6 +42,8 @@ import java.util.Arrays;
 @Indexed
 @Component
 public class StorageExampleRunner implements CommandLineRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(StorageExampleRunner.class);
 
     private static final String OBJECT_KEY = "examples/hello.txt";
     private static final String COPY_KEY = "examples/copy/hello-copy.txt";
@@ -55,7 +60,7 @@ public class StorageExampleRunner implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         StorageProvider provider = storageTemplate.primary();
 
         UploadResult uploadResult = storageTemplate.upload(UploadObjectRequest.builder()
@@ -73,6 +78,8 @@ public class StorageExampleRunner implements CommandLineRunner {
                 .objectKey(OBJECT_KEY)
                 .build())) {
             text = readText(inputStream);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to download example object", ex);
         }
 
         ListObjectsResult objects = storageTemplate.list(ListObjectsRequest.builder()
@@ -81,16 +88,16 @@ public class StorageExampleRunner implements CommandLineRunner {
                 .build());
 
         String presignedUrl = storageTemplate.generatePresignedUrl(OBJECT_KEY, 1800);
-        System.out.println("presignedUrl= " + presignedUrl);
-        System.out.println("head = " + JSON.toJSONString(objectInfo));
+        log.info("presignedUrl={}", presignedUrl);
+        if (log.isInfoEnabled()) { log.info("head={}", JSON.toJSONString(objectInfo)); }
 
-        System.out.println("Peach store example finished.");
-        System.out.println("provider=" + uploadResult.getProviderName());
-        System.out.println("bucket=" + uploadResult.getBucketName());
-        System.out.println("objectKey=" + uploadResult.getObjectKey());
-        System.out.println("size=" + objectInfo.getSize());
-        System.out.println("downloadText=" + text);
-        System.out.println("listCount=" + objects.getItems().size());
+        log.info("Peach store example finished.");
+        log.info("provider={}", uploadResult.getProviderName());
+        log.info("bucket={}", uploadResult.getBucketName());
+        log.info("objectKey={}", uploadResult.getObjectKey());
+        log.info("size={}", objectInfo.getSize());
+        log.info("downloadText={}", text);
+        log.info("listCount={}", objects.getItems().size());
 
         if (provider.supports(StorageCapability.COPY)) {
             runCopyExample();
@@ -113,10 +120,10 @@ public class StorageExampleRunner implements CommandLineRunner {
                 .targetObjectKey(COPY_KEY)
                 .overwrite(true)
                 .build());
-        System.out.println("copyResult=" + JSON.toJSONString(copyResult));
+        if (log.isInfoEnabled()) { log.info("copyResult={}", JSON.toJSONString(copyResult)); }
     }
 
-    private void runMoveExample() throws Exception {
+    private void runMoveExample() {
         storageTemplate.upload(UploadObjectRequest.builder()
                 .objectKey(MOVE_SOURCE_KEY)
                 .content(UploadContent.of("move example", StandardCharsets.UTF_8))
@@ -128,10 +135,10 @@ public class StorageExampleRunner implements CommandLineRunner {
                 .targetObjectKey(MOVE_TARGET_KEY)
                 .overwrite(true)
                 .build());
-        System.out.println("moveResult=" + JSON.toJSONString(moveResult));
+        if (log.isInfoEnabled()) { log.info("moveResult={}", JSON.toJSONString(moveResult)); }
     }
 
-    private void runBatchDeleteExample() throws Exception {
+    private void runBatchDeleteExample() {
         storageTemplate.upload(UploadObjectRequest.builder()
                 .objectKey(BATCH_KEY_A)
                 .content(UploadContent.of("batch-a", StandardCharsets.UTF_8))
@@ -146,7 +153,7 @@ public class StorageExampleRunner implements CommandLineRunner {
         BatchDeleteResult batchDeleteResult = storageTemplate.batchDelete(BatchDeleteObjectsRequest.builder()
                 .objectKeys(Arrays.asList(BATCH_KEY_A, BATCH_KEY_B))
                 .build());
-        System.out.println("batchDeleteResult=" + JSON.toJSONString(batchDeleteResult));
+        if (log.isInfoEnabled()) { log.info("batchDeleteResult={}", JSON.toJSONString(batchDeleteResult)); }
     }
 
     private void runOssFrontendExamples(StorageProvider provider) {
@@ -157,7 +164,7 @@ public class StorageExampleRunner implements CommandLineRunner {
                             .expireSeconds(300)
                             .maxSize(10 * 1024 * 1024L)
                             .build());
-            System.out.println("frontendUploadToken=" + JSON.toJSONString(tokenResult));
+            if (log.isInfoEnabled()) { log.info("frontendUploadToken={}", JSON.toJSONString(tokenResult)); }
         }
 
         if (provider.supports(StorageCapability.MULTIPART_UPLOAD)) {
@@ -166,7 +173,7 @@ public class StorageExampleRunner implements CommandLineRunner {
                             .objectKey(MULTIPART_KEY)
                             .contentType("application/octet-stream")
                             .build());
-            System.out.println("multipartInit=" + JSON.toJSONString(initResult));
+            if (log.isInfoEnabled()) { log.info("multipartInit={}", JSON.toJSONString(initResult)); }
 
             UploadPartResult uploadPartResult = storageTemplate.prepareUploadPart(
                     UploadPartRequest.builder()
@@ -175,24 +182,28 @@ public class StorageExampleRunner implements CommandLineRunner {
                             .partNumber(1)
                             .expireSeconds(900)
                             .build());
-            System.out.println("multipartPartUrl=" + JSON.toJSONString(uploadPartResult));
+            if (log.isInfoEnabled()) { log.info("multipartPartUrl={}", JSON.toJSONString(uploadPartResult)); }
 
             AbortMultipartUploadResult abortResult = storageTemplate.abortMultipartUpload(
                     AbortMultipartUploadRequest.builder()
                             .objectKey(MULTIPART_KEY)
                             .uploadId(initResult.getUploadId())
                             .build());
-            System.out.println("multipartAbort=" + JSON.toJSONString(abortResult));
+            if (log.isInfoEnabled()) { log.info("multipartAbort={}", JSON.toJSONString(abortResult)); }
         }
     }
 
-    private String readText(InputStream inputStream) throws Exception {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
-        int length;
-        while ((length = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, length);
+    private String readText(InputStream inputStream) {
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, length);
+            }
+            return outputStream.toString(StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Failed to read storage object stream", ex);
         }
-        return outputStream.toString(StandardCharsets.UTF_8.name());
     }
 }

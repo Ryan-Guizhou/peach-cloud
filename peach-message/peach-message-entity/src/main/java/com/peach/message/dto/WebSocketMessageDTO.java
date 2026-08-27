@@ -37,5 +37,5 @@ public class WebSocketMessageDTO implements Serializable {
     private Long timestamp;
 
     @Schema(description = "消息体")
-    private Object payload;
+    private transient Object payload;
 }

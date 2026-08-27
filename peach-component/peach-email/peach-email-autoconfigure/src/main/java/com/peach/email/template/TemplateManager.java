@@ -24,7 +24,7 @@ public class TemplateManager {
 
     public TemplateManager(TemplateRenderer renderer, List<TemplateResolver> extraResolvers) {
         this.renderer = renderer;
-        if (extraResolvers != null && extraResolvers.size() > 0) {
+        if (extraResolvers != null && !extraResolvers.isEmpty()) {
             resolvers.addAll(extraResolvers);
         }
         ServiceLoader<TemplateResolver> loader = ServiceLoader.load(TemplateResolver.class);

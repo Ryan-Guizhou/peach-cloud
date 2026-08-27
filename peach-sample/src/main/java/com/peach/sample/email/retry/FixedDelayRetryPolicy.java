@@ -49,15 +49,6 @@ public class FixedDelayRetryPolicy implements RetryPolicy {
 
     @Override
     public boolean isRetryable(Throwable error) {
-        if (error instanceof SendFailedException) {
-            // 收件人地址/内容错误通常不可重试
-            return false;
-        }
-        if (error instanceof MessagingException) {
-            // 网络/连接错误可重试
-            return true;
-        }
-        // 默认其他异常可重试
-        return true;
+        return !(error instanceof SendFailedException);
     }
 }

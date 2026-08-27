@@ -46,11 +46,11 @@ public final class GatewayFilterSupport {
      * @return 直连远端地址；无法解析时返回 {@code unknown}
      */
     public static String remoteAddress(ServerWebExchange exchange) {
-        if (exchange.getRequest().getRemoteAddress() == null
-                || exchange.getRequest().getRemoteAddress().getAddress() == null) {
+        var remoteAddress = exchange.getRequest().getRemoteAddress();
+        if (remoteAddress == null || remoteAddress.getAddress() == null) {
             return "unknown";
         }
-        return exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
+        return remoteAddress.getAddress().getHostAddress();
     }
 
     /**

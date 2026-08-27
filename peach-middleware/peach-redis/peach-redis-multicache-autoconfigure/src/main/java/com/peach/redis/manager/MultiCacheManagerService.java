@@ -22,6 +22,9 @@ import java.util.function.Supplier;
  */
 public class MultiCacheManagerService {
 
+    private static final String DEFAULT_CACHE_NAME = "default";
+
+
     private MultiCacheManager cacheManager;
 
 
@@ -221,7 +224,7 @@ public class MultiCacheManagerService {
      * 使用默认缓存名
      */
     public  void put(Object key, Object value) {
-        put("default", key, value);
+        put(DEFAULT_CACHE_NAME, key, value);
     }
 
     /**
@@ -229,7 +232,7 @@ public class MultiCacheManagerService {
      */
     @Nullable
     public  <T> T get(Object key) {
-        return get("default", key);
+        return get(DEFAULT_CACHE_NAME, key);
     }
 
     /**
@@ -237,7 +240,7 @@ public class MultiCacheManagerService {
      */
     @NonNull
     public <T> T getOrDefault(Object key, T defaultValue) {
-        return getOrDefault("default", key, defaultValue);
+        return getOrDefault(DEFAULT_CACHE_NAME, key, defaultValue);
     }
 
     /**
@@ -245,14 +248,14 @@ public class MultiCacheManagerService {
      */
     @Nullable
     public <T> T getOrElse(Object key, Supplier<T> supplier) {
-        return getOrElse("default", key, supplier);
+        return getOrElse(DEFAULT_CACHE_NAME, key, supplier);
     }
 
     /**
      * 使用默认缓存名
      */
     public  void evict(Object key) {
-        evict("default", key);
+        evict(DEFAULT_CACHE_NAME, key);
     }
 
     // ==================== 配置相关 ====================

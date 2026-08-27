@@ -3,7 +3,6 @@ package com.peach.scheduled.external;
 import org.springframework.stereotype.Indexed;
 
 import com.peach.common.response.Response;
-import com.peach.scheduled.dto.HandlerRegistrationDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.openfeign.FallbackFactory;
@@ -28,6 +27,7 @@ public class SchedulerHandlerExternalClientFallbackFactory
      * 创建相关对象。
      */
     public SchedulerHandlerExternalClientFallbackFactory() {
+        // Intentionally empty.
     }
 
     /**
@@ -37,14 +37,6 @@ public class SchedulerHandlerExternalClientFallbackFactory
     public SchedulerHandlerExternalClient create(Throwable cause) {
         final String errorType = cause == null ? "unknown" : cause.getClass().getName();
         log.warn("Scheduler handler registration client entered fallback, errorType={}", errorType);
-        return new SchedulerHandlerExternalClient() {
-            /**
-             * 继承接口定义。
-             */
-            @Override
-            public Response register(HandlerRegistrationDTO request) {
-                return Response.fail("Scheduler handler registration is unavailable");
-            }
-        };
+        return request -> Response.fail("Scheduler handler registration is unavailable");
     }
 }

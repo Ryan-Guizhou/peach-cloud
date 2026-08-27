@@ -1,8 +1,9 @@
 package com.peach.fileservice.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.PageResult;
@@ -53,6 +54,7 @@ import com.peach.satoken.context.SecurityContextHolder;
 import com.peach.satoken.context.UserContext;
 import com.peach.service.MultiZoneStorage;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,6 +63,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -117,6 +120,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
         private final FileDomainProperties fileDomainProperties;
 
+        private final ObjectProvider<IFileDomainService> self;
+
     @Override
     public FileDigestVO calculateSha256(MultipartFile file) {
         FileDigestVO result = new FileDigestVO();
@@ -146,7 +151,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         check.setBizTag(data.getBizTag());
         check.setRemark(data.getRemark());
         check.setStorageProvider(data.getStorageProvider());
-        return upload(check, file);
+        return self.getObject().upload(check, file);
     }
 
     @Override
@@ -197,10 +202,10 @@ public class FileDomainServiceImpl implements IFileDomainService {
     public FileUploadVO upload(FileUploadCheckDTO data, MultipartFile file) {
         validateCheckData(data);
         if (file == null || file.isEmpty()) {
-            throw new RuntimeException("upload file is empty");
+            throw new IllegalArgumentException("upload file is empty");
         }
         if (data.getFileSize() != null && file.getSize() != data.getFileSize()) {
-            throw new RuntimeException("file size mismatch");
+            throw new IllegalArgumentException("file size mismatch");
         }
         FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(data.getSha256(), data.getFileSize());
         if (objectVO != null) {
@@ -208,8 +213,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
         }
         byte[] bytes = readFileBytes(file);
         verifyDigest(data, bytes);
-        String objectId = IDGeneratorUtil.UUID();
-        String fileId = IDGeneratorUtil.UUID();
+        String objectId = IDGeneratorUtil.generateUuid();
+        String fileId = IDGeneratorUtil.generateUuid();
         String objectKey = buildObjectKey(data.getBizType(), data.getFileName());
         UploadObjectRequest request = UploadObjectRequest.builder()
                 .bucketName(null)
@@ -245,9 +250,9 @@ public class FileDomainServiceImpl implements IFileDomainService {
             result.setFileId(uploadVO.getFileId());
             return result;
         }
-        String sessionId = IDGeneratorUtil.UUID();
-        String fileId = IDGeneratorUtil.UUID();
-        String objectId = IDGeneratorUtil.UUID();
+        String sessionId = IDGeneratorUtil.generateUuid();
+        String fileId = IDGeneratorUtil.generateUuid();
+        String objectId = IDGeneratorUtil.generateUuid();
         String objectKey = buildObjectKey(data.getBizType(), data.getFileName());
         String providerName = resolveProvider(data.getStorageProvider());
         InitiateMultipartUploadResult initiateResult = initiateMultipart(providerName, objectKey,
@@ -272,7 +277,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         sessionDO.setObjectKey(initiateResult.getObjectKey());
         sessionDO.setUploadId(initiateResult.getUploadId());
         sessionDO.setSessionStatus(FileDomainConstant.SessionStatus.INITIATED);
-        sessionDO.setExpireTime(format(LocalDateTime.now().plusMinutes(fileDomainProperties.getUploadSessionExpireMinutes())));
+        sessionDO.setExpireTime(format(LocalDateTime.now(ZoneId.systemDefault()).plusMinutes(fileDomainProperties.getUploadSessionExpireMinutes())));
         sessionDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
         sessionDO.fillCreateTime();
         fileUploadSessionDao.insert(sessionDO);
@@ -409,7 +414,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     public PageResult<FileRecordVO> pageList(FileQueryQO qo) {
         fillCurrentTenantOrg(qo);
-        PageInfo<FileRecordVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
+        PageInfo<FileRecordVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> fileRecordDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
     }
@@ -423,7 +428,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
             return;
         }
         String now = DateUtil.nowTime();
-        String expireTime = format(LocalDateTime.now().plusDays(fileDomainProperties.getRetentionDays()));
+        String expireTime = format(LocalDateTime.now(ZoneId.systemDefault()).plusDays(fileDomainProperties.getRetentionDays()));
         fileRecordDao.logicalDelete(fileId, FileDomainConstant.FileStatus.DELETED, now, expireTime,
                 FileDomainConstant.LogicDelete.YES, now, currentOperator());
         fileObjectDao.decreaseRefCount(recordVO.getObjectId(), 1, now, currentOperator());
@@ -443,7 +448,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         }
         if (StringUtil.isNotBlank(recordVO.getExpireDeleteTime())
                 && recordVO.getExpireDeleteTime().compareTo(DateUtil.nowTime()) < 0) {
-            throw new RuntimeException("file restore expired");
+            throw new IllegalArgumentException("file restore expired");
         }
         String now = DateUtil.nowTime();
         fileRecordDao.restoreByFileId(fileId, FileDomainConstant.FileStatus.ACTIVE,
@@ -483,7 +488,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
                 } else {
                     multiZoneStorage.abortMultipartUpload(sessionVO.getStorageProvider(), request);
                 }
-            } catch (Exception ex) {
+            } catch (RuntimeException ex) {
                 log.error("abort expired upload session failed, sessionId={}", sessionVO.getSessionId(), ex);
             }
             fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.EXPIRED,
@@ -542,7 +547,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     private FileRecordDO buildFileRecord(FileUploadCheckDTO data, String objectId, Long fileSize) {
         FileRecordDO recordDO = new FileRecordDO();
-        recordDO.setFileId(IDGeneratorUtil.UUID());
+        recordDO.setFileId(IDGeneratorUtil.generateUuid());
         recordDO.setObjectId(objectId);
         recordDO.setBizType(data.getBizType());
         recordDO.setBizId(data.getBizId());
@@ -561,7 +566,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     private FileRecordDO buildFileRecord(FileUploadSessionVO sessionVO, String objectId, Long fileSize) {
         FileRecordDO recordDO = new FileRecordDO();
-        recordDO.setFileId(IDGeneratorUtil.UUID());
+        recordDO.setFileId(IDGeneratorUtil.generateUuid());
         recordDO.setObjectId(objectId);
         recordDO.setBizType(sessionVO.getBizType());
         recordDO.setBizId(sessionVO.getBizId());
@@ -580,26 +585,26 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     private void validateCheckData(FileUploadCheckDTO data) {
         if (data == null) {
-            throw new RuntimeException("request data is empty");
+            throw new IllegalArgumentException("request data is empty");
         }
         if (StringUtil.isBlank(data.getSha256())) {
-            throw new RuntimeException("sha256 is empty");
+            throw new IllegalArgumentException("sha256 is empty");
         }
         if (data.getFileSize() == null || data.getFileSize() < 0) {
-            throw new RuntimeException("file size is invalid");
+            throw new IllegalArgumentException("file size is invalid");
         }
         if (StringUtil.isBlank(data.getFileName())) {
-            throw new RuntimeException("file name is empty");
+            throw new IllegalArgumentException("file name is empty");
         }
         if (StringUtil.isBlank(data.getBizType())) {
-            throw new RuntimeException("biz type is empty");
+            throw new IllegalArgumentException("biz type is empty");
         }
     }
 
     private FileRecordVO requireRecord(String fileId) {
         FileRecordVO recordVO = fileRecordDao.selectDetailByFileId(fileId);
         if (recordVO == null) {
-            throw new RuntimeException("file not found");
+            throw new IllegalArgumentException("file not found");
         }
         return recordVO;
     }
@@ -608,7 +613,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         FileRecordVO recordVO = requireRecord(fileId);
         if (FileDomainConstant.LogicDelete.YES.equals(recordVO.getIsDelete())
                 || !FileDomainConstant.FileStatus.ACTIVE.equals(recordVO.getFileStatus())) {
-            throw new RuntimeException("file is unavailable");
+            throw new IllegalArgumentException("file is unavailable");
         }
         return recordVO;
     }
@@ -616,7 +621,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     private FileUploadSessionVO requireSession(String sessionId) {
         FileUploadSessionVO sessionVO = fileUploadSessionDao.selectById(sessionId);
         if (sessionVO == null) {
-            throw new RuntimeException("upload session not found");
+            throw new IllegalArgumentException("upload session not found");
         }
         return sessionVO;
     }
@@ -624,12 +629,12 @@ public class FileDomainServiceImpl implements IFileDomainService {
     private FileUploadSessionVO requireActiveSession(String sessionId) {
         FileUploadSessionVO sessionVO = requireSession(sessionId);
         if (FileDomainConstant.LogicDelete.YES.equals(sessionVO.getIsDelete())) {
-            throw new RuntimeException("upload session deleted");
+            throw new IllegalArgumentException("upload session deleted");
         }
         if (FileDomainConstant.SessionStatus.ABORTED.equals(sessionVO.getSessionStatus())
                 || FileDomainConstant.SessionStatus.EXPIRED.equals(sessionVO.getSessionStatus())
                 || FileDomainConstant.SessionStatus.FAILED.equals(sessionVO.getSessionStatus())) {
-            throw new RuntimeException("upload session is unavailable");
+            throw new IllegalArgumentException("upload session is unavailable");
         }
         return sessionVO;
     }
@@ -684,12 +689,12 @@ public class FileDomainServiceImpl implements IFileDomainService {
     private void verifyDigest(FileUploadCheckDTO data, byte[] bytes) {
         String sha256 = digest(FileDomainConstant.DIGEST_SHA256_ALGORITHM, bytes);
         if (!data.getSha256().equalsIgnoreCase(sha256)) {
-            throw new RuntimeException("sha256 verify failed");
+            throw new IllegalArgumentException("sha256 verify failed");
         }
         if (StringUtil.isNotBlank(data.getMd5())) {
             String md5 = digest(FileDomainConstant.DIGEST_MD5_ALGORITHM, bytes);
             if (!data.getMd5().equalsIgnoreCase(md5)) {
-                throw new RuntimeException("md5 verify failed");
+                throw new IllegalArgumentException("md5 verify failed");
             }
         }
     }
@@ -712,15 +717,15 @@ public class FileDomainServiceImpl implements IFileDomainService {
             }
             String digest = toHex(sha256.digest());
             if (!sessionVO.getHashSha256().equalsIgnoreCase(digest)) {
-                throw new RuntimeException("uploaded object sha256 verify failed");
+                throw new IllegalStateException("uploaded object sha256 verify failed");
             }
             if (sessionVO.getFileSize() != null && !sessionVO.getFileSize().equals(total)) {
-                throw new RuntimeException("uploaded object size mismatch");
+                throw new IllegalStateException("uploaded object size mismatch");
             }
-        } catch (Exception ex) {
+        } catch (IOException | NoSuchAlgorithmException ex) {
             fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.FAILED,
                     DateUtil.nowTime(), currentOperator());
-            throw new RuntimeException(ex);
+            throw new IllegalStateException("multipart upload verification failed", ex);
         }
     }
 
@@ -767,12 +772,12 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     private String buildObjectKey(String bizType, String fileName) {
         String ext = extractExtension(fileName);
-        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern(FileDomainConstant.OBJECT_KEY_DATE_PATTERN));
+        String datePart = LocalDate.now(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(FileDomainConstant.OBJECT_KEY_DATE_PATTERN));
         StringBuilder key = new StringBuilder();
         key.append(fileDomainProperties.getObjectKeyPrefix()).append(FileDomainConstant.OBJECT_KEY_SEPARATOR)
                 .append(normalizePathSegment(bizType)).append(FileDomainConstant.OBJECT_KEY_SEPARATOR)
                 .append(datePart).append(FileDomainConstant.OBJECT_KEY_SEPARATOR)
-                .append(IDGeneratorUtil.UUID());
+                .append(IDGeneratorUtil.generateUuid());
         if (StringUtil.isNotBlank(ext)) {
             key.append(".").append(ext.toLowerCase(Locale.ROOT));
         }
@@ -795,7 +800,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         try {
             return file.getBytes();
         } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            throw new IllegalStateException("failed to read upload file bytes", ex);
         }
     }
 
@@ -804,8 +809,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
             MessageDigest messageDigest = MessageDigest.getInstance(algorithm);
             messageDigest.update(bytes);
             return toHex(messageDigest.digest());
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("digest algorithm not available: " + algorithm, ex);
         }
     }
 

@@ -10,6 +10,7 @@ public final class CurrentContext {
     private static final ThreadLocal<CurrentContextEntity> CONTEXT = new ThreadLocal<CurrentContextEntity>();
 
     private CurrentContext() {
+        throw new IllegalStateException("Utility class");
     }
 
     public static void setCurrentContext(CurrentContextEntity currentContextEntity) {

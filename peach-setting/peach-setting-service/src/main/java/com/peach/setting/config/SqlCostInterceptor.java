@@ -1,7 +1,10 @@
 package com.peach.setting.config;
 
-import org.apache.ibatis.executor.statement.BaseStatementHandler;
-import org.apache.ibatis.executor.statement.RoutingStatementHandler;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.plugin.Interceptor;
@@ -9,82 +12,64 @@ import org.apache.ibatis.plugin.Intercepts;
 import org.apache.ibatis.plugin.Invocation;
 import org.apache.ibatis.plugin.Plugin;
 import org.apache.ibatis.plugin.Signature;
+import org.apache.ibatis.reflection.MetaObject;
+import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StopWatch;
 
-import java.lang.reflect.Field;
-import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-
 /**
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2026/1/24 15:17
- * @Description SQL 耗时拦截器
+ * MyBatis SQL 耗时拦截器。
+ *
+ * <p>通过 MyBatis {@link MetaObject} 读取 {@code RoutingStatementHandler} 的 delegate 与
+ * mappedStatement，避免直接 {@code Field.setAccessible}。</p>
  */
 @Intercepts({
-        @Signature(type = StatementHandler.class, method = "query", args = {Statement.class, ResultHandler.class}),
-        @Signature(type = StatementHandler.class, method = "update", args = {Statement.class}),
-        @Signature(type = StatementHandler.class, method = "batch", args = {Statement.class})
-})
+        @Signature(type = StatementHandler.class, method = "query", args = { Statement.class, ResultHandler.class }),
+        @Signature(type = StatementHandler.class, method = "update", args = { Statement.class }),
+        @Signature(type = StatementHandler.class, method = "batch", args = { Statement.class }) })
 public class SqlCostInterceptor implements Interceptor {
+    private static final String PARAMETER_KEY = "parameter";
 
     private static Logger log = LoggerFactory.getLogger("SQL_LOG");
 
-    /**
-     * 慢查询阈值，单位毫秒。
-     */
+    // 慢查时间, 默认3秒， 单位毫秒
     private int longQueryTime;
-
-    private static Field DELEGATE_FIELD;
-
-    private static Field MAPPEDSTATEMENTD_FIELD;
 
     private String lineSeparator = System.getProperty("line.separator");
 
-    static {
-        try {
-            DELEGATE_FIELD = RoutingStatementHandler.class.getDeclaredField("delegate");
-            DELEGATE_FIELD.setAccessible(true);
-            MAPPEDSTATEMENTD_FIELD = BaseStatementHandler.class.getDeclaredField("mappedStatement");
-            MAPPEDSTATEMENTD_FIELD.setAccessible(true);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
-        StopWatch watch = null;
-        Map info = new HashMap();
+        Optional<Map<String, Object>> sqlInfo = genSqlInfo(invocation.getTarget());
+        if (sqlInfo.isEmpty()) {
+            return invocation.proceed();
+        }
+        Map<String, Object> info = sqlInfo.get();
+        StopWatch watch = new StopWatch(String.valueOf(info.get("id")));
+        watch.start();
         try {
-            info = genSqlInfo(invocation.getTarget()).get();
-            watch = new StopWatch((String) info.get("id"));
-            watch.start();
-            Object value = invocation.proceed();
-            watch.stop();
-            return value;
+            return invocation.proceed();
         } finally {
-            if (watch != null && watch.isRunning()) {
+            if (watch.isRunning()) {
                 watch.stop();
             }
-            if (watch != null && log.isDebugEnabled()) {
-                log.debug("==>" + info.get("id"));
-                log.debug("==>  Preparing: " + lineSeparator + info.get("sql"));
-                log.debug("==> Parameters: " + info.get("parameter"));
-                log.debug(watch.prettyPrint());
+            if (log.isDebugEnabled()) {
+                log.debug("==>{}", info.get("id"));
+                log.debug("==>  Preparing: {}{}", lineSeparator, info.get("sql"));
+                log.debug("==> Parameters: {}", info.get(PARAMETER_KEY));
+                if (log.isDebugEnabled()) {
+                    log.debug("\n{}", watch.prettyPrint());
+                }
             }
-            if (watch != null && watch.getTotalTimeMillis() > longQueryTime) {
+            if (watch.getTotalTimeMillis() > longQueryTime) {
                 log.warn("!!!slow query->{}!!!", info.get("id"));
                 log.warn("==>{}", info.get("id"));
-                log.warn("==>  Preparing: " + lineSeparator + info.get("sql"));
-                log.warn("==> Parameters: " + info.get("parameter"));
-                log.warn(watch.prettyPrint());
+                log.warn("==>  Preparing: {}{}", lineSeparator, info.get("sql"));
+                log.warn("==> Parameters: {}", info.get(PARAMETER_KEY));
+                if (log.isWarnEnabled()) {
+                    log.warn("\n{}", watch.prettyPrint());
+                }
             }
         }
     }
@@ -100,18 +85,25 @@ public class SqlCostInterceptor implements Interceptor {
     }
 
     private Optional<Map<String, Object>> genSqlInfo(Object statementHandler) {
-        Map<String, Object> result = new HashMap<>();
+        if (!(statementHandler instanceof StatementHandler routingHandler)) {
+            return Optional.empty();
+        }
         try {
-            if (statementHandler instanceof StatementHandler) {
-                StatementHandler delegateHandler = (StatementHandler) DELEGATE_FIELD.get(statementHandler);
-                MappedStatement mappedStatement = (MappedStatement) MAPPEDSTATEMENTD_FIELD.get(delegateHandler);
-                result.put("id", mappedStatement.getId());
-                result.put("sql", delegateHandler.getBoundSql().getSql());
-                result.put("parameter", delegateHandler.getBoundSql().getParameterObject());
+            MetaObject routingMeta = SystemMetaObject.forObject(routingHandler);
+            Object delegate = routingMeta.getValue("delegate");
+            if (!(delegate instanceof StatementHandler delegateHandler)) {
+                return Optional.empty();
             }
+            MetaObject delegateMeta = SystemMetaObject.forObject(delegateHandler);
+            MappedStatement mappedStatement = (MappedStatement) delegateMeta.getValue("mappedStatement");
+            Map<String, Object> result = new HashMap<>();
+            result.put("id", mappedStatement.getId());
+            result.put("sql", delegateHandler.getBoundSql().getSql());
+            result.put(PARAMETER_KEY, delegateHandler.getBoundSql().getParameterObject());
             return Optional.of(result);
         } catch (Exception ex) {
-            return Optional.of(result);
+            return Optional.empty();
         }
     }
+
 }

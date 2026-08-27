@@ -20,6 +20,7 @@ import com.peach.storage.spi.StorageProvider;
 import com.peach.util.StoragePathUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
@@ -344,7 +345,7 @@ public final class StorageProviderSupport {
      */
     private static void copySingleObject(StorageProvider provider, String sourceBucketName, String sourceObjectKey,
                                          String targetBucketName, String targetObjectKey,
-                                         boolean overwrite) throws Exception {
+                                         boolean overwrite) throws IOException {
         // 1. 源对象存在性检查
         if (!provider.exists(sourceBucketName, sourceObjectKey)) {
             throw new StorageException(StorageResultCode.OBJECT_NOT_FOUND,
@@ -498,6 +499,9 @@ public final class StorageProviderSupport {
      */
     private static String resolveTargetKey(StorageProvider provider, String sourceKey, String sourcePrefix,
                                            String targetPrefix) {
+        if (sourcePrefix == null) {
+            throw new StorageException(StorageResultCode.BAD_REQUEST, "Source prefix must not be null");
+        }
         // 特殊：源 Key 本身就是目录本身（如 "folder" 匹配源前缀 "folder/"）
         if (sourceKey.equals(removeTrailingSlash(sourcePrefix))) {
             return removeTrailingSlash(targetPrefix);

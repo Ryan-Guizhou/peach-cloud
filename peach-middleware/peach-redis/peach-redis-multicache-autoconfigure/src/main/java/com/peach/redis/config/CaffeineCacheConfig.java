@@ -14,17 +14,17 @@ public class CaffeineCacheConfig {
     /**
      * 访问后过期时间
      */
-    private long expireAfterAccess = 3 * 60 * 60 * 1000;
+    private long expireAfterAccess = 3L * 60 * 60 * 1000;
 
     /**
      * 写入后过期时间
      */
-    private long expireAfterWrite = 3 * 60 * 60 * 1000;
+    private long expireAfterWrite = 3L * 60 * 60 * 1000;
 
     /**
      * 写入后刷新时间
      */
-    private long refreshAfterWrite = 3 * 60 * 60 * 1000;
+    private long refreshAfterWrite = 3L * 60 * 60 * 1000;
 
     /**
      * 初始化大小

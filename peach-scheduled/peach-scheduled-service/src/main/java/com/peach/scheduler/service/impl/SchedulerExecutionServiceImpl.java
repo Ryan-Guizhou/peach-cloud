@@ -1,5 +1,7 @@
 package com.peach.scheduler.service.impl;
 
+import java.time.ZoneId;
+
 import org.springframework.stereotype.Indexed;
 
 import com.peach.scheduler.service.ISchedulerExecutionService;
@@ -75,7 +77,7 @@ public class SchedulerExecutionServiceImpl implements ISchedulerExecutionService
         SchedulerExecutionDO execution = required(executionId);
         SchedulerJobDO job = jobDao.selectById(execution.getJobId());
         long timeoutMs = job == null || job.getTimeoutMs() == null ? 1800000L : job.getTimeoutMs();
-        long leaseSeconds = Math.max(60L, Math.min(86400L, timeoutMs / 1000L + 120L));
+        long leaseSeconds = Math.clamp(timeoutMs / 1000L + 120L, 60L, 86400L);
         return lifecycleService.claim(executionId, executorInstance, leaseSeconds);
     }
 
@@ -105,12 +107,13 @@ public class SchedulerExecutionServiceImpl implements ISchedulerExecutionService
         }
         SchedulerJobDO job = jobDao.selectById(execution.getJobId());
         int maxAttempts = job == null || job.getMaxAttempts() == null ? 1 : Math.max(1, job.getMaxAttempts());
+        int retryIntervalSeconds = job == null || job.getRetryIntervalSeconds() == null
+                ? 60 : Math.max(1, job.getRetryIntervalSeconds());
         if (execution.getAttempt() < maxAttempts) {
-            int delaySeconds = job.getRetryIntervalSeconds() == null ? 60 : Math.max(1, job.getRetryIntervalSeconds());
             lifecycleService.scheduleRetry(event.getExecutionId(), event.getExecutorInstance(),
-                    LocalDateTime.now().plusSeconds(delaySeconds), event.getResultCode(), event.getErrorMessage());
+                    LocalDateTime.now(ZoneId.systemDefault()).plusSeconds(retryIntervalSeconds), event.getResultCode(), event.getErrorMessage());
         } else {
-            lifecycleService.scheduleRetry(event.getExecutionId(), event.getExecutorInstance(), LocalDateTime.now(),
+            lifecycleService.scheduleRetry(event.getExecutionId(), event.getExecutorInstance(), LocalDateTime.now(ZoneId.systemDefault()),
                     event.getResultCode(), event.getErrorMessage());
             lifecycleService.transition(event.getExecutionId(), ExecutionEvent.EXHAUST,
                     event.getResultCode(), event.getErrorMessage(), "system");

@@ -13,7 +13,7 @@ import java.util.function.Supplier;
  */
 public final class InstanceLazyLoader {
 
-    public static final Map<Class<?>, Object> INSTANCE_MAP = new ConcurrentHashMap<>();
+    protected static final Map<Class<?>, Object> INSTANCE_MAP = new ConcurrentHashMap<>();
 
 
     private InstanceLazyLoader() {

@@ -11,6 +11,7 @@ import jakarta.mail.Message;
 import jakarta.mail.Session;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.util.ByteArrayDataSource;
@@ -29,9 +30,25 @@ import java.util.Map;
  */
 public class MimeMessageBuilder {
 
+    private MimeMessageBuilder() {
+        throw new IllegalStateException("Utility class");
+    }
+
+    private static final String HTML_UTF8_CONTENT_TYPE = "text/html; charset=UTF-8";
+
+    private static final String UTF8_CHARSET = "UTF-8";
+
+
     /** 构建 MimeMessage */
-    public static MimeMessage build(Session session, EmailMessage message) throws Exception {
+    public static MimeMessage build(Session session, EmailMessage message) throws MessagingException {
         MimeMessage mime = new MimeMessage(session);
+        applyHeaders(mime, message);
+        applyBody(mime, message);
+        mime.saveChanges();
+        return mime;
+    }
+
+    private static void applyHeaders(MimeMessage mime, EmailMessage message) throws MessagingException {
         mime.setFrom(new InternetAddress(message.getFrom()));
 
         for (String s : message.getTo()) {
@@ -46,69 +63,87 @@ public class MimeMessageBuilder {
         if (message.getReplyTo() != null) {
             mime.setReplyTo(new InternetAddress[]{new InternetAddress(message.getReplyTo())});
         }
-        mime.setSubject(message.getSubject(), "UTF-8");
+        mime.setSubject(message.getSubject(), UTF8_CHARSET);
         if (message.getHeaders() != null) {
             for (Map.Entry<String,String> e : message.getHeaders().entrySet()) {
                 mime.addHeader(e.getKey(), e.getValue());
             }
         }
+    }
 
+    private static void applyBody(MimeMessage mime, EmailMessage message) throws MessagingException {
         boolean hasAttachments = message.getAttachments() != null && !message.getAttachments().isEmpty();
         boolean hasInline = message.getInlineResources() != null && !message.getInlineResources().isEmpty();
         boolean hasHtml = message.getHtml() != null;
         boolean hasText = message.getText() != null;
 
         if (hasAttachments || hasInline) {
-            MimeMultipart mixed = new MimeMultipart("mixed");
-            MimeBodyPart alternativePartHolder = new MimeBodyPart();
-            MimeMultipart alternative = new MimeMultipart("alternative");
-            if (hasText) {
-                MimeBodyPart textPart = new MimeBodyPart();
-                textPart.setText(message.getText(), "UTF-8");
-                alternative.addBodyPart(textPart);
-            }
-            if (hasHtml) {
-                MimeBodyPart htmlPartBody = new MimeBodyPart();
-                htmlPartBody.setContent(message.getHtml(), "text/html; charset=UTF-8");
-                if (hasInline) {
-                    MimeMultipart related = new MimeMultipart("related");
-                    MimeBodyPart htmlPart = new MimeBodyPart();
-                    htmlPart.setContent(message.getHtml(), "text/html; charset=UTF-8");
-                    related.addBodyPart(htmlPart);
-                    addInlineResources(related, message.getInlineResources());
-                    MimeBodyPart relatedHolder = new MimeBodyPart();
-                    relatedHolder.setContent(related);
-                    alternative.addBodyPart(relatedHolder);
-                } else {
-                    alternative.addBodyPart(htmlPartBody);
-                }
-            }
-            alternativePartHolder.setContent(alternative);
-            mixed.addBodyPart(alternativePartHolder);
+            mime.setContent(buildMixedContent(message, hasAttachments, hasInline, hasHtml, hasText));
+            return;
+        }
+        applySimpleBody(mime, message, hasHtml, hasText);
+    }
+
+    private static MimeMultipart buildMixedContent(EmailMessage message, boolean hasAttachments,
+                                                   boolean hasInline, boolean hasHtml, boolean hasText)
+            throws MessagingException {
+        MimeMultipart mixed = new MimeMultipart("mixed");
+        MimeBodyPart alternativePartHolder = new MimeBodyPart();
+        alternativePartHolder.setContent(buildAlternativeContent(message, hasInline, hasHtml, hasText));
+        mixed.addBodyPart(alternativePartHolder);
+        if (hasAttachments) {
             addAttachments(mixed, message.getAttachments());
-            mime.setContent(mixed);
-        } else {
-            if (hasHtml && hasText) {
-                MimeMultipart alternative = new MimeMultipart("alternative");
-                MimeBodyPart textPart = new MimeBodyPart();
-                textPart.setText(message.getText(), "UTF-8");
+        }
+        return mixed;
+    }
+
+    private static MimeMultipart buildAlternativeContent(EmailMessage message, boolean hasInline,
+                                                         boolean hasHtml, boolean hasText) throws MessagingException {
+        MimeMultipart alternative = new MimeMultipart("alternative");
+        if (hasText) {
+            MimeBodyPart textPart = new MimeBodyPart();
+            textPart.setText(message.getText(), UTF8_CHARSET);
+            alternative.addBodyPart(textPart);
+        }
+        if (hasHtml) {
+            if (hasInline) {
+                MimeMultipart related = new MimeMultipart("related");
                 MimeBodyPart htmlPart = new MimeBodyPart();
-                htmlPart.setContent(message.getHtml(), "text/html; charset=UTF-8");
-                alternative.addBodyPart(textPart);
-                alternative.addBodyPart(htmlPart);
-                mime.setContent(alternative);
-            } else if (hasHtml) {
-                mime.setContent(message.getHtml(), "text/html; charset=UTF-8");
-            } else if (hasText) {
-                mime.setText(message.getText(), "UTF-8");
+                htmlPart.setContent(message.getHtml(), HTML_UTF8_CONTENT_TYPE);
+                related.addBodyPart(htmlPart);
+                addInlineResources(related, message.getInlineResources());
+                MimeBodyPart relatedHolder = new MimeBodyPart();
+                relatedHolder.setContent(related);
+                alternative.addBodyPart(relatedHolder);
+            } else {
+                MimeBodyPart htmlPartBody = new MimeBodyPart();
+                htmlPartBody.setContent(message.getHtml(), HTML_UTF8_CONTENT_TYPE);
+                alternative.addBodyPart(htmlPartBody);
             }
         }
-        mime.saveChanges();
-        return mime;
+        return alternative;
+    }
+
+    private static void applySimpleBody(MimeMessage mime, EmailMessage message, boolean hasHtml, boolean hasText)
+            throws MessagingException {
+        if (hasHtml && hasText) {
+            MimeMultipart alternative = new MimeMultipart("alternative");
+            MimeBodyPart textPart = new MimeBodyPart();
+            textPart.setText(message.getText(), UTF8_CHARSET);
+            MimeBodyPart htmlPart = new MimeBodyPart();
+            htmlPart.setContent(message.getHtml(), HTML_UTF8_CONTENT_TYPE);
+            alternative.addBodyPart(textPart);
+            alternative.addBodyPart(htmlPart);
+            mime.setContent(alternative);
+        } else if (hasHtml) {
+            mime.setContent(message.getHtml(), HTML_UTF8_CONTENT_TYPE);
+        } else if (hasText) {
+            mime.setText(message.getText(), UTF8_CHARSET);
+        }
     }
 
     /** 添加附件到 mixed 部分 */
-    private static void addAttachments(MimeMultipart mixed, List<Attachment> attachments) throws Exception {
+    private static void addAttachments(MimeMultipart mixed, List<Attachment> attachments) throws MessagingException {
         if (attachments == null) {
             return;
         }
@@ -134,7 +169,7 @@ public class MimeMessageBuilder {
     }
 
     /** 添加内嵌资源到 related 部分（通过 CID 引用） */
-    private static void addInlineResources(MimeMultipart related, List<InlineResource> inlineResources) throws Exception {
+    private static void addInlineResources(MimeMultipart related, List<InlineResource> inlineResources) throws MessagingException {
         if (inlineResources == null) return;
         for (InlineResource r : inlineResources) {
             MimeBodyPart part = new MimeBodyPart();

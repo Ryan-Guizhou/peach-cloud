@@ -47,7 +47,7 @@ public class RedisStreamHandler {
     public void streamBindingGroup(String streamName, String group){
         boolean hasKey = hasKey(streamName);
         if(!hasKey){
-            Map<String,Object> map = new HashMap<>(2);
+            Map<String,Object> map = HashMap.newHashMap(2);
             map.put("key","value");
             RecordId recordId = redisStreamPushHandler.push(JSON.toJSONString(map));
             addGroup(streamName,group);

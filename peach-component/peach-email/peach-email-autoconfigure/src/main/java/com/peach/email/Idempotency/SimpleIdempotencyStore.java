@@ -1,7 +1,7 @@
-package com.peach.email.Idempotency;
+package com.peach.email.idempotency;
 
 import com.peach.email.core.SendResult;
-//import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Optional;
@@ -13,13 +13,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * @CreateTime 2025/12/9 15:19
  * @Description 简单幂等存储实现
  */
-//@Slf4j
+@Slf4j
 public class SimpleIdempotencyStore implements IdempotencyStore{
 
-    private final ConcurrentHashMap<String, SendResult> store = new ConcurrentHashMap<String, SendResult>();
+    private final ConcurrentHashMap<String, SendResult> store = new ConcurrentHashMap<>();
 
     public SimpleIdempotencyStore() {
-//      log.info("Init SimpleIdempotencyStore successful");
+      log.info("Init SimpleIdempotencyStore successful");
     }
 
     @Override
@@ -31,7 +31,7 @@ public class SimpleIdempotencyStore implements IdempotencyStore{
     }
 
     @Override
-    public void record(String key, SendResult result) {
+    public void storeSendResult(String key, SendResult result) {
         Optional.ofNullable(key)
                 .flatMap(k -> Optional.ofNullable(result))
                 .filter(SendResult::isSuccess)

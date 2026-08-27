@@ -1,8 +1,9 @@
 package com.peach.setting.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.PageResult;
@@ -58,7 +59,7 @@ public class NoticeServiceImpl implements INoticeService {
     @Override
     public PageResult<NoticeVO> noticePageList(NoticeQO qo) {
         fillCurrentTenantOrg(qo);
-        PageInfo<NoticeVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
+        PageInfo<NoticeVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> noticeDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
     }
@@ -75,7 +76,7 @@ public class NoticeServiceImpl implements INoticeService {
     public void saveNotice(NoticeDTO data) {
         NoticeDO noticeDO = new NoticeDO();
         BeanUtils.copyProperties(data, noticeDO);
-        noticeDO.setId(IDGeneratorUtil.UUID());
+        noticeDO.setId(IDGeneratorUtil.generateUuid());
         noticeDO.setReadCount(Optional.ofNullable(noticeDO.getReadCount()).orElse(PubCommonConst.LOGIC_FLASE));
         noticeDO.setPublishStatus(Optional.ofNullable(noticeDO.getPublishStatus()).orElse(SettingEnum.PublishStatus.DRAFT.getCode()));
         noticeDO.setInboxEnabled(Optional.ofNullable(noticeDO.getInboxEnabled()).orElse(PubCommonConst.LOGIC_FLASE));
@@ -114,15 +115,15 @@ public class NoticeServiceImpl implements INoticeService {
         update.setPublishStatus(SettingEnum.PublishStatus.PUBLISHED.getCode());
         update.fillModifyTime("");
         noticeDao.updateById(update);
-        if (!PubCommonConst.LOGIC_TRUE.equals(db.getInboxEnabled()) || PeachCollectionUtil.isEmpty(db.getReceiverIdList())) {
+        if (!PubCommonConst.LOGIC_TRUE.equals(db.getInboxEnabled()) || org.springframework.util.CollectionUtils.isEmpty(db.getReceiverIdList())) {
             log.info("无需同步站内信");
             return;
         }
         List<SiteMessageDO> list = new ArrayList<>();
         for (String receiverId : data.getReceiverIdList()) {
             SiteMessageDO message = new SiteMessageDO();
-            message.setId(IDGeneratorUtil.UUID());
-            message.setMessageCode(IDGeneratorUtil.UUID());
+            message.setId(IDGeneratorUtil.generateUuid());
+            message.setMessageCode(IDGeneratorUtil.generateUuid());
             message.setReceiverId(receiverId);
             message.setTitleMessageKey(db.getTitleMessageKey());
             message.setContentMessageKey(db.getContentMessageKey());
@@ -169,7 +170,7 @@ public class NoticeServiceImpl implements INoticeService {
     @Override
     public PageResult<SiteMessageVO> siteMessagePageList(SiteMessageQO qo) {
         fillCurrentTenantOrg(qo);
-        PageInfo<SiteMessageVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
+        PageInfo<SiteMessageVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> siteMessageDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
     }

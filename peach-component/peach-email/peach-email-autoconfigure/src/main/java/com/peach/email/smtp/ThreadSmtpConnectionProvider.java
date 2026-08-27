@@ -2,6 +2,7 @@ package com.peach.email.smtp;
 
 import com.peach.email.core.EmailContext;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
 
@@ -19,7 +20,7 @@ public class ThreadSmtpConnectionProvider implements SmtpConnectionProvider{
     private static final String SEPARATOR_COLON = ":";
 
     @Override
-    public Transport acquire(Session session, EmailContext context) throws Exception {
+    public Transport acquire(Session session, EmailContext context) throws MessagingException {
         String key = buildKey(context);
         Holder h = threadLocal.get();
         if (h == null) {
@@ -27,19 +28,7 @@ public class ThreadSmtpConnectionProvider implements SmtpConnectionProvider{
             threadLocal.set(h);
         }
         if (h.transport != null) {
-            boolean same = key.equals(h.key);
-            try {
-                if (!same || !h.transport.isConnected()) {
-                    try {
-                        h.transport.close();
-                    } catch (Exception ignored) {
-                        log.error("Failed to close SMTP transport", ignored);
-                    }
-                    h.transport = null;
-                }
-            } catch (Exception ignored) {
-                h.transport = null;
-            }
+            resetTransportIfStale(h, key);
         }
         if (h.transport == null) {
             Transport t = session.getTransport("smtp");
@@ -52,6 +41,41 @@ public class ThreadSmtpConnectionProvider implements SmtpConnectionProvider{
 
     @Override
     public void release(Transport transport) {/* 保留连接，不立即关闭 */}
+
+    /**
+     * 清理当前线程持有的 SMTP 连接，避免 ThreadLocal 泄漏。
+     */
+    public void clearThreadState() {
+        Holder holder = threadLocal.get();
+        if (holder != null && holder.transport != null) {
+            try {
+                holder.transport.close();
+            } catch (Exception ignored) {
+                log.debug("Failed to close SMTP transport during thread cleanup", ignored);
+            }
+        }
+        threadLocal.remove();
+    }
+
+    private void resetTransportIfStale(Holder holder, String key) {
+        boolean same = key.equals(holder.key);
+        try {
+            if (!same || !holder.transport.isConnected()) {
+                closeTransportQuietly(holder.transport);
+                holder.transport = null;
+            }
+        } catch (Exception ignored) {
+            holder.transport = null;
+        }
+    }
+
+    private void closeTransportQuietly(Transport transport) {
+        try {
+            transport.close();
+        } catch (Exception ignored) {
+            log.error("Failed to close SMTP transport", ignored);
+        }
+    }
 
     private static class Holder {
         Transport transport;

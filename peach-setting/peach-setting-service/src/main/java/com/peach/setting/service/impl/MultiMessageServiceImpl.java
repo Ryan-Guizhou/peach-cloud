@@ -1,8 +1,9 @@
 package com.peach.setting.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.common.IDGeneratorUtil;
 import com.peach.common.PageResult;
@@ -51,7 +52,7 @@ public class MultiMessageServiceImpl implements IMultiMessageService {
     @Override
     public PageResult<LanguageVO> languagePageList(LanguageQO qo) {
         fillCurrentTenantOrg(qo);
-        PageInfo<LanguageVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
+        PageInfo<LanguageVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> languageDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
     }
@@ -73,7 +74,7 @@ public class MultiMessageServiceImpl implements IMultiMessageService {
         if (PubCommonConst.LOGIC_TRUE.equals(languageDO.getDefaultFlag())) {
             languageDao.clearDefaultFlag();
         }
-        languageDO.setId(IDGeneratorUtil.UUID());
+        languageDO.setId(IDGeneratorUtil.generateUuid());
         languageDO.fillCreateTime();
         languageDao.insert(languageDO);
     }
@@ -105,7 +106,7 @@ public class MultiMessageServiceImpl implements IMultiMessageService {
     @Override
     public PageResult<MulitMessageVO> messagePageList(MulitMessageQO qo) {
         fillCurrentTenantOrg(qo);
-        PageInfo<MulitMessageVO> pageInfo = PageHelper.startPage(qo.getPageNum(), qo.getPageSize())
+        PageInfo<MulitMessageVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> multiMessageDao.selectByQO(qo));
         return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
     }
@@ -128,7 +129,7 @@ public class MultiMessageServiceImpl implements IMultiMessageService {
     public void saveMessage(MultiMessageDTO data) {
         MultiMessageDO multiMessageDO = new MultiMessageDO();
         BeanUtils.copyProperties(data, multiMessageDO);
-        multiMessageDO.setId(IDGeneratorUtil.UUID());
+        multiMessageDO.setId(IDGeneratorUtil.generateUuid());
         multiMessageDO.fillCreateTime();
         multiMessageDao.insert(multiMessageDO);
     }

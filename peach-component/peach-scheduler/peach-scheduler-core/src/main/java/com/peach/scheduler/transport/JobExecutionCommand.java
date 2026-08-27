@@ -22,6 +22,7 @@ public class JobExecutionCommand {
      * 创建相关对象。
      */
     public JobExecutionCommand() {
+        // Intentionally empty.
     }
 
     /**

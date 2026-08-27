@@ -16,9 +16,10 @@ public class CheckMsg implements Serializable {
 
     private boolean success = true;
 
-    private Object data;
+    private transient Object data;
 
     public CheckMsg() {
+        // Required for JavaBean serialization.
     }
 
     public String getMsgInfo() {
@@ -48,14 +49,14 @@ public class CheckMsg implements Serializable {
         return this;
     }
 
-    public CheckMsg success(CheckCallback callback) throws Exception {
+    public CheckMsg success(CheckCallback callback) {
         if (this.isSuccess()) {
             return callback.doCallback();
         }
         return this;
     }
 
-    public CheckMsg fail(CheckCallback callback) throws Exception {
+    public CheckMsg fail(CheckCallback callback) {
         if (!this.isSuccess()) {
             callback.doCallback();
         }
@@ -81,7 +82,7 @@ public class CheckMsg implements Serializable {
     }
 
     public static interface CheckCallback {
-        public CheckMsg doCallback() throws Exception;
+        CheckMsg doCallback();
     }
 
 }

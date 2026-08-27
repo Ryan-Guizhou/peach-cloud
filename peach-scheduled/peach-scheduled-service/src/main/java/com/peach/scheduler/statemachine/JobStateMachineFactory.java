@@ -27,6 +27,7 @@ public class JobStateMachineFactory {
      * 创建相关对象。
      */
     public JobStateMachineFactory() {
+        // Intentionally empty.
     }
 
     /**

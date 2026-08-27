@@ -7,6 +7,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
 
@@ -77,7 +78,7 @@ public class PeachCodeGenerator implements CodeGenerator {
                 : new TransactionTemplate(transactionManager);
         if (this.mysqlFallbackTransaction != null) {
             this.mysqlFallbackTransaction.setPropagationBehavior(
-                    TransactionTemplate.PROPAGATION_REQUIRES_NEW);
+                    TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         }
     }
 
@@ -100,41 +101,49 @@ public class PeachCodeGenerator implements CodeGenerator {
             return;
         }
         for (Map<String, Object> rule : rules) {
-            String tenantId = String.valueOf(rule.get("TENANT_ID"));
-            String prefix = String.valueOf(rule.get("CODE_PREFIX"));
-            long mysqlValue = ((Number) rule.get("CURRENT_VALUE")).longValue();
-            try {
-                String key = redisKey(tenantId, prefix);
-                Long redisValue = readRedisValue(key);
-                long maxValue = Math.max(mysqlValue, redisValue == null ? 0L : redisValue);
-                if (redisValue == null && mysqlValue > 0L) {
-                    log.warn("Redis code counter is missing. stage=startup-sync, tenantId={}, prefix={}, "
-                                    + "mysqlValue={}, action=restore-redis",
-                            tenantId, prefix, mysqlValue);
-                } else if (redisValue != null && redisValue < mysqlValue) {
-                    log.warn("Redis code counter is behind MySQL. stage=startup-sync, tenantId={}, prefix={}, "
-                                    + "redisValue={}, mysqlValue={}, action=advance-redis",
-                            tenantId, prefix, redisValue, mysqlValue);
-                } else if (redisValue != null && redisValue > mysqlValue) {
-                    log.warn("Redis code counter is ahead of MySQL. stage=startup-sync, tenantId={}, prefix={}, "
-                                    + "redisValue={}, mysqlValue={}, action=advance-mysql",
-                            tenantId, prefix, redisValue, mysqlValue);
-                }
-                if (maxValue > mysqlValue) {
-                    jdbcTemplate.update(
-                            "UPDATE PEACH_CODE_RULE SET CURRENT_VALUE = ?, "
-                                    + "MODIFY_TIME = DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s') "
-                                    + "WHERE TENANT_ID = ? AND CODE_PREFIX = ? AND CURRENT_VALUE < ?",
-                            maxValue, tenantId, prefix, maxValue);
-                }
-                if (maxValue > 0L) {
-                    setRedisIfGreater(key, maxValue);
-                }
-            } catch (Exception ex) {
-                log.warn("Code counter synchronization failed. stage=startup-sync, tenantId={}, prefix={}, "
-                                + "action=continue-with-current-state",
-                        tenantId, prefix, ex);
+            synchronizeSingleRule(rule);
+        }
+    }
+
+    private void synchronizeSingleRule(Map<String, Object> rule) {
+        String tenantId = String.valueOf(rule.get("TENANT_ID"));
+        String prefix = String.valueOf(rule.get("CODE_PREFIX"));
+        long mysqlValue = ((Number) rule.get("CURRENT_VALUE")).longValue();
+        try {
+            String key = redisKey(tenantId, prefix);
+            Long redisValue = readRedisValue(key);
+            long maxValue = Math.max(mysqlValue, redisValue == null ? 0L : redisValue);
+            logCounterDrift(tenantId, prefix, mysqlValue, redisValue);
+            if (maxValue > mysqlValue) {
+                jdbcTemplate.update(
+                        "UPDATE PEACH_CODE_RULE SET CURRENT_VALUE = ?, "
+                                + "MODIFY_TIME = DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s') "
+                                + "WHERE TENANT_ID = ? AND CODE_PREFIX = ? AND CURRENT_VALUE < ?",
+                        maxValue, tenantId, prefix, maxValue);
             }
+            if (maxValue > 0L) {
+                setRedisIfGreater(key, maxValue);
+            }
+        } catch (Exception ex) {
+            log.warn("Code counter synchronization failed. stage=startup-sync, tenantId={}, prefix={}, "
+                            + "action=continue-with-current-state",
+                    tenantId, prefix, ex);
+        }
+    }
+
+    private void logCounterDrift(String tenantId, String prefix, long mysqlValue, Long redisValue) {
+        if (redisValue == null && mysqlValue > 0L) {
+            log.warn("Redis code counter is missing. stage=startup-sync, tenantId={}, prefix={}, "
+                            + "mysqlValue={}, action=restore-redis",
+                    tenantId, prefix, mysqlValue);
+        } else if (redisValue != null && redisValue < mysqlValue) {
+            log.warn("Redis code counter is behind MySQL. stage=startup-sync, tenantId={}, prefix={}, "
+                            + "redisValue={}, mysqlValue={}, action=advance-redis",
+                    tenantId, prefix, redisValue, mysqlValue);
+        } else if (redisValue != null && redisValue > mysqlValue) {
+            log.warn("Redis code counter is ahead of MySQL. stage=startup-sync, tenantId={}, prefix={}, "
+                            + "redisValue={}, mysqlValue={}, action=advance-mysql",
+                    tenantId, prefix, redisValue, mysqlValue);
         }
     }
 
@@ -154,42 +163,9 @@ public class PeachCodeGenerator implements CodeGenerator {
         long maxValue = maxValue(rule.maxCodeWidth);
 
         if (properties.isRedisEnabled() && redisTemplate != null) {
-            try {
-                String key = redisKey(tenantId, prefix);
-                Long redisValue = readRedisValue(key);
-                if (redisValue == null && rule.currentValue > 0L) {
-                    log.warn("Redis code counter is missing. stage=allocate, tenantId={}, prefix={}, "
-                                    + "mysqlValue={}, action=restore-and-increment",
-                            tenantId, prefix, rule.currentValue);
-                } else if (redisValue != null && redisValue < rule.currentValue) {
-                    log.warn("Redis code counter is behind MySQL. stage=allocate, tenantId={}, prefix={}, "
-                                    + "redisValue={}, mysqlValue={}, action=advance-and-increment",
-                            tenantId, prefix, redisValue, rule.currentValue);
-                }
-                Long value = redisTemplate.execute(INCREMENT_SCRIPT,
-                        List.of(key),
-                        Long.toString(rule.currentValue), Long.toString(maxValue));
-                if (value == null || value < 0L) {
-                    throw new CodeGeneratorException("Code sequence exceeds MAX_CODE_WIDTH: " + prefix);
-                }
-                try {
-                    persistMysqlWatermark(tenantId, prefix, value);
-                } catch (Exception persistEx) {
-                    log.error("MySQL watermark persistence failed after Redis allocation. "
-                                    + "stage=allocate, tenantId={}, prefix={}, redisValue={}, action=fail-closed",
-                            tenantId, prefix, value, persistEx);
-                    throw new CodeGeneratorException("Failed to persist Redis code watermark: " + prefix,
-                            persistEx);
-                }
-                log.debug("Business code allocated. source=redis, tenantId={}, prefix={}, sequence={}, code={}",
-                        tenantId, prefix, value, format(prefix, value, rule.maxCodeWidth));
-                return format(prefix, value, rule.maxCodeWidth);
-            } catch (CodeGeneratorException ex) {
-                throw ex;
-            } catch (Exception redisEx) {
-                log.warn("Redis code allocation failed. stage=allocate, tenantId={}, prefix={}, "
-                                + "action=mysql-fallback",
-                        tenantId, prefix, redisEx);
+            String redisCode = allocateFromRedis(tenantId, prefix, rule, maxValue);
+            if (redisCode != null) {
+                return redisCode;
             }
         }
 
@@ -210,6 +186,49 @@ public class PeachCodeGenerator implements CodeGenerator {
         log.info("Business code allocated. source=mysql-fallback, tenantId={}, prefix={}, sequence={}, code={}",
                 tenantId, prefix, value, code);
         return code;
+    }
+
+    private String allocateFromRedis(String tenantId, String prefix, CodeRule rule, long maxValue) {
+        try {
+            String key = redisKey(tenantId, prefix);
+            Long redisValue = readRedisValue(key);
+            if (redisValue == null && rule.currentValue > 0L) {
+                log.warn("Redis code counter is missing. stage=allocate, tenantId={}, prefix={}, "
+                                + "mysqlValue={}, action=restore-and-increment",
+                        tenantId, prefix, rule.currentValue);
+            } else if (redisValue != null && redisValue < rule.currentValue) {
+                log.warn("Redis code counter is behind MySQL. stage=allocate, tenantId={}, prefix={}, "
+                                + "redisValue={}, mysqlValue={}, action=advance-and-increment",
+                        tenantId, prefix, redisValue, rule.currentValue);
+            }
+            Long value = redisTemplate.execute(INCREMENT_SCRIPT,
+                    List.of(key),
+                    Long.toString(rule.currentValue), Long.toString(maxValue));
+            if (value == null || value < 0L) {
+                throw new CodeGeneratorException("Code sequence exceeds MAX_CODE_WIDTH: " + prefix);
+            }
+            persistMysqlWatermarkSafely(tenantId, prefix, value);
+            log.debug("Business code allocated. source=redis, tenantId={}, prefix={}, sequence={}, code={}",
+                    tenantId, prefix, value, format(prefix, value, rule.maxCodeWidth));
+            return format(prefix, value, rule.maxCodeWidth);
+        } catch (CodeGeneratorException ex) {
+            throw ex;
+        } catch (Exception redisEx) {
+            log.warn("Redis code allocation failed. stage=allocate, tenantId={}, prefix={}, action=mysql-fallback",
+                    tenantId, prefix, redisEx);
+            return null;
+        }
+    }
+
+    private void persistMysqlWatermarkSafely(String tenantId, String prefix, long value) {
+        try {
+            persistMysqlWatermark(tenantId, prefix, value);
+        } catch (Exception persistEx) {
+            log.error("MySQL watermark persistence failed after Redis allocation. "
+                            + "stage=allocate, tenantId={}, prefix={}, redisValue={}, action=fail-closed",
+                    tenantId, prefix, value, persistEx);
+            throw new CodeGeneratorException("Failed to persist Redis code watermark: " + prefix, persistEx);
+        }
     }
 
     /**

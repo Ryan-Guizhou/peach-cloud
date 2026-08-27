@@ -5,10 +5,14 @@ package com.peach.redis.constant;
  * @Version 1.0.0
  * @CreateTime 2025/12/19 17:51
  */
-public interface MultiCacheConstant {
+public final class MultiCacheConstant {
 
-    String CACHE_MESSAGE_TOPIC = "cache-message-topic";
+    private MultiCacheConstant() {
+        throw new IllegalStateException("Utility class");
+    }
 
-    String REDIS_KEY_SEPARATOR = ":";
+    public static final String CACHE_MESSAGE_TOPIC = "cache-message-topic";
+
+    public static final String REDIS_KEY_SEPARATOR = ":";
 
 }

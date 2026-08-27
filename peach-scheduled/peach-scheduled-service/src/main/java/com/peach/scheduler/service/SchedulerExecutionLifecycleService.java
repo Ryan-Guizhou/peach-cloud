@@ -1,17 +1,21 @@
 package com.peach.scheduler.service;
 
+import java.time.ZoneId;
+
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Indexed;
 
 import com.peach.scheduled.common.ExecutionEvent;
 import com.peach.scheduled.common.ExecutionState;
 import com.peach.scheduler.dao.SchedulerExecutionAttemptDao;
+import com.peach.scheduler.dao.ExecutionCompletionCommand;
 import com.peach.scheduler.dao.SchedulerExecutionDao;
 import com.peach.scheduler.dao.SchedulerStateLogDao;
 import com.peach.scheduled.entity.SchedulerExecutionDO;
 import com.peach.scheduler.statemachine.ExecutionStateMachineFactory;
 import com.peach.scheduler.statemachine.StateMachineTransitionResolver;
-import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -23,10 +27,14 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Indexed
 public class SchedulerExecutionLifecycleService {
+    private static final String ENTITY_TYPE_EXECUTION = "EXECUTION";
+
     private final SchedulerExecutionDao executionDao;
     private final SchedulerExecutionAttemptDao executionAttemptDao;
     private final SchedulerStateLogDao stateLogDao;
     private final ExecutionStateMachineFactory stateMachineFactory;
+
+    private final ObjectProvider<SchedulerExecutionLifecycleService> self;
 
     /**
      * 创建相关对象。
@@ -40,11 +48,13 @@ public class SchedulerExecutionLifecycleService {
             SchedulerExecutionDao executionDao,
             SchedulerExecutionAttemptDao executionAttemptDao,
             SchedulerStateLogDao stateLogDao,
-            ExecutionStateMachineFactory stateMachineFactory) {
+            ExecutionStateMachineFactory stateMachineFactory,
+            ObjectProvider<SchedulerExecutionLifecycleService> self) {
         this.executionDao = executionDao;
         this.executionAttemptDao = executionAttemptDao;
         this.stateLogDao = stateLogDao;
         this.stateMachineFactory = stateMachineFactory;
+        this.self = self;
     }
 
     /**
@@ -54,7 +64,7 @@ public class SchedulerExecutionLifecycleService {
      */
     @Transactional
     public void queue(String executionId) {
-        transition(executionId, ExecutionEvent.QUEUE, null, null, "system");
+        self.getObject().transition(executionId, ExecutionEvent.QUEUE, null, null, "system");
     }
 
     /**
@@ -71,12 +81,12 @@ public class SchedulerExecutionLifecycleService {
         if (execution.getState() != ExecutionState.QUEUED) return false;
         ExecutionState target = StateMachineTransitionResolver.transit(
                 stateMachineFactory.create(execution.getState()), ExecutionEvent.CLAIM);
-        LocalDateTime start = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.now(ZoneId.systemDefault());
         int updated = executionDao.claim(
                 executionId, executorInstance, start.plusSeconds(leaseSeconds), execution.getVersion());
         if (updated != 1) return false;
         executionAttemptDao.insertStart(executionId, execution.getAttempt(), executorInstance, start);
-        stateLogDao.insert("EXECUTION", executionId, execution.getState().name(),
+        stateLogDao.insert(ENTITY_TYPE_EXECUTION, executionId, execution.getState().name(),
                 ExecutionEvent.CLAIM.name(), target.name(), executorInstance, null);
         return true;
     }
@@ -95,15 +105,19 @@ public class SchedulerExecutionLifecycleService {
         SchedulerExecutionDO execution = required(executionId);
         ExecutionState target = StateMachineTransitionResolver.transit(
                 stateMachineFactory.create(execution.getState()), event);
-        LocalDateTime finish = LocalDateTime.now();
+        LocalDateTime finish = LocalDateTime.now(ZoneId.systemDefault());
         long durationMs = execution.getStartTime() == null
-                ? 0L : Duration.between(execution.getStartTime(), finish).toMillis();
-        int updated = executionDao.complete(executionId, execution.getState().name(), target.name(),
-                execution.getVersion(), executorInstance, finish, durationMs, errorType, errorMessage);
+                ? 0L
+                : ChronoUnit.MILLIS.between(
+                        execution.getStartTime().atZone(ZoneId.systemDefault()).toInstant(),
+                        finish.atZone(ZoneId.systemDefault()).toInstant());
+        int updated = executionDao.complete(new ExecutionCompletionCommand(
+                executionId, execution.getState().name(), target.name(), execution.getVersion(),
+                executorInstance, finish, durationMs, errorType, errorMessage));
         if (updated != 1) throw new IllegalStateException("Execution completion rejected by optimistic lock");
         executionAttemptDao.complete(executionId, execution.getAttempt(), target.name(), finish, durationMs,
                 errorType, errorMessage);
-        stateLogDao.insert("EXECUTION", executionId, execution.getState().name(), event.name(),
+        stateLogDao.insert(ENTITY_TYPE_EXECUTION, executionId, execution.getState().name(), event.name(),
                 target.name(), executorInstance, null);
     }
 
@@ -124,12 +138,15 @@ public class SchedulerExecutionLifecycleService {
         int updated = executionDao.scheduleRetry(executionId, execution.getVersion(), nextRetryTime,
                 errorType, errorMessage);
         if (updated != 1) throw new IllegalStateException("Execution retry scheduling rejected by optimistic lock");
-        LocalDateTime finish = LocalDateTime.now();
+        LocalDateTime finish = LocalDateTime.now(ZoneId.systemDefault());
         long durationMs = execution.getStartTime() == null
-                ? 0L : Duration.between(execution.getStartTime(), finish).toMillis();
+                ? 0L
+                : ChronoUnit.MILLIS.between(
+                        execution.getStartTime().atZone(ZoneId.systemDefault()).toInstant(),
+                        finish.atZone(ZoneId.systemDefault()).toInstant());
         executionAttemptDao.complete(executionId, execution.getAttempt(), target.name(), finish, durationMs,
                 errorType, errorMessage);
-        stateLogDao.insert("EXECUTION", executionId, execution.getState().name(),
+        stateLogDao.insert(ENTITY_TYPE_EXECUTION, executionId, execution.getState().name(),
                 ExecutionEvent.FAIL.name(), target.name(), executorInstance, null);
     }
 
@@ -146,7 +163,7 @@ public class SchedulerExecutionLifecycleService {
                 stateMachineFactory.create(execution.getState()), ExecutionEvent.RETRY);
         int updated = executionDao.requeueRetry(executionId, execution.getVersion());
         if (updated != 1) return false;
-        stateLogDao.insert("EXECUTION", executionId, execution.getState().name(),
+        stateLogDao.insert(ENTITY_TYPE_EXECUTION, executionId, execution.getState().name(),
                 ExecutionEvent.RETRY.name(), target.name(), "system", null);
         return true;
     }
@@ -168,7 +185,7 @@ public class SchedulerExecutionLifecycleService {
         int updated = executionDao.updateState(executionId, execution.getState().name(), target.name(),
                 execution.getVersion(), errorType, errorMessage);
         if (updated != 1) throw new IllegalStateException("Concurrent execution update detected");
-        stateLogDao.insert("EXECUTION", executionId, execution.getState().name(), event.name(),
+        stateLogDao.insert(ENTITY_TYPE_EXECUTION, executionId, execution.getState().name(), event.name(),
                 target.name(), operator, null);
     }
 

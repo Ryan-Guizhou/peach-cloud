@@ -84,6 +84,7 @@ public class CompleteMultipartUploadRequest extends StorageObjectRequest {
             return this;
         }
 
+        @Override
         public CompleteMultipartUploadRequest build() {
             validate();
             if (uploadId == null || uploadId.isBlank()) {

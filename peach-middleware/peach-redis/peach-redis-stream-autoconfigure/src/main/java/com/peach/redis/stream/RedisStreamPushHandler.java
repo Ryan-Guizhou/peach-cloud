@@ -30,11 +30,11 @@ public class RedisStreamPushHandler {
      * @return
      */
     public RecordId push(String message){
-        ObjectRecord<String, String> record = StreamRecords.newRecord()
+        ObjectRecord<String, String> streamRecord = StreamRecords.newRecord()
                 .in(redisStreamProperties.getStreamName())
                 .ofObject(message)
                 .withId(RecordId.autoGenerate());
-        RecordId recordId = this.stringRedisTemplate.opsForStream().add(record);
+        RecordId recordId = this.stringRedisTemplate.opsForStream().add(streamRecord);
         log.info("redis streamName : {} message : {}", redisStreamProperties.getStreamName(),message);
         return recordId;
     }

@@ -22,6 +22,7 @@ public class PeachScheduledApplication {
      * 创建相关对象。
      */
     public PeachScheduledApplication() {
+        // Intentionally empty.
     }
 
     /**

@@ -39,7 +39,7 @@ public class CommonValidator {
      * @param target 被检验的对象
      */
     public void validate(Object target) {
-        validate(target, new Class<?>[]{Default.class});
+        validate(target, Default.class);
     }
 
     /**
@@ -48,7 +48,7 @@ public class CommonValidator {
      * @param group 分组
      */
     public void validate(Object target, Class<?> group) {
-        validate(target, new Class<?>[]{group});
+        validate(target, group);
     }
 
     /**
@@ -83,7 +83,7 @@ public class CommonValidator {
      * @return 错误信息集合
      */
     public Set<String> getValidationMessages(Object target) {
-        return getValidationMessages(target, new Class<?>[]{Default.class});
+        return getValidationMessages(target, Default.class);
     }
 
     /**
@@ -93,7 +93,7 @@ public class CommonValidator {
      * @return 错误信息集合
      */
     public Set<String> getValidationMessages(Object target, Class<?> group) {
-        return getValidationMessages(target, new Class<?>[]{group});
+        return getValidationMessages(target, group);
     }
 
     /**
@@ -119,7 +119,7 @@ public class CommonValidator {
      * @return 详细错误信息集合
      */
     public Set<ValidationDetail> getValidationErrors(Object target) {
-        return getValidationErrors(target, new Class<?>[]{Default.class});
+        return getValidationErrors(target, Default.class);
     }
 
     /**
@@ -129,7 +129,7 @@ public class CommonValidator {
      * @return 详细错误信息集合
      */
     public Set<ValidationDetail> getValidationErrors(Object target, Class<?> group) {
-        return getValidationErrors(target, new Class<?>[]{group});
+        return getValidationErrors(target, group);
     }
 
     /**
@@ -156,7 +156,7 @@ public class CommonValidator {
      * @return 是否有效
      */
     public boolean isValid(Object target) {
-        return isValid(target, new Class<?>[]{Default.class});
+        return isValid(target, Default.class);
     }
 
     /**
@@ -166,7 +166,7 @@ public class CommonValidator {
      * @return 是否有效
      */
     public boolean isValid(Object target, Class<?> group) {
-        return isValid(target, new Class<?>[]{group});
+        return isValid(target, group);
     }
 
     /**
@@ -190,7 +190,7 @@ public class CommonValidator {
      * @param propertyName 属性名称
      */
     public void validateProperty(Object target, String propertyName) {
-        validateProperty(target, propertyName, new Class<?>[]{Default.class});
+        validateProperty(target, propertyName, Default.class);
     }
 
     /**
@@ -200,7 +200,7 @@ public class CommonValidator {
      * @param group 分组
      */
     public void validateProperty(Object target, String propertyName, Class<?> group) {
-        validateProperty(target, propertyName, new Class<?>[]{group});
+        validateProperty(target, propertyName, group);
     }
 
     /**

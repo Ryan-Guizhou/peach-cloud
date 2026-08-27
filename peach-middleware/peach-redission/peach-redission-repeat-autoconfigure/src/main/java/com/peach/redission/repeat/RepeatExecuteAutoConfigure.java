@@ -21,7 +21,7 @@ import org.springframework.context.annotation.Bean;
 @AutoConfiguration
 public class RepeatExecuteAutoConfigure {
 
-    @Bean(LockInfoType.REPEAT_EXCUTED)
+    @Bean(LockInfoType.REPEAT_EXECUTED)
     public LockInfoHandle repeatExecuteLimitHandle(){
         return new RepeatExecuteLimitHandle();
     }

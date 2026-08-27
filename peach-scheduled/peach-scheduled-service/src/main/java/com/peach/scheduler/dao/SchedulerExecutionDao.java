@@ -86,15 +86,7 @@ public interface SchedulerExecutionDao extends PeachDao<SchedulerExecutionDO, Sc
      * @param errorMessage 脱敏后的失败摘要
      * @return 受影响行数
      */
-    int complete(@Param("executionId") String executionId,
-                 @Param("fromState") String fromState,
-                 @Param("toState") String toState,
-                 @Param("version") Long version,
-                 @Param("executorInstance") String executorInstance,
-                 @Param("finishTime") LocalDateTime finishTime,
-                 @Param("durationMs") Long durationMs,
-                 @Param("errorType") String errorType,
-                 @Param("errorMessage") String errorMessage);
+    int complete(ExecutionCompletionCommand command);
 
     /**
      * 将失败执行实例转入等待重试并记录下次可重试时间。

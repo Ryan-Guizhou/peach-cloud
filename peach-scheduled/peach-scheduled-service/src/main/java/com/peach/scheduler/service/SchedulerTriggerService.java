@@ -37,6 +37,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Indexed
 public class SchedulerTriggerService implements ScheduleTriggerHandler {
+    private static final String SYSTEM_OPERATOR = "system";
+
 
     private static final Logger log = LoggerFactory.getLogger(SchedulerTriggerService.class);
 
@@ -118,7 +120,7 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
         SchedulerJobDO job = jobDao.selectByIdForUpdate(execution.getJobId());
         if (job == null || job.getState() == JobState.DELETED) {
             lifecycleService.transition(executionId, ExecutionEvent.EXHAUST,
-                    "JOB_UNAVAILABLE", "Scheduler job is no longer available", "system");
+                    "JOB_UNAVAILABLE", "Scheduler job is no longer available", SYSTEM_OPERATOR);
             return false;
         }
         if (!lifecycleService.requeueRetry(executionId)) {
@@ -146,7 +148,7 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
         SchedulerJobDO job = jobDao.selectByIdForUpdate(execution.getJobId());
         if (job == null || job.getState() == JobState.DELETED) {
             lifecycleService.transition(executionId, ExecutionEvent.CANCEL,
-                    "JOB_UNAVAILABLE", "Scheduler job is no longer available", "system");
+                    "JOB_UNAVAILABLE", "Scheduler job is no longer available", SYSTEM_OPERATOR);
             return false;
         }
         if (executionDao.countActiveByJobId(job.getId()) > 0) {
@@ -186,7 +188,7 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
         int activeCount = executionDao.countActiveByJobId(job.getId());
         if (activeCount > 0 && policy == ConcurrencyPolicy.SKIP_IF_RUNNING) {
             lifecycleService.transition(execution.getExecutionId(), ExecutionEvent.SKIP,
-                    "CONCURRENCY_POLICY", "Skipped because another occurrence is active", "system");
+                    "CONCURRENCY_POLICY", "Skipped because another occurrence is active", SYSTEM_OPERATOR);
             log.info("Scheduler occurrence skipped by concurrency policy, executionId={}, jobCode={}",
                     execution.getExecutionId(), job.getJobCode());
             return execution.getExecutionId();

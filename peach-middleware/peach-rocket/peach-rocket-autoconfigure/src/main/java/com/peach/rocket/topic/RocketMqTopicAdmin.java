@@ -109,6 +109,9 @@ public class RocketMqTopicAdmin implements SmartInitializingSingleton {
                 createTopicOnAllBrokers(admin, clusterInfo, topic);
             }
 
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new MqException("Failed to auto create RocketMQ topic", ex);
         } catch (Exception ex) {
             throw new MqException("Failed to auto create RocketMQ topic", ex);
         } finally {

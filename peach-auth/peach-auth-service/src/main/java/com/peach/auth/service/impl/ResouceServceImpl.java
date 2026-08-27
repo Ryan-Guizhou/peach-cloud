@@ -1,8 +1,9 @@
 package com.peach.auth.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dto.ResourceDTO;
 import com.peach.auth.dao.ResourceDao;
@@ -34,9 +35,8 @@ public class ResouceServceImpl implements IResouceService {
 
     @Override
     public PageInfo<ResourceVO> pageList(ResourceQO resourceQO) {
-        PageInfo<ResourceVO> pageInfo = PageHelper.startPage(resourceQO.getPageNum(), resourceQO.getPageSize())
+        return PageMethod.startPage(resourceQO.getPageNum(), resourceQO.getPageSize())
                 .doSelectPageInfo(() -> resourceDao.selectByQO(resourceQO));
-        return pageInfo;
     }
 
     @Override

@@ -23,6 +23,7 @@ public class PeachSchedulerRocketAutoConfiguration {
      * 创建相关对象。
      */
     public PeachSchedulerRocketAutoConfiguration() {
+        // Intentionally empty.
     }
 
     /**

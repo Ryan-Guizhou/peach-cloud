@@ -58,7 +58,7 @@ public class MessagePublishDTO implements Serializable {
     private String url;
 
     @Schema(description = "扩展数据")
-    private Map<String, Object> extra;
+    private transient Map<String, Object> extra;
 
     @Schema(description = "是否需要站内信持久化")
     private Boolean persistent;

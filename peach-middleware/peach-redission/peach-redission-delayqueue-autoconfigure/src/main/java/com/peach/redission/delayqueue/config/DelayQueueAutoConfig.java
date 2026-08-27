@@ -25,22 +25,19 @@ public class DelayQueueAutoConfig {
     @Bean
     @ConditionalOnMissingBean(DelayQueueBasePart.class)
     public DelayQueueBasePart delayQueueBasePart(RedissonClient redissonClient, DelayQueueProperties delayQueueProperties){
-        DelayQueueBasePart delayQueueBasePart = new DelayQueueBasePart(redissonClient,delayQueueProperties);
-        return delayQueueBasePart;
+        return new DelayQueueBasePart(redissonClient, delayQueueProperties);
     }
 
 
     @Bean
     @ConditionalOnMissingBean(DelayQueueInitHandler.class)
     public DelayQueueInitHandler delayQueueInitHandler(DelayQueueBasePart delayQueueBasePart){
-        DelayQueueInitHandler delayQueueInitHandler = new DelayQueueInitHandler(delayQueueBasePart);
-        return delayQueueInitHandler;
+        return new DelayQueueInitHandler(delayQueueBasePart);
     }
 
     @Bean
     @ConditionalOnMissingBean(DelayQueueContext.class)
     public DelayQueueContext delayQueueContext(DelayQueueBasePart delayQueueBasePart){
-        DelayQueueContext delayQueueContext = new DelayQueueContext(delayQueueBasePart);
-        return delayQueueContext;
+        return new DelayQueueContext(delayQueueBasePart);
     }
 }

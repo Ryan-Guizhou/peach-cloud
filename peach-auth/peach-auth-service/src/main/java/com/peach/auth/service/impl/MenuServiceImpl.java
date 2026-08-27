@@ -1,8 +1,9 @@
 package com.peach.auth.service.impl;
 
+import com.github.pagehelper.page.PageMethod;
+
 import lombok.RequiredArgsConstructor;
 
-import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dto.MenuDTO;
 import com.peach.auth.dao.MenuDao;
@@ -34,9 +35,8 @@ public class MenuServiceImpl implements IMenuService {
 
     @Override
     public PageInfo<MenuVO> pageList(MenuQO menuQO) {
-        PageInfo<MenuVO> pageInfo = PageHelper.startPage(menuQO.getPageNum(), menuQO.getPageSize())
+        return PageMethod.startPage(menuQO.getPageNum(), menuQO.getPageSize())
                 .doSelectPageInfo(() -> menuDao.selectByQO(menuQO));
-        return pageInfo;
     }
 
     @Override
@@ -53,7 +53,7 @@ public class MenuServiceImpl implements IMenuService {
         MenuDO menuDO = new MenuDO();
         BeanUtils.copyProperties(menuDTO, menuDO);
         menuDO.fillCreateTime(null);
-        Optional.ofNullable(menuDO.getIsDelete()).ifPresent(value -> menuDO.setIsDelete(value));
+        Optional.ofNullable(menuDO.getIsDelete()).ifPresent(menuDO::setIsDelete);
         if (menuDO.getIsDelete() == null) {
             menuDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
         }

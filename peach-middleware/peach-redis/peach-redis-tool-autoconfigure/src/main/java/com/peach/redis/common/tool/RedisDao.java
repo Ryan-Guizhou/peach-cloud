@@ -7,12 +7,15 @@ package com.peach.redis.common.tool;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import jakarta.annotation.Nullable;
 import java.util.Set;
 
 /**
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2025/12/4 17:39
+ * Redis 数据访问接口。
+ *
+ * @author Mr Shu
+ * @version 1.0.0
+ * @since 2025/12/4
  */
 public interface RedisDao {
 
@@ -269,7 +272,7 @@ public interface RedisDao {
      * @param v
      * @return long
      */
-    public long lRemove(Object k, long count, Object v);
+    public long lRemove(Object k, long count, @Nullable Object v);
 
     /**
      * 移除k中值为v的所有数据,返回删除的个数；如果没有这个元素则返回0(操作list)
@@ -296,7 +299,7 @@ public interface RedisDao {
      * @param end
      * @return List<Object>
      */
-    public List<?> lRange(Object k, long start, long end);
+    public List<Object> lRange(Object k, long start, long end);
 
     /**
      * 集合添加

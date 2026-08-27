@@ -6,15 +6,27 @@ package com.peach.common.constant;
  * @CreateTime 2026/1/18 17:21
  * @Description 服务间调用路径常量
  */
-public interface ServicePathConstant {
+public final class ServicePathConstant {
 
-    String AUTH_PATH_SERVICE = "/auth/external";
+    private ServicePathConstant() {
+        throw new IllegalStateException("Utility class");
+    }
 
-    String MONITOR_PATH_SERVICE = "/monitor/external";
+    public static final String PATH_PREFIX = "/";
 
-    String FILE_PATH_SERVICE = "/file/external";
+    private static final String EXTERNAL = "external";
 
-    String MESSAGE_PATH_SERVICE = "/message/external";
+    public static final String AUTH_PATH_SERVICE = PATH_PREFIX + "auth" + PATH_PREFIX + EXTERNAL;
 
-    String SETTING_PATH_SERVICE = "/setting/external";
+    public static final String MONITOR_PATH_SERVICE = PATH_PREFIX + "monitor" + PATH_PREFIX + EXTERNAL;
+
+    public static final String FILE_PATH_SERVICE = PATH_PREFIX + "fileservice" + PATH_PREFIX + EXTERNAL;
+
+    public static final String MESSAGE_PATH_SERVICE = PATH_PREFIX + "message" + PATH_PREFIX + EXTERNAL;
+
+    public static final String SETTING_PATH_SERVICE = PATH_PREFIX + "setting" + PATH_PREFIX + EXTERNAL;
+
+    public static final String SCHEDULED_PATH_SERVICE = PATH_PREFIX + "scheduled" + PATH_PREFIX + EXTERNAL;
+
+    public static final String GENERATOR_PATH_SERVICE = PATH_PREFIX + "generator" + PATH_PREFIX + EXTERNAL;
 }

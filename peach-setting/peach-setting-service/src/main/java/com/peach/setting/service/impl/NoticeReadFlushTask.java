@@ -50,47 +50,58 @@ public class NoticeReadFlushTask {
         }
         Map<String, Integer> readCountMap = new HashMap<>();
         for (long i = 0; i < size; i++) {
-            Object item = redisDao.lLeftPop(SettingConst.NOTICE_READ_PENDING_LIST);
-            if (item == null) {
-                continue;
-            }
-            String pendingKey = String.valueOf(item);
-            Object value = redisDao.vGet(pendingKey);
-            redisDao.delete(pendingKey);
-            if (value == null) {
-                continue;
-            }
-            String suffix = pendingKey.substring(SettingConst.NOTICE_READ_PENDING_KEY_PREFIX.length());
-            String[] arr = suffix.split(":", 2);
-            if (arr.length != 2) {
-                continue;
-            }
-            String noticeCode = arr[0];
-            String readUserId = arr[1];
-            NoticeReadRecordVO exists = noticeReadRecordDao.selectByNoticeCodeAndUserId(noticeCode, readUserId);
-            if (exists != null) {
-                continue;
-            }
-            NoticeVO notice = noticeDao.selectByNoticeCode(noticeCode);
-            if (notice == null) {
-                continue;
-            }
-            if (notice.getTenantId() == null || notice.getTenantId().isBlank()
-                    || notice.getOrgId() == null || notice.getOrgId().isBlank()) {
-                log.warn("skip notice read record flush because notice tenant or organization is missing, noticeCode={}", noticeCode);
-                continue;
-            }
-            NoticeReadRecordDO record = new NoticeReadRecordDO();
-            record.setId(IDGeneratorUtil.UUID());
-            record.setNoticeCode(noticeCode);
-            record.setTenantId(notice.getTenantId());
-            record.setOrgId(notice.getOrgId());
-            record.setReadUserId(readUserId);
-            record.setReadTime(String.valueOf(value));
-            record.setCreatedTime(DateUtil.nowTime());
-            noticeReadRecordDao.insert(record);
-            readCountMap.merge(noticeCode, 1, Integer::sum);
+            processPendingReadRecord(readCountMap);
         }
+        applyReadCountUpdates(readCountMap);
+    }
+
+    private void processPendingReadRecord(Map<String, Integer> readCountMap) {
+        Object item = redisDao.lLeftPop(SettingConst.NOTICE_READ_PENDING_LIST);
+        if (item == null) {
+            return;
+        }
+        String pendingKey = String.valueOf(item);
+        Object value = redisDao.vGet(pendingKey);
+        redisDao.delete(pendingKey);
+        if (value == null) {
+            return;
+        }
+        String suffix = pendingKey.substring(SettingConst.NOTICE_READ_PENDING_KEY_PREFIX.length());
+        String[] arr = suffix.split(":", 2);
+        if (arr.length != 2) {
+            return;
+        }
+        persistReadRecordIfAbsent(arr[0], arr[1], String.valueOf(value), readCountMap);
+    }
+
+    private void persistReadRecordIfAbsent(String noticeCode, String readUserId, String readTime,
+                                           Map<String, Integer> readCountMap) {
+        NoticeReadRecordVO exists = noticeReadRecordDao.selectByNoticeCodeAndUserId(noticeCode, readUserId);
+        if (exists != null) {
+            return;
+        }
+        NoticeVO notice = noticeDao.selectByNoticeCode(noticeCode);
+        if (notice == null) {
+            return;
+        }
+        if (notice.getTenantId() == null || notice.getTenantId().isBlank()
+                || notice.getOrgId() == null || notice.getOrgId().isBlank()) {
+            log.warn("skip notice read record flush because notice tenant or organization is missing, noticeCode={}", noticeCode);
+            return;
+        }
+        NoticeReadRecordDO readRecord = new NoticeReadRecordDO();
+        readRecord.setId(IDGeneratorUtil.generateUuid());
+        readRecord.setNoticeCode(noticeCode);
+        readRecord.setTenantId(notice.getTenantId());
+        readRecord.setOrgId(notice.getOrgId());
+        readRecord.setReadUserId(readUserId);
+        readRecord.setReadTime(readTime);
+        readRecord.setCreatedTime(DateUtil.nowTime());
+        noticeReadRecordDao.insert(readRecord);
+        readCountMap.merge(noticeCode, 1, Integer::sum);
+    }
+
+    private void applyReadCountUpdates(Map<String, Integer> readCountMap) {
         for (Map.Entry<String, Integer> entry : readCountMap.entrySet()) {
             noticeDao.increaseReadCount(entry.getKey(), entry.getValue());
         }

@@ -1,5 +1,7 @@
 package com.peach.redission.delayqueue.core;
 
+import java.time.ZoneId;
+
 import com.peach.redission.delayqueue.context.DelayQueuePart;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RMap;
@@ -101,9 +103,7 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
                         ProcessingMessage processingMessage = new ProcessingMessage(content, System.currentTimeMillis());
                         processingMessages.put(messageId, processingMessage);
                         
-                        executeTaskThreadPool.execute(() -> {
-                            processMessageWithAck(content, messageId);
-                        });
+                        executeTaskThreadPool.execute(() -> processMessageWithAck(content, messageId));
                     } catch (InterruptedException e) {
                         log.warn("Consumer listener interrupted for topic: {}", getTopicName());
                         destroy(executeTaskThreadPool);
@@ -128,8 +128,9 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
                 long startTime = System.currentTimeMillis();
                 
                 // 检查processingMessages中是否有未完成的消息
-                for (String messageId : processingMessages.keySet()) {
-                    ProcessingMessage processingMessage = processingMessages.get(messageId);
+                for (var entry : processingMessages.entrySet()) {
+                    String messageId = entry.getKey();
+                    ProcessingMessage processingMessage = entry.getValue();
                     if (processingMessage != null) {
                         log.info("Recovering message: {}", messageId);
                         processMessageWithAck(processingMessage.getContent(), messageId);
@@ -153,39 +154,67 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
     private void processMessageWithAck(String content, String messageId) {
         int retryCount = 0;
         boolean success = false;
-        
-        while (!success && retryCount <= maxRetryAttempts) {
-            try {
-                if (retryCount > 0) {
-                    log.info("Retrying message processing. Attempt: {}/{} for topic: {}, message: {}", 
-                            retryCount, maxRetryAttempts, getTopicName(), messageId);
-                    // 使用指数退避策略
-                    long backoffTime = retryIntervalMillis * (1L << (retryCount - 1)); // 2^(retryCount-1) * baseDelay
-                    Thread.sleep(Math.min(backoffTime, 60000)); // 最大等待1分钟
-                }
-                
-                consumerTask.execute(content);
-                success = true;
-                log.debug("Successfully executed consumer task for topic: {}, message: {}", getTopicName(), messageId);
-            } catch (InterruptedException e) {
-                log.warn("Message processing interrupted for topic: {}, message: {}", getTopicName(), messageId);
-                Thread.currentThread().interrupt(); // 恢复中断状态
-                break;
-            } catch (Exception e) {
-                retryCount++;
-                log.warn("Failed to process message. Attempt: {}/{} for topic: {}, message: {}", 
-                        retryCount, maxRetryAttempts, getTopicName(), messageId, e);
-                
-                // 如果达到最大重试次数，则移动到死信队列
-                if (retryCount > maxRetryAttempts) {
-                    log.error("Message processing failed after {} attempts for topic: {}, message: {}. Moving to dead letter queue.", 
-                            maxRetryAttempts, getTopicName(), messageId, e);
-                    deadLetterQueueManager.moveToDeadLetterQueue(getTopicName(), content, e, retryCount);
-                }
+        boolean interrupted = false;
+
+        while (!success && !interrupted && retryCount <= maxRetryAttempts) {
+            ProcessAttempt attempt = attemptProcess(content, messageId, retryCount);
+            interrupted = attempt.interrupted();
+            success = attempt.succeeded();
+            if (!success && !interrupted) {
+                retryCount = handleProcessFailure(content, messageId, retryCount, attempt.error());
             }
         }
-        
-        // 确认消息处理完成，从处理中映射中移除
+
+        acknowledgeProcessing(messageId, success, retryCount);
+    }
+
+    private ProcessAttempt attemptProcess(String content, String messageId, int retryCount) {
+        try {
+            if (retryCount > 0) {
+                log.info("Retrying message processing. Attempt: {}/{} for topic: {}, message: {}",
+                        retryCount, maxRetryAttempts, getTopicName(), messageId);
+                long backoffTime = retryIntervalMillis * (1L << (retryCount - 1));
+                Thread.sleep(Math.min(backoffTime, 60000));
+            }
+            consumerTask.execute(content);
+            log.debug("Successfully executed consumer task for topic: {}, message: {}", getTopicName(), messageId);
+            return ProcessAttempt.completed();
+        } catch (InterruptedException e) {
+            log.warn("Message processing interrupted for topic: {}, message: {}", getTopicName(), messageId);
+            Thread.currentThread().interrupt();
+            return ProcessAttempt.interruptedState();
+        } catch (Exception e) {
+            log.warn("Failed to process message. Attempt: {}/{} for topic: {}, message: {}",
+                    retryCount + 1, maxRetryAttempts, getTopicName(), messageId, e);
+            return ProcessAttempt.failed(e);
+        }
+    }
+
+    private int handleProcessFailure(String content, String messageId, int retryCount, Exception error) {
+        int nextRetry = retryCount + 1;
+        if (nextRetry > maxRetryAttempts) {
+            log.error("Message processing failed after {} attempts for topic: {}, message: {}. Moving to dead letter queue.",
+                    maxRetryAttempts, getTopicName(), messageId, error);
+            deadLetterQueueManager.moveToDeadLetterQueue(getTopicName(), content, error, nextRetry);
+        }
+        return nextRetry;
+    }
+
+    private record ProcessAttempt(boolean succeeded, boolean interrupted, Exception error) {
+        private static ProcessAttempt completed() {
+            return new ProcessAttempt(true, false, null);
+        }
+
+        private static ProcessAttempt interruptedState() {
+            return new ProcessAttempt(false, true, null);
+        }
+
+        private static ProcessAttempt failed(Exception error) {
+            return new ProcessAttempt(false, false, error);
+        }
+    }
+
+    private void acknowledgeProcessing(String messageId, boolean success, int retryCount) {
         if (success || retryCount > maxRetryAttempts) {
             processingMessages.remove(messageId);
             if (success) {
@@ -195,7 +224,7 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
             }
         }
     }
-    
+
     private String getTopicName() {
         // Extract topic name from blockingQueue if possible
         return blockingQueue != null ? blockingQueue.getName() : "unknown";
@@ -261,7 +290,7 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
         public ProcessingMessage(String content, long startTime) {
             this.content = content;
             this.startTime = startTime;
-            this.timestamp = LocalDateTime.now().toString();
+            this.timestamp = LocalDateTime.now(ZoneId.systemDefault()).toString();
         }
         
         // Getters and setters

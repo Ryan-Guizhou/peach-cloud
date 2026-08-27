@@ -14,7 +14,11 @@ import java.net.UnknownHostException;
  * @CreateTime 2025/3/13 15:07
  */
 @Slf4j
-public class IpUtil {
+public final class IpUtil {
+
+    private IpUtil() {
+        throw new IllegalStateException("Utility class");
+    }
 
     private static final String IP_UTILS_FLAG = ",";
 
@@ -27,7 +31,7 @@ public class IpUtil {
     /**
      * 校验一个ip是否为有效的ipv4地址
      */
-    private static final String IPV4_REGEX = "^([0-9]{1,3}\\.){3}[0-9]{1,3}$";
+    private static final String IPV4_REGEX = "^(\\d{1,3}\\.){3}\\d{1,3}$";
 
     /**
      * 校验ip地址是否为有效的ipv4地址
@@ -62,52 +66,60 @@ public class IpUtil {
     public static String getIpAddr(HttpServletRequest request) {
         String ip = null;
         try {
-            //以下两个获取在k8s中，将真实的客户端IP，放到了x-Original-Forwarded-For。而将WAF的回源地址放到了 x-Forwarded-For了。
-            ip = request.getHeader("X-Original-Forwarded-For");
+            ip = resolveForwardedIp(request);
             if (StringUtils.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
-                ip = request.getHeader("X-Forwarded-For");
+                ip = resolveLocalHostIp(request);
             }
-            //获取nginx等代理的ip
-            if (StringUtils.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
-                ip = request.getHeader("x-forwarded-for");
-            }
-            if (StringUtils.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
-                ip = request.getHeader("Proxy-Client-IP");
-            }
-            if (StringUtils.isEmpty(ip) || ip.length() == 0 || UNKNOWN.equalsIgnoreCase(ip)) {
-                ip = request.getHeader("WL-Proxy-Client-IP");
-            }
-            if (StringUtils.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
-                ip = request.getHeader("HTTP_CLIENT_IP");
-            }
-            if (StringUtils.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
-                ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-            }
-            //兼容k8s集群获取ip
-            if (StringUtils.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
-                ip = request.getRemoteAddr();
-                if (LOCALHOST_IPV6.equalsIgnoreCase(ip) || LOCALHOST_IPV4.equalsIgnoreCase(ip)) {
-                    //根据网卡取本机配置的IP
-                    InetAddress iNet = null;
-                    try {
-                        iNet = InetAddress.getLocalHost();
-                    } catch (UnknownHostException e) {
-                        log.error("getClientIp error: {}", e);
-                    }
-                    assert iNet != null;
-                    ip = iNet.getHostAddress();
-                }
-            }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("IpUtil getIpAddr "+e.getMessage(),e);
         }
-        //使用代理，则获取第一个IP地址
-        if (!StringUtils.isEmpty(ip) && ip.indexOf(IP_UTILS_FLAG) > 0) {
-            ip = ip.substring(0, ip.indexOf(IP_UTILS_FLAG));
-        }
+        ip = firstForwardedIp(ip);
         if (isValidIpv4(ip)){
             return ip;
         }
         return null;
+    }
+
+    private static String resolveForwardedIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Original-Forwarded-For");
+        if (StringUtils.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Forwarded-For");
+        }
+        if (StringUtils.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
+            ip = request.getHeader("x-forwarded-for");
+        }
+        if (StringUtils.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (StringUtils.isEmpty(ip) || ip.isEmpty() || UNKNOWN.equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (StringUtils.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (StringUtils.isEmpty(ip) || UNKNOWN.equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        return ip;
+    }
+
+    private static String resolveLocalHostIp(HttpServletRequest request) {
+        String ip = request.getRemoteAddr();
+        if (!LOCALHOST_IPV6.equalsIgnoreCase(ip) && !LOCALHOST_IPV4.equalsIgnoreCase(ip)) {
+            return ip;
+        }
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            log.error("getClientIp error: {}", e);
+            return ip;
+        }
+    }
+
+    private static String firstForwardedIp(String ip) {
+        if (!StringUtils.isEmpty(ip) && ip.indexOf(IP_UTILS_FLAG) >= 0) {
+            return ip.substring(0, ip.indexOf(IP_UTILS_FLAG));
+        }
+        return ip;
     }
 }

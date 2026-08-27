@@ -38,9 +38,11 @@ import com.qcloud.cos.model.PutObjectRequest;
 import com.qcloud.cos.model.PutObjectResult;
 import com.qcloud.cos.region.Region;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -184,12 +186,10 @@ public class CosStorageProvider implements StorageProvider {
         String actualBucket = bucketName(config, request.getBucketName());
         try {
             com.qcloud.cos.model.ListObjectsRequest listRequest = new com.qcloud.cos.model.ListObjectsRequest();
-            Optional.ofNullable(request.getPrefix())
-                            .ifPresent(prefix -> listRequest.setPrefix(prefix));
-            Optional.ofNullable(resolveDelimiter(request))
-                    .ifPresent(delimiter -> listRequest.setDelimiter(delimiter));
+            Optional.ofNullable(request.getPrefix()).ifPresent(listRequest::setPrefix);
+            Optional.ofNullable(resolveDelimiter(request)).ifPresent(listRequest::setDelimiter);
             Optional.ofNullable(request.getContinuationToken())
-                    .ifPresent(continuationToken -> listRequest.setMarker(request.getContinuationToken()));
+                    .ifPresent(ignored -> listRequest.setMarker(request.getContinuationToken()));
             listRequest.setBucketName(actualBucket);
             listRequest.setMaxKeys(request.getMaxKeys());
             ObjectListing listing = client.listObjects(listRequest);
@@ -330,7 +330,7 @@ public class CosStorageProvider implements StorageProvider {
         COSCredentials credentials = new BasicCOSCredentials(config.getAccessKey(), config.getSecretKey());
         ClientConfig clientConfig = new ClientConfig(new Region(config.getRegion()));
         Optional.ofNullable(resolveEndpointHost(config.getEndpoint()))
-                .ifPresent(endpoint -> clientConfig.setEndPointSuffix(endpoint));
+                .ifPresent(clientConfig::setEndPointSuffix);
         return new COSClient(credentials, clientConfig);
     }
 
@@ -340,7 +340,7 @@ public class CosStorageProvider implements StorageProvider {
      * @return
      * @throws Exception
      */
-    private ObjectMetadata buildMetadata(UploadObjectRequest request) throws Exception {
+    private ObjectMetadata buildMetadata(UploadObjectRequest request) throws IOException {
         ObjectMetadata metadata = new ObjectMetadata();
 
         long length = request.getContent().length();

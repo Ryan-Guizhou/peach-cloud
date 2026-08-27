@@ -42,6 +42,7 @@ public class SchedulerRocketDurabilityAutoConfiguration {
      * 创建相关对象。
      */
     public SchedulerRocketDurabilityAutoConfiguration() {
+        // Intentionally empty.
     }
 
     /**

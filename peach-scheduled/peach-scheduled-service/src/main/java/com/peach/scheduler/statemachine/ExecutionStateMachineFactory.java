@@ -27,6 +27,7 @@ public class ExecutionStateMachineFactory {
      * 创建相关对象。
      */
     public ExecutionStateMachineFactory() {
+        // Intentionally empty.
     }
 
     /**

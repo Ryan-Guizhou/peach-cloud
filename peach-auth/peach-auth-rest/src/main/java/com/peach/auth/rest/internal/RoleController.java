@@ -1,12 +1,13 @@
 package com.peach.auth.rest.internal;
 
+import com.peach.common.PeachGroup;
+
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.dto.RoleDTO;
 import com.peach.auth.enums.UserLogEnum;
-import com.peach.auth.group.RoleGroup;
 import com.peach.auth.qo.RoleQO;
 import com.peach.auth.service.IRoleService;
 import com.peach.auth.vo.RoleVO;
@@ -63,7 +64,7 @@ public class RoleController {
     @Operation(summary = "新增角色")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增角色信息,角色信息:['+#p0+']'")
-    public Response add(@Validated({RoleGroup.insertGroup.class}) @RequestBody RoleDTO roleDTO) {
+    public Response add(@Validated({PeachGroup.InsertGroup.class}) @RequestBody RoleDTO roleDTO) {
         roleService.add(roleDTO);
         return Response.success();
     }
@@ -81,7 +82,7 @@ public class RoleController {
     @Operation(summary = "更新角色")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'更新角色信息,角色信息:['+#p0+']'")
-    public Response update(@Validated({RoleGroup.updateGroup.class}) @RequestBody RoleDTO roleDTO) {
+    public Response update(@Validated({PeachGroup.UpdateGroup.class}) @RequestBody RoleDTO roleDTO) {
         roleService.update(roleDTO);
         return Response.success();
     }

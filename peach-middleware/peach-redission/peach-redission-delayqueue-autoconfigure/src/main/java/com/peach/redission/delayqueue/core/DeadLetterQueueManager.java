@@ -1,5 +1,7 @@
 package com.peach.redission.delayqueue.core;
 
+import java.time.ZoneId;
+
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RMap;
 import org.redisson.api.RedissonClient;
@@ -151,7 +153,7 @@ public class DeadLetterQueueManager {
             deadLetterInfo.put("content", content);
             deadLetterInfo.put("exception", exception.getClass().getName() + ": " + exception.getMessage());
             deadLetterInfo.put("retryCount", retryCount);
-            deadLetterInfo.put("timestamp", LocalDateTime.now().toString());
+            deadLetterInfo.put("timestamp", LocalDateTime.now(ZoneId.systemDefault()).toString());
             
             // 使用时间戳作为key，确保唯一性
             String key = System.currentTimeMillis() + "-" + System.nanoTime();
@@ -219,28 +221,14 @@ public class DeadLetterQueueManager {
             RMap<String, Object> deadLetterMap = redissonClient.getMap(deadLetterTopic);
             
             // 计算过期时间阈值
-            LocalDateTime expireTime = LocalDateTime.now().minusHours(maxAgeHours);
+            LocalDateTime expireTime = LocalDateTime.now(ZoneId.systemDefault()).minusHours(maxAgeHours);
             
             // 获取所有条目并检查时间戳
             Map<String, Object> allEntries = deadLetterMap.readAllMap();
             int removedCount = 0;
-            
             for (Map.Entry<String, Object> entry : allEntries.entrySet()) {
-                try {
-                    if (entry.getValue() instanceof Map) {
-                        Map<?, ?> valueMap = (Map<?, ?>) entry.getValue();
-                        Object timestampObj = valueMap.get("timestamp");
-                        
-                        if (timestampObj instanceof String) {
-                            LocalDateTime messageTime = LocalDateTime.parse((String) timestampObj);
-                            if (messageTime.isBefore(expireTime)) {
-                                deadLetterMap.remove(entry.getKey());
-                                removedCount++;
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    log.warn("Failed to parse timestamp for entry: {}", entry.getKey(), e);
+                if (removeIfExpired(deadLetterMap, entry, expireTime)) {
+                    removedCount++;
                 }
             }
             
@@ -255,7 +243,28 @@ public class DeadLetterQueueManager {
             log.error("Failed to clean old messages from dead letter queue. Topic: {}", topic, e);
         }
     }
-    
+
+    private boolean removeIfExpired(RMap<String, Object> deadLetterMap, Map.Entry<String, Object> entry,
+                                    LocalDateTime expireTime) {
+        try {
+            if (!(entry.getValue() instanceof Map<?, ?> valueMap)) {
+                return false;
+            }
+            Object timestampObj = valueMap.get("timestamp");
+            if (!(timestampObj instanceof String timestamp)) {
+                return false;
+            }
+            LocalDateTime messageTime = LocalDateTime.parse(timestamp);
+            if (messageTime.isBefore(expireTime)) {
+                deadLetterMap.remove(entry.getKey());
+                return true;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse timestamp for entry: {}", entry.getKey(), e);
+        }
+        return false;
+    }
+
     /**
      * 关闭资源
      */

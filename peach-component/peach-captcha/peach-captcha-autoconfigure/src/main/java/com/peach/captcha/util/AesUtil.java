@@ -2,10 +2,15 @@ package com.peach.captcha.util;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.security.GeneralSecurityException;
+
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import com.peach.common.util.PeachSecureRandom;
+import java.util.Arrays;
 import java.util.Base64;
 
 /**
@@ -15,12 +20,13 @@ import java.util.Base64;
  */
 public final class AesUtil {
 
-    /***
-     * 算法
-     */
-    private static final String ALGORITHMSTR = "AES/ECB/PKCS5Padding";
+    private static final String ALGORITHM = "AES/GCM/NoPadding";
 
-    private AesUtil(){
+    private static final int GCM_IV_LENGTH = 12;
+
+    private static final int GCM_TAG_LENGTH = 128;
+
+    private AesUtil() {
         throw new IllegalStateException("Utility class");
     }
 
@@ -39,7 +45,7 @@ public final class AesUtil {
      * @param radix 可以转换进制的范围，从Character.MIN_RADIX到Character.MAX_RADIX，超出范围后变为10进制
      * @return 转换后的字符串
      */
-    public static String binary(byte[] bytes, int radix){
+    public static String binary(byte[] bytes, int radix) {
         // 这里的1代表正数
         return new BigInteger(1, bytes).toString(radix);
     }
@@ -49,7 +55,7 @@ public final class AesUtil {
      * @param bytes 待编码的byte[]
      * @return 编码后的base 64 code
      */
-    public static String base64Encode(byte[] bytes){
+    public static String base64Encode(byte[] bytes) {
         return Base64.getEncoder().encodeToString(bytes);
     }
 
@@ -57,9 +63,8 @@ public final class AesUtil {
      * base 64 decode
      * @param base64Code 待解码的base 64 code
      * @return 解码后的byte[]
-     * @throws Exception
      */
-    public static byte[] base64Decode(String base64Code) throws Exception{
+    public static byte[] base64Decode(String base64Code) {
         Base64.Decoder decoder = Base64.getDecoder();
         return StringUtils.isEmpty(base64Code) ? null : decoder.decode(base64Code);
     }
@@ -70,15 +75,20 @@ public final class AesUtil {
      * @param content 待加密的内容
      * @param encryptKey 加密密钥
      * @return 加密后的byte[]
-     * @throws Exception
      */
-    public static byte[] aesEncryptToBytes(String content, String encryptKey) throws Exception {
-        KeyGenerator kgen = KeyGenerator.getInstance("AES");
-        kgen.init(128);
-        Cipher cipher = Cipher.getInstance(ALGORITHMSTR);
-        cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(encryptKey.getBytes(), "AES"));
-
-        return cipher.doFinal(content.getBytes("utf-8"));
+    public static byte[] aesEncryptToBytes(String content, String encryptKey) throws GeneralSecurityException {
+        byte[] iv = new byte[GCM_IV_LENGTH];
+        PeachSecureRandom.get().nextBytes(iv);
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+        cipher.init(Cipher.ENCRYPT_MODE,
+                new SecretKeySpec(encryptKey.getBytes(StandardCharsets.UTF_8), "AES"),
+                parameterSpec);
+        byte[] encrypted = cipher.doFinal(content.getBytes(StandardCharsets.UTF_8));
+        byte[] result = new byte[iv.length + encrypted.length];
+        System.arraycopy(iv, 0, result, 0, iv.length);
+        System.arraycopy(encrypted, 0, result, iv.length, encrypted.length);
+        return result;
     }
 
 
@@ -87,9 +97,8 @@ public final class AesUtil {
      * @param content 待加密的内容
      * @param encryptKey 加密密钥
      * @return 加密后的base 64 code
-     * @throws Exception
      */
-    public static String aesEncrypt(String content, String encryptKey) throws Exception {
+    public static String aesEncrypt(String content, String encryptKey) throws GeneralSecurityException {
         if (StringUtils.isBlank(encryptKey)) {
             return content;
         }
@@ -101,16 +110,17 @@ public final class AesUtil {
      * @param encryptBytes 待解密的byte[]
      * @param decryptKey 解密密钥
      * @return 解密后的String
-     * @throws Exception
      */
-    public static String aesDecryptByBytes(byte[] encryptBytes, String decryptKey) throws Exception {
-        KeyGenerator kgen = KeyGenerator.getInstance("AES");
-        kgen.init(128);
-
-        Cipher cipher = Cipher.getInstance(ALGORITHMSTR);
-        cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(decryptKey.getBytes(), "AES"));
-        byte[] decryptBytes = cipher.doFinal(encryptBytes);
-        return new String(decryptBytes);
+    public static String aesDecryptByBytes(byte[] encryptBytes, String decryptKey) throws GeneralSecurityException {
+        byte[] iv = Arrays.copyOfRange(encryptBytes, 0, GCM_IV_LENGTH);
+        byte[] ciphertext = Arrays.copyOfRange(encryptBytes, GCM_IV_LENGTH, encryptBytes.length);
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+        cipher.init(Cipher.DECRYPT_MODE,
+                new SecretKeySpec(decryptKey.getBytes(StandardCharsets.UTF_8), "AES"),
+                parameterSpec);
+        byte[] decryptBytes = cipher.doFinal(ciphertext);
+        return new String(decryptBytes, StandardCharsets.UTF_8);
     }
 
 
@@ -119,13 +129,19 @@ public final class AesUtil {
      * @param encryptStr 待解密的base 64 code
      * @param decryptKey 解密密钥
      * @return 解密后的string
-     * @throws Exception
      */
-    public static String aesDecrypt(String encryptStr, String decryptKey) throws Exception {
+    public static String aesDecrypt(String encryptStr, String decryptKey) throws GeneralSecurityException {
         if (StringUtils.isBlank(decryptKey)) {
             return encryptStr;
         }
-        return StringUtils.isEmpty(encryptStr) ? null : aesDecryptByBytes(base64Decode(encryptStr), decryptKey);
+        if (StringUtils.isEmpty(encryptStr)) {
+            return null;
+        }
+        byte[] encryptedBytes = base64Decode(encryptStr);
+        if (encryptedBytes == null || encryptedBytes.length == 0) {
+            return null;
+        }
+        return aesDecryptByBytes(encryptedBytes, decryptKey);
     }
 
 }

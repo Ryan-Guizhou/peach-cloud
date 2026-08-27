@@ -14,5 +14,5 @@ public interface IAuthLogService {
 
     PageInfo<AuthLogVO> pageList(AuthLogQO authLogQO);
 
-    void record(AuthLogDO authLogDO);
+    void saveLog(AuthLogDO authLogDO);
 }

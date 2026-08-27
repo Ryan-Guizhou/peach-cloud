@@ -5,6 +5,7 @@ import com.peach.captcha.model.PointVO;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -25,15 +26,15 @@ public final class JsonUtil {
      * @param clazz 目标类型
      * @return PointVO列表
      */
-    public static List<PointVO> parseArray(String text, Class<PointVO> clazz) {
+    public static List<PointVO> parseArray(String text) {
         if (text == null) {
-            return null;
+            return Collections.emptyList();
         } else {
             String[] arr = text.replaceFirst("\\[","")
                     .replaceFirst("\\]","").split("\\}");
             List<PointVO> ret = new ArrayList<>(arr.length);
             for (String s : arr) {
-                ret.add(parseObject(s,PointVO.class));
+                ret.add(parseObject(s, PointVO.class));
             }
             return ret;
         }
@@ -45,8 +46,8 @@ public final class JsonUtil {
      * @param clazz 目标类型
      * @return PointVO
      */
-    public static PointVO parseObject(String text, Class<PointVO> clazz) {
-        if(text == null) {
+    public static PointVO parseObject(String text, @SuppressWarnings("unused") Class<PointVO> clazz) {
+        if (text == null) {
             return null;
         }
         try {
@@ -62,20 +63,20 @@ public final class JsonUtil {
         if(object == null) {
             return "{}";
         }
-        if(object instanceof PointVO){
-            PointVO t = (PointVO)object;
-            return t.toJsonString();
+        if (object instanceof PointVO pointVO) {
+            return pointVO.toJsonString();
         }
-        if(object instanceof List){
-            List<PointVO> list = (List<PointVO>)object;
+        if (object instanceof List<?> list) {
             StringBuilder buf = new StringBuilder("[");
-            list.stream().forEach(t->{
-                buf.append(t.toJsonString()).append(",");
+            list.forEach(item -> {
+                if (item instanceof PointVO pointVO) {
+                    buf.append(pointVO.toJsonString()).append(",");
+                }
             });
             return buf.deleteCharAt(buf.lastIndexOf(",")).append("]").toString();
         }
-        if(object instanceof Map){
-            return ((Map)object).entrySet().toString();
+        if (object instanceof Map<?, ?> map) {
+            return map.entrySet().toString();
         }
         throw new UnsupportedOperationException("不支持的输入类型:" +object.getClass().getSimpleName());
     }

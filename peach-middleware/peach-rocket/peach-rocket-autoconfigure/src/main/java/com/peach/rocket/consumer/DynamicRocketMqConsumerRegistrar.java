@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
@@ -111,50 +112,78 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
         final String consumerGroup = RocketMqNaming.normalizeConsumerGroup(annotation.consumerGroup());
         String tagExpression = StringUtils.hasText(annotation.tag()) ? annotation.tag() : "*";
         try {
-            final DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(consumerGroup);
-            consumer.setNamesrvAddr(rocketMQProperties.getNameServer());
-            consumer.setInstanceName(properties.getAppName() + "-" + beanName + "-" + System.nanoTime());
-            consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
-            consumer.setConsumeThreadMin(properties.getConsumer().getConsumeThreadMin());
-            consumer.setConsumeThreadMax(properties.getConsumer().getConsumeThreadMax());
-            if (annotation.maxReconsumeTimes() >= 0) {
-                consumer.setMaxReconsumeTimes(annotation.maxReconsumeTimes());
-            }
-            consumer.setMessageModel(annotation.messageModel() == MqMessageModel.BROADCASTING ? MessageModel.BROADCASTING : MessageModel.CLUSTERING);
-            consumer.subscribe(topic, tagExpression);
-            if (annotation.consumeMode() == MqConsumeMode.ORDERLY) {
-                consumer.registerMessageListener((MessageListenerOrderly) (messages, context) -> {
-                    try {
-                        for (MessageExt message : messages) {
-                            logReceive(beanName, consumerGroup, message);
-                            invoker.invoke(handler, beanName, message.getBody(), annotation, message.getMsgId(), message.getReconsumeTimes());
-                        }
-                        return ConsumeOrderlyStatus.SUCCESS;
-                    } catch (RuntimeException ex) {
-                        log.error("[mq-consumer-error] consumer={} group={} mode=orderly exception={}", beanName, consumerGroup, ex.getClass().getName(), ex);
-                        return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
-                    }
-                });
-            } else {
-                consumer.registerMessageListener((MessageListenerConcurrently) (messages, context) -> {
-                    try {
-                        for (MessageExt message : messages) {
-                            logReceive(beanName, consumerGroup, message);
-                            invoker.invoke(handler, beanName, message.getBody(), annotation, message.getMsgId(), message.getReconsumeTimes());
-                        }
-                        return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-                    } catch (RuntimeException ex) {
-                        log.error("[mq-consumer-error] consumer={} group={} mode=concurrently exception={}", beanName, consumerGroup, ex.getClass().getName(), ex);
-                        return ConsumeConcurrentlyStatus.RECONSUME_LATER;
-                    }
-                });
-            }
+            final DefaultMQPushConsumer consumer = createConsumer(beanName, annotation, topic, consumerGroup, tagExpression);
+            registerMessageListener(consumer, beanName, consumerGroup, handler, annotation);
             consumer.start();
             consumers.add(consumer);
             log.info("[mq-consumer] dynamic consumer registered. bean={} topic={} tag={} group={} mode={} model={}",
                     beanName, topic, tagExpression, consumerGroup, annotation.consumeMode(), annotation.messageModel());
         } catch (Exception ex) {
             throw new MqException("Failed to register RocketMQ dynamic consumer for bean " + beanName, ex);
+        }
+    }
+
+    private DefaultMQPushConsumer createConsumer(String beanName, MqConsumer annotation,
+                                                   String topic, String consumerGroup, String tagExpression) throws MQClientException {
+        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(consumerGroup);
+        consumer.setNamesrvAddr(rocketMQProperties.getNameServer());
+        consumer.setInstanceName(properties.getAppName() + "-" + beanName + "-" + System.nanoTime());
+        consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
+        consumer.setConsumeThreadMin(properties.getConsumer().getConsumeThreadMin());
+        consumer.setConsumeThreadMax(properties.getConsumer().getConsumeThreadMax());
+        if (annotation.maxReconsumeTimes() >= 0) {
+            consumer.setMaxReconsumeTimes(annotation.maxReconsumeTimes());
+        }
+        consumer.setMessageModel(annotation.messageModel() == MqMessageModel.BROADCASTING
+                ? MessageModel.BROADCASTING : MessageModel.CLUSTERING);
+        consumer.subscribe(topic, tagExpression);
+        return consumer;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void registerMessageListener(DefaultMQPushConsumer consumer, String beanName, String consumerGroup,
+                                         MqMessageHandler handler, MqConsumer annotation) {
+        if (annotation.consumeMode() == MqConsumeMode.ORDERLY) {
+            consumer.registerMessageListener((MessageListenerOrderly) (messages, context) ->
+                    consumeOrderly(beanName, consumerGroup, handler, annotation, messages));
+        } else {
+            consumer.registerMessageListener((MessageListenerConcurrently) (messages, context) ->
+                    consumeConcurrently(beanName, consumerGroup, handler, annotation, messages));
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private ConsumeOrderlyStatus consumeOrderly(String beanName, String consumerGroup, MqMessageHandler handler,
+                                                  MqConsumer annotation, List<MessageExt> messages) {
+        try {
+            dispatchMessages(beanName, consumerGroup, handler, annotation, messages);
+            return ConsumeOrderlyStatus.SUCCESS;
+        } catch (RuntimeException ex) {
+            log.error("[mq-consumer-error] consumer={} group={} mode=orderly exception={}", beanName, consumerGroup,
+                    ex.getClass().getName(), ex);
+            return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private ConsumeConcurrentlyStatus consumeConcurrently(String beanName, String consumerGroup, MqMessageHandler handler,
+                                                            MqConsumer annotation, List<MessageExt> messages) {
+        try {
+            dispatchMessages(beanName, consumerGroup, handler, annotation, messages);
+            return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+        } catch (RuntimeException ex) {
+            log.error("[mq-consumer-error] consumer={} group={} mode=concurrently exception={}", beanName, consumerGroup,
+                    ex.getClass().getName(), ex);
+            return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void dispatchMessages(String beanName, String consumerGroup, MqMessageHandler handler, MqConsumer annotation,
+                                  List<MessageExt> messages) {
+        for (MessageExt message : messages) {
+            logReceive(beanName, consumerGroup, message);
+            invoker.invoke(handler, beanName, message.getBody(), annotation, message.getMsgId(), message.getReconsumeTimes());
         }
     }
 

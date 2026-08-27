@@ -31,11 +31,7 @@ import java.util.Properties;
 @Slf4j
 public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
 
-    @Override
-    public void init(Properties config) {
-        super.init(config);
-    }
-
+    private static final String ANGLE_ATTRIBUTE = "angle";
 
 
     @Override
@@ -55,41 +51,41 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
         // 2. Generate rotated image / 生成旋转图片
         // Random rotation angle 0 - 360 / 随机旋转角度 0 - 360
         int randomAngle = RandomUtils.getRandomInt(0, 360);
-        
+
         // Rotate image / 旋转图片
         BufferedImage rotatedImage = rotateImage(originalImage, randomAngle);
-        
+
         // 3. Convert to Base64 / 转换 Base64
         String rotatedImageBase64 = CaptchaImageUtil.getImageToBase64Str(rotatedImage);
         // Also return the original image for verification/reference / 也返回原图用于验证/参考
         String originalImageBase64 = CaptchaImageUtil.getImageToBase64Str(originalImage);
-        
+
         // 4. Generate Token and Cache / 生成 Token 和 缓存
         // Target restore angle = 360 - randomAngle / 目标还原角度 = 360 - randomAngle
         int targetAngle = (360 - randomAngle) % 360;
-        
+
         captchaVO.setRotateImageBase64(rotatedImageBase64);
         // Use SlidingOriginalImageBase64 field to store the unrotated image / 使用 SlidingOriginalImageBase64 字段存储未旋转的原图
         captchaVO.setSlidingOriginalImageBase64(originalImageBase64);
         captchaVO.setToken(RandomUtils.getUuid());
-        
+
         // Generate secret key / 生成密钥
         String secretKey = AesUtil.getKey();
         if (CAPTCHA_AES_STATUS) {
             captchaVO.setSecretKey(secretKey);
         }
-        
+
         String codeKey = RedisKeyBuild
                 .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA, captchaVO.getToken())
                 .getRealKey();
-        
+
         // Store correct angle and secret key / 存储正确角度和密钥
         Map<String, Object> cacheMap = new HashMap<>();
-        cacheMap.put("angle", targetAngle);
+        cacheMap.put(ANGLE_ATTRIBUTE, targetAngle);
         cacheMap.put("secretKey", secretKey);
-        
+
         setCaptchaCahche(codeKey, JSON.toJSONString(cacheMap));
-        
+
         return Response.success(captchaVO);
     }
 
@@ -103,7 +99,7 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
         String codeKey = RedisKeyBuild
                 .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA, captchaVO.getToken())
                 .getRealKey();
-        
+
         if (!existCaptchaKey(codeKey)) {
             log.error("captcha check not found, key: {}", codeKey);
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
@@ -124,53 +120,38 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
                 log.error("captcha check cache map invalid");
                 return Response.fail("validate fail");
             }
-            
-            Integer targetAngle = (Integer) cacheMap.get("angle");
+
+            Integer targetAngle = (Integer) cacheMap.get(ANGLE_ATTRIBUTE);
             String secretKey = (String) cacheMap.get("secretKey");
-            
+
             // Decrypt user submitted angle / 解密用户提交的角度
             String pointJson = captchaVO.getAnswer();
-            String decrypted = AesUtil.aesDecrypt(pointJson, secretKey);
-            
-            // Assume decrypted is JSON {"angle": 123} or directly angle string
-            // Compatible with direct number string / 兼容直接传数字字符串的情况
-            Double userAngleDouble;
-            try {
-                // Try parsing JSON / 尝试解析JSON
-                Map userMap = JSON.parseObject(decrypted, Map.class);
-                if (userMap != null && userMap.containsKey("angle")) {
-                    userAngleDouble = Double.parseDouble(userMap.get("angle").toString());
-                } else {
-                    userAngleDouble = Double.parseDouble(decrypted);
-                }
-            } catch (Exception e) {
-                 userAngleDouble = Double.parseDouble(decrypted);
-            }
-            
+            Double userAngleDouble = parseUserAngle(pointJson, secretKey);
+
             int userAngle = userAngleDouble.intValue();
-            
+
             // Verify deviation (allow +- 5 degrees) / 验证偏差 (允许 +- 5 度)
             int diff = Math.abs(userAngle - targetAngle);
             // Handle 0/360 boundary / 处理 0/360 边界问题
             if (diff > 180) {
                 diff = 360 - diff;
             }
-            
+
             if (diff > 5) {
                 return Response.fail("validate fail");
             }
-            
+
             // Generate secondary verification / 生成二次校验
             String value = AesUtil.aesEncrypt(captchaVO.getToken().concat("@").concat(String.valueOf(userAngle)), secretKey);
             String secondKey = RedisKeyBuild
                 .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA_SECOND, value)
                 .getRealKey();
             setCaptchaCahche(secondKey, captchaVO.getToken());
-            
+
             captchaVO.setResult(true);
             captchaVO.setCaptchaVerification(value);
             return Response.success(captchaVO);
-            
+
         } catch (Exception e) {
             log.error("Rotate check error", e);
             return Response.fail(e.getMessage());
@@ -195,33 +176,46 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
         deleteCaptchKey(codeKey);
         return Response.success();
     }
-    
+
     /**
      * Rotate Image / 图片旋转
      */
     private BufferedImage rotateImage(BufferedImage bufferedImage, int angle) {
         int width = bufferedImage.getWidth();
         int height = bufferedImage.getHeight();
-        
+
         // Create new image (supports transparency) / 创建新的图片（支持透明度）
         BufferedImage rotatedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = rotatedImage.createGraphics();
-        
+
         // Set antialiasing / 设置抗锯齿
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        
+
         // Rotation center / 旋转中心
         int centerX = width / 2;
         int centerY = height / 2;
-        
+
         AffineTransform transform = new AffineTransform();
         transform.rotate(Math.toRadians(angle), centerX, centerY);
-        
+
         g2d.setTransform(transform);
         g2d.drawImage(bufferedImage, 0, 0, null);
         g2d.dispose();
-        
+
         return rotatedImage;
+    }
+
+    private Double parseUserAngle(String pointJson, String secretKey) {
+        try {
+            String decrypted = AesUtil.aesDecrypt(pointJson, secretKey);
+            Map<?, ?> userMap = JSON.parseObject(decrypted, Map.class);
+            if (userMap != null && userMap.containsKey(ANGLE_ATTRIBUTE)) {
+                return Double.parseDouble(userMap.get(ANGLE_ATTRIBUTE).toString());
+            }
+            return Double.parseDouble(decrypted);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

@@ -67,8 +67,7 @@ public class CaptchaServiceAutoconfigure {
         // 旋转底图路径
         properties.setProperty(CaptchaPropertiesConst.ORIGINAL_PATH_ROTATE, config.getRotate());
 
-        CaptchaService captchaService = CaptchaServiceFactory.getCaptchaService(properties);
-        return captchaService;
+        return CaptchaServiceFactory.getCaptchaService(properties);
     }
 
 

@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public class CustomTemplateResolver implements TemplateResolver {
 
-    public static final Map<String,String> map = new HashMap<>();
+    protected static final Map<String,String> map = new HashMap<>();
 
     public CustomTemplateResolver() {
         map.put("qq_complex", "qq_complex.ftl");
