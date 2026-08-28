@@ -28,14 +28,13 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * 机构管理接口。
- *
+ * 机构管理。
  * <p>提供机构的分页查询、单条查询、创建、删除和更新接口，仅处理机构自身数据，不负责租户切换逻辑。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/7/8 14:10
- */
+  */
 @Slf4j
 @Indexed
 @Validated
@@ -66,7 +65,7 @@ public class OrganizationController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增机构信息,机构信息:['+#p0+']'")
     public Response add(@Validated({PeachGroup.InsertGroup.class}) @RequestBody OrganizationDTO organizationDTO) {
-        log.info("新增机构,机构编码={}", organizationDTO.getOrgCode());
+        log.info("Creating organization, orgCode={}", organizationDTO.getOrgCode());
         organizationService.add(organizationDTO);
         return Response.success();
     }
@@ -76,7 +75,7 @@ public class OrganizationController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.DELETE,
             optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除机构信息,机构ID:['+#p0+']'")
     public Response delById(@NotBlank(message = "机构ID不能为空") String orgId) {
-        log.info("删除机构,机构ID={}", orgId);
+        log.info("Deleting organization, orgId={}", orgId);
         organizationService.delById(orgId);
         return Response.success();
     }
@@ -86,7 +85,7 @@ public class OrganizationController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'更新机构信息,机构信息:['+#p0+']'")
     public Response update(@Validated({PeachGroup.UpdateGroup.class}) @RequestBody OrganizationDTO organizationDTO) {
-        log.info("更新机构,机构ID={}", organizationDTO.getOrgId());
+        log.info("Updating organization, orgId={}", organizationDTO.getOrgId());
         organizationService.update(organizationDTO);
         return Response.success();
     }

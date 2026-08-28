@@ -21,7 +21,7 @@ import com.peach.common.util.PeachSecureRandom;
 import java.util.Properties;
 
 /**
- * Text/Arithmetic Captcha Service Implementation
+ * Text验证码服务实现类。
  * 文字/算术验证码服务实现类
  *
  * @Author Mr Shu

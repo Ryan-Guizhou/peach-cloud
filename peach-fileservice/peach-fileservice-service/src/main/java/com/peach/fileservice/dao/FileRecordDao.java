@@ -11,14 +11,13 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
- * 文件记录数据访问接口
- *
+ * 文件记录数据访问。
  * <p>提供文件记录的数据库操作，包括查询、逻辑删除、恢复、清理等功能。
  * 支持文件的完整生命周期管理。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Indexed
 @MybatisDao

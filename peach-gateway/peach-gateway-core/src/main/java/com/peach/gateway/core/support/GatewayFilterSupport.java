@@ -9,8 +9,7 @@ import reactor.core.publisher.Mono;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 网关过滤器通用辅助工具。
- *
+ * 网关过滤器支持类。
  * <p>该工具只处理请求头、远端地址和安全错误响应，不读取 query、body、token 等敏感数据，
  * 用于避免网关日志和错误响应泄露私密信息。</p>
  *

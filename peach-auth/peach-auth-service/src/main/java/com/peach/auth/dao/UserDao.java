@@ -12,6 +12,8 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
+ * 用户数据访问。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/9 15:52

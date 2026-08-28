@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Rotate Puzzle Captcha Service Implementation
+ * RotatePuzzle验证码服务实现类。
  * 旋转拼图验证码服务实现类
  *
  * @Author Mr Shu

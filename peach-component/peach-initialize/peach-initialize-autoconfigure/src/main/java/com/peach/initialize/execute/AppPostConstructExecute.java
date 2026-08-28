@@ -8,6 +8,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import jakarta.annotation.PostConstruct;
 
 /**
+ * 应用后置构造执行器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/16 15:14

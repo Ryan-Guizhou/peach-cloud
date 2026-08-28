@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 /**
- * 调度模块相关说明。
+ * 调度处理器External客户端。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -25,8 +25,8 @@ public interface SchedulerHandlerExternalClient {
     /**
      * 注册相关能力。
      *
-     * @param request 参数说明
-     * @return 返回结果
+     * @param request request。
+     * @return 执行结果。
      */
     @PostMapping("/internal/scheduler/handlers/register")
     Response register(@RequestBody HandlerRegistrationDTO request);

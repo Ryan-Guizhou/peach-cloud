@@ -1,6 +1,8 @@
 package com.peach.redis.constant;
 
 /**
+ * 多语言缓存常量。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/19 17:51

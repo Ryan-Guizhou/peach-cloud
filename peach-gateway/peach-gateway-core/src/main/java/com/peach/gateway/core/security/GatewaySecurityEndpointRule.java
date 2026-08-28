@@ -1,5 +1,7 @@
 package com.peach.gateway.core.security;
 
+import java.io.Serial;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
- * 网关公开端点匹配规则。
+ * GatewaySecurityEndpointRule相关类。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -18,7 +20,8 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class GatewaySecurityEndpointRule implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1266668187683266109L;
 
     /**
      * 匹配所有 HTTP 方法的通配值。

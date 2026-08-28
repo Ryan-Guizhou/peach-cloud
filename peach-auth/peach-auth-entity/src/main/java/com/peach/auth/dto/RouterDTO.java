@@ -1,11 +1,15 @@
 package com.peach.auth.dto;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
 
 /**
+ * 路由信息。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/18 15:41
@@ -14,7 +18,8 @@ import java.io.Serializable;
 @Schema(description = "路由信息")
 public class RouterDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 6818572783834885012L;
 
     @Schema(description = "路由ID")
     private String routerId;

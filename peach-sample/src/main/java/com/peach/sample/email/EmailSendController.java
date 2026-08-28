@@ -13,6 +13,8 @@ import java.io.IOException;
 
 
 /**
+ * 邮件发送控制器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/10 10:57

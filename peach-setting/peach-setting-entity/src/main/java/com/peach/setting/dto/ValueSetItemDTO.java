@@ -1,5 +1,7 @@
 package com.peach.setting.dto;
 
+import java.io.Serial;
+
 import com.peach.setting.comon.enums.ValueSetItemGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,6 +10,8 @@ import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**
+ * 值集项DTO。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 21:50
@@ -16,7 +20,8 @@ import java.io.Serializable;
 @Data
 public class ValueSetItemDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 4465070466254386799L;
 
     @Schema(description = "主键ID")
     @NotBlank(groups = {ValueSetItemGroup.UpdatetGroup.class}, message = "主键ID不能为空")

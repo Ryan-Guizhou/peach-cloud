@@ -7,10 +7,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * 摘要工具类；新代码请使用 {@link #sha256Hex(String)}。
+ * Md5工具类。
  *
- * @author Mr Shu
- * @version 1.0.0
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Slf4j
 public final class Md5Util {

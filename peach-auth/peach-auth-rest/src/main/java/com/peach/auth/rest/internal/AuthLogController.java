@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 授权日志查询接口。
+ * 授权日志。
  *
  * @Author Mr Shu
  * @Version 1.0.0

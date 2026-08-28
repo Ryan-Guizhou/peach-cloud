@@ -3,7 +3,7 @@ package com.peach.gateway.core.constant;
 import com.peach.common.constant.SaTokenConstant;
 
 /**
- * 网关安全常量。
+ * 网关常量。
  *
  * @Author Mr Shu
  * @Version 1.0.0

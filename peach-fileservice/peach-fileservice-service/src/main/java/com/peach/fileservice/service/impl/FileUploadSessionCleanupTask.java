@@ -11,14 +11,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
 
 /**
- * 过期上传会话清理定时任务
- *
+ * 文件上传会话Cleanup任务。
  * <p>定期清理超时未完成的分片上传会话，释放临时资源，避免存储泄漏。
  * 清理频率通过 {@link FileDomainProperties#getUploadSessionCleanupCron()} 配置。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Slf4j
 @Indexed

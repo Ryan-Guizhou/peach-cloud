@@ -16,6 +16,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 多语言缓存管理器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:13
@@ -95,14 +97,12 @@ public class MultiCacheManager implements CacheManager {
      */
     private void handleKeyStrength(Caffeine<Object, Object> builder, CaffeineCacheConfig.CaffeineStrength strength) {
         switch (strength) {
-            case WEAK:
-                builder.weakKeys();
-                break;
-            case STRONG:
+            case WEAK -> builder.weakKeys();
+            case STRONG -> {
                 log.error("Caffeine does not support key soft references");
                 throw new UnsupportedOperationException("Caffeine does not support key soft references");
-            default:
-                log.error("The citation method is incorrect");
+            }
+            default -> log.error("The citation method is incorrect");
         }
     }
 
@@ -112,17 +112,11 @@ public class MultiCacheManager implements CacheManager {
      * @param strength
      * @return
      */
-    private void handleValueStrength(Caffeine<Object, Object> builder,  CaffeineCacheConfig.CaffeineStrength strength) {
+    private void handleValueStrength(Caffeine<Object, Object> builder, CaffeineCacheConfig.CaffeineStrength strength) {
         switch (strength) {
-            case WEAK:
-                builder.weakValues();
-                break;
-            case STRONG:
-                builder.softValues();
-                break;
-            default:
-                // 可记录日志或什么都不做
-                log.error("The citation method is incorrect");
+            case WEAK -> builder.weakValues();
+            case STRONG -> builder.softValues();
+            default -> log.error("The citation method is incorrect");
         }
     }
 

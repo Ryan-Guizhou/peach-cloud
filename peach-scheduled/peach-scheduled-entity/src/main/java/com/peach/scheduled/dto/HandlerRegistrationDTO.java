@@ -11,8 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 业务服务调度 Handler 注册请求对象。
- *
+ * 业务服务调度 Handler 注册请求。
  * <p>业务服务启动和心跳阶段通过内部接口上报当前实例支持的 Handler 列表，
  * 调度中心仅将其作为能力注册信息，不把它作为服务发现的替代方案。</p>
  *
@@ -44,6 +43,10 @@ public class HandlerRegistrationDTO {
 
     /**
      * 单个 Handler 注册项。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     @Data
     @Schema(description = "单个 Handler 注册项")

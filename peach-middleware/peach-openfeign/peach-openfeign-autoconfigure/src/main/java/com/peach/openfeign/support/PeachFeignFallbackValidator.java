@@ -12,28 +12,25 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Feign 客户端降级（fallback/fallbackFactory）缺失校验器。
- *
+ * PeachFeign降级校验器。
  * <p>该组件在应用启动阶段（{@link InitializingBean#afterPropertiesSet()}）执行，
  * 用于扫描所有已注册的 Feign 客户端（通过 {@link FeignClientFactoryBean}），
  * 检查它们是否配置了 {@code fallback} 或 {@code fallbackFactory} 属性。</p>
- *
  * <p><b>目的：</b>提前发现缺少降级处理的 Feign 客户端，避免在运行时因下游服务故障
  * 导致调用失败且无降级逻辑而引发级联异常。特别在非生产环境（如开发、测试）中，
  * 若配置了快速失败模式，会直接抛出启动异常，强制开发者补齐降级策略。</p>
- *
  * <p><b>配置项：</b>通过 {@link PeachOpenfeignProperties.Fallback} 控制：
  * <ul>
- *   <li>{@code validateOnStartup}：是否启用启动时校验（默认 true）</li>
- *   <li>{@code failFastIfMissing}：缺失时是否快速失败（抛异常，默认 true）</li>
- *   <li>{@code productionProfiles}：生产环境 profile 列表（如 ["prod","prd"]），
- *       在此列表中即使缺失也不抛异常（仅 warn 日志），避免启动阻断</li>
+ * <li>{@code validateOnStartup}：是否启用启动时校验（默认 true）</li>
+ * <li>{@code failFastIfMissing}：缺失时是否快速失败（抛异常，默认 true）</li>
+ * <li>{@code productionProfiles}：生产环境 profile 列表（如 ["prod","prd"]），
+ * 在此列表中即使缺失也不抛异常（仅 warn 日志），避免启动阻断</li>
  * </ul>
  * </p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/8/12
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/8/12
  */
 @Slf4j
 public class PeachFeignFallbackValidator implements InitializingBean {

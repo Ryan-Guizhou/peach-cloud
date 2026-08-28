@@ -1,6 +1,8 @@
 package com.peach.common.util.encrypt;
 
 /**
+ * Encrypt常量。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 16:11

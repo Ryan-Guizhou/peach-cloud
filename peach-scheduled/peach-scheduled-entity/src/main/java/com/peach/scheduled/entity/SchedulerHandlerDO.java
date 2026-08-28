@@ -1,5 +1,7 @@
 package com.peach.scheduled.entity;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -12,7 +14,6 @@ import java.time.LocalDateTime;
 
 /**
  * 调度业务处理器注册数据库对象。
- *
  * <p>该表记录业务服务主动上报的 Handler 能力和实例心跳，
  * 仅用于调度治理和页面展示，不替代服务注册中心。</p>
  *
@@ -26,13 +27,14 @@ import java.time.LocalDateTime;
 @Schema(description = "调度业务处理器注册数据库对象")
 public class SchedulerHandlerDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 2866838377753390678L;
 
     /** 主键。 */
     @Id
     @Column(name = "ID")
     @Schema(description = "主键")
-    private Long id;
+    private String id;
 
     /** 业务应用名称。 */
     @Column(name = "APPLICATION_NAME")

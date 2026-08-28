@@ -1,7 +1,7 @@
 package com.peach.openfeign.exception;
 
 /**
- * 下游服务返回 HTTP 错误。
+ * PeachFeignRemote异常。
  *
  * @Author Mr Shu
  * @Version 1.0.0

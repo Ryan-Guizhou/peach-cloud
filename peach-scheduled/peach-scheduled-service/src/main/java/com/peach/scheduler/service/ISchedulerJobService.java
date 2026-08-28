@@ -8,7 +8,7 @@ import com.peach.scheduled.qo.SchedulerJobQO;
 import java.util.List;
 
 /**
- * 调度任务管理服务接口。
+ * IScheduler任务服务类。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -33,7 +33,7 @@ public interface ISchedulerJobService {
      * @param operatorId 操作人 ID
      * @return 更新后的任务定义
      */
-    SchedulerJobVO update(Long jobId, SchedulerJobSaveDTO data, String operatorId);
+    SchedulerJobVO update(String jobId, SchedulerJobSaveDTO data, String operatorId);
 
     /**
      * 查询任务列表。
@@ -49,7 +49,7 @@ public interface ISchedulerJobService {
      * @param jobId 任务 ID
      * @return 任务定义
      */
-    SchedulerJobVO get(Long jobId);
+    SchedulerJobVO get(String jobId);
 
     /**
      * 执行任务生命周期状态迁移。
@@ -59,5 +59,5 @@ public interface ISchedulerJobService {
      * @param operatorId 操作人 ID
      * @return 状态迁移后的任务定义
      */
-    SchedulerJobVO transition(Long jobId, JobEvent event, String operatorId);
+    SchedulerJobVO transition(String jobId, JobEvent event, String operatorId);
 }

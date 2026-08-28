@@ -37,11 +37,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * 调度模块相关说明。
- *
- * <p>调度模块相关说明。
- * 调度模块相关说明。
- * 调度模块相关说明。</p>
+ * 调度服务配置类。
+ * <p>调度模块说明。
+ * 调度模块说明。
+ * 调度模块说明。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -53,16 +52,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class SchedulerServiceConfiguration {
 
     /**
-     * 创建相关对象。
-     */
-    public SchedulerServiceConfiguration() {
-        // Intentionally empty.
-    }
-
-    /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     @Bean
     public JobStateMachineFactory jobStateMachineFactory() {
@@ -70,9 +62,9 @@ public class SchedulerServiceConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     @Bean
     public ExecutionStateMachineFactory executionStateMachineFactory() {
@@ -80,13 +72,13 @@ public class SchedulerServiceConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param jobDao 参数说明
-     * @param jobVersionDao 参数说明
-     * @param stateLogDao 参数说明
-     * @param stateMachineFactory 参数说明
-     * @return 返回结果
+     * @param jobDao job Dao。
+     * @param jobVersionDao job Version Dao。
+     * @param stateLogDao state Log Dao。
+     * @param stateMachineFactory state Machine Factory。
+     * @return 执行结果。
      */
     @Bean
     public SchedulerJobLifecycleService schedulerJobLifecycleService(
@@ -98,13 +90,13 @@ public class SchedulerServiceConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param executionDao 参数说明
-     * @param executionAttemptDao 参数说明
-     * @param stateLogDao 参数说明
-     * @param stateMachineFactory 参数说明
-     * @return 返回结果
+     * @param executionDao execution Dao。
+     * @param executionAttemptDao execution Attempt Dao。
+     * @param stateLogDao state Log Dao。
+     * @param stateMachineFactory state Machine Factory。
+     * @return 执行结果。
      */
     @Bean
     public SchedulerExecutionLifecycleService schedulerExecutionLifecycleService(
@@ -118,10 +110,10 @@ public class SchedulerServiceConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param outboxPublisher 参数说明
-     * @return 返回结果
+     * @param outboxPublisher outbox Publisher。
+     * @return 执行结果。
      */
     @Bean
     public JobDispatcher schedulerJobDispatcher(MqOutboxPublisher outboxPublisher) {
@@ -129,14 +121,14 @@ public class SchedulerServiceConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param jobDao 参数说明
-     * @param executionDao 参数说明
-     * @param lifecycleService 参数说明
-     * @param dispatcher 参数说明
-     * @param operationLogDao 参数说明
-     * @return 返回结果
+     * @param jobDao job Dao。
+     * @param executionDao execution Dao。
+     * @param lifecycleService lifecycle Service。
+     * @param dispatcher dispatcher。
+     * @param operationLogDao operation Log Dao。
+     * @return 执行结果。
      */
     @Bean
     public SchedulerTriggerService schedulerTriggerService(
@@ -150,15 +142,15 @@ public class SchedulerServiceConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param jobDao 参数说明
-     * @param handlerDao 参数说明
-     * @param jobVersionDao 参数说明
-     * @param lifecycleService 参数说明
-     * @param objectMapper 参数说明
-     * @param operationLogDao 参数说明
-     * @return 返回结果
+     * @param jobDao job Dao。
+     * @param handlerDao handler Dao。
+     * @param jobVersionDao job Version Dao。
+     * @param lifecycleService lifecycle Service。
+     * @param objectMapper object Mapper。
+     * @param operationLogDao operation Log Dao。
+     * @return 执行结果。
      */
     @Bean
     public ISchedulerJobService schedulerJobService(
@@ -173,14 +165,14 @@ public class SchedulerServiceConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param executionDao 参数说明
-     * @param jobDao 参数说明
-     * @param lifecycleService 参数说明
-     * @param triggerService 参数说明
-     * @param operationLogDao 参数说明
-     * @return 返回结果
+     * @param executionDao execution Dao。
+     * @param jobDao job Dao。
+     * @param lifecycleService lifecycle Service。
+     * @param triggerService trigger Service。
+     * @param operationLogDao operation Log Dao。
+     * @return 执行结果。
      */
     @Bean
     public ISchedulerExecutionService schedulerExecutionService(
@@ -194,13 +186,13 @@ public class SchedulerServiceConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param executionDao 参数说明
-     * @param jobDao 参数说明
-     * @param lifecycleService 参数说明
-     * @param triggerService 参数说明
-     * @return 返回结果
+     * @param executionDao execution Dao。
+     * @param jobDao job Dao。
+     * @param lifecycleService lifecycle Service。
+     * @param triggerService trigger Service。
+     * @return 执行结果。
      */
     @Bean
     public SchedulerRetryRecoveryService schedulerRetryRecoveryService(
@@ -212,9 +204,9 @@ public class SchedulerServiceConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     @Bean
     public SchedulerCronService schedulerCronService() {
@@ -222,10 +214,10 @@ public class SchedulerServiceConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param handlerDao 参数说明
-     * @return 返回结果
+     * @param handlerDao handler Dao。
+     * @return 执行结果。
      */
     @Bean
     public ISchedulerHandlerService schedulerHandlerService(SchedulerHandlerDao handlerDao) {
@@ -233,12 +225,12 @@ public class SchedulerServiceConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param jobDao 参数说明
-     * @param providers 参数说明
-     * @param providerId 参数说明
-     * @return 返回结果
+     * @param jobDao job Dao。
+     * @param providers providers。
+     * @param providerId provider Id。
+     * @return 执行结果。
      */
     @Bean
     public SchedulerReconciler schedulerReconciler(

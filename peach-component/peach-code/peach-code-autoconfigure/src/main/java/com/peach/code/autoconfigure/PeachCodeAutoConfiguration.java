@@ -12,11 +12,14 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * 业务编码生成器自动配置。
- *
+ * Peach代码自动配置。
  * <p>仅在引入 {@code JdbcTemplate}、启用 {@code peach.code} 且业务方没有自定义
  * {@link CodeGenerator} 时创建默认实现。Redis 客户端和事务管理器均采用可选注入，分别用于
  * Redis 主路径和 MySQL 故障兜底。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @AutoConfiguration
 @ConditionalOnClass({JdbcTemplate.class, CodeGenerator.class})

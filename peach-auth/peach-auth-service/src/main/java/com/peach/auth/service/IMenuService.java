@@ -7,8 +7,7 @@ import com.peach.auth.vo.MenuVO;
 
 
 /**
- * 菜单服务接口。
- *
+ * IMenu服务类。
  * <p>提供菜单分页、查询以及基础增删改能力。</p>
  *
  * @Author Mr Shu

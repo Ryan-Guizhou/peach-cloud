@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Adobe控制器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/17 18:55

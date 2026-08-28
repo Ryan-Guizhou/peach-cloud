@@ -12,6 +12,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Memory缓存工具类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/29 18:11

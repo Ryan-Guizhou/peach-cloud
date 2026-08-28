@@ -1,5 +1,7 @@
 package com.peach.auth.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -25,7 +27,9 @@ import java.io.Serializable;
 @Schema(description = "机构实体")
 @EqualsAndHashCode(callSuper = true)
 public class OrganizationDO extends PeachDO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = -3347676039473972911L;
 
     @Id
     @Column(name = "ORG_ID")

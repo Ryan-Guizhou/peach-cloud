@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
- * OpenFeign 客户端治理组件自动配置。
+ * PeachOpenFeign客户端自动配置。
  * <p>
  * 负责装配超时、错误解码、有界重试、Same-Token 与 RequestId 注入、fallback 校验能力，
  * 为所有 Feign 客户端提供统一治理基线。

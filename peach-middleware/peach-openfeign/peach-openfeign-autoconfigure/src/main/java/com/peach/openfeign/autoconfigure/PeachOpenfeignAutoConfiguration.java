@@ -15,7 +15,7 @@ import jakarta.annotation.PostConstruct;
 
 
 /**
- * Peach OpenFeign 治理总入口自动配置。
+ * PeachOpenFeign自动配置。
  * <p>
  * 该类保持最小职责：仅在启动阶段输出传输层与熔断治理的关键运行态，
  * 便于快速核对配置项与依赖是否一致，不承载具体拦截、重试或异常治理逻辑。

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
- * IP 白名单数据访问接口。
+ * IpWhitelist数据访问。
  *
  * @Author Mr Shu
  * @Version 1.0.0

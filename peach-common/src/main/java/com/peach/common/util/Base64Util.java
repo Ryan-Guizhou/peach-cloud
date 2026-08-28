@@ -4,11 +4,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
+ * Base64工具类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 17:26
  * @Description Base64工具类
- * 因为编码器的不同,在对有特殊符号 如: +- 进行base64编码时,会出现乱码,所以需要使用更加安全的编码器 urlEncoder/urlDecoder
  */
 public final class Base64Util {
 

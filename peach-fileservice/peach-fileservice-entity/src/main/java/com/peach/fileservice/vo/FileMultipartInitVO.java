@@ -1,5 +1,7 @@
 package com.peach.fileservice.vo;
 
+import java.io.Serial;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -7,23 +9,23 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 文件分片上传初始化视图对象
- *
+ * 分片上传初始化结果。
  * <p>用于封装分片上传初始化阶段的返回结果，包含秒传检测结果、
  * 文件业务ID、上传会话信息（sessionId、uploadId）、存储提供方与
  * Bucket/对象Key等底层存储元数据以及会话过期时间，
  * 为客户端后续分片上传提供完整的会话上下文。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Data
 @Schema(description = "分片上传初始化结果")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class FileMultipartInitVO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1765137472917767018L;
 
     @Schema(description = "是否秒传")
     private Boolean instantUpload;

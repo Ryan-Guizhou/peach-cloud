@@ -13,8 +13,7 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 /**
- * 网关请求 ID 过滤器。
- *
+ * 网关请求Global过滤器。
  * <p>网关统一生成可信请求 ID，并传递给下游服务和响应头。</p>
  *
  * @Author Mr Shu

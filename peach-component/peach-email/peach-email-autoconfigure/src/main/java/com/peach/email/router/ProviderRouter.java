@@ -18,12 +18,12 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
+ * 提供商路由器：维护可用的传输实现、上下文与优先级，
+ * 提供按优先级排序的候选集合以支持故障转移策略。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:43
- * @Description
- * 提供商路由器：维护可用的传输实现、上下文与优先级，
- * 提供按优先级排序的候选集合以支持故障转移策略。
  */
 @Slf4j
 public class ProviderRouter {

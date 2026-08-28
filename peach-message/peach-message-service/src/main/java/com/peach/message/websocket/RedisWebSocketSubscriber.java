@@ -15,6 +15,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
+ * WebSocket Redis订阅处理器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45

@@ -6,10 +6,11 @@ import com.peach.captcha.service.CaptchaService;
 import com.peach.captcha.service.impl.KnowledgeCaptchaServiceImpl;
 
 /**
+ * Knowledge验证码服务提供者。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/22 14:20
- * @Description: 知识验证码服务提供者 / Knowledge verification code service provider
  */
 public class KnowledgeCaptchaServiceProvider implements CaptchaServiceProvider {
 

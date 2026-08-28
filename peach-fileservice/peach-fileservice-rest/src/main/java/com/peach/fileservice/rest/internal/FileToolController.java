@@ -16,7 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 文件内部工具接口。
+ * 供内部调用方使用的文件辅助工具。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Validated
 @Indexed

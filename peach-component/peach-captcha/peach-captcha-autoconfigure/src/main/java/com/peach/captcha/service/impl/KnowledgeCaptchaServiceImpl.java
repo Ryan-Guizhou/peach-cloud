@@ -25,7 +25,7 @@ import com.peach.common.util.PeachSecureRandom;
 import java.util.Properties;
 
 /**
- * 知识/常识验证码服务实现类
+ * Knowledge验证码服务实现类。
  *
  * @Author Mr Shu
  * @Version 1.0.0

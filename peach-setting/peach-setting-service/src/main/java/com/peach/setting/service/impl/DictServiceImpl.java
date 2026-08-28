@@ -33,6 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
+ * 字典服务实现。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 20:50

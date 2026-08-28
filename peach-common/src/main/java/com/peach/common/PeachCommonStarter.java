@@ -6,6 +6,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 /**
+ * Peach通用启动配置。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/13 13:07

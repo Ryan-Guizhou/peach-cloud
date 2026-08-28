@@ -15,22 +15,20 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * Peach OpenFeign 请求拦截器。
- *
+ * PeachOpenFeign请求拦截器。
  * <p>作为 Feign 的 {@link RequestInterceptor} 实现，在每次服务间调用（通过 Feign 客户端发起 HTTP 请求）之前执行。
  * 主要职责包括：</p>
  * <ul>
- *   <li><b>请求体大小校验：</b>若配置了上传最大字节数，检查请求体是否超限，超限则快速失败，避免网络传输浪费。</li>
- *   <li><b>链路追踪标识中继：</b>将当前 HTTP 请求头中的 <code>X-Request-Id</code> 透传到下游服务，保障全链路追踪能力。</li>
- *   <li><b>服务间认证凭据注入：</b>注入 Sa-Token 的 Same-Token，用于内部服务间的身份验证，防止外部直接调用。</li>
+ * <li><b>请求体大小校验：</b>若配置了上传最大字节数，检查请求体是否超限，超限则快速失败，避免网络传输浪费。</li>
+ * <li><b>链路追踪标识中继：</b>将当前 HTTP 请求头中的 <code>X-Request-Id</code> 透传到下游服务，保障全链路追踪能力。</li>
+ * <li><b>服务间认证凭据注入：</b>注入 Sa-Token 的 Same-Token，用于内部服务间的身份验证，防止外部直接调用。</li>
  * </ul>
- *
  * <p><b>执行时机：</b>每当 Spring Cloud OpenFeign 的代理对象发起 HTTP 请求时，会先调用此拦截器的 {@link #apply(RequestTemplate)} 方法，
  * 对请求模板（包括 URL、头、体等）进行增强或校验，然后再由 Feign 底层执行真正的网络请求。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/8/12
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/8/12
  */
 @Slf4j
 public class PeachOpenfeignRequestInterceptor implements RequestInterceptor {
@@ -227,11 +225,11 @@ public class PeachOpenfeignRequestInterceptor implements RequestInterceptor {
      */
     private String getCurrentRequestHeader(String headerName) {
         RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
-        if (!(attributes instanceof ServletRequestAttributes)) {
+        if (!(attributes instanceof ServletRequestAttributes servletRequestAttributes)) {
             // 非 Servlet 环境（如非 Web 调用），无法获取原始请求头
             return null;
         }
-        HttpServletRequest request = ((ServletRequestAttributes) attributes).getRequest();
+        HttpServletRequest request = servletRequestAttributes.getRequest();
         String value = request.getHeader(headerName);
         return value == null ? null : value.trim();
     }

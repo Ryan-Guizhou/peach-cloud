@@ -37,6 +37,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * 用户资料服务实现类。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
 @Slf4j
 @Indexed
 @Service
@@ -224,7 +231,7 @@ public class UserProfileServiceImpl implements IUserProfileService {
                     FileDownloadUrlVO.class, "头像地址获取失败");
             return result.getUrl();
         } catch (RuntimeException exception) {
-            log.warn("头像临时地址获取失败，fileId={}", fileId);
+            log.warn("Failed to resolve temporary avatar URL, fileId={}", fileId);
             return null;
         }
     }
@@ -244,10 +251,10 @@ public class UserProfileServiceImpl implements IUserProfileService {
         try {
             Response response = fileFeignClient.delete(fileId);
             if (response == null || !response.isSuccess()) {
-                log.warn("头像文件清理未成功，fileId={}", fileId);
+                log.warn("Avatar file cleanup was not successful, fileId={}", fileId);
             }
         } catch (RuntimeException exception) {
-            log.warn("头像文件清理失败，fileId={}", fileId);
+            log.warn("Avatar file cleanup failed, fileId={}", fileId);
         }
     }
 

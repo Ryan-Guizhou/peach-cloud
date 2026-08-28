@@ -11,10 +11,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 /**
- * Peach Cloud 可观测性核心自动配置。
- *
+ * PeachObservability自动配置。
  * <p>提供请求关联标识的生成和解析基础设施。指标、Trace 和 OTLP 导出由 starter 引入的
  * Spring Boot Actuator、Micrometer 和 OpenTelemetry 官方自动配置负责。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @AutoConfiguration
 @EnableConfigurationProperties(PeachObservabilityProperties.class)

@@ -1,5 +1,7 @@
 package com.peach.scheduled.entity;
 
+import java.io.Serial;
+
 import com.peach.scheduled.common.JobState;
 import com.peach.scheduled.common.SyncStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,7 +16,6 @@ import java.time.LocalDateTime;
 
 /**
  * 调度任务定义数据库对象。
- *
  * <p>该对象与 PEACH_SCHEDULER_JOB 表一一对应，仅承载持久化字段，
  * 不在 DO 中放置调度、重试、状态迁移等业务逻辑。</p>
  *
@@ -28,13 +29,14 @@ import java.time.LocalDateTime;
 @Schema(description = "调度任务定义数据库对象")
 public class SchedulerJobDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -8258638478106567940L;
 
     /** 任务主键。 */
     @Id
     @Column(name = "ID")
     @Schema(description = "任务主键")
-    private Long id;
+    private String id;
 
     /** 稳定任务编码。 */
     @Column(name = "JOB_CODE")

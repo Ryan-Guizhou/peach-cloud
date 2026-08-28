@@ -5,10 +5,11 @@ import jakarta.mail.SendFailedException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * 简单重试策略。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:10
- * @Description: 简单的重试策略
  */
 @Slf4j
 public class SimpleRetryPolicy implements RetryPolicy{

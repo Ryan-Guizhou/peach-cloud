@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 网关专用公开安全端点匹配器。
+ * GatewaySecurityEndpointMatcher相关类。
  *
  * @Author Mr Shu
  * @Version 1.0.0

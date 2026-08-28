@@ -1,5 +1,7 @@
 package com.peach.setting.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -12,10 +14,11 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
+ * 多语言消息。
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 20:30
- * @Description 多语言消息 */
+ */
 
 @Data
 @Entity
@@ -24,7 +27,8 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = true)
 public class MultiMessageDO extends PeachDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -2673161574061145964L;
 
     @Id
     @Column(name = "ID")

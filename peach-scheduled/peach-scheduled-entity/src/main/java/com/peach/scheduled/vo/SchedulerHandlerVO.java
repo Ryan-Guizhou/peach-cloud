@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 
 /**
  * 调度 Handler 视图对象。
- *
  * <p>该对象只用于接口响应和页面展示，不参与数据库持久化。</p>
  *
  * @Author Mr Shu
@@ -20,7 +19,7 @@ public class SchedulerHandlerVO {
 
     /** 主键。 */
     @Schema(description = "主键")
-    private Long id;
+    private String id;
 
     /** 业务应用名称。 */
     @Schema(description = "业务应用名称")

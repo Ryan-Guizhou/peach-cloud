@@ -1,15 +1,21 @@
 package com.peach.common;
 
+import java.io.Serial;
+
 import java.io.Serializable;
 import java.util.List;
 
 /**
+ * 分页列表。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/4/5 10:52
  */
 public class PageList<T> implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = 7257416866491739172L;
 
     private Integer pageIndex = 1;
 

@@ -15,10 +15,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 
 /**
- * Servlet 可观测性自动配置。
- *
+ * PeachServletObservability自动配置。
  * <p>该配置只在 Servlet 应用中注册请求 ID 过滤器，并早于认证与用户上下文过滤器执行。
  * 响应式网关不加载 Servlet API，也不会创建该过滤器。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @AutoConfiguration
 @AutoConfigureAfter(PeachObservabilityAutoConfiguration.class)

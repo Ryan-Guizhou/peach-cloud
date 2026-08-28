@@ -11,6 +11,8 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 
 /**
+ * Sample启动类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/8 15:21

@@ -13,13 +13,12 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import java.util.regex.Pattern;
 
 /**
+ * SpEL解析。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
- * 解析操作日志中的受限 SpEL 表达式。
- *
- * <p>该类只允许读取已显式注入的变量，不开放 Bean、类型、构造器和方法调用能力，
- * 避免日志表达式意外访问应用运行时对象。</p>
- */
+ * @CreateTime 2026/3/20 16:58
+  */
 @Slf4j
 public class SpelParse {
 
@@ -70,7 +69,7 @@ public class SpelParse {
             String result = expression.getValue(context, String.class);
             return result == null ? "" : result;
         } catch (Exception ex) {
-            log.warn("操作日志表达式解析失败，保留原始模板，表达式长度={}", express.length(), ex);
+            log.warn("Failed to parse operation log expression, keeping template, expressionLength={}", express.length(), ex);
             return express;
         }
     }

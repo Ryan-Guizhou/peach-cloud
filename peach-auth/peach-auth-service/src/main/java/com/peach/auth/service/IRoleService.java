@@ -8,8 +8,7 @@ import com.peach.auth.vo.RoleVO;
 import java.util.List;
 
 /**
- * 角色服务接口。
- *
+ * IRole服务类。
  * <p>提供角色分页、查询以及基础增删改能力。</p>
  *
  * @Author Mr Shu

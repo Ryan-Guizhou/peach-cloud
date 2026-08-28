@@ -1,5 +1,7 @@
 package com.peach.auth.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -11,6 +13,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 
+/**
+ * 用户头像历史。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
+
+
 @Data
 @Entity
 @Table(name = "PEACH_USER_AVATAR_HISTORY")
@@ -18,7 +29,8 @@ import java.io.Serializable;
 @Schema(description = "用户头像历史")
 public class UserAvatarHistoryDO extends PeachDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -1707114200070052073L;
 
     @Id
     @Column(name = "AVATAR_HISTORY_ID")

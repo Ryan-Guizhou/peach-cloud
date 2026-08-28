@@ -2,6 +2,7 @@ package com.peach.common;
 
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.Serial;
 import lombok.Data;
 import org.apache.commons.beanutils.BeanUtils;
 
@@ -10,12 +11,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 /**
+ * Peach实体。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 18:42
  */
 @Data
 public class PeachEntity implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -4380175357452651885L;
 
     @Schema(description = "分页页码")
     private Integer pageNum = 1;

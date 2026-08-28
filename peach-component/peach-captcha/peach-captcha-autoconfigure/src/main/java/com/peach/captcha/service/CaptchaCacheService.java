@@ -1,6 +1,8 @@
 package com.peach.captcha.service;
 
 /**
+ * 图片验证码缓存服务。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:40

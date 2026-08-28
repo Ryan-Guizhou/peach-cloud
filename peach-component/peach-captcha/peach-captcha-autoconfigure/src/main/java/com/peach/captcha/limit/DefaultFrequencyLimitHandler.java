@@ -15,16 +15,17 @@ import java.util.Properties;
 
 
 /**
- * 验证码接口限流:
- *      客户端ClientUid 组件
+ * 默认Frequency限流处理器。
+ * 客户端ClientUid 组件
  * 针对同一个客户端的请求，做如下限制:
- * get
- * 	 1分钟内check失败5次，锁定5分
- * 	 1分钟内不能超过120次。
+ * get。。
+ * 1分钟内check失败5次，锁定5分
+ * 1分钟内不能超过120次。
  * check:
- *   1分钟内不超过600次
+ * 1分钟内不超过600次
  * verify:
- *   1分钟内不超过600次
+ * 1分钟内不超过600次
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:42

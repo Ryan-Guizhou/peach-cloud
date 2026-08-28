@@ -7,7 +7,11 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.SendFailedException;
 
 /**
- * 固定间隔重试策略
+ * Fixed延迟重试策略。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Slf4j
 public class FixedDelayRetryPolicy implements RetryPolicy {

@@ -6,6 +6,8 @@ import com.peach.captcha.service.CaptchaService;
 import com.peach.captcha.service.impl.ClickWordCaptchServiceImpl;
 
 /**
+ * ClickWordCaptch服务提供者。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/22 11:36

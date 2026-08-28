@@ -1,5 +1,7 @@
 package com.peach.auth.dto;
 
+import java.io.Serial;
+
 import com.peach.common.PeachGroup;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,7 +12,7 @@ import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
- * 角色维护请求参数。
+ * 角色DTO。
  * <p>用于角色的新增、修改和授权场景，按租户和机构维度隔离数据。</p>
  *
  * @Author Mr Shu
@@ -21,7 +23,8 @@ import java.io.Serializable;
 @Schema(description = "角色DTO")
 public class RoleDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 7399713680052821739L;
 
     @Schema(description = "角色ID")
     @NotBlank(message = "角色ID不能为空", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})

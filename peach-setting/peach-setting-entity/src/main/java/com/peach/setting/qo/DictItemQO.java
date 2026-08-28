@@ -1,5 +1,7 @@
 package com.peach.setting.qo;
 
+import java.io.Serial;
+
 import com.peach.common.PeachEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,6 +10,8 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 
 /**
+ * 字典项查询对象。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 20:40
@@ -18,7 +22,8 @@ import java.io.Serializable;
 @Schema(description = "字典项查询对象")
 public class DictItemQO extends PeachEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 8485179762119338426L;
 
     @Schema(description = "字典项ID")
     private String id;

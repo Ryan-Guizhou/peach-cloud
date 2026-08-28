@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
+ * Setting服务外部接口暴露接口管理。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/7/8 13:44

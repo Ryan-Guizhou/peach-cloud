@@ -1,6 +1,8 @@
 package com.peach.common;
 
 /**
+ * 当前上下文。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/7/5 19:20

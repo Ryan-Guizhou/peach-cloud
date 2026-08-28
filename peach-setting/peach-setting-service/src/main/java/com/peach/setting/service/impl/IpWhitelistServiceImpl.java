@@ -9,6 +9,7 @@ import com.peach.common.IDGeneratorUtil;
 import com.peach.common.PageResult;
 import com.peach.common.constant.PubCommonConst;
 import com.peach.common.util.DateUtil;
+import com.peach.common.util.TransactionUtils;
 import com.peach.satoken.context.SecurityContextHolder;
 import com.peach.setting.comon.enums.SettingConst;
 import com.peach.setting.dao.IpWhitelistDao;
@@ -23,14 +24,12 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.UUID;
 
 /**
- * IP 白名单服务实现。
+ * IpWhitelist服务实现类。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -124,16 +123,7 @@ public class IpWhitelistServiceImpl implements IIpWhitelistService {
      * 在事务提交后刷新缓存；不存在事务时直接刷新。
      */
     private void refreshCacheAfterCommit() {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            refreshCache();
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                refreshCache();
-            }
-        });
+        TransactionUtils.runAfterCommit(this::refreshCache);
     }
 
     private void fillCurrentTenantOrg(IpWhitelistQO qo) {

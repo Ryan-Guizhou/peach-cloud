@@ -1,5 +1,7 @@
 package com.peach.fileservice.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -12,22 +14,21 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
- * 文件上传会话数据库实体
- *
+ * 文件上传会话实体。
  * <p>映射表 {@code PEACH_FILE_UPLOAD_SESSION}，用于持久化文件上传过程中的会话信息。
  * 每次文件上传操作创建一条会话记录，贯穿上传全生命周期，主要包含：</p>
  * <ul>
- *   <li>会话标识：会话ID、预生成文件ID、预生成物理对象ID</li>
- *   <li>文件摘要：SHA-256、MD5，用于完整性校验与秒传判定</li>
- *   <li>文件元数据：文件名、显示名、大小、内容类型</li>
- *   <li>业务关联：业务类型、业务ID、业务标签、备注</li>
- *   <li>存储信息：存储提供方、Bucket名称、对象Key、底层上传会话ID</li>
- *   <li>生命周期：会话状态、过期时间、逻辑删除标记</li>
+ * <li>会话标识：会话ID、预生成文件ID、预生成物理对象ID</li>
+ * <li>文件摘要：SHA-256、MD5，用于完整性校验与秒传判定</li>
+ * <li>文件元数据：文件名、显示名、大小、内容类型</li>
+ * <li>业务关联：业务类型、业务ID、业务标签、备注</li>
+ * <li>存储信息：存储提供方、Bucket名称、对象Key、底层上传会话ID</li>
+ * <li>生命周期：会话状态、过期时间、逻辑删除标记</li>
  * </ul>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Data
 @Entity
@@ -36,7 +37,8 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = true)
 public class FileUploadSessionDO extends PeachDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -8459293278843801649L;
 
     @Id
     @Column(name = "SESSION_ID")

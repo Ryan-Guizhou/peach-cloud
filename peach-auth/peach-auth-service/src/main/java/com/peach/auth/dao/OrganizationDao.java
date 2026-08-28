@@ -10,8 +10,7 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
- * 机构 DAO。
- *
+ * 机构数据访问。
  * <p>负责机构基础 CRUD 以及带查询条件的列表查询。</p>
  *
  * @Author Mr Shu

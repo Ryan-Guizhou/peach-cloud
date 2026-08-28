@@ -15,6 +15,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
+ * 缓存工具类，提供统一的缓存操作方法，支持多级缓存管理。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:13

@@ -1,7 +1,7 @@
 package com.peach.openfeign.exception;
 
 /**
- * Feign 调用被 Sentinel 限流。
+ * PeachFeignRateLimited异常。
  *
  * @Author Mr Shu
  * @Version 1.0.0

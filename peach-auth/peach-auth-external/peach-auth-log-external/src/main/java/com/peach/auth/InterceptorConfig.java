@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
 
 /**
+ * 拦截器配置类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/18 18:10

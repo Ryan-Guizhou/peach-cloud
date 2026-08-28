@@ -59,15 +59,14 @@
         FOR UPDATE
     </select>
 
-    <insert id="insert" parameterType="com.peach.scheduled.entity.SchedulerJobDO"
-            useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="com.peach.scheduled.entity.SchedulerJobDO">
         INSERT INTO PEACH_SCHEDULER_JOB
-        (JOB_CODE, JOB_NAME, APPLICATION_NAME, HANDLER_NAME, DESCRIPTION, SCHEDULE_TYPE, CRON_EXPRESSION,
+        (ID, JOB_CODE, JOB_NAME, APPLICATION_NAME, HANDLER_NAME, DESCRIPTION, SCHEDULE_TYPE, CRON_EXPRESSION,
          INTERVAL_SECONDS, START_AT, TIME_ZONE, MISFIRE_POLICY, CONCURRENCY_POLICY, TIMEOUT_MS, MAX_ATTEMPTS,
          RETRY_INTERVAL_SECONDS, PARAMETERS_JSON, STATE, SCHEDULE_VERSION, SYNC_STATUS, VERSION, CREATOR_ID,
          CREATED_TIME, MODIFIER_ID, MODIFY_TIME)
         VALUES
-        (#{jobCode}, #{jobName}, #{applicationName}, #{handlerName}, #{description}, #{scheduleType},
+        (#{id}, #{jobCode}, #{jobName}, #{applicationName}, #{handlerName}, #{description}, #{scheduleType},
          #{cronExpression}, #{intervalSeconds}, #{startAt}, #{timeZone}, #{misfirePolicy}, #{concurrencyPolicy},
          #{timeoutMs}, #{maxAttempts}, #{retryIntervalSeconds}, #{parametersJson}, #{state}, #{scheduleVersion},
          #{syncStatus}, #{version}, #{creatorId}, NOW(3), #{modifierId}, NOW(3))

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
+ * 文件服务Feign客户端。
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/2/1 15:00

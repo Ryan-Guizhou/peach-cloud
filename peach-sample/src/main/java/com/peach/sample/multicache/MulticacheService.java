@@ -1,5 +1,7 @@
 package com.peach.sample.multicache;
 
+import java.io.Serial;
+
 import org.springframework.stereotype.Indexed;
 import com.peach.redis.manager.MultiCacheManager;
 import lombok.Data;
@@ -16,6 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Multicache服务类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/10 15:16
@@ -81,7 +85,8 @@ public class MulticacheService {
     @Data
     public static class UserDO implements Serializable {
 
-        private static final long serialVersionUID = -247342486981431698L;
+        @Serial
+        private static final long serialVersionUID = -2530600649621291954L;
 
         private String userId;
 

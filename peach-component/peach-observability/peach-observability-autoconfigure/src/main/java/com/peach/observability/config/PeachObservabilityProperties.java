@@ -3,10 +3,13 @@ package com.peach.observability.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Peach Cloud 可观测性配置。
- *
+ * PeachObservability配置属性。
  * <p>该配置只管理项目自定义的请求关联能力。指标、链路导出、采样率和管理端点继续使用
  * Spring Boot 标准的 {@code management.*} 配置，避免形成两套含义相同的配置体系。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @ConfigurationProperties(prefix = "peach.observability")
 public class PeachObservabilityProperties {
@@ -30,9 +33,12 @@ public class PeachObservabilityProperties {
     }
 
     /**
-     * 请求关联标识配置。
-     *
+     * 请求Id。
      * <p>请求 ID 用于用户侧问题定位，不替代 OpenTelemetry 的 traceId 和 spanId。</p>
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class RequestId {
 

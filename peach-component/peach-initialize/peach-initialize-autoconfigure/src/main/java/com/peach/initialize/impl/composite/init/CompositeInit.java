@@ -5,6 +5,8 @@ import com.peach.initialize.impl.composite.CompositeContainer;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
+ * Composite初始化。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/16 16:26

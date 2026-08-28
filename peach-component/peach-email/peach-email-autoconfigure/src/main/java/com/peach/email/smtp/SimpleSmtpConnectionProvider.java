@@ -8,6 +8,8 @@ import jakarta.mail.Transport;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * 简单的连接提供者。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 18:27

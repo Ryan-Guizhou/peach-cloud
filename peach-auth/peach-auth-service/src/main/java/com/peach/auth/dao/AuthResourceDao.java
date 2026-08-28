@@ -7,6 +7,8 @@ import com.peach.auth.vo.AuthResourceVO;
 import org.springframework.stereotype.Indexed;
 
 /**
+ * 认证资源数据访问。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 17:47

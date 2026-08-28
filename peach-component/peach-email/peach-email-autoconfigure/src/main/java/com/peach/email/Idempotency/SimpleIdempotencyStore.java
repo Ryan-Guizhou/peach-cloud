@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * 简单幂等存储实现。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:19

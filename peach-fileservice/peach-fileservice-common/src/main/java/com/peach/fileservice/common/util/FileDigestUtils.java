@@ -8,9 +8,12 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 
 /**
- * 文件摘要工具。
- *
+ * 文件Digest工具类。
  * <p>只处理输入流和摘要，不负责文件落盘、对象存储或日志输出。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public final class FileDigestUtils {
 

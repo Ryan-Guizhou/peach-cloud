@@ -15,6 +15,8 @@ import org.springframework.stereotype.Indexed;
 
 
 /**
+ * File服务feign自动装配。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025-11-25 17:47

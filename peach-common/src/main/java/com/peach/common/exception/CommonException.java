@@ -7,6 +7,8 @@ import com.peach.common.util.language.MultiLanguage;
 import java.util.Optional;
 
 /**
+ * 通用异常。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/11 10:28

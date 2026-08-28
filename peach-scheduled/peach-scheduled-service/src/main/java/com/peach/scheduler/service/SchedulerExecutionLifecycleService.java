@@ -19,7 +19,7 @@ import java.time.temporal.ChronoUnit;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 执行相关状态处理。
+ * 调度执行Lifecycle服务类。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -37,12 +37,12 @@ public class SchedulerExecutionLifecycleService {
     private final ObjectProvider<SchedulerExecutionLifecycleService> self;
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param executionDao 参数说明
-     * @param executionAttemptDao 参数说明
-     * @param stateLogDao 参数说明
-     * @param stateMachineFactory 参数说明
+     * @param executionDao execution Dao。
+     * @param executionAttemptDao execution Attempt Dao。
+     * @param stateLogDao state Log Dao。
+     * @param stateMachineFactory state Machine Factory。
      */
     public SchedulerExecutionLifecycleService(
             SchedulerExecutionDao executionDao,
@@ -60,7 +60,7 @@ public class SchedulerExecutionLifecycleService {
     /**
      * 执行相关状态迁移。
      *
-     * @param executionId 参数说明
+     * @param executionId execution Id。
      */
     @Transactional
     public void queue(String executionId) {
@@ -68,9 +68,9 @@ public class SchedulerExecutionLifecycleService {
     }
 
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      *
-     * @return 返回结果
+     * @return 执行结果。
      * @param executionId 执行实例 ID
      * @param executorInstance 执行器实例标识
      * @param leaseSeconds 执行租约时长，单位秒
@@ -169,7 +169,7 @@ public class SchedulerExecutionLifecycleService {
     }
 
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      * @param executionId 执行实例 ID
      * @param event 状态机事件
      * @param errorType 错误类型

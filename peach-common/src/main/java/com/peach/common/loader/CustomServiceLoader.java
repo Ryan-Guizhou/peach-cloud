@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -24,22 +23,20 @@ import java.util.Set;
 
 
 /**
- *
+ * 自定义服务加载器。
  * <p>扩展标准ServiceLoader，支持从自定义路径加载SPI服务实现
- *
  * <h3>特性：</h3>
  * <ul>
- *   <li>兼容标准ServiceLoader，从META-INF/services/加载</li>
- *   <li>支持从自定义路径加载服务实现</li>
- *   <li>线程安全：加载方法是静态的，使用局部变量</li>
- *   <li>性能优化：避免重复加载，使用缓存策略</li>
- *   <li>安全性：类加载隔离，异常隔离处理</li>
+ * <li>兼容标准ServiceLoader，从META-INF/services/加载</li>
+ * <li>支持从自定义路径加载服务实现</li>
+ * <li>线程安全：加载方法是静态的，使用局部变量</li>
+ * <li>性能优化：避免重复加载，使用缓存策略</li>
+ * <li>安全性：类加载隔离，异常隔离处理</li>
  * </ul>
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:44
- * @Description:
- * 自定义服务加载器
  */
 @Slf4j
 public class CustomServiceLoader {
@@ -84,7 +81,7 @@ public class CustomServiceLoader {
         }
 
         // 返回不可修改的列表，保护内部数据
-        return Collections.unmodifiableList(providers);
+        return List.copyOf(providers);
     }
 
     /**
@@ -285,7 +282,7 @@ public class CustomServiceLoader {
             throw new IOException("Failed to load services from file: " + configFile.getAbsolutePath(), e);
         }
 
-        return Collections.unmodifiableList(providers);
+        return List.copyOf(providers);
     }
 
     /**

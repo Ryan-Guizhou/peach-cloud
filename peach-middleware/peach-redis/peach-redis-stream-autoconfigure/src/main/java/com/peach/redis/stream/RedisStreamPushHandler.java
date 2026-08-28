@@ -8,6 +8,8 @@ import org.springframework.data.redis.connection.stream.StreamRecords;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**
+ * Redis流Push处理器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/18 16:30

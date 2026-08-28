@@ -1,5 +1,7 @@
 package com.peach.fileservice.vo;
 
+import java.io.Serial;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -7,29 +9,28 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 云存储浏览节点返回对象。
- *
+ * 云存储浏览节点。
  * <p>
  * 用于表示云存储目录浏览时返回的文件或目录节点信息，
  * 支持对象存储以及文件系统类型存储的统一展示。
  * </p>
- *
  * <p>
  * 例如：
  * OSS、OBS、COS、S3 等对象存储中的 Object，
  * 以及 NAS 等文件系统中的文件和目录。
  * </p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/7/9
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/7/9
  */
 @Data
 @Schema(description = "云存储浏览节点")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CloudStorageObjectNodeVO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -1917006774830320038L;
 
     /**
      * 节点名称。

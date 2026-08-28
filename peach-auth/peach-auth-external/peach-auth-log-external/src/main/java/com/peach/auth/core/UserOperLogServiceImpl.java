@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
+ * 用户操作日志服务实现类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/18 18:59

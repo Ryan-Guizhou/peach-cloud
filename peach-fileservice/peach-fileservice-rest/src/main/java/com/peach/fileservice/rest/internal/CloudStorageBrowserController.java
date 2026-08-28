@@ -31,8 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 
 /**
- * 云存储浏览接口。
- *
+ * 云存储浏览。
  * <p>提供云存储目录浏览、对象元数据查询、上传、创建目录以及删除对象和目录等接口。</p>
  *
  * @Author Mr Shu
@@ -55,7 +54,7 @@ public class CloudStorageBrowserController {
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.SELECT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'检查存储桶是否存在,实例ID:['+#p0+']'")
     public Response bucketExists(@PathVariable("instanceId") String instanceId) {
-        log.info("检查存储桶是否存在,实例ID={}", instanceId);
+        log.info("Checking bucket existence, instanceId={}", instanceId);
         return Response.success(cloudStorageBrowserService.bucketExists(instanceId));
     }
 
@@ -65,7 +64,7 @@ public class CloudStorageBrowserController {
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'检查对象是否存在,实例ID:['+#p0+'],对象Key:['+#p1+']'")
     public Response objectExists(@PathVariable("instanceId") String instanceId,
                                  @RequestParam("objectKey") String objectKey) {
-        log.info("检查对象是否存在,实例ID={},对象Key={}", instanceId, objectKey);
+        log.info("Checking object existence, instanceId={}, objectKey={}", instanceId, objectKey);
         return Response.success(cloudStorageBrowserService.objectExists(instanceId, objectKey));
     }
 
@@ -75,7 +74,7 @@ public class CloudStorageBrowserController {
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'查询对象列表,实例ID:['+#p0+'],目录路径:['+#p1.path+']'")
     public Response list(@PathVariable("instanceId") String instanceId,
                          @RequestBody(required = false) CloudStorageListDTO data) {
-        log.info("查询对象列表,实例ID={},目录路径={}", instanceId, data == null ? null : data.getPath());
+        log.info("Listing cloud storage objects, instanceId={}, path={}", instanceId, data == null ? null : data.getPath());
         return Response.success(cloudStorageBrowserService.list(instanceId, data));
     }
 
@@ -85,7 +84,7 @@ public class CloudStorageBrowserController {
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'查询对象元数据,实例ID:['+#p0+'],对象Key:['+#p1+']'")
     public Response stat(@PathVariable("instanceId") String instanceId,
                          @RequestParam("objectKey") String objectKey) {
-        log.info("查询对象元数据,实例ID={},对象Key={}", instanceId, objectKey);
+        log.info("Fetching object metadata, instanceId={}, objectKey={}", instanceId, objectKey);
         return Response.success(cloudStorageBrowserService.stat(instanceId, objectKey));
     }
 
@@ -96,7 +95,7 @@ public class CloudStorageBrowserController {
     public Response upload(@PathVariable("instanceId") String instanceId,
                            @Valid @ModelAttribute CloudStorageUploadDTO data,
                            @RequestPart("file") MultipartFile file) {
-        log.info("上传云存储对象,实例ID={},目标路径={},文件名={}", instanceId,
+        log.info("Uploading cloud storage object, instanceId={}, targetPath={}, filename={}", instanceId,
                 data == null ? null : data.getTargetPath(), file == null ? null : file.getOriginalFilename());
         return Response.success(cloudStorageBrowserService.upload(instanceId, data.getTargetPath(), file));
     }
@@ -107,7 +106,7 @@ public class CloudStorageBrowserController {
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'创建云存储目录,实例ID:['+#p0+'],目录路径:['+#p1.path+']'")
     public Response createDirectory(@PathVariable("instanceId") String instanceId,
                                     @Valid @RequestBody CloudStorageCreateDirectoryDTO data) {
-        log.info("创建云存储目录,实例ID={},目录路径={}", instanceId, data.getPath());
+        log.info("Creating cloud storage directory, instanceId={}, path={}", instanceId, data.getPath());
         cloudStorageBrowserService.createDirectory(instanceId, data.getPath());
         return Response.success();
     }
@@ -118,7 +117,7 @@ public class CloudStorageBrowserController {
             optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除云存储对象,实例ID:['+#p0+'],对象Key:['+#p1.objectKey+']'")
     public Response deleteObject(@PathVariable("instanceId") String instanceId,
                                  @Valid @RequestBody CloudStorageDeleteObjectDTO data) {
-        log.info("删除云存储对象,实例ID={},对象Key={}", instanceId, data.getObjectKey());
+        log.info("Deleting cloud storage object, instanceId={}, objectKey={}", instanceId, data.getObjectKey());
         cloudStorageBrowserService.deleteObject(instanceId, data.getObjectKey());
         return Response.success();
     }
@@ -129,7 +128,7 @@ public class CloudStorageBrowserController {
             optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除云存储目录,实例ID:['+#p0+'],目录路径:['+#p1.path+']'")
     public Response deleteDirectory(@PathVariable("instanceId") String instanceId,
                                     @Valid @RequestBody CloudStorageDeleteDirectoryDTO data) {
-        log.info("删除云存储目录,实例ID={},目录路径={}", instanceId, data.getPath());
+        log.info("Deleting cloud storage directory, instanceId={}, path={}", instanceId, data.getPath());
         cloudStorageBrowserService.deleteDirectory(instanceId, data.getPath());
         return Response.success();
     }

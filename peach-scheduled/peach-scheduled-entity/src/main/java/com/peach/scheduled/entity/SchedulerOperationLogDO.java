@@ -3,7 +3,7 @@ package com.peach.scheduled.entity;
 import java.time.LocalDateTime;
 
 /**
- * 调度人工操作审计记录。
+ * 调度Operation日志数据对象。
  *
  * @Author Mr Shu
  * @Version 1.0.0

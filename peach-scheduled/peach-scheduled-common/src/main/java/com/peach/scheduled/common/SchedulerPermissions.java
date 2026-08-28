@@ -1,8 +1,7 @@
 package com.peach.scheduled.common;
 
 /**
- * Scheduler 管理端操作级权限编码。
- *
+ * SchedulerPermissions相关类。
  * <p>常量用于前端路由、权限资源初始化以及后续接入统一接口鉴权；
  * 平台侧 `scheduler:*` 资源由权限模块维护，编码以本类为准。</p>
  *

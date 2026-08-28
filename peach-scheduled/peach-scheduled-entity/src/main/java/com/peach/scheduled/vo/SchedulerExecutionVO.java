@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 
 /**
  * 调度执行视图对象。
- *
  * <p>该对象只用于接口响应和页面展示，不参与数据库持久化。</p>
  *
  * @Author Mr Shu
@@ -25,7 +24,7 @@ public class SchedulerExecutionVO {
 
     /** 关联任务主键。 */
     @Schema(description = "关联任务主键")
-    private Long jobId;
+    private String jobId;
 
     /** 稳定任务编码。 */
     @Schema(description = "稳定任务编码")

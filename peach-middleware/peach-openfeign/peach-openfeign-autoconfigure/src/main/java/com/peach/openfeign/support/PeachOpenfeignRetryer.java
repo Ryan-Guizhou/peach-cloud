@@ -5,15 +5,14 @@ import feign.RetryableException;
 import feign.Retryer;
 
 /**
- * Peach OpenFeign 有界重试器。
- *
+ * PeachOpenFeign重试器。
  * <p>基于 {@link PeachOpenfeignRetryPolicy} 控制最大次数和退避间隔。
  * Feign {@link Retryer} 接口要求实现 {@code clone()} 以隔离每次请求的重试状态；本类通过
  * 手动复制字段满足契约（Sonar S2975/S1182 已在根 {@code pom.xml} 多条件忽略中按文件配置）。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/8/12
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/8/12
  */
 public class PeachOpenfeignRetryer implements Retryer {
 

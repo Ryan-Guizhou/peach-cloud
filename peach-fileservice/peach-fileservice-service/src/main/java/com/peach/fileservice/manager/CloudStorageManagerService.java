@@ -6,6 +6,8 @@ import com.peach.fileservice.BucketInfo;
 import java.util.List;
 
 /**
+ * 云存储管理服务接口。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/19 16:55

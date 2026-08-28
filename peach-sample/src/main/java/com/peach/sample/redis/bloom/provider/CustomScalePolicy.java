@@ -7,7 +7,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 斐波那契增长策略：容量按斐波那契数列增长，平滑扩容
+ * 自定义缩放策略。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public class CustomScalePolicy implements BloomScalePolicy {
     

@@ -1,5 +1,7 @@
 package com.peach.auth.qo;
 
+import java.io.Serial;
+
 import com.peach.common.PeachEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,15 +10,18 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 
 /**
+ * AuthFunctionQO查询参数。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 18:08
- */
+  */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "AuthFunctionQO查询参数")
 public class AuthFunctionQO extends PeachEntity implements Serializable {
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -6300198139602166763L;
 
     @Schema(description = "租户ID")
     private String tenantId;

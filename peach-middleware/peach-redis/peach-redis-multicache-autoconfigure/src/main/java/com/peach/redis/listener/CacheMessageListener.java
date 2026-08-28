@@ -7,6 +7,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 
 /**
+ * 缓存失效监听器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:29
@@ -27,6 +29,6 @@ public class CacheMessageListener<K,V> implements MessageListener {
     public void onMessage(Message message, byte[] pattern) {
         CacheMessage cacheMessage = (CacheMessage) redisTemplate.getValueSerializer().deserialize(message.getBody());
         assert cacheMessage != null;
-        multiCacheManager.clearLocal(cacheMessage.getCacheName(), cacheMessage.getKey(), cacheMessage.getSender());
+        multiCacheManager.clearLocal(cacheMessage.cacheName(), cacheMessage.key(), cacheMessage.sender());
     }
 }

@@ -1,5 +1,7 @@
 package com.peach.auth.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -12,17 +14,21 @@ import java.io.Serializable;
 
 
 /**
+ * PeachApplication实体。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 17:36
- */
+  */
 @Data
 @Entity
 @Table(name = "PEACH_APPLICATION")
 @Schema(description = "PeachApplication实体")
 @EqualsAndHashCode(callSuper = true)
 public class ApplicationDO extends PeachDO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = 1860066138968904427L;
 
     @Id
     @Column(name = "APP_ID")

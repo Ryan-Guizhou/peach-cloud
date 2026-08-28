@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
+ * 角色服务实现类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 18:30

@@ -1,5 +1,7 @@
 package com.peach.auth.qo;
 
+import java.io.Serial;
+
 import com.peach.common.PeachEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,6 +10,8 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 
 /**
+ * 角色查询参数。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 18:10
@@ -16,7 +20,9 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "角色查询参数")
 public class RoleQO extends PeachEntity implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = -6714438507781425188L;
 
     @Schema(description = "年度")
     private Integer fiscal;

@@ -10,6 +10,8 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * MultiLanguage相关类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/13 12:44

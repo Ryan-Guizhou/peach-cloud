@@ -4,8 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
- * 调度任务列表查询对象。
- *
+ * 调度任务列表查询条件。
  * <p>分页偏移量在 Java 中计算并通过 MyBatis 参数绑定，禁止使用原始 SQL 字符串替换。</p>
  *
  * @Author Mr Shu

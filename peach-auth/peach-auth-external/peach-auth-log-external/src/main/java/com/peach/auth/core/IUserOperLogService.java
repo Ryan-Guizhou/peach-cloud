@@ -7,6 +7,8 @@ import com.peach.auth.vo.UserOperLogVO;
 import java.util.List;
 
 /**
+ * IUser操作日志服务类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/18 18:54

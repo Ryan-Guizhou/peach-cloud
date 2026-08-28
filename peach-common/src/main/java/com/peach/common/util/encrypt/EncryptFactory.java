@@ -8,6 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * Encrypt工厂。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 16:10

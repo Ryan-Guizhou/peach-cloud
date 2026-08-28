@@ -1,17 +1,16 @@
 package com.peach.email.core;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /**
+ * 业务邮件模型：统一描述发件人、收件人、主题与内容，以及附件、内嵌资源与自
+ * 支持提供幂等键以避免重复外发；使用构建器创建不可变对象。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:44
- * @Description
- * 业务邮件模型：统一描述发件人、收件人、主题与内容，以及附件、内嵌资源与自
- * 支持提供幂等键以避免重复外发；使用构建器创建不可变对象。
  */
 public class EmailMessage {
     /**
@@ -76,14 +75,14 @@ public class EmailMessage {
 
     private EmailMessage(Builder b) {
         this.from = b.from;
-        this.to = Collections.unmodifiableList(new ArrayList<String>(b.to));
-        this.cc = Collections.unmodifiableList(new ArrayList<String>(b.cc));
-        this.bcc = Collections.unmodifiableList(new ArrayList<String>(b.bcc));
+        this.to = List.copyOf(b.to);
+        this.cc = List.copyOf(b.cc);
+        this.bcc = List.copyOf(b.bcc);
         this.subject = b.subject;
         this.text = b.text;
         this.html = b.html;
-        this.attachments = Collections.unmodifiableList(new ArrayList<Attachment>(b.attachments));
-        this.inlineResources = Collections.unmodifiableList(new ArrayList<InlineResource>(b.inlineResources));
+        this.attachments = List.copyOf(b.attachments);
+        this.inlineResources = List.copyOf(b.inlineResources);
         this.headers = b.headers;
         this.replyTo = b.replyTo;
         this.idempotencyKey = b.idempotencyKey;
@@ -142,7 +141,11 @@ public class EmailMessage {
     }
 
     /**
-     * 构建器：用于组装邮件对象
+     * 构建器。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class Builder {
 

@@ -22,9 +22,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
+ * Transfer工具类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
- * @Description
  * @CreateTime 2025/3/15 0:01
  */
 @Slf4j
@@ -145,6 +146,15 @@ public class TransferUtil {
         return diviceInfo;
     }
 
+    /**
+     * DiviceInfo。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
+    
     @Data
     public static class DiviceInfo {
 

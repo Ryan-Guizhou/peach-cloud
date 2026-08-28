@@ -1,5 +1,7 @@
 package com.peach.auth.qo;
 
+import java.io.Serial;
+
 import com.peach.common.PeachEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,7 +10,7 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 
 /**
- * 机构查询条件。
+ * 机构查询参数。
  * <p>用于机构列表、分页和详情查询，默认按租户和机构状态过滤。</p>
  *
  * @Author Mr Shu
@@ -19,7 +21,9 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "机构查询参数")
 public class OrganizationQO extends PeachEntity implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = 2533335254149341115L;
 
     @Schema(description = "机构ID")
     private String orgId;

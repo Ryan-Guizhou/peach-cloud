@@ -6,7 +6,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import reactor.core.publisher.Mono;
 
 /**
- * 校验相关数据。
+ * StateMachineTransition解析器。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -21,13 +21,13 @@ public final class StateMachineTransitionResolver {
     }
 
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      *
-     * @param machine 参数说明
-     * @param event 参数说明
-     * 调度模块相关说明。
-     * 调度模块相关说明。
-     * @return 返回结果
+     * @param machine machine。
+     * @param event event。
+     * 调度模块说明。
+     * 调度模块说明。
+     * @return 执行结果。
      * @throws IllegalStateException 异常说明
      */
     public static <S, E> S transit(StateMachine<S, E> machine, E event) {

@@ -7,7 +7,7 @@ import com.peach.scheduled.dto.ExecutionClaimDTO;
 import com.peach.scheduler.transport.ExecutionLeaseClient;
 
 /**
- * 调度模块相关说明。
+ * Feign执行Lease客户端。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -18,16 +18,16 @@ public class FeignExecutionLeaseClient implements ExecutionLeaseClient {
     private final SchedulerExecutionExternalClient client;
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param client 参数说明
+     * @param client client。
      */
     public FeignExecutionLeaseClient(SchedulerExecutionExternalClient client) {
         this.client = client;
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public boolean claim(String executionId, String executorInstance) {

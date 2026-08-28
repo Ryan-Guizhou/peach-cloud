@@ -15,8 +15,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
- * 网关 IP 白名单过滤器。
- *
+ * 网关IpWhitelistGlobal过滤器。
  * <p>白名单由 setting 模块维护并预热到 Redis Set。Redis Set 为空时视为未启用白名单；
  * Redis 不可用时放行请求并记录风险日志，避免缓存故障导致全站不可用。</p>
  *

@@ -5,10 +5,12 @@ import com.peach.common.util.StringUtil;
 import java.util.UUID;
 
 /**
+ * // UUID生成器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
- * @Description // UUID生成器
  * @CreateTime 2024/10/10 15:22
+ * @Description // UUID生成器
  */
 public class IDGeneratorUtil {
 

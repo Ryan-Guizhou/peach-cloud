@@ -1,7 +1,7 @@
 package com.peach.openfeign.exception;
 
 /**
- * Feign 调用超时。
+ * PeachFeignTimeout异常。
  *
  * @Author Mr Shu
  * @Version 1.0.0

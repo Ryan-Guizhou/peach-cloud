@@ -7,7 +7,7 @@
             INTERVAL_SECONDS, START_AT, TIME_ZONE, MISFIRE_POLICY, CONCURRENCY_POLICY, TIMEOUT_MS, MAX_ATTEMPTS,
             RETRY_INTERVAL_SECONDS, PARAMETERS_JSON, STATE, CREATED_TIME, CREATOR_ID
         ) VALUES (
-            #{id,jdbcType=BIGINT}, #{scheduleVersion,jdbcType=BIGINT}, #{jobCode,jdbcType=VARCHAR},
+            #{id,jdbcType=VARCHAR}, #{scheduleVersion,jdbcType=BIGINT}, #{jobCode,jdbcType=VARCHAR},
             #{applicationName,jdbcType=VARCHAR}, #{handlerName,jdbcType=VARCHAR}, #{scheduleType,jdbcType=VARCHAR},
             #{cronExpression,jdbcType=VARCHAR}, #{intervalSeconds,jdbcType=BIGINT}, #{startAt,jdbcType=TIMESTAMP},
             #{timeZone,jdbcType=VARCHAR}, #{misfirePolicy,jdbcType=VARCHAR}, #{concurrencyPolicy,jdbcType=VARCHAR},

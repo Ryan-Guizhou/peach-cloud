@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 
 /**
- * 调度模块相关说明。
+ * SchedulerReconciler相关类。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -30,7 +30,7 @@ public class SchedulerReconciler {
     private final SchedulingProvider provider;
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      * @param jobDao 任务定义数据访问对象
      * @param provider 当前启用的调度 Provider
      */
@@ -40,7 +40,7 @@ public class SchedulerReconciler {
     }
 
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      */
     @Scheduled(fixedDelayString = "${peach.scheduler.service.reconcile-delay-ms:5000}")
     public void reconcile() {

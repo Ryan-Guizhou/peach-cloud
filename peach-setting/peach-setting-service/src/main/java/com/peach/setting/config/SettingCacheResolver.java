@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 import java.util.Collection;
 
 /**
+ * setting 模块缓存解析器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/7 12:20

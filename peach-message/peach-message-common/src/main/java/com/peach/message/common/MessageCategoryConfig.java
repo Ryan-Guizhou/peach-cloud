@@ -2,11 +2,11 @@ package com.peach.message.common;
 
 import com.peach.message.common.enums.MessageEnum;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
+ * 消息大类与小类映射配置。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 15:26
@@ -14,23 +14,23 @@ import java.util.List;
  */
 public class MessageCategoryConfig {
 
-    private static final List<String> MESSAGE_TYPES = Collections.unmodifiableList(Arrays.asList(
+    private static final List<String> MESSAGE_TYPES = List.of(
             MessageEnum.MessageType.SYSTEM.getCode(),
             MessageEnum.MessageType.NOTICE.getCode(),
             MessageEnum.MessageType.CUSTOM.getCode()
-    ));
+    );
 
-    private static final List<String> ANNOUNCEMENT_TYPES = Collections.unmodifiableList(Arrays.asList(
+    private static final List<String> ANNOUNCEMENT_TYPES = List.of(
             "INFO",
             "WARNING",
             "MAINTENANCE",
             "PROMOTION"
-    ));
+    );
 
-    private static final List<String> TODO_TYPES = Collections.unmodifiableList(Arrays.asList(
+    private static final List<String> TODO_TYPES = List.of(
             MessageEnum.MessageType.APPROVAL.getCode(),
             MessageEnum.MessageType.TASK.getCode()
-    ));
+    );
 
     private MessageCategoryConfig() {
     }

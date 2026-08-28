@@ -1,5 +1,7 @@
 package com.peach.auth.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -11,6 +13,8 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
+ * Function实体。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 17:36
@@ -22,7 +26,8 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = true)
 public class FunctionDO extends PeachDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 7397081470749548788L;
 
     @Id
     @Column(name = "FUNC_ID")

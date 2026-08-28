@@ -1,5 +1,7 @@
 package com.peach.auth.vo;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -7,12 +9,18 @@ import java.io.Serializable;
 
 /**
  * 登录页初始化信息。
- */
+ * /
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+  */
 @Data
 @Schema(description = "登录页初始化信息")
 public class LoginInitVO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -8349078546308158013L;
 
     @Schema(description = "系统名称")
     private String systemName;

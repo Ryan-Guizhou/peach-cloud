@@ -20,10 +20,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.StopWatch;
 
 /**
- * MyBatis SQL 耗时拦截器。
- *
+ * SqlCost拦截器。
  * <p>通过 MyBatis {@link MetaObject} 读取 {@code RoutingStatementHandler} 的 delegate 与
  * mappedStatement，避免直接 {@code Field.setAccessible}。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Intercepts({
         @Signature(type = StatementHandler.class, method = "query", args = { Statement.class, ResultHandler.class }),

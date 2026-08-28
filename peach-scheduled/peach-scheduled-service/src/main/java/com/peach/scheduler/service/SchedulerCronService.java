@@ -6,7 +6,14 @@ import org.springframework.stereotype.Indexed;
 import java.time.Instant;
 import java.util.List;
 
-@Indexed
+
+/**
+ * 调度Cron服务类。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
 public class SchedulerCronService {
 
     public SchedulerCronService() {

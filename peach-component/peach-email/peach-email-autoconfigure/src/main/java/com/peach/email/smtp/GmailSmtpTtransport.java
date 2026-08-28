@@ -2,6 +2,8 @@ package com.peach.email.smtp;
 
 
 /**
+ * GmailSmtpTtransport相关类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:51

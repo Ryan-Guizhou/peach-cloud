@@ -1,7 +1,7 @@
 package com.peach.scheduled.common;
 
 /**
- * 单次调度执行实例的标准生命周期状态。
+ * 执行State枚举。
  *
  * @Author Mr Shu
  * @Version 1.0.0

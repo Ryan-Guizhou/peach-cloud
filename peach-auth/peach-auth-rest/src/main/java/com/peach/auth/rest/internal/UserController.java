@@ -27,8 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * 用户管理接口。
- *
+ * 用户管理。
  * <p>提供用户列表查询、单条查询以及基础增删改入口。</p>
  *
  * @Author Mr Shu

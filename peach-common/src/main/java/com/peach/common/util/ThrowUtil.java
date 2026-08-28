@@ -5,6 +5,8 @@ import com.peach.common.exception.BusinessException;
 import java.util.Optional;
 
 /**
+ * Throw工具类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/13 13:05

@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 网关 Sa-Token 配置属性。
+ * 网关Sa令牌配置属性。
  *
  * @Author Mr Shu
  * @Version 1.0.0

@@ -11,8 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 调度执行实例数据访问接口。
- *
+ * 调度执行数据访问。
  * <p>执行实例包含原子 Claim、租约、恢复和状态机更新等并发语义，
  * 所有状态写入均使用受限 SQL 和乐观锁，不通过通用 CRUD 直接修改。</p>
  *
@@ -119,7 +118,7 @@ public interface SchedulerExecutionDao extends PeachDao<SchedulerExecutionDO, Sc
      * @param jobId 任务主键
      * @return 活跃执行实例数量
      */
-    int countActiveByJobId(@Param("jobId") Long jobId);
+    int countActiveByJobId(@Param("jobId") String jobId);
 
     /**
      * 查询因串行并发策略而暂缓分发的 CREATED 执行实例。

@@ -14,8 +14,7 @@ import jakarta.annotation.PostConstruct;
 import java.text.MessageFormat;
 
 /**
- * 网关侧 Sa-Token token 策略配置。
- *
+ * 网关Sa令牌Strategy配置类。
  * <p>该配置属于网关服务内部模块，由 {@code peach-gateway-launch} 的组件扫描加载。
  * 它只处理网关本地 Sa-Token 策略扩展，不依赖业务服务侧 {@code peach-satoken}。
  * 当 {@link GatewaySaTokenProperties#isTokenStrategyEnabled()} 开启时，覆盖 Sa-Token token

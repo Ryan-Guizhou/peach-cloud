@@ -10,9 +10,10 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
+ * UserOperLogQueue相关类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
- * @Description
  * @CreateTime 2025/3/15 0:27
  */
 @Slf4j

@@ -6,7 +6,7 @@ import com.peach.scheduled.vo.SchedulerHandlerVO;
 import java.util.List;
 
 /**
- * 调度 Handler 注册服务接口。
+ * IScheduler处理器服务类。
  *
  * @Author Mr Shu
  * @Version 1.0.0

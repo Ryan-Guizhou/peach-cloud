@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
+ * RedisStream 处理器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:29

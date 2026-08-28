@@ -29,6 +29,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
+ * 响应式 WebSocket 处理器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45
@@ -186,8 +188,16 @@ public class MessageWebSocketHandler implements WebSocketHandler {
         return StringUtils.trimToNull(token);
     }
 
+    /**
+     * 令牌Expired异常。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
     private static class TokenExpiredException extends RuntimeException {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = -8480920349214423575L;
 
         TokenExpiredException(String message) {
             super(message);

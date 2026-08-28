@@ -1,5 +1,7 @@
 package com.peach.fileservice.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -12,15 +14,14 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
- * 业务文件记录数据库实体
- *
+ * 业务文件记录实体。
  * <p>映射数据库表 PEACH_FILE_RECORD，用于持久化业务文件记录信息。
  * 记录文件与业务的关联关系，包含文件元数据（名称、类型、大小、扩展名）、
  * 业务归属标识（业务类型、业务ID、业务标签）以及逻辑删除与过期清理策略。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Data
 @Entity
@@ -29,7 +30,8 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = true)
 public class FileRecordDO extends PeachDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -6089582482751673964L;
 
     @Id
     @Column(name = "FILE_ID")

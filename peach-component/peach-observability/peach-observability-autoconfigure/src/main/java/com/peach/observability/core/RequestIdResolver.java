@@ -3,10 +3,13 @@ package com.peach.observability.core;
 import com.peach.observability.config.PeachObservabilityProperties;
 
 /**
- * 请求 ID 解析器。
- *
+ * 请求Id解析器。
  * <p>仅接受 ASCII 字母、数字、下划线和连字符，防止控制字符和日志注入。公网入口可以关闭
  * 上游信任，此时无论客户端是否传值都生成新的可信请求 ID。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public final class RequestIdResolver {
 

@@ -11,6 +11,8 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
+ * 公告阅读记录数据访问接口。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 20:00

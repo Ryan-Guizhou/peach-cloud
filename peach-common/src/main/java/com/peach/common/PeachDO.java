@@ -1,5 +1,7 @@
 package com.peach.common;
 
+import java.io.Serial;
+
 import com.peach.common.util.DateUtil;
 import com.peach.common.util.StringUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,25 +22,23 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 基础数据库实体对象。
- *
+ * Peach数据对象。
  * <p>
  * 该类主要用于承载所有数据库实体通用的审计字段和基础工具方法。
  * 所有 DO / Entity 实体可以继承该类，统一获得创建人、创建时间、更新人、更新时间等基础字段。
  * </p>
- *
  * <p>
  * 注意：
  * <ul>
- *     <li>该类不建议承担 DTO、VO 转换职责，DTO/DO/VO 转换建议交给 Converter / Assembler。</li>
- *     <li>该类不建议包含具体业务默认值逻辑，业务默认值应由子类或业务层处理。</li>
- *     <li>该类提供的反射方法主要用于通用框架能力，业务代码中应谨慎使用。</li>
+ * <li>该类不建议承担 DTO、VO 转换职责，DTO/DO/VO 转换建议交给 Converter / Assembler。</li>
+ * <li>该类不建议包含具体业务默认值逻辑，业务默认值应由子类或业务层处理。</li>
+ * <li>该类提供的反射方法主要用于通用框架能力，业务代码中应谨慎使用。</li>
  * </ul>
  * </p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/6 20:30
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/6 20:30
  */
 @Data
 public class PeachDO implements Serializable {
@@ -46,7 +46,8 @@ public class PeachDO implements Serializable {
     private static final String CURRENT_USER_ID_FIELD = "currentUserId";
 
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -3930151180455626026L;
 
     /**
      * 缓存每个实体类上的主键字段，避免重复反射扫描。
@@ -59,47 +60,35 @@ public class PeachDO implements Serializable {
 
     private static final String ORG_ID_FIELD = "orgId";
 
-    /**
-     * Created time.
-     */
     @Column(name = "CREATED_TIME")
     @Schema(description = "创建时间")
     private String createdTime;
 
-    /**
-     * Creator id.
-     */
     @Column(name = "CREATOR_ID")
     @Schema(description = "创建人ID")
     private String creatorId;
 
-    /**
-     * Modify time.
-     */
     @Column(name = "MODIFY_TIME")
     @Schema(description = "修改时间")
     private String modifyTime;
 
-    /**
-     * Modifier id.
-     */
     @Column(name = "MODIFIER_ID")
     @Schema(description = "修改人ID")
     private String modifierId;
 
-
     /**
-     * 根据 Map 创建指定类型的对象。
-     *
+     * 根据 Map 创建指定类型的实体对象。
      * <p>
      * Map 中的 key 需要与目标对象的属性名保持一致。
      * 该方法适用于简单对象属性拷贝，不建议用于复杂嵌套对象转换。
      * </p>
      *
-     * @param clazz 目标对象类型
-     * @param map   属性 Map
+     * @param clazz 目标对象类型，不能为 null
+     * @param map   属性 Map，可为 null
      * @param <E>   目标对象泛型
-     * @return 创建并填充属性后的对象
+     * @return 创建并填充属性后的目标对象
+     * @throws IllegalArgumentException 当 clazz 为 null 时抛出
+     * @throws RuntimeException 当对象创建或属性拷贝失败时抛出
      */
     public static <E> E create(Class<E> clazz, Map<String, ?> map) {
         if (clazz == null) {
@@ -120,24 +109,20 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * 将当前对象转换为 Map。
-     *
+     * 将当前实体对象转换为 Map。
      * <p>
      * 默认会过滤掉以下属性：
      * <ul>
-     *     <li>class 属性</li>
-     *     <li>null 值属性</li>
+     *     <li>{@code class} 属性</li>
+     *     <li>{@code null} 值属性</li>
      *     <li>空字符串属性</li>
      * </ul>
+     * 如果传入 keys，则只保留 keys 中指定的属性；如果未传入 keys，则保留所有非空属性。
      * </p>
-     *
-     * <p>
-     * 如果传入 keys，则只保留 keys 中指定的属性。
-     * 如果未传入 keys，则保留所有非空属性。
-     * </p>
-     *
-     * @param keys 需要保留的属性名，可为空
+
+     * @param keys 需要保留的属性名列表，不传则保留所有非空属性
      * @return 当前对象对应的属性 Map
+     * @throws RuntimeException 当实体转换为 Map 失败时抛出
      */
     public Map<String, Object> toMap(String... keys) {
         try {
@@ -166,10 +151,9 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * 判断属性名是否包含在指定 keys 中。
-     *
+     * 判断属性名是否包含在指定的 keys 数组中。
      * <p>
-     * 规则：
+     * 判定规则：
      * <ul>
      *     <li>key 为空时，默认返回 true</li>
      *     <li>keys 为空时，表示不限制字段，默认返回 true</li>
@@ -179,7 +163,7 @@ public class PeachDO implements Serializable {
      *
      * @param key  当前属性名
      * @param keys 允许保留的属性名数组
-     * @return 是否允许保留当前属性
+     * @return 若允许保留当前属性则返回 {@code true}，否则返回 {@code false}
      */
     private boolean containsKey(Object key, String[] keys) {
         String keyStr = Objects.toString(key, "");
@@ -199,25 +183,24 @@ public class PeachDO implements Serializable {
 
     /**
      * 判断属性值是否为空。
-     *
      * <p>
-     * 当前规则：
+     * 判定规则：
      * <ul>
-     *     <li>null 视为空</li>
-     *     <li>空字符串视为空</li>
+     *     <li>{@code null} 视为空</li>
+     *     <li>空字符串/空白字符序列视为空</li>
      * </ul>
      * </p>
      *
      * @param value 属性值
-     * @return 是否为空
+     * @return 若属性值为空则返回 {@code true}，否则返回 {@code false}
      */
     private boolean isEmptyValue(Object value) {
         if (value == null) {
             return true;
         }
 
-        if (value instanceof CharSequence) {
-            return StringUtil.isEmpty(value.toString());
+        if (value instanceof CharSequence charSequence) {
+            return StringUtil.isEmpty(charSequence.toString());
         }
 
         return false;
@@ -225,15 +208,15 @@ public class PeachDO implements Serializable {
 
     /**
      * 从 Map 中拷贝属性到当前对象。
-     *
      * <p>
      * Map 中的 key 需要与当前对象的属性名保持一致。
-     * 该方法会修改当前对象，并返回当前对象本身。
+     * 该方法会直接修改当前对象，并返回当前对象本身（链式调用）。
      * </p>
      *
-     * @param source 属性 Map
+     * @param source 属性 Map，若为空则直接返回当前对象
      * @param <E>    当前实体类型
-     * @return 当前对象
+     * @return 当前对象本身
+     * @throws RuntimeException 当属性拷贝失败时抛出
      */
     @SuppressWarnings("unchecked")
     public <E extends PeachDO> E copyFromMap(Map<String, ?> source) {
@@ -250,15 +233,15 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * 深拷贝当前对象。
-     *
+     * 克隆当前对象。
      * <p>
-     * 该方法基于 Apache Commons BeanUtils 的 cloneBean 实现。
-     * 注意：该方法更适合 JavaBean 的浅层属性克隆，对于复杂嵌套对象集合，不一定是真正意义上的深拷贝。
+     * 该方法基于 Apache Commons BeanUtils 的 {@code cloneBean} 实现。
+     * 注意：该方法主要用于 JavaBean 的浅层/单层属性克隆，对于包含复杂嵌套集合的对象，非严格意义上的深拷贝。
      * </p>
      *
      * @param <E> 当前实体类型
-     * @return 当前对象的克隆对象
+     * @return 当前对象的克隆副本
+     * @throws RuntimeException 当克隆失败时抛出
      */
     @SuppressWarnings("unchecked")
     public <E extends PeachDO> E deepClone() {
@@ -270,9 +253,9 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * Fill create audit fields.
+     * 显式填充创建审计字段（创建时间和创建人 ID）。
      *
-     * @param creatorId creator id
+     * @param creatorId 创建人 ID
      */
     public void fillCreateTime(String creatorId) {
         this.createdTime = getCurrentTime();
@@ -280,12 +263,13 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * Fill create audit fields from current user context.
-     *
+     * 从当前安全上下文自动填充创建审计字段、租户及组织信息。
      * <p>
-     * peach-common cannot directly depend on peach-satoken, so the current context is read reflectively.
-     * If the entity has tenantId/orgId writable properties, they are filled and validated here.
+     * 说明：框架内部通过反射调用安全上下文以避免直接包依赖。
+     * 若实体定义了 {@code tenantId} 或 {@code orgId} 可写属性，会自动进行填充和非空校验。
      * </p>
+     *
+     * @throws IllegalStateException 当租户或组织信息在当前上下文中缺失时抛出
      */
     public void fillCreateTime() {
         fillCreateTime(currentContextValue(CURRENT_USER_ID_FIELD));
@@ -294,10 +278,11 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * Fill create audit fields from current user context and explicit tenant/organization values.
+     * 从当前安全上下文自动填充创建审计字段，并显式指定租户及组织 ID。
      *
-     * @param tenantId tenant id
-     * @param orgId    organization id
+     * @param tenantId 租户 ID
+     * @param orgId    组织 ID
+     * @throws IllegalStateException 当租户或组织信息缺失时抛出
      */
     public void fillCreateTime(String tenantId, String orgId) {
         fillCreateTime(currentContextValue(CURRENT_USER_ID_FIELD));
@@ -305,9 +290,9 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * Fill modify audit fields.
+     * 显式填充修改审计字段（修改时间和修改人 ID）。
      *
-     * @param modifierId modifier id
+     * @param modifierId 修改人 ID
      */
     public void fillModifyTime(String modifierId) {
         this.modifyTime = getCurrentTime();
@@ -315,14 +300,14 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * Fill modify audit fields from current user context.
+     * 从当前安全上下文自动填充修改审计字段（修改时间和修改人 ID）。
      */
     public void fillModifyTime() {
         fillModifyTime(currentContextValue(CURRENT_USER_ID_FIELD));
     }
 
     /**
-     * Fill tenant and organization fields from current user context when the entity declares those properties.
+     * 从当前安全上下文自动填充租户 ID 和组织 ID（若实体存在对应可写属性）。
      */
     public void fillCurrentTenantOrg() {
         setPropertyIfWritable(TENANT_ID_FIELD, currentContextValue("currentTenantId"));
@@ -330,10 +315,11 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * Fill tenant and organization fields from explicit values when the entity declares those properties.
+     * 显式填充租户 ID 和组织 ID（若实体存在对应可写属性），并触发非空校验。
      *
-     * @param tenantId tenant id
-     * @param orgId    organization id
+     * @param tenantId 租户 ID
+     * @param orgId    组织 ID
+     * @throws IllegalStateException 当传入的租户或组织 ID 为空时抛出
      */
     public void fillTenantOrg(String tenantId, String orgId) {
         setPropertyIfWritable(TENANT_ID_FIELD, tenantId);
@@ -342,39 +328,41 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * Validate tenant and organization fields when the entity declares those properties.
+     * 校验实体中的租户 ID 和组织 ID 属性（如果实体包含这些可写属性，则值不能为空）。
+     *
+     * @throws IllegalStateException 当对应的租户或组织 ID 属性值为 null 或空字符串时抛出
      */
     public void requireTenantOrgIfPresent() {
         requirePropertyIfWritable(TENANT_ID_FIELD, "Current tenant context is missing");
         requirePropertyIfWritable(ORG_ID_FIELD, "Current organization context is missing");
     }
 
-
-
     /**
      * 获取当前系统时间字符串。
      *
-     * @return 当前时间字符串
+     * @return 当前格式化后的时间字符串
      */
     public static String getCurrentTime() {
         return DateUtil.nowTime();
     }
 
     /**
-     * 校验日期字符串是否合法。
+     * 校验日期字符串格式是否合法。
      *
-     * @param dateStr 日期字符串
-     * @return 是否合法
+     * @param dateStr 待校验的日期字符串
+     * @return 若合法则返回 {@code true}，否则返回 {@code false}
      */
     public static boolean isValidDate(String dateStr) {
         return DateUtil.isValidDate(dateStr);
     }
 
     /**
-     * 获取当前对象指定字段的值。
+     * 获取当前对象指定属性的值。
      *
-     * @param field 字段名
-     * @return 字段值
+     * @param field 属性名，不能为空
+     * @return 属性值
+     * @throws IllegalArgumentException 当 field 为空时抛出
+     * @throws RuntimeException 当读取属性值失败时抛出
      */
     public Object getField(String field) {
         checkFieldName(field);
@@ -387,12 +375,15 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * 获取当前对象指定字段的值，并转换为指定类型。
+     * 获取当前对象指定属性的值，并转换为指定的类型。
      *
-     * @param field 字段名
-     * @param type  目标类型
-     * @param <E>   返回值类型
-     * @return 字段值
+     * @param field 属性名，不能为空
+     * @param type  目标类型的 Class，不能为空
+     * @param <E>   返回值类型泛型
+     * @return 转换为指定类型后的属性值；若原属性值为 null 则返回 null
+     * @throws IllegalArgumentException 当 field 或 type 为空时抛出
+     * @throws ClassCastException 当类型转换失败时抛出
+     * @throws RuntimeException 当读取属性值失败时抛出
      */
     public <E> E getValue(String field, Class<E> type) {
         checkFieldName(field);
@@ -415,10 +406,12 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * 设置当前对象指定字段的值。
+     * 设置当前对象指定属性的值。
      *
-     * @param field 字段名
-     * @param value 字段值
+     * @param field 属性名，不能为空
+     * @param value 要设置的属性值
+     * @throws IllegalArgumentException 当 field 为空时抛出
+     * @throws RuntimeException 当设置属性值失败时抛出
      */
     public void setValue(String field, Object value) {
         checkFieldName(field);
@@ -430,6 +423,13 @@ public class PeachDO implements Serializable {
         }
     }
 
+    /**
+     * 通过反射从安全上下文（{@code SecurityContextHolder}）中获取静态无参方法的返回值。
+     *
+     * @param methodName 无参静态方法名
+     * @return 方法调用的字符串结果；若类/方法不存在或返回值为 null/空串，则返回 {@code null}
+     * @throws RuntimeException 当反射调用过程中发生非反射找不到的异常时抛出
+     */
     private static String currentContextValue(String methodName) {
         try {
             Class<?> holderClass = Class.forName(SECURITY_CONTEXT_HOLDER_CLASS);
@@ -445,6 +445,13 @@ public class PeachDO implements Serializable {
         }
     }
 
+    /**
+     * 若当前对象存在指定名称的可写属性，则为其设置属性值。
+     *
+     * @param field 属性名
+     * @param value 属性值
+     * @throws RuntimeException 当设置属性失败时抛出
+     */
     private void setPropertyIfWritable(String field, String value) {
         if (!PropertyUtils.isWriteable(this, field)) {
             return;
@@ -456,6 +463,13 @@ public class PeachDO implements Serializable {
         }
     }
 
+    /**
+     * 若当前对象存在指定名称的可写属性，则校验其属性值不能为空。
+     *
+     * @param field   属性名
+     * @param message 校验失败时的异常信息
+     * @throws IllegalStateException 当该属性可写且属性值为空（null 或空字符串）时抛出
+     */
     private void requirePropertyIfWritable(String field, String message) {
         if (!PropertyUtils.isWriteable(this, field)) {
             return;
@@ -467,9 +481,10 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * 校验字段名是否为空。
+     * 校验属性名是否为空。
      *
-     * @param field 字段名
+     * @param field 属性名
+     * @throws IllegalArgumentException 当属性名为 null 或空字符串时抛出
      */
     private void checkFieldName(String field) {
         if (ObjectUtils.isEmpty(field)) {
@@ -478,10 +493,11 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * 从当前类及其父类中查找带有 {@link Id} 注解的字段。
+     * 从当前类及其父类中递归查找带有 {@link Id} 注解的主键字段。
      *
-     * @param clazz 实体 Class
-     * @return 主键字段
+     * @param clazz 待查找的实体 Class
+     * @return 标注了 {@link Id} 的 Field 对象
+     * @throws IllegalArgumentException 当传入 Class 为 null、Object.class、PeachDO.class 或未找到 @Id 字段时抛出
      */
     private static Field getIdField(Class<?> clazz) {
         if (clazz == null || clazz == Object.class || clazz == PeachDO.class) {

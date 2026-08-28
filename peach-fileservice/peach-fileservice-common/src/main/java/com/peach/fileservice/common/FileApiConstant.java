@@ -1,7 +1,11 @@
 package com.peach.fileservice.common;
 
 /**
- * 文件服务 API 路径常量。
+ * 文件API常量。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public final class FileApiConstant {
 

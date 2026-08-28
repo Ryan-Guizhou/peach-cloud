@@ -7,7 +7,7 @@ import org.springframework.stereotype.Indexed;
 import com.peach.scheduled.entity.SchedulerJobDO;
 
 /**
- * Scheduler 任务定义版本快照数据访问接口。
+ * 调度任务Version数据访问。
  *
  * @Author Mr Shu
  * @Version 1.0.0

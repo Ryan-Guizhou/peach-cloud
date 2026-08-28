@@ -10,10 +10,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
+ * 校验异常。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
- * @Description 校验异常
  * @CreateTime 04 3月 2025 21:30
+ * @Description 校验异常
  */
 public class ValidationException extends RuntimeException{
 

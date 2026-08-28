@@ -1,5 +1,7 @@
 package com.peach.auth.dto;
 
+import java.io.Serial;
+
 import com.peach.common.PeachGroup;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,16 +12,19 @@ import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
+ * 菜单DTO。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/9 16:45
  * @Description 菜单DTO
- */
+  */
 @Data
 @Schema(description = "菜单DTO")
 public class MenuDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -8288943614511816025L;
 
     @Schema(description = "菜单ID")
     @NotBlank(message = "菜单ID不能为空", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})

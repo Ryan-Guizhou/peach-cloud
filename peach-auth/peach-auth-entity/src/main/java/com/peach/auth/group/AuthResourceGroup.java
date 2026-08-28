@@ -7,6 +7,8 @@ import lombok.Data;
 
 
 /**
+ * 认证资源校验分组。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 18:09

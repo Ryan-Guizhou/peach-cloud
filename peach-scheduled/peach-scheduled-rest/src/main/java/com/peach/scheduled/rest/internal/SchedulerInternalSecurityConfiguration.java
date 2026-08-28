@@ -12,8 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Scheduler 内部接口用户上下文白名单配置。
- *
+ * 调度Internal安全配置类。
  * <p>Claim 和 Handler 注册属于服务间调用，没有终端用户登录上下文，因此需要跳过
  * UserContextFilter 的用户登录恢复；接口本身仍由 SchedulerInternalController 显式校验 Same-Token。
  * 这里只解决无用户上下文的调用模型，不把内部接口降级为匿名接口。</p>

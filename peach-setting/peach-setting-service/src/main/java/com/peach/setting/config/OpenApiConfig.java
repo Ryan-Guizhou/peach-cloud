@@ -77,7 +77,7 @@ public class OpenApiConfig {
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
                                 .description("Referer 来源头")));
-        if (serverUrl != null && !serverUrl.trim().isEmpty()) {
+        if (serverUrl != null && !serverUrl.isBlank()) {
             openAPI.servers(List.of(new Server()
                     .url(serverUrl.trim())
                     .description(serverDescription)));

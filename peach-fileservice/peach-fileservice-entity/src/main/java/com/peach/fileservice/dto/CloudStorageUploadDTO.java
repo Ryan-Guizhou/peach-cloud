@@ -1,12 +1,14 @@
 package com.peach.fileservice.dto;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
 
 /**
- * 云存储上传参数.
+ * 云存储上传参数。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -15,7 +17,9 @@ import java.io.Serializable;
 @Data
 @Schema(description = "云存储上传参数")
 public class CloudStorageUploadDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = -4786099280414504539L;
 
     @Schema(description = "路径")
     private String targetPath;

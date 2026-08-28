@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Queue;
 
 /**
+ * 抽象组合。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/16 16:25

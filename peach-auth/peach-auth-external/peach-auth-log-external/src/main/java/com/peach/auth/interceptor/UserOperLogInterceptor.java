@@ -13,6 +13,8 @@ import org.springframework.core.annotation.AnnotationUtils;
 import java.lang.reflect.Method;
 
 /**
+ * 用户操作日志拦截器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/18 16:40
@@ -34,7 +36,7 @@ public class UserOperLogInterceptor implements MethodInterceptor {
         long totalTime = endTime - start;
         UserOperLogVO userOperLogVO = TransferUtil.transferToOperLog(invocation, userOperLog, totalTime, response);
         UserOperLogQueue.getInstance().addOperLogQueue(userOperLogVO);
-        log.info("用户操作日志,耗时: {}ms", userOperLog, totalTime);
+        log.info("User operation log recorded, elapsedMs={}", userOperLog, totalTime);
         return proceed;
     }
 

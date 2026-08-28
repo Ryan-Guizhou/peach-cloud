@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * 公告服务实现。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 20:50
@@ -107,7 +109,7 @@ public class NoticeServiceImpl implements INoticeService {
     public void publishNotice(NoticePublishDTO data) {
         NoticeVO db = noticeDao.selectById(data.getId());
         if (db == null) {
-            log.info("公告不存在, ID:{}", data.getId());
+            log.info("Notice not found, noticeId={}", data.getId());
             return;
         }
         NoticeDO update = new NoticeDO();
@@ -116,7 +118,7 @@ public class NoticeServiceImpl implements INoticeService {
         update.fillModifyTime("");
         noticeDao.updateById(update);
         if (!PubCommonConst.LOGIC_TRUE.equals(db.getInboxEnabled()) || org.springframework.util.CollectionUtils.isEmpty(db.getReceiverIdList())) {
-            log.info("无需同步站内信");
+            log.info("Site message sync skipped because notice is unchanged");
             return;
         }
         List<SiteMessageDO> list = new ArrayList<>();
@@ -146,7 +148,7 @@ public class NoticeServiceImpl implements INoticeService {
     public void revokeNotice(String id) {
         NoticeVO db = noticeDao.selectById(id);
         if (db == null) {
-            log.info("公告不存在, 无法撤销, ID:{}", id);
+            log.info("Notice not found, revoke skipped, noticeId={}", id);
             return;
         }
         NoticeDO update = new NoticeDO();

@@ -1,7 +1,7 @@
 package com.peach.openfeign.exception;
 
 /**
- * Feign 调用被 Sentinel 熔断降级。
+ * PeachFeignCircuit开放异常。
  *
  * @Author Mr Shu
  * @Version 1.0.0

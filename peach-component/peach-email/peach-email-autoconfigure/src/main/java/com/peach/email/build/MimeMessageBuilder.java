@@ -15,18 +15,17 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.util.ByteArrayDataSource;
-import java.io.File;
 import java.util.List;
 import java.util.Map;
 
 /**
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2025/12/9 15:05
- * @Description
  * 将领域模型 EmailMessage 构建为可发送的 MimeMessage。
  * 结构采用 multipart/mixed + multipart/alternative (+ multipart/related) 组合
  * 以兼容多客户端并支持附件与内嵌资源。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2025/12/9 15:05
  */
 public class MimeMessageBuilder {
 
@@ -150,19 +149,19 @@ public class MimeMessageBuilder {
         for (Attachment a : attachments) {
             MimeBodyPart part = new MimeBodyPart();
             DataSource ds;
-            if (a.getContent() != null) {
-                ds = new ByteArrayDataSource(a.getContent(), a.getContentType() != null ? a.getContentType() : "application/octet-stream");
-            } else if (a.getPath() != null) {
-                ds = new FileDataSource(new File(a.getPath()));
+            if (a.content() != null) {
+                ds = new ByteArrayDataSource(a.content(), a.contentType() != null ? a.contentType() : "application/octet-stream");
+            } else if (a.path() != null) {
+                ds = new FileDataSource(a.path());
             } else {
                 continue;
             }
             part.setDataHandler(new DataHandler(ds));
-            if (a.getFilename() != null) {
-                part.setFileName(a.getFilename());
+            if (a.filename() != null) {
+                part.setFileName(a.filename());
             }
-            if (a.getDisposition() != null) {
-                part.setDisposition(a.getDisposition());
+            if (a.disposition() != null) {
+                part.setDisposition(a.disposition());
             }
             mixed.addBodyPart(part);
         }
@@ -174,16 +173,16 @@ public class MimeMessageBuilder {
         for (InlineResource r : inlineResources) {
             MimeBodyPart part = new MimeBodyPart();
             DataSource ds;
-            if (r.getContent() != null) {
-                ds = new ByteArrayDataSource(r.getContent(), r.getContentType() != null ? r.getContentType() : "application/octet-stream");
-            } else if (r.getPath() != null) {
-                ds = new FileDataSource(new File(r.getPath()));
+            if (r.content() != null) {
+                ds = new ByteArrayDataSource(r.content(), r.contentType() != null ? r.contentType() : "application/octet-stream");
+            } else if (r.path() != null) {
+                ds = new FileDataSource(r.path());
             } else {
                 continue;
             }
             part.setDataHandler(new DataHandler(ds));
-            if (r.getContentId() != null) {
-                part.setHeader("Content-ID", "<" + r.getContentId() + ">");
+            if (r.contentId() != null) {
+                part.setHeader("Content-ID", "<" + r.contentId() + ">");
             }
             related.addBodyPart(part);
         }

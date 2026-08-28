@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 /**
- * 调度模块相关说明。
+ * 调度执行External客户端。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -24,11 +24,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 @Indexed
 public interface SchedulerExecutionExternalClient {
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      *
-     * @param executionId 参数说明
-     * @param request 参数说明
-     * @return 返回结果
+     * @param executionId execution Id。
+     * @param request request。
+     * @return 执行结果。
      */
     @PostMapping("/internal/scheduler/executions/{id}/claim")
     Response claim(@PathVariable("id") String executionId, @RequestBody ExecutionClaimDTO request);

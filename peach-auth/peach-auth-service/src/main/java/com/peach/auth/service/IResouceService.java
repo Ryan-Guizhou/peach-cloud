@@ -8,8 +8,7 @@ import com.peach.auth.vo.ResourceVO;
 import java.util.List;
 
 /**
- * 资源服务接口。
- *
+ * IResouce服务类。
  * <p>提供资源分页、查询以及基础增删改能力。</p>
  *
  * @Author Mr Shu

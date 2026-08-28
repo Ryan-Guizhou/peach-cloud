@@ -8,7 +8,7 @@ import com.peach.setting.vo.IpWhitelistVO;
 import java.util.List;
 
 /**
- * IP 白名单服务接口。
+ * IIpWhitelist服务类。
  *
  * @Author Mr Shu
  * @Version 1.0.0

@@ -1,5 +1,7 @@
 package com.peach.auth.entity;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -9,9 +11,10 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
+ * 模块编码。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
- * @Description 
  * @CreateTime 2025/03/14 23:12
  */
 @Data
@@ -19,7 +22,8 @@ import java.io.Serializable;
 @Schema(description = "模块编码")
 public class UserOperLogDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 2118532517927027530L;
 
     @Id
     @Column(name = "ID")

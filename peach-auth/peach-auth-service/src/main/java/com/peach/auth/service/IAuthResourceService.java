@@ -8,6 +8,8 @@ import com.peach.auth.vo.AuthResourceVO;
 import java.util.List;
 
 /**
+ * IAuth资源服务类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 18:25

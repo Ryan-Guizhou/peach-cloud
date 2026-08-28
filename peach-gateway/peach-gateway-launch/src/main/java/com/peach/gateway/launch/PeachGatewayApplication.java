@@ -8,6 +8,8 @@ import org.springframework.context.annotation.ComponentScan;
 
 
 /**
+ * Peach网关启动类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/8 16:20

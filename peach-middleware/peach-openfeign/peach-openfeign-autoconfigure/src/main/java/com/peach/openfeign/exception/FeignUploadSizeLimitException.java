@@ -1,7 +1,7 @@
 package com.peach.openfeign.exception;
 
 /**
- * Feign 上传大小超过限制时抛出。
+ * Feign上传Size限流异常。
  *
  * @Author Mr Shu
  * @Version 1.0.0

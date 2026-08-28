@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 /**
+ * 菜单服务实现类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 18:30

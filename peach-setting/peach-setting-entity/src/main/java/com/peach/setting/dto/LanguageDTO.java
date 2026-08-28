@@ -1,5 +1,7 @@
 package com.peach.setting.dto;
 
+import java.io.Serial;
+
 import com.peach.setting.comon.enums.LanguageGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,6 +10,8 @@ import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**
+ * 语言设置DTO。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 21:50
@@ -16,7 +20,8 @@ import java.io.Serializable;
 @Data
 public class LanguageDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 2069058615113074759L;
 
     @Schema(description = "语言ID")
     @NotBlank(groups = {LanguageGroup.UpdatetGroup.class}, message = "语言ID不能为空")

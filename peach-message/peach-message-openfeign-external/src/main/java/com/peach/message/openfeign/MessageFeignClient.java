@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 /**
+ * 消息服务Feign客户端。
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45

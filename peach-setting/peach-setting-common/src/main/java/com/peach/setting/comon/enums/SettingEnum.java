@@ -1,6 +1,8 @@
 package com.peach.setting.comon.enums;
 
 /**
+ * setting 模块通用枚举接口。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 20:35
@@ -23,7 +25,11 @@ public interface SettingEnum {
     String getValue();
 
     /**
-     * 业务分类。
+     * Biz类型枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     enum BizType implements SettingEnum {
         VALUE_SET("VALUE_SET", "值集"),
@@ -52,7 +58,11 @@ public interface SettingEnum {
     }
 
     /**
-     * 值集来源类型。
+     * 值集Source类型枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     enum ValueSetSourceType implements SettingEnum {
         DICT("DICT", "字典"),
@@ -76,7 +86,11 @@ public interface SettingEnum {
     }
 
     /**
-     * 公告类型。
+     * 公告类型枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     enum NoticeType implements SettingEnum {
         INFO("INFO", "普通公告"),
@@ -102,7 +116,11 @@ public interface SettingEnum {
     }
 
     /**
-     * 发布状态。
+     * 发布Status枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     enum PublishStatus implements SettingEnum {
         DRAFT("DRAFT", "草稿"),
@@ -128,7 +146,11 @@ public interface SettingEnum {
     }
 
     /**
-     * 消息类型。
+     * 消息类型枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     enum MessageType implements SettingEnum {
         NOTICE("NOTICE", "通知"),
@@ -165,7 +187,11 @@ public interface SettingEnum {
     }
 
     /**
-     * 消息来源类型。
+     * 消息Source类型枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     enum MessageSourceType implements SettingEnum {
         CUSTOM("CUSTOM", "自定义"),
@@ -189,7 +215,11 @@ public interface SettingEnum {
     }
 
     /**
-     * 发送状态。
+     * SendStatus枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     enum SendStatus implements SettingEnum {
         DRAFT("DRAFT", "草稿"),
@@ -214,7 +244,11 @@ public interface SettingEnum {
     }
 
     /**
-     * 使用范围。
+     * UsageScope枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     enum UsageScope implements SettingEnum {
         COMMON("COMMON", "通用"),

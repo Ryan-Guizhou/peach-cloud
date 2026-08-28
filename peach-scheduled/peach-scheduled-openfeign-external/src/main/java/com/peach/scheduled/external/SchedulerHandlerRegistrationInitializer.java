@@ -14,7 +14,7 @@ import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.scheduling.annotation.Scheduled;
 
 /**
- * 注册相关能力。
+ * 调度处理器Registration初始化器。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -28,7 +28,7 @@ public class SchedulerHandlerRegistrationInitializer implements SmartInitializin
     private final PeachSchedulerProperties properties;
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      * @param registry 本地 Job Handler 注册表
      * @param client Scheduler 控制面 Feign Client
      * @param properties Scheduler 执行器配置
@@ -50,7 +50,7 @@ public class SchedulerHandlerRegistrationInitializer implements SmartInitializin
     }
 
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      */
     @Scheduled(fixedDelayString = "${peach.scheduler.executor.handler-heartbeat-ms:60000}")
     public void heartbeat() {
@@ -63,8 +63,8 @@ public class SchedulerHandlerRegistrationInitializer implements SmartInitializin
         request.setInstanceId(resolveInstanceId());
         for (JobDescriptor descriptor : registry.descriptors()) {
             HandlerRegistrationDTO.Item item = new HandlerRegistrationDTO.Item();
-            item.setHandlerName(descriptor.getHandlerName());
-            item.setDescription(descriptor.getDescription());
+            item.setHandlerName(descriptor.handlerName());
+            item.setDescription(descriptor.description());
             request.getHandlers().add(item);
         }
         if (request.getHandlers().isEmpty()) {

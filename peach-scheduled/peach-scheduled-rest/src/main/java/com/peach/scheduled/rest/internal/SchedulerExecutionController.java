@@ -9,6 +9,7 @@ import com.peach.scheduled.qo.SchedulerExecutionQO;
 import com.peach.scheduler.service.ISchedulerExecutionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,8 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 调度执行实例管理接口。
- *
+ * 调度执行管理。
  * <p>提供执行历史查询、详情查询、人工重试和人工取消能力。
  * 人工操作必须携带原因并由服务层写入操作审计；RUNNING 状态不提供伪取消。</p>
  *
@@ -31,18 +31,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/scheduler/executions")
 @Tag(name = "调度执行管理", description = "调度执行管理")
 @Indexed
+@RequiredArgsConstructor
 public class SchedulerExecutionController {
 
     private final ISchedulerExecutionService schedulerExecutionService;
-
-    /**
-     * 创建调度执行实例管理接口。
-     *
-     * @param schedulerExecutionService 调度执行实例服务
-     */
-    public SchedulerExecutionController(ISchedulerExecutionService schedulerExecutionService) {
-        this.schedulerExecutionService = schedulerExecutionService;
-    }
 
     /**
      * 查询调度执行实例列表。

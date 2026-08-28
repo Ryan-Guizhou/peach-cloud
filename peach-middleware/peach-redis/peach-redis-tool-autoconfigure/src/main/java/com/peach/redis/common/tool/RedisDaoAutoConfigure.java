@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.RedisTemplate;
 
 /**
+ * RedisDaoAuto自动配置。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/19 10:23

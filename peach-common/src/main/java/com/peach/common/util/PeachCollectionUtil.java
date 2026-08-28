@@ -14,10 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 /**
+ * //借用spring的集合工具类的便利，补全一下反向判断。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
- * @Description //借用spring的集合工具类的便利，补全一下反向判断
  * @CreateTime 2024/10/14 15:51
+ * @Description //借用spring的集合工具类的便利，补全一下反向判断
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public final class PeachCollectionUtil extends CollectionUtils {
@@ -43,7 +45,7 @@ public final class PeachCollectionUtil extends CollectionUtils {
     public static Map map(Object object,boolean isRemoveEmpty) {
         try {
             Map map;
-            if (object instanceof LinkedHashMap){
+            if (object instanceof LinkedHashMap<?, ?>) {
                 String json = JSON.toJSONString(object);
                 map = (Map) JSON.parse(json);
             }else{

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 分页结果。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/4/5 10:59

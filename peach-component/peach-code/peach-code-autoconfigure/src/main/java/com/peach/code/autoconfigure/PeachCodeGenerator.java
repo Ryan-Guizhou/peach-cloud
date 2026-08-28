@@ -18,15 +18,17 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * Redis 优先、MySQL 兜底的租户业务编码生成器。
- *
+ * Peach代码生成器。
  * <p>正常路径使用 Lua 在 Redis 中原子完成“以 MySQL 当前值校准 + 自增 + 最大值校验”；
  * Redis 不可用时使用 MySQL {@code LAST_INSERT_ID(expr)} 原子自增，并在成功后尝试回写 Redis。
  * Redis 分配成功后还会通过独立事务将 MySQL 规则表只增持久化，缩小 Redis 丢失后的恢复窗口。
  * 应用启动时会将规则表中的 MySQL 序号与 Redis 序号取最大值同步，避免 Redis 恢复后回退。</p>
- *
  * <p>该模式与业务事务不构成分布式事务：Redis 已分配的序号不会因业务事务回滚而回收。
  * 如果业务必须严格避免回滚空号，应关闭 {@code peach.code.redis-enabled}，使用 MySQL 事务模式。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Slf4j
 public class PeachCodeGenerator implements CodeGenerator {
@@ -396,9 +398,12 @@ public class PeachCodeGenerator implements CodeGenerator {
     }
 
     /**
-     * 从 MySQL 规则表读取的最小规则快照。
-     *
+     * CodeRule。
      * <p>快照只在单次发号过程中使用，避免将数据库行对象泄漏到生成器内部流程。</p>
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     private static final class CodeRule {
         private final int maxCodeWidth;

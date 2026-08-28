@@ -24,8 +24,7 @@ import java.util.List;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 调度执行实例服务实现。
- *
+ * 调度执行服务实现类。
  * <p>负责执行租约抢占、结果收敛、失败重试、人工重试、人工取消和 DO 到 VO 的边界转换。
  * 所有状态变更委托给执行生命周期服务，避免绕过状态机和乐观锁。</p>
  *
@@ -68,9 +67,9 @@ public class SchedulerExecutionServiceImpl implements ISchedulerExecutionService
     /**
      * 尝试执行相关操作。
      *
-     * @param executionId 参数说明
-     * @param executorInstance 参数说明
-     * @return 返回结果
+     * @param executionId execution Id。
+     * @param executorInstance executor Instance。
+     * @return 执行结果。
      */
     @Override
     public boolean claim(String executionId, String executorInstance) {
@@ -84,25 +83,25 @@ public class SchedulerExecutionServiceImpl implements ISchedulerExecutionService
     /**
      * 处理相关数据。
      *
-     * @param event 参数说明
+     * @param event event。
      */
     @Override
     public void processResult(JobExecutionResultEvent event) {
-        SchedulerExecutionDO execution = required(event.getExecutionId());
+        SchedulerExecutionDO execution = required(event.executionId());
         if (execution.getState() != ExecutionState.RUNNING) {
             if (isTerminal(execution.getState()) || execution.getState() == ExecutionState.RETRY_WAIT) {
                 return;
             }
-            throw new IllegalStateException("Execution is not running: " + event.getExecutionId());
+            throw new IllegalStateException("Execution is not running: " + event.executionId());
         }
-        if (event.getStatus() == ExecutionResultStatus.SUCCEEDED) {
-            lifecycleService.complete(event.getExecutionId(), ExecutionEvent.SUCCESS, event.getExecutorInstance(),
-                    event.getResultCode(), null);
+        if (event.status() == ExecutionResultStatus.SUCCEEDED) {
+            lifecycleService.complete(event.executionId(), ExecutionEvent.SUCCESS, event.executorInstance(),
+                    event.resultCode(), null);
             return;
         }
-        if (event.getStatus() == ExecutionResultStatus.TIMED_OUT) {
-            lifecycleService.complete(event.getExecutionId(), ExecutionEvent.TIMEOUT, event.getExecutorInstance(),
-                    event.getResultCode(), event.getErrorMessage());
+        if (event.status() == ExecutionResultStatus.TIMED_OUT) {
+            lifecycleService.complete(event.executionId(), ExecutionEvent.TIMEOUT, event.executorInstance(),
+                    event.resultCode(), event.errorMessage());
             return;
         }
         SchedulerJobDO job = jobDao.selectById(execution.getJobId());
@@ -110,27 +109,27 @@ public class SchedulerExecutionServiceImpl implements ISchedulerExecutionService
         int retryIntervalSeconds = job == null || job.getRetryIntervalSeconds() == null
                 ? 60 : Math.max(1, job.getRetryIntervalSeconds());
         if (execution.getAttempt() < maxAttempts) {
-            lifecycleService.scheduleRetry(event.getExecutionId(), event.getExecutorInstance(),
-                    LocalDateTime.now(ZoneId.systemDefault()).plusSeconds(retryIntervalSeconds), event.getResultCode(), event.getErrorMessage());
+            lifecycleService.scheduleRetry(event.executionId(), event.executorInstance(),
+                    LocalDateTime.now(ZoneId.systemDefault()).plusSeconds(retryIntervalSeconds), event.resultCode(), event.errorMessage());
         } else {
-            lifecycleService.scheduleRetry(event.getExecutionId(), event.getExecutorInstance(), LocalDateTime.now(ZoneId.systemDefault()),
-                    event.getResultCode(), event.getErrorMessage());
-            lifecycleService.transition(event.getExecutionId(), ExecutionEvent.EXHAUST,
-                    event.getResultCode(), event.getErrorMessage(), "system");
+            lifecycleService.scheduleRetry(event.executionId(), event.executorInstance(), LocalDateTime.now(ZoneId.systemDefault()),
+                    event.resultCode(), event.errorMessage());
+            lifecycleService.transition(event.executionId(), ExecutionEvent.EXHAUST,
+                    event.resultCode(), event.errorMessage(), "system");
         }
     }
 
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      *
-     * <p>调度模块相关说明。
-     * 调度模块相关说明。
-     * 调度模块相关说明。</p>
+     * <p>调度模块说明。
+     * 调度模块说明。
+     * 调度模块说明。</p>
      *
-     * @param executionId 参数说明
-     * @param operatorId 参数说明
-     * @param reason 参数说明
-     * @return 返回结果
+     * @param executionId execution Id。
+     * @param operatorId operator Id。
+     * @param reason reason。
+     * @return 执行结果。
      * @throws IllegalStateException 异常说明
      */
     @Transactional
@@ -150,16 +149,16 @@ public class SchedulerExecutionServiceImpl implements ISchedulerExecutionService
     }
 
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      *
-     * <p>调度模块相关说明。
-     * 调度模块相关说明。
-     * 调度模块相关说明。</p>
+     * <p>调度模块说明。
+     * 调度模块说明。
+     * 调度模块说明。</p>
      *
-     * @param executionId 参数说明
-     * @param operatorId 参数说明
-     * @param reason 参数说明
-     * @return 返回结果
+     * @param executionId execution Id。
+     * @param operatorId operator Id。
+     * @param reason reason。
+     * @return 执行结果。
      * @throws IllegalStateException 异常说明
      */
     @Transactional
@@ -181,8 +180,8 @@ public class SchedulerExecutionServiceImpl implements ISchedulerExecutionService
     /**
      * 获取相关数据。
      *
-     * @param query 参数说明
-     * @return 返回结果
+     * @param query query。
+     * @return 执行结果。
      */
     @Override
     public List<SchedulerExecutionVO> list(SchedulerExecutionQO query) {
@@ -192,8 +191,8 @@ public class SchedulerExecutionServiceImpl implements ISchedulerExecutionService
     /**
      * 获取相关数据。
      *
-     * @param executionId 参数说明
-     * @return 返回结果
+     * @param executionId execution Id。
+     * @return 执行结果。
      */
     @Override
     public SchedulerExecutionVO get(String executionId) {

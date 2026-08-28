@@ -3,6 +3,8 @@ package com.peach.captcha.provider;
 import com.peach.captcha.service.CaptchaService;
 
 /**
+ * 验证码服务提供者。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 14:56

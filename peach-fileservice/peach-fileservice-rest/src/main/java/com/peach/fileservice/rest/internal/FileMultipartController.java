@@ -22,14 +22,13 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * 文件分片上传内部接口。
- *
+ * 文件分片上传初始化、分片 URL、完成与中止接口。
  * <p>该控制器只承载分片上传会话相关操作，路径仍保持在 {@code /file/internal/multipart/**}，
  * 便于与普通文件资源管理接口区分。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/8/12
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/8/12
  */
 @Indexed
 @Validated

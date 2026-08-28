@@ -1,5 +1,7 @@
 package com.peach.fileservice.vo;
 
+import java.io.Serial;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -9,18 +11,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 云存储对象浏览器分页结果
+ * 云存储浏览器分页结果。
  * 用于展示云存储桶内文件和目录的层级浏览视图，支持分页和目录折叠
  *
- * @author your-name
- * @date 2026-07-09
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Data
 @Schema(description = "云存储浏览器分页结果")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CloudStorageObjectPageVO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 7203914688378571066L;
 
     /**
      * 云存储实例ID

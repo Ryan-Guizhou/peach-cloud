@@ -8,10 +8,12 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 /**
+ * 获取ip地址，需要配置nginx使用才能获取到真实的内外网地址。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
- * @Description 获取ip地址，需要配置nginx使用才能获取到真实的内外网地址
  * @CreateTime 2025/3/13 15:07
+ * @Description 获取ip地址，需要配置nginx使用才能获取到真实的内外网地址
  */
 @Slf4j
 public final class IpUtil {

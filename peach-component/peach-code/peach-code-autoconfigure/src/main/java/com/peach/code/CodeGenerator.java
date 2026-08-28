@@ -1,10 +1,13 @@
 package com.peach.code;
 
 /**
- * 租户业务编码生成器。
- *
+ * 代码生成器。
  * <p>编码规则由 {@code PEACH_CODE_RULE} 表维护。默认实现采用 Redis 优先、MySQL 兜底策略；
  * 业务方应通过业务表唯一索引保证最终不重复，并根据业务需要将生成和业务写入放在同一事务中。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public interface CodeGenerator {
 

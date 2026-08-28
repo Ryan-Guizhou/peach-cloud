@@ -18,32 +18,31 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 /**
- * 云存储实例公共辅助组件。
- *
+ * 云存储实例支持类。
  * <p>
  * 用于处理云存储实例相关的公共转换及辅助逻辑，包括：
  * </p>
- *
  * <ul>
- *     <li>数据库实体转换为存储运行时配置</li>
- *     <li>数据库实体转换为接口返回对象</li>
- *     <li>存储密钥加密、解密及脱敏处理</li>
- *     <li>当前操作用户信息获取</li>
- *     <li>扩展配置解析</li>
+ * <li>数据库实体转换为存储运行时配置</li>
+ * <li>数据库实体转换为接口返回对象</li>
+ * <li>存储密钥加密、解密及脱敏处理</li>
+ * <li>当前操作用户信息获取</li>
+ * <li>扩展配置解析</li>
  * </ul>
- *
  * <p>
  * 该组件主要用于抽取云存储实例管理过程中重复代码，
  * 简化 Service 层业务逻辑。
  * </p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/7/9
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/7/9
  */
 @Indexed
 @Component
 public class CloudStorageInstanceSupport {
+
+    private static final TypeReference<Map<String, String>> EXTRA_MAP_TYPE = new ExtraMapTypeReference();
 
     /**
      * 将云存储实例数据库对象转换为运行时存储配置。
@@ -208,8 +207,18 @@ public class CloudStorageInstanceSupport {
         if (StringUtil.isBlank(extraJson)) {
             return Map.of();
         }
-        return JSON.parseObject(extraJson, new TypeReference<Map<String, String>>() {
-        });
+        return JSON.parseObject(extraJson, EXTRA_MAP_TYPE);
+    }
+
+    /**
+     * ExtraMap类型Reference。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
+    private static final class ExtraMapTypeReference extends TypeReference<Map<String, String>> {
     }
 
     /**

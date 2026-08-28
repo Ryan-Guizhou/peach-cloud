@@ -29,6 +29,7 @@ import java.util.Properties;
 
 
 /**
+ * Peach消息启动类。
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/8 16:20

@@ -13,12 +13,14 @@ import java.util.Base64;
 import java.util.Map;
 
 /**
- * AES encryption service.
+ * AesEncrypt 服务类。
+ * <p>密钥必须在运行时通过系统属性 {@code peach.common.encrypt.aes.key}
+ * 或环境变量 {@code PEACH_COMMON_ENCRYPT_AES_KEY} 提供。
+ * 当密钥为 Base64 编码时，请使用 {@code base64:<值>} 格式。</p>
  *
- * <p>The key must be provided at runtime with system property
- * {@code peach.common.encrypt.aes.key} or environment variable
- * {@code PEACH_COMMON_ENCRYPT_AES_KEY}. Use {@code base64:<value>} when the key
- * is Base64 encoded.</p>
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public class AesEncryptService extends AbstractEncrypt {
 

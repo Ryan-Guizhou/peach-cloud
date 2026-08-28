@@ -11,7 +11,7 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * 登录成功后的会话信息。
+ * 登录信息。
  * <p>承载当前用户的基础身份、机构、角色和菜单路由信息，供前端登录后初始化页面使用。</p>
  *
  * @Author Mr Shu

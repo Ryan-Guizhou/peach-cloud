@@ -1,5 +1,7 @@
 package com.peach.fileservice.dto;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -9,21 +11,21 @@ import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
- * 文件上传预检查数据传输对象
- *
+ * 文件上传预检查参数。
  * <p>用于文件上传前的校验与秒传检测，包含文件SHA256、MD5、大小、名称等核心信息，
  * 支持根据摘要判断文件是否已存在以实现秒传，同时携带业务类型、业务ID、存储提供方等
  * 业务关联信息，便于对文件合法性与存储策略进行预验证。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Data
 @Schema(description = "文件上传预检查参数")
 public class FileUploadCheckDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -7208445276532057631L;
 
     @NotBlank(message = "sha256不能为空")
     @Schema(description = "文件sha256", requiredMode = Schema.RequiredMode.REQUIRED)

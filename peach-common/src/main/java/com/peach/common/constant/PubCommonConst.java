@@ -1,6 +1,8 @@
 package com.peach.common.constant;
 
 /**
+ * Pub通用常量。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:50
@@ -58,12 +60,12 @@ public final class PubCommonConst {
     public static final String STR_FALSE = "false";
 
     /**
-     * boolean true
+     * Booleantrue。。
      */
     public static final Boolean TRUE = true;
 
     /**
-     * boolean false
+     * Booleanfalse。。
      */
     public static final Boolean FALSE = false;
 

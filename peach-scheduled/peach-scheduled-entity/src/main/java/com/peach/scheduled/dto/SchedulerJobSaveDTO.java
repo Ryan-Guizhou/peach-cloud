@@ -10,8 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * 调度任务新增或修改请求对象。
- *
+ * 调度任务新增或修改请求。
  * <p>只承载控制面允许用户配置的任务定义字段，不允许客户端提交内部状态、
  * 乐观锁版本、执行租约等运行时字段。</p>
  *

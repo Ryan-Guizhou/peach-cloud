@@ -3,6 +3,8 @@ package com.peach.redis.config;
 import lombok.Data;
 
 /**
+ * caffeine 缓存配置。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 16:09
@@ -45,6 +47,14 @@ public class CaffeineCacheConfig {
      * value 对象引用强度 既可以强引用 也可以弱引用
      */
     private CaffeineStrength valueStrength = CaffeineStrength.STRONG;
+
+    /**
+     * CaffeineStrength枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     public enum CaffeineStrength {
         /**

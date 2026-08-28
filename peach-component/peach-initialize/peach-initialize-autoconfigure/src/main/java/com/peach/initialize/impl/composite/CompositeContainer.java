@@ -12,6 +12,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
+ * Composite容器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/16 16:27

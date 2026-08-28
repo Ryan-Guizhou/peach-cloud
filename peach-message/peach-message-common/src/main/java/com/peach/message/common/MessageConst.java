@@ -1,6 +1,8 @@
 package com.peach.message.common;
 
 /**
+ * 消息模块常量。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45

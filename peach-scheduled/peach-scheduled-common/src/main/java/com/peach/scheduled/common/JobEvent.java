@@ -1,7 +1,7 @@
 package com.peach.scheduled.common;
 
 /**
- * 任务定义状态机事件。
+ * 任务事件。
  *
  * @Author Mr Shu
  * @Version 1.0.0

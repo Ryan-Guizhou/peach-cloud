@@ -1,7 +1,7 @@
 package com.peach.scheduled.common;
 
 /**
- * 执行状态机支持的事件。
+ * 执行事件。
  *
  * @Author Mr Shu
  * @Version 1.0.0

@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
+ * Adobe相关类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/17 18:54
@@ -17,7 +19,7 @@ public class Adobe implements ConsumerTask {
 
     @Override
     public void execute(String content) {
-      log.info("消费消息:[{}]",content);
+      log.info("Consumed delay queue message: [{}]",content);
     }
 
     @Override

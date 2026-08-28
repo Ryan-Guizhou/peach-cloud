@@ -11,6 +11,8 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.stereotype.Indexed;
 
 /**
+ * WebSocket Redis配置。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45

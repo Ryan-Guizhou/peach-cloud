@@ -22,6 +22,8 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
+ * MongoAuto自动配置。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/13 17:01

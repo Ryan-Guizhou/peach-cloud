@@ -74,32 +74,30 @@ import java.util.Locale;
 
 
 /**
- * 文件域服务实现类
- *
+ * 文件Domain服务实现类。
  * <p>实现文件上传、下载、分片上传、文件管理等核心业务功能。
  * 主要特性包括：</p>
  * <ul>
- *   <li><b>秒传检测</b>：基于 SHA-256 和文件大小检测文件是否已存在，实现秒传</li>
- *   <li><b>分片上传</b>：支持大文件分片上传，提供预签名URL直传</li>
- *   <li><b>逻辑删除</b>：文件删除采用逻辑删除，支持在保留期内恢复</li>
- *   <li><b>定时清理</b>：定期物理删除过期文件和清理未完成会话</li>
- *   <li><b>多存储支持</b>：支持多种云存储服务（MinIO、OSS、COS、OBS等）</li>
- *   <li><b>对象复用</b>：相同内容的文件共享存储对象，节省存储空间</li>
+ * <li><b>秒传检测</b>：基于 SHA-256 和文件大小检测文件是否已存在，实现秒传</li>
+ * <li><b>分片上传</b>：支持大文件分片上传，提供预签名URL直传</li>
+ * <li><b>逻辑删除</b>：文件删除采用逻辑删除，支持在保留期内恢复</li>
+ * <li><b>定时清理</b>：定期物理删除过期文件和清理未完成会话</li>
+ * <li><b>多存储支持</b>：支持多种云存储服务（MinIO、OSS、COS、OBS等）</li>
+ * <li><b>对象复用</b>：相同内容的文件共享存储对象，节省存储空间</li>
  * </ul>
- *
  * <p>核心业务流程：</p>
  * <ol>
- *   <li>上传前校验（秒传检测）</li>
- *   <li>文件上传（简单上传或分片上传）</li>
- *   <li>创建文件记录和文件对象</li>
- *   <li>文件下载（生成预签名URL）</li>
- *   <li>文件管理（查询、删除、恢复）</li>
- *   <li>定时清理（过期文件和会话）</li>
+ * <li>上传前校验（秒传检测）</li>
+ * <li>文件上传（简单上传或分片上传）</li>
+ * <li>创建文件记录和文件对象</li>
+ * <li>文件下载（生成预签名URL）</li>
+ * <li>文件管理（查询、删除、恢复）</li>
+ * <li>定时清理（过期文件和会话）</li>
  * </ol>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  * @see IFileDomainService
  */
 @Slf4j
@@ -798,7 +796,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     private byte[] readFileBytes(MultipartFile file) {
         try {
-            return file.getBytes();
+            return file.getInputStream().readAllBytes();
         } catch (IOException ex) {
             throw new IllegalStateException("failed to read upload file bytes", ex);
         }

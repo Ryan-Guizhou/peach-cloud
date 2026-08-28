@@ -8,10 +8,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.openfeign.FallbackFactory;
 
 /**
- * 调度模块相关说明。
- *
- * <p>调度模块相关说明。
- * 调度模块相关说明。</p>
+ * 调度执行外部客户端降级工厂。
+ * <p>调度模块说明。
+ * 调度模块说明。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -24,14 +23,7 @@ public class SchedulerExecutionExternalClientFallbackFactory
     private static final Logger log = LoggerFactory.getLogger(SchedulerExecutionExternalClientFallbackFactory.class);
 
     /**
-     * 创建相关对象。
-     */
-    public SchedulerExecutionExternalClientFallbackFactory() {
-        // Intentionally empty.
-    }
-
-    /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public SchedulerExecutionExternalClient create(Throwable cause) {

@@ -10,8 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Peach OpenFeign 配置属性。
- *
+ * PeachOpenFeign配置属性。
  * <p>该配置用于管理服务间 Feign 调用所需的 Same-Token、RequestId、超时、重试、
  * Sentinel 治理、异常响应和 fallback 校验能力。</p>
  *
@@ -73,6 +72,14 @@ public class PeachOpenfeignProperties {
     private FallbackOptions fallback = new FallbackOptions();
 
     @Data
+    /**
+     * ClientOptions。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
     public static class ClientOptions {
 
         private boolean okhttpEnabled = true;

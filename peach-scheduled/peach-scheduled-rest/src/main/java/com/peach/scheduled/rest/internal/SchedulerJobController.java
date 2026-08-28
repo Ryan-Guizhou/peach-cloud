@@ -1,5 +1,6 @@
 package com.peach.scheduled.rest.internal;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
 
 import com.peach.common.response.Response;
@@ -13,6 +14,7 @@ import com.peach.scheduler.service.SchedulerCronService;
 import com.peach.scheduler.service.SchedulerTriggerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,8 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 /**
- * 调度任务管理接口。
- *
+ * 调度任务管理。
  * <p>提供任务定义查询、创建、修改、生命周期操作、立即执行和 Cron 预览能力。
  * 所有写操作的操作人均从当前 Peach 安全上下文获取，禁止客户端伪造操作人标识。</p>
  *
@@ -37,31 +38,18 @@ import jakarta.validation.Valid;
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:42
  */
+@Slf4j
+@Indexed
 @Validated
 @RestController
 @RequestMapping("/scheduler/jobs")
 @Tag(name = "调度任务管理", description = "调度任务管理")
-@Indexed
+@RequiredArgsConstructor
 public class SchedulerJobController {
 
     private final ISchedulerJobService schedulerJobService;
     private final SchedulerTriggerService schedulerTriggerService;
     private final SchedulerCronService schedulerCronService;
-
-    /**
-     * 创建调度任务管理接口。
-     *
-     * @param schedulerJobService 调度任务服务
-     * @param schedulerTriggerService 任务触发服务
-     * @param schedulerCronService Cron 校验和预览服务
-     */
-    public SchedulerJobController(ISchedulerJobService schedulerJobService,
-                                  SchedulerTriggerService schedulerTriggerService,
-                                  SchedulerCronService schedulerCronService) {
-        this.schedulerJobService = schedulerJobService;
-        this.schedulerTriggerService = schedulerTriggerService;
-        this.schedulerCronService = schedulerCronService;
-    }
 
     /**
      * 查询符合条件的调度任务列表。
@@ -83,7 +71,7 @@ public class SchedulerJobController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "查询调度任务详情")
-    public Response get(@PathVariable Long id) {
+    public Response get(@PathVariable String id) {
         return Response.success(schedulerJobService.get(id));
     }
 
@@ -108,7 +96,7 @@ public class SchedulerJobController {
      */
     @PutMapping("/{id}")
     @Operation(summary = "更新调度任务")
-    public Response update(@PathVariable Long id, @Valid @RequestBody SchedulerJobSaveDTO data) {
+    public Response update(@PathVariable String id, @Valid @RequestBody SchedulerJobSaveDTO data) {
         return Response.success(schedulerJobService.update(id, data, currentUserId()));
     }
 
@@ -120,7 +108,7 @@ public class SchedulerJobController {
      */
     @PostMapping("/{id}/enable")
     @Operation(summary = "启用调度任务")
-    public Response enable(@PathVariable Long id) {
+    public Response enable(@PathVariable String id) {
         return transition(id, JobEvent.ENABLE);
     }
 
@@ -132,7 +120,7 @@ public class SchedulerJobController {
      */
     @PostMapping("/{id}/pause")
     @Operation(summary = "暂停调度任务")
-    public Response pause(@PathVariable Long id) {
+    public Response pause(@PathVariable String id) {
         return transition(id, JobEvent.PAUSE);
     }
 
@@ -144,7 +132,7 @@ public class SchedulerJobController {
      */
     @PostMapping("/{id}/resume")
     @Operation(summary = "恢复调度任务")
-    public Response resume(@PathVariable Long id) {
+    public Response resume(@PathVariable String id) {
         return transition(id, JobEvent.RESUME);
     }
 
@@ -156,7 +144,7 @@ public class SchedulerJobController {
      */
     @PostMapping("/{id}/disable")
     @Operation(summary = "停用调度任务")
-    public Response disable(@PathVariable Long id) {
+    public Response disable(@PathVariable String id) {
         return transition(id, JobEvent.DISABLE);
     }
 
@@ -168,7 +156,7 @@ public class SchedulerJobController {
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "删除调度任务")
-    public Response delete(@PathVariable Long id) {
+    public Response delete(@PathVariable String id) {
         return transition(id, JobEvent.DELETE);
     }
 
@@ -180,7 +168,7 @@ public class SchedulerJobController {
      */
     @PostMapping("/{id}/run")
     @Operation(summary = "立即触发调度任务")
-    public Response runNow(@PathVariable Long id) {
+    public Response runNow(@PathVariable String id) {
         return Response.success(schedulerTriggerService.triggerManual(id, currentUserId()));
     }
 
@@ -200,7 +188,7 @@ public class SchedulerJobController {
         return Response.success(schedulerCronService.preview(expression, timeZone, count));
     }
 
-    private Response transition(Long id, JobEvent event) {
+    private Response transition(String id, JobEvent event) {
         return Response.success(schedulerJobService.transition(id, event, currentUserId()));
     }
 

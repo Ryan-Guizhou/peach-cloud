@@ -7,6 +7,8 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
+ * 应用CommandLine执行器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/16 14:56

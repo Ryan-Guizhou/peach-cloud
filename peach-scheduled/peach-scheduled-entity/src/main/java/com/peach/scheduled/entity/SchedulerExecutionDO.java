@@ -1,5 +1,7 @@
 package com.peach.scheduled.entity;
 
+import java.io.Serial;
+
 import com.peach.scheduled.common.ExecutionState;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -13,7 +15,6 @@ import java.time.LocalDateTime;
 
 /**
  * 调度执行实例数据库对象。
- *
  * <p>一条记录表示任务的一次逻辑触发。分布式执行采用至少一次投递语义，
  * 因此业务 Handler 仍必须具备幂等能力。</p>
  *
@@ -27,7 +28,8 @@ import java.time.LocalDateTime;
 @Schema(description = "调度执行实例数据库对象")
 public class SchedulerExecutionDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 674290409448199412L;
 
     /** 执行实例唯一标识。 */
     @Id
@@ -38,7 +40,7 @@ public class SchedulerExecutionDO implements Serializable {
     /** 关联任务主键。 */
     @Column(name = "JOB_ID")
     @Schema(description = "关联任务主键")
-    private Long jobId;
+    private String jobId;
 
     /** 稳定任务编码。 */
     @Column(name = "JOB_CODE")

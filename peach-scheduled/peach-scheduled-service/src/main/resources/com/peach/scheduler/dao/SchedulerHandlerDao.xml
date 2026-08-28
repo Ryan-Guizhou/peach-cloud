@@ -9,9 +9,9 @@
 
     <insert id="upsert" parameterType="com.peach.scheduled.entity.SchedulerHandlerDO">
         INSERT INTO PEACH_SCHEDULER_HANDLER (
-            APPLICATION_NAME, HANDLER_NAME, DESCRIPTION, STATUS, INSTANCE_ID, LAST_HEARTBEAT_TIME, CREATED_TIME, MODIFY_TIME
+            ID, APPLICATION_NAME, HANDLER_NAME, DESCRIPTION, STATUS, INSTANCE_ID, LAST_HEARTBEAT_TIME, CREATED_TIME, MODIFY_TIME
         ) VALUES (
-            #{applicationName,jdbcType=VARCHAR}, #{handlerName,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR},
+            #{id,jdbcType=VARCHAR}, #{applicationName,jdbcType=VARCHAR}, #{handlerName,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR},
             'ONLINE', #{instanceId,jdbcType=VARCHAR}, NOW(), NOW(), NOW()
         ) ON DUPLICATE KEY UPDATE
             DESCRIPTION = VALUES(DESCRIPTION),

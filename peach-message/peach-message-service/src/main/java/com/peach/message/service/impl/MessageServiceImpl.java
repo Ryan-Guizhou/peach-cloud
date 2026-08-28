@@ -30,12 +30,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
+ * 消息服务实现。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45
@@ -301,12 +302,12 @@ public class MessageServiceImpl implements IMessageService {
 
     private List<String> resolveMessageTypes(String messageCategory) {
         if (StringUtils.isBlank(messageCategory)) {
-            return Collections.emptyList();
+            return List.of();
         }
         try {
             return MessageCategoryConfig.getTypes(MessageEnum.MessageCategory.valueOf(messageCategory));
         } catch (Exception e) {
-            return Collections.emptyList();
+            return List.of();
         }
     }
 }

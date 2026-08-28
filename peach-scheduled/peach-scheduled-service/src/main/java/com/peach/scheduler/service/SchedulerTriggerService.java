@@ -2,6 +2,7 @@ package com.peach.scheduler.service;
 
 import org.springframework.stereotype.Indexed;
 
+import com.peach.common.IDGeneratorUtil;
 import com.peach.scheduled.common.ExecutionEvent;
 import com.peach.scheduled.common.ExecutionState;
 import com.peach.scheduled.common.JobState;
@@ -19,17 +20,15 @@ import com.peach.scheduler.transport.JobExecutionCommand;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 转换相关数据。
- *
- * <p>调度模块相关说明。
- * 调度模块相关说明。
- * 调度模块相关说明。</p>
+ * 调度Trigger服务类。
+ * <p>调度模块说明。
+ * 调度模块说明。
+ * 调度模块说明。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -49,12 +48,12 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
     private final SchedulerOperationLogDao operationLogDao;
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param jobDao 参数说明
-     * @param executionDao 参数说明
-     * @param lifecycleService 参数说明
-     * @param dispatcher 参数说明
+     * @param jobDao job Dao。
+     * @param executionDao execution Dao。
+     * @param lifecycleService lifecycle Service。
+     * @param dispatcher dispatcher。
      * @param operationLogDao 操作审计日志数据访问对象
      */
     public SchedulerTriggerService(SchedulerJobDao jobDao,
@@ -70,34 +69,34 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     @Transactional
     public void onTrigger(ScheduleTriggerContext context) {
-        SchedulerJobDO job = jobDao.selectByCode(context.getJobCode());
+        SchedulerJobDO job = jobDao.selectByCode(context.jobCode());
         if (job == null || job.getState() != JobState.ENABLED) {
-            log.info("Scheduler trigger ignored because job is not enabled, jobCode={}", context.getJobCode());
+            log.info("Scheduler trigger ignored because job is not enabled, jobCode={}", context.jobCode());
             return;
         }
-        createOccurrence(job, TriggerType.SCHEDULED, context.getScheduledTime(),
-                job.getId() + ":" + context.getScheduledTime().toEpochMilli());
+        createOccurrence(job, TriggerType.SCHEDULED, context.scheduledTime(),
+                job.getId() + ":" + context.scheduledTime().toEpochMilli());
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param jobId 参数说明
-     * @param operatorId 参数说明
-     * @return 返回结果
+     * @param jobId job Id。
+     * @param operatorId operator Id。
+     * @return 执行结果。
      */
     @Transactional
-    public String triggerManual(Long jobId, String operatorId) {
+    public String triggerManual(String jobId, String operatorId) {
         SchedulerJobDO job = jobDao.selectById(jobId);
         if (job == null || job.getState() == JobState.DELETED) {
             throw new IllegalArgumentException("Scheduler job not found: " + jobId);
         }
-        String occurrenceKey = "manual:" + jobId + ":" + UUID.randomUUID();
+        String occurrenceKey = "manual:" + jobId + ":" + IDGeneratorUtil.generateUuid();
         String executionId = createOccurrence(job, TriggerType.MANUAL, Instant.now(), occurrenceKey);
         if (executionId != null) {
             operationLogDao.insertSuccess("RUN", "JOB", String.valueOf(jobId), operatorId, null);
@@ -106,10 +105,10 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
     }
 
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      *
-     * @param executionId 参数说明
-     * @return 返回结果
+     * @param executionId execution Id。
+     * @return 执行结果。
      */
     @Transactional
     public boolean dispatchRetry(String executionId) {
@@ -134,10 +133,10 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
     /**
      * 尝试执行相关操作。
      *
-     * <p>调度模块相关说明。</p>
+     * <p>调度模块说明。</p>
      *
-     * @param executionId 参数说明
-     * @return 返回结果
+     * @param executionId execution Id。
+     * @return 执行结果。
      */
     @Transactional
     public boolean dispatchDeferred(String executionId) {
@@ -167,7 +166,7 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
         }
 
         SchedulerExecutionDO execution = new SchedulerExecutionDO();
-        execution.setExecutionId(UUID.randomUUID().toString());
+        execution.setExecutionId(IDGeneratorUtil.generateUuid());
         execution.setJobId(job.getId());
         execution.setJobCode(job.getJobCode());
         execution.setOccurrenceKey(occurrenceKey);
@@ -176,7 +175,7 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
         execution.setState(ExecutionState.CREATED);
         execution.setAttempt(1);
         execution.setVersion(0L);
-        execution.setTraceId(UUID.randomUUID().toString());
+        execution.setTraceId(IDGeneratorUtil.generateUuid());
 
         if (executionDao.insertIgnore(execution) != 1) {
             log.info("Duplicate scheduler occurrence ignored, jobCode={}, occurrenceKey={}",
@@ -213,15 +212,14 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
     }
 
     private JobExecutionCommand command(SchedulerJobDO job, SchedulerExecutionDO execution) {
-        JobExecutionCommand command = new JobExecutionCommand();
-        command.setExecutionId(execution.getExecutionId());
-        command.setJobCode(job.getJobCode());
-        command.setApplicationName(job.getApplicationName());
-        command.setHandlerName(job.getHandlerName());
-        command.setParameters(job.getParametersJson());
-        command.setTimeoutMs(job.getTimeoutMs() == null ? 0L : job.getTimeoutMs());
-        command.setAttempt(execution.getAttempt());
-        command.setTraceId(execution.getTraceId());
-        return command;
+        return new JobExecutionCommand(
+                execution.getExecutionId(),
+                job.getJobCode(),
+                job.getApplicationName(),
+                job.getHandlerName(),
+                job.getParametersJson(),
+                job.getTimeoutMs() == null ? 0L : job.getTimeoutMs(),
+                execution.getAttempt(),
+                execution.getTraceId());
     }
 }

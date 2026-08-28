@@ -7,6 +7,8 @@ import org.springframework.cloud.openfeign.FallbackFactory;
 
 
 /**
+ * Setting Feign 降级工厂。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/2/1 15:00
@@ -23,7 +25,17 @@ public class SettingFeignClientFallbackFactory implements FallbackFactory<Settin
     @Override
     public SettingFeignClient create(Throwable cause) {
         fallbackSupport.fail(ServiceContextConstant.SETTING_SERVICE_CONTEXT, "create", cause);
-        return new SettingFeignClient() {
-        };
+        return new FallbackSettingFeignClient();
+    }
+
+    /**
+     * Fallback设置Feign客户端。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
+    private static final class FallbackSettingFeignClient implements SettingFeignClient {
     }
 }

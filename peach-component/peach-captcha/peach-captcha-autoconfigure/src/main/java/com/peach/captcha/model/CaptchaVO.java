@@ -1,11 +1,15 @@
 package com.peach.captcha.model;
 
+import java.io.Serial;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.io.Serializable;
 
 /**
+ * 验证码视图对象。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 11:06
@@ -14,7 +18,8 @@ import java.io.Serializable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CaptchaVO implements Serializable {
 
-    private static final long serialVersionUID = 4709594363282708784L;
+    @Serial
+    private static final long serialVersionUID = -44213028347206787L;
 
     private String clientUid;
 

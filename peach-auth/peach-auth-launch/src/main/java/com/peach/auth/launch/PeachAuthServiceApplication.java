@@ -31,11 +31,14 @@ import java.util.Properties;
 
 
 /**
+ * Peach认证服务启动类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025-11-25 17:47
  */
 @Slf4j
+@Indexed
 @EnableCaching
 @EnableDiscoveryClient
 @EnableAspectJAutoProxy(proxyTargetClass = true)
@@ -44,7 +47,6 @@ import java.util.Properties;
 @MapperScan(basePackages = {"com.peach.*.dao"},
         annotationClass = MybatisDao.class,
         sqlSessionFactoryRef = "mybatisSession")
-@Indexed
 @SpringBootApplication
 public class PeachAuthServiceApplication {
 

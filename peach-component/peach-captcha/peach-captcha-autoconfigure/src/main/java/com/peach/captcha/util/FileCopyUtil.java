@@ -4,9 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StreamUtils;
 
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -15,6 +15,8 @@ import java.io.StringWriter;
 import java.io.Writer;
 
 /**
+ * 文件Copy工具类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/21 13:50
@@ -31,7 +33,7 @@ public final class FileCopyUtil {
     }
 
     /**
-     * Copy InputStream to OutputStream
+     * CopyInputStreamtoOutputStream。。
      * 将输入流复制到输出流（自动关闭流）
      *
      * @param in  source input stream / 输入流
@@ -49,7 +51,7 @@ public final class FileCopyUtil {
     }
 
     /**
-     * Copy byte array to OutputStream
+     * CopybytearraytoOutputStream。。
      * 将字节数组写入输出流
      *
      * @param in  source byte array / 字节数组
@@ -65,7 +67,7 @@ public final class FileCopyUtil {
     }
 
     /**
-     * Copy InputStream to byte array
+     * CopyInputStreamtobytearray。。
      * 将输入流读取为字节数组
      *
      * @param in input stream / 输入流
@@ -82,7 +84,7 @@ public final class FileCopyUtil {
     }
 
     /**
-     * Copy Reader to Writer
+     * CopyReadertoWriter。。
      * Reader → Writer 字符流复制
      *
      * @param in  reader / 输入字符流
@@ -109,7 +111,7 @@ public final class FileCopyUtil {
     }
 
     /**
-     * Copy String to Writer
+     * CopyStringtoWriter。。
      * 将字符串写入 Writer
      *
      * @param in  source string / 输入字符串
@@ -125,7 +127,7 @@ public final class FileCopyUtil {
     }
 
     /**
-     * Copy Reader to String
+     * CopyReadertoString。。
      * Reader → String
      *
      * @param in reader / 输入字符流
@@ -143,7 +145,7 @@ public final class FileCopyUtil {
     }
 
     /**
-     * Delete file by file path
+     * Deletefilebyfilepath。。
      * 根据文件路径删除文件
      *
      * @param fileUrl file path / 文件路径
@@ -151,9 +153,9 @@ public final class FileCopyUtil {
      */
     public static boolean deleteFile(String fileUrl) {
         try {
-            File file = new File(fileUrl);
-            if (file.isFile() && file.exists()) {
-                Files.delete(file.toPath());
+            Path path = Path.of(fileUrl);
+            if (Files.isRegularFile(path)) {
+                Files.delete(path);
                 return true;
             }
             return false;
@@ -164,7 +166,7 @@ public final class FileCopyUtil {
     }
 
     /**
-     * Close Closeable quietly
+     * CloseCloseablequietly。。
      * 安静关闭资源（吞掉异常）
      *
      * @param closeable resource / 资源对象

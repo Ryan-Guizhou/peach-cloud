@@ -6,6 +6,8 @@ import com.peach.captcha.service.CaptchaService;
 import com.peach.captcha.service.impl.BlockPuzzleCaptchaServiceImpl;
 
 /**
+ * 滑块验证码服务提供者。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/21 18:21

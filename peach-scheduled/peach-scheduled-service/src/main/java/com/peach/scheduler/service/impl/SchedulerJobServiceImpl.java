@@ -2,6 +2,7 @@ package com.peach.scheduler.service.impl;
 
 import org.springframework.stereotype.Indexed;
 
+import com.peach.common.IDGeneratorUtil;
 import com.peach.scheduler.service.ISchedulerJobService;
 import com.peach.scheduler.service.SchedulerJobLifecycleService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,8 +33,7 @@ import org.quartz.CronExpression;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 调度任务管理服务实现。
- *
+ * 调度任务服务实现类。
  * <p>负责任务定义校验、Handler 在线校验、参数安全校验、版本快照、
  * 生命周期调用以及 DO 到 VO 的边界转换。</p>
  *
@@ -55,7 +55,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
     private final SchedulerOperationLogDao operationLogDao;
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      * @param jobDao 任务定义数据访问对象
      * @param handlerDao Handler 注册数据访问对象
      * @param jobVersionDao 任务定义版本快照数据访问对象
@@ -78,7 +78,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      * @param data 任务定义请求
      * @param operatorId 操作人 ID
      * @return 创建后的任务定义
@@ -91,6 +91,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
             throw new IllegalArgumentException("Job code already exists");
         }
         SchedulerJobDO job = map(data, new SchedulerJobDO());
+        job.setId(IDGeneratorUtil.generateUuid());
         job.setState(JobState.DRAFT);
         job.setScheduleVersion(1L);
         job.setSyncStatus(SyncStatus.PENDING);
@@ -112,7 +113,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
      */
     @Transactional
     @Override
-    public SchedulerJobVO update(Long jobId, SchedulerJobSaveDTO data, String operatorId) {
+    public SchedulerJobVO update(String jobId, SchedulerJobSaveDTO data, String operatorId) {
         validate(data);
         SchedulerJobDO job = required(jobId);
         if (!job.getJobCode().equals(data.getJobCode())) {
@@ -132,7 +133,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      * @param query 查询条件
      */
     @Override
@@ -143,25 +144,25 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      * @param jobId 任务 ID
      */
     @Override
-    public SchedulerJobVO get(Long jobId) {
+    public SchedulerJobVO get(String jobId) {
         return toVO(required(jobId));
     }
 
     /**
      * 执行相关状态处理。
      *
-     * @return 返回结果
+     * @return 执行结果。
      * @param jobId 任务 ID
      * @param event 状态机事件
      * @param operatorId 操作人 ID
      */
     @Transactional
     @Override
-    public SchedulerJobVO transition(Long jobId, JobEvent event, String operatorId) {
+    public SchedulerJobVO transition(String jobId, JobEvent event, String operatorId) {
         SchedulerJobDO job = lifecycleService.transition(jobId, event, operatorId);
         operationLogDao.insertSuccess(event.name(), "JOB", String.valueOf(jobId), operatorId, null);
         return toVO(job);
@@ -280,7 +281,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
         return job;
     }
 
-    private SchedulerJobDO required(Long jobId) {
+    private SchedulerJobDO required(String jobId) {
         SchedulerJobDO job = jobDao.selectById(jobId);
         if (job == null) throw new IllegalArgumentException("Scheduler job not found: " + jobId);
         return job;

@@ -9,7 +9,7 @@ import com.peach.scheduler.dispatch.JobDispatcher;
 import com.peach.scheduler.transport.JobExecutionCommand;
 
 /**
- * 分布式调度相关实现。
+ * RocketJobDispatcher相关类。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -20,23 +20,23 @@ public class RocketJobDispatcher implements JobDispatcher {
     private final MqOutboxPublisher outboxPublisher;
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param outboxPublisher 参数说明
+     * @param outboxPublisher outbox Publisher。
      */
     public RocketJobDispatcher(MqOutboxPublisher outboxPublisher) {
         this.outboxPublisher = outboxPublisher;
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void dispatch(JobExecutionCommand command) {
         MqSendOptions options = MqSendOptions.builder()
-                .topic(SchedulerConstants.executionTopic(command.getApplicationName()))
+                .topic(SchedulerConstants.executionTopic(command.applicationName()))
                 .tag("execute")
-                .key(command.getExecutionId())
+                .key(command.executionId())
                 .build();
         outboxPublisher.publish(command, options);
     }

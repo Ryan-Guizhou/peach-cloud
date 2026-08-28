@@ -22,6 +22,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.StopWatch;
 
 
+/**
+ * SqlCost拦截器。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
+
 @Intercepts({
         @Signature(type = StatementHandler.class, method = "query", args = { Statement.class, ResultHandler.class }),
         @Signature(type = StatementHandler.class, method = "update", args = { Statement.class }),

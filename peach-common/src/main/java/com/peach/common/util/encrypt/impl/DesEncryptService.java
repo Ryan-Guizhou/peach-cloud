@@ -13,13 +13,15 @@ import java.security.GeneralSecurityException;
 import java.util.Map;
 
 /**
- * Legacy encryption service.
+ * DesEncrypt 服务类。
+ * <p>此类保留了历史构造方法和 EncryptService 契约，但不再使用 DES 算法或硬编码密钥。
+ * 密钥必须在运行时通过系统属性 {@code peach.common.encrypt.legacy.key}
+ * 或环境变量 {@code PEACH_COMMON_ENCRYPT_LEGACY_KEY} 提供。
+ * 当密钥为 Base64 编码时，请使用 {@code base64:<值>} 格式。</p>
  *
- * <p>This class keeps the historical constructor and EncryptService contract,
- * but no longer uses DES or a hard-coded key. The key must be provided at
- * runtime with system property {@code peach.common.encrypt.legacy.key} or
- * environment variable {@code PEACH_COMMON_ENCRYPT_LEGACY_KEY}. Use
- * {@code base64:<value>} when the key is Base64 encoded.</p>
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public class DesEncryptService extends AbstractEncrypt {
 

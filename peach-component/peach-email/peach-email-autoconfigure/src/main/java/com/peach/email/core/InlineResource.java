@@ -1,53 +1,33 @@
 package com.peach.email.core;
 
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
+ * Inline 资源值对象。
+ *
+ * @param contentId   内容标识符（Content-ID），用于 HTML 邮件内联引用
+ * @param contentType 资源的 MIME 类型（如 image/png）
+ * @param content     资源的二进制内容
+ * @param path        资源路径
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:44
- * @Description
- * 内嵌资源：在 HTML 中通过 CID 引用的图片或其他资源。
  */
-public class InlineResource {
+public record InlineResource(String contentId, String contentType, byte[] content, String path) {
+
+    public InlineResource {
+        content = content != null ? Arrays.copyOf(content, content.length) : null;
+    }
 
     /**
-     * 内容ID（CID），用于在HTML中通过<img src="cid:...">引用
+     * 返回二进制内容的防御性拷贝。
+     *
+     * @return 内容字节数组的拷贝；若内容为 null 则返回 null
      */
-    private final String contentId;
-
-    /**
-     * 内容类型（MIME），如 image/png
-     */
-    private final String contentType;
-
-    /**
-     * 二进制内容（与 path 二选一）；内部保存为防御性拷贝
-     */
-    private final byte[] content;
-
-    /**
-     * 文件路径（与 content 二选一）；当提供路径时将读取文件数据
-     */
-    private final String path;
-
-    public InlineResource(String contentId, String contentType, byte[] content, String path) {
-        this.contentId = contentId;
-        this.contentType = contentType;
-        this.content = content != null ? content.clone() : null;
-        this.path = path;
+    public byte[] content() {
+        return content != null ? Arrays.copyOf(content, content.length) : null;
     }
 
-    public String getContentId() {
-        return contentId;
-    }
-    public String getContentType() {
-        return contentType;
-    }
-    /** 返回二进制内容的防御性拷贝 */
-    public byte[] getContent() {
-        return content != null ? content.clone() : null;
-    }
-    public String getPath() {
-        return path;
-    }
 }

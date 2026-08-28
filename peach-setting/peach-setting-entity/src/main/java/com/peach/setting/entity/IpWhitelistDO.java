@@ -1,5 +1,7 @@
 package com.peach.setting.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -12,7 +14,7 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
- * IP 白名单。
+ * IP白名单。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -25,7 +27,8 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = true)
 public class IpWhitelistDO extends PeachDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 8745007457982485873L;
 
     @Id
     @Column(name = "ID")

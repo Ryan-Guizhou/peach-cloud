@@ -1,5 +1,7 @@
 package com.peach.fileservice.vo;
 
+import java.io.Serial;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -7,23 +9,23 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 云存储上传结果返回对象。
- *
+ * 云存储上传结果。
  * <p>
  * 用于返回文件上传完成后的存储信息，
  * 包括存储提供方、存储桶、对象路径、文件大小以及访问地址等信息。
  * </p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/7/9
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/7/9
  */
 @Data
 @Schema(description = "云存储上传结果")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CloudStorageUploadVO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 4304740160360999588L;
 
     /**
      * 存储提供方名称。

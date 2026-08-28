@@ -1,5 +1,7 @@
 package com.peach.auth.qo;
 
+import java.io.Serial;
+
 import com.peach.common.PeachEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -13,12 +15,14 @@ import java.io.Serializable;
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/8/12 22:50
- */
+  */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "用户操作日志查询参数")
 public class UserOperLogQO extends PeachEntity implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = 1133878252981634479L;
 
     @Schema(description = "操作类型编码")
     private String optTypeCode;

@@ -2,8 +2,6 @@
 
 package com.peach.redis.common.tool;
 
-import cn.hutool.core.date.DateUnit;
-import cn.hutool.core.date.DateUtil;
 import jakarta.annotation.Nullable;
 import org.springframework.stereotype.Indexed;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +22,8 @@ import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,10 +32,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * RedisDao实现类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:39
-  */
+ */
 @Slf4j
 @Indexed
 @Repository("redisDao")
@@ -68,7 +68,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     }
 
     private static List<String> getScanResult(Jedis redisService, String key, Integer count) {
-        Date startTime = new Date();
+        Instant startTime = Instant.now();
         //扫描的参数对象创建与封装
         ScanParams params = new ScanParams();
         params.match(key);
@@ -105,7 +105,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             if (results != null && results.size() > 0) {
                 list.addAll(results);
             }
-            long timeOut = DateUtil.between(startTime, new Date(), DateUnit.SECOND);
+            long timeOut = Duration.between(startTime, Instant.now()).getSeconds();
             if (StringUtils.isBlank(cursor)) {
                 log.info("cursor == null");
                 cursor = "0";
@@ -141,7 +141,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
                 }
                 retryNum++;
             } catch (Exception e) {
-                log.error("重试失败"+e.getMessage(),e);
+                log.error("Retry failed, message={}", e.getMessage(), e);
                 retryNum++;
             }
         }
@@ -566,7 +566,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             //关闭cursor
             cursor.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Redis HSCAN failed, matchKey={}", matchKey, e);
         }
         return map;
     }
@@ -583,7 +583,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             //关闭cursor
             cursor.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Redis HSCAN failed, matchKey={}", matchKey, e);
         }
         return keys;
     }
@@ -603,7 +603,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             //关闭cursor
             cursor.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Redis HSCAN failed, matchKey={}", matchKey, e);
         }
         return map;
     }

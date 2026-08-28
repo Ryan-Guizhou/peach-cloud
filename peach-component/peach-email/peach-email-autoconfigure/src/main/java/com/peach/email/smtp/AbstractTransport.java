@@ -13,6 +13,8 @@ import jakarta.mail.internet.MimeMessage;
 import java.util.Properties;
 
 /**
+ * 抽象的SMTP传输实现 子类可重写。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:47

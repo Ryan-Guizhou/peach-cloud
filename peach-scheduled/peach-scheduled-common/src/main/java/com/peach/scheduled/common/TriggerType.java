@@ -1,7 +1,7 @@
 package com.peach.scheduled.common;
 
 /**
- * 一次执行记录的触发来源。
+ * Trigger类型枚举。
  *
  * @Author Mr Shu
  * @Version 1.0.0

@@ -10,9 +10,12 @@ import java.util.List;
 import java.util.TimeZone;
 
 /**
- * Quartz {@link CronExpression} 预览桥接；Quartz API 仍使用 {@link Date}，对外返回 {@link Instant}。
- *
+ * QuartzCron预览桥接。
  * <p>Sonar S2143 已在根 {@code pom.xml} {@code sonar.issue.ignore.multicriteria} 中按文件忽略。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public final class QuartzCronPreviewBridge {
 

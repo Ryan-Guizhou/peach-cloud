@@ -26,7 +26,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 /**
- * IP 白名单管理接口。
+ * IP白名单管理接口。
  *
  * @Author Mr Shu
  * @Version 1.0.0

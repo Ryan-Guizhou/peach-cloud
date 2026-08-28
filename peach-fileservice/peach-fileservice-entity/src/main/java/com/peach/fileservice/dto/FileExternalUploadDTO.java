@@ -1,5 +1,7 @@
 package com.peach.fileservice.dto;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -8,14 +10,18 @@ import java.io.Serializable;
 
 /**
  * 外部文件上传参数。
- *
  * <p>外部调用方不需要提交摘要；摘要由文件服务根据 multipart 内容计算。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Data
 @Schema(description = "外部文件上传参数")
 public class FileExternalUploadDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1758052528016184951L;
 
     @NotBlank(message = "业务类型不能为空")
     @Schema(description = "业务类型", requiredMode = Schema.RequiredMode.REQUIRED)

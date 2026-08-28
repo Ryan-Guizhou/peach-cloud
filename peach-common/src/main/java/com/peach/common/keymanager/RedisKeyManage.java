@@ -1,6 +1,8 @@
 package com.peach.common.keymanager;
 
 /**
+ * Redis键Manage枚举。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 11:13

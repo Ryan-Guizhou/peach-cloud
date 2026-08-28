@@ -1,5 +1,7 @@
 package com.peach.fileservice.dto;
 
+import java.io.Serial;
+
 import com.peach.common.PeachGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,7 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**
- * 云存储实例保存接口参数.
+ * 云存储实例保存接口参数。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -17,7 +19,9 @@ import java.io.Serializable;
 @Data
 @Schema(description = "云存储实例保存接口参数")
 public class CloudStorageInstanceSaveDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = 8565509510666963957L;
 
     @Schema(description = "存储实例ID")
     @NotBlank(groups = PeachGroup.UpdateGroup.class, message = "存储实例ID不能为空")

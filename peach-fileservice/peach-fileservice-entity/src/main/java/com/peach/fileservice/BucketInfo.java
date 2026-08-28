@@ -1,14 +1,13 @@
 package com.peach.fileservice;
 
 /**
- * 存储桶信息
- *
+ * 存储桶信息。
  * <p>封装存储桶的基本信息，包括桶名称和对象键前缀。
  * 用于云存储服务的桶配置管理。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 public class BucketInfo {
 

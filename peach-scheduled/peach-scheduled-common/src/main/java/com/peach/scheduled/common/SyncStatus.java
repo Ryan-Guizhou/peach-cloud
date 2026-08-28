@@ -1,7 +1,7 @@
 package com.peach.scheduled.common;
 
 /**
- * Peach 任务定义与底层 Scheduling Provider 运行时投影的同步状态。
+ * SyncStatus枚举。
  *
  * @Author Mr Shu
  * @Version 1.0.0

@@ -1,6 +1,8 @@
 package com.peach.common.constant;
 
 /**
+ * 服务名称常量。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/18 17:21

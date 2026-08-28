@@ -1,7 +1,7 @@
 package com.peach.setting.comon.enums;
 
 /**
- * IP 白名单校验分组。
+ * IpWhitelist校验分组。
  *
  * @Author Mr Shu
  * @Version 1.0.0

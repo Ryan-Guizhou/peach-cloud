@@ -1,5 +1,7 @@
 package com.peach.auth.vo;
 
+import java.io.Serial;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.peach.auth.entity.MenuDO;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,6 +12,8 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
+ * 菜单返回视图。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 17:05
@@ -20,7 +24,8 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class MenuVO extends MenuDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 2801750461743152792L;
 
     @Schema(description = "已授权资源列表")
     private List<ResourceVO> resourceList;

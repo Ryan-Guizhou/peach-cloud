@@ -6,6 +6,8 @@ import com.peach.auth.qo.AuthLogQO;
 import com.peach.auth.vo.AuthLogVO;
 
 /**
+ * IAuth日志服务类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 18:25

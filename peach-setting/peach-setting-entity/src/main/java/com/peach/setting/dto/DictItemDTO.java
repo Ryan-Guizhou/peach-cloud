@@ -1,5 +1,7 @@
 package com.peach.setting.dto;
 
+import java.io.Serial;
+
 import com.peach.setting.comon.enums.DictItemGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,6 +10,8 @@ import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**
+ * 字典项DTO。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 21:50
@@ -16,7 +20,8 @@ import java.io.Serializable;
 @Data
 public class DictItemDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 2408169425048421706L;
 
     @Schema(description = "字典项ID")
     @NotBlank(groups = {DictItemGroup.UpdatetGroup.class}, message = "字典项ID不能为空")

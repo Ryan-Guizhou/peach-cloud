@@ -26,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.constraints.NotBlank;
 
 /**
+ * 站内信接口。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45

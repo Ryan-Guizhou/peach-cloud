@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * 健康检查接口。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/24 15:17

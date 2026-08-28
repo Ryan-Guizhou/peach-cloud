@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * 调度模块相关说明。
+ * PeachScheduled启动类。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -18,18 +18,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(scanBasePackages = "com.peach.scheduler")
 public class PeachScheduledApplication {
 
-    /**
-     * 创建相关对象。
-     */
-    public PeachScheduledApplication() {
-        // Intentionally empty.
-    }
 
-    /**
-     * 调度模块相关说明。
-     *
-     * @param args 参数说明
-     */
     public static void main(String[] args) {
         SpringApplication.run(PeachScheduledApplication.class, args);
     }

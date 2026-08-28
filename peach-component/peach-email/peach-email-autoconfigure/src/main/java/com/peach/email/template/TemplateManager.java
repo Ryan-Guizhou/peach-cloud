@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
+ * 模板管理器：聚合SPI与Spring注入的解析器并委托渲染器输出。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 18:31

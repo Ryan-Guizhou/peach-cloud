@@ -1,5 +1,7 @@
 package com.peach.auth.dto;
 
+import java.io.Serial;
+
 import com.peach.common.PeachGroup;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,6 +13,8 @@ import java.io.Serializable;
 
 
 /**
+ * 功能DTO。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/9 16:45
@@ -20,7 +24,8 @@ import java.io.Serializable;
 @Schema(description = "功能DTO")
 public class FunctionDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -3702934397198638628L;
 
     @Schema(description = "功能ID")
     @NotBlank(message = "功能ID不能为空", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})

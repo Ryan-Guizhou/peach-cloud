@@ -7,7 +7,7 @@ import com.peach.scheduler.transport.JobExecutionResultEvent;
 import java.util.List;
 
 /**
- * 调度执行实例服务接口。
+ * IScheduler执行服务类。
  *
  * @Author Mr Shu
  * @Version 1.0.0

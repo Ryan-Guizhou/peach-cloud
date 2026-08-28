@@ -4,6 +4,8 @@ import com.peach.captcha.model.CaptchaVO;
 import com.peach.common.response.Response;
 
 /**
+ * Frequency限流处理器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 10:31

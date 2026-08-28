@@ -2,6 +2,7 @@ package com.peach.scheduler.service.impl;
 
 import org.springframework.stereotype.Indexed;
 
+import com.peach.common.IDGeneratorUtil;
 import com.peach.scheduler.service.ISchedulerHandlerService;
 import com.peach.scheduler.dao.SchedulerHandlerDao;
 import com.peach.scheduled.dto.HandlerRegistrationDTO;
@@ -13,8 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 调度 Handler 注册服务实现。
- *
+ * 调度处理器服务实现类。
  * <p>负责接收业务实例 Handler 能力上报、刷新心跳状态并向管理端提供 VO 列表。</p>
  *
  * @Author Mr Shu
@@ -26,9 +26,9 @@ public class SchedulerHandlerServiceImpl implements ISchedulerHandlerService {
     private final SchedulerHandlerDao handlerDao;
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param handlerDao 参数说明
+     * @param handlerDao handler Dao。
      */
     public SchedulerHandlerServiceImpl(SchedulerHandlerDao handlerDao) {
         this.handlerDao = handlerDao;
@@ -37,13 +37,14 @@ public class SchedulerHandlerServiceImpl implements ISchedulerHandlerService {
     /**
      * 注册相关能力。
      *
-     * @param request 参数说明
+     * @param request request。
      */
     @Transactional
     @Override
     public void register(HandlerRegistrationDTO request) {
         for (HandlerRegistrationDTO.Item item : request.getHandlers()) {
             SchedulerHandlerDO handler = new SchedulerHandlerDO();
+            handler.setId(IDGeneratorUtil.generateUuid());
             handler.setApplicationName(request.getApplicationName());
             handler.setHandlerName(item.getHandlerName());
             handler.setDescription(item.getDescription());
@@ -64,7 +65,7 @@ public class SchedulerHandlerServiceImpl implements ISchedulerHandlerService {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     @Override
     public List<SchedulerHandlerVO> list() {

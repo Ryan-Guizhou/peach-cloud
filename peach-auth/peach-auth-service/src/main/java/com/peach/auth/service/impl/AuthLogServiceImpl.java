@@ -18,7 +18,7 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
 /**
- * 授权日志服务实现。
+ * 认证日志服务实现类。
  *
  * @Author Mr Shu
  * @Version 1.0.0

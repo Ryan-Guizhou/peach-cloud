@@ -3,6 +3,8 @@ package com.peach.common;
 import java.util.List;
 
 /**
+ * Peach数据访问。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 16:21

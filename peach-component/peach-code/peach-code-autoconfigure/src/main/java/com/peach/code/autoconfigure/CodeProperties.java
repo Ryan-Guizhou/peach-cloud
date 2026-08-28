@@ -3,10 +3,13 @@ package com.peach.code.autoconfigure;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * 业务编码生成器配置。
- *
+ * 代码配置属性。
  * <p>默认实现 Redis 优先发号，Redis 不可用时使用 MySQL 原子自增兜底；关闭 Redis 后可切换为
  * MySQL 独立事务发号模式。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @ConfigurationProperties(prefix = "peach.code")
 public class CodeProperties {

@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 
 /**
- * 重新入队相关执行。
+ * 调度重试Recovery服务类。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -35,7 +35,7 @@ public class SchedulerRetryRecoveryService {
     private final SchedulerTriggerService triggerService;
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      * @param executionDao 执行实例数据访问对象
      * @param jobDao 任务定义数据访问对象
      * @param lifecycleService 生命周期服务

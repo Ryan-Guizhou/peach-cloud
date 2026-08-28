@@ -6,6 +6,8 @@ import com.peach.captcha.service.CaptchaCacheService;
 import com.peach.captcha.service.impl.cache.MemoryCaptchaCacheService;
 
 /**
+ * Memory验证码缓存提供者。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:57

@@ -1,5 +1,7 @@
 package com.peach.auth.dto;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -18,7 +20,9 @@ import java.util.List;
 @Data
 @Schema(description = "角色功能授权参数")
 public class RoleFunctionAuthDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = 6984993053452352110L;
 
     @Schema(description = "租户ID")
     @NotBlank(message = "租户ID不能为空")

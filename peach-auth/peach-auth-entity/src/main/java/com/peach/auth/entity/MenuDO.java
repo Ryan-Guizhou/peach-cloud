@@ -1,5 +1,7 @@
 package com.peach.auth.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -11,6 +13,8 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
+ * Menu实体。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 17:36
@@ -21,7 +25,9 @@ import java.io.Serializable;
 @Schema(description = "Menu实体")
 @EqualsAndHashCode(callSuper = true)
 public class MenuDO extends PeachDO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = -8461601607850009256L;
 
     @Id
     @Column(name = "MENU_ID")

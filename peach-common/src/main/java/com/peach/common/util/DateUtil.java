@@ -17,11 +17,11 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * 时间格式化工具类；基于 {@link java.time}，新代码优先使用本类或直接使用 java.time API。
+ * 日期工具类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2024/10/10
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2024/10/10
  */
 @Slf4j
 public final class DateUtil {

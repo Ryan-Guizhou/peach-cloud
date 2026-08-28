@@ -1,5 +1,7 @@
 package com.peach.auth.dto;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -19,7 +21,9 @@ import java.util.List;
 @Data
 @Schema(description = "角色资源授权参数")
 public class RoleResourceAuthDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = -8983595099572971670L;
 
     @Schema(description = "租户ID")
     @NotBlank(message = "租户ID不能为空")
@@ -47,7 +51,9 @@ public class RoleResourceAuthDTO implements Serializable {
     @Data
     @Schema(description = "角色资源授权明细")
     public static class RoleResourceItemDTO implements Serializable {
-        private static final long serialVersionUID = 1L;
+
+        @Serial
+        private static final long serialVersionUID = 2315733189978535843L;
 
         @Schema(description = "功能编码")
         @NotBlank(message = "功能编码不能为空")

@@ -1,5 +1,7 @@
 package com.peach.common.util;
 
+import java.io.Serial;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -27,15 +29,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * 字符串工具；Date 格式化方法保留以兼容存量调用方。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
- * @Description 字符串工具；Date 格式化方法保留以兼容存量调用方。
  * @CreateTime 2025/10/14 15:51
-  */
+ * @Description 字符串工具；Date 格式化方法保留以兼容存量调用方。
+ */
 @Slf4j
 public final class StringUtil implements Serializable {
 
-    private static final long serialVersionUID = 2143367839995921470L;
+    @Serial
+    private static final long serialVersionUID = 5111636355235107159L;
 
     private static final Pattern linePattern = Pattern.compile("_(\\w)");
 
@@ -252,7 +257,7 @@ public final class StringUtil implements Serializable {
      */
     public static String getUpperHeadStrNoUnderscore(String originStr) {
         String[] chars = StringUtil.stringToArray(originStr);
-        StringBuffer target = new StringBuffer();
+        StringBuilder target = new StringBuilder();
         for (int j = 0; j < chars.length; j++) {
             if (j == 0) {
                 target.append(chars[j].toUpperCase());
@@ -273,7 +278,7 @@ public final class StringUtil implements Serializable {
      */
     public static String getLowerHeadStrNoUnderscore(String originStr) {
         String[] chars = StringUtil.stringToArray(originStr);
-        StringBuffer target = new StringBuffer();
+        StringBuilder target = new StringBuilder();
         for (int j = 0; j < chars.length; j++) {
             if (j == 0) {
                 target.append(chars[j].toLowerCase());
@@ -314,7 +319,7 @@ public final class StringUtil implements Serializable {
 
     /**
      * <p>
-     * clean illegal char
+     * Cleanillegalchar。。
      * </p>
      *
      * @param str cleaned object
@@ -362,7 +367,7 @@ public final class StringUtil implements Serializable {
      * 下划线转驼峰
      */
     public static String lineToHump(String str) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if(!ObjectUtils.isEmpty(str)) {
             str = str.toLowerCase();
             if (str.contains("_")) {
@@ -380,9 +385,9 @@ public final class StringUtil implements Serializable {
 
     //只把下斜线变成驼峰，下斜线后的字母大小写不变
     public static String lineToHumpOthersNoChange(String str) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (str.contains("_")){
-            
+
             Matcher matcher = linePattern.matcher(str);
             while (matcher.find()) {
                 matcher.appendReplacement(sb, matcher.group(1).toUpperCase());
@@ -400,7 +405,7 @@ public final class StringUtil implements Serializable {
      */
     public static String humpToLine(String str) {
         Matcher matcher = humpPattern.matcher(str);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         while (matcher.find()) {
             matcher.appendReplacement(sb, "_" + matcher.group(0).toLowerCase());
         }
@@ -442,7 +447,7 @@ public final class StringUtil implements Serializable {
     }
 
     public static String buildCodeName(String code, String name, String split) {
-        StringBuffer content = new StringBuffer();
+        StringBuilder content = new StringBuilder();
         if (isNotEmpty(code)) {
             if (isEmpty(split)) split = " ";
             content.append(code).append(split);
@@ -506,7 +511,7 @@ public final class StringUtil implements Serializable {
      */
     public static String formatStrList( List<String> strs, String separator, Integer limit) {
         if (isEmpty(separator)) separator = COMMA;
-        StringBuffer res = new StringBuffer();
+        StringBuilder res = new StringBuilder();
         if (PeachCollectionUtil.isNotEmpty(strs)) {
             for (int i = 0; i < strs.size(); i++) {
                 String s = strs.get(i);
@@ -549,8 +554,8 @@ public final class StringUtil implements Serializable {
                     finalValue = temp.toString();
                 } else if (value instanceof Integer temp) {
                     finalValue = temp.toString();
-                } else if (value instanceof String) {
-                    finalValue = value.toString();
+                } else if (value instanceof String str) {
+                    finalValue = str;
                 }
             }
         } catch (Exception e) {

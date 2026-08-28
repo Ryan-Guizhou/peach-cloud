@@ -4,6 +4,8 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
+ * 事务工具类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/7/7 14:07
@@ -23,13 +25,30 @@ public final class TransactionUtils {
             return;
         }
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    action.run();
-                }
-            });
+            TransactionSynchronizationManager.registerSynchronization(new AfterCommitSynchronization(action));
         } else {
+            action.run();
+        }
+    }
+
+    /**
+     * AfterCommitSynchronization。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
+    private static final class AfterCommitSynchronization implements TransactionSynchronization {
+
+        private final Runnable action;
+
+        private AfterCommitSynchronization(Runnable action) {
+            this.action = action;
+        }
+
+        @Override
+        public void afterCommit() {
             action.run();
         }
     }

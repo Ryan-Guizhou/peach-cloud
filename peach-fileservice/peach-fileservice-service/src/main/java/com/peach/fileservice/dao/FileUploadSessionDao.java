@@ -10,13 +10,12 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
- * 文件上传会话数据访问接口
- *
+ * 文件上传会话数据访问。
  * <p>提供分片上传会话的数据库操作，包括会话状态更新、过期会话查询等功能。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Indexed
 @MybatisDao

@@ -9,32 +9,14 @@ import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineBuilder;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 
-/**
- * 创建相关对象。
- *
- * <p>调度模块相关说明。
- * 调度模块相关说明。
- * 调度模块相关说明。</p>
- *
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2025/12/29 17:42
- */
-@Indexed
-public class ExecutionStateMachineFactory {
 
-    /**
-     * 创建相关对象。
-     */
-    public ExecutionStateMachineFactory() {
-        // Intentionally empty.
-    }
+public class ExecutionStateMachineFactory {
 
     /**
      * 构建相关数据。
      *
-     * @param current 参数说明
-     * @return 返回结果
+     * @param current current。
+     * @return 执行结果。
      */
     @SuppressWarnings("deprecation")
     public StateMachine<ExecutionState, ExecutionEvent> create(ExecutionState current) {

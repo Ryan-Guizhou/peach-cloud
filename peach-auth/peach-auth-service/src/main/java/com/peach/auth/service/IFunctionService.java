@@ -8,8 +8,7 @@ import com.peach.auth.vo.FunctionVO;
 import java.util.List;
 
 /**
- * 功能服务接口。
- *
+ * IFunction服务类。
  * <p>提供功能分页、查询以及基础增删改能力。</p>
  *
  * @Author Mr Shu

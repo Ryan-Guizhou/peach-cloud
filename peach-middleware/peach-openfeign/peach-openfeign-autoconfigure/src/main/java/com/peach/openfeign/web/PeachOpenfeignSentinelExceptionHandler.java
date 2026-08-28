@@ -12,8 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * Sentinel 阻断异常统一响应处理器。
- *
+ * PeachOpenFeignSentinelException处理器。
  * <p>负责将 Sentinel 抛出的 block/degrade 异常映射为统一前端响应：
  * 流控异常返回 429，其余阻断异常返回通用失败响应。</p>
  *

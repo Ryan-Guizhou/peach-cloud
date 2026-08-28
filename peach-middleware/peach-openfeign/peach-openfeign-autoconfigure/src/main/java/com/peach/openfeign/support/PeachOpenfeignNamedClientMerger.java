@@ -8,8 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Peach OpenFeign 命名客户端配置合并器。
- *
+ * PeachOpenFeign命名客户端合并器。
  * <p>将 {@code peach.openfeign.client.named} 合并到 Spring Cloud OpenFeign 原生
  * {@link FeignClientProperties}，避免业务同时维护两套超时配置。</p>
  *

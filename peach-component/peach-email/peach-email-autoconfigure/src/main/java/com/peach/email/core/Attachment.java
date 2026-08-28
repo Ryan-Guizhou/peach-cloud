@@ -1,102 +1,73 @@
 package com.peach.email.core;
 
+import java.util.Arrays;
 
 /**
- * @Author Mr Shu
+ * Attachment 值对象，表示邮件附件。
+ *
+ * @param filename    附件文件名（不含路径）
+ * @param contentType 附件的 MIME 类型（如 "image/png"），可为 null
+ * @param content     附件二进制内容的字节数组（内部会进行防御性拷贝）
+ * @param path        附件来源路径（若从文件系统读取），可为 null
+ * @param disposition 内容处置方式，通常为 "inline" 或 "attachment"，对应 {@link AttachmentType}
+ *
+ * @Author MrShu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:44
- * @Description
- * 附件模型：支持二进制内容或文件路径；可设置文件名、内容类型与处置方式。
  */
-public class Attachment {
-    /**
-     * 文件名（用于邮件客户端展示），选填
-     */
-    private final String filename;
+public record Attachment(
+        String filename,
+        String contentType,
+        byte[] content,
+        String path,
+        String disposition) {
 
     /**
-     * 内容类型（MIME），选填，缺省为 application/octet-stream
+     * 紧凑构造器：对 content 进行防御性拷贝，避免外部修改影响内部状态。
      */
-    private final String contentType;
-
-    /**
-     * 二进制内容（与 path 二选一）；内部保存为防御性拷贝
-     */
-    private final byte[] content;
-
-    /**
-     * 文件路径（与 content 二选一）；当提供路径时将读取文件数据
-     */
-    private final String path;
-
-    /**
-     * 处置方式：attachment 或 inline，选填
-     */
-    private final String disposition;
-
-
-    public Attachment(String filename, String contentType, byte[] content, String path, String disposition) {
-        this.filename = filename;
-        this.contentType = contentType;
-        this.content = content != null ? content.clone() : null;
-        this.path = path;
-        this.disposition = disposition;
+    public Attachment {
+        content = content != null ? Arrays.copyOf(content, content.length) : null;
     }
 
-
     /**
-     * 使用数据源的构造函数（流式读取），适合大附件
+     * 使用数据源（流式读取）的构造方法，适合大附件场景。
+     * 此时 {@code content} 和 {@code path} 均为 null，需通过其他方式提供数据。
+     *
+     * @param filename    附件文件名
+     * @param contentType MIME 类型
+     * @param disposition 处置方式（如 "attachment"）
      */
     public Attachment(String filename, String contentType, String disposition) {
-        this.filename = filename;
-        this.contentType = contentType;
-        this.content = null;
-        this.path = null;
-        this.disposition = disposition;
-    }
-
-    public String getFilename() {
-        return filename;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    public byte[] getContent() {
-        return content != null ? content.clone() : null;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public String getDisposition() {
-        return disposition;
-    }
-
-    public String toString() {
-        StringBuilder sb = new StringBuilder("Attachment{");
-        sb.append("filename='").append(filename).append('\'');
-        sb.append(", contentType='").append(contentType).append('\'');
-        sb.append(", content=").append(content);
-        sb.append(", path='").append(path).append('\'');
-        sb.append(", disposition='").append(disposition).append('\'');
-        sb.append('}');
-        return sb.toString();
+        this(filename, contentType, null, null, disposition);
     }
 
     /**
-     * 附件类型：内部嵌套或附件
+     * 获取二进制内容的防御性拷贝副本。
+     *
+     * @return 内容的副本，若原内容为 null 则返回 null
      */
-    public enum AttachmentType{
-        INLINE("inline","内部嵌套"),
-        ATTACHMENT("attachment","附件");
+    @Override
+    public byte[] content() {
+        return content != null ? Arrays.copyOf(content, content.length) : null;
+    }
 
-        private String type;
-        private String desc;
+    /**
+     * 附件类型枚举，对应 RFC 2183 中的 Content-Disposition 值。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+    public enum AttachmentType {
+        /** 内嵌资源（如邮件中的图片） */
+        INLINE("inline", "内部嵌套"),
+        /** 普通附件 */
+        ATTACHMENT("attachment", "附件");
 
-        AttachmentType(String type, String desc){
+        private final String type;
+        private final String desc;
+
+        AttachmentType(String type, String desc) {
             this.type = type;
             this.desc = desc;
         }

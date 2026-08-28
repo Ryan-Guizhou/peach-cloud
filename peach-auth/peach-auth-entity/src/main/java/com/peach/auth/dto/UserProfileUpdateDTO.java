@@ -1,5 +1,7 @@
 package com.peach.auth.dto;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -8,11 +10,19 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 
+/**
+ * 个人资料更新参数。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
 @Data
 @Schema(description = "个人资料更新参数")
 public class UserProfileUpdateDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -2319857262756514426L;
 
     @Schema(description = "用户名称")
     @NotBlank(message = "用户名称不能为空")

@@ -8,7 +8,7 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.util.pattern.PathPatternParser;
 
 /**
- * 网关跨域配置。
+ * 网关Cors配置类。
  *
  * @Author Mr Shu
  * @Version 1.0.0

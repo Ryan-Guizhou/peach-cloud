@@ -10,7 +10,7 @@ import org.springframework.stereotype.Indexed;
 import jakarta.annotation.PostConstruct;
 
 /**
- * 网关侧 Sa-Token Session 策略配置。
+ * 网关Sa令牌会话Strategy配置类。
  *
  * <p>该配置属于网关服务内部模块，由 {@code peach-gateway-launch} 的组件扫描加载。
  * 它将 Sa-Token Session 创建策略替换为网关本地的 Jackson 兼容类型，使网关读取

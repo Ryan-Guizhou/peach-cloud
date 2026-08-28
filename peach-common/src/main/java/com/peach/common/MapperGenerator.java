@@ -3,27 +3,34 @@ package com.peach.common;
 
 import com.peach.common.util.StringUtil;
 
+import lombok.extern.slf4j.Slf4j;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 
 /**
+ * Dao层自动生成工具类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/7/5 19:20
  * @Description Dao层自动生成工具类
  */
+@Slf4j
 public class MapperGenerator {
 	private static final String lineSeparator = System.lineSeparator();
 
@@ -37,37 +44,34 @@ public class MapperGenerator {
 
 	private static final String DEFAULT_MAPPER_NAME = "GeneratorDao";
 
-	private static final String DEFAULT_OUTPUT_PATH = System.getProperty("user.dir") + File.separator + "src/main/java/generator/";
+	private static final Path DEFAULT_OUTPUT_PATH = Path.of(System.getProperty("user.dir"), "src/main/java/generator");
 
 	public static <T> String genMapper(Class<T> c) {
 		return genMapper(c, false);
 	}
 
-	public static <T> void genMapperToFile(Class<T> c, String mapperName,String ouptPutPach) {
+	public static <T> void genMapperToFile(Class<T> c, String mapperName, String ouptPutPach) {
 
 		String content = genMapper(c);
-		if(StringUtil.isBlank(ouptPutPach)){
-			ouptPutPach = DEFAULT_OUTPUT_PATH;
-		}
-		File outputDir = new File(ouptPutPach);
-		if (!outputDir.exists()) {
-			outputDir.mkdirs();
-		}
+		Path outputDir = StringUtil.isBlank(ouptPutPach) ? DEFAULT_OUTPUT_PATH : Path.of(ouptPutPach);
 
 		if (StringUtil.isBlank(mapperName)){
 			mapperName = DEFAULT_MAPPER_NAME;
 		}
-		File file = new File(ouptPutPach + mapperName + ".xml");
-		if (file.exists()) {
-            System.out.println("mapper file exists: " + file.getAbsolutePath());
+		Path file = outputDir.resolve(mapperName + ".xml");
+		if (Files.exists(file)) {
+            log.info("Mapper file already exists: {}", file.toAbsolutePath());
 			return;
 		}
 
-		try (FileWriter writer = new FileWriter(file)) {
-			writer.write(content);
-            System.out.println("mapper file exists: " + file.getAbsolutePath());
+		try {
+			if (!Files.exists(outputDir)) {
+				Files.createDirectories(outputDir);
+			}
+			Files.writeString(file, content);
+            log.info("Mapper file generated: {}", file.toAbsolutePath());
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("Failed to write mapper file: {}", file.toAbsolutePath(), e);
 		}
 	}
 
@@ -620,12 +624,12 @@ public class MapperGenerator {
 		Optional<Field> idField = fields.stream().filter(f -> {
 			return f.getAnnotation(Id.class) != null;
 		}).findFirst();
-		if (idField.isPresent()) {
+		idField.ifPresent(field -> {
 			b.append(String.format("    <id %-30s %-30s />",
-					"column=\"" + idField.get().getAnnotation(Column.class).name() + "\"",
-					"property=\"" + idField.get().getName() + "\""));
+					"column=\"" + field.getAnnotation(Column.class).name() + "\"",
+					"property=\"" + field.getName() + "\""));
 			b.append(lineSeparator);
-		}
+		});
 		fields.stream().map(f -> {
 			String jdbcType = getJdbcType(f);
 			return String.format("    <result %-30s %-30s %-20s />",
@@ -671,6 +675,10 @@ public class MapperGenerator {
 		} else if (type.equals(Integer.class)) {
 			return "INTEGER";
 		} else if (type.equals(Date.class)) {
+			return "TIMESTAMP";
+		} else if (type.equals(LocalDateTime.class) || type.equals(Instant.class)) {
+			return "TIMESTAMP";
+		} else if (type.equals(LocalDate.class)) {
 			return "DATE";
 		} else if (type.equals(Long.class)) {
 			return "BIGINT";

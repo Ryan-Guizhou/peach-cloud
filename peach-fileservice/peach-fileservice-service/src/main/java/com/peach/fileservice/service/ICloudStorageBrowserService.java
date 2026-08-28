@@ -7,7 +7,7 @@ import com.peach.fileservice.vo.CloudStorageUploadVO;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 云存储浏览服务接口。
+ * ICloud存储浏览器服务类。
  *
  * @Author Mr Shu
  * @Version 1.0.0

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 角色资源授权接口。
+ * 角色资源授权。
  *
  * @Author Mr Shu
  * @Version 1.0.0

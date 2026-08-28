@@ -8,6 +8,7 @@ import com.peach.monitor.openfeign.fallback.MonitorFeignClientFallbackFactory;
 import org.springframework.cloud.openfeign.FeignClient;
 
 /**
+ * setting 服务 Feign 客户端定义。
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/2/9 15:01

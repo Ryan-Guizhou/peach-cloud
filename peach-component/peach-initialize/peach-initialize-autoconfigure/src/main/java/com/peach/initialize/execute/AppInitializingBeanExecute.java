@@ -6,6 +6,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
+ * 应用InitializingBean执行器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/16 14:56

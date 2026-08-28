@@ -6,6 +6,8 @@ import org.redisson.client.codec.Codec;
 import org.redisson.client.codec.StringCodec;
 
 /**
+ * 自定义Codec提供者。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/11/27 14:39

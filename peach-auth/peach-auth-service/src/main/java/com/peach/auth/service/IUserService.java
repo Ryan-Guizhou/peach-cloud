@@ -13,8 +13,7 @@ import com.peach.auth.vo.LoginInitVO;
 import java.util.List;
 
 /**
- * 用户服务接口。
- *
+ * IUser服务类。
  * <p>提供用户分页、查询、登录、注册以及基础增删改能力。</p>
  *
  * @Author Mr Shu

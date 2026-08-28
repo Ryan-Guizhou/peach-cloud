@@ -11,11 +11,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
+ * TTLIdempotency存储。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/10 10:59
- * 带过期时间的幂等存储
- * 支持设置记录有效期，超过 TTL 自动失效
  */
 @Slf4j
 public class TTLIdempotencyStore implements IdempotencyStore {
@@ -67,7 +67,11 @@ public class TTLIdempotencyStore implements IdempotencyStore {
     }
 
     /**
-     * 存储实体，记录时间戳
+     * Entry。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     private static class Entry {
 

@@ -3,7 +3,11 @@ package com.peach.scheduler.dao;
 import java.time.LocalDateTime;
 
 /**
- * 执行实例完成状态更新参数。
+ * 执行CompletionCommand值对象。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public record ExecutionCompletionCommand(
         String executionId,

@@ -3,7 +3,11 @@ package com.peach.observability.core;
 import java.util.UUID;
 
 /**
- * 基于随机 UUID 的默认请求 ID 生成器。
+ * Uuid请求Id生成器。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public final class UuidRequestIdGenerator implements RequestIdGenerator {
 

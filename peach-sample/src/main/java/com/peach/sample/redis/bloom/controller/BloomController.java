@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * 布隆控制器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/8 15:20

@@ -13,10 +13,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
 /**
- * RocketMQ 可观测性自动配置。
- *
+ * PeachRocketMQObservability自动配置。
  * <p>仅当 RocketMQ 传播 SPI 和 Micrometer Tracing 同时存在时生效，不会让 RocketMQ 模块
  * 直接依赖 OpenTelemetry 或其他具体 Tracing 实现。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @AutoConfiguration
 @AutoConfigureAfter(PeachObservabilityAutoConfiguration.class)

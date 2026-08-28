@@ -7,8 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Indexed;
 
 /**
- * 调度人工操作审计数据访问接口。
- *
+ * 调度Operation日志数据访问。
  * <p>记录人工重试、人工取消等高风险管理操作及操作原因。</p>
  *
  * @Author Mr Shu

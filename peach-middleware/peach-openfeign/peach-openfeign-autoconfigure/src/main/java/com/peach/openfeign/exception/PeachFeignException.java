@@ -1,7 +1,7 @@
 package com.peach.openfeign.exception;
 
 /**
- * Peach OpenFeign 统一异常基类。
+ * PeachFeign异常。
  *
  * @Author Mr Shu
  * @Version 1.0.0

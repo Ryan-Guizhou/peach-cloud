@@ -7,6 +7,8 @@ import com.peach.redission.repeat.annoation.RepeatLimit;
 import org.springframework.stereotype.Service;
 
 /**
+ * Distributed服务类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/29 10:27

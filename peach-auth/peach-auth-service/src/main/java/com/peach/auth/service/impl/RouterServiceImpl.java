@@ -21,6 +21,8 @@ import jakarta.annotation.PostConstruct;
 import java.util.List;
 
 /**
+ * 路由服务实现类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 18:27
@@ -45,7 +47,7 @@ public class RouterServiceImpl implements IRouterService {
     public void delById(String id) {
         boolean valid = commonValidator.isValid(id);
         if (!valid) {
-            log.error("参数验证失败");
+            log.error("Parameter validation failed");
             return;
         }
         routerDao.delById(id);

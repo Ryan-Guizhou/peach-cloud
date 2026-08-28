@@ -7,8 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Indexed;
 
 /**
- * 调度状态迁移日志数据访问接口。
- *
+ * 调度State日志数据访问。
  * <p>记录 Job 和 Execution 每次状态机迁移的前后状态、事件和操作人。</p>
  *
  * @Author Mr Shu

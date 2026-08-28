@@ -21,8 +21,7 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 /**
- * 网关统一异常过滤器。
- *
+ * 网关ExceptionGlobal过滤器。
  * <p>作为网关最后一道异常防线，将异常映射为安全响应，避免将内部异常信息返回给客户端。</p>
  *
  * @Author Mr Shu

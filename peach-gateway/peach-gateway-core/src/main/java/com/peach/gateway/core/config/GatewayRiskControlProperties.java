@@ -4,7 +4,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * 网关风控配置属性。
+ * 网关RiskControl配置属性。
  *
  * @Author Mr Shu
  * @Version 1.0.0

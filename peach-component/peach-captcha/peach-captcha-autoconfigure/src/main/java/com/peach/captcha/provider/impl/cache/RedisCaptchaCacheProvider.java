@@ -8,6 +8,8 @@ import com.peach.captcha.service.impl.cache.RedisCaptchaCacheService;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**
+ * redis缓存服务提供者。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:57

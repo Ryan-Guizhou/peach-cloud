@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * 公告阅读记录定时落库任务。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 20:50

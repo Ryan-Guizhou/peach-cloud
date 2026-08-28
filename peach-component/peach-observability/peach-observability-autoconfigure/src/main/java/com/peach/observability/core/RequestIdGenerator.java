@@ -1,10 +1,13 @@
 package com.peach.observability.core;
 
 /**
- * 请求 ID 生成器。
- *
+ * 请求Id生成器。
  * <p>业务方可以声明同类型 Bean 覆盖默认实现。生成值必须适合写入 HTTP Header 和日志上下文，
  * 且不得携带用户信息、租户信息或其他敏感数据。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @FunctionalInterface
 public interface RequestIdGenerator {

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
- * 云存储实例数据访问接口.
+ * 云存储实例数据访问。
  *
  * @Author Mr Shu
  * @Version 1.0.0

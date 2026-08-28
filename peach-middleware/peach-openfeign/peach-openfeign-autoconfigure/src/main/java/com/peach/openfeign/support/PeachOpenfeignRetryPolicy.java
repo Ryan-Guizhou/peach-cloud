@@ -8,8 +8,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Peach OpenFeign 有界重试策略。
- *
+ * PeachOpenFeign重试策略。
  * <p>策略只对配置允许的 HTTP 方法、状态码和异常类型生效，避免对写操作或
  * 非瞬时故障做隐式重复提交。</p>
  *

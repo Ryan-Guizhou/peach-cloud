@@ -1,5 +1,7 @@
 package com.peach.fileservice.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -12,7 +14,7 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
- * 云存储实例实体.
+ * 云存储实例实体。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -24,7 +26,9 @@ import java.io.Serializable;
 @Schema(description = "云存储实例实体")
 @EqualsAndHashCode(callSuper = true)
 public class CloudStorageInstanceDO extends PeachDO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = -9033902583602867366L;
 
     @Id
     @Column(name = "INSTANCE_ID")

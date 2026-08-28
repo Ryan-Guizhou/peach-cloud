@@ -59,7 +59,7 @@ import java.util.Set;
 import java.time.LocalDate;
 
 /**
- * 用户业务服务实现。
+ * 用户服务实现类。
  * <p>负责用户基础信息、登录态、权限结果以及机构信息的组装，不直接承载组织树维护逻辑。</p>
  *
  * @Author Mr Shu
@@ -112,7 +112,7 @@ public class UserServiceImpl implements IUserService {
         try {
             decryptPassword = RsaPasswordUtil.decrypt(password);
         } catch (Exception e) {
-            log.error("解密密码失败:{}", e.getMessage(), e);
+            log.error("Failed to decrypt password: {}", e.getMessage(), e);
             return Response.fail("密码解密失败");
         }
         if (StringUtil.isBlank(decryptPassword)) {
@@ -123,7 +123,7 @@ public class UserServiceImpl implements IUserService {
                 decryptPassword.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         UserVO userVO = userDao.login(username, base64Password);
         if (ObjectUtil.isNull(userVO)) {
-            log.warn("用户名或密码校验失败，username={}", username);
+            log.warn("Username or password validation failed, username={}", username);
             return Response.fail("用户名或密码错误");
         }
 
@@ -140,7 +140,7 @@ public class UserServiceImpl implements IUserService {
 
         StpUtil.login(userId);
         String token = StpUtil.getTokenValue();
-        log.info("用户登录成功，userId={}, tenantId={}, orgId={}", userId,
+        log.info("User login succeeded, userId={}, tenantId={}, orgId={}", userId,
                 currentUserOrg.getTenantId(), currentUserOrg.getOrgId());
 
         RoleQO roleQO = new RoleQO();

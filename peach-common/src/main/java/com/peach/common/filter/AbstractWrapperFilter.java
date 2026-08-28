@@ -17,8 +17,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 
 /**
+ * 请求包装过滤器 / Request wrapper filter。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/2/2 18:23
@@ -122,29 +125,7 @@ public abstract class AbstractWrapperFilter extends OncePerRequestFilter {
 
         @Override
         public ServletInputStream getInputStream() throws IOException {
-            final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(body);
-            return new ServletInputStream() {
-                @Override
-                public boolean isFinished() {
-                    return byteArrayInputStream.available() == 0;
-                }
-
-                @Override
-                public boolean isReady() {
-                    return true;
-                }
-
-                @Override
-                public void setReadListener(ReadListener readListener) {
-                    // Intentionally empty.
-                }
-
-                @Override
-                public int read() throws IOException {
-                    return byteArrayInputStream.read();
-                }
-            };
-
+            return new ByteArrayBodyServletInputStream(body);
         }
 
         @Override
@@ -158,7 +139,44 @@ public abstract class AbstractWrapperFilter extends OncePerRequestFilter {
         }
 
         public byte[] getBody() {
-            return body.clone();
+            return Arrays.copyOf(body, body.length);
+        }
+    }
+
+    /**
+     * ByteArrayBodyServletInputStream。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
+    private static final class ByteArrayBodyServletInputStream extends ServletInputStream {
+
+        private final ByteArrayInputStream byteArrayInputStream;
+
+        private ByteArrayBodyServletInputStream(byte[] body) {
+            this.byteArrayInputStream = new ByteArrayInputStream(body);
+        }
+
+        @Override
+        public boolean isFinished() {
+            return byteArrayInputStream.available() == 0;
+        }
+
+        @Override
+        public boolean isReady() {
+            return true;
+        }
+
+        @Override
+        public void setReadListener(ReadListener readListener) {
+            // Intentionally empty.
+        }
+
+        @Override
+        public int read() throws IOException {
+            return byteArrayInputStream.read();
         }
     }
 }

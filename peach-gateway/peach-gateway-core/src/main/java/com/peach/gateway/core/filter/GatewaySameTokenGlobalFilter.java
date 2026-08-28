@@ -16,8 +16,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
- * 网关 Same-Token 传递过滤器。
- *
+ * 网关Same令牌Global过滤器。
  * <p>非公开端点通过网关认证后，由该过滤器向下游业务服务注入 Same-Token，
  * 供业务服务侧 Same-Token 拦截器校验。公开端点与登录校验使用同一套白名单，
  * 不注入 Same-Token，避免未登录公开请求依赖服务间凭证。</p>

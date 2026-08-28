@@ -18,14 +18,13 @@ import com.peach.fileservice.vo.FileUploadVO;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 文件域服务接口
- *
+ * IFileDomain服务类。
  * <p>提供文件上传、下载、分片上传、文件管理等核心业务功能。
  * 支持秒传检测、分片上传、逻辑删除、文件恢复等高级特性。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 public interface IFileDomainService {
 

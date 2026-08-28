@@ -5,6 +5,8 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
+ * Redis流配置属性。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/18 16:12

@@ -2,7 +2,11 @@ package com.peach.common.util.encrypt;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.nio.charset.StandardCharsets;
+
 /**
+ * 抽象加密。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 16:10
@@ -16,7 +20,7 @@ public abstract class AbstractEncrypt implements EncryptService {
      * @return
      */
     protected byte[] hexToByte(String ciphertext) {
-        byte[] cipherBytes = ciphertext.getBytes();
+        byte[] cipherBytes = ciphertext.getBytes(StandardCharsets.UTF_8);
         if ((cipherBytes.length % 2) != 0) {
             log.error("The content:[{}] length is not even",ciphertext);
             throw new IllegalArgumentException(String.format("The content:[%s] length is not even",ciphertext));
@@ -36,18 +40,18 @@ public abstract class AbstractEncrypt implements EncryptService {
      * @return
      */
     protected String byteToHex(byte[] bytes) {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder stringBuilder = new StringBuilder();
         if (bytes.length == 0){
-            return new String(stringBuffer);
+            return stringBuilder.toString();
         }
         for (int i = 0; i < bytes.length; i++) {
             String s = Integer.toHexString(bytes[i] & 0xFF);
             if (1 == s.length()) {
-                stringBuffer.append("0");
+                stringBuilder.append("0");
             }
-            stringBuffer = stringBuffer.append(s);
+            stringBuilder.append(s);
         }
-        return new String(stringBuffer);
+        return stringBuilder.toString();
 
     }
 }

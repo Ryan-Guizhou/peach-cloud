@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * 登录接口。
+ * 用户登录。
  * <p>负责登录、注册和登出等认证入口，不承载业务域数据维护逻辑。</p>
  *
  * @Author Mr Shu

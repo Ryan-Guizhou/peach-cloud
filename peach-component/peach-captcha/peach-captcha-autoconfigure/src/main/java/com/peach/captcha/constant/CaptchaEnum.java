@@ -1,6 +1,8 @@
 package com.peach.captcha.constant;
 
 /**
+ * 验证码枚举。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 15:46
@@ -9,7 +11,11 @@ package com.peach.captcha.constant;
 public interface CaptchaEnum {
 
     /**
-     * 验证缓存类型 枚举
+     * 验证码缓存类型枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     enum CaptchaCacheType implements CaptchaEnum {
 
@@ -36,7 +42,11 @@ public interface CaptchaEnum {
     }
 
     /**
-     * 验证码实现类型 枚举
+     * 验证码Service类型枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     enum CaptchaServiceType implements CaptchaEnum {
 
@@ -85,7 +95,11 @@ public interface CaptchaEnum {
     }
 
     /**
-     * 验证码校验操作类型 枚举
+     * 验证码Opertion类型枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     enum CaptchaOpertionType implements CaptchaEnum {
 
@@ -116,6 +130,14 @@ public interface CaptchaEnum {
             return value;
         }
     }
+
+    /**
+     * Captch缓存Map枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     enum CaptchCacheMapEnum{
         ROTATE_ORIGINAL("ROTATE_ORIGINAL", "旋转拼图底图"),

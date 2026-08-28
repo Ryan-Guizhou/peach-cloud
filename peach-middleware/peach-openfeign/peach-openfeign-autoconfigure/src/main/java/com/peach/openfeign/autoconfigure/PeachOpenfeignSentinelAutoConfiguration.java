@@ -13,8 +13,7 @@ import org.springframework.stereotype.Indexed;
 import jakarta.annotation.PostConstruct;
 
 /**
- * Peach OpenFeign Sentinel 治理自动配置。
- *
+ * PeachOpenFeignSentinel自动配置。
  * <p>该配置不直接创建 Sentinel 规则数据源，规则数据源由
  * Spring Cloud Alibaba Sentinel 的 {@code spring.cloud.sentinel.datasource}
  * 配置装配；这里负责校验 Feign Sentinel 开关与 Peach 配置是否一致。</p>

@@ -1,6 +1,8 @@
 package com.peach.message.common.enums;
 
 /**
+ * 消息模块枚举。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45
@@ -11,6 +13,14 @@ public interface MessageEnum {
     String getCode();
 
     String getValue();
+
+    /**
+     * Receiver类型枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     enum ReceiverType implements MessageEnum {
         USER("USER", "指定用户"),
@@ -37,6 +47,14 @@ public interface MessageEnum {
         }
     }
 
+    /**
+     * 消息Category枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
     enum MessageCategory implements MessageEnum {
         MESSAGE("MESSAGE", "消息"),
         ANNOUNCEMENT("ANNOUNCEMENT", "公告"),
@@ -59,6 +77,14 @@ public interface MessageEnum {
             return value;
         }
     }
+
+    /**
+     * 消息类型枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     enum MessageType implements MessageEnum {
         SYSTEM("SYSTEM", "系统消息"),
@@ -85,6 +111,14 @@ public interface MessageEnum {
         }
     }
 
+    /**
+     * 消息Source类型枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
     enum MessageSourceType implements MessageEnum {
         CUSTOM("CUSTOM", "自定义"),
         MESSAGE("MESSAGE", "消息"),
@@ -109,6 +143,14 @@ public interface MessageEnum {
         }
     }
 
+    /**
+     * SendStatus枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
     enum SendStatus implements MessageEnum {
         DRAFT("DRAFT", "草稿"),
         SENT("SENT", "已发送"),
@@ -131,6 +173,14 @@ public interface MessageEnum {
             return value;
         }
     }
+
+    /**
+     * 消息Priority枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     enum MessagePriority implements MessageEnum {
         LOW("LOW", "低"),
@@ -155,6 +205,14 @@ public interface MessageEnum {
             return value;
         }
     }
+
+    /**
+     * WebSocketEvent类型枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     enum WebSocketEventType implements MessageEnum {
         MESSAGE_CREATED("MESSAGE_CREATED", "新站内信"),
@@ -182,6 +240,14 @@ public interface MessageEnum {
             return value;
         }
     }
+
+    /**
+     * WsPushMode枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     enum WsPushMode implements MessageEnum {
         SINGLE("SINGLE", "单用户推送"),

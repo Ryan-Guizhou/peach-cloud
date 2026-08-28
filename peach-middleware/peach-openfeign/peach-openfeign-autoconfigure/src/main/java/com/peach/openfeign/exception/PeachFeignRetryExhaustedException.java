@@ -1,7 +1,7 @@
 package com.peach.openfeign.exception;
 
 /**
- * Feign 重试耗尽。
+ * PeachFeign重试Exhausted异常。
  *
  * @Author Mr Shu
  * @Version 1.0.0

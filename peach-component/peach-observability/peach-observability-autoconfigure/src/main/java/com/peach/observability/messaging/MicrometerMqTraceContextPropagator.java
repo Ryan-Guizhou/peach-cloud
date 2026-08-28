@@ -8,10 +8,13 @@ import io.micrometer.tracing.propagation.Propagator;
 import java.util.Map;
 
 /**
- * 基于 Micrometer Tracing 的 MQ 链路上下文传播器。
- *
+ * MicrometerMQ追踪上下文传播器。
  * <p>生产端通过当前 Tracer 和 Propagator 注入标准传播字段；消费端从消息头提取父上下文，
  * 创建 {@link Span.Kind#CONSUMER} Span，并在作用域结束时可靠关闭。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public final class MicrometerMqTraceContextPropagator implements MqTraceContextPropagator {
 
@@ -54,6 +57,14 @@ public final class MicrometerMqTraceContextPropagator implements MqTraceContextP
     private static String safeTopic(String topic) {
         return topic == null || topic.isBlank() ? "unknown" : topic;
     }
+
+    /**
+     * MicrometerMQTraceScope值对象。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     private record MicrometerMqTraceScope(Span span, Tracer.SpanInScope spanInScope) implements MqTraceScope {
 

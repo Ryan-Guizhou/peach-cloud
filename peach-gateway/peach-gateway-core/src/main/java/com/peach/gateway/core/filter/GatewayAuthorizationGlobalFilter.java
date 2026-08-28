@@ -27,8 +27,7 @@ import reactor.core.publisher.Mono;
 import java.util.Locale;
 
 /**
- * 网关认证过滤器。
- *
+ * 网关AuthorizationGlobal过滤器。
  * <p>请求进入下游服务前校验 Sa-Token 登录态，公开端点按配置跳过。</p>
  *
  * @Author Mr Shu

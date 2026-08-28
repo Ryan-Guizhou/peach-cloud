@@ -1,5 +1,13 @@
 package com.peach.email.enums;
 
+/**
+ * 邮件Provider枚举。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
+
 public enum EmailProviderEnum {
     ALI("ali", "smtpdm.aliyun.com","465"),
     NETEASE_163("163", "smtp.163.com","465"),

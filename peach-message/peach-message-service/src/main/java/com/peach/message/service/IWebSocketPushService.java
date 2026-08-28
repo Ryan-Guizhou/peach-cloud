@@ -3,6 +3,8 @@ package com.peach.message.service;
 import com.peach.message.dto.WebSocketMessageDTO;
 
 /**
+ * WebSocket 推送服务接口。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45

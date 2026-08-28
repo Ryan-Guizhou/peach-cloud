@@ -21,8 +21,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * 机构服务实现。
- *
+ * 机构服务实现类。
  * <p>负责机构的分页、查询以及基础增删改，不承载跨机构权限逻辑。</p>
  *
  * @Author Mr Shu

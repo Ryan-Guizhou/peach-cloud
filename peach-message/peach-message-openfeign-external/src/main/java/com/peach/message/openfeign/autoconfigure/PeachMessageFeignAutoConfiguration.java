@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Indexed;
 
 /**
+ * 消息服务Feign自动配置。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45

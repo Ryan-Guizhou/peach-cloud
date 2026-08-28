@@ -1,6 +1,8 @@
 package com.peach.email.constant;
 
 /**
+ * 邮件常量。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:41

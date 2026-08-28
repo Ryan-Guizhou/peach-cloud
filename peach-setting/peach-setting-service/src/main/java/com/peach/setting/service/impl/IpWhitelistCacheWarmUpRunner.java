@@ -2,13 +2,14 @@ package com.peach.setting.service.impl;
 
 import org.springframework.stereotype.Indexed;
 import com.peach.setting.service.IIpWhitelistService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 /**
- * IP 白名单缓存预热任务。
+ * IpWhitelist缓存WarmUp运行器。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -17,13 +18,10 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Indexed
 @Component
+@RequiredArgsConstructor
 public class IpWhitelistCacheWarmUpRunner implements ApplicationRunner {
 
     private final IIpWhitelistService ipWhitelistService;
-
-    public IpWhitelistCacheWarmUpRunner(IIpWhitelistService ipWhitelistService) {
-        this.ipWhitelistService = ipWhitelistService;
-    }
 
     @Override
     public void run(ApplicationArguments args) {

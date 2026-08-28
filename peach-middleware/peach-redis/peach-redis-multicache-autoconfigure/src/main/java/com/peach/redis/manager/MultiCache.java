@@ -21,6 +21,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
+ * 多级缓存。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:13

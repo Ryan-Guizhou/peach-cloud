@@ -29,6 +29,8 @@ import java.util.Objects;
 import java.util.Properties;
 
 /**
+ * BlockPuzzle验证码服务实现类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/21 17:10
@@ -96,7 +98,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         try {
             cachePoint = JsonUtil.parseObject(pointJson, PointVO.class);
             //aes解密
-            pointJson = decrypt(captchaVO.getAnswer(), cachePoint.getSecretKey());
+            pointJson = decrypt(captchaVO.getAnswer(), cachePoint.secretKey());
             frontPoint = JsonUtil.parseObject(pointJson, PointVO.class);
         } catch (Exception e) {
             log.error("captcha point parse error, pointJson: {}", pointJson, e);
@@ -104,14 +106,14 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
             return Response.fail(e.getMessage());
         }
 
-        if (cachePoint.x - Integer.parseInt(SLIP_OFFSET) > frontPoint.x
-                || frontPoint.x > cachePoint.x + Integer.parseInt(SLIP_OFFSET)
-                || cachePoint.y != frontPoint.y) {
+        if (cachePoint.x() - Integer.parseInt(SLIP_OFFSET) > frontPoint.x()
+                || frontPoint.x() > cachePoint.x() + Integer.parseInt(SLIP_OFFSET)
+                || cachePoint.y() != frontPoint.y()) {
             afterValidateFail(captchaVO);
             return Response.fail("coordinate error");
         }
         //校验成功，将信息存入缓存
-        String secretKey = cachePoint.getSecretKey();
+        String secretKey = cachePoint.secretKey();
         String value;
         try {
             value = AesUtil.aesEncrypt(captchaVO.getToken().concat("@").concat(pointJson), secretKey);
@@ -176,7 +178,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
 
             //随机生成拼图坐标
             PointVO point = generateSlidingPoint(slidingOriginalImageWidth, slidingOriginalImageHeight, slidingBlockingImageWidth, slidingBlockingImageHeight);
-            int x = point.getX();
+            int x = point.x();
 
             //生成新的拼图图像
             BufferedImage newSlidingImage = new BufferedImage(slidingBlockingImageWidth, slidingBlockingImageHeight, slidingBlockingImage.getType());
@@ -212,7 +214,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
             // 滑块
             dataVO.setNewSlidingBlockingImageBase64(encoder.encodeToString(jigsawImages).replaceAll("[\\r\\n]", ""));
             dataVO.setToken(RandomUtils.getUuid());
-            dataVO.setSecretKey(point.getSecretKey());
+            dataVO.setSecretKey(point.secretKey());
             //将坐标信息存入redis中
             String codeKey = RedisKeyBuild
                     .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA, dataVO.getToken())
@@ -413,7 +415,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         if (CAPTCHA_AES_STATUS) {
             key = AesUtil.getKey();
         }
-        return new PointVO(x, y, key);
+        return new PointVO(key, x, y);
     }
 
 

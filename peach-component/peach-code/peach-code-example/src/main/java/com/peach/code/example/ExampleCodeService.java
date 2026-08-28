@@ -6,10 +6,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 业务编码生成示例服务。
- *
+ * Example代码服务类。
  * <p>示例通过 Spring 事务代理调用编码生成器，展示编码生成与业务写入应处于同一个事务边界。
  * 实际业务服务应采用同样的事务边界，不要直接在事务外调用 {@code CodeGenerator}。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Indexed
 @Service

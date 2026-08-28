@@ -17,12 +17,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Indexed;
 
 /**
- * Servlet 场景下的 OpenFeign Web 侧自动配置。
- *
+ * PeachOpenFeignWeb自动配置。
  * <p>负责导入统一异常处理器，并在启动期将
  * {@code peach.openfeign.client.named} 的命名客户端参数合并到
  * {@link FeignClientProperties}，保证配置入口一致。</p>
- *
  * <p>该配置仅在 Servlet Web 应用生效，不作用于 Gateway WebFlux 场景。</p>
  *
  * @Author Mr Shu

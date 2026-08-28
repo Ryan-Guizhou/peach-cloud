@@ -1,5 +1,7 @@
 package com.peach.setting.dto;
 
+import java.io.Serial;
+
 import com.peach.setting.comon.enums.IpWhitelistGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,7 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**
- * IP 白名单 DTO。
+ * IpWhitelist传输对象。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -17,7 +19,8 @@ import java.io.Serializable;
 @Data
 public class IpWhitelistDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -5454457856425869542L;
 
     @Schema(description = "主键ID")
     @NotBlank(groups = {IpWhitelistGroup.UpdatetGroup.class}, message = "IP白名单ID不能为空")

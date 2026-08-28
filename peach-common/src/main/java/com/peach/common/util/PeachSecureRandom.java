@@ -4,7 +4,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 /**
- * 项目级 CSPRNG 单例，供 token 种子、验证码、加密 IV 等场景复用。
+ * Peach安全随机数。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public final class PeachSecureRandom {
 

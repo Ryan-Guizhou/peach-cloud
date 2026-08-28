@@ -24,6 +24,8 @@ import java.util.Properties;
 
 
 /**
+ * 抽象缓存服务类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 15:00

@@ -1,9 +1,12 @@
 package com.peach.observability.core;
 
 /**
- * 可观测性公共常量。
- *
+ * Observability常量。
  * <p>这些常量只描述稳定的技术协议，不包含任何业务域语义。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public final class ObservabilityConstants {
 

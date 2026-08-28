@@ -31,6 +31,8 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
+ * 邮件自动配置。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:16

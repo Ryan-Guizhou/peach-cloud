@@ -1,10 +1,11 @@
 package com.peach.email.core;
 
 /**
+ * 发送结果。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:13
- * @Description: 发送结果：包含提供商名称、Message-ID、耗时与错误信息。
  */
 public class SendResult {
     /**

@@ -1,7 +1,7 @@
 package com.peach.openfeign.exception;
 
 /**
- * Same-Token 缺失且 fail-fast 开启时抛出。
+ * FeignSame令牌异常。
  *
  * @Author Mr Shu
  * @Version 1.0.0

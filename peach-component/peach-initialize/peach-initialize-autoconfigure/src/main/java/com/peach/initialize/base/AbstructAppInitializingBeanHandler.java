@@ -3,6 +3,8 @@ package com.peach.initialize.base;
 import com.peach.initialize.constant.InitializeHandlerType;
 
 /**
+ * 应用初始化Bean处理顶级抽象类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/16 15:18

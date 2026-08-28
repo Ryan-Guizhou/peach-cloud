@@ -15,7 +15,11 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 /**
- * Message 服务对 WebSocket 与普通 HTTP 请求补充 Same-Token 校验。
+ * 消息Same令牌Web过滤器。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Slf4j
 @Indexed

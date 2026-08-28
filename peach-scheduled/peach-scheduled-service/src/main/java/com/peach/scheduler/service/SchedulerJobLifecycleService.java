@@ -13,7 +13,7 @@ import com.peach.scheduler.statemachine.StateMachineTransitionResolver;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 执行相关状态处理。
+ * 调度任务Lifecycle服务类。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -27,7 +27,7 @@ public class SchedulerJobLifecycleService {
     private final JobStateMachineFactory stateMachineFactory;
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      * @param jobDao 任务定义数据访问对象
      * @param jobVersionDao 任务定义版本快照数据访问对象
      * @param stateLogDao 状态迁移审计日志数据访问对象
@@ -46,13 +46,13 @@ public class SchedulerJobLifecycleService {
     /**
      * 执行相关状态处理。
      *
-     * @param jobId 参数说明
-     * @param event 参数说明
-     * @param operatorId 参数说明
-     * @return 返回结果
+     * @param jobId job Id。
+     * @param event event。
+     * @param operatorId operator Id。
+     * @return 执行结果。
      */
     @Transactional
-    public SchedulerJobDO transition(Long jobId, JobEvent event, String operatorId) {
+    public SchedulerJobDO transition(String jobId, JobEvent event, String operatorId) {
         SchedulerJobDO job = required(jobId);
         JobState fromState = job.getState();
         JobState toState = StateMachineTransitionResolver.transit(
@@ -67,7 +67,7 @@ public class SchedulerJobLifecycleService {
         return refreshed;
     }
 
-    private SchedulerJobDO required(Long jobId) {
+    private SchedulerJobDO required(String jobId) {
         SchedulerJobDO job = jobDao.selectById(jobId);
         if (job == null) throw new IllegalArgumentException("Scheduler job not found: " + jobId);
         return job;

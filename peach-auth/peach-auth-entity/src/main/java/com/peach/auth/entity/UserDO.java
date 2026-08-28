@@ -1,5 +1,7 @@
 package com.peach.auth.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -11,17 +13,21 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
+ * User实体。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 17:36
- */
+  */
 @Data
 @Entity
 @Table(name = "PEACH_USER")
 @Schema(description = "User实体")
 @EqualsAndHashCode(callSuper = true)
 public class UserDO extends PeachDO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = -3354777952204829102L;
 
     @Id
     @Column(name = "USER_ID")

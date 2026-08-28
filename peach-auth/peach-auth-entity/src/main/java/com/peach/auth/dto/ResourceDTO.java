@@ -1,5 +1,7 @@
 package com.peach.auth.dto;
 
+import java.io.Serial;
+
 import com.peach.common.PeachGroup;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,6 +13,8 @@ import java.io.Serializable;
 
 
 /**
+ * 资源DTO。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/9 16:45
@@ -20,7 +24,8 @@ import java.io.Serializable;
 @Schema(description = "资源DTO")
 public class ResourceDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 5940398568041986270L;
 
     @Schema(description = "资源ID")
     @NotBlank(message = "资源ID不能为空", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})

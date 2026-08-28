@@ -1,5 +1,7 @@
 package com.peach.fileservice.dto;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -7,7 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**
- * 云存储是否路径参数.
+ * 云存储是否路径参数。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -16,7 +18,9 @@ import java.io.Serializable;
 @Data
 @Schema(description = "云存储是否路径参数")
 public class CloudStorageCreateDirectoryDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = 7928577434272310995L;
 
     @Schema(description = "路径", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "路径不能为空")

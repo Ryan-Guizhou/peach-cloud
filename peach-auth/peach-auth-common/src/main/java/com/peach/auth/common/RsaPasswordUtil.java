@@ -30,10 +30,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Rsa 加解密算法。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
- * @Description Rsa 加解密算法
  * @CreateTime 2025/3/13 12:42
+ * @Description Rsa 加解密算法
  */
 @Slf4j
 public class RsaPasswordUtil {
@@ -80,7 +82,7 @@ public class RsaPasswordUtil {
     private static final Cache<String, Map<String, String>> RSA_PASS_WORD_INFO = CacheBuilder.newBuilder().expireAfterWrite(3, TimeUnit.HOURS).build();
 
     /**
-     * redissonClient
+     * redisson客户端。
      */
     private static final RedissonClient redissonClient = InstanceLazyLoader.getInstance(RedissonClient.class);
 
@@ -107,7 +109,7 @@ public class RsaPasswordUtil {
         try {
             decryptPassword = decrypt(password);
         } catch (Exception e) {
-            log.error("解密失败");
+            log.error("Password decryption failed");
             throw new IllegalStateException("RSA initialization failed", e);
         }
         return decryptPassword;
@@ -253,7 +255,7 @@ public class RsaPasswordUtil {
      * @return
      */
     private static byte[] hexToByte(String ciphertext) {
-        byte[] cipherBytes = ciphertext.getBytes();
+        byte[] cipherBytes = ciphertext.getBytes(StandardCharsets.UTF_8);
         if ((cipherBytes.length % 2) != 0) {
             log.error("The content:[{}] length is not even",ciphertext);
             throw new IllegalArgumentException(String.format("The content:[%s] length is not even",ciphertext));
@@ -273,18 +275,18 @@ public class RsaPasswordUtil {
      * @return
      */
     private static String byteToHex(byte[] bytes) {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder stringBuilder = new StringBuilder();
         if (bytes.length == 0){
-            return new String(stringBuffer);
+            return stringBuilder.toString();
         }
         for (int i = 0; i < bytes.length; i++) {
             String s = Integer.toHexString(bytes[i] & 0xFF);
             if (1 == s.length()) {
-                stringBuffer.append("0");
+                stringBuilder.append("0");
             }
-            stringBuffer = stringBuffer.append(s);
+            stringBuilder.append(s);
         }
-        return new String(stringBuffer);
+        return stringBuilder.toString();
 
     }
 

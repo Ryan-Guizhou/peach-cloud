@@ -10,14 +10,13 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
- * 文件对象数据访问接口
- *
+ * 文件Object数据访问。
  * <p>提供文件对象（存储实体）的数据库操作，包括秒传检测、引用计数管理、
  * 存储状态更新等功能。文件对象与文件记录是一对多关系。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Indexed
 @MybatisDao

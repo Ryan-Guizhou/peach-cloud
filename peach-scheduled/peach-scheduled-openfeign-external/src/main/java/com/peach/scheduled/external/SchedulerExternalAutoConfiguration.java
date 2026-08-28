@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * 调度模块相关说明。
+ * 调度External自动配置。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -24,17 +24,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @Indexed
 public class SchedulerExternalAutoConfiguration {
-    /**
-     * 创建相关对象。
-     */
-    public SchedulerExternalAutoConfiguration() {
-        // Intentionally empty.
-    }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     @Bean
     @ConditionalOnMissingBean
@@ -43,9 +37,9 @@ public class SchedulerExternalAutoConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     @Bean
     @ConditionalOnMissingBean
@@ -54,9 +48,9 @@ public class SchedulerExternalAutoConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @return 返回结果
+     * @return 执行结果。
      * @param client Scheduler 控制面 Feign Client
      */
     @Bean
@@ -66,9 +60,9 @@ public class SchedulerExternalAutoConfiguration {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @return 返回结果
+     * @return 执行结果。
      * @param registry 本地 Job Handler 注册表
      * @param client Scheduler 控制面 Feign Client
      * @param properties Scheduler 执行器配置

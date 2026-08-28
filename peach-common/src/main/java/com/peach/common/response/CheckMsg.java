@@ -1,8 +1,12 @@
 package com.peach.common.response;
 
+import java.io.Serial;
+
 import java.io.Serializable;
 
 /**
+ * 校验消息类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/11 9:45
@@ -10,7 +14,8 @@ import java.io.Serializable;
  */
 public class CheckMsg implements Serializable {
 
-    private static final long serialVersionUID = 597043735933699805L;
+    @Serial
+    private static final long serialVersionUID = -6951787632913350881L;
 
     private String msgInfo;
 
@@ -80,6 +85,14 @@ public class CheckMsg implements Serializable {
         }
         return check;
     }
+
+    /**
+     * Check回调。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     public static interface CheckCallback {
         CheckMsg doCallback();

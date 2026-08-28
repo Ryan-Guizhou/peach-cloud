@@ -30,6 +30,8 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 /**
+ * 多语言管理接口。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/29 20:51

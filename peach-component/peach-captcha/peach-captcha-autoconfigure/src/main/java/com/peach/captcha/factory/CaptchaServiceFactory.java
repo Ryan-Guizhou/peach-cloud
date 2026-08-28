@@ -13,6 +13,8 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * 验证码服务工厂。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:42

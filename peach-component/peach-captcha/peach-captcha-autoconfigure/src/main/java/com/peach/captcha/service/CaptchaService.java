@@ -6,6 +6,8 @@ import com.peach.common.response.Response;
 import java.util.Properties;
 
 /**
+ * 验证码服务类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 14:52

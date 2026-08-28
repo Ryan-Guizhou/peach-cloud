@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 授权功能服务实现。
+ * 认证功能服务实现类。
  *
  * @Author Mr Shu
  * @Version 1.0.0

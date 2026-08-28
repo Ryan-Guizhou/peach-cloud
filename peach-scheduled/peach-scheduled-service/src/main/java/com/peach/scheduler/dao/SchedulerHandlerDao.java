@@ -9,8 +9,7 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
- * 调度 Handler 注册信息数据访问接口。
- *
+ * 调度处理器数据访问。
  * <p>用于维护业务服务上报的 Handler 能力、实例标识和心跳状态。</p>
  *
  * @Author Mr Shu

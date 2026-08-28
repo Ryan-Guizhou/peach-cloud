@@ -7,6 +7,8 @@ import jakarta.mail.Session;
 import jakarta.mail.Transport;
 
 /**
+ * 线程安全连接提供者。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 18:31
@@ -76,6 +78,14 @@ public class ThreadSmtpConnectionProvider implements SmtpConnectionProvider{
             log.error("Failed to close SMTP transport", ignored);
         }
     }
+
+    /**
+     * Holder。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     private static class Holder {
         Transport transport;

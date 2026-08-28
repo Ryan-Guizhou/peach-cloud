@@ -6,6 +6,8 @@ import lombok.EqualsAndHashCode;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
+ * 数据源配置属性。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/9 15:47

@@ -24,9 +24,12 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * 文件外部接口。
- *
+ * 供其他业务服务调用的文件 API。
  * <p>外部接口只暴露业务文件 ID 和临时 URL，不暴露 bucket、objectKey 或本地路径。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Validated
 @Indexed

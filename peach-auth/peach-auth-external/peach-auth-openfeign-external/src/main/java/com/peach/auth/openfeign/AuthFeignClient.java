@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 
 /**
+ * 认证Feign客户端。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/2/1 15:00

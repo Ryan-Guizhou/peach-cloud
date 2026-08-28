@@ -14,6 +14,8 @@ import java.util.Arrays;
 import java.util.Base64;
 
 /**
+ * Aes工具类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/21 18:06

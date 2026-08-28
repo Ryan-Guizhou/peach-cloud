@@ -10,10 +10,13 @@ import feign.Response;
 import feign.codec.ErrorDecoder;
 
 /**
- * Peach OpenFeign 错误解码器。
- *
+ * PeachOpenFeignErrorDecoder相关类。
  * <p>将下游 HTTP 错误转换为模块统一异常，并对配置允许重试的状态码抛出
  * Feign 标准 {@link feign.RetryableException} 交给重试器处理。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public class PeachOpenFeignErrorDecoder implements ErrorDecoder {
 

@@ -11,6 +11,8 @@ import com.peach.setting.vo.MulitMessageVO;
 import java.util.List;
 
 /**
+ * 多语言消息服务接口。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 20:50

@@ -8,6 +8,8 @@ import com.peach.auth.vo.AuthFunctionVO;
 import java.util.List;
 
 /**
+ * IAuth功能服务类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 18:25

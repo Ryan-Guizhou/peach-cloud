@@ -10,8 +10,7 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
- * 调度任务数据访问接口。
- *
+ * 调度任务数据访问。
  * <p>基础 CRUD 继承 PeachDao，行锁读取和乐观锁更新通过显式 SQL 完成。</p>
  *
  * @Author Mr Shu
@@ -28,7 +27,7 @@ public interface SchedulerJobDao extends PeachDao<SchedulerJobDO, SchedulerJobDO
      * @param id 任务主键
      * @return 任务定义，不存在时返回 null
      */
-    SchedulerJobDO selectById(@Param("id") Long id);
+    SchedulerJobDO selectById(@Param("id") String id);
 
     /**
      * 根据稳定任务编码查询任务定义。
@@ -44,7 +43,7 @@ public interface SchedulerJobDao extends PeachDao<SchedulerJobDO, SchedulerJobDO
      * @param id 任务主键
      * @return 已加行锁的任务定义
      */
-    SchedulerJobDO selectByIdForUpdate(@Param("id") Long id);
+    SchedulerJobDO selectByIdForUpdate(@Param("id") String id);
 
     /**
      * 新增调度任务定义。
@@ -70,7 +69,7 @@ public interface SchedulerJobDao extends PeachDao<SchedulerJobDO, SchedulerJobDO
      * @param modifierId 修改人标识
      * @return 受影响行数
      */
-    int updateState(@Param("id") Long id,
+    int updateState(@Param("id") String id,
                     @Param("fromState") String fromState,
                     @Param("toState") String toState,
                     @Param("version") Long version,
@@ -83,7 +82,7 @@ public interface SchedulerJobDao extends PeachDao<SchedulerJobDO, SchedulerJobDO
      * @param scheduleVersion 调度定义版本
      * @return 受影响行数
      */
-    int markSyncSuccess(@Param("id") Long id, @Param("scheduleVersion") Long scheduleVersion);
+    int markSyncSuccess(@Param("id") String id, @Param("scheduleVersion") Long scheduleVersion);
 
     /**
      * 记录指定调度版本同步失败及失败摘要。
@@ -93,7 +92,7 @@ public interface SchedulerJobDao extends PeachDao<SchedulerJobDO, SchedulerJobDO
      * @param error 脱敏后的同步失败摘要
      * @return 受影响行数
      */
-    int markSyncFailure(@Param("id") Long id,
+    int markSyncFailure(@Param("id") String id,
                         @Param("scheduleVersion") Long scheduleVersion,
                         @Param("error") String error);
 

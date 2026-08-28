@@ -1,5 +1,7 @@
 package com.peach.auth.vo;
 
+import java.io.Serial;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.peach.auth.entity.UserOrgDO;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,7 +11,7 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 
 /**
- * 用户机构关系返回视图。
+ * 用户机构关系统一返回视图。
  * <p>用于登录后返回可切换机构列表和默认机构信息。</p>
  *
  * @Author Mr Shu
@@ -22,7 +24,8 @@ import java.io.Serializable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserOrgVO extends UserOrgDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 4933915625426423406L;
 
     @Schema(description = "租户编码")
     private String tenantCode;

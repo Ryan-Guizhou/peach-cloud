@@ -1,5 +1,7 @@
 package com.peach.setting.dto;
 
+import java.io.Serial;
+
 import com.peach.setting.comon.enums.MultiMessageGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,6 +10,8 @@ import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**
+ * 多语言消息DTO。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 21:50
@@ -16,7 +20,8 @@ import java.io.Serializable;
 @Data
 public class MultiMessageDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 4148762014332806498L;
 
     @Schema(description = "消息ID")
     @NotBlank(groups = {MultiMessageGroup.UpdatetGroup.class}, message = "消息ID不能为空")

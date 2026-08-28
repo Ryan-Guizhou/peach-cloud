@@ -1,6 +1,6 @@
 package com.peach.scheduled.common;
 /**
- * 调度平台稳定常量。
+ * 调度常量。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -23,8 +23,8 @@ public final class SchedulerConstants {
     /**
      * 构建相关数据。
      *
-     * @param applicationName 参数说明
-     * @return 返回结果
+     * @param applicationName application Name。
+     * @return 执行结果。
      */
     public static String executionTopic(String applicationName) {
         return "scheduler-execute-" + applicationName;

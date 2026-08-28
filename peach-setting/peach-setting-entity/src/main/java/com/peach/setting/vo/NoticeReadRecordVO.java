@@ -1,5 +1,7 @@
 package com.peach.setting.vo;
 
+import java.io.Serial;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.peach.setting.entity.NoticeReadRecordDO;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,6 +11,8 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 
 /**
+ * 通知阅读记录视图对象。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 20:35
@@ -20,6 +24,8 @@ import java.io.Serializable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NoticeReadRecordVO extends NoticeReadRecordDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 4688846489045407067L;
+
 }
 

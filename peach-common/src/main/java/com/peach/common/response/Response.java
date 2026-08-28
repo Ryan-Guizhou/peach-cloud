@@ -1,5 +1,7 @@
 package com.peach.common.response;
 
+import java.io.Serial;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.peach.common.util.StringUtil;
@@ -9,13 +11,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 
 /**
+ * Response相关类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/11 9:45
  */
 public class Response implements Serializable {
 
-    private static final long serialVersionUID = 2402460635136759519L;
+    @Serial
+    private static final long serialVersionUID = 5869923247678244325L;
 
     @Schema(description = "状态码")
     private String code;
@@ -125,7 +130,8 @@ public class Response implements Serializable {
 
     public static class SuccessResponse extends Response implements Serializable{
 
-        private static final long serialVersionUID = 9040035077231522334L;
+        @Serial
+        private static final long serialVersionUID = -3121389056547111758L;
 
         public SuccessResponse() {
             super();
@@ -144,7 +150,8 @@ public class Response implements Serializable {
     public static class BusinessFailResponse extends Response implements Serializable{
 
 
-        private static final long serialVersionUID = -348678046434125007L;
+        @Serial
+        private static final long serialVersionUID = 5018037661408963348L;
 
         public BusinessFailResponse() {
             super();
@@ -167,7 +174,8 @@ public class Response implements Serializable {
 
     public static class FailResponse extends Response implements Serializable{
 
-        private static final long serialVersionUID = -3506879010527215679L;
+        @Serial
+        private static final long serialVersionUID = 4788855368908558299L;
 
         public FailResponse() {
             super();
@@ -197,7 +205,8 @@ public class Response implements Serializable {
 
     public static class CommonResponse extends Response implements Serializable{
 
-        private static final long serialVersionUID = -5544154186538478127L;
+        @Serial
+        private static final long serialVersionUID = -8754287856822940252L;
 
         public CommonResponse(StatusEnum statusEnum) {
             super();

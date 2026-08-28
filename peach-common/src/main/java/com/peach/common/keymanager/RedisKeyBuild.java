@@ -5,6 +5,8 @@ import java.text.MessageFormat;
 import java.util.Objects;
 
 /**
+ * Redis键构建器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 11:14

@@ -21,11 +21,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * OpenFeign 异常统一响应处理器。
- *
+ * PeachOpenFeignException处理器。
  * <p>负责将 Feign 调用链路中的远端错误、限流熔断、重试耗尽与安全校验失败，
  * 统一转换为对前端可消费的标准响应，避免把内部调用细节直接暴露给调用方。</p>
- *
  * <p>该处理器只负责响应映射与日志分级，不改变 Feign 异常分类规则；
  * 异常分类由 error decoder、retryer 与 sentinel 处理链负责。</p>
  *

@@ -1,5 +1,13 @@
 package com.peach.monitor.entity;
 
+/**
+ * 用户传输对象。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
+
 public class UserDTO {
     private Long id;
     private String name;

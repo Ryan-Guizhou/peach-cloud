@@ -6,6 +6,8 @@ import org.springframework.data.redis.connection.stream.RecordId;
 import org.springframework.data.redis.stream.StreamListener;
 
 /**
+ * Redis流监听器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/18 16:46

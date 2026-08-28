@@ -5,6 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 
 /**
+ * peach.mongo 可配置项，控制连接池、超时、重试、模板行为与事务。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/13 17:01
@@ -48,13 +50,17 @@ public class PeachMongoProperties {
     private Transaction transaction = new Transaction();
 
     /**
-     * 连接池参数：并发连接与维护策略
+     * Pool。
      * - maxSize：连接池最大连接数
      * - minSize：连接池最小保留连接数
      * - maxConnecting：并发建立连接的最大数
      * - maxConnectionIdleTimeMs：连接空闲超过该时间将被回收
      * - maintenanceInitialDelayMs：维护任务初始延迟
      * - maintenanceFrequencyMs：维护任务执行频率
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     @Data
     public static class Pool {
@@ -67,9 +73,13 @@ public class PeachMongoProperties {
     }
 
     /**
-     * Socket 超时配置
+     * Socket。
      * - connectTimeoutMs：建立 TCP 连接的超时
      * - readTimeoutMs：读取数据的超时
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     @Data
     public static class Socket {
@@ -78,8 +88,12 @@ public class PeachMongoProperties {
     }
 
     /**
-     * 集群选择超时配置
+     * Cluster。
      * - serverSelectionTimeoutMs：选择可用服务器节点的最大等待时间
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     @Data
     public static class Cluster {
@@ -87,8 +101,12 @@ public class PeachMongoProperties {
     }
 
     /**
-     * 模板行为配置
+     * 模板。
      * - removeClassField：是否移除 _class 类型标识字段，减少文档冗余
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     @Data
     public static class Template {
@@ -96,8 +114,12 @@ public class PeachMongoProperties {
     }
 
     /**
-     * 事务配置
+     * 事务。
      * - enabled：是否开启 MongoTransactionManager（要求副本集/集群）
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     @Data
     public static class Transaction {

@@ -11,16 +11,18 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
+ * 验证码Image工具类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 17:39
@@ -149,20 +151,22 @@ public final class CaptchaImageUtil {
         if (StringUtil.isBlank(customPath)){
             return imagesMap;
         }
-        File file = new File(customPath);
-        if (!file.exists() || !file.isDirectory()){
+        Path dir = Path.of(customPath);
+        if (!Files.isDirectory(dir)) {
             return imagesMap;
         }
-        File[] files = file.listFiles();
-        assert files != null;
-        for (File item : files) {
-            try {
-                byte[] bytes = FileCopyUtil.copyToByteArray(new FileInputStream(item));
-                String encodeValue =  Base64Util.encodeToString(bytes);
-                imagesMap.put(item.getName(), encodeValue);
-            } catch (IOException e) {
-                log.error("Error copying resource to byte array: {}", item.getName(), e);
-            }
+        try (var paths = Files.list(dir)) {
+            paths.filter(Files::isRegularFile).forEach(item -> {
+                try {
+                    byte[] bytes = Files.readAllBytes(item);
+                    String encodeValue = Base64Util.encodeToString(bytes);
+                    imagesMap.put(item.getFileName().toString(), encodeValue);
+                } catch (IOException e) {
+                    log.error("Error copying resource to byte array: {}", item.getFileName(), e);
+                }
+            });
+        } catch (IOException e) {
+            log.error("Error listing custom image directory: {}", customPath, e);
         }
         return imagesMap;
     }

@@ -3,7 +3,7 @@ package com.peach.scheduled.entity;
 import java.time.LocalDateTime;
 
 /**
- * 调度状态迁移日志。
+ * 调度State日志数据对象。
  *
  * @Author Mr Shu
  * @Version 1.0.0

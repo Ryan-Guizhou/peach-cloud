@@ -6,6 +6,8 @@ import com.peach.common.util.encrypt.EncryptService;
 import com.peach.common.util.encrypt.impl.DesEncryptService;
 
 /**
+ * DesEncrypt提供者。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 16:24

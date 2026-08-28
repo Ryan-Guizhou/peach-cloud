@@ -1,7 +1,7 @@
 package com.peach.scheduled.common;
 
 /**
- * 调度任务定义的标准生命周期状态。
+ * 任务State枚举。
  *
  * @Author Mr Shu
  * @Version 1.0.0

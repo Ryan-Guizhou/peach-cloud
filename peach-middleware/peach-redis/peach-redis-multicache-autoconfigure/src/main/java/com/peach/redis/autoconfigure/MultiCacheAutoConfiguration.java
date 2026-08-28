@@ -22,6 +22,8 @@ import java.util.Objects;
 
 
 /**
+ * 多级缓存自动注入。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:29

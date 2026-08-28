@@ -1,5 +1,7 @@
 package com.peach.fileservice.qo;
 
+import java.io.Serial;
+
 import com.peach.common.PeachEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,7 +10,7 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 
 /**
- * 云存储实例查询参数.
+ * 云存储实例查询参数。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -19,7 +21,8 @@ import java.io.Serializable;
 @Schema(description = "云存储实例查询参数")
 public class CloudStorageInstanceQO extends PeachEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -4043078066581200354L;
 
     @Schema(description = "租户ID")
     private String tenantId;

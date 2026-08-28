@@ -1,5 +1,7 @@
 package com.peach.fileservice.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -12,17 +14,16 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
- * 文件物理对象数据库实体
- *
+ * 文件物理对象实体。
  * <p>映射表 {@code PEACH_FILE_OBJECT}，表示文件在对象存储中的物理实体。
  * 记录文件的 SHA-256/MD5 摘要、大小、存储提供方与桶信息、对象Key、
  * 原始文件名、MIME类型、扩展名等元数据，并通过引用计数（refCount）
  * 支持多对一的文件去重与秒传场景。同时维护存储状态、上传时间、
  * 最后访问时间以及逻辑删除标记，用于文件生命周期管理。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Data
 @Entity
@@ -31,7 +32,8 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = true)
 public class FileObjectDO extends PeachDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -4923191473705995553L;
 
     @Id
     @Column(name = "OBJECT_ID")

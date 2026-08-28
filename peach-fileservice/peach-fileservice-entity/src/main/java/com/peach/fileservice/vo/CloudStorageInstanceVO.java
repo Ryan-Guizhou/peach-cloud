@@ -1,5 +1,7 @@
 package com.peach.fileservice.vo;
 
+import java.io.Serial;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.peach.fileservice.entity.CloudStorageInstanceDO;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,7 +11,7 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 
 /**
- * 云存储实例返回视图.
+ * 云存储实例返回视图。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -20,7 +22,9 @@ import java.io.Serializable;
 @Schema(description = "云存储实例返回视图")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CloudStorageInstanceVO extends CloudStorageInstanceDO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = 327197220037134973L;
 
     @Schema(description = "Masked secret key")
     private String secretKeyMasked;

@@ -7,6 +7,8 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.Transport;
 
 /**
+ * 连接提供者：决定获取与释放连接的策略。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 18:25

@@ -8,6 +8,8 @@ import java.util.Comparator;
 import java.util.Map;
 
 /**
+ * 应用初始化执行顶级抽象类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/16 14:55

@@ -9,10 +9,13 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 /**
- * 业务编码示例启动事件。
- *
+ * Peach代码事件。
  * <p>应用启动完成后为指定租户生成菜单和通知编码，并记录格式校验结果。该事件用于人工验证
  * Redis/MySQL 双通道发号是否符合预期，不承担业务数据创建职责。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Indexed
 @Component

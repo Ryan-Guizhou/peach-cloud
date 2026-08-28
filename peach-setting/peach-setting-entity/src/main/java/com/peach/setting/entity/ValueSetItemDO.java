@@ -1,5 +1,7 @@
 package com.peach.setting.entity;
 
+import java.io.Serial;
+
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -12,6 +14,8 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
+ * 值集项。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 20:30
@@ -24,7 +28,8 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = true)
 public class ValueSetItemDO extends PeachDO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -384043292077429178L;
 
     @Id
     @Column(name = "ID")

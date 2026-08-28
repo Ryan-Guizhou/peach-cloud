@@ -26,16 +26,14 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * 文件域 REST 控制器
- *
+ * 文件上传下载与文件记录管理接口。
  * <p>提供文件上传、下载、分片上传、文件管理等 RESTful API 接口。
  * 支持秒传检测、分片上传、逻辑删除、文件恢复等高级功能。</p>
- *
  * <p>接口路径前缀：{@code /file/internal/}</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Indexed
 @Validated

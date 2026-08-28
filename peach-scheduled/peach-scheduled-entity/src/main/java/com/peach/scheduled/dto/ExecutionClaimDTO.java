@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 调度执行实例租约抢占请求对象。
+ * 调度执行实例租约抢占请求。
  *
  * @Author Mr Shu
  * @Version 1.0.0

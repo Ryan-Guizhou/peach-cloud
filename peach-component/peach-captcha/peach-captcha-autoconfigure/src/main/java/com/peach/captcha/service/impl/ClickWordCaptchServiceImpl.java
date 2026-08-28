@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Properties;
 
 /**
- * Click Word Captcha Service Implementation
+ * ClickWordCaptch服务实现类。
  * 点选文字验证码服务实现类
  *
  * @Author Mr Shu
@@ -153,7 +153,7 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
                  return Response.fail("validate fail: point count mismatch");
             }
 
-            String secretKey = cachePoints.get(0).getSecretKey();
+            String secretKey = cachePoints.get(0).secretKey();
             // 4. Decrypt and verify one by one / 逐个解密验证
             for (int i = 0; i < cachePoints.size(); i++) {
                 // Decrypt using corresponding key / 使用对应的密钥解密
@@ -176,14 +176,14 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
             PointVO target = cachePoints.get(i);
             PointVO source = userPoints.get(i);
             // Allow error 25px / 允许误差 25px
-            if (Math.abs(target.getX() - source.getX()) > 25 || Math.abs(target.getY() - source.getY()) > 25) {
+            if (Math.abs(target.x() - source.x()) > 25 || Math.abs(target.y() - source.y()) > 25) {
                 return Response.fail("validate fail");
             }
         }
 
         // 6. Verification passed, generate secondary verification token / 校验通过，生成二次校验 token
         // Encrypt result using first point's key / 使用第一个点的密钥加密结果
-        String secretKey = cachePoints.get(0).getSecretKey();
+        String secretKey = cachePoints.get(0).secretKey();
         String value;
         try {
             value = AesUtil.aesEncrypt(captchaVO.getToken().concat("@").concat(JsonUtil.toJsonString(userPoints)), secretKey);
@@ -234,17 +234,17 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
             boolean overlap = false;
             for (PointVO p : existPoints) {
                 // Distance check to prevent overlap / 距离判断，防止重叠
-                if (Math.sqrt(Math.pow((double) x - p.getX(), 2) + Math.pow((double) y - p.getY(), 2)) < HAN_ZI_SIZE * 1.5) {
+                if (Math.sqrt(Math.pow((double) x - p.x(), 2) + Math.pow((double) y - p.y(), 2)) < HAN_ZI_SIZE * 1.5) {
                     overlap = true;
                     break;
                 }
             }
             if (!overlap) {
-                return new PointVO(x, y, null);
+                return new PointVO(null, x, y);
             }
         }
         // If fail to find, return random one (low probability) / 如果实在找不到，就随便返回一个，概率很小
-        return new PointVO(RandomUtils.getRandomInt(20, width - 20), RandomUtils.getRandomInt(20, height - 20), null);
+        return new PointVO(null, RandomUtils.getRandomInt(20, width - 20), RandomUtils.getRandomInt(20, height - 20));
     }
 
     public int getWordTotalCount() {
@@ -336,7 +336,7 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
             at.rotate(Math.toRadians(RandomUtils.getRandomInt(-45, 45)));
             graphics.setFont(font.deriveFont(at));
 
-            graphics.drawString(word, point.getX(), point.getY());
+            graphics.drawString(word, point.x(), point.y());
         }
 
         graphics.setFont(font);
@@ -353,9 +353,9 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
             String word = words.get(index);
             int textWidth = fm.stringWidth(word);
 
-            int centerX = p.getX() + textWidth / 2;
-            int centerY = p.getY() - textHeight / 2;
-            checkPointList.add(new PointVO(centerX, centerY, secretKey));
+            int centerX = p.x() + textWidth / 2;
+            int centerY = p.y() - textHeight / 2;
+            checkPointList.add(new PointVO(secretKey, centerX, centerY));
         }
 
         graphics.dispose();

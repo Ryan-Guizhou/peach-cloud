@@ -14,6 +14,8 @@ import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAd
 import java.util.Map;
 
 /**
+ * WebSocket 配置类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45

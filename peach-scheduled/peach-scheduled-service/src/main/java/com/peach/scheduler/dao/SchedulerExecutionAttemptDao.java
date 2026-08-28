@@ -9,8 +9,7 @@ import org.springframework.stereotype.Indexed;
 import java.time.LocalDateTime;
 
 /**
- * 调度执行尝试记录数据访问接口。
- *
+ * 调度执行Attempt数据访问。
  * <p>每次实际业务执行对应一条 attempt 记录，用于保留重试历史和失败摘要。</p>
  *
  * @Author Mr Shu

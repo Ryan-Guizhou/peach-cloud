@@ -21,8 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 /**
- * 网关基础风控过滤器。
- *
+ * 网关RiskControlGlobal过滤器。
  * <p>在请求进入下游服务前拦截异常请求形态和显式黑名单流量；公开端点按网关安全配置跳过。</p>
  *
  * @Author Mr Shu

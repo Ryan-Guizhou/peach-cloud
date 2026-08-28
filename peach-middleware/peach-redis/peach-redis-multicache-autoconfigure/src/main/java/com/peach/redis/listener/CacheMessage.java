@@ -1,46 +1,46 @@
-
 package com.peach.redis.listener;
 
+import java.io.Serial;
 
-
-import lombok.Data;
-
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 
 /**
+ * 多节点缓存通知消息。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 16:09
  * @Description 多节点缓存通知消息
  */
-@Data
-public class CacheMessage implements Serializable {
+public record CacheMessage(String cacheName, Object key, Integer sender) implements Serializable {
 
-    private static final long serialVersionUID = -6221995438342888610L;
+    @Serial
+    private static final long serialVersionUID = 3322404813031251603L;
 
-    /**
-     * 缓存名称
-     */
-    private String cacheName;
+    private Object writeReplace() throws ObjectStreamException {
+        return new SerializedForm(cacheName, sender);
+    }
 
     /**
      * 缓存key
      */
-    private transient Object key;
 
-    /**
-     * 消息发起者
-     */
-    private Integer sender;
+    private static final class SerializedForm implements Serializable {
 
-    public CacheMessage() {
+        @Serial
+        private static final long serialVersionUID = -5261253543605003715L;
+
+        private final String cacheName;
+        private final Integer sender;
+
+        private SerializedForm(String cacheName, Integer sender) {
+            this.cacheName = cacheName;
+            this.sender = sender;
+        }
+
+        private Object readResolve() throws ObjectStreamException {
+            return new CacheMessage(cacheName, null, sender);
+        }
     }
-
-
-    public CacheMessage(String cacheName, Object key, Integer sender) {
-        this.cacheName = cacheName;
-        this.key = key;
-        this.sender = sender;
-    }
-
 }

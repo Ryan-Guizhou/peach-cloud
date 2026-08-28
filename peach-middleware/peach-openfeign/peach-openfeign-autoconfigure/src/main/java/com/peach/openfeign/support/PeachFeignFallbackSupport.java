@@ -9,8 +9,7 @@ import com.peach.openfeign.exception.PeachFeignTimeoutException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Feign 降级工厂通用支持组件。
- *
+ * PeachFeign降级支持类。
  * <p>业务 fallbackFactory 可复用该组件统一记录降级日志，并按 Sentinel 限流、
  * 熔断降级、超时、重试耗尽等原因返回基础响应。日志只记录 client、method
  * 与异常类型，不记录请求体、token 或敏感字段。</p>

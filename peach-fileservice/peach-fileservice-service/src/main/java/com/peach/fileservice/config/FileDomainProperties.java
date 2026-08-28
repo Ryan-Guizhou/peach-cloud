@@ -5,14 +5,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * 文件域配置属性
- *
+ * 文件Domain配置属性。
  * <p>定义文件服务的核心配置参数，包括存储提供者、对象键前缀、
  * 保留期、URL过期时间、清理任务等配置项。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Data
 @Component("fileDomainProperties")

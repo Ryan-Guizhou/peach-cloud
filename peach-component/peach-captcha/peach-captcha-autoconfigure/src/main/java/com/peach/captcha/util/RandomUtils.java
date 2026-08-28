@@ -8,6 +8,8 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
+ * 随机工具类 / Random tool class。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/21 13:50
@@ -69,7 +71,7 @@ public final class RandomUtils {
      */
     public static String getRandomString(int length){
         ThreadLocalRandom r = ThreadLocalRandom.current();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for(int i = 0; i<length; i++){
             sb.append(NUMBER_STRING.charAt(r.nextInt(NUMBER_STRING.length())));
         }

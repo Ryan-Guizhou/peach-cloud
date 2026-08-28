@@ -27,8 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * 资源管理接口。
- *
+ * 资源管理。
  * <p>提供资源列表查询、单条查询以及基础增删改入口。</p>
  *
  * @Author Mr Shu

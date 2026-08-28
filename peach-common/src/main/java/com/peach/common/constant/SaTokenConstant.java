@@ -1,7 +1,11 @@
 package com.peach.common.constant;
 
 /**
- * Sa-Token 跨模块共享常量（网关与业务服务 token 策略保持一致）。
+ * Sa令牌常量。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public final class SaTokenConstant {
 

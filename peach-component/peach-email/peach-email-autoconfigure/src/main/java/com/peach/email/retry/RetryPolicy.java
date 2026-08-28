@@ -1,10 +1,11 @@
 package com.peach.email.retry;
 
 /**
+ * 重试策略。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:07
- * @Description: 重试策略接口
  */
 public interface RetryPolicy {
 

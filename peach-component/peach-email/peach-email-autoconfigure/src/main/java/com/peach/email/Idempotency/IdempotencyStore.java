@@ -3,10 +3,11 @@ package com.peach.email.idempotency;
 import com.peach.email.core.SendResult;
 
 /**
+ * Idempotency存储。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:18
- * @Description: 幂等存储接口
  */
 public interface IdempotencyStore {
 

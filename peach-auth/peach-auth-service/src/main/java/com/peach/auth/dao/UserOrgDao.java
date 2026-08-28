@@ -10,8 +10,7 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
- * 用户机构关系 DAO。
- *
+ * 用户Org数据访问。
  * <p>用于维护用户与租户、机构之间的绑定关系，以及登录时的当前机构上下文查询。</p>
  *
  * @Author Mr Shu

@@ -12,6 +12,8 @@ import java.util.List;
 
 
 /**
+ * 自定义缓存解析器，根据id动态拼接缓存key，例如：userCache:123。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/10 15:15

@@ -11,11 +11,11 @@ import jakarta.annotation.Nullable;
 import java.util.Set;
 
 /**
- * Redis 数据访问接口。
+ * Redis数据访问。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2025/12/4
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2025/12/4
  */
 public interface RedisDao {
 

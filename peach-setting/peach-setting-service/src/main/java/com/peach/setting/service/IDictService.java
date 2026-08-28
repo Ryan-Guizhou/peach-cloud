@@ -11,6 +11,8 @@ import com.peach.setting.vo.DictTypeVO;
 import java.util.List;
 
 /**
+ * 字典服务接口。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 20:50

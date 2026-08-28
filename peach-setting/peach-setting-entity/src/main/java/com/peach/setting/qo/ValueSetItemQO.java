@@ -1,5 +1,7 @@
 package com.peach.setting.qo;
 
+import java.io.Serial;
+
 import com.peach.common.PeachEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -8,6 +10,8 @@ import lombok.EqualsAndHashCode;
 import java.io.Serializable;
 
 /**
+ * 值集项查询对象。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 20:40
@@ -18,7 +22,8 @@ import java.io.Serializable;
 @Schema(description = "值集项查询对象")
 public class ValueSetItemQO extends PeachEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -6856549050428742407L;
 
     @Schema(description = "租户ID")
     private String tenantId;

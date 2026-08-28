@@ -7,21 +7,19 @@ import com.peach.fileservice.vo.CloudStorageInstanceVO;
 import java.util.List;
 
 /**
- * 云存储实例服务接口。
- *
+ * ICloud存储实例服务类。
  * <p>
  * 负责管理系统中的云存储实例信息，包括：
  * 云存储实例新增、修改、删除、启停用、连接测试以及实例查询等功能。
  * </p>
- *
  * <p>
  * 云存储实例主要用于维护不同类型存储服务的连接配置，
  * 例如对象存储（OSS、OBS、COS、S3）、文件存储（NAS）等。
  * </p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/7/9
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/7/9
  */
 public interface ICloudStorageInstanceService {
 

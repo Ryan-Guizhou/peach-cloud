@@ -30,7 +30,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Default browser service for persisted storage instances.
+ * 云存储浏览器服务实现类。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Indexed
 @Service

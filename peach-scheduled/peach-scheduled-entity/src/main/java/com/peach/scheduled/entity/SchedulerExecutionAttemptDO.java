@@ -3,7 +3,7 @@ package com.peach.scheduled.entity;
 import java.time.LocalDateTime;
 
 /**
- * 调度执行尝试记录。
+ * 调度执行Attempt数据对象。
  *
  * @Author Mr Shu
  * @Version 1.0.0

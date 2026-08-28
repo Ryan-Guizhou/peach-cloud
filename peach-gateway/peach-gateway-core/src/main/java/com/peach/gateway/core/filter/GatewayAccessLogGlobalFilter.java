@@ -13,8 +13,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
- * 网关访问日志过滤器。
- *
+ * 网关Access日志Global过滤器。
  * <p>仅记录请求方法、路径、状态码、耗时、客户端地址和请求 ID，不记录 query、body、token。</p>
  *
  * @Author Mr Shu

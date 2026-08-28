@@ -27,8 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * 云存储实例管理接口。
- *
+ * 云存储实例管理。
  * <p>提供云存储实例的新增、修改、删除、启停、连通性测试和查询接口，仅负责实例配置管理。</p>
  *
  * @Author Mr Shu
@@ -51,7 +50,7 @@ public class CloudStorageInstanceController {
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增云存储实例,实例名称:['+#p0.instanceName+']'")
     public Response add(@Validated(PeachGroup.InsertGroup.class) @RequestBody CloudStorageInstanceSaveDTO data) {
-        log.info("新增云存储实例,实例名称={}", data.getInstanceName());
+        log.info("Creating cloud storage instance, instanceName={}", data.getInstanceName());
         return Response.success(cloudStorageService.add(data));
     }
 
@@ -60,7 +59,7 @@ public class CloudStorageInstanceController {
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'更新云存储实例,实例ID:['+#p0.instanceId+'],实例名称:['+#p0.instanceName+']'")
     public Response update(@Validated(PeachGroup.UpdateGroup.class) @RequestBody CloudStorageInstanceSaveDTO data) {
-        log.info("更新云存储实例,实例ID={},实例名称={}", data.getInstanceId(), data.getInstanceName());
+        log.info("Updating cloud storage instance, instanceId={}, instanceName={}", data.getInstanceId(), data.getInstanceName());
         return Response.success(cloudStorageService.update(data));
     }
 
@@ -69,7 +68,7 @@ public class CloudStorageInstanceController {
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.DELETE,
             optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除云存储实例,实例ID:['+#p0+']'")
     public Response delete(@NotBlank(message = "实例ID不能为空") @PathVariable String instanceId) {
-        log.info("删除云存储实例,实例ID={}", instanceId);
+        log.info("Deleting cloud storage instance, instanceId={}", instanceId);
         cloudStorageService.delete(instanceId);
         return Response.success();
     }
@@ -79,7 +78,7 @@ public class CloudStorageInstanceController {
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'启用云存储实例,实例ID:['+#p0+']'")
     public Response enable(@NotBlank(message = "实例ID不能为空") @PathVariable String instanceId) {
-        log.info("启用云存储实例,实例ID={}", instanceId);
+        log.info("Enabling cloud storage instance, instanceId={}", instanceId);
         cloudStorageService.enable(instanceId);
         return Response.success();
     }
@@ -89,7 +88,7 @@ public class CloudStorageInstanceController {
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'禁用云存储实例,实例ID:['+#p0+']'")
     public Response disable(@NotBlank(message = "实例ID不能为空") @PathVariable String instanceId) {
-        log.info("禁用云存储实例,实例ID={}", instanceId);
+        log.info("Disabling cloud storage instance, instanceId={}", instanceId);
         cloudStorageService.disable(instanceId);
         return Response.success();
     }
@@ -99,7 +98,7 @@ public class CloudStorageInstanceController {
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.SELECT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'测试云存储连通性,实例名称:['+#p0.instanceName+']'")
     public Response testConnection(@Validated(PeachGroup.InsertGroup.class) @RequestBody CloudStorageInstanceSaveDTO data) {
-        log.info("测试云存储连通性,实例名称={}", data.getInstanceName());
+        log.info("Testing cloud storage connectivity, instanceName={}", data.getInstanceName());
         return Response.success(cloudStorageService.testConnection(data));
     }
 
@@ -108,7 +107,7 @@ public class CloudStorageInstanceController {
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.SELECT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'查询云存储实例,实例ID:['+#p0+']'")
     public Response selectById(@NotBlank(message = "实例ID不能为空") @PathVariable String instanceId) {
-        log.info("查询云存储实例,实例ID={}", instanceId);
+        log.info("Fetching cloud storage instance, instanceId={}", instanceId);
         return Response.success(cloudStorageService.selectById(instanceId));
     }
 
@@ -117,7 +116,7 @@ public class CloudStorageInstanceController {
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.SELECT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'查询云存储实例列表'")
     public Response list(@RequestBody(required = false) CloudStorageInstanceQO data) {
-        log.info("查询云存储实例列表,实例名称={},存储类型={},启用状态={}",
+        log.info("Listing cloud storage instances, instanceName={}, storeType={}, enabled={}",
                 data == null ? null : data.getInstanceName(),
                 data == null ? null : data.getStoreType(),
                 data == null ? null : data.getEnabled());
@@ -125,11 +124,11 @@ public class CloudStorageInstanceController {
     }
 
     @GetMapping("/listEnabled")
-    @Operation(summary = "查询已启用云存储实例列表")
+    @Operation(summary = "Listing enabled cloud storage instances")
     @UserOperLog(moduleCode = UserLogEnum.Module.FILESERVICE, optType = UserLogEnum.OptType.SELECT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'查询已启用云存储实例列表'")
     public Response listEnabled() {
-        log.info("查询已启用云存储实例列表");
+        log.info("Listing enabled cloud storage instances");
         return Response.success(cloudStorageService.listEnabled());
     }
 }

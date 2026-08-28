@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
+ * 暴露给外部的监控服务接口。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/7/8 13:42

@@ -2,6 +2,7 @@ package com.peach.common.validate;
 
 import org.springframework.stereotype.Indexed;
 import com.peach.common.exception.ValidationException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -16,8 +17,9 @@ import java.util.stream.Collectors;
 
 
 /**
- * 通用验证器工具类
+ * 通用校验器。
  * 提供对象属性验证、批量验证等功能
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/11/10 18:34
@@ -25,14 +27,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @Indexed
 @Component
+@RequiredArgsConstructor
 public class CommonValidator {
 
     private final Validator validator;
-
-
-    public CommonValidator(Validator validator) {
-        this.validator = validator;
-    }
 
     /**
      * 校验对象（使用默认分组）
@@ -66,12 +64,12 @@ public class CommonValidator {
                             if (!violations.isEmpty()) {
                                 Set<String> set = convertToMessage(violations);
                                 String errorMessage = set.stream().collect(Collectors.joining(","));
-                                log.error("对象验证失败，共{}个错误：{}", violations.size(), errorMessage);
+                                log.error("Object validation failed with {} error(s): {}", violations.size(), errorMessage);
                                 throw new ValidationException(errorMessage);
                             }
 
                             if (log.isDebugEnabled()) {
-                                log.debug("对象验证通过: {}", validObj.getClass().getSimpleName());
+                                log.debug("Object validation passed: {}", validObj.getClass().getSimpleName());
                             }
                         }
                 );
@@ -218,12 +216,12 @@ public class CommonValidator {
                     if (!violations.isEmpty()) {
                         Set<String> set = convertToMessage(violations);
                         String errorMessage = set.stream().collect(Collectors.joining(","));
-                        log.error("对象验证失败，共{}个错误：{}", violations.size(), errorMessage);
+                        log.error("Object validation failed with {} error(s): {}", violations.size(), errorMessage);
                         throw new ValidationException(errorMessage);
                     }
 
                     if (log.isDebugEnabled()) {
-                        log.debug("对象验证通过: {}", validObj.getClass().getSimpleName());
+                        log.debug("Object validation passed: {}", validObj.getClass().getSimpleName());
                     }
                 });
 
@@ -332,7 +330,11 @@ public class CommonValidator {
     }
 
     /**
-     *  字段错误信息
+     * ValidationDetail。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class ValidationDetail {
 

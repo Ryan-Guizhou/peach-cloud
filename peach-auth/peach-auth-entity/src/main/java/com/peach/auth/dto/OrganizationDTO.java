@@ -1,5 +1,7 @@
 package com.peach.auth.dto;
 
+import java.io.Serial;
+
 import com.peach.common.PeachGroup;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -10,6 +12,8 @@ import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
+ * 机构DTO。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/7/8 14:10
@@ -17,7 +21,9 @@ import java.io.Serializable;
 @Data
 @Schema(description = "机构DTO")
 public class OrganizationDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = -8686817700851458692L;
 
     @Schema(description = "机构ID")
     @NotBlank(message = "机构ID不能为空", groups = {PeachGroup.UpdateGroup.class})

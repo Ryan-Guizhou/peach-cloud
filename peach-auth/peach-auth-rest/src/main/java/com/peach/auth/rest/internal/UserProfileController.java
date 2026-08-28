@@ -2,6 +2,7 @@ package com.peach.auth.rest.internal;
 
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
 import com.peach.auth.dto.UserProfileUpdateDTO;
 import com.peach.auth.service.IUserProfileService;
@@ -21,6 +22,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * 个人中心。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
+@Slf4j
 @Validated
 @Indexed
 @RestController

@@ -1,22 +1,27 @@
 package com.peach.fileservice.dto;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
 
 /**
- * 云存储对象列表浏览请求参数
+ * 云存储浏览器列表请求参数。
  * 用于前端向服务端发起文件/目录列表查询的请求数据传输对象
  *
- * @author your-name
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  * @date 2026-07-09
  */
 @Data
 @Schema(description = "云存储浏览器列表请求参数")
 public class CloudStorageListDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -8552886072345481486L;
 
     /**
      * 相对路径

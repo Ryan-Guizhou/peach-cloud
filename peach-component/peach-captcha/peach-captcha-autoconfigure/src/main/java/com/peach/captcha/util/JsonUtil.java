@@ -5,11 +5,12 @@ import com.peach.captcha.model.PointVO;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /**
+ * Json工具类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/21 18:10
@@ -28,7 +29,7 @@ public final class JsonUtil {
      */
     public static List<PointVO> parseArray(String text) {
         if (text == null) {
-            return Collections.emptyList();
+            return List.of();
         } else {
             String[] arr = text.replaceFirst("\\[","")
                     .replaceFirst("\\]","").split("\\}");
@@ -51,10 +52,9 @@ public final class JsonUtil {
             return null;
         }
         try {
-            PointVO ret =  clazz.getDeclaredConstructor().newInstance();
-            return ret.parse(text);
-        }catch (Exception ex){
-            log.error("json解析异常,text={}", text, ex);
+            return PointVO.parseJson(text);
+        } catch (Exception ex) {
+            log.error("JSON parsing failed, text={}", text, ex);
             return null;
         }
     }

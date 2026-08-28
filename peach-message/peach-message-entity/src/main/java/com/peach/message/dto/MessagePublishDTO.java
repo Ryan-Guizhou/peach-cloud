@@ -1,5 +1,7 @@
 package com.peach.message.dto;
 
+import java.io.Serial;
+
 import com.peach.message.common.enums.MessageEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -10,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * 消息发布DTO。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45
@@ -18,7 +22,8 @@ import java.util.Map;
 @Data
 public class MessagePublishDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 6657063581023708609L;
 
     @Schema(description = "消息类型")
     private String messageType;

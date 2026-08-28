@@ -1,5 +1,7 @@
 package com.peach.auth.dto;
 
+import java.io.Serial;
+
 import com.peach.auth.group.LoginGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -10,6 +12,8 @@ import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 
 /**
+ * 登录DTO。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/24 15:36
@@ -17,7 +21,9 @@ import java.io.Serializable;
 @Data
 @Schema(description = "登录DTO")
 public class LoginDTO implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = -8673490179027899291L;
 
     @Schema(description = "用户名，可以是手机号、邮箱、账号")
     @NotBlank(message = "用户名不能为空", groups = {LoginGroup.Login.class})

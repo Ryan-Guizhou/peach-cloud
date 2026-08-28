@@ -8,8 +8,7 @@ import com.peach.auth.vo.OrganizationVO;
 import java.util.List;
 
 /**
- * 机构服务接口。
- *
+ * IOrganization服务类。
  * <p>提供机构的分页查询、单条查询和基础增删改能力。</p>
  *
  * @Author Mr Shu

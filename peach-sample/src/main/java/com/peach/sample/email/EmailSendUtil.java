@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * 邮件发送工具类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/10 10:59

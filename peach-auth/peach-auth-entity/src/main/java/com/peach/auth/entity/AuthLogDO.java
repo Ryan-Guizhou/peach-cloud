@@ -1,5 +1,7 @@
 package com.peach.auth.entity;
 
+import java.io.Serial;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import jakarta.persistence.Column;
@@ -9,6 +11,8 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
+ * AuthLog实体。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/17 17:36
@@ -18,7 +22,9 @@ import java.io.Serializable;
 @Table(name = "PEACH_AUTH_LOG")
 @Schema(description = "AuthLog实体")
 public class AuthLogDO  implements Serializable {
-    private static final long serialVersionUID = 1L;
+
+    @Serial
+    private static final long serialVersionUID = -2722983120034541958L;
 
     @Id
     @Column(name = "LOG_ID")

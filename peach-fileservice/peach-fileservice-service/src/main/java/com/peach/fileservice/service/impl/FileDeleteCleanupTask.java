@@ -11,14 +11,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
 
 /**
- * 过期删除文件清理定时任务
- *
+ * 文件DeleteCleanup任务。
  * <p>定期物理删除超过保留期的逻辑删除文件，释放存储空间。
  * 清理频率通过 {@link FileDomainProperties#getCleanupCron()} 配置。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Slf4j
 @Indexed

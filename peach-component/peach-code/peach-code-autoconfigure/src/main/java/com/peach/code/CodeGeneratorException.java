@@ -1,10 +1,13 @@
 package com.peach.code;
 
 /**
- * 业务编码生成失败异常。
- *
+ * 代码Generator异常。
  * <p>用于表示编码规则缺失、配置非法、规则停用、调用事务边界错误或序号达到上限等
  * 可识别的业务失败，不用于表示 Redis 水位更新失败。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public class CodeGeneratorException extends RuntimeException {
 

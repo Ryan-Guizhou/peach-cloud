@@ -8,6 +8,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.awt.Font;
 
 /**
+ * 验证码配置属性。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 17:06

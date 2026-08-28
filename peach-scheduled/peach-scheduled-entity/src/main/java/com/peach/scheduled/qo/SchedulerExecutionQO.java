@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
- * 调度执行实例列表查询对象。
+ * 调度执行实例列表查询条件。
  *
  * @Author Mr Shu
  * @Version 1.0.0

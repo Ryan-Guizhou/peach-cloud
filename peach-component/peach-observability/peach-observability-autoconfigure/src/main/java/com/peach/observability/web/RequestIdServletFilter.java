@@ -13,10 +13,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Servlet 请求 ID 过滤器。
- *
+ * 请求IdServlet过滤器。
  * <p>过滤器解析或生成请求 ID，将其写入请求属性、响应头和 MDC，并在请求完成后恢复原有
  * MDC 值，防止线程复用造成上下文泄漏。过滤器不会记录请求体、查询参数或认证信息。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public final class RequestIdServletFilter extends OncePerRequestFilter {
 

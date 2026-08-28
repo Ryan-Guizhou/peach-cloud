@@ -30,6 +30,7 @@ import java.util.Properties;
 
 
 /**
+ * PeachGenerator启动类。
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025-11-25 17:47

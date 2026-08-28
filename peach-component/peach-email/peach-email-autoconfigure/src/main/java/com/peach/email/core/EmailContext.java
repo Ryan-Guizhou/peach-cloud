@@ -4,12 +4,12 @@ import java.util.Optional;
 import java.util.Properties;
 
 /**
+ * 邮件传输上下文：承载 SMTP 连接所需的主机、端口、SSL 与认证信息，
+ * 可通过 extra 注入额外 JavaMail 属性（如超时等）。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/9 15:44
- * @Description
- * 传输上下文：承载 SMTP 连接所需的主机、端口、SSL 与认证信息，
- * 可通过 extra 注入额外 JavaMail 属性（如超时等）。
  */
 public class EmailContext {
 

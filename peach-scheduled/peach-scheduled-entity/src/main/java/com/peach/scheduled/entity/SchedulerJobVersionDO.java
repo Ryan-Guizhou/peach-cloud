@@ -3,7 +3,7 @@ package com.peach.scheduled.entity;
 import java.time.LocalDateTime;
 
 /**
- * 调度任务定义版本快照。
+ * 调度任务Version数据对象。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  */
 public class SchedulerJobVersionDO {
 
-    private Long jobId;
+    private String jobId;
 
     private Long scheduleVersion;
 
@@ -49,11 +49,11 @@ public class SchedulerJobVersionDO {
 
     private String creatorId;
 
-    public Long getJobId() {
+    public String getJobId() {
         return jobId;
     }
 
-    public void setJobId(Long jobId) {
+    public void setJobId(String jobId) {
         this.jobId = jobId;
     }
 

@@ -18,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
 
 /**
+ * 资源管理。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/2/1 15:07

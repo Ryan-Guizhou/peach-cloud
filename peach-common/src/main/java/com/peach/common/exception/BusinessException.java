@@ -9,6 +9,8 @@ import lombok.EqualsAndHashCode;
 import java.util.Optional;
 
 /**
+ * Business异常。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/11 9:39

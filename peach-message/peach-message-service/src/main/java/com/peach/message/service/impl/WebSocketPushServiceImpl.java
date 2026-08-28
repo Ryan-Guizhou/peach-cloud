@@ -16,6 +16,8 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
 /**
+ * WebSocket 推送服务实现。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/23 14:45

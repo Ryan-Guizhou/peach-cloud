@@ -1,5 +1,7 @@
 package com.peach.setting.dto;
 
+import java.io.Serial;
+
 import com.peach.setting.comon.enums.NoticeGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -9,6 +11,8 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
+ * 通知发布DTO。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 21:50
@@ -17,7 +21,8 @@ import java.util.List;
 @Data
 public class NoticePublishDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 3649848894302126986L;
 
     @Schema(description = "通知ID")
     @NotBlank(groups = {NoticeGroup.PublishGroup.class}, message = "通知ID不能为空")

@@ -3,6 +3,8 @@ package com.peach.initialize.base;
 import org.springframework.context.ConfigurableApplicationContext;
 
 /**
+ * 初始化处理顶级抽象接口。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/16 14:50
