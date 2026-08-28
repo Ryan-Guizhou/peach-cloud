@@ -35,14 +35,13 @@ import com.peach.storage.spi.StorageProvider;
 import java.io.InputStream;
 
 /**
- * MultiZoneStorage 默认实现。
- *
+ * DefaultMultiZoneStorage相关类。
  * <p>该类只做业务入口委托，不直接引用任何云厂商 SDK 类型。所有云厂商差异均下沉到
  * {@link StorageProvider} 实现中。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 public class DefaultMultiZoneStorage implements MultiZoneStorage {
 

@@ -1,6 +1,8 @@
 package com.peach.redission.distrbutedlock.strategy;
 
 /**
+ * 锁TimeOut策略。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/26 9:47

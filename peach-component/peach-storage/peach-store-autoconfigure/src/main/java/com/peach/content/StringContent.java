@@ -6,11 +6,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 基于字符串的上传内容。
+ * 字符串内容。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/10 15:26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/10 15:26
  */
 public class StringContent implements UploadContent {
 

@@ -5,8 +5,7 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Peach Scheduler 执行器侧配置属性。
- *
+ * Peach调度配置属性。
  * <p>该配置只描述业务应用接入 Scheduler Executor Runtime 所需的通用参数，不包含中央控制面的
  * Quartz、JDBC 或任务定义管理配置。</p>
  *
@@ -63,7 +62,7 @@ public class PeachSchedulerProperties {
     }
 
     /**
-     * 业务应用执行器配置。
+     * Executor。
      *
      * @Author Mr Shu
      * @Version 1.0.0

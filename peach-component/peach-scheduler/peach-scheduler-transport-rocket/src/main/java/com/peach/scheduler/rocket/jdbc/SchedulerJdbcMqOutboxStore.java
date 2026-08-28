@@ -18,16 +18,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
- * 调度模块相关说明。
- *
- * <p>调度模块相关说明。
- * 调度模块相关说明。
- * 调度模块相关说明。
- * 调度模块相关说明。
- * 调度模块相关说明。</p>
- *
- * <p>调度模块相关说明。
- * 调度模块相关说明。</p>
+ * 调度JdbcMQ发件箱存储。
+ * <p>调度模块说明。
+ * 调度模块说明。
+ * 调度模块说明。
+ * 调度模块说明。
+ * 调度模块说明。</p>
+ * <p>调度模块说明。
+ * 调度模块说明。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -48,9 +46,9 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     private final String claimantId;
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param jdbcTemplate 参数说明
+     * @param jdbcTemplate jdbc Template。
      */
     public SchedulerJdbcMqOutboxStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -58,17 +56,17 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void save(MqOutboxEvent event) {
         LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         jdbcTemplate.update(INSERT_SQL,
-                event.getMessageId(),
-                event.getTopic(),
-                event.getTag(),
-                event.getBusinessKey(),
-                Base64.getEncoder().encodeToString(event.getBody()),
+                event.messageId(),
+                event.topic(),
+                event.tag(),
+                event.businessKey(),
+                Base64.getEncoder().encodeToString(event.body()),
                 "NORMAL",
                 MqOutboxStatus.INIT.name(),
                 0,
@@ -78,7 +76,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public List<MqOutboxEvent> findPending(int batchSize) {
@@ -102,7 +100,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void markSent(String messageId) {
@@ -115,7 +113,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void markFailed(String messageId) {
@@ -134,7 +132,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public boolean replay(String messageId) {
@@ -159,28 +157,32 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 调度模块相关说明。
+     * 发件箱RowMapper。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     private static final class OutboxRowMapper implements RowMapper<MqOutboxEvent> {
 
         /**
-         * 继承接口定义。
+         * 接口实现。
          */
         @Override
         public MqOutboxEvent mapRow(ResultSet resultSet, int rowNum) throws SQLException {
-            MqOutboxEvent event = new MqOutboxEvent();
-            event.setMessageId(resultSet.getString("MESSAGE_ID"));
-            event.setTopic(resultSet.getString("TOPIC"));
-            event.setTag(resultSet.getString("TAG"));
-            event.setBusinessKey(resultSet.getString("BUSINESS_KEY"));
-            event.setBody(Base64.getDecoder().decode(resultSet.getString("PAYLOAD")));
-            event.setStatus(MqOutboxStatus.valueOf(resultSet.getString("STATUS")));
-            event.setRetryCount(resultSet.getInt("RETRY_COUNT"));
             Timestamp createdAt = resultSet.getTimestamp("CREATED_AT");
             Timestamp updatedAt = resultSet.getTimestamp("UPDATED_AT");
-            event.setCreatedAt(createdAt == null ? null : createdAt.toLocalDateTime());
-            event.setUpdatedAt(updatedAt == null ? null : updatedAt.toLocalDateTime());
-            return event;
+            return new MqOutboxEvent(
+                    resultSet.getString("MESSAGE_ID"),
+                    Base64.getDecoder().decode(resultSet.getString("PAYLOAD")),
+                    resultSet.getString("TOPIC"),
+                    resultSet.getString("TAG"),
+                    resultSet.getString("BUSINESS_KEY"),
+                    null,
+                    MqOutboxStatus.valueOf(resultSet.getString("STATUS")),
+                    resultSet.getInt("RETRY_COUNT"),
+                    createdAt == null ? null : createdAt.toLocalDateTime(),
+                    updatedAt == null ? null : updatedAt.toLocalDateTime());
         }
     }
 }

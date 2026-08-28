@@ -11,11 +11,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * Peach RocketMQ 示例消息发送 Runner。
+ * PeachRocketMQ示例运行器。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 @Slf4j
 @Indexed

@@ -9,20 +9,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * 存储 provider 注册中心。
- *
+ * StorageProviderRegistry相关类。
  * <p>注册中心负责按实例名称和存储类型查找 provider。名称查找用于业务指定具体实例，
  * 类型查找用于只配置了单个同类型实例的简单场景。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 @Slf4j
 public class StorageProviderRegistry implements DisposableBean {
@@ -53,7 +51,7 @@ public class StorageProviderRegistry implements DisposableBean {
                 providersMap.put(name, provider);
             }
         }
-        this.providersByName = Collections.unmodifiableMap(providersMap);
+        this.providersByName = Map.copyOf(providersMap);
         log.info("StorageProviderRegistry initialized from collection. providers={}",
                 StorageLogSanitizer.providerNames(this.providersByName));
     }
@@ -82,7 +80,7 @@ public class StorageProviderRegistry implements DisposableBean {
                 providersMap.put(name, provider);
             });
         }
-        this.providersByName = Collections.unmodifiableMap(providersMap);
+        this.providersByName = Map.copyOf(providersMap);
         log.info("StorageProviderRegistry initialized from map. providers={}",
                 StorageLogSanitizer.providerNames(this.providersByName));
     }

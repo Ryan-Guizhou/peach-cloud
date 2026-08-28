@@ -17,6 +17,8 @@ import static com.peach.redission.distrbutedlock.locker.LockType.REENTRANT;
 import static com.peach.redission.distrbutedlock.locker.LockType.WRITE;
 
 /**
+ * DistrbutedLocker管理器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/25 19:02

@@ -4,11 +4,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 初始化分片上传请求。
+ * InitiateMultipartUploadRequest相关类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 14:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 14:15
  */
 public class InitiateMultipartUploadRequest extends StorageObjectRequest {
 

@@ -12,7 +12,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 /**
- * 自动配置。
+ * PeachQuartz自动配置。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -22,18 +22,12 @@ import org.springframework.context.annotation.Bean;
 @EnableConfigurationProperties(PeachQuartzProperties.class)
 @Indexed
 public class PeachQuartzAutoConfiguration {
-    /**
-     * 创建相关对象。
-     */
-    public PeachQuartzAutoConfiguration() {
-        // Intentionally empty.
-    }
 
     /**
      * 注册相关能力。
-     * @param scheduler 参数说明
-     * @param triggerHandler 参数说明
-     * @return 返回结果
+     * @param scheduler scheduler。
+     * @param triggerHandler trigger Handler。
+     * @return 执行结果。
      */
     @Bean
     @ConditionalOnBean(ScheduleTriggerHandler.class)
@@ -42,10 +36,10 @@ public class PeachQuartzAutoConfiguration {
     }
 
     /**
-     * 创建相关对象。
-     * @param scheduler 参数说明
-     * @param properties 参数说明
-     * @return 返回结果
+     * 创建实例。
+     * @param scheduler scheduler。
+     * @param properties properties。
+     * @return 执行结果。
      */
     @Bean
     @ConditionalOnMissingBean(name = "quartzSchedulingProvider")

@@ -8,11 +8,14 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
- * 异步任务上下文包装器。
- *
+ * Task包装器。
  * <p>在任务提交线程捕获 Micrometer 上下文、MDC 和可选的 Spring Security 上下文，在工作
  * 线程执行期间恢复，并在任务结束后还原工作线程原有状态。该行为保证 requestId、traceId、
  * spanId 等关联字段不会因为线程切换丢失，也不会在线程复用时泄漏到后续任务。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Slf4j
 public class TaskWrapper {

@@ -4,17 +4,15 @@ import com.peach.enums.StorageResultCode;
 import com.peach.exception.StorageException;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * 批量删除对象请求。
- *
+ * BatchDeleteObjectsRequest相关类。
  * <p>当前用于删除同一 bucket 下的多个对象 key。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/17 16:20
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/17 16:20
  */
 public class BatchDeleteObjectsRequest {
 
@@ -35,7 +33,7 @@ public class BatchDeleteObjectsRequest {
 
     private BatchDeleteObjectsRequest(Builder builder) {
         this.bucketName = builder.bucketName;
-        this.objectKeys = Collections.unmodifiableList(new ArrayList<>(builder.objectKeys));
+        this.objectKeys = List.copyOf(builder.objectKeys);
         this.quiet = builder.quiet;
     }
 

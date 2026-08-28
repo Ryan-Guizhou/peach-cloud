@@ -26,11 +26,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 默认实现。
- *
- * <p>调度模块相关说明。
- * 调度模块相关说明。
- * 调度模块相关说明。</p>
+ * DefaultPeachJobExecutor相关类。
+ * <p>调度模块说明。
+ * 调度模块说明。
+ * 调度模块说明。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -68,60 +67,60 @@ public class DefaultPeachJobExecutor implements PeachJobExecutor {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void execute(JobExecutionCommand command) {
         validate(command);
         String instanceId = resolveInstanceId();
-        if (!leaseClient.claim(command.getExecutionId(), instanceId)) {
+        if (!leaseClient.claim(command.executionId(), instanceId)) {
             log.info("Scheduler execution claim rejected, executionId={}, jobCode={}, executorInstance={}",
-                    command.getExecutionId(), command.getJobCode(), instanceId);
+                    command.executionId(), command.jobCode(), instanceId);
             return;
         }
-        JobHandler handler = registry.getRequired(command.getHandlerName());
+        JobHandler handler = registry.getRequired(command.handlerName());
         Instant startedAt = Instant.now();
         log.info("Scheduler execution started, executionId={}, jobCode={}, handlerName={}, attempt={}, executorInstance={}",
-                command.getExecutionId(), command.getJobCode(), command.getHandlerName(), command.getAttempt(), instanceId);
+                command.executionId(), command.jobCode(), command.handlerName(), command.attempt(), instanceId);
         Future<JobResult> future = threadPoolManager.submit(PoolType.SCHEDULED, () -> handler.execute(new JobContext(
-                command.getExecutionId(), command.getJobCode(), command.getApplicationName(), command.getParameters(),
-                Math.max(1, command.getAttempt()), command.getTraceId())));
-        JobExecutionResultEvent event = new JobExecutionResultEvent();
-        event.setExecutionId(command.getExecutionId());
-        event.setExecutorInstance(instanceId);
-        event.setStartedAt(startedAt);
+                command.executionId(), command.jobCode(), command.applicationName(), command.parameters(),
+                Math.max(1, command.attempt()), command.traceId())));
+        JobExecutionResultEvent.Builder eventBuilder = JobExecutionResultEvent.builder()
+                .executionId(command.executionId())
+                .executorInstance(instanceId)
+                .startedAt(startedAt);
         try {
-            JobResult result = waitFor(future, command.getTimeoutMs());
+            JobResult result = waitFor(future, command.timeoutMs());
             if (result == null || !result.isSuccess()) {
-                event.setStatus(ExecutionResultStatus.FAILED);
-                event.setResultCode(result == null ? "NULL_RESULT" : result.getCode());
-                event.setErrorMessage(sanitize(result == null ? "Handler returned null result" : result.getMessage()));
+                eventBuilder.status(ExecutionResultStatus.FAILED)
+                        .resultCode(result == null ? "NULL_RESULT" : result.getCode())
+                        .errorMessage(sanitize(result == null ? "Handler returned null result" : result.getMessage()));
             } else {
-                event.setStatus(ExecutionResultStatus.SUCCEEDED);
-                event.setResultCode(result.getCode());
+                eventBuilder.status(ExecutionResultStatus.SUCCEEDED)
+                        .resultCode(result.getCode());
             }
         } catch (TimeoutException ex) {
             future.cancel(true);
-            event.setStatus(ExecutionResultStatus.TIMED_OUT);
-            event.setResultCode("TIMEOUT");
-            event.setErrorMessage("Execution exceeded configured timeout");
+            eventBuilder.status(ExecutionResultStatus.TIMED_OUT)
+                    .resultCode("TIMEOUT")
+                    .errorMessage("Execution exceeded configured timeout");
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            event.setStatus(ExecutionResultStatus.FAILED);
-            event.setResultCode("INTERRUPTED");
-            event.setErrorMessage("Executor thread was interrupted");
+            eventBuilder.status(ExecutionResultStatus.FAILED)
+                    .resultCode("INTERRUPTED")
+                    .errorMessage("Executor thread was interrupted");
         } catch (ExecutionException ex) {
             Throwable cause = ex.getCause() == null ? ex : ex.getCause();
-            event.setStatus(ExecutionResultStatus.FAILED);
-            event.setResultCode(cause.getClass().getSimpleName());
-            event.setErrorMessage(sanitize(cause.getMessage()));
+            eventBuilder.status(ExecutionResultStatus.FAILED)
+                    .resultCode(cause.getClass().getSimpleName())
+                    .errorMessage(sanitize(cause.getMessage()));
             log.error("Scheduler execution failed, executionId={}, jobCode={}, errorType={}",
-                    command.getExecutionId(), command.getJobCode(), cause.getClass().getName());
+                    command.executionId(), command.jobCode(), cause.getClass().getName());
         }
-        event.setFinishedAt(Instant.now());
+        JobExecutionResultEvent event = eventBuilder.finishedAt(Instant.now()).build();
         resultReporter.report(event);
         log.info("Scheduler execution finished, executionId={}, jobCode={}, status={}, executorInstance={}",
-                command.getExecutionId(), command.getJobCode(), event.getStatus(), instanceId);
+                command.executionId(), command.jobCode(), event.status(), instanceId);
     }
 
     private JobResult waitFor(Future<JobResult> future, long commandTimeoutMs)
@@ -134,12 +133,12 @@ public class DefaultPeachJobExecutor implements PeachJobExecutor {
     }
 
     private void validate(JobExecutionCommand command) {
-        if (command == null || blank(command.getExecutionId()) || blank(command.getJobCode())
-                || blank(command.getApplicationName()) || blank(command.getHandlerName())) {
+        if (command == null || blank(command.executionId()) || blank(command.jobCode())
+                || blank(command.applicationName()) || blank(command.handlerName())) {
             throw new IllegalArgumentException("Scheduler execution command is incomplete");
         }
         String localApp = properties.getExecutor().getApplicationName();
-        if (!blank(localApp) && !localApp.equals(command.getApplicationName())) {
+        if (!blank(localApp) && !localApp.equals(command.applicationName())) {
             throw new IllegalArgumentException("Scheduler command target application does not match local application");
         }
     }

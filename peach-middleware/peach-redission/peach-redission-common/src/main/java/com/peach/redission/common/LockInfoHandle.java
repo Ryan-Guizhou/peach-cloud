@@ -3,6 +3,8 @@ package com.peach.redission.common;
 import org.aspectj.lang.JoinPoint;
 
 /**
+ * 锁Info处理器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/19 18:53

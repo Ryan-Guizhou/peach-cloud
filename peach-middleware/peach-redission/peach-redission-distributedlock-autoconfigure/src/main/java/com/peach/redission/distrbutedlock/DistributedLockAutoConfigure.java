@@ -16,14 +16,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 
 /**
- * 分布式锁自动配置。
- *
+ * Distributed锁Auto自动配置。
  * <p>注册 {@link LockInfoHandle} Bean 名 {@value LockInfoType#DISTRIBUTE}，供
  * {@link LockInfoHandleFactory#getLockHandle(String)} 按类型字符串解析。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2025/12/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2025/12/26
  */
 @AutoConfiguration
 @AutoConfigureAfter(RedisConfig.class)

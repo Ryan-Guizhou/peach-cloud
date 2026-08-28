@@ -3,7 +3,7 @@ package com.peach.scheduler.model;
 import java.time.Instant;
 
 /**
- * 调度引擎无关的数据模型。
+ * JobDefinition相关类。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -22,13 +22,6 @@ public class JobDefinition {
     private ConcurrencyPolicy concurrencyPolicy = ConcurrencyPolicy.DISALLOW;
     private String parameters;
     private boolean enabled;
-
-    /**
-     * 创建相关对象。
-     */
-    public JobDefinition() {
-        // Intentionally empty.
-    }
 
     /**
      * 校验相关数据。
@@ -55,7 +48,7 @@ public class JobDefinition {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public String getJobCode() {
         return jobCode;
@@ -63,7 +56,7 @@ public class JobDefinition {
     /**
      * 设置相关数据。
      *
-     * @param jobCode 参数说明
+     * @param jobCode job Code。
      */
     public void setJobCode(String jobCode) {
         this.jobCode = jobCode;
@@ -71,7 +64,7 @@ public class JobDefinition {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public String getApplicationName() {
         return applicationName;
@@ -79,7 +72,7 @@ public class JobDefinition {
     /**
      * 设置相关数据。
      *
-     * @param applicationName 参数说明
+     * @param applicationName application Name。
      */
     public void setApplicationName(String applicationName) {
         this.applicationName = applicationName;
@@ -87,7 +80,7 @@ public class JobDefinition {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public String getHandlerName() {
         return handlerName;
@@ -95,7 +88,7 @@ public class JobDefinition {
     /**
      * 设置相关数据。
      *
-     * @param handlerName 参数说明
+     * @param handlerName handler Name。
      */
     public void setHandlerName(String handlerName) {
         this.handlerName = handlerName;
@@ -103,7 +96,7 @@ public class JobDefinition {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public ScheduleType getScheduleType() {
         return scheduleType;
@@ -111,7 +104,7 @@ public class JobDefinition {
     /**
      * 设置相关数据。
      *
-     * @param scheduleType 参数说明
+     * @param scheduleType schedule Type。
      */
     public void setScheduleType(ScheduleType scheduleType) {
         this.scheduleType = scheduleType;
@@ -119,7 +112,7 @@ public class JobDefinition {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public String getCronExpression() {
         return cronExpression;
@@ -127,7 +120,7 @@ public class JobDefinition {
     /**
      * 设置相关数据。
      *
-     * @param cronExpression 参数说明
+     * @param cronExpression cron Expression。
      */
     public void setCronExpression(String cronExpression) {
         this.cronExpression = cronExpression;
@@ -135,7 +128,7 @@ public class JobDefinition {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public long getIntervalSeconds() {
         return intervalSeconds;
@@ -143,7 +136,7 @@ public class JobDefinition {
     /**
      * 设置相关数据。
      *
-     * @param intervalSeconds 参数说明
+     * @param intervalSeconds interval Seconds。
      */
     public void setIntervalSeconds(long intervalSeconds) {
         this.intervalSeconds = intervalSeconds;
@@ -151,7 +144,7 @@ public class JobDefinition {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public Instant getStartAt() {
         return startAt;
@@ -159,7 +152,7 @@ public class JobDefinition {
     /**
      * 设置相关数据。
      *
-     * @param startAt 参数说明
+     * @param startAt start At。
      */
     public void setStartAt(Instant startAt) {
         this.startAt = startAt;
@@ -167,7 +160,7 @@ public class JobDefinition {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public String getTimezone() {
         return timezone;
@@ -175,7 +168,7 @@ public class JobDefinition {
     /**
      * 设置相关数据。
      *
-     * @param timezone 参数说明
+     * @param timezone timezone。
      */
     public void setTimezone(String timezone) {
         this.timezone = timezone;
@@ -183,7 +176,7 @@ public class JobDefinition {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public MisfirePolicy getMisfirePolicy() {
         return misfirePolicy;
@@ -191,7 +184,7 @@ public class JobDefinition {
     /**
      * 设置相关数据。
      *
-     * @param misfirePolicy 参数说明
+     * @param misfirePolicy misfire Policy。
      */
     public void setMisfirePolicy(MisfirePolicy misfirePolicy) {
         this.misfirePolicy = misfirePolicy;
@@ -199,7 +192,7 @@ public class JobDefinition {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public ConcurrencyPolicy getConcurrencyPolicy() {
         return concurrencyPolicy;
@@ -207,7 +200,7 @@ public class JobDefinition {
     /**
      * 设置相关数据。
      *
-     * @param concurrencyPolicy 参数说明
+     * @param concurrencyPolicy concurrency Policy。
      */
     public void setConcurrencyPolicy(ConcurrencyPolicy concurrencyPolicy) {
         this.concurrencyPolicy = concurrencyPolicy;
@@ -215,7 +208,7 @@ public class JobDefinition {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public String getParameters() {
         return parameters;
@@ -223,7 +216,7 @@ public class JobDefinition {
     /**
      * 设置相关数据。
      *
-     * @param parameters 参数说明
+     * @param parameters parameters。
      */
     public void setParameters(String parameters) {
         this.parameters = parameters;
@@ -231,7 +224,7 @@ public class JobDefinition {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public boolean isEnabled() {
         return enabled;
@@ -239,7 +232,7 @@ public class JobDefinition {
     /**
      * 设置相关数据。
      *
-     * @param enabled 参数说明
+     * @param enabled enabled。
      */
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;

@@ -1,11 +1,11 @@
 package com.peach.rocket.security;
 
 /**
- * MQ 加密策略 SPI。
+ * MQ加密策略。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public interface MqEncryptionPolicy {
 

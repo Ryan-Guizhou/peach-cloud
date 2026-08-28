@@ -1,11 +1,14 @@
 package com.peach.response;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * 对象列表分页结果。
+ * ListObjects结果。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public class ListObjectsResult {
 
@@ -27,10 +30,10 @@ public class ListObjectsResult {
         this.providerName = builder.providerName;
         this.bucketName = builder.bucketName;
         this.prefix = builder.prefix;
-        this.items = Collections.unmodifiableList(new ArrayList<>(builder.items));
+        this.items = List.copyOf(builder.items);
         this.nextContinuationToken = builder.nextContinuationToken;
         this.truncated = builder.truncated;
-        this.commonPrefixes = Collections.unmodifiableList(new ArrayList<>(builder.commonPrefixes));
+        this.commonPrefixes = List.copyOf(builder.commonPrefixes);
     }
 
     public static Builder builder() {
@@ -64,6 +67,14 @@ public class ListObjectsResult {
     public List<String> getCommonPrefixes() {
         return commonPrefixes;
     }
+
+    /**
+     * 构建器。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     public static class Builder {
 

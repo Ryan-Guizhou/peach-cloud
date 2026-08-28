@@ -1,15 +1,13 @@
 package com.peach.response;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * 批量删除对象结果。
+ * BatchDelete结果。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/17 16:20
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/17 16:20
  */
 public class BatchDeleteResult {
 
@@ -36,7 +34,7 @@ public class BatchDeleteResult {
     public BatchDeleteResult(String providerName, String bucketName, List<String> objectKeys, int deletedCount) {
         this.providerName = providerName;
         this.bucketName = bucketName;
-        this.objectKeys = Collections.unmodifiableList(new ArrayList<>(objectKeys));
+        this.objectKeys = List.copyOf(objectKeys);
         this.deletedCount = deletedCount;
     }
 

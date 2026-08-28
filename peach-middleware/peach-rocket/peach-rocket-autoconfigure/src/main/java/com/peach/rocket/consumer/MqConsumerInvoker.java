@@ -22,11 +22,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
 
 /**
- * MQ 消费调用器。
+ * MQConsumer调用器。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 @Slf4j
 public class MqConsumerInvoker {
@@ -96,16 +96,16 @@ public class MqConsumerInvoker {
         // ==================== 2. 构建消费上下文 ====================
         // 统一使用信封中的 messageId（业务生成的 ID），若为空则使用 RocketMQ 的 messageId
         MqConsumeContext context = new MqConsumeContext(
-                messageId == null ? envelope.getMessageId() : messageId,  // 消息唯一标识
-                envelope.getTopic(),                                       // Topic
-                envelope.getTag(),                                         // Tag
-                envelope.getKey(),                                         // 业务 Key（用于路由）
-                reconsumeTimes,                                            // 重试次数
-                envelope.getHeaders()                                      // 自定义 Header
+                messageId == null ? envelope.messageId() : messageId,
+                envelope.topic(),
+                envelope.tag(),
+                envelope.key(),
+                reconsumeTimes,
+                envelope.headers()
         );
 
         try (MqTraceContextPropagator.MqTraceScope traceScope = traceContextPropagator
-                .startConsumerSpan(context.getTopic(), context.getHeaders())) {
+                .startConsumerSpan(context.topic(), context.headers())) {
 
         // ==================== 3. 幂等性处理 ====================
         // 3.1 解析幂等 Key（默认为 messageId，也可通过 SpEL 表达式自定义）
@@ -118,18 +118,18 @@ public class MqConsumerInvoker {
         MqIdempotentContext idempotentContext = new MqIdempotentContext(
                 idempotentKey,
                 RocketMqNaming.normalizeConsumerGroup(consumer.consumerGroup()),
-                context.getTopic(),
-                context.getTag(),
-                context.getKey(),
-                context.getMessageId(),
+                context.topic(),
+                context.tag(),
+                context.key(),
+                context.messageId(),
                 properties.getConsumer().getIdempotentExpire()
         );
 
         // 3.2 幂等检查：如果该消息已经被成功消费过，直接返回，不重复执行业务逻辑
         if (useIdempotent && idempotentStore.isSuccess(idempotentContext)) {
             log.info("[mq-consume-idempotent-hit] consumer={} topic={} tag={} key={} messageId={}",
-                    handlerName, context.getTopic(), context.getTag(),
-                    context.getKey(), context.getMessageId());
+                    handlerName, context.topic(), context.tag(),
+                    context.key(), context.messageId());
             return;  // 幂等命中，直接返回
         }
 
@@ -145,7 +145,7 @@ public class MqConsumerInvoker {
             // 4.1 调用业务 Handler 处理消息
             // envelope.getPayload() 返回解码后的业务对象（如 OrderDTO）
             // context 包含消息元数据，业务方可根据需要进行使用
-            handler.handle(envelope.getPayload(), context);
+            handler.handle(envelope.payload(), context);
 
             // 4.2 处理成功：标记幂等记录为成功状态
             if (useIdempotent) {
@@ -154,8 +154,8 @@ public class MqConsumerInvoker {
 
             // 4.3 记录成功消费日志（包含耗时）
             log.info("[mq-consume] consumer={} topic={} tag={} key={} messageId={} retry={} cost={}ms success=true",
-                    handlerName, context.getTopic(), context.getTag(), context.getKey(),
-                    context.getMessageId(), reconsumeTimes, System.currentTimeMillis() - start);
+                    handlerName, context.topic(), context.tag(), context.key(),
+                    context.messageId(), reconsumeTimes, System.currentTimeMillis() - start);
 
         } catch (RuntimeException ex) {
             traceScope.error(ex);
@@ -181,8 +181,8 @@ public class MqConsumerInvoker {
             // 5.4 不需要重试：记录警告日志，消息消费成功（不抛出异常）
             // 这样消息会从 Broker 中确认删除，不会进入无限重试
             log.warn("[mq-consume-skip-retry] consumer={} topic={} tag={} key={} messageId={} exception={}",
-                    handlerName, context.getTopic(), context.getTag(), context.getKey(),
-                    context.getMessageId(), ex.getClass().getName());
+                    handlerName, context.topic(), context.tag(), context.key(),
+                    context.messageId(), ex.getClass().getName());
             // 注意：这里不再抛出异常，相当于告诉 RocketMQ 消息已消费成功
             // 但业务上该消息实际处理失败了（适用于非关键业务或已记录告警的场景）
         }

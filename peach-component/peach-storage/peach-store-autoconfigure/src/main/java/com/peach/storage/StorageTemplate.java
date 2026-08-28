@@ -36,18 +36,16 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Map;
 
 /**
- * 存储操作模板入口。
- *
+ * 存储模板。
  * <p>所有不指定 `providerName` 的方法都会委托给 `primary` 主存储实例。如果需要操作其他存储，
  * 使用 {@link #provider(String)} 获取指定实例，或调用带 `providerName` 的重载方法。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 13:49
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 13:49
  */
 @Slf4j
 public class StorageTemplate {
@@ -58,7 +56,7 @@ public class StorageTemplate {
 
     public StorageTemplate(StorageProvider primaryProvider, Map<String, StorageProvider> namedProviders) {
         this.primaryProvider = primaryProvider;
-        this.namedProviders = Collections.unmodifiableMap(namedProviders);
+        this.namedProviders = Map.copyOf(namedProviders);
         log.info("StorageTemplate created. primary={}, providers={}",
                 primaryProvider == null ? null : primaryProvider.name(),
                 StorageLogSanitizer.providerNames(this.namedProviders));

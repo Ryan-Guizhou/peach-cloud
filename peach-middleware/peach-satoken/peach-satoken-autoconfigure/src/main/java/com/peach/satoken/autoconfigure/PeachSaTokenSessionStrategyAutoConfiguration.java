@@ -9,8 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import jakarta.annotation.PostConstruct;
 
 /**
- * Sa-Token 会话策略自动配置。
- *
+ * PeachSa令牌会话Strategy自动配置。
  * <p>用于替换默认会话创建策略，使 Sa-Token 会话对象使用当前项目定制实现。</p>
  *
  * @Author Mr Shu

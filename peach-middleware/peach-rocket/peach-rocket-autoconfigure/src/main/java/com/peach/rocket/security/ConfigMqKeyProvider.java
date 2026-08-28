@@ -5,11 +5,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
- * 基于配置的 MQ 密钥提供者。
+ * 配置MQ键提供者。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class ConfigMqKeyProvider implements MqKeyProvider {
 

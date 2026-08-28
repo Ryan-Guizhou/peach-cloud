@@ -4,8 +4,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Sa-Token 历史请求 ID 配置。
- *
+ * 请求Id配置属性。
  * <p>请求 ID 已迁移到 {@code peach.observability.request-id}。该类型仅为已有调用方保留
  * 源码和二进制兼容，不再由 Sa-Token 自动配置加载。</p>
  *

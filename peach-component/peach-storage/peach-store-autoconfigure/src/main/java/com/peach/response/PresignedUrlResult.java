@@ -4,11 +4,11 @@ import java.time.Instant;
 
 
 /**
- * 预签名 URL 结果。
+ * PresignedUrl结果。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 public class PresignedUrlResult {
 

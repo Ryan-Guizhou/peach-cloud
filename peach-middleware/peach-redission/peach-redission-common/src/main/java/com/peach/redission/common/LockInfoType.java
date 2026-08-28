@@ -1,6 +1,8 @@
 package com.peach.redission.common;
 
 /**
+ * LockInfoType相关类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/22 10:56

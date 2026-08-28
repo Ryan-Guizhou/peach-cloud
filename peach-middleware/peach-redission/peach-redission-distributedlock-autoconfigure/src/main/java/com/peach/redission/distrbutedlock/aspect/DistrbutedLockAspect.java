@@ -30,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Distrbuted锁切面。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/25 18:59

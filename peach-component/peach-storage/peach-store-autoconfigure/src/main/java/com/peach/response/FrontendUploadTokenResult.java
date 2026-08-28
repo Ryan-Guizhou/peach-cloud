@@ -1,14 +1,13 @@
 package com.peach.response;
 
 import java.time.Instant;
-import java.util.Date;
 
 /**
- * 前端直传令牌结果。
+ * Frontend上传令牌结果。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 14:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 14:15
  */
 public class FrontendUploadTokenResult {
 

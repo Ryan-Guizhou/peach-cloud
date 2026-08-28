@@ -1,7 +1,7 @@
 package com.peach.scheduler.rocket;
 
 /**
- * 调度模块相关说明。
+ * SchedulerRocketTopics相关类。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -19,8 +19,8 @@ public final class SchedulerRocketTopics {
     private SchedulerRocketTopics() { }
     /**
      * 构建相关数据。
-     * @param applicationName 参数说明
-     * @return 返回结果
+     * @param applicationName application Name。
+     * @return 执行结果。
      */
     public static String executionTopic(String applicationName) {
         return "scheduler-execute-" + applicationName;

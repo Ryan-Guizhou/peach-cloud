@@ -46,6 +46,8 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 /**
+ * 多级缓存。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:13
@@ -158,36 +160,29 @@ public class RedisConfig {
     @ConditionalOnMissingBean(JedisConnectionFactory.class)
     JedisConnectionFactory jedisConnectionFactory(
             @Qualifier("redisPoolConfigs") JedisPoolConfig jedisPoolConfig) {
-        JedisConnectionFactory jedisConnectionFactory = null;
         log.info("redis host:" + host);
-        //单机模式
-        switch (mode) {
-            case RedisConstant.STANDALONE:
+        return switch (mode) {
+            case RedisConstant.STANDALONE -> {
                 //获得默认的连接池构造
                 //JedisConnectionFactory对于Standalone模式的没有（RedisStandaloneConfiguration，JedisPoolConfig）的构造函数，对此
                 //我们用JedisClientConfiguration接口的builder方法实例化一个构造器，还得类型转换
-                JedisClientConfiguration.JedisPoolingClientConfigurationBuilder jpcf = (JedisClientConfiguration.JedisPoolingClientConfigurationBuilder) JedisClientConfiguration.builder();
-                //修改我们的连接池配置
+                JedisClientConfiguration.JedisPoolingClientConfigurationBuilder jpcf =
+                        (JedisClientConfiguration.JedisPoolingClientConfigurationBuilder) JedisClientConfiguration.builder();
                 jpcf.poolConfig(jedisPoolConfig);
-                //通过构造器来构造jedis客户端配置
                 JedisClientConfiguration jedisClientConfiguration = jpcf.build();
-                jedisConnectionFactory = new JedisConnectionFactory(redisStandaloneConfiguration(), jedisClientConfiguration);
                 log.info("redis standalone mode  init success！");
-                break;
-            case RedisConstant.SENTINEL:
-                //哨兵模式
-                jedisConnectionFactory = new JedisConnectionFactory(sentinelConfiguration(), jedisPoolConfig);
+                yield new JedisConnectionFactory(redisStandaloneConfiguration(), jedisClientConfiguration);
+            }
+            case RedisConstant.SENTINEL -> {
                 log.info("redis sentinel mode  init success！");
-                break;
-            case RedisConstant.CLUSTER:
-                //Cluster模式
-                jedisConnectionFactory = new JedisConnectionFactory(redisClusterConfiguration(), jedisPoolConfig);
+                yield new JedisConnectionFactory(sentinelConfiguration(), jedisPoolConfig);
+            }
+            case RedisConstant.CLUSTER -> {
                 log.info("redis cluster mode  init success！");
-                break;
-            default:
-                break;
-        }
-        return jedisConnectionFactory;
+                yield new JedisConnectionFactory(redisClusterConfiguration(), jedisPoolConfig);
+            }
+            default -> null;
+        };
     }
 
 
@@ -291,22 +286,21 @@ public class RedisConfig {
             config.setThreads(redissonThreads);
             config.setNettyThreads(redissonNettyThreads);
 
-            switch (mode) {
-                case RedisConstant.STANDALONE:
-                    config = configureSingleServer(config);
+            config = switch (mode) {
+                case RedisConstant.STANDALONE -> {
                     log.info("Redisson standalone mode init success!");
-                    break;
-                case RedisConstant.SENTINEL:
-                    config = configureSentinelServers(config);
+                    yield configureSingleServer(config);
+                }
+                case RedisConstant.SENTINEL -> {
                     log.info("Redisson sentinel mode init success!");
-                    break;
-                case RedisConstant.CLUSTER:
-                    config = configureClusterServers(config);
+                    yield configureSentinelServers(config);
+                }
+                case RedisConstant.CLUSTER -> {
                     log.info("Redisson cluster mode init success!");
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unsupported redis mode: " + mode);
-            }
+                    yield configureClusterServers(config);
+                }
+                default -> throw new IllegalArgumentException("Unsupported redis mode: " + mode);
+            };
 
             // 设置编码器（默认使用JsonJacksonCodec）
             config.setCodec(new org.redisson.codec.JsonJacksonCodec());

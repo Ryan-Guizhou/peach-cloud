@@ -1,5 +1,7 @@
 package com.peach.satoken.security;
 
+import java.io.Serial;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,8 +9,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
- * 业务服务侧 Sa-Token 公开端点匹配规则。
- *
+ * SatokenEndpointRule相关类。
  * <p>该规则用于 Servlet 业务服务中的 Same-Token 拦截器和用户上下文过滤器，
  * 只表达 HTTP 方法与 Ant 风格路径，不承载权限、角色或风控语义。</p>
  *
@@ -21,7 +22,8 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class SatokenEndpointRule implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 6179495143005666441L;
 
     /**
      * 匹配所有 HTTP 方法的通配值。

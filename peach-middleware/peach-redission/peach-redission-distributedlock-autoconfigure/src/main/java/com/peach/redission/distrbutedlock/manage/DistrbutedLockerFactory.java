@@ -6,6 +6,8 @@ import com.peach.redission.distrbutedlock.locker.LockType;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * DistrbutedLocker工厂。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/25 19:00
@@ -19,19 +21,16 @@ public class DistrbutedLockerFactory {
         this.distrbutedLockerManager = distrbutedLockerManager;
     }
 
-    public DistributedLocker getDistrbutedLocker(LockType lockType){
-        switch (lockType){
-            case FAIR:
-                return distrbutedLockerManager.getFairLocker();
-            case READ:
-                return distrbutedLockerManager.getReadLocker();
-            case REENTRANT:
-                return distrbutedLockerManager.getReentrantLocker();
-            case WRITE:
-                return distrbutedLockerManager.getWriteLocker();
-            default:
-                log.error("lockType is error,lockType:{}",lockType);
-                return null;
-        }
+    public DistributedLocker getDistrbutedLocker(LockType lockType) {
+        return switch (lockType) {
+            case FAIR -> distrbutedLockerManager.getFairLocker();
+            case READ -> distrbutedLockerManager.getReadLocker();
+            case REENTRANT -> distrbutedLockerManager.getReentrantLocker();
+            case WRITE -> distrbutedLockerManager.getWriteLocker();
+            default -> {
+                log.error("lockType is error,lockType:{}", lockType);
+                yield null;
+            }
+        };
     }
 }

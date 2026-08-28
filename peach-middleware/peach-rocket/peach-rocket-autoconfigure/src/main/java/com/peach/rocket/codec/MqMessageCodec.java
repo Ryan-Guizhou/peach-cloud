@@ -3,11 +3,11 @@ package com.peach.rocket.codec;
 import com.peach.rocket.core.MqMessageEnvelope;
 
 /**
- * MQ 消息编解码器。
+ * MQ消息Codec接口。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public interface MqMessageCodec {
 

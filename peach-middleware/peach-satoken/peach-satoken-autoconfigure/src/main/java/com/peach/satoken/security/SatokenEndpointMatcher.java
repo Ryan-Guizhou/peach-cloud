@@ -6,8 +6,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 业务服务侧 Sa-Token 公开端点匹配器。
- *
+ * SatokenEndpointMatcher相关类。
  * <p>匹配器会对 HTTP 方法做大写标准化，并对路径补齐前导斜杠，保证
  * Nacos 配置、默认配置和 Servlet 请求路径使用一致的匹配规则。</p>
  *

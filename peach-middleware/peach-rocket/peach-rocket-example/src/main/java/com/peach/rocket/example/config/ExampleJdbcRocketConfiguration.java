@@ -11,14 +11,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * Example 模块中的 JDBC 覆盖配置。
- *
+ * ExampleJdbcRocketMQ配置类。
  * <p>当示例应用中存在 {@link JdbcTemplate} 时，通过显式声明 Bean 覆盖 starter 默认的内存实现，
  * 用于演示如何在业务项目里接入 JDBC 幂等和 JDBC Outbox。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 @Indexed
 @Configuration

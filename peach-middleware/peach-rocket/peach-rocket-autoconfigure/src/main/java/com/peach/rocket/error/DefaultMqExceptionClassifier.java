@@ -4,11 +4,11 @@ import com.peach.rocket.core.MqConsumeContext;
 import com.peach.rocket.core.MqMessageEnvelope;
 
 /**
- * 默认 MQ 消费异常分类器。
+ * DefaultMqExceptionClassifier相关类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class DefaultMqExceptionClassifier implements MqExceptionClassifier {
 

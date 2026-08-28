@@ -1,16 +1,15 @@
 package com.peach.response;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 存储对象元信息。
+ * Object信息。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 public class ObjectInfo {
 
@@ -62,7 +61,7 @@ public class ObjectInfo {
         this.contentType = builder.contentType;
         this.etag = builder.etag;
         this.lastModified = builder.lastModified;
-        this.metadata = Collections.unmodifiableMap(new LinkedHashMap<>(builder.metadata));
+        this.metadata = Map.copyOf(builder.metadata);
     }
 
     public static Builder builder() {

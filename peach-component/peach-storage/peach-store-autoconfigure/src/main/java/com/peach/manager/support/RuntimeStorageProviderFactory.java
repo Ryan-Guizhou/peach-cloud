@@ -8,33 +8,29 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 
 /**
- * 基于运行时配置创建临时存储 Provider 的工厂组件。
- *
+ * Runtime存储Provider工厂。
  * <p>
  * 该组件用于根据动态传入的存储配置，
  * 通过 SPI 机制匹配对应的 {@link StorageProviderFactory}，
  * 创建具体的存储 Provider 实现。
  * </p>
- *
  * <p>
  * 主要用于存储管理场景，例如：
  * </p>
- *
  * <ul>
- *     <li>测试存储连接</li>
- *     <li>浏览存储内容</li>
- *     <li>验证存储配置</li>
- *     <li>动态访问不同类型存储</li>
+ * <li>测试存储连接</li>
+ * <li>浏览存储内容</li>
+ * <li>验证存储配置</li>
+ * <li>动态访问不同类型存储</li>
  * </ul>
- *
  * <p>
  * 该组件根据当前操作动态创建 Provider，
  * 不负责业务文件上传下载场景中的 Provider 长期缓存。
  * </p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 @Slf4j
 public class RuntimeStorageProviderFactory {

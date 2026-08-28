@@ -5,6 +5,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 /**
+ * 锁InfoHandle工厂。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/22 10:58

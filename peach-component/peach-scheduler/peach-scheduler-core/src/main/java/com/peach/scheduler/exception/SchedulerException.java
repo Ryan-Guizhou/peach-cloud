@@ -1,7 +1,7 @@
 package com.peach.scheduler.exception;
 
 /**
- * Peach Scheduler 运行时异常基类。
+ * 调度异常。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -9,7 +9,7 @@ package com.peach.scheduler.exception;
  */
 public class SchedulerException extends RuntimeException {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 7686128735923333894L;
 
     /**
      * 创建调度异常。

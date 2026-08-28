@@ -17,8 +17,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * 调度 RocketMQ JDBC 存储自动配置。
- *
+ * 调度RocketMQJdbc自动配置。
  * <p>在 Spring Boot 完成 {@link JdbcTemplate} 自动配置后，为调度消息提供持久化的
  * Outbox 与消费幂等存储。该配置必须先于 Peach RocketMQ 的通用存储配置执行，
  * 避免在数据库可用时回退到仅适合开发调试的内存实现。</p>

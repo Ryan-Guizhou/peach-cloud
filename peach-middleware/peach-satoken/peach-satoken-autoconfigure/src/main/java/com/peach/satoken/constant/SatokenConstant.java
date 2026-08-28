@@ -1,7 +1,7 @@
 package com.peach.satoken.constant;
 
 /**
- * Sa-Token 相关常量。
+ * Satoken常量。
  *
  * @Author Mr Shu
  * @Version 1.0.0

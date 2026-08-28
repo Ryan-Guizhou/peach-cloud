@@ -1,11 +1,11 @@
 package com.peach.response;
 
 /**
- * 拷贝对象结果。
+ * Copy结果。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/17 16:20
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/17 16:20
  */
 public class CopyResult {
 

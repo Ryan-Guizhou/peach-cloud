@@ -7,8 +7,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * 根据 Provider ID 解析 {@link SchedulingProvider} 的注册表。
- *
+ * SchedulingProvider解析器。
  * <p>该类是 Provider SPI 的关键边界。多个 Provider 可以同时存在于 Spring 容器中，但同一 Provider ID
  * 只允许注册一个实现。</p>
  *
@@ -64,7 +63,7 @@ public class SchedulingProviderResolver {
      * @return Provider ID 到实现的只读视图
      */
     public Map<String, SchedulingProvider> getProviders() {
-        return java.util.Collections.unmodifiableMap(providers);
+        return Map.copyOf(providers);
     }
 
     private String normalizeProviderId(String providerId) {

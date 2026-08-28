@@ -42,11 +42,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
 /**
- * Peach RocketMQ Starter 自动配置入口。
+ * PeachRocketMQAuto自动配置。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 @AutoConfigureAfter({RocketMQAutoConfiguration.class,RocketMQProperties.class})
 @ConditionalOnClass(RocketMQTemplate.class)

@@ -1,7 +1,7 @@
 package com.peach.scheduler.model;
 
 /**
- * 执行结果相关说明。
+ * 执行结果Status枚举。
  *
  * @Author Mr Shu
  * @Version 1.0.0

@@ -9,11 +9,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
 /**
- * Peach RocketMQ Starter 配置属性。
+ * PeachRocketMQ配置属性。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 @ConfigurationProperties(prefix = "peach.rocket")
 public class PeachRocketProperties implements InitializingBean {
@@ -89,7 +89,11 @@ public class PeachRocketProperties implements InitializingBean {
     public Outbox getOutbox() { return outbox; }
 
     /**
-     * 生产者增强配置。
+     * 生产者。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class Producer {
         private Duration defaultTimeout = Duration.ofSeconds(3);
@@ -98,7 +102,11 @@ public class PeachRocketProperties implements InitializingBean {
     }
 
     /**
-     * 消费者增强配置。
+     * 消费者。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class Consumer {
         private boolean enableIdempotent = true;
@@ -119,7 +127,11 @@ public class PeachRocketProperties implements InitializingBean {
     }
 
     /**
-     * topic 和 consumer group 命名配置。
+     * Naming。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class Naming {
         private String topicPrefix = "biz";
@@ -137,7 +149,11 @@ public class PeachRocketProperties implements InitializingBean {
     }
 
     /**
-     * payload 加密配置。
+     * 安全。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class Security {
         private boolean enabled = false;
@@ -164,7 +180,11 @@ public class PeachRocketProperties implements InitializingBean {
     }
 
     /**
-     * 事务消息配置。
+     * 事务。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class Transaction {
         private boolean enabled = true;
@@ -176,7 +196,11 @@ public class PeachRocketProperties implements InitializingBean {
     }
 
     /**
-     * topic 自动创建配置。
+     * Topic。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class Topic {
         private boolean autoCreate = false;
@@ -200,7 +224,11 @@ public class PeachRocketProperties implements InitializingBean {
     }
 
     /**
-     * Outbox 可靠消息配置。
+     * 发件箱。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class Outbox {
         private boolean enabled = false;

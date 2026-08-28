@@ -1,13 +1,12 @@
 package com.peach.rocket.outbox;
 
 /**
- * Outbox 消息状态。
- *
+ * MQ发件箱Status枚举。
  * <p>该状态用于描述一条 Outbox 消息从写入本地存储到成功投递 RocketMQ 过程中的生命周期阶段。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public enum MqOutboxStatus {
 

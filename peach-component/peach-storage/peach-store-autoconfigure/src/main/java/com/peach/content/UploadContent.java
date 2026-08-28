@@ -9,14 +9,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
 /**
- * 上传内容抽象。
- *
+ * 上传内容。
  * <p>该接口屏蔽上传数据来源，provider 只关心 {@link #read()} 返回的输入流和
  * {@link #length()} 返回的内容长度。调用方使用完成后应关闭该对象，以释放文件或流资源。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/10 14:54
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/10 14:54
  */
 public interface UploadContent extends AutoCloseable {
 

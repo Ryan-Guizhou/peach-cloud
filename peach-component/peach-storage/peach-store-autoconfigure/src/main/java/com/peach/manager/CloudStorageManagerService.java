@@ -11,19 +11,16 @@ import com.peach.response.ObjectInfo;
 import com.peach.response.UploadResult;
 
 /**
- * 基于运行时存储配置的云存储管理操作接口。
- *
+ * 云存储Manager服务类。
  * <p>该服务主要用于存储管理场景，例如连接测试、存储浏览、
  * 文件上传以及目录维护等操作。</p>
- *
  * <p>调用方需要传入临时的 {@link StorageProperties.StorageProvider}
  * 存储配置，服务会根据当前操作动态创建对应的存储实现实例。</p>
- *
  * <p>该接口主要面向管理端场景，不建议用于高频业务文件读写场景。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 public interface CloudStorageManagerService {
 

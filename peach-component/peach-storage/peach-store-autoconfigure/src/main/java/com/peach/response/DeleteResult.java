@@ -2,11 +2,11 @@ package com.peach.response;
 
 
 /**
- * 删除结果。
+ * Delete结果。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 public class DeleteResult {
 

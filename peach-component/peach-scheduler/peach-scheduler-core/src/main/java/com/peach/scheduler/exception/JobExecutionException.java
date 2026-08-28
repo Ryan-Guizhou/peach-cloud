@@ -1,7 +1,7 @@
 package com.peach.scheduler.exception;
 
 /**
- * 任务执行阶段异常。
+ * 任务执行异常。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -9,7 +9,7 @@ package com.peach.scheduler.exception;
  */
 public class JobExecutionException extends SchedulerException {
 
-    private static final long serialVersionUID = 4L;
+    private static final long serialVersionUID = 8910390988204823998L;
 
     /**
      * 创建任务执行异常。

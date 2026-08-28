@@ -4,15 +4,14 @@ import com.peach.enums.StorageResultCode;
 import com.peach.exception.StorageException;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * 完成分片上传请求。
+ * CompleteMultipartUploadRequest相关类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 14:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 14:15
  */
 public class CompleteMultipartUploadRequest extends StorageObjectRequest {
 
@@ -29,7 +28,7 @@ public class CompleteMultipartUploadRequest extends StorageObjectRequest {
     private CompleteMultipartUploadRequest(Builder builder) {
         super(builder);
         this.uploadId = builder.uploadId;
-        this.parts = Collections.unmodifiableList(new ArrayList<>(builder.parts));
+        this.parts = List.copyOf(builder.parts);
     }
 
     /**
@@ -58,6 +57,14 @@ public class CompleteMultipartUploadRequest extends StorageObjectRequest {
     public List<Part> getParts() {
         return parts;
     }
+
+    /**
+     * 构建器。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     public static class Builder extends StorageObjectRequest.Builder<Builder> {
 
@@ -103,7 +110,11 @@ public class CompleteMultipartUploadRequest extends StorageObjectRequest {
     }
 
     /**
-     * 分片完成信息。
+     * Part。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class Part {
 

@@ -16,12 +16,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * 当前用户上下文恢复过滤器。
- *
+ * 用户上下文过滤器。
  * <p>该过滤器只作用于引入 {@code peach-satoken-starter} 的 Servlet 业务服务。公开端点直接放行；
  * 非公开端点必须先存在 Sa-Token 登录态，再按 loginId 从 Redis 用户上下文 Hash 中恢复
  * {@link UserContext}，并绑定到 {@link SecurityContextHolder} 供当前请求链路使用。</p>
- *
  * <p>过滤器不会写入 Redis，也不会刷新用户上下文缓存。登录、切换租户/机构或用户资料变更后的缓存写入，
  * 必须由认证服务按 {@link UserContextSupport} 约定的字段完成。</p>
  *

@@ -5,6 +5,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * 命名工厂。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/5 17:54

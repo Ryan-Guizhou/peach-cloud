@@ -1,10 +1,12 @@
 package com.peach.satoken.context;
 
+import java.io.Serial;
+
 
 import java.io.Serializable;
 
 /**
- * 用户上下文信息类。
+ * 用户上下文。
  * <p>
  * 用于在系统各层之间传递当前登录用户的基本信息、组织信息、租户信息以及请求上下文相关属性。
  * 该类实现了 {@link Serializable} 接口，支持跨线程、跨会话或分布式环境下的序列化传输。
@@ -16,7 +18,8 @@ import java.io.Serializable;
  */
 public class UserContext implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -9060905080421512607L;
 
     /**
      * 用户唯一标识（通常为主键ID）

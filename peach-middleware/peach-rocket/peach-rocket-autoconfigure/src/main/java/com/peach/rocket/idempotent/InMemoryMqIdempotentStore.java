@@ -5,11 +5,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 基于内存的 MQ 幂等存储。
+ * InMemoryMQ幂等存储。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class InMemoryMqIdempotentStore implements MqIdempotentStore {
 
@@ -19,7 +19,7 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
     public boolean tryStart(MqIdempotentContext context) {
         cleanupExpired();
         String key = storageKey(context);
-        Record newRecord = new Record(Status.PROCESSING, Instant.now().plus(context.getExpire()));
+        Record newRecord = new Record(Status.PROCESSING, Instant.now().plus(context.expire()));
         Record old = records.putIfAbsent(key, newRecord);
         if (old == null) {
             return true;
@@ -58,8 +58,16 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
     }
 
     private String storageKey(MqIdempotentContext context) {
-        return context.getConsumerGroup() + ':' + context.getIdempotentKey();
+        return context.consumerGroup() + ':' + context.idempotentKey();
     }
+
+    /**
+     * Status枚举。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     private enum Status {
         PROCESSING,
@@ -67,7 +75,11 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
     }
 
     /**
-     * 内存幂等记录。
+     * 记录。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     private static class Record {
         private final Status status;

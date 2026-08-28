@@ -5,19 +5,19 @@ import com.peach.rocket.core.MqMessageEnvelope;
 import org.springframework.util.StringUtils;
 
 /**
- * 默认 MQ 幂等键解析器。
+ * 默认MQ幂等键解析器。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class DefaultMqIdempotentKeyResolver implements MqIdempotentKeyResolver {
 
     @Override
     public String resolve(MqMessageEnvelope<?> envelope, MqConsumeContext context) {
-        if (StringUtils.hasText(context.getKey())) {
-            return context.getTopic() + ':' + context.getTag() + ':' + context.getKey();
+        if (StringUtils.hasText(context.key())) {
+            return context.topic() + ':' + context.tag() + ':' + context.key();
         }
-        return context.getTopic() + ':' + context.getMessageId();
+        return context.topic() + ':' + context.messageId();
     }
 }

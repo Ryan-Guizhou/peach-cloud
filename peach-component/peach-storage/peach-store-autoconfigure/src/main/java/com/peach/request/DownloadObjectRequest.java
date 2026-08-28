@@ -4,9 +4,9 @@ package com.peach.request;
 /**
  * 下载对象请求。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 public class DownloadObjectRequest extends StorageObjectRequest {
 

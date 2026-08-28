@@ -10,11 +10,11 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * Example 模块中的 JDBC 幂等存储实现。
+ * ExampleJdbcMQ幂等存储。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class ExampleJdbcMqIdempotentStore implements MqIdempotentStore {
     private static final String SQL_UPDATE_PREFIX = "UPDATE ";
@@ -40,16 +40,16 @@ public class ExampleJdbcMqIdempotentStore implements MqIdempotentStore {
             jdbcTemplate.update("INSERT INTO " + TABLE_NAME
                             + " (idempotent_key, consumer_group, topic, tag, business_key, message_id, status, consume_count, created_at, updated_at)"
                             + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    context.getIdempotentKey(), context.getConsumerGroup(), context.getTopic(), context.getTag(),
-                    context.getBusinessKey(), context.getMessageId(), STATUS_PROCESSING, 1, Timestamp.valueOf(now), Timestamp.valueOf(now));
+                    context.idempotentKey(), context.consumerGroup(), context.topic(), context.tag(),
+                    context.businessKey(), context.messageId(), STATUS_PROCESSING, 1, Timestamp.valueOf(now), Timestamp.valueOf(now));
             return true;
         } catch (DuplicateKeyException ex) {
-            LocalDateTime timeoutBefore = now.minus(context.getExpire());
+            LocalDateTime timeoutBefore = now.minus(context.expire());
             int updated = jdbcTemplate.update(SQL_UPDATE_PREFIX + TABLE_NAME
                             + " SET status = ?, topic = ?, tag = ?, business_key = ?, message_id = ?, consume_count = consume_count + 1, updated_at = ?"
                             + " WHERE idempotent_key = ? AND consumer_group = ? AND (status = ? OR (status = ? AND updated_at < ?))",
-                    STATUS_PROCESSING, context.getTopic(), context.getTag(), context.getBusinessKey(), context.getMessageId(),
-                    Timestamp.valueOf(now), context.getIdempotentKey(), context.getConsumerGroup(), "FAILED", STATUS_PROCESSING,
+                    STATUS_PROCESSING, context.topic(), context.tag(), context.businessKey(), context.messageId(),
+                    Timestamp.valueOf(now), context.idempotentKey(), context.consumerGroup(), "FAILED", STATUS_PROCESSING,
                     Timestamp.valueOf(timeoutBefore));
             return updated == 1;
         }
@@ -58,20 +58,20 @@ public class ExampleJdbcMqIdempotentStore implements MqIdempotentStore {
     @Override
     public void markSuccess(MqIdempotentContext context) {
         jdbcTemplate.update(SQL_UPDATE_PREFIX + TABLE_NAME + " SET status = ?, updated_at = ? WHERE idempotent_key = ? AND consumer_group = ?",
-                "SUCCESS", Timestamp.valueOf(LocalDateTime.now(ZoneId.systemDefault())), context.getIdempotentKey(), context.getConsumerGroup());
+                "SUCCESS", Timestamp.valueOf(LocalDateTime.now(ZoneId.systemDefault())), context.idempotentKey(), context.consumerGroup());
     }
 
     @Override
     public void markFailed(MqIdempotentContext context) {
         jdbcTemplate.update(SQL_UPDATE_PREFIX + TABLE_NAME + " SET status = ?, updated_at = ? WHERE idempotent_key = ? AND consumer_group = ?",
-                "FAILED", Timestamp.valueOf(LocalDateTime.now(ZoneId.systemDefault())), context.getIdempotentKey(), context.getConsumerGroup());
+                "FAILED", Timestamp.valueOf(LocalDateTime.now(ZoneId.systemDefault())), context.idempotentKey(), context.consumerGroup());
     }
 
     @Override
     public boolean isSuccess(MqIdempotentContext context) {
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(1) FROM " + TABLE_NAME + " WHERE idempotent_key = ? AND consumer_group = ? AND status = ?",
-                Integer.class, context.getIdempotentKey(), context.getConsumerGroup(), "SUCCESS");
+                Integer.class, context.idempotentKey(), context.consumerGroup(), "SUCCESS");
         return count != null && count > 0;
     }
 }

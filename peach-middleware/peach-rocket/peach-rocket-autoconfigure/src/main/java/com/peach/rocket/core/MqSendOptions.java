@@ -5,14 +5,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 单次 MQ 发送参数。
- *
+ * MQ发送选项。
  * <p>该对象用于描述一次发送行为的临时覆盖项，优先级高于事件注解中的默认声明。适合在业务侧按场景动态指定
  * topic、tag、key、顺序消息分片键、超时时间、延迟级别以及透传 headers。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class MqSendOptions {
 

@@ -8,11 +8,11 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
 
 /**
- * Outbox 可靠消息补偿调度器。
+ * MqOutboxDispatcher相关类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 @Slf4j
 public class MqOutboxDispatcher {
@@ -32,13 +32,13 @@ public class MqOutboxDispatcher {
         List<MqOutboxEvent> events = outboxStore.findPending(properties.getOutbox().getBatchSize());
         for (MqOutboxEvent event : events) {
             try {
-                String destination = event.getTag() == null || event.getTag().isEmpty() ? event.getTopic() : event.getTopic() + ":" + event.getTag();
-                rocketMQTemplate.syncSend(destination, MessageBuilder.withPayload(event.getBody()).build());
-                outboxStore.markSent(event.getMessageId());
-                log.info("[mq-outbox] message sent. messageId={} topic={} tag={}", event.getMessageId(), event.getTopic(), event.getTag());
+                String destination = event.tag() == null || event.tag().isEmpty() ? event.topic() : event.topic() + ":" + event.tag();
+                rocketMQTemplate.syncSend(destination, MessageBuilder.withPayload(event.body()).build());
+                outboxStore.markSent(event.messageId());
+                log.info("[mq-outbox] message sent. messageId={} topic={} tag={}", event.messageId(), event.topic(), event.tag());
             } catch (RuntimeException ex) {
-                outboxStore.markFailed(event.getMessageId());
-                log.error("[mq-outbox-error] messageId={} topic={} tag={} exception={}", event.getMessageId(), event.getTopic(), event.getTag(), ex.getClass().getName(), ex);
+                outboxStore.markFailed(event.messageId());
+                log.error("[mq-outbox-error] messageId={} topic={} tag={} exception={}", event.messageId(), event.topic(), event.tag(), ex.getClass().getName(), ex);
             }
         }
     }

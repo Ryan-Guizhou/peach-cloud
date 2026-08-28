@@ -1,6 +1,8 @@
 package com.peach.redis.bloom.constant;
 
 /**
+ * Spi常量。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/8 14:08

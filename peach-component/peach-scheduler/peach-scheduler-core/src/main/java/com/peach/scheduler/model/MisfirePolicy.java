@@ -1,7 +1,7 @@
 package com.peach.scheduler.model;
 
 /**
- * Provider 无关的错过触发策略。
+ * Misfire策略。
  *
  * @Author Mr Shu
  * @Version 1.0.0

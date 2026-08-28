@@ -6,7 +6,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Peach Scheduler Quartz 示例应用。
+ * Peach调度Example启动类。
  *
  * @Author Mr Shu
  * @Version 1.0.0

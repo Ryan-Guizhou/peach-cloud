@@ -5,14 +5,13 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * 基于输入流的上传内容。
- *
+ * 输入流内容。
  * <p>输入流通常只能读取一次，适合直接转发请求体等场景。需要重试上传时，应优先使用
  * FileContent、PathContent 或 ByteArrayContent。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/10 15:46
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/10 15:46
  */
 public class InputStreamContent implements UploadContent {
 

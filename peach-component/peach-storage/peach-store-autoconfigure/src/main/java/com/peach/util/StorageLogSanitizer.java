@@ -8,9 +8,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 存储日志脱敏工具。
- *
+ * StorageLogSanitizer相关类。
  * <p>用于输出 provider 配置摘要时隐藏 endpoint、domain、rootPath 等敏感信息。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public final class StorageLogSanitizer {
 

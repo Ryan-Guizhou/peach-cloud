@@ -1,7 +1,7 @@
 package com.peach.scheduler.model;
 
 /**
- * 任务调度定义类型。
+ * Schedule类型枚举。
  *
  * @Author Mr Shu
  * @Version 1.0.0

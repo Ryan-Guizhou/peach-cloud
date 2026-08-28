@@ -1,8 +1,7 @@
 package com.peach.scheduler.model;
 
 /**
- * 同一逻辑任务的并发执行策略。
- *
+ * Concurrency策略。
  * <p>生产环境的最终并发事实由 Scheduler JDBC 执行记录控制，Quartz Bridge 的并发行为不作为业务并发依据。</p>
  *
  * @Author Mr Shu

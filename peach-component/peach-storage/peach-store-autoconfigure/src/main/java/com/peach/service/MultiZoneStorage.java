@@ -32,13 +32,12 @@ import com.peach.storage.spi.StorageProvider;
 import java.io.InputStream;
 
 /**
- * 多存储实例服务接口。
- *
+ * 多语言Zone存储接口。
  * <p>对外提供按 provider 路由的统一存储访问入口。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 14:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 14:15
  */
 public interface MultiZoneStorage {
 

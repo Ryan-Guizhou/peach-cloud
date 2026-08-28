@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * 默认 Outbox 可靠消息发布器。
+ * DefaultMqOutboxPublisher相关类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class DefaultMqOutboxPublisher implements MqOutboxPublisher {
 
@@ -36,26 +36,30 @@ public class DefaultMqOutboxPublisher implements MqOutboxPublisher {
     public <T> String publish(T payload, MqSendOptions options) {
         MqSendOptions actualOptions = options == null ? MqSendOptions.defaults() : options;
         MqRoute route = routeResolver.resolve(payload, actualOptions);
-        MqMessageEnvelope<T> envelope = new MqMessageEnvelope<T>();
-        envelope.setMessageId(UUID.randomUUID().toString());
-        envelope.setTopic(route.getTopic());
-        envelope.setTag(route.getTag());
-        envelope.setKey(route.getKey());
-        envelope.setPayloadType(payload.getClass().getName());
-        envelope.setPayload(payload);
-        envelope.setHeaders(headerResolver.resolve(actualOptions.getHeaders()));
-        envelope.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
-        MqOutboxEvent event = new MqOutboxEvent();
-        event.setMessageId(envelope.getMessageId());
-        event.setBody(codec.encode(envelope));
-        event.setTopic(route.getTopic());
-        event.setTag(route.getTag());
-        event.setBusinessKey(route.getKey());
-        event.setOptions(actualOptions);
-        event.setStatus(MqOutboxStatus.INIT);
-        event.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
-        event.setUpdatedAt(LocalDateTime.now(ZoneId.systemDefault()));
+        MqMessageEnvelope<T> envelope = MqMessageEnvelope.create(
+                UUID.randomUUID().toString(),
+                route.topic(),
+                route.tag(),
+                route.key(),
+                null,
+                payload.getClass().getName(),
+                1,
+                headerResolver.resolve(actualOptions.getHeaders()),
+                payload,
+                LocalDateTime.now(ZoneId.systemDefault()));
+        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
+        MqOutboxEvent event = new MqOutboxEvent(
+                envelope.messageId(),
+                codec.encode(envelope),
+                route.topic(),
+                route.tag(),
+                route.key(),
+                actualOptions,
+                MqOutboxStatus.INIT,
+                0,
+                now,
+                now);
         outboxStore.save(event);
-        return event.getMessageId();
+        return event.messageId();
     }
 }

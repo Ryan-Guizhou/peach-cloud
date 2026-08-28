@@ -13,20 +13,15 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * Sa-Token 历史请求 ID 过滤器。
- *
+ * 请求Id过滤器。
  * <p>该过滤器在每个请求中执行一次，负责处理请求ID（Request ID）：</p>
  * <ul>
- *   <li>从请求头中读取指定名称（通过 {@link RequestIdProperties#getHeaderName()} 配置）的请求ID。</li>
- *   <li>若请求头中存在且符合格式要求（8~64位字母数字下划线连字符），则沿用该ID（通常由上游服务传递）。</li>
- *   <li>若请求头中不存在或格式非法，则自动生成一个新的UUID（去掉连字符）作为请求ID。</li>
- *   <li>将最终的请求ID写入响应头（相同名称），便于下游服务或客户端追踪。</li>
+ * <li>从请求头中读取指定名称（通过 {@link RequestIdProperties#getHeaderName()} 配置）的请求ID。</li>
+ * <li>若请求头中存在且符合格式要求（8~64位字母数字下划线连字符），则沿用该ID（通常由上游服务传递）。</li>
+ * <li>若请求头中不存在或格式非法，则自动生成一个新的UUID（去掉连字符）作为请求ID。</li>
+ * <li>将最终的请求ID写入响应头（相同名称），便于下游服务或客户端追踪。</li>
  * </ul>
- *
  * <p><b>格式校验：</b>使用正则 {@code ^[A-Za-z0-9_-]{8,64}$}，确保ID安全且长度合理。</p>
- *
- * @deprecated 请求 ID 已统一由 {@code peach-observability-starter} 提供。该类型不再自动注册，
- * 仅为已有手工实例化代码保留兼容。
  *
  * @Author Mr Shu
  * @Version 1.0.0

@@ -10,6 +10,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 /**
+ * 线程线程池Auto自动配置。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/5 17:52

@@ -39,6 +39,13 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+/**
+ * 存储Example运行器。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
 @Indexed
 @Component
 public class StorageExampleRunner implements CommandLineRunner {

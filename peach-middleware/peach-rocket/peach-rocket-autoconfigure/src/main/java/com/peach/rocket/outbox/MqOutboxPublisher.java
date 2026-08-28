@@ -3,11 +3,11 @@ package com.peach.rocket.outbox;
 import com.peach.rocket.core.MqSendOptions;
 
 /**
- * Outbox 可靠消息发布入口。
+ * MQ发件箱Publisher接口。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public interface MqOutboxPublisher {
 

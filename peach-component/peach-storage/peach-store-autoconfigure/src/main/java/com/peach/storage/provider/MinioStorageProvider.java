@@ -60,10 +60,13 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * MinIO 存储实现。
- *
+ * Minio存储提供者。
  * <p>该实现基于 MinIO 原生 Java SDK，对外保留 `MINIO` 类型，同时补齐可直接通过
  * MinIO/S3 兼容协议实现的前端直传、分片上传、分页列表和预签名上传能力。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public class MinioStorageProvider implements StorageProvider {
 
@@ -615,10 +618,13 @@ public class MinioStorageProvider implements StorageProvider {
     }
 
     /**
-     * 高级 MinIO 异步客户端，封装分片上传相关操作。
-     *
+     * AdvancedMinioAsync客户端。
      * <p>继承 {@link MinioAsyncClient}，提供简化的分片上传 API，
      * 隐藏底层 SDK 的复杂参数和返回值处理。</p>
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     private static final class AdvancedMinioAsyncClient extends MinioAsyncClient {
 

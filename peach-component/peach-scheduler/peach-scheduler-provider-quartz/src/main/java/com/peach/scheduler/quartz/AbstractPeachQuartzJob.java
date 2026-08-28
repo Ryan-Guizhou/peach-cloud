@@ -8,9 +8,8 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 /**
- * 调度模块相关说明。
- *
- * <p>调度模块相关说明。</p>
+ * AbstractPeachQuartzJob相关类。
+ * <p>调度模块说明。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -18,41 +17,41 @@ import org.quartz.JobExecutionException;
  */
 public abstract class AbstractPeachQuartzJob implements Job {
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      */
     public static final String CONTEXT_TRIGGER_HANDLER = "peachScheduleTriggerHandler";
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      */
     public static final String KEY_JOB_CODE = "jobCode";
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      */
     public static final String KEY_PARAMETERS = "parameters";
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      */
     protected AbstractPeachQuartzJob() {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         try {
             Object value = context.getScheduler().getContext().get(CONTEXT_TRIGGER_HANDLER);
-            if (!(value instanceof ScheduleTriggerHandler)) {
+            if (!(value instanceof ScheduleTriggerHandler handler)) {
                 throw new IllegalStateException("ScheduleTriggerHandler is not registered in Quartz SchedulerContext");
             }
-            ScheduleTriggerContext trigger = new ScheduleTriggerContext();
-            trigger.setJobCode(context.getMergedJobDataMap().getString(KEY_JOB_CODE));
-            trigger.setParameters(context.getMergedJobDataMap().getString(KEY_PARAMETERS));
-            trigger.setProviderId(QuartzSchedulingProvider.PROVIDER_ID);
-            trigger.setScheduledTime(context.getScheduledFireTime() == null
-                    ? Instant.now() : context.getScheduledFireTime().toInstant());
-            ((ScheduleTriggerHandler) value).onTrigger(trigger);
+            ScheduleTriggerContext trigger = new ScheduleTriggerContext(
+                    context.getMergedJobDataMap().getString(KEY_JOB_CODE),
+                    context.getScheduledFireTime() == null
+                            ? Instant.now() : context.getScheduledFireTime().toInstant(),
+                    context.getMergedJobDataMap().getString(KEY_PARAMETERS),
+                    QuartzSchedulingProvider.PROVIDER_ID);
+            handler.onTrigger(trigger);
         } catch (Exception ex) {
             throw new JobExecutionException("Failed to process Peach scheduler Quartz trigger", ex, false);
         }

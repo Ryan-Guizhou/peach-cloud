@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * 调度模块相关说明。
+ * DemoCleanupJob相关类。
  *
  * @Author Mr Shu
  * @Version 1.0.0

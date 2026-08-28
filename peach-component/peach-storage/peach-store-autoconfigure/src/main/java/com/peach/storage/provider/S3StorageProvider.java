@@ -55,14 +55,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 /**
- * AWS S3 存储实现。
- *
+ * S3存储提供者。
  * <p>该实现使用 AWS 官方 {@code aws-java-sdk-s3}，直接对接 S3 协议。
  * 配置中必须提供 endpoint、region、accessKey、secretKey 和 bucketName。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/17 10:20
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/17 10:20
  */
 public class S3StorageProvider implements StorageProvider {
 

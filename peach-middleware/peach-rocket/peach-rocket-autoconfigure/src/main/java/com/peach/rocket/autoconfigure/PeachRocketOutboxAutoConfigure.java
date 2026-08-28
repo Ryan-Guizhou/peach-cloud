@@ -22,11 +22,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * Peach RocketMQ Outbox 可靠消息自动配置。
+ * PeachRocketMQ发件箱Auto自动配置。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 @EnableScheduling
 @AutoConfiguration

@@ -10,7 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 
 /**
- * 自动配置。
+ * Peach调度RocketMQ自动配置。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -19,17 +19,11 @@ import org.springframework.context.annotation.Bean;
 @AutoConfiguration
 @Indexed
 public class PeachSchedulerRocketAutoConfiguration {
-    /**
-     * 创建相关对象。
-     */
-    public PeachSchedulerRocketAutoConfiguration() {
-        // Intentionally empty.
-    }
 
     /**
-     * 创建相关对象。
-     * @param outboxPublisher 参数说明
-     * @return 返回结果
+     * 创建实例。
+     * @param outboxPublisher outbox Publisher。
+     * @return 执行结果。
      */
     @Bean
     @ConditionalOnBean(MqOutboxPublisher.class)

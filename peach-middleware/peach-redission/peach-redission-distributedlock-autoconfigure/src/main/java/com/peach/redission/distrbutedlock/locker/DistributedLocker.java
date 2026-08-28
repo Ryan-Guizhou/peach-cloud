@@ -5,6 +5,8 @@ import org.redisson.api.RLock;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Distributed锁。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/22 11:38

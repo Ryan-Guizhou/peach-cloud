@@ -47,13 +47,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 /**
- * 存储 provider 运行期 SPI。
- *
+ * 存储提供者。
  * <p>该接口定义统一的对象存储访问能力，并提供部分通用默认实现。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 14:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 14:15
  */
 public interface StorageProvider extends AutoCloseable {
 

@@ -3,6 +3,8 @@ package com.peach.redission.distrbutedlock.lockinfo.impl;
 import com.peach.redission.common.AbstracyLockInfoHandle;
 
 /**
+ * Distributed锁Info处理器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/26 11:46

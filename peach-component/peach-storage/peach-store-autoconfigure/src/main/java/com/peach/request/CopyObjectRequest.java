@@ -1,13 +1,12 @@
 package com.peach.request;
 
 /**
- * 拷贝对象请求。
- *
+ * CopyObjectRequest相关类。
  * <p>通过 `recursive` 区分文件拷贝和目录拷贝。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/17 16:20
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/17 16:20
  */
 public class CopyObjectRequest extends StorageTransferRequest {
 

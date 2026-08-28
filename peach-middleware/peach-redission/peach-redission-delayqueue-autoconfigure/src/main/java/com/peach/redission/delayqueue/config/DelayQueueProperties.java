@@ -6,11 +6,12 @@ import java.util.concurrent.TimeUnit;
 import static com.peach.redission.delayqueue.config.DelayQueueProperties.PREFIX;
 
 /**
+ * 延迟队列属性配置类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/17 17:30
  * @Description 延迟队列属性配置类
- * 用于配置延迟队列的各种参数，包括线程池配置、分区数量和重试机制等
  */
 @Data
 @ConfigurationProperties(prefix = PREFIX)

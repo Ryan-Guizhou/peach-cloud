@@ -9,11 +9,11 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * AES-GCM MQ payload 加密器。
+ * AesGcmMQ载荷加密器。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class AesGcmMqPayloadEncryptor implements MqPayloadEncryptor {
 
@@ -35,11 +35,11 @@ public class AesGcmMqPayloadEncryptor implements MqPayloadEncryptor {
             byte[] iv = new byte[IV_LENGTH];
             secureRandom.nextBytes(iv);
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyProvider.getKey(context.getKeyId()), "AES"), new GCMParameterSpec(TAG_LENGTH_BIT, iv));
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyProvider.getKey(context.keyId()), "AES"), new GCMParameterSpec(TAG_LENGTH_BIT, iv));
             byte[] encrypted = cipher.doFinal(plainBytes);
             ByteBuffer buffer = ByteBuffer.allocate(iv.length + encrypted.length);
             buffer.put(iv).put(encrypted);
-            return new MqEncryptionResult(buffer.array(), context.getAlgorithm(), context.getKeyId());
+            return new MqEncryptionResult(buffer.array(), context.algorithm(), context.keyId());
         } catch (Exception ex) {
             throw new MqException("Failed to encrypt MQ payload", ex);
         }
@@ -51,7 +51,7 @@ public class AesGcmMqPayloadEncryptor implements MqPayloadEncryptor {
             byte[] iv = Arrays.copyOfRange(cipherBytes, 0, IV_LENGTH);
             byte[] encrypted = Arrays.copyOfRange(cipherBytes, IV_LENGTH, cipherBytes.length);
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyProvider.getKey(context.getKeyId()), "AES"), new GCMParameterSpec(TAG_LENGTH_BIT, iv));
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyProvider.getKey(context.keyId()), "AES"), new GCMParameterSpec(TAG_LENGTH_BIT, iv));
             return cipher.doFinal(encrypted);
         } catch (Exception ex) {
             throw new MqException("Failed to decrypt MQ payload", ex);

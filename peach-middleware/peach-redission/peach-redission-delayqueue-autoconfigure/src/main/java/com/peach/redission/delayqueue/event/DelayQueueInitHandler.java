@@ -14,6 +14,8 @@ import org.springframework.util.CollectionUtils;
 import java.util.Map;
 
 /**
+ * 延迟队列初始化处理。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/17 16:53

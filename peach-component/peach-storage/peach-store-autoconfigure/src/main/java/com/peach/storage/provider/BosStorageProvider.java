@@ -51,14 +51,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 /**
- * 百度云 BOS 存储实现。
- *
+ * Bos存储提供者。
  * <p>该实现使用百度云官方 {@code bce-java-sdk}，不经过通用 S3 协议适配。
  * 配置中必须提供 endpoint、accessKey、secretKey 和 bucketName。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/17 10:20
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/17 10:20
  */
 public class BosStorageProvider implements StorageProvider {
 

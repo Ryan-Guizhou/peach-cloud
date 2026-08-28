@@ -2,11 +2,11 @@ package com.peach.storage.constants;
 
 
 /**
- * 常见云存储 SDK Maven 坐标。
+ * CloudStorageMavenCoordinates相关类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 18:02
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 18:02
  */
 public final class CloudStorageMavenCoordinates {
 
@@ -29,12 +29,12 @@ public final class CloudStorageMavenCoordinates {
     public static final String TENCENT_COS = "com.qcloud:cos_api";
 
     /**
-     * AWS S3 SDK v1
+     * AWSS3SDKv1。。
      */
     public static final String AWS_S3 = "com.amazonaws:aws-java-sdk-s3";
 
     /**
-     * MinIO
+     * MinIO。。
      */
     public static final String MINIO = "io.minio:minio";
 

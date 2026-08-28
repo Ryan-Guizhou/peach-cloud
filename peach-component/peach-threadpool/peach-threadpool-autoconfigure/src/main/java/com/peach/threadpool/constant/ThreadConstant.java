@@ -1,6 +1,8 @@
 package com.peach.threadpool.constant;
 
 /**
+ * 线程常量。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/5 17:51

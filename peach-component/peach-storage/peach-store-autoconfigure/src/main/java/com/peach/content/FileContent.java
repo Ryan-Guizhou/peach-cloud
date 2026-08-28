@@ -8,11 +8,11 @@ import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * 基于本地文件的上传内容。
+ * 文件内容。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/10 15:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/10 15:15
  */
 public class FileContent implements UploadContent {
 

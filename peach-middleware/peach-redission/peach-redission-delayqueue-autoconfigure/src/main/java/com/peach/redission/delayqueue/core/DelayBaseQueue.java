@@ -6,11 +6,12 @@ import org.redisson.api.RedissonClient;
 
 
 /**
+ * 延迟队列基础类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/17 16:53
  * @Description 延迟队列基础类
- * 提供延迟队列的基本功能，包括Redisson客户端的初始化和阻塞队列的获取
  */
 @Slf4j
 public class DelayBaseQueue {

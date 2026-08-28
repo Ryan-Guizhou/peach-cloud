@@ -1,7 +1,7 @@
 package com.peach.scheduler.core;
 
 /**
- * 业务调度相关说明。
+ * 任务结果。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -20,20 +20,20 @@ public final class JobResult {
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public static JobResult success() {
         return new JobResult(true, "SUCCESS", null);
     }
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param code 参数说明
-     * @param message 参数说明
-     * @return 返回结果
+     * @param code code。
+     * @param message message。
+     * @return 执行结果。
      */
     public static JobResult failure(String code, String message) {
         return new JobResult(false, code, message);
@@ -42,7 +42,7 @@ public final class JobResult {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public boolean isSuccess() {
         return success;
@@ -50,7 +50,7 @@ public final class JobResult {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public String getCode() {
         return code;
@@ -58,7 +58,7 @@ public final class JobResult {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public String getMessage() {
         return message;

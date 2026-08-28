@@ -3,11 +3,11 @@ package com.peach.rocket.route;
 import com.peach.rocket.core.MqSendOptions;
 
 /**
- * MQ 路由解析器。
+ * MQRoute解析器。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public interface MqRouteResolver {
 

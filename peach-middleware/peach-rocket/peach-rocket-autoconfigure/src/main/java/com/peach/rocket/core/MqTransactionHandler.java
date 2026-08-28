@@ -1,12 +1,12 @@
 package com.peach.rocket.core;
 
 /**
- * RocketMQ 事务消息处理器。
+ * MQ事务处理器。
  *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  * @param <T> payload 类型
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
  */
 public interface MqTransactionHandler<T> {
 

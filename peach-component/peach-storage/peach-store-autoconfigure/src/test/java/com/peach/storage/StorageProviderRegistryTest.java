@@ -12,6 +12,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 存储ProviderRegistryTest。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
+
 class StorageProviderRegistryTest {
 
     @Test
@@ -35,6 +43,14 @@ class StorageProviderRegistryTest {
         registry.destroy();
         assertTrue(provider.closed.get());
     }
+
+    /**
+     * Test提供者。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     private static class TestProvider implements StorageProvider {
 

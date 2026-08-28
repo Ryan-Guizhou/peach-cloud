@@ -1,7 +1,7 @@
 package com.peach.satoken.context;
 
 /**
- * 当前请求的已验真用户上下文持有者。
+ * SecurityContextHolder相关类。
  * <p>
  * 基于 {@link ThreadLocal} 实现，用于在当前线程中存储和访问已登录用户的 {@link UserContext} 信息。
  * 适用于 Web 请求的单次生命周期内，在 Controller、Service、DAO 等各层之间传递用户身份数据，

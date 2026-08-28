@@ -5,15 +5,14 @@ import com.peach.enums.StorageResultCode;
 import com.peach.exception.StorageException;
 
 /**
- * 单对象操作基础请求。
- *
+ * StorageObjectRequest相关类。
  * <p>`bucketName` 可以为空。对象存储类型会使用默认 bucket；LOCAL/NAS/SFTP 这类无物理 bucket
  * 的 provider 会使用固定 alias，并以配置的 `rootPath` 作为真实边界。`objectKey` 必须是对象
  * 存储 key，不建议业务层传入本地绝对路径。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 public class StorageObjectRequest {
 

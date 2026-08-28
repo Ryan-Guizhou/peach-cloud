@@ -24,7 +24,7 @@ import org.quartz.TriggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
+import com.peach.scheduler.quartz.internal.QuartzDateBridge;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -32,8 +32,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 /**
- * 基于 Quartz 的 Peach Scheduler Provider。
- *
+ * QuartzScheduling提供者。
  * <p>该实现负责将统一 {@link JobDefinition} 映射为 Quartz JobDetail/Trigger，并提供动态创建、
  * 更新、暂停、恢复、删除和手动触发能力。</p>
  *
@@ -62,7 +61,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     /**
      * 创建 Quartz Provider。
      *
-     * @param scheduler 参数说明
+     * @param scheduler scheduler。
      * @param properties Peach Quartz 配置
      */
     public QuartzSchedulingProvider(Scheduler scheduler, PeachQuartzProperties properties) {
@@ -71,7 +70,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public String getProviderId() {
@@ -79,7 +78,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public Set<SchedulerCapability> getCapabilities() {
@@ -87,7 +86,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void schedule(JobDefinition definition) {
@@ -110,7 +109,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void reschedule(JobDefinition definition) {
@@ -145,7 +144,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void pause(String jobCode) {
@@ -153,7 +152,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void resume(String jobCode) {
@@ -161,7 +160,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void delete(String jobCode) {
@@ -169,7 +168,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void trigger(String jobCode, String parameters) {
@@ -184,7 +183,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public boolean exists(String jobCode) {
@@ -240,7 +239,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
                     : schedule.withMisfireHandlingInstructionFireNow();
             return builder.withSchedule(schedule).startNow().build();
         }
-        return builder.startAt(Date.from(definition.getStartAt())).build();
+        return builder.startAt(QuartzDateBridge.toQuartzDate(definition.getStartAt())).build();
     }
 
     private JobKey jobKey(String jobCode) {
@@ -261,7 +260,11 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * Quartz 受检异常调用适配器。
+     * QuartzCall接口。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     private interface QuartzCall {
 

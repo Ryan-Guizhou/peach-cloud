@@ -59,14 +59,13 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * 阿里云 OSS 存储实现。
- *
+ * Oss存储提供者。
  * <p>该实现使用阿里云官方 {@code aliyun-sdk-oss}，不通过通用 S3 协议适配。
  * 配置中必须提供 endpoint、accessKey、secretKey 和 bucketName。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/10 14:52
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/10 14:52
  */
 public class OssStorageProvider implements StorageProvider {
 

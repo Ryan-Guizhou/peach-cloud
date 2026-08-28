@@ -1,7 +1,7 @@
 package com.peach.scheduler.core;
 
 /**
- * 不可变调度上下文。
+ * 任务上下文。
  *
  * @Author Mr Shu
  * @Version 1.0.0

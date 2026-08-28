@@ -3,11 +3,11 @@ package com.peach.rocket.outbox;
 import java.util.List;
 
 /**
- * Outbox 可靠消息存储 SPI。
+ * MQ发件箱存储。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public interface MqOutboxStore {
 

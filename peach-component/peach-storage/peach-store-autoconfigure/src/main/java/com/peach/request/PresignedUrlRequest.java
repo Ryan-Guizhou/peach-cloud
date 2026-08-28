@@ -4,11 +4,11 @@ import com.peach.enums.StorageResultCode;
 import com.peach.exception.StorageException;
 
 /**
- * 预签名 URL 请求。
+ * PresignedUrlRequest相关类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 public class PresignedUrlRequest extends StorageObjectRequest {
 

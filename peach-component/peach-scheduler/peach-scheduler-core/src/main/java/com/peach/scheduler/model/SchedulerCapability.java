@@ -1,8 +1,7 @@
 package com.peach.scheduler.model;
 
 /**
- * 调度 Provider 对外暴露的可选能力。
- *
+ * 调度Capability枚举。
  * <p>上层代码可以基于能力集合判断当前 Provider 是否支持对应控制操作，避免直接依赖具体调度引擎。</p>
  *
  * @Author Mr Shu

@@ -26,10 +26,13 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 受管线程池入口。
- *
+ * 线程线程池管理器。
  * <p>负责创建不同任务类型的线程池，并在提交任务时传播日志、链路和安全上下文。调用方不应
  * 绕过该入口创建无法统一关闭和观测的游离线程池。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public class ThreadPoolManager {
 

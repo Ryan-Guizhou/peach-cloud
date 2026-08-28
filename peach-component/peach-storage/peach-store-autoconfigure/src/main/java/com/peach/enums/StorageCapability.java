@@ -1,14 +1,13 @@
 package com.peach.enums;
 
 /**
- * 存储增强能力枚举。
- *
+ * 存储Capability枚举。
  * <p>该枚举只描述不同 provider 之间的可选增强能力，不重复表达所有实现都必须具备的
  * 基础能力，例如上传、下载、删除和查询对象元信息。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 14:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 14:15
  */
 public enum StorageCapability {
 

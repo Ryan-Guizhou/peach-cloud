@@ -1,13 +1,14 @@
 package com.peach.satoken.session;
 
+import java.io.Serial;
+
 import cn.dev33.satoken.session.SaSession;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.io.Serializable;
 
 /**
- * Sa-Token 会话定制实现。
- *
+ * PeachSaSessionForJacksonCustomized相关类。
  * <p>仅用于 Jackson 序列化时忽略 `timeout` 属性，避免会话反序列化时携带不需要的字段。</p>
  *
  * @Author Mr Shu
@@ -17,7 +18,8 @@ import java.io.Serializable;
 @JsonIgnoreProperties({"timeout"})
 public class PeachSaSessionForJacksonCustomized extends SaSession implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 4607035593341920764L;
 
     /**
      * 无参构造。

@@ -3,11 +3,11 @@ package com.peach.response;
 import java.time.Instant;
 
 /**
- * 分片上传信息结果。
+ * 上传Part结果。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 14:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 14:15
  */
 public class UploadPartResult {
 

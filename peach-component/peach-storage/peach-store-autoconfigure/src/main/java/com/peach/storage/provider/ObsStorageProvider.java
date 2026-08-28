@@ -48,14 +48,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 /**
- * 华为云 OBS 存储实现。
- *
+ * Obs存储提供者。
  * <p>该实现使用华为云官方 {@code esdk-obs-java}，不通过通用 S3 协议适配。
  * 配置中必须提供 endpoint、accessKey、secretKey 和 bucketName。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 public class ObsStorageProvider implements StorageProvider {
 

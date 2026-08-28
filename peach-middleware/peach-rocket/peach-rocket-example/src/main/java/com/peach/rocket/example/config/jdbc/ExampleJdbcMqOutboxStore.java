@@ -15,11 +15,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
- * Example 模块中的 JDBC Outbox 存储实现。
+ * ExampleJdbcMQ发件箱存储。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class ExampleJdbcMqOutboxStore implements MqOutboxStore {
     private static final String SQL_UPDATE_PREFIX = "UPDATE ";
@@ -42,8 +42,8 @@ public class ExampleJdbcMqOutboxStore implements MqOutboxStore {
         jdbcTemplate.update("INSERT INTO " + TABLE_NAME
                         + " (message_id, topic, tag, business_key, payload, send_mode, status, retry_count, next_retry_time, created_at, updated_at)"
                         + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                event.getMessageId(), event.getTopic(), event.getTag(), event.getBusinessKey(),
-                Base64.getEncoder().encodeToString(event.getBody()), "NORMAL", MqOutboxStatus.INIT.name(), 0,
+                event.messageId(), event.topic(), event.tag(), event.businessKey(),
+                Base64.getEncoder().encodeToString(event.body()), "NORMAL", MqOutboxStatus.INIT.name(), 0,
                 Timestamp.valueOf(now), Timestamp.valueOf(now), Timestamp.valueOf(now));
     }
 
@@ -73,22 +73,30 @@ public class ExampleJdbcMqOutboxStore implements MqOutboxStore {
         return updated == 1;
     }
 
+    /**
+     * 发件箱RowMapper。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
     private static final class OutboxRowMapper implements RowMapper<MqOutboxEvent> {
         @Override
         public MqOutboxEvent mapRow(ResultSet rs, int rowNum) throws SQLException {
-            MqOutboxEvent event = new MqOutboxEvent();
-            event.setMessageId(rs.getString("message_id"));
-            event.setTopic(rs.getString("topic"));
-            event.setTag(rs.getString("tag"));
-            event.setBusinessKey(rs.getString("business_key"));
-            event.setBody(Base64.getDecoder().decode(rs.getString("payload")));
-            event.setStatus(MqOutboxStatus.valueOf(rs.getString("status")));
-            event.setRetryCount(rs.getInt("retry_count"));
             Timestamp createdAt = rs.getTimestamp("created_at");
             Timestamp updatedAt = rs.getTimestamp("updated_at");
-            event.setCreatedAt(createdAt == null ? null : createdAt.toLocalDateTime());
-            event.setUpdatedAt(updatedAt == null ? null : updatedAt.toLocalDateTime());
-            return event;
+            return new MqOutboxEvent(
+                    rs.getString("message_id"),
+                    Base64.getDecoder().decode(rs.getString("payload")),
+                    rs.getString("topic"),
+                    rs.getString("tag"),
+                    rs.getString("business_key"),
+                    null,
+                    MqOutboxStatus.valueOf(rs.getString("status")),
+                    rs.getInt("retry_count"),
+                    createdAt == null ? null : createdAt.toLocalDateTime(),
+                    updatedAt == null ? null : updatedAt.toLocalDateTime());
         }
     }
 }

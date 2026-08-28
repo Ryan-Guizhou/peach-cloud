@@ -7,7 +7,11 @@ import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Sa-Token Servlet 自动配置测试。
+ * PeachSa令牌WebAutoConfigurationTest。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 class PeachSaTokenWebAutoConfigurationTest {
 

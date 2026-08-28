@@ -17,8 +17,6 @@ import com.peach.rocket.route.MqRouteResolver;
 import com.peach.rocket.transaction.RocketMqTransactionMessageProducer;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -33,16 +31,16 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.StringUtils;
 
 /**
- * 基于 {@link RocketMQTemplate} 的 MQ 生产者适配器。
+ * RocketMqPublisher相关类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 @Slf4j
 public class RocketMqPublisher implements MqPublisher {
 
-    private static final List<DelayLevel> DEFAULT_DELAY_LEVELS = Collections.unmodifiableList(Arrays.asList(
+    private static final List<DelayLevel> DEFAULT_DELAY_LEVELS = List.of(
             new DelayLevel(1, Duration.ofSeconds(1)), new DelayLevel(2, Duration.ofSeconds(5)),
             new DelayLevel(3, Duration.ofSeconds(10)), new DelayLevel(4, Duration.ofSeconds(30)),
             new DelayLevel(5, Duration.ofMinutes(1)), new DelayLevel(6, Duration.ofMinutes(2)),
@@ -51,7 +49,7 @@ public class RocketMqPublisher implements MqPublisher {
             new DelayLevel(11, Duration.ofMinutes(7)), new DelayLevel(12, Duration.ofMinutes(8)),
             new DelayLevel(13, Duration.ofMinutes(9)), new DelayLevel(14, Duration.ofMinutes(10)),
             new DelayLevel(15, Duration.ofMinutes(20)), new DelayLevel(16, Duration.ofMinutes(30)),
-            new DelayLevel(17, Duration.ofHours(1)), new DelayLevel(18, Duration.ofHours(2))));
+            new DelayLevel(17, Duration.ofHours(1)), new DelayLevel(18, Duration.ofHours(2)));
 
     private final RocketMQTemplate rocketMQTemplate;
     private final MqMessageCodec codec;
@@ -92,8 +90,8 @@ public class RocketMqPublisher implements MqPublisher {
                 : rocketMQTemplate.syncSend(destination(route), buildMessage(payload, actualOptions, route), actualOptions.getTimeoutMillis(), delayLevel);
         MqSendResult mqSendResult = toMqSendResult(result, route);
         log.info("[mq-send] app={} payloadType={} mode=sync topic={} tag={} key={} delayLevel={} messageId={} status={} cost={}ms success={}",
-                properties.getAppName(), payload.getClass().getSimpleName(), mqSendResult.getTopic(), mqSendResult.getTag(),
-                mqSendResult.getKey(), delayLevel, mqSendResult.getMessageId(), mqSendResult.getRawStatus(),
+                properties.getAppName(), payload.getClass().getSimpleName(), mqSendResult.topic(), mqSendResult.tag(),
+                mqSendResult.key(), delayLevel, mqSendResult.messageId(), mqSendResult.rawStatus(),
                 System.currentTimeMillis() - start, mqSendResult.isSuccess());
         return mqSendResult;
     }
@@ -109,24 +107,9 @@ public class RocketMqPublisher implements MqPublisher {
         final long start = System.currentTimeMillis();
         final MqRoute route = routeResolver.resolve(payload, actualOptions);
         final CompletableFuture<MqSendResult> future = new CompletableFuture<MqSendResult>();
-        rocketMQTemplate.asyncSend(destination(route), buildMessage(payload, actualOptions, route), new SendCallback() {
-            @Override
-            public void onSuccess(SendResult sendResult) {
-                MqSendResult result = toMqSendResult(sendResult, route);
-                log.info("[mq-send] app={} payloadType={} mode=async topic={} tag={} key={} messageId={} status={} cost={}ms success={}",
-                        properties.getAppName(), payload.getClass().getSimpleName(), result.getTopic(), result.getTag(),
-                        result.getKey(), result.getMessageId(), result.getRawStatus(), System.currentTimeMillis() - start, result.isSuccess());
-                future.complete(result);
-            }
-
-            @Override
-            public void onException(Throwable throwable) {
-                log.error("[mq-send-error] app={} payloadType={} mode=async topic={} tag={} key={} cost={}ms exception={}",
-                        properties.getAppName(), payload.getClass().getSimpleName(), route.getTopic(), route.getTag(), route.getKey(),
-                        System.currentTimeMillis() - start, throwable.getClass().getName(), throwable);
-                future.completeExceptionally(throwable);
-            }
-        }, actualOptions.getTimeoutMillis());
+        rocketMQTemplate.asyncSend(destination(route), buildMessage(payload, actualOptions, route),
+                new AsyncSendCallback(this, properties, payload, route, start, future),
+                actualOptions.getTimeoutMillis());
         return future;
     }
 
@@ -136,7 +119,7 @@ public class RocketMqPublisher implements MqPublisher {
         MqRoute route = routeResolver.resolve(payload, actualOptions);
         rocketMQTemplate.sendOneWay(destination(route), buildMessage(payload, actualOptions, route));
         log.info("[mq-send] app={} payloadType={} mode=one-way topic={} tag={} key={} success=true",
-                properties.getAppName(), payload.getClass().getSimpleName(), route.getTopic(), route.getTag(), route.getKey());
+                properties.getAppName(), payload.getClass().getSimpleName(), route.topic(), route.tag(), route.key());
     }
 
     @Override
@@ -180,36 +163,36 @@ public class RocketMqPublisher implements MqPublisher {
     }
 
     private <T> Message<byte[]> buildMessage(T payload, MqSendOptions options, MqRoute route) {
-        MqMessageEnvelope<T> envelope = new MqMessageEnvelope<T>();
-        envelope.setMessageId(UUID.randomUUID().toString());
-        envelope.setTopic(route.getTopic());
-        envelope.setTag(route.getTag());
-        envelope.setKey(route.getKey());
-        envelope.setProducerApp(properties.getAppName());
-        envelope.setVersion(resolveVersion(payload));
-        envelope.setPayloadType(payload.getClass().getName());
-        envelope.setPayload(payload);
-        envelope.setHeaders(headerResolver.resolve(options.getHeaders()));
-        envelope.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
+        MqMessageEnvelope<T> envelope = MqMessageEnvelope.create(
+                UUID.randomUUID().toString(),
+                route.topic(),
+                route.tag(),
+                route.key(),
+                properties.getAppName(),
+                payload.getClass().getName(),
+                resolveVersion(payload),
+                headerResolver.resolve(options.getHeaders()),
+                payload,
+                LocalDateTime.now(ZoneId.systemDefault()));
         MessageBuilder<byte[]> builder = MessageBuilder.withPayload(codec.encode(envelope));
-        if (StringUtils.hasText(route.getKey())) {
-            builder.setHeader(MessageConst.PROPERTY_KEYS, route.getKey());
+        if (StringUtils.hasText(route.key())) {
+            builder.setHeader(MessageConst.PROPERTY_KEYS, route.key());
         }
-        for (String name : envelope.getHeaders().keySet()) {
-            builder.setHeader(name, envelope.getHeaders().get(name));
+        for (String name : envelope.headers().keySet()) {
+            builder.setHeader(name, envelope.headers().get(name));
         }
         return builder.build();
     }
 
     private String destination(MqRoute route) {
-        return StringUtils.hasText(route.getTag()) ? route.getTopic() + ":" + route.getTag() : route.getTopic();
+        return StringUtils.hasText(route.tag()) ? route.topic() + ":" + route.tag() : route.topic();
     }
 
     private MqSendResult toMqSendResult(SendResult result, MqRoute route) {
         return MqSendResult.builder()
                 .success(result != null && result.getSendStatus() == SendStatus.SEND_OK)
                 .messageId(result == null ? null : result.getMsgId())
-                .topic(route.getTopic()).tag(route.getTag()).key(route.getKey())
+                .topic(route.topic()).tag(route.tag()).key(route.key())
                 .rawStatus(result == null || result.getSendStatus() == null ? null : result.getSendStatus().name())
                 .build();
     }
@@ -223,10 +206,10 @@ public class RocketMqPublisher implements MqPublisher {
         if (delay == null) {
             return null;
         }
-        if (delay.getRocketMqDelayLevel() != null) {
-            return delay.getRocketMqDelayLevel();
+        if (delay.rocketMqDelayLevel() != null) {
+            return delay.rocketMqDelayLevel();
         }
-        Duration duration = delay.getDuration();
+        Duration duration = delay.duration();
         for (DelayLevel level : DEFAULT_DELAY_LEVELS) {
             if (!level.getDuration().minus(duration).isNegative()) {
                 return level.getLevel();
@@ -234,6 +217,63 @@ public class RocketMqPublisher implements MqPublisher {
         }
         return DEFAULT_DELAY_LEVELS.get(DEFAULT_DELAY_LEVELS.size() - 1).getLevel();
     }
+
+    /**
+     * AsyncSend回调。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
+    private static final class AsyncSendCallback implements SendCallback {
+
+        private final RocketMqPublisher publisher;
+        private final PeachRocketProperties properties;
+        private final Object payload;
+        private final MqRoute route;
+        private final long start;
+        private final CompletableFuture<MqSendResult> future;
+
+        private AsyncSendCallback(RocketMqPublisher publisher,
+                                  PeachRocketProperties properties,
+                                  Object payload,
+                                  MqRoute route,
+                                  long start,
+                                  CompletableFuture<MqSendResult> future) {
+            this.publisher = publisher;
+            this.properties = properties;
+            this.payload = payload;
+            this.route = route;
+            this.start = start;
+            this.future = future;
+        }
+
+        @Override
+        public void onSuccess(SendResult sendResult) {
+            MqSendResult result = publisher.toMqSendResult(sendResult, route);
+            log.info("[mq-send] app={} payloadType={} mode=async topic={} tag={} key={} messageId={} status={} cost={}ms success={}",
+                    properties.getAppName(), payload.getClass().getSimpleName(), result.topic(), result.tag(),
+                    result.key(), result.messageId(), result.rawStatus(), System.currentTimeMillis() - start, result.isSuccess());
+            future.complete(result);
+        }
+
+        @Override
+        public void onException(Throwable throwable) {
+            log.error("[mq-send-error] app={} payloadType={} mode=async topic={} tag={} key={} cost={}ms exception={}",
+                    properties.getAppName(), payload.getClass().getSimpleName(), route.topic(), route.tag(), route.key(),
+                    System.currentTimeMillis() - start, throwable.getClass().getName(), throwable);
+            future.completeExceptionally(throwable);
+        }
+    }
+
+    /**
+     * 延迟Level。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     private static class DelayLevel {
         private final int level;

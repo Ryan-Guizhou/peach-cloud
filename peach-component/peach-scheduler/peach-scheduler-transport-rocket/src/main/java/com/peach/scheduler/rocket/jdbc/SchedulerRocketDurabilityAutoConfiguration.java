@@ -16,16 +16,16 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 
 /**
- * 验证相关行为。
+ * 调度RocketMQDurability自动配置。
  *
- * <p>调度模块相关说明。
- * 调度模块相关说明。
- * 调度模块相关说明。
- * 调度模块相关说明。</p>
+ * <p>调度模块说明。
+ * 调度模块说明。
+ * 调度模块说明。
+ * 调度模块说明。</p>
  *
- * <p>调度模块相关说明。
- * 调度模块相关说明。
- * 调度模块相关说明。</p>
+ * <p>调度模块说明。
+ * 调度模块说明。
+ * 调度模块说明。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -39,18 +39,11 @@ import org.springframework.context.annotation.Bean;
 public class SchedulerRocketDurabilityAutoConfiguration {
 
     /**
-     * 创建相关对象。
-     */
-    public SchedulerRocketDurabilityAutoConfiguration() {
-        // Intentionally empty.
-    }
-
-    /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param outboxStoreProvider 参数说明
-     * @param idempotentStoreProvider 参数说明
-     * @return 返回结果
+     * @param outboxStoreProvider outbox Store Provider。
+     * @param idempotentStoreProvider idempotent Store Provider。
+     * @return 执行结果。
      */
     @Bean
     public SmartInitializingSingleton schedulerRocketDurabilityVerifier(

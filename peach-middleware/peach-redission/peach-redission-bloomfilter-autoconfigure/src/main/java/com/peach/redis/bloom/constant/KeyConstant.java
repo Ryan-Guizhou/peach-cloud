@@ -1,6 +1,8 @@
 package com.peach.redis.bloom.constant;
 
 /**
+ * 键常量。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/11/27 15:17

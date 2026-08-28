@@ -7,11 +7,11 @@ import com.peach.rocket.exception.MqException;
 import java.io.IOException;
 
 /**
- * 基于 Jackson 的 MQ 标准信封编解码器。
+ * JacksonMqMessageCodec相关类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class JacksonMqMessageCodec implements MqMessageCodec {
 

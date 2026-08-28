@@ -1,6 +1,8 @@
 package com.peach.redis.constant;
 
 /**
+ * Redis常量。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 17:39

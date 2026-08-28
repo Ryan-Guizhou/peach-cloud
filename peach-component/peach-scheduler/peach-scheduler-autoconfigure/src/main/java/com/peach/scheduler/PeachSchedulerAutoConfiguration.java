@@ -20,7 +20,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 /**
- * 自动配置。
+ * Peach调度自动配置。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -33,16 +33,9 @@ import org.springframework.context.annotation.Bean;
 public class PeachSchedulerAutoConfiguration {
 
     /**
-     * 创建相关对象。
-     */
-    public PeachSchedulerAutoConfiguration() {
-        // Intentionally empty.
-    }
-
-    /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     @Bean
     @ConditionalOnMissingBean
@@ -51,10 +44,10 @@ public class PeachSchedulerAutoConfiguration {
     }
 
     /**
-     * 创建相关对象。
-     * @param registry 参数说明
-     * @param handlers 参数说明
-     * @return 返回结果
+     * 创建实例。
+     * @param registry registry。
+     * @param handlers handlers。
+     * @return 执行结果。
      */
     @Bean
     @ConditionalOnMissingBean
@@ -63,13 +56,13 @@ public class PeachSchedulerAutoConfiguration {
     }
 
     /**
-     * 创建相关对象。
-     * @param registry 参数说明
-     * @param threadPoolManager 参数说明
-     * @param leaseClient 参数说明
-     * @param resultReporter 参数说明
-     * @param properties 参数说明
-     * @return 返回结果
+     * 创建实例。
+     * @param registry registry。
+     * @param threadPoolManager thread Pool Manager。
+     * @param leaseClient lease Client。
+     * @param resultReporter result Reporter。
+     * @param properties properties。
+     * @return 执行结果。
      */
     @Bean
     @ConditionalOnBean({ThreadPoolManager.class, ExecutionLeaseClient.class, ExecutionResultReporter.class})

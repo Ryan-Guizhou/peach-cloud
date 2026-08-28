@@ -21,11 +21,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * 死信队列管理器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/17 16:53
  * @Description 死信队列管理器
- * 用于处理多次重试失败的消息，将这些消息存储到专门的死信队列中，以便后续分析和处理
  */
 @Slf4j
 public class DeadLetterQueueManager {

@@ -26,10 +26,14 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 /**
- * 自动装配：在容器中存在 {@link org.redisson.api.RedissonClient} 时，
+ * 布隆过滤器自动配置。
  * 提供默认的 {@link com.peach.redis.bloom.core.BloomFilterService} 实现。
  * 支持通过 SPI 覆盖命名策略、编解码器与扩容策略；
  * 同时允许用户自定义 Bean 覆盖（使用 @ConditionalOnMissingBean）。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @Slf4j
 @Indexed

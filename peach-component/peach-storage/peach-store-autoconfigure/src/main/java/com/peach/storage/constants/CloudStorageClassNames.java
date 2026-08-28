@@ -2,11 +2,11 @@ package com.peach.storage.constants;
 
 
 /**
- * 云存储 SDK 核心类全限定名。
+ * CloudStorageClassNames相关类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 18:02
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 18:02
  */
 public final class CloudStorageClassNames {
 
@@ -35,12 +35,12 @@ public final class CloudStorageClassNames {
     public static final String TENCENT_COS = "com.qcloud.cos.COSClient";
 
     /**
-     * AWS S3 SDK v1
+     * AWSS3SDKv1。。
      */
     public static final String AWS_S3 = "com.amazonaws.services.s3.AmazonS3";
 
     /**
-     * MinIO
+     * MinIO。。
      */
     public static final String MINIO = "io.minio.MinioClient";
 

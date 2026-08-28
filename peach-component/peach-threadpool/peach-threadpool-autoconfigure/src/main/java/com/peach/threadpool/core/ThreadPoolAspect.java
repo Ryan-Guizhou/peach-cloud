@@ -16,6 +16,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 线程线程池切面。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/5 18:50
@@ -47,8 +49,7 @@ public class ThreadPoolAspect {
             return CompletableFuture.supplyAsync(()->{
                 try {
                     Object result = pjp.proceed();
-                    if (result instanceof CompletableFuture) {
-                        CompletableFuture<Object> cf = (CompletableFuture<Object>) result;
+                    if (result instanceof CompletableFuture<?> cf) {
                         return cf.join();
                     }
                     return result;

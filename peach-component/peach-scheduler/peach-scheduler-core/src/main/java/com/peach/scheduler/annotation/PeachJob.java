@@ -9,8 +9,8 @@ import java.lang.annotation.Target;
 /**
  * 更新相关状态。
  *
- * <p>调度模块相关说明。
- * 调度模块相关说明。</p>
+ * <p>调度模块说明。
+ * 调度模块说明。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -24,14 +24,14 @@ public @interface PeachJob {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     String value();
 
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     String description() default "";
 }

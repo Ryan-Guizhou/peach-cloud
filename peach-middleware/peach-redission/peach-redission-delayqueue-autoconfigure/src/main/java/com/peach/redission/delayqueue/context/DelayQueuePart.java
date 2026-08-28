@@ -4,6 +4,8 @@ import com.peach.redission.delayqueue.core.ConsumerTask;
 import lombok.Data;
 
 /**
+ * 延迟队列部分。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/17 17:35

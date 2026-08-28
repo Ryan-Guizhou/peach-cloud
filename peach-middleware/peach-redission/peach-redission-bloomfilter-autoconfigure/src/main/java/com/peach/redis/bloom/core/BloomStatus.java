@@ -5,7 +5,11 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 命名空间级状态模型：包含段状态、近似计数、容量、综合 FPP 等。
+ * BloomStatus相关类。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public class BloomStatus {
 

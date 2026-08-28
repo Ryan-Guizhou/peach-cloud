@@ -12,6 +12,14 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Peach存储AutoConfigurationTest。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
+
 class PeachStorageAutoConfigurationTest {
 
     @Test

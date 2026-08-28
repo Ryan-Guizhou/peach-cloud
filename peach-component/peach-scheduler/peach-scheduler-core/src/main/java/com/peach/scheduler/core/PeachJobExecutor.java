@@ -3,7 +3,7 @@ package com.peach.scheduler.core;
 import com.peach.scheduler.transport.JobExecutionCommand;
 
 /**
- * 调度运行时说明。
+ * Peach任务Executor接口。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -12,9 +12,9 @@ import com.peach.scheduler.transport.JobExecutionCommand;
 public interface PeachJobExecutor {
 
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      *
-     * @param command 参数说明
+     * @param command command。
      */
     void execute(JobExecutionCommand command);
 }

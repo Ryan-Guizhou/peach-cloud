@@ -1,11 +1,12 @@
 package com.peach.redission.delayqueue.core;
 
 /**
+ * 消费者任务顶级抽象接口。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/17 16:53
  * @Description 消费者任务顶级抽象接口
- * 所有延迟队列的消费者都需要实现此接口，定义如何处理延迟消息
  */
 public interface ConsumerTask {
 

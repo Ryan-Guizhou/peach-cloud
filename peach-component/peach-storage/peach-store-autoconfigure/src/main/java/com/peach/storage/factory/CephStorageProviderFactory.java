@@ -10,11 +10,11 @@ import com.peach.storage.spi.StorageProviderFactory;
 import com.peach.storage.factory.support.StorageValidationSupport;
 
 /**
- * CEPH provider 工厂。
+ * Ceph存储Provider工厂。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/17 10:20
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/17 10:20
  */
 public class CephStorageProviderFactory implements StorageProviderFactory {
 

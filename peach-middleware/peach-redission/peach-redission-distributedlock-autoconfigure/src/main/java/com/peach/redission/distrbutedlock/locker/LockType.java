@@ -1,5 +1,13 @@
 package com.peach.redission.distrbutedlock.locker;
 
+/**
+ * 锁类型枚举。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
+
 public enum LockType {
     /**
      * 可重入锁

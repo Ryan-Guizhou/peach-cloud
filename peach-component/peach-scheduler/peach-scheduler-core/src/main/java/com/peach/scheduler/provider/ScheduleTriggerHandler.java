@@ -1,7 +1,7 @@
 package com.peach.scheduler.provider;
 
 /**
- * 调度触发回调。
+ * ScheduleTrigger处理器。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -10,9 +10,9 @@ package com.peach.scheduler.provider;
 public interface ScheduleTriggerHandler {
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param context 参数说明
+     * @param context context。
      */
     void onTrigger(ScheduleTriggerContext context);
 }

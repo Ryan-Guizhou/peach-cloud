@@ -3,8 +3,12 @@ package com.peach.redis.bloom.core;
 import java.util.Collection;
 
 /**
- * BloomFilter 服务接口，封装命名空间级增查与批处理能力。
+ * 布隆过滤器服务类。
  * 写入统一进入尾段（最新段），读取跨段（新→旧）。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public interface BloomFilterService {
 

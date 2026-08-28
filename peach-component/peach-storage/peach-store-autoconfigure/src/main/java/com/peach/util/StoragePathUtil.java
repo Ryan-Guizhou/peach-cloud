@@ -12,34 +12,30 @@ import java.util.List;
 
 /**
  * 存储路径工具类。
- *
  * <p>核心设计理念：
  * <ul>
- *   <li><b>统一分隔符：</b>对象存储（OSS/S3）统一使用 {@code /} 作为 Key 分隔符，不依赖操作系统</li>
- *   <li><b>安全防护：</b>严格过滤 {@code ..} 路径穿越符号，确保所有操作都在配置的根目录内</li>
- *   <li><b>跨平台兼容：</b>LOCAL/NAS 落盘时，将对象 Key 转换为当前操作系统的 {@link Path} 格式</li>
+ * <li><b>统一分隔符：</b>对象存储（OSS/S3）统一使用 {@code /} 作为 Key 分隔符，不依赖操作系统</li>
+ * <li><b>安全防护：</b>严格过滤 {@code ..} 路径穿越符号，确保所有操作都在配置的根目录内</li>
+ * <li><b>跨平台兼容：</b>LOCAL/NAS 落盘时，将对象 Key 转换为当前操作系统的 {@link Path} 格式</li>
  * </ul>
  * </p>
- *
  * <p><b>使用示例：</b>
  * <pre>{@code
  * // 规范化对象Key
  * String key = StoragePathUtil.normalizeObjectKey("images//avatar/../photo.jpg");
  * // 输出: "images/photo.jpg"
- *
  * // 拼接对象Key
  * String fullKey = StoragePathUtil.joinObjectKey("user", "123", "file.txt");
  * // 输出: "user/123/file.txt"
- *
  * // 转换为本地路径（自动适配Windows/Linux）
  * Path localPath = StoragePathUtil.resolveLocalPath(Paths.get("/data"), "user/file.txt");
  * // Linux: /data/user/file.txt
  * // Windows: D:\\data\\user\\file.txt
  * }</pre>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 public final class StoragePathUtil {
 

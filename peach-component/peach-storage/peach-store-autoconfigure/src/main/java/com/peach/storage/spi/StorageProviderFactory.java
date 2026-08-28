@@ -4,13 +4,12 @@ import com.peach.config.StorageProperties;
 import com.peach.enums.StorageType;
 
 /**
- * 存储 provider 工厂 SPI。
- *
+ * 存储Provider工厂。
  * <p>负责 provider 类型绑定、配置校验和实例创建。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 14:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 14:15
  */
 public interface StorageProviderFactory {
 

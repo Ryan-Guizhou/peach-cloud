@@ -8,11 +8,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * 仅用于本地示例的集成实现。
- *
- * <p>调度模块相关说明。
- * 调度模块相关说明。
- * 调度模块相关说明。</p>
+ * 示例调度Integration配置类。
+ * <p>调度模块说明。
+ * 调度模块说明。
+ * 调度模块说明。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -32,7 +31,7 @@ public class DemoSchedulerIntegrationConfiguration {
     /**
      * 创建相关对象。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     @Bean
     @ConditionalOnMissingBean(ExecutionLeaseClient.class)

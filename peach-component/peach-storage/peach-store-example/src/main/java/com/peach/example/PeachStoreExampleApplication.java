@@ -4,11 +4,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Peach Store starter 示例应用。
+ * PeachStoreExample启动类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 15:03
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 15:03
  */
 @SpringBootApplication
 public class PeachStoreExampleApplication {

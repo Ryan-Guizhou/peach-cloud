@@ -3,13 +3,16 @@ package com.peach.redis.bloom.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * BloomFilter Starter 配置项。
- *
+ * 布隆过滤器配置属性。
  * 支持：
  * - 键前缀与默认命名空间控制；
  * - 初始容量与误判率（FPP）；
  * - 负载阈值与扩容倍率；
  * - 段数上限与本地缓存开关。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 @ConfigurationProperties(prefix = "peach.redis.bloom")
 public class BloomFilterProperties {

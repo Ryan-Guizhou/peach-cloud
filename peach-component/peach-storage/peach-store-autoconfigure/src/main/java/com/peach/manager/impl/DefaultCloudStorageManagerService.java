@@ -28,20 +28,20 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * 默认的云存储管理器服务实现（面向浏览器）
+ * 默认云存储Manager服务类。
  * <p>
  * 该类是云存储操作的核心实现，提供了统一的存储访问接口，支持：
  * <ul>
- *   <li><b>多存储类型支持</b>：本地文件系统（LOCAL）、网络附加存储（NAS）、以及各类云存储（OSS、COS、S3等）</li>
- *   <li><b>目录模拟机制</b>：通过占位符文件（.peach-dir）在云存储中模拟空目录</li>
- *   <li><b>路径规范化</b>：统一使用正斜杠（/）作为路径分隔符，兼容不同操作系统</li>
- *   <li><b>分页查询</b>：支持递归和非递归两种列表模式，并支持基于令牌的分页</li>
- *   <li><b>资源管理</b>：通过 try-with-resources 确保存储提供者资源的正确释放</li>
+ * <li><b>多存储类型支持</b>：本地文件系统（LOCAL）、网络附加存储（NAS）、以及各类云存储（OSS、COS、S3等）</li>
+ * <li><b>目录模拟机制</b>：通过占位符文件（.peach-dir）在云存储中模拟空目录</li>
+ * <li><b>路径规范化</b>：统一使用正斜杠（/）作为路径分隔符，兼容不同操作系统</li>
+ * <li><b>分页查询</b>：支持递归和非递归两种列表模式，并支持基于令牌的分页</li>
+ * <li><b>资源管理</b>：通过 try-with-resources 确保存储提供者资源的正确释放</li>
  * </ul>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/19
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/19
  */
 public class DefaultCloudStorageManagerService implements CloudStorageManagerService {
 

@@ -21,12 +21,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 /**
- * 分段可扩容的 BloomFilter 实现：
+ * Segmented布隆过滤器服务类。
  * - 写入统一进入“尾段”，达到负载阈值时新增下一段；
  * - 读取跨所有段，优先尾段（新→旧），提高命中率与性能；
  * - 并发扩容与初始化通过命名空间级分布式锁保护；
  * - 本地缓存（可选）减少远程调用；
  * - 容量元数据存储于 Redis Map，确保负载计算使用真实容量。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public class SegmentedBloomFilterService implements BloomFilterService {
 

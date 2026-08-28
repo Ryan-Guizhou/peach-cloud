@@ -30,11 +30,11 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * 基于 {@link MqConsumer} 的 RocketMQ 动态消费者注册器。
+ * DynamicRocketMQMQConsumer注册器。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 @Slf4j
 public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, ApplicationContextAware {

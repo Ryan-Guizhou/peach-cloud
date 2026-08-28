@@ -2,14 +2,13 @@ package com.peach.enums;
 
 /**
  * 存储类型枚举。
- *
  * <p>枚举只表达存储产品或协议类型，不绑定具体 SDK 实现。具体实现由
  * {@code StorageProviderFactory} 通过 SPI 按类型创建，业务侧可以在不修改
  * starter 源码的情况下扩展新的存储类型。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/10 14:49
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/10 14:49
  */
 public enum StorageType {
 
@@ -39,7 +38,7 @@ public enum StorageType {
     NAS,
 
     /**
-     * SFTP
+     * SFTP。。
      */
     SFTP,
 

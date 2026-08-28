@@ -4,13 +4,12 @@ import com.peach.enums.StorageResultCode;
 import com.peach.exception.StorageException;
 
 /**
- * 源对象到目标对象的传输请求基类。
- *
+ * StorageTransferRequest相关类。
  * <p>用于拷贝、移动这类同时依赖源路径和目标路径的操作。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/17 16:20
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/17 16:20
  */
 public class StorageTransferRequest {
 

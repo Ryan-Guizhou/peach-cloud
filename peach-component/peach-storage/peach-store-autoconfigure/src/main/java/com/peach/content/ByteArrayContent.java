@@ -4,11 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 /**
- * 基于字节数组的上传内容。
+ * 字节数组内容。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/10 14:54
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/10 14:54
  */
 public class ByteArrayContent implements UploadContent {
 

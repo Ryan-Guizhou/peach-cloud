@@ -7,6 +7,8 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * RedissionData处理器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/19 18:53
@@ -43,16 +45,12 @@ public class RedissionDataHandle {
         redissonClient.getBucket(key).set(value, getDuration(time, timeUnit));
     }
 
-    public Duration getDuration(long timeToLive, TimeUnit timeUnit){
-        switch (timeUnit) {
-            case MINUTES:
-                return Duration.ofMinutes(timeToLive);
-            case HOURS:
-                return Duration.ofHours(timeToLive);
-            case DAYS:
-                return Duration.ofDays(timeToLive);
-            default:
-                return Duration.ofSeconds(timeToLive);
-        }
+    public Duration getDuration(long timeToLive, TimeUnit timeUnit) {
+        return switch (timeUnit) {
+            case MINUTES -> Duration.ofMinutes(timeToLive);
+            case HOURS -> Duration.ofHours(timeToLive);
+            case DAYS -> Duration.ofDays(timeToLive);
+            default -> Duration.ofSeconds(timeToLive);
+        };
     }
 }

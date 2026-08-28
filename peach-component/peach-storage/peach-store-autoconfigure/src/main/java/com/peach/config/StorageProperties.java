@@ -8,14 +8,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Peach Storage starter 配置项。
- *
+ * 存储配置属性。
  * <p>配置前缀为 {@code peach.storage}。一个应用可以同时配置多个存储实例，
  * 例如一个默认 OSS 桶、一个私有 S3 桶和一个用于临时文件的本地/NAS 目录。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/10 15:11
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/10 15:11
  */
 @Validated
 @ConfigurationProperties(prefix = "peach.storage")
@@ -82,7 +81,11 @@ public class StorageProperties {
     }
 
     /**
-     * 单个存储实例配置。
+     * 存储提供者。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class StorageProvider {
 

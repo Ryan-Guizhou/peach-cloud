@@ -5,6 +5,8 @@ import com.peach.threadpool.core.PoolType;
 import com.peach.threadpool.core.RejectedPolicy;
 
 /**
+ * 线程池模板。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/6 10:54

@@ -32,25 +32,23 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * {@link StorageProvider} SPI 支撑工具类。
- *
+ * 存储Provider支持类。
  * <p>为存储服务提供者（StorageProvider）的 SPI 实现提供通用能力封装，
  * 包括对象 Key 处理、列表结果构建、拷贝/移动等复合操作的模板方法。
  * 旨在减少各存储实现（如 OSS、S3、本地文件等）中的重复代码。
  * </p>
- *
  * <p><b>核心功能：</b>
  * <ul>
- *   <li>对象 Key 规范化与业务前缀剥离</li>
- *   <li>Endpoint 标准化（自动补全协议和 Host 提取）</li>
- *   <li>递归拷贝与移动的复杂逻辑封装</li>
- *   <li>列表结果构建和基础能力集声明</li>
+ * <li>对象 Key 规范化与业务前缀剥离</li>
+ * <li>Endpoint 标准化（自动补全协议和 Host 提取）</li>
+ * <li>递归拷贝与移动的复杂逻辑封装</li>
+ * <li>列表结果构建和基础能力集声明</li>
  * </ul>
  * </p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 18:02
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 18:02
  */
 public final class StorageProviderSupport {
 

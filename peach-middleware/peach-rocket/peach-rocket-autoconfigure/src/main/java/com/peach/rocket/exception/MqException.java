@@ -1,15 +1,15 @@
 package com.peach.rocket.exception;
 
 /**
- * MQ 模块统一运行时异常。
+ * MQ异常。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class MqException extends RuntimeException {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -6166678259118358198L;
 
     /**
      * 创建 MQ 异常。

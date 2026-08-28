@@ -1,11 +1,11 @@
 package com.peach.rocket.outbox;
 
 /**
- * Outbox 失败消息重放服务。
+ * MQ发件箱Replay服务类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public interface MqOutboxReplayService {
 

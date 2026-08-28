@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 线程线程池配置属性。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/5 17:51

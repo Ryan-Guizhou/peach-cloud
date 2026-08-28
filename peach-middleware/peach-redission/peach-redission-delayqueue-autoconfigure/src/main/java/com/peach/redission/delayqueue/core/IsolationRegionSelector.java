@@ -4,11 +4,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
+ * 隔离区域选择器。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/17 16:53
  * @Description 隔离区域选择器
- * 用于在多个隔离区域（分区）之间轮询选择，以实现负载均衡
  */
 public class IsolationRegionSelector {
 

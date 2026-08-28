@@ -12,11 +12,11 @@ import com.peach.rocket.security.MqPayloadEncryptor;
 import java.io.IOException;
 
 /**
- * 支持 payload 加密的 Jackson 消息编解码器。
+ * SecureJacksonMqMessageCodec相关类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class SecureJacksonMqMessageCodec implements MqMessageCodec {
 
@@ -33,21 +33,20 @@ public class SecureJacksonMqMessageCodec implements MqMessageCodec {
     }
 
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public byte[] encode(MqMessageEnvelope<?> envelope) {
         try {
-            Object payload = envelope.getPayload();
+            Object payload = envelope.payload();
+            MqMessageEnvelope<?> toEncode = envelope;
             if (encryptionPolicy != null && encryptor != null
-                    && encryptionPolicy.shouldEncrypt(envelope.getTopic(), envelope.getPayloadType(), payload)) {
+                    && encryptionPolicy.shouldEncrypt(envelope.topic(), envelope.payloadType(), payload)) {
                 byte[] plainBytes = objectMapper.writeValueAsBytes(payload);
-                MqEncryptionContext context = new MqEncryptionContext(envelope.getTopic(), envelope.getPayloadType(), properties.getSecurity().getAlgorithm(), properties.getSecurity().getKeyId());
+                MqEncryptionContext context = new MqEncryptionContext(
+                        envelope.topic(), envelope.payloadType(),
+                        properties.getSecurity().getAlgorithm(), properties.getSecurity().getKeyId());
                 MqEncryptionResult result = encryptor.encrypt(plainBytes, context);
-                ((MqMessageEnvelope) envelope).setPayload(result.getCipherBytes());
-                envelope.setEncrypted(true);
-                envelope.setEncryptionAlgorithm(result.getAlgorithm());
-                envelope.setEncryptionKeyId(result.getKeyId());
+                toEncode = envelope.withEncryptedPayload(result.cipherBytes(), result.algorithm(), result.keyId());
             }
-            return objectMapper.writeValueAsBytes(envelope);
+            return objectMapper.writeValueAsBytes(toEncode);
         } catch (IOException ex) {
             throw new MqException("Failed to encode MQ message envelope", ex);
         }
@@ -58,30 +57,17 @@ public class SecureJacksonMqMessageCodec implements MqMessageCodec {
         try {
             JavaType javaType = objectMapper.getTypeFactory().constructParametricType(MqMessageEnvelope.class, Object.class);
             MqMessageEnvelope<?> raw = objectMapper.readValue(body, javaType);
-            Object payload = raw.getPayload();
+            Object payload = raw.payload();
             T actualPayload;
-            if (raw.isEncrypted()) {
+            if (raw.encrypted()) {
                 byte[] cipherBytes = objectMapper.convertValue(payload, byte[].class);
-                MqEncryptionContext context = new MqEncryptionContext(raw.getTopic(), raw.getPayloadType(), raw.getEncryptionAlgorithm(), raw.getEncryptionKeyId());
+                MqEncryptionContext context = new MqEncryptionContext(
+                        raw.topic(), raw.payloadType(), raw.encryptionAlgorithm(), raw.encryptionKeyId());
                 actualPayload = objectMapper.readValue(encryptor.decrypt(cipherBytes, context), payloadType);
             } else {
                 actualPayload = objectMapper.convertValue(payload, payloadType);
             }
-            MqMessageEnvelope<T> envelope = new MqMessageEnvelope<T>();
-            envelope.setMessageId(raw.getMessageId());
-            envelope.setTopic(raw.getTopic());
-            envelope.setTag(raw.getTag());
-            envelope.setKey(raw.getKey());
-            envelope.setProducerApp(raw.getProducerApp());
-            envelope.setPayloadType(raw.getPayloadType());
-            envelope.setVersion(raw.getVersion());
-            envelope.setHeaders(raw.getHeaders());
-            envelope.setCreatedAt(raw.getCreatedAt());
-            envelope.setEncrypted(raw.isEncrypted());
-            envelope.setEncryptionAlgorithm(raw.getEncryptionAlgorithm());
-            envelope.setEncryptionKeyId(raw.getEncryptionKeyId());
-            envelope.setPayload(actualPayload);
-            return envelope;
+            return raw.withPayload(actualPayload);
         } catch (IOException ex) {
             throw new MqException("Failed to decode MQ message envelope", ex);
         }

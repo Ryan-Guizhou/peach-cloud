@@ -6,11 +6,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 基于内存的 Outbox 存储，适用于本地开发和单实例测试。
+ * InMemoryMQ发件箱存储。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class InMemoryMqOutboxStore implements MqOutboxStore {
 
@@ -18,14 +18,14 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
 
     @Override
     public void save(MqOutboxEvent event) {
-        events.put(event.getMessageId(), event);
+        events.put(event.messageId(), event);
     }
 
     @Override
     public List<MqOutboxEvent> findPending(int batchSize) {
         List<MqOutboxEvent> result = new ArrayList<MqOutboxEvent>();
         for (MqOutboxEvent event : events.values()) {
-            if ((event.getStatus() == MqOutboxStatus.INIT || event.getStatus() == MqOutboxStatus.RETRY) && result.size() < batchSize) {
+            if ((event.status() == MqOutboxStatus.INIT || event.status() == MqOutboxStatus.RETRY) && result.size() < batchSize) {
                 result.add(event);
             }
         }
@@ -36,7 +36,7 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
     public void markSent(String messageId) {
         MqOutboxEvent event = events.get(messageId);
         if (event != null) {
-            event.setStatus(MqOutboxStatus.SENT);
+            events.put(messageId, event.withStatus(MqOutboxStatus.SENT));
         }
     }
 
@@ -44,18 +44,17 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
     public void markFailed(String messageId) {
         MqOutboxEvent event = events.get(messageId);
         if (event != null) {
-            event.setRetryCount(event.getRetryCount() + 1);
-            event.setStatus(MqOutboxStatus.RETRY);
+            events.put(messageId, event.withRetryCount(event.retryCount() + 1).withStatus(MqOutboxStatus.RETRY));
         }
     }
 
     @Override
     public boolean replay(String messageId) {
         MqOutboxEvent event = events.get(messageId);
-        if (event == null || event.getStatus() != MqOutboxStatus.FAILED) {
+        if (event == null || event.status() != MqOutboxStatus.FAILED) {
             return false;
         }
-        event.setStatus(MqOutboxStatus.RETRY);
+        events.put(messageId, event.withStatus(MqOutboxStatus.RETRY));
         return true;
     }
 }

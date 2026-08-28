@@ -24,8 +24,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * Sa-Token Servlet 自动配置。
- *
+ * PeachSa令牌Web自动配置。
  * <p>负责注册业务服务侧 Same-Token 拦截器和当前用户上下文恢复过滤器。请求 ID 已统一由
  * {@code peach-observability-starter} 管理，Sa-Token 不再注册重复过滤器。该配置只在
  * Servlet Web 应用中生效，响应式网关不依赖该自动配置。</p>
@@ -56,29 +55,7 @@ public class PeachSaTokenWebAutoConfiguration {
             havingValue = "true", matchIfMissing = true)
     public WebMvcConfigurer peachSaTokenWebMvcConfigurer(PeachSaTokenProperties properties,
                                                          UserContextProperties userContextProperties) {
-        return new WebMvcConfigurer() {
-            private final SatokenEndpointMatcher endpointMatcher = new SatokenEndpointMatcher();
-
-            @Override
-            public void addInterceptors(InterceptorRegistry registry) {
-                registry.addInterceptor(new SaInterceptor(handler -> {
-                    String path = SaHolder.getRequest().getRequestPath();
-                    String method = SaHolder.getRequest().getMethod();
-                    if (properties.getSameToken().isLogPath()) {
-                        log.debug("Sa-Token same-token check entered, method={}, path={}", method, path);
-                    }
-                    if (endpointMatcher.matches(userContextProperties.getPublicEndpoints(), method, path)) {
-                        if (properties.getSameToken().isLogPath()) {
-                            log.debug("Sa-Token same-token check skipped for public endpoint, method={}, path={}",
-                                    method, path);
-                        }
-                        return;
-                    }
-                    SaSameUtil.checkCurrentRequestToken();
-                })).addPathPatterns("/**")
-                        .excludePathPatterns(properties.getSameToken().getExcludePathPatterns());
-            }
-        };
+        return new PeachSaTokenWebMvcConfigurer(properties, userContextProperties);
     }
 
     /**
@@ -125,5 +102,46 @@ public class PeachSaTokenWebAutoConfiguration {
         registration.setName("peachUserContextFilter");
         registration.setOrder(0);
         return registration;
+    }
+
+    /**
+     * PeachSa令牌WebMvcConfigurer。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
+    private static final class PeachSaTokenWebMvcConfigurer implements WebMvcConfigurer {
+
+        private final PeachSaTokenProperties properties;
+        private final UserContextProperties userContextProperties;
+        private final SatokenEndpointMatcher endpointMatcher = new SatokenEndpointMatcher();
+
+        private PeachSaTokenWebMvcConfigurer(PeachSaTokenProperties properties,
+                                             UserContextProperties userContextProperties) {
+            this.properties = properties;
+            this.userContextProperties = userContextProperties;
+        }
+
+        @Override
+        public void addInterceptors(InterceptorRegistry registry) {
+            registry.addInterceptor(new SaInterceptor(handler -> {
+                String path = SaHolder.getRequest().getRequestPath();
+                String method = SaHolder.getRequest().getMethod();
+                if (properties.getSameToken().isLogPath()) {
+                    log.debug("Sa-Token same-token check entered, method={}, path={}", method, path);
+                }
+                if (endpointMatcher.matches(userContextProperties.getPublicEndpoints(), method, path)) {
+                    if (properties.getSameToken().isLogPath()) {
+                        log.debug("Sa-Token same-token check skipped for public endpoint, method={}, path={}",
+                                method, path);
+                    }
+                    return;
+                }
+                SaSameUtil.checkCurrentRequestToken();
+            })).addPathPatterns("/**")
+                    .excludePathPatterns(properties.getSameToken().getExcludePathPatterns());
+        }
     }
 }

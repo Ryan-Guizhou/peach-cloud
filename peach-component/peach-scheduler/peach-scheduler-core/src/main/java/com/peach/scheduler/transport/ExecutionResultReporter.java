@@ -1,7 +1,7 @@
 package com.peach.scheduler.transport;
 
 /**
- * 调度扩展接口。
+ * 执行结果Reporter接口。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -10,7 +10,7 @@ package com.peach.scheduler.transport;
 public interface ExecutionResultReporter {
 
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      *
      * @param event 参数说明
      */

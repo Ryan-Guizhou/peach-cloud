@@ -17,6 +17,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * ReliableDelayConsumerQueue相关类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/17 17:37
@@ -35,11 +37,11 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
     private final AtomicBoolean runFlag = new AtomicBoolean(false);
 
     private final ConsumerTask consumerTask;
-    
+
     private final DeadLetterQueueManager deadLetterQueueManager;
-    
+
     private final int maxRetryAttempts;
-    
+
     private final long retryIntervalMillis;
 
     private final RMap<String, ProcessingMessage> processingMessages;
@@ -58,23 +60,23 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
                 r -> new Thread(Thread.currentThread().getThreadGroup(), r,
                         "reliable-delay-queue-consume-thread-" + executeTaskThreadCount.getAndIncrement()));
         this.consumerTask = delayQueuePart.getConsumerTask();
-        
+
         // 初始化死信队列管理器
         this.deadLetterQueueManager = new DeadLetterQueueManager(
                 delayQueuePart.getDelayQueueBasePart().getRedissonClient(),
                 delayQueuePart.getDelayQueueBasePart().getDelayQueueProperties().getMaxDeadLetterQueueSize(),
                 delayQueuePart.getDelayQueueBasePart().getDelayQueueProperties().getDeadLetterCleanIntervalHours(),
                 delayQueuePart.getDelayQueueBasePart().getDelayQueueProperties().getDeadLetterMessageRetentionHours());
-        
+
         // 获取重试配置
         this.maxRetryAttempts = delayQueuePart.getDelayQueueBasePart().getDelayQueueProperties().getMaxRetryAttempts();
         this.retryIntervalMillis = delayQueuePart.getDelayQueueBasePart().getDelayQueueProperties().getRetryIntervalMillis();
-        
+
         // 初始化正在处理的消息映射
         this.processingMessages = redissonClient.getMap(relTopic + ":processing");
-        
-        log.info("Initialized ReliableDelayConsumerQueue for topic: {} with thread pool config - core: {}, max: {}, queueSize: {}, maxRetryAttempts: {}", 
-                relTopic, 
+
+        log.info("Initialized ReliableDelayConsumerQueue for topic: {} with thread pool config - core: {}, max: {}, queueSize: {}, maxRetryAttempts: {}",
+                relTopic,
                 delayQueuePart.getDelayQueueBasePart().getDelayQueueProperties().getCorePoolSize(),
                 delayQueuePart.getDelayQueueBasePart().getDelayQueueProperties().getMaximumPoolSize(),
                 delayQueuePart.getDelayQueueBasePart().getDelayQueueProperties().getWorkQueueSize(),
@@ -85,24 +87,24 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
         if (!runFlag.get()) {
             runFlag.set(true);
             log.info("Starting reliable listener for topic: {}", getTopicName());
-            
+
             listenStartThreadPool.execute(() -> {
                 // 异步执行消息恢复，不阻塞主监听线程
                 recoverUnfinishedMessagesAsync();
-                
+
                 log.info("Reliable listener started for topic: {}", getTopicName());
                 while (!Thread.interrupted() && runFlag.get()) {
                     try {
                         assert blockingQueue != null;
                         String content = blockingQueue.take();
                         log.debug("Received message from queue for topic: {}", getTopicName());
-                        
+
                         // 为消息生成唯一ID
                         String messageId = UUID.randomUUID().toString();
                         // 记录消息开始处理
                         ProcessingMessage processingMessage = new ProcessingMessage(content, System.currentTimeMillis());
                         processingMessages.put(messageId, processingMessage);
-                        
+
                         executeTaskThreadPool.execute(() -> processMessageWithAck(content, messageId));
                     } catch (InterruptedException e) {
                         log.warn("Consumer listener interrupted for topic: {}", getTopicName());
@@ -117,7 +119,7 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
             });
         }
     }
-    
+
     /**
      * 异步恢复未完成的消息
      */
@@ -126,7 +128,7 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
             try {
                 log.info("Starting async recovery of unfinished messages for topic: {}", getTopicName());
                 long startTime = System.currentTimeMillis();
-                
+
                 // 检查processingMessages中是否有未完成的消息
                 for (var entry : processingMessages.entrySet()) {
                     String messageId = entry.getKey();
@@ -136,7 +138,7 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
                         processMessageWithAck(processingMessage.getContent(), messageId);
                     }
                 }
-                
+
                 long endTime = System.currentTimeMillis();
                 log.info("Finished async recovery of unfinished messages for topic: {}, took {} ms", getTopicName(), (endTime - startTime));
             } catch (Exception e) {
@@ -144,10 +146,10 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
             }
         });
     }
-    
+
     /**
      * 带确认机制的消息处理方法
-     * 
+     *
      * @param content 消息内容
      * @param messageId 消息ID
      */
@@ -257,63 +259,67 @@ public class ReliableDelayConsumerQueue extends DelayBaseQueue{
             log.error("Error destroying executor service for topic: {}", getTopicName(), e);
         }
     }
-    
+
     /**
      * 停止监听器并释放资源
      */
     public void stopListener() {
         log.info("Stopping reliable listener for topic: {}", getTopicName());
         runFlag.set(false);
-        
+
         // 关闭线程池
         destroy(listenStartThreadPool);
         destroy(executeTaskThreadPool);
-        
+
         // 关闭死信队列管理器
         deadLetterQueueManager.destroy();
-        
+
         log.info("Reliable listener stopped and resources released for topic: {}", getTopicName());
     }
-    
+
     /**
-     * 正在处理的消息信息
+     * Processing消息。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     public static class ProcessingMessage {
         private String content;
         private long startTime;
         private String timestamp;
-        
+
         public ProcessingMessage() {
             // 默认构造函数
         }
-        
+
         public ProcessingMessage(String content, long startTime) {
             this.content = content;
             this.startTime = startTime;
             this.timestamp = LocalDateTime.now(ZoneId.systemDefault()).toString();
         }
-        
+
         // Getters and setters
         public String getContent() {
             return content;
         }
-        
+
         public void setContent(String content) {
             this.content = content;
         }
-        
+
         public long getStartTime() {
             return startTime;
         }
-        
+
         public void setStartTime(long startTime) {
             this.startTime = startTime;
         }
-        
+
         public String getTimestamp() {
             return timestamp;
         }
-        
+
         public void setTimestamp(String timestamp) {
             this.timestamp = timestamp;
         }

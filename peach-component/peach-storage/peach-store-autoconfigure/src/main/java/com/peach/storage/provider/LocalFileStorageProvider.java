@@ -42,13 +42,12 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * 本地文件系统存储实现。
- *
+ * Local文件存储提供者。
  * <p>objectKey 会被解析到配置的 rootPath 下，并阻止路径越界。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 @Slf4j
 public class LocalFileStorageProvider implements StorageProvider {

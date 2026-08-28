@@ -5,7 +5,7 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Peach Scheduler Quartz Provider 配置属性。
+ * PeachQuartz配置属性。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -30,7 +30,7 @@ public class PeachQuartzProperties {
     /**
      * 获取 Quartz group。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public String getGroup() {
         return group;
@@ -39,7 +39,7 @@ public class PeachQuartzProperties {
     /**
      * 设置 Quartz group。
      *
-     * @param group 参数说明
+     * @param group group。
      */
     public void setGroup(String group) {
         this.group = group;

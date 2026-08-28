@@ -15,6 +15,14 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * 存储TemplateTest。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
+ */
+
 class StorageTemplateTest {
 
     @Test
@@ -42,6 +50,14 @@ class StorageTemplateTest {
 
         assertThrows(IllegalArgumentException.class, () -> template.provider("missing"));
     }
+
+    /**
+     * Tracking提供者。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     private static class TrackingProvider implements StorageProvider {
 

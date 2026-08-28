@@ -1,14 +1,13 @@
 package com.peach.enums;
 
 /**
- * 常见上传内容类型枚举。
- *
+ * 存储Content类型枚举。
  * <p>枚举覆盖业务中最常见的文本、图片、音视频、压缩包、Office 文档和二进制流场景。
  * 未覆盖的类型仍可以通过 {@code UploadObjectRequest.Builder#contentType(String)} 直接传入 MIME。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 14:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 14:15
  */
 public enum StorageContentType {
 

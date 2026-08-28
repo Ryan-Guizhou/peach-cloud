@@ -1,7 +1,7 @@
 package com.peach.scheduler.exception;
 
 /**
- * 调度配置、任务定义或 Provider 注册不合法时抛出的异常。
+ * 调度Configuration异常。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -9,7 +9,7 @@ package com.peach.scheduler.exception;
  */
 public class SchedulerConfigurationException extends SchedulerException {
 
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = -4077828524089181582L;
 
     /**
      * 创建调度配置异常。

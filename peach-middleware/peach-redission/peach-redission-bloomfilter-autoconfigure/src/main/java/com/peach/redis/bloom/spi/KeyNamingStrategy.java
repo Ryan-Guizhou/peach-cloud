@@ -7,7 +7,11 @@ import com.peach.redis.bloom.constant.KeyConstant;
 import java.text.MessageFormat;
 
 /**
- * Redis 键命名策略 SPI：为不同环境/规范提供可插拔的键命名规则。
+ * 键Naming策略。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public interface KeyNamingStrategy {
     /** 段列表键：存储命名空间下的所有段名（RList） */
@@ -26,41 +30,52 @@ public interface KeyNamingStrategy {
     String getName();
 
     static KeyNamingStrategy defaultStrategy() {
-        return new KeyNamingStrategy() {
-            @Override
-            public String segmentsKey(String prefix, String namespace) {
-                return MessageFormat.format(KeyConstant.SEGMENT_KEY, prefix, namespace);
-            }
+        return new DefaultKeyNamingStrategy();
+    }
 
-            @Override
-            public String lockKey(String prefix, String namespace) {
-                return MessageFormat.format(KeyConstant.LOCK_KEY, prefix, namespace);
-            }
+    /**
+     * 默认KeyNamingStrategy。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
-            @Override
-            public String segmentName(String prefix, String namespace, int index) {
-                return MessageFormat.format(KeyConstant.SEGMENT_NAME_KEY, prefix, namespace, index);
-            }
+    final class DefaultKeyNamingStrategy implements KeyNamingStrategy {
 
-            @Override
-            public String segmentCountKey(String prefix, String namespace, String segmentName) {
-                return MessageFormat.format(KeyConstant.SEGMENT_COUNT_KEY, prefix, namespace, segmentName);
-            }
+        @Override
+        public String segmentsKey(String prefix, String namespace) {
+            return MessageFormat.format(KeyConstant.SEGMENT_KEY, prefix, namespace);
+        }
 
-            @Override
-            public String capacityMapKey(String prefix, String namespace) {
-                return MessageFormat.format(KeyConstant.CAPACITY_MAP_KEY, prefix, namespace);
-            }
+        @Override
+        public String lockKey(String prefix, String namespace) {
+            return MessageFormat.format(KeyConstant.LOCK_KEY, prefix, namespace);
+        }
 
-            @Override
-            public String fppMapKey(String prefix, String namespace) {
-                return MessageFormat.format(KeyConstant.FPP_MAP_KEY, prefix, namespace);
-            }
+        @Override
+        public String segmentName(String prefix, String namespace, int index) {
+            return MessageFormat.format(KeyConstant.SEGMENT_NAME_KEY, prefix, namespace, index);
+        }
 
-            @Override
-            public String getName() {
-                return this.getClass().getSimpleName();
-            }
-        };
+        @Override
+        public String segmentCountKey(String prefix, String namespace, String segmentName) {
+            return MessageFormat.format(KeyConstant.SEGMENT_COUNT_KEY, prefix, namespace, segmentName);
+        }
+
+        @Override
+        public String capacityMapKey(String prefix, String namespace) {
+            return MessageFormat.format(KeyConstant.CAPACITY_MAP_KEY, prefix, namespace);
+        }
+
+        @Override
+        public String fppMapKey(String prefix, String namespace) {
+            return MessageFormat.format(KeyConstant.FPP_MAP_KEY, prefix, namespace);
+        }
+
+        @Override
+        public String getName() {
+            return DefaultKeyNamingStrategy.class.getSimpleName();
+        }
     }
 }

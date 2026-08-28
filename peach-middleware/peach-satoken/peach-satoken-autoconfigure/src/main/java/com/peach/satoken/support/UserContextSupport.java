@@ -2,6 +2,7 @@ package com.peach.satoken.support;
 
 import com.peach.satoken.constant.SatokenConstant;
 import com.peach.satoken.context.UserContext;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -10,8 +11,7 @@ import org.springframework.stereotype.Indexed;
 import java.util.Map;
 
 /**
- * 用户上下文缓存支持类。
- *
+ * 用户上下文支持类。
  * <p>负责从 Redis 缓存中加载当前用户的上下文信息（包括用户ID、编码、姓名、租户、组织、会计期间、语言等），
  * 缓存 Key 格式为 {@link SatokenConstant#USER_PROFILE_CACHE_PREFIX} + userId，使用 Hash 结构存储字段。
  * 若缓存缺失或数据不完整（如 userId 不匹配），则返回 {@code null}。</p>
@@ -23,13 +23,10 @@ import java.util.Map;
 @Slf4j
 @Indexed
 @Component
+@RequiredArgsConstructor
 public class UserContextSupport {
 
     private final StringRedisTemplate redisTemplate;
-
-    public UserContextSupport(StringRedisTemplate redisTemplate) {
-        this.redisTemplate = redisTemplate;
-    }
 
     /**
      * 根据用户ID查询并构建用户上下文对象。

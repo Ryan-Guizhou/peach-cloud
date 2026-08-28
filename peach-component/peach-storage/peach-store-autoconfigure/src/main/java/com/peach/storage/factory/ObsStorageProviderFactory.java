@@ -11,11 +11,11 @@ import com.peach.storage.factory.support.StorageValidationSupport;
 
 
 /**
- * 华为云 OBS provider 工厂。
+ * Obs存储Provider工厂。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 public class ObsStorageProviderFactory implements StorageProviderFactory {
 

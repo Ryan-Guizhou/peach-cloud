@@ -1,11 +1,11 @@
 package com.peach.rocket.core;
 
 /**
- * MQ 消息模型。
+ * MQ消息Model枚举。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public enum MqMessageModel {
 

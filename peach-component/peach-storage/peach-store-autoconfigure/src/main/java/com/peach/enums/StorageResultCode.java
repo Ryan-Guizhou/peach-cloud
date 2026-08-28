@@ -1,13 +1,12 @@
 package com.peach.enums;
 
 /**
- * 存储操作响应码。
- *
+ * 存储结果代码枚举。
  * <p>响应码用于业务层统一判断结果，也用于 {@code StorageException} 标记错误类型。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 14:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 14:15
  */
 public enum StorageResultCode {
 

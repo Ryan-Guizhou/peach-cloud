@@ -1,7 +1,11 @@
 package com.peach.redis.bloom.spi;
 
 /**
- * 扩容策略 SPI：定义段容量的估算与下一段容量的计算规则。
+ * 布隆缩放策略。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public interface BloomScalePolicy {
     /**
@@ -17,23 +21,34 @@ public interface BloomScalePolicy {
     String getName();
 
     static BloomScalePolicy defaultPolicy() {
-        return new BloomScalePolicy() {
-            @Override
-            public long capacityOf(String segmentName, long initialCapacity, int segmentIndex) {
-                double cap = initialCapacity * Math.pow(2.0, Math.max(0, segmentIndex));
-                return (long) Math.max(initialCapacity, cap);
-            }
+        return new DefaultBloomScalePolicy();
+    }
 
-            @Override
-            public long nextCapacity(long currentCapacity, double scaleFactor) {
-                double next = currentCapacity * Math.max(1.1d, scaleFactor);
-                return (long) Math.ceil(next);
-            }
+    /**
+     * 默认布隆ScalePolicy。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
-            @Override
-            public String getName() {
-                return this.getClass().getSimpleName();
-            }
-        };
+    final class DefaultBloomScalePolicy implements BloomScalePolicy {
+
+        @Override
+        public long capacityOf(String segmentName, long initialCapacity, int segmentIndex) {
+            double cap = initialCapacity * Math.pow(2.0, Math.max(0, segmentIndex));
+            return (long) Math.max(initialCapacity, cap);
+        }
+
+        @Override
+        public long nextCapacity(long currentCapacity, double scaleFactor) {
+            double next = currentCapacity * Math.max(1.1d, scaleFactor);
+            return (long) Math.ceil(next);
+        }
+
+        @Override
+        public String getName() {
+            return DefaultBloomScalePolicy.class.getSimpleName();
+        }
     }
 }

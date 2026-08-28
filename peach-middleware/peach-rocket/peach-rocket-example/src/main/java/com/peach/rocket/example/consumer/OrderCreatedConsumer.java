@@ -9,11 +9,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * 订单创建事件消费者。
+ * OrderCreated消费者。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 @Slf4j
 @Indexed
@@ -23,6 +23,6 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 
     @Override
     public void handle(OrderCreatedEvent message, MqConsumeContext context) {
-        log.info("[example-order-created] orderId={} amount={} messageId={}", message.getOrderId(), message.getAmount(), context.getMessageId());
+        log.info("[example-order-created] orderId={} amount={} messageId={}", message.orderId(), message.amount(), context.messageId());
     }
 }

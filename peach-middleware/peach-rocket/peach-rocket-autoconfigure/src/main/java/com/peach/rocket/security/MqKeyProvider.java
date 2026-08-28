@@ -1,11 +1,11 @@
 package com.peach.rocket.security;
 
 /**
- * MQ 加密密钥提供者 SPI。
+ * MQ键提供者。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public interface MqKeyProvider {
 

@@ -8,8 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 当前用户上下文过滤器配置。
- *
+ * 用户上下文配置属性。
  * <p>该配置只作用于引入 `peach-satoken-starter` 的 Servlet 业务服务。
  * 公开端点会跳过未登录用户上下文恢复，同时也会被 Same-Token 拦截器放行。</p>
  *

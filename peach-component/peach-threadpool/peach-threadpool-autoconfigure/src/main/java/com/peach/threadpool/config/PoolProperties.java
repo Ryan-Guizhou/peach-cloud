@@ -5,12 +5,11 @@ import com.peach.threadpool.core.PoolType;
 import com.peach.threadpool.core.RejectedPolicy;
 
 /**
+ * 线程池配置属性。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/1/4 19:02
- * @Description
- * 线程池配置属性类
- * 用于定义和配置线程池的各项参数
  */
 public class PoolProperties {
 

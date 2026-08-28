@@ -4,13 +4,12 @@ import org.springframework.stereotype.Indexed;
 
 import com.peach.scheduler.annotation.PeachJob;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 线程安全的调度组件。
+ * JobRegistry相关类。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -19,15 +18,8 @@ import java.util.Map;
 @Indexed
 public class JobRegistry {
 
-    /**
-     * 创建相关对象。
-     */
-    public JobRegistry() {
-        // Intentionally empty.
-    }
-
-    private final Map<String, JobHandler> handlers = new LinkedHashMap<String, JobHandler>();
-    private final Map<String, JobDescriptor> descriptors = new LinkedHashMap<String, JobDescriptor>();
+    private final Map<String, JobHandler> handlers = new LinkedHashMap<>();
+    private final Map<String, JobDescriptor> descriptors = new LinkedHashMap<>();
 
     /**
      * 注册相关能力。
@@ -54,8 +46,8 @@ public class JobRegistry {
     /**
      * 获取相关数据。
      *
-     * @param handlerName 参数说明
-     * @return 返回结果
+     * @param handlerName handler Name。
+     * @return 执行结果。
      * @throws IllegalArgumentException 异常说明
      */
     public synchronized JobHandler getRequired(String handlerName) {
@@ -69,9 +61,9 @@ public class JobRegistry {
     /**
      * 获取相关数据。
      *
-     * @return 返回结果
+     * @return 执行结果。
      */
     public synchronized List<JobDescriptor> descriptors() {
-        return Collections.unmodifiableList(new ArrayList<JobDescriptor>(descriptors.values()));
+        return List.copyOf(descriptors.values());
     }
 }

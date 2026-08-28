@@ -14,11 +14,11 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.util.StringUtils;
 
 /**
- * 基于 {@link MqEvent} 的 MQ 路由解析器。
+ * AnnotationMQRoute解析器。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class AnnotationMqRouteResolver implements MqRouteResolver {
 

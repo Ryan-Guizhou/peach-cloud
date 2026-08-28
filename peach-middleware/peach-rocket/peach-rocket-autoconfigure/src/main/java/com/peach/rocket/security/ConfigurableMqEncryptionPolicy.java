@@ -4,11 +4,11 @@ import com.peach.rocket.annotation.MqEncrypted;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 
 /**
- * 基于配置和注解的 MQ 加密策略。
+ * ConfigurableMQ加密策略。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public class ConfigurableMqEncryptionPolicy implements MqEncryptionPolicy {
 

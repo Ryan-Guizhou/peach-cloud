@@ -21,7 +21,6 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import jakarta.annotation.PostConstruct;
 
-import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -34,8 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
- * 基于 Redis 的 Sa-Token DAO 实现。
- *
+ * PeachSa令牌数据访问。
  * <p>负责 Sa-Token 的字符串、对象、过期时间与搜索操作，底层通过项目内 Redis 连接工厂构建模板。</p>
  *
  * @Author Mr Shu
@@ -99,8 +97,7 @@ public class PeachSaTokenDao implements SaTokenDao {
         }
 
         StringRedisSerializer keySerializer = new StringRedisSerializer();
-        GenericJackson2JsonRedisSerializer valueSerializer = new GenericJackson2JsonRedisSerializer();
-        configureObjectMapper(valueSerializer);
+        GenericJackson2JsonRedisSerializer valueSerializer = createValueSerializer();
 
         StringRedisTemplate stringTemplate = new StringRedisTemplate();
         stringTemplate.setConnectionFactory(jedisConnectionFactory);
@@ -120,28 +117,25 @@ public class PeachSaTokenDao implements SaTokenDao {
     }
 
     /**
-     * 配置对象序列化器的 ObjectMapper。
+     * 创建并配置 JSON 序列化器。
      *
-     * @param valueSerializer JSON 序列化器
+     * @return 配置完成的 JSON 序列化器
      */
-    private void configureObjectMapper(GenericJackson2JsonRedisSerializer valueSerializer) {
-        try {
-            Field field = GenericJackson2JsonRedisSerializer.class.getDeclaredField("mapper");
-            field.setAccessible(true);
-            this.objectMapper = (ObjectMapper) field.get(valueSerializer);
-            this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private GenericJackson2JsonRedisSerializer createValueSerializer() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-            JavaTimeModule timeModule = new JavaTimeModule();
-            timeModule.addSerializer(new LocalDateTimeSerializer(DATE_TIME_FORMATTER));
-            timeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(DATE_TIME_FORMATTER));
-            timeModule.addSerializer(new LocalDateSerializer(DATE_FORMATTER));
-            timeModule.addDeserializer(LocalDate.class, new LocalDateDeserializer(DATE_FORMATTER));
-            timeModule.addSerializer(new LocalTimeSerializer(TIME_FORMATTER));
-            timeModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer(TIME_FORMATTER));
-            this.objectMapper.registerModule(timeModule);
-        } catch (Exception e) {
-            log.error("PeachSaTokenDao init failed. {}", e.getMessage(), e);
-        }
+        JavaTimeModule timeModule = new JavaTimeModule();
+        timeModule.addSerializer(new LocalDateTimeSerializer(DATE_TIME_FORMATTER));
+        timeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(DATE_TIME_FORMATTER));
+        timeModule.addSerializer(new LocalDateSerializer(DATE_FORMATTER));
+        timeModule.addDeserializer(LocalDate.class, new LocalDateDeserializer(DATE_FORMATTER));
+        timeModule.addSerializer(new LocalTimeSerializer(TIME_FORMATTER));
+        timeModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer(TIME_FORMATTER));
+        mapper.registerModule(timeModule);
+
+        this.objectMapper = mapper;
+        return new GenericJackson2JsonRedisSerializer(mapper);
     }
 
     /**

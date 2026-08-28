@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Peach Sa-Token extension properties.
+ * PeachSa令牌配置属性。
  *
  * @Author Mr Shu
  * @Version 1.0.0

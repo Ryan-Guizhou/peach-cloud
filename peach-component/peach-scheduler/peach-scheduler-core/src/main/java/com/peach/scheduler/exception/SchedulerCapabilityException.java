@@ -1,7 +1,7 @@
 package com.peach.scheduler.exception;
 
 /**
- * 当前调度 Provider 不支持目标能力时抛出的异常。
+ * 调度Capability异常。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -9,7 +9,7 @@ package com.peach.scheduler.exception;
  */
 public class SchedulerCapabilityException extends SchedulerException {
 
-    private static final long serialVersionUID = 3L;
+    private static final long serialVersionUID = -4347986955631535663L;
 
     /**
      * 创建 Provider 能力异常。

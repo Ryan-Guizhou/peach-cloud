@@ -4,11 +4,11 @@ import com.peach.enums.StorageResultCode;
 import com.peach.exception.StorageException;
 
 /**
- * 生成分片上传信息请求。
+ * UploadPartRequest相关类。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 14:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 14:15
  */
 public class UploadPartRequest extends StorageObjectRequest {
 

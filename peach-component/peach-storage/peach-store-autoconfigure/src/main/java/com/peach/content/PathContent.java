@@ -7,11 +7,11 @@ import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * 基于 {@link Path} 的上传内容。
+ * 路径内容。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/10 15:26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/10 15:26
  */
 public class PathContent implements UploadContent {
 

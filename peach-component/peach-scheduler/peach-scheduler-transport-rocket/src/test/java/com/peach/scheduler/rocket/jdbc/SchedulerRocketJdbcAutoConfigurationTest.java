@@ -15,11 +15,11 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * {@link SchedulerRocketJdbcAutoConfiguration} 自动装配测试。
+ * 调度RocketMQJdbcAutoConfigurationTest。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/8/24
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/8/24
  */
 class SchedulerRocketJdbcAutoConfigurationTest {
 
@@ -43,7 +43,11 @@ class SchedulerRocketJdbcAutoConfigurationTest {
     }
 
     /**
-     * 测试数据源配置，仅用于验证自动配置顺序，不建立真实数据库连接。
+     * DataSource配置类。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     @Configuration(proxyBeanMethods = false)
     static class DataSourceConfiguration {

@@ -4,13 +4,12 @@ import com.peach.config.StorageProperties;
 import java.util.Objects;
 
 /**
- * provider 工厂校验支撑工具。
- *
+ * 存储Validation支持类。
  * <p>用于复用各类 provider 在启动阶段的配置完整性校验与依赖存在性校验。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 18:02
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 18:02
  */
 public final class StorageValidationSupport {
 

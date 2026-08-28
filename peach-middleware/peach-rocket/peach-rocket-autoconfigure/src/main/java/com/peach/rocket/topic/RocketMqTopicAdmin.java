@@ -21,25 +21,22 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
 
 /**
- * RocketMQ Topic 自动创建器。
- *
+ * RocketMQMQ主题管理。
  * <p>该组件在 Spring 容器单例 Bean 初始化完成后自动执行，扫描应用中所有需要使用的 Topic，
  * 并通过 RocketMQ Admin API 在 Broker 集群上自动创建这些 Topic。
- *
  * <p><b>Topic 来源：</b>
  * <ul>
- *   <li>显式配置：通过 {@code peach.rocket.topic.topics} 配置项指定</li>
- *   <li>消费者注解：扫描所有 {@code @MqConsumer} 注解中声明的 Topic</li>
- *   <li>事务注解：扫描所有 {@code @MqTransaction} 注解中声明的 Topic</li>
+ * <li>显式配置：通过 {@code peach.rocket.topic.topics} 配置项指定</li>
+ * <li>消费者注解：扫描所有 {@code @MqConsumer} 注解中声明的 Topic</li>
+ * <li>事务注解：扫描所有 {@code @MqTransaction} 注解中声明的 Topic</li>
  * </ul>
- *
  * <p><b>执行时机：</b>
  * 实现 {@link SmartInitializingSingleton} 接口，在所有单例 Bean 实例化完成后执行，
  * 确保所有注解已被扫描并注册到 Spring 容器中。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 @Slf4j
 public class RocketMqTopicAdmin implements SmartInitializingSingleton {

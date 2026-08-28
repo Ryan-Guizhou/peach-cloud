@@ -7,6 +7,8 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 /**
+ * SpEL解析。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/22 10:01

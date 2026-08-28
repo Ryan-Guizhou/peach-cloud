@@ -7,7 +7,7 @@ import org.quartz.Scheduler;
 import org.springframework.beans.factory.InitializingBean;
 
 /**
- * 调度模块相关说明。
+ * QuartzTrigger处理器注册器。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -19,10 +19,10 @@ public class QuartzTriggerHandlerRegistrar implements InitializingBean {
     private final ScheduleTriggerHandler triggerHandler;
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      *
-     * @param scheduler 参数说明
-     * @param triggerHandler 参数说明
+     * @param scheduler scheduler。
+     * @param triggerHandler trigger Handler。
      */
     public QuartzTriggerHandlerRegistrar(Scheduler scheduler, ScheduleTriggerHandler triggerHandler) {
         this.scheduler = scheduler;
@@ -30,7 +30,7 @@ public class QuartzTriggerHandlerRegistrar implements InitializingBean {
     }
 
     /**
-     * 继承接口定义。
+     * 接口实现。
      */
     @Override
     public void afterPropertiesSet() throws Exception {

@@ -4,8 +4,12 @@ import org.redisson.client.codec.Codec;
 import org.redisson.codec.JsonJacksonCodec;
 
 /**
- * 编解码器提供者 SPI：用于配置 Redisson 的 {@link org.redisson.client.codec.Codec}。
+ * Codec提供者。
  * 默认提供单例的 Jackson JSON 与字符串编解码器实现。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public interface CodecProvider {
     Codec codec();
@@ -13,13 +17,33 @@ public interface CodecProvider {
     String getName();
 
     static CodecProvider defaultJacksonCodec() {
-        return new CodecProvider() {
-            private final Codec singleton = new JsonJacksonCodec();
-            @Override
-            public Codec codec() { return singleton; }
+        return DefaultJacksonCodecProvider.INSTANCE;
+    }
 
-            @Override
-            public String getName() { return "json-jackson"; }
-        };
+    /**
+     * 默认JacksonCodec提供者。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
+    final class DefaultJacksonCodecProvider implements CodecProvider {
+
+        private static final DefaultJacksonCodecProvider INSTANCE = new DefaultJacksonCodecProvider();
+        private final Codec singleton = new JsonJacksonCodec();
+
+        private DefaultJacksonCodecProvider() {
+        }
+
+        @Override
+        public Codec codec() {
+            return singleton;
+        }
+
+        @Override
+        public String getName() {
+            return "json-jackson";
+        }
     }
 }

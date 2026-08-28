@@ -4,11 +4,11 @@ import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import org.springframework.util.StringUtils;
 
 /**
- * RocketMQ topic 和 consumer group 命名工具。
+ * RocketMQMQ命名。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public final class RocketMqNaming {
 

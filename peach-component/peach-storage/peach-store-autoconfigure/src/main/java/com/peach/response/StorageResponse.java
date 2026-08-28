@@ -4,12 +4,11 @@ import com.peach.enums.StorageResultCode;
 
 
 /**
- * 存储操作统一响应对象。
+ * StorageResponse相关类。
  *
- * @param <T> 响应数据类型
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 public class StorageResponse<T> {
 

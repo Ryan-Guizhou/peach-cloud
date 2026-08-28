@@ -1,10 +1,9 @@
 package com.peach.scheduler.quartz;
 
 /**
- * 调度模块相关说明。
- *
- * <p>调度模块相关说明。
- * 调度模块相关说明。</p>
+ * PeachQuartzConcurrentJob相关类。
+ * <p>调度模块说明。
+ * 调度模块说明。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -13,7 +12,7 @@ package com.peach.scheduler.quartz;
 public class PeachQuartzConcurrentJob extends AbstractPeachQuartzJob {
 
     /**
-     * 创建相关对象。
+     * 创建实例。
      */
     public PeachQuartzConcurrentJob() {
         super();

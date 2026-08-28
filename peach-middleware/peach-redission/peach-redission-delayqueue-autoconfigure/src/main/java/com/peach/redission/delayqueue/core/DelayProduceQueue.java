@@ -8,11 +8,12 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
+ * 延迟队列生产者类。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/17 16:53
  * @Description 延迟队列生产者类
- * 负责将消息添加到Redisson的延迟队列中，消息将在指定的延迟时间后被消费者处理
  */
 @Slf4j
 public class DelayProduceQueue extends DelayBaseQueue {

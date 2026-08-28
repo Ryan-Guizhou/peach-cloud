@@ -10,7 +10,11 @@ import com.peach.storage.spi.StorageProviderFactory;
 import com.peach.storage.factory.support.StorageValidationSupport;
 
 /**
- * MinIO provider factory.
+ * Minio存储Provider工厂。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/3/20 16:58
  */
 public class MinioStorageProviderFactory implements StorageProviderFactory {
 

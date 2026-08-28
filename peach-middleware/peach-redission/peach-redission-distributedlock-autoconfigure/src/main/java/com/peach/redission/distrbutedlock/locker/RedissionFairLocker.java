@@ -7,6 +7,8 @@ import org.redisson.api.RedissonClient;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 公平锁。
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/22 11:38

@@ -38,22 +38,20 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * RocketMQ 事务消息生产者。
- *
+ * RocketMQMQ事务消息生产者。
  * <p>该类封装了 RocketMQ 事务消息的发送、本地事务执行和事务状态回查的完整流程。
  * 事务消息保证消息发送与本地事务的原子性，适用于订单支付、库存扣减等需要强一致性的场景。
- *
  * <p><b>核心流程：</b>
  * <ol>
- *   <li>发送半消息（Half Message）到 Broker</li>
- *   <li>执行本地事务（{@link MqTransactionHandler#executeLocalTransaction}）</li>
- *   <li>根据本地事务结果提交或回滚消息</li>
- *   <li>若本地事务执行超时，Broker 会回调 {@link MqTransactionHandler#checkLocalTransaction} 进行状态回查</li>
+ * <li>发送半消息（Half Message）到 Broker</li>
+ * <li>执行本地事务（{@link MqTransactionHandler#executeLocalTransaction}）</li>
+ * <li>根据本地事务结果提交或回滚消息</li>
+ * <li>若本地事务执行超时，Broker 会回调 {@link MqTransactionHandler#checkLocalTransaction} 进行状态回查</li>
  * </ol>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 @Slf4j
 public class RocketMqTransactionMessageProducer implements SmartLifecycle {
@@ -161,14 +159,14 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         MqMessageEnvelope<T> envelope = buildEnvelope(payload, actualOptions, route);
 
         // 构建 RocketMQ 消息对象
-        Message message = new Message(route.getTopic(), route.getTag(), route.getKey(), codec.encode(envelope));
+        Message message = new Message(route.topic(), route.tag(), route.key(), codec.encode(envelope));
 
         // 设置事务 Key 到消息用户属性
         message.putUserProperty(PROPERTY_TRANSACTION_KEY, transactionKey);
 
         // 设置业务 Key（用于消息查询）
-        if (StringUtils.hasText(route.getKey())) {
-            message.putUserProperty(MessageConst.PROPERTY_KEYS, route.getKey());
+        if (StringUtils.hasText(route.key())) {
+            message.putUserProperty(MessageConst.PROPERTY_KEYS, route.key());
         }
 
         // 构建事务参数对象，传递给 TransactionListener
@@ -179,7 +177,7 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
             SendResult result = producer.sendMessageInTransaction(message, argument);
 
             log.info("[mq-send] mode=transaction topic={} tag={} key={} transactionKey={} messageId={} status={} success={}",
-                    route.getTopic(), route.getTag(), route.getKey(), transactionKey,
+                    route.topic(), route.tag(), route.key(), transactionKey,
                     result == null ? null : result.getMsgId(),
                     result == null || result.getSendStatus() == null ? null : result.getSendStatus().name(),
                     isSendOk(result));
@@ -187,9 +185,9 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
             return MqSendResult.builder()
                     .success(isSendOk(result))
                     .messageId(result == null ? null : result.getMsgId())
-                    .topic(route.getTopic())
-                    .tag(route.getTag())
-                    .key(route.getKey())
+                    .topic(route.topic())
+                    .tag(route.tag())
+                    .key(route.key())
                     .rawStatus(result == null || result.getSendStatus() == null ? null : result.getSendStatus().name())
                     .build();
 
@@ -293,18 +291,17 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
      * @return 消息信封
      */
     private <T> MqMessageEnvelope<T> buildEnvelope(T payload, MqSendOptions options, MqRoute route) {
-        MqMessageEnvelope<T> envelope = new MqMessageEnvelope<T>();
-        envelope.setMessageId(UUID.randomUUID().toString());
-        envelope.setTopic(route.getTopic());
-        envelope.setTag(route.getTag());
-        envelope.setKey(route.getKey());
-        envelope.setProducerApp(properties.getAppName());
-        envelope.setVersion(resolveVersion(payload));
-        envelope.setPayloadType(payload.getClass().getName());
-        envelope.setPayload(payload);
-        envelope.setHeaders(headerResolver.resolve(options.getHeaders()));
-        envelope.setCreatedAt(LocalDateTime.now(ZoneId.systemDefault()));
-        return envelope;
+        return MqMessageEnvelope.create(
+                UUID.randomUUID().toString(),
+                route.topic(),
+                route.tag(),
+                route.key(),
+                properties.getAppName(),
+                payload.getClass().getName(),
+                resolveVersion(payload),
+                headerResolver.resolve(options.getHeaders()),
+                payload,
+                LocalDateTime.now(ZoneId.systemDefault()));
     }
 
     /**
@@ -318,6 +315,14 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         MqEvent event = payload.getClass().getAnnotation(MqEvent.class);
         return event == null ? 1 : event.version();
     }
+
+    /**
+     * Delegating事务监听器。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
 
     private final class DelegatingTransactionListener implements TransactionListener {
 
@@ -347,12 +352,12 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         @Override
         public LocalTransactionState executeLocalTransaction(Message message, Object arg) {
             TransactionArgument argument = (TransactionArgument) arg;
-            TransactionHandlerAdapter adapter = findHandler(argument.route().getTopic(),
-                    argument.route().getTag());
+            TransactionHandlerAdapter adapter = findHandler(argument.route().topic(),
+                    argument.route().tag());
 
             if (adapter == null) {
                 log.warn("[mq-transaction] no handler found on execute. topic={} tag={}",
-                        argument.route().getTopic(), argument.route().getTag());
+                        argument.route().topic(), argument.route().tag());
                 return LocalTransactionState.UNKNOW;
             }
 
@@ -384,7 +389,7 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
             MqMessageEnvelope<?> envelope = codec.decode(message.getBody(), adapter.getPayloadType());
 
             // 执行回查
-            return toRocketState(adapter.check(envelope.getPayload(), transactionKey));
+            return toRocketState(adapter.check(envelope.payload(), transactionKey));
         }
     }
 
@@ -407,12 +412,24 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         return result != null && result.getSendStatus() == SendStatus.SEND_OK;
     }
 
+    /**
+     * 事务Argument值对象。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
+     */
+
     private record TransactionArgument(String transactionKey, MqRoute route, Object payload) {
     }
 
     /**
      * 事务处理器适配器。
      * 包装 MqTransactionHandler，缓存 Payload 类型和路由信息。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/3/20 16:58
      */
     private static final class TransactionHandlerAdapter {
 

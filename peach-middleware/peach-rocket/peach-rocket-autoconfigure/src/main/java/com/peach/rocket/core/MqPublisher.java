@@ -3,11 +3,11 @@ package com.peach.rocket.core;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * MQ 统一发送入口。
+ * MQPublisher接口。
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/26
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/26
  */
 public interface MqPublisher {
 

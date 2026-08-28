@@ -14,7 +14,7 @@ import jakarta.annotation.PostConstruct;
 import java.text.MessageFormat;
 
 /**
- * Sa-Token token strategy auto configuration.
+ * PeachSa令牌Strategy自动配置。
  *
  * @Author Mr Shu
  * @Version 1.0.0

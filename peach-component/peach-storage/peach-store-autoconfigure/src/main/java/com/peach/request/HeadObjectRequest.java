@@ -1,13 +1,12 @@
 package com.peach.request;
 
 /**
- * 查询对象元信息请求。
- *
+ * HeadObjectRequest相关类。
  * <p>该请求仅表达“读取对象元信息”，不包含下载语义，适合作为统一的 `head/stat` 查询模型。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/18 14:15
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/18 14:15
  */
 public class HeadObjectRequest extends StorageObjectRequest {
 

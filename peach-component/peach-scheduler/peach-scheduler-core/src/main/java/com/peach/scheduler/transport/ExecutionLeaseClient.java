@@ -1,7 +1,7 @@
 package com.peach.scheduler.transport;
 
 /**
- * 调度扩展接口。
+ * 执行Lease客户端。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -10,11 +10,11 @@ package com.peach.scheduler.transport;
 public interface ExecutionLeaseClient {
 
     /**
-     * 调度模块相关说明。
+     * 调度模块说明。
      *
-     * @param executionId 参数说明
-     * @param executorInstance 参数说明
-     * @return 返回结果
+     * @param executionId execution Id。
+     * @param executorInstance executor Instance。
+     * @return 执行结果。
      */
     boolean claim(String executionId, String executorInstance);
 }

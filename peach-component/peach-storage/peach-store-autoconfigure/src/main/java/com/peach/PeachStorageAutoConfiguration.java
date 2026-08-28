@@ -27,15 +27,14 @@ import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
- * Peach Storage 自动配置。
- *
+ * Peach存储自动配置。
  * <p>自动装配流程为：通过 Java SPI 加载所有 {@link StorageProviderFactory}，
  * 根据 {@code peach.storage.providers} 创建并注册 {@link StorageProvider}，
  * 再注入 {@link StorageTemplate} 和 {@link MultiZoneStorage} 默认实现。</p>
  *
- * @author Mr Shu
- * @version 1.0.0
- * @since 2026/6/16 14:01
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/6/16 14:01
  */
 @Slf4j
 @Indexed
