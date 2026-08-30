@@ -162,14 +162,14 @@ public class KnowledgeCaptchaServiceImpl extends AbstractCacheService {
                     .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA_SECOND, captchaVO.getCaptchaVerification())
                     .getRealKey();
             if (!existCaptchaKey(codeKey)) {
-                log.error("captcha verification not found, key: {}", codeKey);
+                log.warn("captcha secondary verification cache entry not found");
                 return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
             }
             // Secondary validation token invalid immediately after use / 二次校验取值后，即刻失效
             deleteCaptchKey(codeKey);
             return Response.success();
         } catch (Exception e) {
-            log.error("captcha verification error, key: {}", captchaVO.getCaptchaVerification(), e);
+            log.warn("captcha verification failed, reason={}", e.getClass().getSimpleName());
             return Response.fail(e.getMessage());
         }
     }

@@ -73,7 +73,7 @@ public final class IpUtil {
                 ip = resolveLocalHostIp(request);
             }
         } catch (RuntimeException e) {
-            log.error("IpUtil getIpAddr "+e.getMessage(),e);
+            log.warn("Failed to resolve client IP, reason={}", e.getClass().getSimpleName());
         }
         ip = firstForwardedIp(ip);
         if (isValidIpv4(ip)){
@@ -113,7 +113,7 @@ public final class IpUtil {
         try {
             return InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
-            log.error("getClientIp error: {}", e);
+            log.warn("Failed to resolve local host address, reason={}", e.getClass().getSimpleName());
             return ip;
         }
     }

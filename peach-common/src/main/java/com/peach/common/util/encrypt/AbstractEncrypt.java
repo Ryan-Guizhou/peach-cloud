@@ -22,8 +22,8 @@ public abstract class AbstractEncrypt implements EncryptService {
     protected byte[] hexToByte(String ciphertext) {
         byte[] cipherBytes = ciphertext.getBytes(StandardCharsets.UTF_8);
         if ((cipherBytes.length % 2) != 0) {
-            log.error("The content:[{}] length is not even",ciphertext);
-            throw new IllegalArgumentException(String.format("The content:[%s] length is not even",ciphertext));
+            log.warn("Ciphertext length is not even, length={}", cipherBytes.length);
+            throw new IllegalArgumentException("Ciphertext length is not even");
         }
         byte[] result = new byte[cipherBytes.length / 2];
         for (int i = 0; i < cipherBytes.length; i += 2) {

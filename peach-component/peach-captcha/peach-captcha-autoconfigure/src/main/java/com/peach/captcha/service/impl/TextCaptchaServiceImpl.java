@@ -79,7 +79,7 @@ public class TextCaptchaServiceImpl extends AbstractCacheService {
                 .getRealKey();
 
         if (!existCaptchaKey(codeKey)) {
-            log.error("captcha check not found, key: {}", codeKey);
+            log.warn("captcha check cache entry not found");
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
 
@@ -87,13 +87,13 @@ public class TextCaptchaServiceImpl extends AbstractCacheService {
         deleteCaptchKey(codeKey);
 
         if (StringUtil.isBlank(val)) {
-            log.error("captcha check value empty, key: {}", codeKey);
+            log.warn("captcha check cache value is empty");
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
 
         String[] parts = val.split("#");
         if (parts.length != 2) {
-            log.error("captcha check value format error, val: {}", val);
+            log.warn("captcha check cache value format is invalid");
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
         String rightAnswer = parts[0];
@@ -112,7 +112,7 @@ public class TextCaptchaServiceImpl extends AbstractCacheService {
 
             // Secondary verification Token / 二次校验Token
             String value = AesUtil.aesEncrypt(captchaVO.getToken().concat("@").concat(userAnswer), secretKey);
-            log.info("captcha secretKey:{}, value:{}", secretKey, value);
+            log.debug("captcha secondary verification token generated");
 
             String secondKey = RedisKeyBuild
                     .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA_SECOND, value)
@@ -141,14 +141,14 @@ public class TextCaptchaServiceImpl extends AbstractCacheService {
                     .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA_SECOND, captchaVO.getCaptchaVerification())
                     .getRealKey();
             if (!existCaptchaKey(codeKey)) {
-                log.error("captcha verification not found, key: {}", codeKey);
+                log.warn("captcha secondary verification cache entry not found");
                 return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
             }
             // Secondary validation token invalid immediately after use / 二次校验取值后，即刻失效
             deleteCaptchKey(codeKey);
             return Response.success();
         } catch (Exception e) {
-            log.error("captcha verification error, key: {}", captchaVO.getCaptchaVerification(), e);
+            log.warn("captcha verification failed, reason={}", e.getClass().getSimpleName());
             return Response.fail(e.getMessage());
         }
     }

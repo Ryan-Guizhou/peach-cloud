@@ -8,6 +8,9 @@ import java.io.Serializable;
 /**
  * 多节点缓存通知消息。
  *
+ * @param cacheName 缓存名称
+ * @param key 缓存键，序列化跨节点传输时会被清空
+ * @param sender 发送节点标识
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/4 16:09
@@ -21,10 +24,6 @@ public record CacheMessage(String cacheName, Object key, Integer sender) impleme
     private Object writeReplace() throws ObjectStreamException {
         return new SerializedForm(cacheName, sender);
     }
-
-    /**
-     * 缓存key
-     */
 
     private static final class SerializedForm implements Serializable {
 

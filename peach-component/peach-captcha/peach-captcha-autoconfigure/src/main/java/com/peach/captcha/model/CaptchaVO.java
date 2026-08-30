@@ -3,6 +3,7 @@ package com.peach.captcha.model;
 import java.io.Serial;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -16,61 +17,47 @@ import java.io.Serializable;
  */
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "验证码视图对象")
 public class CaptchaVO implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -44213028347206787L;
 
+    @Schema(description = "客户端唯一标识")
     private String clientUid;
 
-    /***
-     * 客户端ip+userAgent
-     */
+    @Schema(description = "客户端IP和User-Agent摘要")
     private String browserInfo;
 
+    @Schema(description = "验证码类型")
     private String captchaType;
 
+    @Schema(description = "验证码令牌")
     private String token;
 
-    /**
-     * 后台二次校验参数
-     */
+    @Schema(description = "后台二次校验参数")
     private String captchaVerification;
 
 
-    /**
-     * 密钥
-     */
+    @Schema(description = "验证码密钥")
     private String secretKey;
 
-    /**
-     * 原生图片base64
-     */
+    @Schema(description = "原始图片Base64")
     private String slidingOriginalImageBase64;
 
-    /**
-     * 滑块图片base64
-     */
+    @Schema(description = "滑块图片Base64")
     private String newSlidingBlockingImageBase64;
 
-    /**
-     * 点选文字底图
-     */
+    @Schema(description = "点选文字底图Base64")
     private String picClickBase64;
 
-    /**
-     * 点选文字提示图
-     */
+    @Schema(description = "点选文字提示图Base64")
     private String picClickpromptBase64;
 
-    /**
-     * 点坐标(base64加密传输)
-     */
+    @Schema(description = "点坐标加密传输内容")
     private String answer;
 
-    /**
-     * 旋转图片base64
-     */
+    @Schema(description = "旋转图片Base64")
     private String rotateImageBase64;
 
     public void resetClientFlag(){
@@ -78,9 +65,7 @@ public class CaptchaVO implements Serializable {
         this.clientUid = null;
     }
 
-    /**
-     * 校验结果
-     */
+    @Schema(description = "验证码校验结果")
     private Boolean result;
 
 }

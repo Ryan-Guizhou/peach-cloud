@@ -7,6 +7,13 @@ import java.time.Duration;
  * <p>该模型用于把一次消费在幂等判断阶段所需的关键信息收敛到统一对象中，便于不同幂等存储实现共享同一套
  * 输入语义，例如内存实现、JDBC 实现、Redis 实现或业务自定义实现。
  *
+ * @param idempotentKey 幂等键
+ * @param consumerGroup 消费者分组
+ * @param topic 消息主题
+ * @param tag 消息标签
+ * @param businessKey 业务消息键
+ * @param messageId 消息ID
+ * @param expire 幂等记录过期时间
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/26

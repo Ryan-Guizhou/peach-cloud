@@ -5,6 +5,8 @@ import java.time.Duration;
 /**
  * MQ延迟值对象。
  *
+ * @param rocketMqDelayLevel RocketMQ 延迟级别
+ * @param duration 延迟时长
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/26

@@ -7,6 +7,12 @@ import java.util.Map;
  * <p>业务消费者在处理消息时，可通过该上下文读取消息元信息和透传头信息，而不需要直接依赖 RocketMQ
  * 原生消息对象，从而保持业务代码和消息中间件实现解耦。
  *
+ * @param messageId 消息ID
+ * @param topic 消息主题
+ * @param tag 消息标签
+ * @param key 业务消息键
+ * @param reconsumeTimes RocketMQ 重试消费次数
+ * @param headers 透传消息头
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/26

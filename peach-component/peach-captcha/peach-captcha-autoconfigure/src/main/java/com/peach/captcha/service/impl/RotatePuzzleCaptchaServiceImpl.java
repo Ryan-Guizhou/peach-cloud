@@ -101,7 +101,7 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
                 .getRealKey();
 
         if (!existCaptchaKey(codeKey)) {
-            log.error("captcha check not found, key: {}", codeKey);
+            log.warn("captcha check cache entry not found");
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
 
@@ -110,7 +110,7 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
         deleteCaptchKey(codeKey);
 
         if (StringUtil.isBlank(s)) {
-            log.error("captcha check value empty, key: {}", codeKey);
+            log.warn("captcha check cache value is empty");
              return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
 
@@ -170,7 +170,7 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
                 .getRealKey();
 
         if (!existCaptchaKey(codeKey)){
-            log.error("captcha verification not found, key: {}", codeKey);
+            log.warn("captcha secondary verification cache entry not found");
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
         deleteCaptchKey(codeKey);

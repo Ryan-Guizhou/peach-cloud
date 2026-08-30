@@ -34,20 +34,26 @@ public class UserAvatarHistoryDO extends PeachDO implements Serializable {
 
     @Id
     @Column(name = "AVATAR_HISTORY_ID")
+    @Schema(description = "头像历史主键")
     private String avatarHistoryId;
 
     @Column(name = "USER_ID")
+    @Schema(description = "用户ID")
     private String userId;
 
     @Column(name = "FILE_ID")
+    @Schema(description = "头像文件ID")
     private String fileId;
 
     @Column(name = "SORT_NO")
+    @Schema(description = "头像排序号")
     private Integer sortNo;
 
     @Column(name = "IS_CURRENT")
+    @Schema(description = "是否当前头像")
     private Integer isCurrent;
 
     @Column(name = "IS_DELETE")
+    @Schema(description = "是否删除")
     private Integer isDelete;
 }

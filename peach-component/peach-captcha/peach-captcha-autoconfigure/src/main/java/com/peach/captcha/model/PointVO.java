@@ -6,14 +6,23 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * Point视图对象。
  *
+ * @param secretKey 验证码密钥
+ * @param x 横坐标
+ * @param y 纵坐标
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/30 11:06
  */
-public record PointVO(String secretKey, int x, int y) implements Serializable {
+@Schema(description = "验证码坐标视图对象")
+public record PointVO(
+        @Schema(description = "验证码密钥") String secretKey,
+        @Schema(description = "横坐标") int x,
+        @Schema(description = "纵坐标") int y) implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -2118960679939189710L;

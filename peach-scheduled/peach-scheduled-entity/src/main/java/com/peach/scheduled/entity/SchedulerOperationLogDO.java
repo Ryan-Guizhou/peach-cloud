@@ -1,5 +1,9 @@
 package com.peach.scheduled.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -9,20 +13,31 @@ import java.time.LocalDateTime;
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:42
  */
-public class SchedulerOperationLogDO {
+@Schema(description = "调度操作日志数据对象")
+public class SchedulerOperationLogDO implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    @Schema(description = "操作类型")
     private String operation;
 
+    @Schema(description = "操作目标类型")
     private String targetType;
 
+    @Schema(description = "操作目标ID")
     private String targetId;
 
+    @Schema(description = "操作人ID")
     private String operatorId;
 
+    @Schema(description = "操作原因")
     private String reason;
 
+    @Schema(description = "操作结果")
     private String result;
 
+    @Schema(description = "创建时间")
     private LocalDateTime createdTime;
 
     public String getOperation() {

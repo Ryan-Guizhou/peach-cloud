@@ -40,7 +40,7 @@ public final class Md5Util {
             }
             return result.toString();
         } catch (NoSuchAlgorithmException e) {
-            log.error("");
+            log.error("SHA-256 algorithm is not available", e);
             throw new IllegalStateException("SHA-256 algorithm is not available", e);
         }
     }

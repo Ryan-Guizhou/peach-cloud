@@ -6,6 +6,13 @@ import java.time.Instant;
 /**
  * 任务执行结果事件。
  *
+ * @param executionId 执行实例唯一标识
+ * @param status 执行结果状态
+ * @param errorMessage 脱敏后的失败摘要
+ * @param resultCode 业务结果编码
+ * @param executorInstance 执行器实例标识
+ * @param startedAt 实际开始时间
+ * @param finishedAt 实际结束时间
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:42

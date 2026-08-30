@@ -36,7 +36,8 @@ public class UserOperLogInterceptor implements MethodInterceptor {
         long totalTime = endTime - start;
         UserOperLogVO userOperLogVO = TransferUtil.transferToOperLog(invocation, userOperLog, totalTime, response);
         UserOperLogQueue.getInstance().addOperLogQueue(userOperLogVO);
-        log.info("User operation log recorded, elapsedMs={}", userOperLog, totalTime);
+        log.info("User operation log recorded, module={}, optType={}, elapsedMs={}",
+                userOperLog.moduleCode(), userOperLog.optType(), totalTime);
         return proceed;
     }
 

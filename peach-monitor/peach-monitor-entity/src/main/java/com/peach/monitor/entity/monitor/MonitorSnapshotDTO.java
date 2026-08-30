@@ -1,5 +1,9 @@
 package com.peach.monitor.entity.monitor;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -11,14 +15,29 @@ import java.util.Map;
  * @CreateTime 2026/3/20 16:58
  */
 
-public class MonitorSnapshotDTO {
+@Schema(description = "监控快照传输对象")
+public class MonitorSnapshotDTO implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    @Schema(description = "服务名称")
     private String serviceName;
+
+    @Schema(description = "快照时间戳")
     private long timestamp;
-    private Map<String, Object> hostInfo = new LinkedHashMap<String, Object>();
-    private Map<String, Object> jvmInfo = new LinkedHashMap<String, Object>();
-    private Map<String, Object> databaseInfo = new LinkedHashMap<String, Object>();
-    private Map<String, Object> middlewareInfo = new LinkedHashMap<String, Object>();
+
+    @Schema(description = "主机监控信息")
+    private Map<String, Object> hostInfo = new LinkedHashMap<>();
+
+    @Schema(description = "JVM监控信息")
+    private Map<String, Object> jvmInfo = new LinkedHashMap<>();
+
+    @Schema(description = "数据库监控信息")
+    private Map<String, Object> databaseInfo = new LinkedHashMap<>();
+
+    @Schema(description = "中间件监控信息")
+    private Map<String, Object> middlewareInfo = new LinkedHashMap<>();
 
     public String getServiceName() {
         return serviceName;

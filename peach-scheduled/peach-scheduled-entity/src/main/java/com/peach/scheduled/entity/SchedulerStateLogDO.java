@@ -1,5 +1,9 @@
 package com.peach.scheduled.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -9,22 +13,34 @@ import java.time.LocalDateTime;
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:42
  */
-public class SchedulerStateLogDO {
+@Schema(description = "调度状态变更日志数据对象")
+public class SchedulerStateLogDO implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    @Schema(description = "聚合类型")
     private String aggregateType;
 
+    @Schema(description = "聚合ID")
     private String aggregateId;
 
+    @Schema(description = "变更前状态")
     private String fromState;
 
+    @Schema(description = "触发事件")
     private String event;
 
+    @Schema(description = "变更后状态")
     private String toState;
 
+    @Schema(description = "操作人ID")
     private String operatorId;
 
+    @Schema(description = "备注")
     private String remark;
 
+    @Schema(description = "创建时间")
     private LocalDateTime createdTime;
 
     public String getAggregateType() {

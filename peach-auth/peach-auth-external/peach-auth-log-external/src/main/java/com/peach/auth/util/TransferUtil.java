@@ -104,8 +104,8 @@ public class TransferUtil {
                 return spelParse.parseExpression(content);
             }
             return content;
-        }catch (Exception ex){
-            log.error("spel parse failed"+ex.getMessage(),ex);
+        } catch (Exception ex) {
+            log.warn("SpEL parse failed for operation log content, contentLength={}", content.length(), ex);
             return content;
         }
     }

@@ -109,7 +109,7 @@ public class RsaPasswordUtil {
         try {
             decryptPassword = decrypt(password);
         } catch (Exception e) {
-            log.error("Password decryption failed");
+            log.warn("Password decryption failed, reason={}", e.getClass().getSimpleName());
             throw new IllegalStateException("RSA initialization failed", e);
         }
         return decryptPassword;
@@ -257,8 +257,8 @@ public class RsaPasswordUtil {
     private static byte[] hexToByte(String ciphertext) {
         byte[] cipherBytes = ciphertext.getBytes(StandardCharsets.UTF_8);
         if ((cipherBytes.length % 2) != 0) {
-            log.error("The content:[{}] length is not even",ciphertext);
-            throw new IllegalArgumentException(String.format("The content:[%s] length is not even",ciphertext));
+            log.warn("Ciphertext length is not even, length={}", cipherBytes.length);
+            throw new IllegalArgumentException("Ciphertext length is not even");
         }
         byte[] result = new byte[cipherBytes.length / 2];
         for (int i = 0; i < cipherBytes.length; i += 2) {

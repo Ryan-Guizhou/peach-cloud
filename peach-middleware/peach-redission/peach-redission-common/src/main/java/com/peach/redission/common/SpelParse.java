@@ -47,7 +47,8 @@ public class SpelParse {
             Expression expression = parser.parseExpression(expressionString);
             return expression.getValue(context, String.class);
         } catch (Exception ex) {
-            log.error("An exception occurred while parsing the spell expression" + ex);
+            int expressionLength = expressionString == null ? 0 : expressionString.length();
+            log.warn("Failed to parse SpEL expression, expressionLength={}", expressionLength, ex);
             return expressionString;
         }
     }

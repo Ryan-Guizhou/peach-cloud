@@ -5,6 +5,12 @@ package com.peach.rocket.core;
  * <p>该模型对 RocketMQ 原生发送结果做了最小抽象，只保留业务侧最常用的发送状态、消息 ID 和最终路由信息，
  * 便于日志记录、链路追踪和上层服务统一处理发送结果。
  *
+ * @param success 是否发送成功
+ * @param messageId 消息ID
+ * @param topic 消息主题
+ * @param tag 消息标签
+ * @param key 业务消息键
+ * @param rawStatus RocketMQ 原始发送状态
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/26

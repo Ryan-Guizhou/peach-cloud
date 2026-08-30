@@ -129,7 +129,7 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
                 .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA, captchaVO.getToken())
                 .getRealKey();
         if (!existCaptchaKey(codeKey)){
-            log.error("captcha check not found, key: {}", codeKey);
+            log.warn("captcha check cache entry not found");
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
 
@@ -215,7 +215,7 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
                 .getRealKey();
 
         if (!existCaptchaKey(codeKey)){
-            log.error("captcha verification not found, key: {}", codeKey);
+            log.warn("captcha secondary verification cache entry not found");
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
         deleteCaptchKey(codeKey);
