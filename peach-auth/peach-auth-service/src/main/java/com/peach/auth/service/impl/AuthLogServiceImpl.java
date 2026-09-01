@@ -30,7 +30,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthLogServiceImpl implements IAuthLogService {
 
-        private final AuthLogDao authLogDao;
+    private final AuthLogDao authLogDao;
 
     @Override
     public PageInfo<AuthLogVO> pageList(AuthLogQO authLogQO) {

@@ -41,9 +41,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class IpWhitelistServiceImpl implements IIpWhitelistService {
 
-        private final IpWhitelistDao ipWhitelistDao;
+    private final IpWhitelistDao ipWhitelistDao;
 
-        private final StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     public PageResult<IpWhitelistVO> pageList(IpWhitelistQO qo) {

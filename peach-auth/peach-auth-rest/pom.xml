@@ -33,6 +33,11 @@
             <artifactId>peach-auth-log-external</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-captcha-starter</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

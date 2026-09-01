@@ -46,9 +46,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ValueSetServiceImpl implements IValueSetService {
 
-        private final ValueSetDao valueSetDao;
+    private final ValueSetDao valueSetDao;
 
-        private final ValueSetItemDao valueSetItemDao;
+    private final ValueSetItemDao valueSetItemDao;
 
     @Override
     public PageResult<ValueSetVO> pageList(ValueSetQO qo) {

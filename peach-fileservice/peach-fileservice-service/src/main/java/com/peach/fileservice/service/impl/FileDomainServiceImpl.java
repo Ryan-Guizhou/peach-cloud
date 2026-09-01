@@ -108,17 +108,17 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(DateUtil.TIME_PATTERN);
 
-        private final FileObjectDao fileObjectDao;
+    private final FileObjectDao fileObjectDao;
 
-        private final FileRecordDao fileRecordDao;
+    private final FileRecordDao fileRecordDao;
 
-        private final FileUploadSessionDao fileUploadSessionDao;
+    private final FileUploadSessionDao fileUploadSessionDao;
 
-        private final MultiZoneStorage multiZoneStorage;
+    private final MultiZoneStorage multiZoneStorage;
 
-        private final FileDomainProperties fileDomainProperties;
+    private final FileDomainProperties fileDomainProperties;
 
-        private final ObjectProvider<IFileDomainService> self;
+    private final ObjectProvider<IFileDomainService> self;
 
     @Override
     public FileDigestVO calculateSha256(MultipartFile file) {

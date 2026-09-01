@@ -115,7 +115,9 @@ public class PeachSaTokenWebAutoConfiguration {
     private static final class PeachSaTokenWebMvcConfigurer implements WebMvcConfigurer {
 
         private final PeachSaTokenProperties properties;
+
         private final UserContextProperties userContextProperties;
+
         private final SatokenEndpointMatcher endpointMatcher = new SatokenEndpointMatcher();
 
         private PeachSaTokenWebMvcConfigurer(PeachSaTokenProperties properties,

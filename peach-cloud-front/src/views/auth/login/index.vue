@@ -4,6 +4,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import { initLogin, submitLogin } from '../../../api/auth'
 import AuthShell from '../../../components/auth/AuthShell.vue'
+import BlockPuzzleCaptcha from '../../../components/auth/BlockPuzzleCaptcha.vue'
 import { syncDynamicRoutes } from '../../../router'
 import { useAuthStore } from '../../../stores/auth'
 import type { LoginInitInfo } from '../../../types/auth'
@@ -21,19 +22,48 @@ const isInitializing = ref(true)
 const isSubmitting = ref(false)
 const initInfo = ref<LoginInitInfo | null>(null)
 const formError = ref('')
+const captchaVerification = ref('')
+const captchaPassed = ref(false)
 
 const passwordLength = computed(() => loginPassword.value.length)
+const captchaRequired = computed(() => initInfo.value?.captchaRequired !== false)
+const captchaType = computed(() => initInfo.value?.captchaType ?? 'BLOCKPUZZLE')
+const canSubmit = computed(() => {
+  if (!initInfo.value || isInitializing.value || isSubmitting.value) {
+    return false
+  }
+  if (captchaRequired.value && !captchaPassed.value) {
+    return false
+  }
+  return true
+})
 
 const initializeLogin = async () => {
   isInitializing.value = true
   formError.value = ''
+  captchaVerification.value = ''
+  captchaPassed.value = false
   try {
     initInfo.value = await initLogin()
+    if (initInfo.value.captchaRequired === false) {
+      captchaPassed.value = true
+    }
   } catch (error: unknown) {
     formError.value = error instanceof Error ? error.message : '初始化登录环境失败，请重试'
   } finally {
     isInitializing.value = false
   }
+}
+
+const onCaptchaVerified = (verification: string) => {
+  captchaVerification.value = verification
+  captchaPassed.value = true
+  formError.value = ''
+}
+
+const onCaptchaReset = () => {
+  captchaVerification.value = ''
+  captchaPassed.value = false
 }
 
 const handleSubmit = async () => {
@@ -45,6 +75,10 @@ const handleSubmit = async () => {
     formError.value = '请输入账号和密码'
     return
   }
+  if (captchaRequired.value && !captchaPassed.value) {
+    formError.value = '请先完成滑块验证'
+    return
+  }
 
   isSubmitting.value = true
   formError.value = ''
@@ -54,6 +88,7 @@ const handleSubmit = async () => {
       username: loginUsername.value.trim(),
       password: encryptedPassword,
       fiscal: initInfo.value.fiscal,
+      captchaVerification: captchaRequired.value ? captchaVerification.value : undefined,
     })
     authStore.establishSession(loginInfo, remember.value)
     syncDynamicRoutes()
@@ -65,6 +100,8 @@ const handleSubmit = async () => {
     await router.replace(redirect)
   } catch (error: unknown) {
     formError.value = error instanceof Error ? error.message : '登录失败，请稍后重试'
+    captchaVerification.value = ''
+    captchaPassed.value = !captchaRequired.value
   } finally {
     isSubmitting.value = false
     loginPassword.value = ''
@@ -132,6 +169,14 @@ onMounted(initializeLogin)
         </div>
       </label>
 
+      <BlockPuzzleCaptcha
+        v-if="initInfo && captchaRequired"
+        :captcha-type="captchaType"
+        :disabled="isInitializing || isSubmitting"
+        @verified="onCaptchaVerified"
+        @reset="onCaptchaReset"
+      />
+
       <div class="form-row">
         <label class="remember-row">
           <button
@@ -156,7 +201,7 @@ onMounted(initializeLogin)
       <button
         type="submit"
         class="primary-button"
-        :disabled="isInitializing || isSubmitting || !initInfo"
+        :disabled="!canSubmit"
         :aria-busy="isSubmitting"
       >
         <span v-if="isSubmitting" class="button-spinner" aria-hidden="true" />

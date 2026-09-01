@@ -26,7 +26,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WebSocketConfiguration {
 
-        private final MessageWebSocketHandler messageWebSocketHandler;
+    private final MessageWebSocketHandler messageWebSocketHandler;
 
     @Bean
     public HandlerMapping webSocketHandlerMapping() {

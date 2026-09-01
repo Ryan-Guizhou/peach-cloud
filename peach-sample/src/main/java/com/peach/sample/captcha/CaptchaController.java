@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class CaptchaController {
 
-        private final CaptchaService captchaService;
+    private final CaptchaService captchaService;
 
     @PostMapping("/get")
     public Response getCaptch(@RequestBody CaptchaVO captchaVO) {

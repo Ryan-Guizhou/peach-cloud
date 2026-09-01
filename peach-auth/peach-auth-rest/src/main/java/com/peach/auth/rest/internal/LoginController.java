@@ -1,5 +1,6 @@
 package com.peach.auth.rest.internal;
 
+import com.peach.common.util.StringUtil;
 import lombok.RequiredArgsConstructor;
 
 import cn.dev33.satoken.stp.StpUtil;
@@ -7,12 +8,16 @@ import com.peach.auth.common.RsaPasswordUtil;
 import com.peach.auth.dto.RegisterDTO;
 import com.peach.auth.dto.SwitchContextDTO;
 import com.peach.auth.service.IUserService;
+import com.peach.captcha.constant.CaptchaEnum;
+import com.peach.captcha.model.CaptchaVO;
+import com.peach.captcha.service.CaptchaService;
 import com.peach.common.response.Response;
 import com.peach.auth.dto.LoginDTO;
 import com.peach.auth.group.LoginGroup;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,15 +34,18 @@ import org.springframework.validation.annotation.Validated;
  * @Version 1.0.0
  * @CreateTime 2026/1/24 15:17
  */
+@Slf4j
 @Indexed
+@Validated
 @RestController
 @RequestMapping("/auth")
 @Tag(name = "LoginController", description = "用户登录")
 @RequiredArgsConstructor
 public class LoginController {
 
+    private final IUserService userService;
 
-        private final IUserService userService;
+    private final CaptchaService captchaService;
 
     @Operation(summary = "用户登录")
     @PostMapping("/login")
@@ -64,7 +72,13 @@ public class LoginController {
     @PostMapping("/logout")
     @Operation(summary = "用户登出")
     public Response logout() {
-        StpUtil.logout();
+        Object userId = StpUtil.getLoginId();
+        if (StringUtil.isNotBlank(userId)) {
+            StpUtil.logout(userId);
+            log.info("logout successed, userId is {}",userId);
+        }else {
+            log.info("logout skipped, no active session");
+        }
         Response success = Response.success();
         success.setMsg("登出成功");
         return success;
@@ -113,16 +127,31 @@ public class LoginController {
     }
 
     @PostMapping("/getCaptcha")
-    @Operation(summary = "获取验证码")
-    public Response getCaptcha() {
-        return Response.success();
+    @Operation(summary = "获取滑块验证码")
+    public Response getCaptcha(@RequestBody(required = false) CaptchaVO captchaVO) {
+        CaptchaVO request = captchaVO == null ? new CaptchaVO() : captchaVO;
+        if (StringUtil.isBlank(request.getCaptchaType())) {
+            request.setCaptchaType(CaptchaEnum.CaptchaServiceType.BLOCKPUZZLE.getCode());
+        }
+        return captchaService.get(request);
     }
 
     @PostMapping("/checkCaptcha")
-    @Operation(summary = "验证验证码")
-    public Response checkCaptcha() {
-        return Response.success();
+    @Operation(summary = "校验滑块验证码")
+    public Response checkCaptcha(@RequestBody CaptchaVO captchaVO) {
+        if (captchaVO == null) {
+            return Response.fail("验证码参数不能为空");
+        }
+        if (StringUtil.isBlank(captchaVO.getClientUid()) && StringUtil.isBlank(captchaVO.getBrowserInfo())) {
+            return Response.fail("clientUid 不能为空");
+        }
+        if (StringUtil.isBlank(captchaVO.getCaptchaType())) {
+            captchaVO.setCaptchaType(CaptchaEnum.CaptchaServiceType.BLOCKPUZZLE.getCode());
+        }
+        Response response = captchaService.check(captchaVO);
+        if (response != null && response.isSuccess()) {
+            response.setMsg("滑块验证通过");
+        }
+        return response;
     }
-
-
 }

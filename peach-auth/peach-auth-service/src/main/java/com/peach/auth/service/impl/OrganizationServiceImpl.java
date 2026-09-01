@@ -34,7 +34,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrganizationServiceImpl implements IOrganizationService {
 
-        private final OrganizationDao organizationDao;
+    private final OrganizationDao organizationDao;
 
     @Override
     public PageInfo<OrganizationVO> pageList(OrganizationQO organizationQO) {

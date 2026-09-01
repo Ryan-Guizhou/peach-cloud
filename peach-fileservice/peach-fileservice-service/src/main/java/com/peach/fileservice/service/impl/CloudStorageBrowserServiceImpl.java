@@ -41,11 +41,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CloudStorageBrowserServiceImpl implements ICloudStorageBrowserService {
 
-        private final CloudStorageInstanceDao cloudStorageInstanceDao;
+    private final CloudStorageInstanceDao cloudStorageInstanceDao;
 
-        private final CloudStorageInstanceSupport cloudStorageInstanceSupport;
+    private final CloudStorageInstanceSupport cloudStorageInstanceSupport;
 
-        private final CloudStorageManagerService cloudStorageManagerService;
+    private final CloudStorageManagerService cloudStorageManagerService;
 
     @Override
     public boolean bucketExists(String instanceId) {

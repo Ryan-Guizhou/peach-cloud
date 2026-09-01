@@ -11,6 +11,30 @@ export interface LoginInitInfo {
   fiscal: number
   publicKey: string
   encryptionAlgorithm: string
+  captchaType?: string
+  captchaRequired?: boolean
+  loginConfig?: Record<string, string>
+}
+
+export interface CaptchaChallenge {
+  token: string
+  secretKey?: string
+  slidingOriginalImageBase64?: string
+  newSlidingBlockingImageBase64?: string
+  captchaType?: string
+}
+
+export interface CaptchaRequestPayload {
+  captchaType: string
+  clientUid: string
+  browserInfo?: string
+  token?: string
+  answer?: string
+}
+
+export interface CaptchaCheckResult {
+  captchaVerification?: string
+  result?: boolean
 }
 
 export interface LoginRequest {
@@ -19,6 +43,8 @@ export interface LoginRequest {
   fiscal: number
   tenantId?: string
   orgId?: string
+  captchaVerification?: string
+  clientUid?: string
 }
 
 export interface UserOrgInfo {

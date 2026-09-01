@@ -40,9 +40,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthFunctionServiceImpl implements IAuthFunctionService {
 
-        private final AuthFunctionDao authFunctionDao;
+    private final AuthFunctionDao authFunctionDao;
 
-        private final IAuthLogService authLogService;
+    private final IAuthLogService authLogService;
 
     @Override
     public PageInfo<AuthFunctionVO> pageList(AuthFunctionQO authFunctionQO) {

@@ -125,20 +125,36 @@ public final class CaptchaImageUtil {
             return imagesMap;
         }
         ClassLoader classLoader = CaptchaImageUtil.class.getClassLoader();
-        for (Integer defaultImageCount = DEFAULT_IMAGE_COUNT; defaultImageCount > 0; defaultImageCount--) {
-            String completePath = path.concat(PATH_SEPARATOR).concat(defaultImageCount.toString()).concat(IMAGES_SUFFIX);
-            InputStream resourceAsStream = classLoader.getResourceAsStream(completePath);
-            try {
-                assert path != null;
+        for (int imageIndex = DEFAULT_IMAGE_COUNT; imageIndex > 0; imageIndex--) {
+            String fileName = imageIndex + IMAGES_SUFFIX;
+            String completePath = path + PATH_SEPARATOR + fileName;
+            try (InputStream resourceAsStream = openClasspathResource(classLoader, completePath)) {
+                if (resourceAsStream == null) {
+                    log.warn("Captcha default image not found on classpath: {}", completePath);
+                    continue;
+                }
                 byte[] bytes = FileCopyUtil.copyToByteArray(resourceAsStream);
-                String keyName = defaultImageCount.toString().concat(IMAGES_SUFFIX);
-                String encodeValue = Base64Util.encodeToString(bytes);
-                imagesMap.put(keyName, encodeValue);
+                if (bytes.length == 0) {
+                    log.warn("Captcha default image is empty: {}", completePath);
+                    continue;
+                }
+                imagesMap.put(fileName, Base64Util.encodeToString(bytes));
             } catch (IOException e) {
                 log.error("Error copying resource to byte array: {}", completePath, e);
             }
         }
+        if (imagesMap.isEmpty()) {
+            log.error("No captcha default images loaded from classpath path: {}", path);
+        }
         return imagesMap;
+    }
+
+    private static InputStream openClasspathResource(ClassLoader classLoader, String completePath) {
+        InputStream stream = classLoader.getResourceAsStream(completePath);
+        if (stream != null) {
+            return stream;
+        }
+        return CaptchaImageUtil.class.getResourceAsStream("/" + completePath);
     }
 
     /**

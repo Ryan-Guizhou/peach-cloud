@@ -3,6 +3,7 @@ package com.peach.scheduler.service;
 import org.springframework.stereotype.Indexed;
 
 import com.peach.common.IDGeneratorUtil;
+import com.peach.redission.distrbutedlock.support.DistributedLockTemplate;
 import com.peach.scheduled.common.ExecutionEvent;
 import com.peach.scheduled.common.ExecutionState;
 import com.peach.scheduled.common.JobState;
@@ -38,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SchedulerTriggerService implements ScheduleTriggerHandler {
     private static final String SYSTEM_OPERATOR = "system";
 
+    private static final String SCHEDULER_JOB_LOCK = "SCHEDULER_JOB";
 
     private static final Logger log = LoggerFactory.getLogger(SchedulerTriggerService.class);
 
@@ -46,6 +48,7 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
     private final SchedulerExecutionLifecycleService lifecycleService;
     private final JobDispatcher dispatcher;
     private final SchedulerOperationLogDao operationLogDao;
+    private final DistributedLockTemplate distributedLockTemplate;
 
     /**
      * 创建实例。
@@ -55,17 +58,20 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
      * @param lifecycleService lifecycle Service。
      * @param dispatcher dispatcher。
      * @param operationLogDao 操作审计日志数据访问对象
+     * @param distributedLockTemplate 分布式锁模板
      */
     public SchedulerTriggerService(SchedulerJobDao jobDao,
                                    SchedulerExecutionDao executionDao,
                                    SchedulerExecutionLifecycleService lifecycleService,
                                    JobDispatcher dispatcher,
-                                   SchedulerOperationLogDao operationLogDao) {
+                                   SchedulerOperationLogDao operationLogDao,
+                                   DistributedLockTemplate distributedLockTemplate) {
         this.jobDao = jobDao;
         this.executionDao = executionDao;
         this.lifecycleService = lifecycleService;
         this.dispatcher = dispatcher;
         this.operationLogDao = operationLogDao;
+        this.distributedLockTemplate = distributedLockTemplate;
     }
 
     /**
@@ -116,18 +122,20 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
         if (execution == null || execution.getState() != ExecutionState.RETRY_WAIT) {
             return false;
         }
-        SchedulerJobDO job = jobDao.selectByIdForUpdate(execution.getJobId());
-        if (job == null || job.getState() == JobState.DELETED) {
-            lifecycleService.transition(executionId, ExecutionEvent.EXHAUST,
-                    "JOB_UNAVAILABLE", "Scheduler job is no longer available", SYSTEM_OPERATOR);
-            return false;
-        }
-        if (!lifecycleService.requeueRetry(executionId)) {
-            return false;
-        }
-        SchedulerExecutionDO refreshed = executionDao.selectById(executionId);
-        dispatcher.dispatch(command(job, refreshed));
-        return true;
+        return distributedLockTemplate.call(SCHEDULER_JOB_LOCK, execution.getJobId(), () -> {
+            SchedulerJobDO job = jobDao.selectById(execution.getJobId());
+            if (job == null || job.getState() == JobState.DELETED) {
+                lifecycleService.transition(executionId, ExecutionEvent.EXHAUST,
+                        "JOB_UNAVAILABLE", "Scheduler job is no longer available", SYSTEM_OPERATOR);
+                return false;
+            }
+            if (!lifecycleService.requeueRetry(executionId)) {
+                return false;
+            }
+            SchedulerExecutionDO refreshed = executionDao.selectById(executionId);
+            dispatcher.dispatch(command(job, refreshed));
+            return true;
+        });
     }
 
     /**
@@ -144,63 +152,67 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
         if (execution == null || execution.getState() != ExecutionState.CREATED) {
             return false;
         }
-        SchedulerJobDO job = jobDao.selectByIdForUpdate(execution.getJobId());
-        if (job == null || job.getState() == JobState.DELETED) {
-            lifecycleService.transition(executionId, ExecutionEvent.CANCEL,
-                    "JOB_UNAVAILABLE", "Scheduler job is no longer available", SYSTEM_OPERATOR);
-            return false;
-        }
-        if (executionDao.countActiveByJobId(job.getId()) > 0) {
-            return false;
-        }
-        dispatcher.dispatch(command(job, execution));
-        lifecycleService.queue(executionId);
-        return true;
+        return distributedLockTemplate.call(SCHEDULER_JOB_LOCK, execution.getJobId(), () -> {
+            SchedulerJobDO job = jobDao.selectById(execution.getJobId());
+            if (job == null || job.getState() == JobState.DELETED) {
+                lifecycleService.transition(executionId, ExecutionEvent.CANCEL,
+                        "JOB_UNAVAILABLE", "Scheduler job is no longer available", SYSTEM_OPERATOR);
+                return false;
+            }
+            if (executionDao.countActiveByJobId(job.getId()) > 0) {
+                return false;
+            }
+            dispatcher.dispatch(command(job, execution));
+            lifecycleService.queue(executionId);
+            return true;
+        });
     }
 
     private String createOccurrence(SchedulerJobDO sourceJob, TriggerType triggerType,
                                     Instant scheduledTime, String occurrenceKey) {
-        SchedulerJobDO job = jobDao.selectByIdForUpdate(sourceJob.getId());
-        if (job == null || job.getState() == JobState.DELETED) {
-            return null;
-        }
+        return distributedLockTemplate.call(SCHEDULER_JOB_LOCK, sourceJob.getId(), () -> {
+            SchedulerJobDO job = jobDao.selectById(sourceJob.getId());
+            if (job == null || job.getState() == JobState.DELETED) {
+                return null;
+            }
 
-        SchedulerExecutionDO execution = new SchedulerExecutionDO();
-        execution.setExecutionId(IDGeneratorUtil.generateUuid());
-        execution.setJobId(job.getId());
-        execution.setJobCode(job.getJobCode());
-        execution.setOccurrenceKey(occurrenceKey);
-        execution.setTriggerType(triggerType.name());
-        execution.setScheduledTime(LocalDateTime.ofInstant(scheduledTime, ZoneOffset.UTC));
-        execution.setState(ExecutionState.CREATED);
-        execution.setAttempt(1);
-        execution.setVersion(0L);
-        execution.setTraceId(IDGeneratorUtil.generateUuid());
+            SchedulerExecutionDO execution = new SchedulerExecutionDO();
+            execution.setExecutionId(IDGeneratorUtil.generateUuid());
+            execution.setJobId(job.getId());
+            execution.setJobCode(job.getJobCode());
+            execution.setOccurrenceKey(occurrenceKey);
+            execution.setTriggerType(triggerType.name());
+            execution.setScheduledTime(LocalDateTime.ofInstant(scheduledTime, ZoneOffset.UTC));
+            execution.setState(ExecutionState.CREATED);
+            execution.setAttempt(1);
+            execution.setVersion(0L);
+            execution.setTraceId(IDGeneratorUtil.generateUuid());
 
-        if (executionDao.insertIgnore(execution) != 1) {
-            log.info("Duplicate scheduler occurrence ignored, jobCode={}, occurrenceKey={}",
-                    job.getJobCode(), occurrenceKey);
-            return null;
-        }
+            if (executionDao.insertIgnore(execution) != 1) {
+                log.info("Duplicate scheduler occurrence ignored, jobCode={}, occurrenceKey={}",
+                        job.getJobCode(), occurrenceKey);
+                return null;
+            }
 
-        ConcurrencyPolicy policy = concurrencyPolicy(job);
-        int activeCount = executionDao.countActiveByJobId(job.getId());
-        if (activeCount > 0 && policy == ConcurrencyPolicy.SKIP_IF_RUNNING) {
-            lifecycleService.transition(execution.getExecutionId(), ExecutionEvent.SKIP,
-                    "CONCURRENCY_POLICY", "Skipped because another occurrence is active", SYSTEM_OPERATOR);
-            log.info("Scheduler occurrence skipped by concurrency policy, executionId={}, jobCode={}",
-                    execution.getExecutionId(), job.getJobCode());
+            ConcurrencyPolicy policy = concurrencyPolicy(job);
+            int activeCount = executionDao.countActiveByJobId(job.getId());
+            if (activeCount > 0 && policy == ConcurrencyPolicy.SKIP_IF_RUNNING) {
+                lifecycleService.transition(execution.getExecutionId(), ExecutionEvent.SKIP,
+                        "CONCURRENCY_POLICY", "Skipped because another occurrence is active", SYSTEM_OPERATOR);
+                log.info("Scheduler occurrence skipped by concurrency policy, executionId={}, jobCode={}",
+                        execution.getExecutionId(), job.getJobCode());
+                return execution.getExecutionId();
+            }
+            if (activeCount > 0 && policy == ConcurrencyPolicy.DISALLOW) {
+                log.info("Scheduler occurrence deferred by concurrency policy, executionId={}, jobCode={}",
+                        execution.getExecutionId(), job.getJobCode());
+                return execution.getExecutionId();
+            }
+
+            dispatcher.dispatch(command(job, execution));
+            lifecycleService.queue(execution.getExecutionId());
             return execution.getExecutionId();
-        }
-        if (activeCount > 0 && policy == ConcurrencyPolicy.DISALLOW) {
-            log.info("Scheduler occurrence deferred by concurrency policy, executionId={}, jobCode={}",
-                    execution.getExecutionId(), job.getJobCode());
-            return execution.getExecutionId();
-        }
-
-        dispatcher.dispatch(command(job, execution));
-        lifecycleService.queue(execution.getExecutionId());
-        return execution.getExecutionId();
+        });
     }
 
     private ConcurrencyPolicy concurrencyPolicy(SchedulerJobDO job) {

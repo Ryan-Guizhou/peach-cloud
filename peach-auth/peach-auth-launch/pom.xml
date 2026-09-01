@@ -49,7 +49,17 @@
 
         <dependency>
             <groupId>com.peach</groupId>
+            <artifactId>peach-captcha-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.peach</groupId>
             <artifactId>peach-redis-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redission-distributedlock-starter</artifactId>
         </dependency>
 
         <dependency>

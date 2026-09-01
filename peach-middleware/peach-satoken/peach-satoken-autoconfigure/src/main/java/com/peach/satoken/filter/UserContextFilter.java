@@ -31,7 +31,9 @@ import java.io.IOException;
 public class UserContextFilter extends OncePerRequestFilter {
 
     private final UserContextProperties properties;
+
     private final UserContextSupport userContextSupport;
+
     private final SatokenEndpointMatcher endpointMatcher = new SatokenEndpointMatcher();
 
     /**

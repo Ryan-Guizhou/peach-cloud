@@ -52,13 +52,6 @@
         WHERE JOB_CODE = #{jobCode}
     </select>
 
-    <select id="selectByIdForUpdate" resultMap="JobMap">
-        SELECT <include refid="columns" />
-        FROM PEACH_SCHEDULER_JOB
-        WHERE ID = #{id}
-        FOR UPDATE
-    </select>
-
     <insert id="insert" parameterType="com.peach.scheduled.entity.SchedulerJobDO">
         INSERT INTO PEACH_SCHEDULER_JOB
         (ID, JOB_CODE, JOB_NAME, APPLICATION_NAME, HANDLER_NAME, DESCRIPTION, SCHEDULE_TYPE, CRON_EXPRESSION,

@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class WebSocketPushServiceImpl implements IWebSocketPushService {
 
-        private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public void publish(WebSocketMessageDTO message) {

@@ -43,7 +43,7 @@ import jakarta.validation.constraints.NotBlank;
 @RequiredArgsConstructor
 public class CloudStorageInstanceController {
 
-        private final ICloudStorageInstanceService cloudStorageService;
+    private final ICloudStorageInstanceService cloudStorageService;
 
     @PostMapping
     @Operation(summary = "新增云存储实例")

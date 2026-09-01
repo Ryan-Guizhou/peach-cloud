@@ -43,7 +43,7 @@ import jakarta.validation.constraints.NotBlank;
 @RequiredArgsConstructor
 public class FileController {
 
-        private final IFileDomainService fileDomainService;
+    private final IFileDomainService fileDomainService;
 
     /**
      * 文件上传预检查

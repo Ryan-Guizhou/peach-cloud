@@ -30,14 +30,15 @@ public class UserOperLogTask {
 
     private final UserOperLogQueue userOperLogQueue = UserOperLogQueue.getInstance();
 
-        private final IUserOperLogService userOperLogService;
+    private final IUserOperLogService userOperLogService;
 
-    @Scheduled(fixedRate = 10_000)
+    @Scheduled(fixedRate = 100_000)
     public void excuted() {
         log.info("The scheduled task has started executing");
         handleUserOperLog();
         log.info("The scheduled task has been completed");
     }
+
     public void handleUserOperLog() {
         List<UserOperLogVO> allUserOperLog = userOperLogQueue.getAllUserOperLog();
         if (PeachCollectionUtil.isEmpty(allUserOperLog)) {

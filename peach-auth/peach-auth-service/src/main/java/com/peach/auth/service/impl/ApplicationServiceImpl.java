@@ -21,6 +21,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ApplicationServiceImpl implements IApplicationService {
 
-        private final ApplicationDao applicationDao;
+    private final ApplicationDao applicationDao;
 
 }

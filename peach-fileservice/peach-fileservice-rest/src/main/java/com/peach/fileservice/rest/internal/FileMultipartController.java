@@ -38,7 +38,7 @@ import jakarta.validation.constraints.NotBlank;
 @RequiredArgsConstructor
 public class FileMultipartController {
 
-        private final IFileDomainService fileDomainService;
+    private final IFileDomainService fileDomainService;
 
     /**
      * 初始化分片上传。

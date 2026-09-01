@@ -33,7 +33,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ResouceServceImpl implements IResouceService {
 
-        private final ResourceDao resourceDao;
+    private final ResourceDao resourceDao;
 
     @Override
     public PageInfo<ResourceVO> pageList(ResourceQO resourceQO) {

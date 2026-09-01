@@ -46,9 +46,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DictServiceImpl implements IDictService {
 
-        private final DictTypeDao dictTypeDao;
+    private final DictTypeDao dictTypeDao;
 
-        private final DictItemDao dictItemDao;
+    private final DictItemDao dictItemDao;
 
     @Override
     public PageResult<DictTypeVO> typePageList(DictTypeQO qo) {

@@ -60,5 +60,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redission-distributedlock-starter</artifactId>
+        </dependency>
     </dependencies>
 </project>

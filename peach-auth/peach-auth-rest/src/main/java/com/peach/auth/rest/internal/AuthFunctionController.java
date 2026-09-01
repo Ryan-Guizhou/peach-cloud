@@ -10,6 +10,7 @@ import com.peach.auth.vo.AuthFunctionVO;
 import com.peach.common.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @Version 1.0.0
  * @CreateTime 2026/8/12 21:10
  */
+@Slf4j
 @Indexed
 @Validated
 @RestController
@@ -32,7 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthFunctionController {
 
-        private final IAuthFunctionService authFunctionService;
+    private final IAuthFunctionService authFunctionService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询角色功能授权")

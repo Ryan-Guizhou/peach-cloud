@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class OrderService {
 
-        private final MqPublisher mqPublisher;
+    private final MqPublisher mqPublisher;
 
     /**
      * 发布一组订单消息示例。

@@ -40,7 +40,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class IpWhitelistController {
 
-        private final IIpWhitelistService ipWhitelistService;
+    private final IIpWhitelistService ipWhitelistService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询IP白名单")

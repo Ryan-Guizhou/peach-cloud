@@ -87,7 +87,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
                 .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA, captchaVO.getToken())
                 .getRealKey();
         if (!existCaptchaKey(codeKey)){
-            log.warn("captcha check cache entry not found");
+            log.error("captcha check not found, key: {}", codeKey);
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
         // 获取point
@@ -101,7 +101,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
             pointJson = decrypt(captchaVO.getAnswer(), cachePoint.secretKey());
             frontPoint = JsonUtil.parseObject(pointJson, PointVO.class);
         } catch (Exception e) {
-            log.warn("captcha point parse failed, reason={}", e.getClass().getSimpleName());
+            log.error("captcha point parse error, pointJson: {}", pointJson, e);
             afterValidateFail(captchaVO);
             return Response.fail(e.getMessage());
         }
@@ -130,7 +130,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         captchaVO.setResult(true);
         captchaVO.resetClientFlag();
         captchaVO.setCaptchaVerification(value);
-        return Response.success();
+        return Response.success(captchaVO);
     }
 
     @Override
@@ -145,14 +145,14 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
                     .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA_SECOND,captchaVO.getCaptchaVerification())
                     .getRealKey();
             if (!existCaptchaKey(codeKey)) {
-                log.warn("captcha secondary verification cache entry not found");
+                log.error("captcha verification not found, key: {}", codeKey);
                 return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
             }
             //二次校验取值后，即刻失效
             deleteCaptchKey(codeKey);
             return Response.success();
         } catch (Exception e) {
-            log.warn("captcha verification failed, reason={}", e.getClass().getSimpleName());
+            log.error("captcha verification error, key: {}", captchaVO.getCaptchaVerification(), e);
             return Response.fail(e.getMessage());
         }
 
@@ -219,7 +219,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
                     .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA, dataVO.getToken())
                     .getRealKey();
             setCaptchaCahche(codeKey,point.toJsonString());
-            log.debug("captcha point cached");
+            log.debug("token：{},point:{}", dataVO.getToken(), JsonUtil.toJsonString(point));
             return dataVO;
         } catch (Exception e) {
             log.error("pictureTemplatesCut error:{}", e.getMessage(), e);

@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * 调度任务数据访问。
- * <p>基础 CRUD 继承 PeachDao，行锁读取和乐观锁更新通过显式 SQL 完成。</p>
+ * <p>基础 CRUD 继承 PeachDao，并发控制由 Redisson 分布式锁与乐观锁更新共同完成。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -36,14 +36,6 @@ public interface SchedulerJobDao extends PeachDao<SchedulerJobDO, SchedulerJobDO
      * @return 任务定义，不存在时返回 null
      */
     SchedulerJobDO selectByCode(@Param("jobCode") String jobCode);
-
-    /**
-     * 根据任务主键加行锁读取任务定义。
-     *
-     * @param id 任务主键
-     * @return 已加行锁的任务定义
-     */
-    SchedulerJobDO selectByIdForUpdate(@Param("id") String id);
 
     /**
      * 新增调度任务定义。

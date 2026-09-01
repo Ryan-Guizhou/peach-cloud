@@ -33,7 +33,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class MenuServiceImpl implements IMenuService {
 
-        private final MenuDao menuDao;
+    private final MenuDao menuDao;
 
     @Override
     public PageInfo<MenuVO> pageList(MenuQO menuQO) {

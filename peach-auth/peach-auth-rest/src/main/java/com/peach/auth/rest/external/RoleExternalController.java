@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class RoleExternalController {
 
-        private final IRoleService roleService;
+    private final IRoleService roleService;
 
     @Operation(summary = "根据角色ID查询角色信息")
     @GetMapping("/role/{roleId}")

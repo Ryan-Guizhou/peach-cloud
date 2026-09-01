@@ -26,9 +26,9 @@ import org.springframework.stereotype.Indexed;
 @RequiredArgsConstructor
 public class FileUploadSessionCleanupTask {
 
-        private final IFileDomainService fileDomainService;
+    private final IFileDomainService fileDomainService;
 
-        private final FileDomainProperties fileDomainProperties;
+    private final FileDomainProperties fileDomainProperties;
 
     /**
      * 执行过期上传会话清理

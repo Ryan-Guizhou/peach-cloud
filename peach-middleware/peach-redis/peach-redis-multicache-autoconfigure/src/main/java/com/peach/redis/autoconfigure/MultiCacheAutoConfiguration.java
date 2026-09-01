@@ -52,7 +52,7 @@ public class MultiCacheAutoConfiguration<K, V>{
         log.info("init RedisMessageListenerContainer successful");
         RedisMessageListenerContainer cacheListenerContainer = new RedisMessageListenerContainer();
         cacheListenerContainer.setConnectionFactory(Objects.requireNonNull(redisTemplate.getConnectionFactory()));
-        CacheMessageListener<K, V> cacheMessageListener = new CacheMessageListener<>(redisTemplate, cacheManager);
+        CacheMessageListener cacheMessageListener = new CacheMessageListener(cacheManager);
         cacheListenerContainer.addMessageListener(cacheMessageListener, new ChannelTopic(cacheConfig.getRedis().getTopic()));
         return cacheListenerContainer;
     }

@@ -214,7 +214,7 @@
                     <exclude>**/*.ico</exclude>
                 </excludes>
             </resource>
-            <!-- 处理字体文件，不启用过滤 -->
+            <!-- 处理字体与二进制图片，不启用过滤 -->
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
@@ -224,6 +224,11 @@
                     <include>**/*.woff2</include>
                     <include>**/*.eot</include>
                     <include>**/*.otf</include>
+                    <include>**/*.png</include>
+                    <include>**/*.jpg</include>
+                    <include>**/*.jpeg</include>
+                    <include>**/*.gif</include>
+                    <include>**/*.ico</include>
                 </includes>
             </resource>
         </resources>

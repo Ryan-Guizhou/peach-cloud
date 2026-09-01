@@ -25,7 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserBloomFilterInitData extends AbstractAppStartedEventHandler {
 
-        private final BloomFilterService bloomFilterService;
+    private final BloomFilterService bloomFilterService;
 
     @Override
     public Integer executeOrder() {

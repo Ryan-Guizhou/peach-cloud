@@ -47,9 +47,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MultiMessageServiceImpl implements IMultiMessageService {
 
-        private final LanguageDao languageDao;
+    private final LanguageDao languageDao;
 
-        private final MultiMessageDao multiMessageDao;
+    private final MultiMessageDao multiMessageDao;
 
     @Override
     public PageResult<LanguageVO> languagePageList(LanguageQO qo) {

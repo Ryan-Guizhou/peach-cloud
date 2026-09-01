@@ -36,7 +36,7 @@ public class AuthFeignClientFallbackFactory implements FallbackFactory<AuthFeign
      * @CreateTime 2026/3/20 16:58
      */
 
-    
+
     private static final class FallbackAuthFeignClient implements AuthFeignClient {
 
         private final PeachFeignFallbackSupport fallbackSupport;

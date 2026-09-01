@@ -36,9 +36,9 @@ public class UserOperLogServiceImpl implements IUserOperLogService {
 
     private static final ObjectMapper _mapper = new ObjectMapper();
 
-        private final UserOperLogDao userOperLogDao;
+    private final UserOperLogDao userOperLogDao;
 
-        private final SqlSessionFactory sqlSessionFactory;
+    private final SqlSessionFactory sqlSessionFactory;
 
     @Override
     public PageInfo<UserOperLogVO> pageList(UserOperLogQO userOperLogQO) {
@@ -54,18 +54,15 @@ public class UserOperLogServiceImpl implements IUserOperLogService {
 
     @Override
     public void batchInsert(List<UserOperLogVO> userOperLogVOList) {
-        if (org.springframework.util.CollectionUtils.isEmpty(userOperLogVOList)) {
+        if (PeachCollectionUtil.isEmpty(userOperLogVOList)) {
             return;
         }
 
-        try (SqlSession sqlSession =
-                     sqlSessionFactory.openSession(ExecutorType.BATCH)) {
-
+        try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH)) {
             UserOperLogDao mapper = sqlSession.getMapper(UserOperLogDao.class);
 
             for (UserOperLogVO vo : userOperLogVOList) {
-                UserOperLogDO entity =
-                        _mapper.convertValue(vo, UserOperLogDO.class);
+                UserOperLogDO entity = _mapper.convertValue(vo, UserOperLogDO.class);
                 mapper.insert(entity);
             }
 

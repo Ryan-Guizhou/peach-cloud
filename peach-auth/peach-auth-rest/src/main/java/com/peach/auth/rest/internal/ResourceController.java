@@ -43,7 +43,7 @@ import jakarta.validation.constraints.NotBlank;
 @RequiredArgsConstructor
 public class ResourceController {
 
-        private final IResouceService resourceService;
+    private final IResouceService resourceService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询资源")

@@ -48,11 +48,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MessageServiceImpl implements IMessageService {
 
-        private final SiteMessageDao siteMessageDao;
+    private final SiteMessageDao siteMessageDao;
 
-        private final IWebSocketPushService webSocketPushService;
+    private final IWebSocketPushService webSocketPushService;
 
-        private final ObjectProvider<IMessageService> self;
+    private final ObjectProvider<IMessageService> self;
 
     @Override
     @Transactional(rollbackFor = Exception.class)

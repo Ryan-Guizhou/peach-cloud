@@ -46,7 +46,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MultiMessageController {
 
-        private final IMultiMessageService i18nService;
+    private final IMultiMessageService i18nService;
 
     @PostMapping("/language/pageList")
     @Operation(summary = "分页查询语言配置")

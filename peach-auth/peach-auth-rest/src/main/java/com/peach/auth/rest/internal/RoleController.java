@@ -43,7 +43,7 @@ import jakarta.validation.constraints.NotBlank;
 @RequiredArgsConstructor
 public class RoleController {
 
-        private final IRoleService roleService;
+    private final IRoleService roleService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询角色")

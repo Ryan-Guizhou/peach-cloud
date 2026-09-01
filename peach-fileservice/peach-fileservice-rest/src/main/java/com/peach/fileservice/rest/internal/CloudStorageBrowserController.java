@@ -47,7 +47,7 @@ import jakarta.validation.Valid;
 @RequiredArgsConstructor
 public class CloudStorageBrowserController {
 
-        private final ICloudStorageBrowserService cloudStorageBrowserService;
+    private final ICloudStorageBrowserService cloudStorageBrowserService;
 
     @GetMapping("/{instanceId}/bucket-exists")
     @Operation(summary = "检查存储桶是否存在")

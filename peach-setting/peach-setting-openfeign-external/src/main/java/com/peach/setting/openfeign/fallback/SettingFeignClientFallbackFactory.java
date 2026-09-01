@@ -2,6 +2,7 @@ package com.peach.setting.openfeign.fallback;
 
 import com.peach.common.constant.ServiceContextConstant;
 import com.peach.openfeign.support.PeachFeignFallbackSupport;
+import com.peach.common.response.Response;
 import com.peach.setting.openfeign.SettingFeignClient;
 import org.springframework.cloud.openfeign.FallbackFactory;
 
@@ -16,7 +17,7 @@ import org.springframework.cloud.openfeign.FallbackFactory;
  */
 public class SettingFeignClientFallbackFactory implements FallbackFactory<SettingFeignClient> {
 
-    private final PeachFeignFallbackSupport fallbackSupport;
+private final PeachFeignFallbackSupport fallbackSupport;
 
     public SettingFeignClientFallbackFactory(PeachFeignFallbackSupport fallbackSupport) {
         this.fallbackSupport = fallbackSupport;
@@ -37,5 +38,10 @@ public class SettingFeignClientFallbackFactory implements FallbackFactory<Settin
      */
 
     private static final class FallbackSettingFeignClient implements SettingFeignClient {
+
+        @Override
+        public Response listValueSetItems(String valueSetCode) {
+            return Response.fail("setting service unavailable");
+        }
     }
 }

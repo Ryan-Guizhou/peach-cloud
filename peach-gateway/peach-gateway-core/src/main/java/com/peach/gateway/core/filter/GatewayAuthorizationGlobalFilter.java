@@ -1,5 +1,6 @@
 package com.peach.gateway.core.filter;
 
+import cn.dev33.satoken.SaManager;
 import cn.dev33.satoken.exception.DisableServiceException;
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
@@ -209,7 +210,8 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
                     + ", code=" + notLoginException.getCode()
                     + ", tokenName=" + tokenName
                     + ", configuredHeaderExists=" + configuredHeaderExists
-                    + ", authorizationHeaderExists=" + authorizationHeaderExists;
+                    + ", authorizationHeaderExists=" + authorizationHeaderExists
+                    + ", saTokenDao=" + SaManager.getSaTokenDao().getClass().getName();
         }
         return e.getClass().getSimpleName();
     }

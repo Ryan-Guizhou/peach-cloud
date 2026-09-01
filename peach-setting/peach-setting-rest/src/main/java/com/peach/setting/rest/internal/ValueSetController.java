@@ -46,7 +46,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ValueSetController {
 
-        private final IValueSetService valueSetService;
+    private final IValueSetService valueSetService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询值集")

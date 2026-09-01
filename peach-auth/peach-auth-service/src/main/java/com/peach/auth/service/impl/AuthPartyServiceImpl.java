@@ -21,6 +21,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthPartyServiceImpl implements IAuthPartyService {
 
-        private final AuthPartyDao authPartyDao;
+    private final AuthPartyDao authPartyDao;
 
 }

@@ -22,11 +22,9 @@ import java.util.List;
 @MybatisDao
 public interface UserDao extends PeachDao<UserDO, UserVO> {
 
-    UserVO login(@Param("username") String username,@Param("password") String password);
+    UserVO login(@Param("username") String username, @Param("password") String password);
 
     List<UserVO> selectByQO(UserQO userQO);
-
-    String lockById(String userId);
 
     int updateProfileBasic(@Param("userId") String userId, @Param("userName") String userName,
                            @Param("mobilePhone") String mobilePhone, @Param("email") String email,

@@ -43,7 +43,7 @@ import jakarta.validation.constraints.NotBlank;
 @RequiredArgsConstructor
 public class MenuController {
 
-        private final IMenuService menuService;
+    private final IMenuService menuService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询菜单")

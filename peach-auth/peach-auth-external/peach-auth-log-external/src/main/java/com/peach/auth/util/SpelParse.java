@@ -23,7 +23,9 @@ import java.util.regex.Pattern;
 public class SpelParse {
 
     private static final int MAX_EXPRESSION_LENGTH = 512;
+
     private static final Pattern VARIABLE_NAME = Pattern.compile("p\\d{1,3}");
+
     private static final ExpressionParser PARSER = new SpelExpressionParser();
 
     private final StandardEvaluationContext context;

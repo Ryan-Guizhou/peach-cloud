@@ -26,11 +26,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class MulticacheController {
 
 
-        private final RedisDao redisDao;
+    private final RedisDao redisDao;
 
-        private final MulticacheService multicacheService;
+    private final MulticacheService multicacheService;
 
-        private final MultiCacheManagerService multiCacheManagerService;
+    private final MultiCacheManagerService multiCacheManagerService;
 
     /**
      * 测试缓存

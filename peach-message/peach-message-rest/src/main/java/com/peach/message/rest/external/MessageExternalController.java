@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MessageExternalController {
 
-        private final IMessageService messageService;
+    private final IMessageService messageService;
 
     @PostMapping("/publish")
     @Operation(summary = "发布消息")

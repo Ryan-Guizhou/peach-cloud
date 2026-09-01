@@ -44,7 +44,7 @@ import jakarta.validation.constraints.NotBlank;
 @RequiredArgsConstructor
 public class OrganizationController {
 
-        private final IOrganizationService organizationService;
+    private final IOrganizationService organizationService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询机构")

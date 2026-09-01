@@ -29,7 +29,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class HealthController {
 
-        private final IMonitorRuntimeService monitorRuntimeService;
+    private final IMonitorRuntimeService monitorRuntimeService;
 
     @GetMapping("/health")
     @Operation(summary = "监控健康检查")

@@ -45,7 +45,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NoticeController {
 
-        private final INoticeService noticeService;
+    private final INoticeService noticeService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询公告")

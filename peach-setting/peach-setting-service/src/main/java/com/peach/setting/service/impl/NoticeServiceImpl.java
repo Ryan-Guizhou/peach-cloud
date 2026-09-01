@@ -52,11 +52,11 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class NoticeServiceImpl implements INoticeService {
 
-        private final NoticeDao noticeDao;
+    private final NoticeDao noticeDao;
 
-        private final SiteMessageDao siteMessageDao;
+    private final SiteMessageDao siteMessageDao;
 
-        private final RedisDao redisDao;
+    private final RedisDao redisDao;
 
     @Override
     public PageResult<NoticeVO> noticePageList(NoticeQO qo) {

@@ -87,7 +87,7 @@ public class CaptchaProperties {
     /**
      * 一分钟内接口请求次数限制 开关
      */
-    private boolean reqFrequencyLimitEnable = false;
+    private String reqFrequencyLimitEnable = "1";
 
     /***
      * 一分钟内check接口失败次数

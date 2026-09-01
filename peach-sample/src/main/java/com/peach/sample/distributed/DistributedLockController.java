@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class DistributedLockController {
 
-        private final DistributedService distributedService;
+    private final DistributedService distributedService;
 
 
     @PostMapping("/lock")

@@ -43,7 +43,7 @@ import jakarta.validation.constraints.NotBlank;
 @RequiredArgsConstructor
 public class FunctionController {
 
-        private final IFunctionService functionService;
+    private final IFunctionService functionService;
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询功能")

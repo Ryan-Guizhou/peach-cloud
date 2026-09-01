@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * 登录页初始化信息。
@@ -39,4 +40,13 @@ public class LoginInitVO implements Serializable {
 
     @Schema(description = "密码加密算法")
     private String encryptionAlgorithm;
+
+    @Schema(description = "验证码类型，当前为滑块拼图")
+    private String captchaType;
+
+    @Schema(description = "登录是否需要滑块验证码")
+    private Boolean captchaRequired;
+
+    @Schema(description = "登录配置值集项，键为 ITEM_CODE，值为 ITEM_VALUE")
+    private Map<String, String> loginConfig;
 }

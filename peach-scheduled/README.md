@@ -132,7 +132,7 @@ CREATED --SKIP--> SKIPPED
 
 ## 并发语义
 
-并发由 JDBC 事实保证，不依赖 Quartz 线程生命周期。`SchedulerTriggerService` 对 Job 定义行 `FOR UPDATE`，并以 `QUEUED/RUNNING/RETRY_WAIT` 作为活动 occurrence：
+并发由 JDBC 事实与 Redisson 分布式锁保证，不依赖 Quartz 线程生命周期。`SchedulerTriggerService` 对 Job 定义使用 `SCHEDULER_JOB` 锁，并以 `QUEUED/RUNNING/RETRY_WAIT` 作为活动 occurrence：
 
 | 策略 | 行为 |
 | --- | --- |

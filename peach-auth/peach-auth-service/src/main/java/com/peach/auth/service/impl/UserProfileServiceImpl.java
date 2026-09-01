@@ -1,5 +1,7 @@
 package com.peach.auth.service.impl;
 
+import com.peach.satoken.context.SecurityContextHolder;
+import com.peach.satoken.support.UserContextSupport;
 import jakarta.annotation.Nullable;
 
 import lombok.RequiredArgsConstructor;
@@ -7,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Indexed;
 import cn.dev33.satoken.stp.StpUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.peach.auth.common.SensitiveFieldCipher;
+import com.peach.auth.service.support.UserSensitiveFieldSupport;
 import com.peach.auth.dao.UserAvatarHistoryDao;
 import com.peach.auth.dao.UserDao;
 import com.peach.auth.dto.UserProfileUpdateDTO;
@@ -24,6 +28,7 @@ import com.peach.fileservice.openfeign.FileFeignClient;
 import com.peach.fileservice.vo.FileDownloadUrlVO;
 import com.peach.fileservice.vo.FileUploadVO;
 import com.peach.satoken.constant.SatokenConstant;
+import com.peach.redission.distrbutedlock.support.DistributedLockTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -55,26 +60,31 @@ public class UserProfileServiceImpl implements IUserProfileService {
     private static final String AVATAR_BIZ_TYPE = "USER_AVATAR";
     private static final String AVATAR_BIZ_TAG = "PROFILE_AVATAR";
 
-        private final UserDao userDao;
+    private static final String USER_PROFILE_LOCK = "USER_PROFILE";
 
-        private final UserAvatarHistoryDao userAvatarHistoryDao;
+    private final UserDao userDao;
 
-        private final FileFeignClient fileFeignClient;
+    private final UserAvatarHistoryDao userAvatarHistoryDao;
 
-        private final ObjectMapper objectMapper;
+    private final FileFeignClient fileFeignClient;
 
-        private final StringRedisTemplate stringRedisTemplate;
+    private final ObjectMapper objectMapper;
+
+    private final StringRedisTemplate stringRedisTemplate;
+
+    private final DistributedLockTemplate distributedLockTemplate;
 
     @Override
     public UserProfileVO getCurrentProfile() {
-        String userId = currentUserId();
+        String userId = SecurityContextHolder.currentUserId();
         UserQO query = new UserQO();
         query.setUserId(userId);
         List<UserVO> users = userDao.selectByQO(query);
         if (CollectionUtils.isEmpty(users)) {
-            throw new IllegalStateException("当前用户不存在");
+            throw new IllegalStateException("This user is not exist");
         }
         UserVO user = users.get(0);
+        UserSensitiveFieldSupport.decryptUserFields(user);
         List<AvatarHistoryVO> history = loadAvatarHistory(userId);
 
         UserProfileVO profile = new UserProfileVO();
@@ -94,24 +104,25 @@ public class UserProfileServiceImpl implements IUserProfileService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public UserProfileVO updateCurrentProfile(UserProfileUpdateDTO updateDTO) {
-        String userId = currentUserId();
-        lockUser(userId);
-        String userName = normalizeRequired(updateDTO.getUserName(), "用户名称不能为空");
-        String mobilePhone = normalizeOptional(updateDTO.getMobilePhone());
-        String email = normalizeOptional(updateDTO.getEmail());
-        int affected = userDao.updateProfileBasic(userId, userName, mobilePhone, email, DateUtil.nowTime(), userId);
-        if (affected != 1) {
-            throw new IllegalStateException("个人资料更新失败");
-        }
-        putProfileCacheField(userId, SatokenConstant.USER_PROFILE_FIELD_USER_NAME, Objects.requireNonNull(userName));
-        return getCurrentProfile();
+        String userId = SecurityContextHolder.currentUserId();
+        return distributedLockTemplate.call(USER_PROFILE_LOCK, userId, () -> {
+            String userName = normalizeRequired(updateDTO.getUserName(), "用户名称不能为空");
+            String mobilePhone = SensitiveFieldCipher.encrypt(normalizeOptional(updateDTO.getMobilePhone()));
+            String email = SensitiveFieldCipher.encrypt(normalizeOptional(updateDTO.getEmail()));
+            int affected = userDao.updateProfileBasic(userId, userName, mobilePhone, email, DateUtil.nowTime(), userId);
+            if (affected != 1) {
+                throw new IllegalStateException("个人资料更新失败");
+            }
+            putProfileCacheField(userId, SatokenConstant.USER_PROFILE_FIELD_USER_NAME, Objects.requireNonNull(userName));
+            return getCurrentProfile();
+        });
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public AvatarHistoryVO uploadAvatar(MultipartFile file) {
         validateAvatar(file);
-        String userId = currentUserId();
+        String userId = SecurityContextHolder.currentUserId();
         FileUploadVO uploaded = requireData(fileFeignClient.upload(file, AVATAR_BIZ_TYPE, userId,
                 AVATAR_BIZ_TAG, file.getOriginalFilename(), file.getContentType(), "用户头像", null),
                 FileUploadVO.class, "头像上传失败");
@@ -120,29 +131,30 @@ public class UserProfileServiceImpl implements IUserProfileService {
         }
 
         try {
-            lockUser(userId);
-            List<AvatarHistoryVO> existing = userAvatarHistoryDao.selectActiveByUserId(userId);
-            String now = DateUtil.nowTime();
-            for (int index = 0; index < existing.size(); index++) {
-                AvatarHistoryVO item = existing.get(index);
-                userAvatarHistoryDao.updateOrder(item.getAvatarHistoryId(), userId, index + 2, 0, now, userId);
-            }
+            return distributedLockTemplate.call(USER_PROFILE_LOCK, userId, () -> {
+                List<AvatarHistoryVO> existing = userAvatarHistoryDao.selectActiveByUserId(userId);
+                String now = DateUtil.nowTime();
+                for (int index = 0; index < existing.size(); index++) {
+                    AvatarHistoryVO item = existing.get(index);
+                    userAvatarHistoryDao.updateOrder(item.getAvatarHistoryId(), userId, index + 2, 0, now, userId);
+                }
 
-            UserAvatarHistoryDO historyDO = new UserAvatarHistoryDO();
-            historyDO.setAvatarHistoryId(IDGeneratorUtil.generateUuid());
-            historyDO.setUserId(userId);
-            historyDO.setFileId(uploaded.getFileId());
-            historyDO.setSortNo(1);
-            historyDO.setIsCurrent(1);
-            historyDO.setIsDelete(0);
-            historyDO.fillCreateTime(userId);
-            userAvatarHistoryDao.insert(historyDO);
+                UserAvatarHistoryDO historyDO = new UserAvatarHistoryDO();
+                historyDO.setAvatarHistoryId(IDGeneratorUtil.generateUuid());
+                historyDO.setUserId(userId);
+                historyDO.setFileId(uploaded.getFileId());
+                historyDO.setSortNo(1);
+                historyDO.setIsCurrent(1);
+                historyDO.setIsDelete(0);
+                historyDO.fillCreateTime(userId);
+                userAvatarHistoryDao.insert(historyDO);
 
-            if (existing.size() >= MAX_AVATAR_HISTORY) {
-                List<AvatarHistoryVO> overflow = existing.subList(MAX_AVATAR_HISTORY - 1, existing.size());
-                markOverflowDeleted(userId, overflow, now);
-            }
-            return requireCurrent(loadAvatarHistory(userId));
+                if (existing.size() >= MAX_AVATAR_HISTORY) {
+                    List<AvatarHistoryVO> overflow = existing.subList(MAX_AVATAR_HISTORY - 1, existing.size());
+                    markOverflowDeleted(userId, overflow, now);
+                }
+                return requireCurrent(loadAvatarHistory(userId));
+            });
         } catch (RuntimeException exception) {
             safeDeleteFile(uploaded.getFileId());
             throw exception;
@@ -155,34 +167,35 @@ public class UserProfileServiceImpl implements IUserProfileService {
         if (StringUtil.isBlank(avatarHistoryId)) {
             throw new IllegalArgumentException("头像历史ID不能为空");
         }
-        String userId = currentUserId();
-        lockUser(userId);
-        List<AvatarHistoryVO> history = userAvatarHistoryDao.selectActiveByUserId(userId);
-        AvatarHistoryVO selected = null;
-        for (AvatarHistoryVO item : history) {
-            if (avatarHistoryId.equals(item.getAvatarHistoryId())) {
-                selected = item;
-                break;
+        String userId = SecurityContextHolder.currentUserId();
+        return distributedLockTemplate.call(USER_PROFILE_LOCK, userId, () -> {
+            List<AvatarHistoryVO> history = userAvatarHistoryDao.selectActiveByUserId(userId);
+            AvatarHistoryVO selected = null;
+            for (AvatarHistoryVO item : history) {
+                if (avatarHistoryId.equals(item.getAvatarHistoryId())) {
+                    selected = item;
+                    break;
+                }
             }
-        }
-        if (selected == null) {
-            throw new IllegalArgumentException("头像历史不存在或不属于当前用户");
-        }
+            if (selected == null) {
+                throw new IllegalArgumentException("头像历史不存在或不属于当前用户");
+            }
 
-        List<AvatarHistoryVO> reordered = new ArrayList<>();
-        reordered.add(selected);
-        for (AvatarHistoryVO item : history) {
-            if (!avatarHistoryId.equals(item.getAvatarHistoryId())) {
-                reordered.add(item);
+            List<AvatarHistoryVO> reordered = new ArrayList<>();
+            reordered.add(selected);
+            for (AvatarHistoryVO item : history) {
+                if (!avatarHistoryId.equals(item.getAvatarHistoryId())) {
+                    reordered.add(item);
+                }
             }
-        }
-        String now = DateUtil.nowTime();
-        for (int index = 0; index < reordered.size(); index++) {
-            AvatarHistoryVO item = reordered.get(index);
-            userAvatarHistoryDao.updateOrder(item.getAvatarHistoryId(), userId, index + 1,
-                    index == 0 ? 1 : 0, now, userId);
-        }
-        return requireCurrent(loadAvatarHistory(userId));
+            String now = DateUtil.nowTime();
+            for (int index = 0; index < reordered.size(); index++) {
+                AvatarHistoryVO item = reordered.get(index);
+                userAvatarHistoryDao.updateOrder(item.getAvatarHistoryId(), userId, index + 1,
+                        index == 0 ? 1 : 0, now, userId);
+            }
+            return requireCurrent(loadAvatarHistory(userId));
+        });
     }
 
     private void validateAvatar(MultipartFile file) {
@@ -258,12 +271,6 @@ public class UserProfileServiceImpl implements IUserProfileService {
         }
     }
 
-    private void lockUser(String userId) {
-        if (StringUtil.isBlank(userDao.lockById(userId))) {
-            throw new IllegalStateException("当前用户不存在");
-        }
-    }
-
     private String normalizeRequired(String value, String message) {
         String normalized = normalizeOptional(value);
         if (StringUtil.isBlank(normalized)) {
@@ -298,14 +305,6 @@ public class UserProfileServiceImpl implements IUserProfileService {
             throw new IllegalStateException(message);
         }
         return objectMapper.convertValue(response.getData(), type);
-    }
-
-    private String currentUserId() {
-        String userId = StpUtil.getLoginIdAsString();
-        if (StringUtil.isBlank(userId)) {
-            throw new IllegalStateException("当前用户上下文不存在");
-        }
-        return userId;
     }
 
     private void putProfileCacheField(String userId, String field, @Nullable String value) {

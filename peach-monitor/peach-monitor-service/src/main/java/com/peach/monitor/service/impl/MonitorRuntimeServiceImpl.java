@@ -53,11 +53,11 @@ public class MonitorRuntimeServiceImpl implements IMonitorRuntimeService {
     private static final String JSON_KEY_ERROR = "error";
 
 
-        private final Environment environment;
+    private final Environment environment;
 
-        private final ObjectProvider<DataSource> dataSourceProvider;
+    private final ObjectProvider<DataSource> dataSourceProvider;
 
-        private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
+    private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
 
     @Override
     public MonitorSnapshotDTO snapshot() {

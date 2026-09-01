@@ -31,7 +31,7 @@ public class BloomController {
     private static final String SAMPLE_ORDER_KEY = "order";
 
 
-        private final BloomFilterService bloomFilterService;
+    private final BloomFilterService bloomFilterService;
 
     @PostConstruct
     public void init() {

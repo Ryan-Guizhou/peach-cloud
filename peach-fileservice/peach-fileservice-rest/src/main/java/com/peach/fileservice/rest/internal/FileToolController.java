@@ -30,7 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class FileToolController {
 
-        private final IFileDomainService fileDomainService;
+    private final IFileDomainService fileDomainService;
 
     /**
      * 计算 multipart 文件 SHA-256 摘要。

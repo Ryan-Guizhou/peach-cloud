@@ -26,9 +26,9 @@ import org.springframework.stereotype.Indexed;
 @RequiredArgsConstructor
 public class FileDeleteCleanupTask {
 
-        private final IFileDomainService fileDomainService;
+    private final IFileDomainService fileDomainService;
 
-        private final FileDomainProperties fileDomainProperties;
+    private final FileDomainProperties fileDomainProperties;
 
     /**
      * 执行过期删除文件清理

@@ -28,7 +28,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RedisWebSocketSubscriber implements MessageListener {
 
-        private final WebSocketSessionManager sessionManager;
+    private final WebSocketSessionManager sessionManager;
 
     @Override
     public void onMessage(Message message, byte[] pattern) {

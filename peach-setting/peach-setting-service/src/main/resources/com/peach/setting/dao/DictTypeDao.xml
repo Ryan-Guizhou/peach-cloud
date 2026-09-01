@@ -217,7 +217,7 @@
         WHERE ID =  #{id,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.setting.entity.DictTypeDO">
+    <select id="selectById" parameterType="string" resultType="com.peach.setting.vo.DictTypeVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_DICT_TYPE

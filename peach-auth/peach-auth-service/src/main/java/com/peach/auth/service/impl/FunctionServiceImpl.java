@@ -33,7 +33,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FunctionServiceImpl implements IFunctionService {
 
-        private final FunctionDao functionDao;
+    private final FunctionDao functionDao;
 
     @Override
     public PageInfo<FunctionVO> pageList(FunctionQO functionQO) {

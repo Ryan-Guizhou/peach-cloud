@@ -50,7 +50,7 @@ public class MessageWebSocketHandler implements WebSocketHandler {
 
     private static final CloseStatus CLOSE_TOKEN_INVALID = new CloseStatus(4001, "token invalid or expired");
 
-        private final WebSocketSessionManager sessionManager;
+    private final WebSocketSessionManager sessionManager;
 
     @Override
     public Mono<Void> handle(WebSocketSession session) {

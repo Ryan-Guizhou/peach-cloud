@@ -46,7 +46,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DictController {
 
-        private final IDictService dictService;
+    private final IDictService dictService;
 
     @PostMapping("/type/pageList")
     @Operation(summary = "分页查询字典类型")

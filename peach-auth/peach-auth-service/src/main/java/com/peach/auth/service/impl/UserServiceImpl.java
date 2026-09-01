@@ -1,7 +1,6 @@
 package com.peach.auth.service.impl;
 
-import java.time.ZoneId;
-
+import java.nio.charset.StandardCharsets;
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -11,6 +10,7 @@ import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.LoginInfo;
 import com.peach.auth.common.RsaPasswordUtil;
+import com.peach.auth.common.SensitiveFieldCipher;
 import com.peach.auth.dao.AuthFunctionDao;
 import com.peach.auth.dao.AuthResourceDao;
 import com.peach.auth.dao.MenuDao;
@@ -30,14 +30,20 @@ import com.peach.auth.qo.RoleQO;
 import com.peach.auth.qo.UserQO;
 import com.peach.auth.service.IRoleService;
 import com.peach.auth.service.IUserService;
+import com.peach.auth.service.LoginLockService;
+import com.peach.auth.service.support.LoginInitConfigSupport;
+import com.peach.auth.service.support.UserSensitiveFieldSupport;
 import com.peach.auth.vo.AuthFunctionVO;
 import com.peach.auth.vo.AuthResourceVO;
 import com.peach.auth.vo.MenuVO;
 import com.peach.auth.vo.LoginInitVO;
+import com.peach.auth.vo.LoginLockStatusVO;
 import com.peach.auth.vo.RoleVO;
 import com.peach.auth.vo.RouterVO;
 import com.peach.auth.vo.UserOrgVO;
 import com.peach.auth.vo.UserVO;
+import com.peach.captcha.model.CaptchaVO;
+import com.peach.captcha.service.CaptchaService;
 import com.peach.common.constant.PubCommonConst;
 import com.peach.common.response.Response;
 import com.peach.satoken.constant.SatokenConstant;
@@ -56,7 +62,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.time.LocalDate;
 
 /**
  * 用户服务实现类。
@@ -74,40 +79,67 @@ public class UserServiceImpl implements IUserService {
 
     private static final String INIT_APP_ID = "f73b300578a5436d82ec7fca2c07c284";
 
-        private final UserDao userDao;
+    private final UserDao userDao;
 
-        private final UserOrgDao userOrgDao;
+    private final UserOrgDao userOrgDao;
 
-        private final MenuDao menuDao;
+    private final MenuDao menuDao;
 
-        private final RouterDao routerDao;
+    private final RouterDao routerDao;
 
-        private final AuthFunctionDao authFunctionDao;
+    private final AuthFunctionDao authFunctionDao;
 
-        private final AuthResourceDao authResourceDao;
+    private final AuthResourceDao authResourceDao;
 
-        private final StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
-        private final IRoleService iRoleService;
+    private final IRoleService iRoleService;
+
+    private final CaptchaService captchaService;
+
+    private final LoginLockService loginLockService;
+
+    private final LoginInitConfigSupport loginInitConfigSupport;
+
 
     @Override
     public PageInfo<UserVO> pageList(UserQO userQO) {
-        return PageMethod.startPage(userQO.getPageNum(), userQO.getPageSize())
+        PageInfo<UserVO> pageInfo = PageMethod.startPage(userQO.getPageNum(), userQO.getPageSize())
                 .doSelectPageInfo(() -> userDao.selectByQO(userQO));
+        if (pageInfo.getList() != null) {
+            pageInfo.getList().forEach(UserSensitiveFieldSupport::decryptUserFields);
+        }
+        return pageInfo;
     }
 
     @Override
     public List<UserVO> list(UserQO userQO) {
+        List<UserVO> users;
         if (userQO != null && !CollectionUtils.isEmpty(userQO.getUserIdList())) {
-            return userDao.selectByIds(userQO.getUserIdList());
+            users = userDao.selectByIds(userQO.getUserIdList());
+        } else {
+            users = userDao.select(buildUserDO(userQO));
         }
-        return userDao.select(buildUserDO(userQO));
+        if (users != null) {
+            users.forEach(UserSensitiveFieldSupport::decryptUserFields);
+        }
+        return users;
     }
 
     @Override
     public Response login(LoginDTO loginDTO) {
+        Response captchaResponse = verifyLoginCaptcha(loginDTO.getCaptchaVerification(), loginDTO.getClientUid());
+        if (!captchaResponse.isSuccess()) {
+            return captchaResponse;
+        }
+
+        String username = loginDTO.getUsername().trim();
+        LoginLockStatusVO lockStatus = loginLockService.checkLock(username);
+        if (lockStatus.isLocked()) {
+            return Response.fail(formatLockMessage(lockStatus));
+        }
+
         String password = loginDTO.getPassword();
-        String username = loginDTO.getUsername();
         String decryptPassword;
         try {
             decryptPassword = RsaPasswordUtil.decrypt(password);
@@ -120,12 +152,18 @@ public class UserServiceImpl implements IUserService {
         }
 
         String base64Password = Base64.getEncoder().encodeToString(
-                decryptPassword.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                decryptPassword.getBytes(StandardCharsets.UTF_8));
         UserVO userVO = userDao.login(username, base64Password);
         if (ObjectUtil.isNull(userVO)) {
             log.warn("Username or password validation failed, username={}", username);
+            LoginLockStatusVO failureStatus = loginLockService.recordFailure(username);
+            if (failureStatus.isLocked()) {
+                return Response.fail(formatLockMessage(failureStatus));
+            }
             return Response.fail("用户名或密码错误");
         }
+        loginLockService.clearOnSuccess(username);
+        UserSensitiveFieldSupport.decryptUserFields(userVO);
 
         String userId = userVO.getUserId();
         List<UserOrgVO> userOrgList = userOrgDao.selectByUserId(userId);
@@ -183,6 +221,7 @@ public class UserServiceImpl implements IUserService {
         if (ObjectUtil.isNull(userVO)) {
             return Response.fail("当前用户不存在");
         }
+        UserSensitiveFieldSupport.decryptUserFields(userVO);
         List<UserOrgVO> userOrgList = userOrgDao.selectByUserIdAndTenantId(userId, switchContextDTO.getTenantId());
         if (CollectionUtils.isEmpty(userOrgList)) {
             return Response.fail("当前用户未绑定目标租户");
@@ -235,14 +274,35 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public LoginInitVO initLogin() {
-        LoginInitVO initVO = new LoginInitVO();
-        initVO.setSystemName("Peach Cloud DataOS");
-        initVO.setSystemDescription("面向租户与机构的数据治理、权限和业务协同平台");
-        initVO.setAppId(INIT_APP_ID);
-        initVO.setFiscal(LocalDate.now(ZoneId.systemDefault()).getYear());
-        initVO.setPublicKey(RsaPasswordUtil.getPublicKeyBase64());
-        initVO.setEncryptionAlgorithm("RSAES-PKCS1-v1_5");
-        return initVO;
+        return loginInitConfigSupport.buildLoginInit(RsaPasswordUtil.getPublicKeyBase64());
+    }
+
+    private Response verifyLoginCaptcha(String captchaVerification, String clientUid) {
+        if (!loginInitConfigSupport.isCaptchaRequired()) {
+            return Response.success();
+        }
+        if (StringUtil.isBlank(captchaVerification)) {
+            return Response.fail("请先完成滑块验证");
+        }
+        CaptchaVO captchaVO = new CaptchaVO();
+        captchaVO.setCaptchaType(loginInitConfigSupport.resolveCaptchaType());
+        captchaVO.setCaptchaVerification(captchaVerification.trim());
+        if (StringUtil.isNotBlank(clientUid)) {
+            captchaVO.setClientUid(clientUid.trim());
+        }
+        Response response = captchaService.verification(captchaVO);
+        if (response == null || !response.isSuccess()) {
+            return Response.fail("滑块验证未通过或已失效，请重新验证");
+        }
+        return response;
+    }
+
+    private String formatLockMessage(LoginLockStatusVO lockStatus) {
+        if (lockStatus.isPermanent()) {
+            return "账号因密码错误次数过多已被永久锁定，请联系管理员";
+        }
+        long minutes = Math.max(1L, (lockStatus.getRemainingLockSeconds() + 59) / 60);
+        return "账号已锁定，请 " + minutes + " 分钟后再试";
     }
 
     /**
@@ -505,17 +565,16 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public UserVO selectUserById(String id) {
-        if (StringUtil.isBlank(id)) {
-            log.info("id is blank");
-            return new UserVO();
-        }
-        return userDao.selectById(id);
+        UserVO userVO = userDao.selectById(id);
+        UserSensitiveFieldSupport.decryptUserFields(userVO);
+        return userVO;
     }
 
     @Override
     public void add(UserDTO userDTO) {
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
+        UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillCreateTime(null);
         if (userDO.getIsDelete() == null) {
             userDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
@@ -536,6 +595,7 @@ public class UserServiceImpl implements IUserService {
     public void update(UserDTO userDTO) {
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
+        UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillModifyTime(null);
         userDao.updateById(userDO);
     }
@@ -547,7 +607,7 @@ public class UserServiceImpl implements IUserService {
         }
         userDO.setUserId(userQO.getUserId());
         userDO.setUserName(userQO.getUsername());
-        userDO.setMobilePhone(userQO.getPhone());
+        userDO.setMobilePhone(SensitiveFieldCipher.encrypt(userQO.getPhone()));
         userDO.setDefaultOrgId(userQO.getDefaultOrgId());
         return userDO;
     }

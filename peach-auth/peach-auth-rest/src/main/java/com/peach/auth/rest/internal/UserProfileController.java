@@ -38,7 +38,7 @@ import jakarta.validation.constraints.NotBlank;
 @RequiredArgsConstructor
 public class UserProfileController {
 
-        private final IUserProfileService userProfileService;
+    private final IUserProfileService userProfileService;
 
     @GetMapping
     @Operation(summary = "获取当前用户个人资料")

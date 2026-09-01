@@ -48,7 +48,7 @@ public class DefaultCloudStorageManagerService implements CloudStorageManagerSer
 
     public static final String DIRECTORY_PLACEHOLDER_FILE = ".peach-dir";
 
-    private final RuntimeStorageProviderFactory runtimeStorageProviderFactory;
+private final RuntimeStorageProviderFactory runtimeStorageProviderFactory;
 
 
     public DefaultCloudStorageManagerService(RuntimeStorageProviderFactory runtimeStorageProviderFactory) {

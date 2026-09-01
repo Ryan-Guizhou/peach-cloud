@@ -54,7 +54,7 @@ public class CaptchaServiceAutoconfigure {
         // 定时清理过期local缓存，秒
         properties.setProperty(CaptchaPropertiesConst.CAPTCHA_TIMING_CLEAR_SECOND, config.getTimingClear());
         // 接口限流开关 0禁用 1启用
-        properties.setProperty(CaptchaPropertiesConst.REQ_FREQUENCY_LIMIT_ENABLE, String.valueOf(config.isReqFrequencyLimitEnable()));
+        properties.setProperty(CaptchaPropertiesConst.REQ_FREQUENCY_LIMIT_ENABLE, String.valueOf(config.getReqFrequencyLimitEnable()));
         // get 接口 一分钟请求次数限制
         properties.setProperty(CaptchaPropertiesConst.REQ_GET_MINUTE_LIMIT, String.valueOf(config.getReqGetMinuteLimit()));
         // 验证失败后，get接口锁定时间

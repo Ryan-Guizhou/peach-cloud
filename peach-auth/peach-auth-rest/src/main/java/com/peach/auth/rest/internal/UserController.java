@@ -43,7 +43,7 @@ import jakarta.validation.constraints.NotBlank;
 @RequiredArgsConstructor
 public class UserController {
 
-        private final IUserService userService;
+    private final IUserService userService;
 
     @Operation(summary = "查询用户列表")
     @PostMapping("/pageList")

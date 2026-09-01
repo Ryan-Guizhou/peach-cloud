@@ -26,7 +26,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class EmailSendController {
 
-        private final EmailSendUtil emailSendUtil;
+    private final EmailSendUtil emailSendUtil;
 
     /**
      * 发送简单邮件

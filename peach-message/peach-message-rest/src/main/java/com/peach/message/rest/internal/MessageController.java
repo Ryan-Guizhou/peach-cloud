@@ -43,7 +43,7 @@ public class MessageController {
 
     private static final String USER_NOT_LOGGED_IN_MESSAGE = "当前用户未登录";
 
-        private final IMessageService messageService;
+    private final IMessageService messageService;
 
     @GetMapping("/query")
     @Operation(summary = "查询站内信列表")

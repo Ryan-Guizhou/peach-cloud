@@ -39,7 +39,7 @@ import jakarta.validation.constraints.NotBlank;
 @RequiredArgsConstructor
 public class FileExternalController {
 
-        private final IFileDomainService fileDomainService;
+    private final IFileDomainService fileDomainService;
 
     @PostMapping(FileApiConstant.EXTERNAL_UPLOAD)
     @Operation(summary = "外部上传文件")

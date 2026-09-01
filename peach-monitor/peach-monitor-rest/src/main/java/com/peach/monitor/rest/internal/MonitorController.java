@@ -31,9 +31,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MonitorController {
 
-        private final AuthFeignClient authFeignClient;
+    private final AuthFeignClient authFeignClient;
 
-        private final IMonitorRuntimeService monitorRuntimeService;
+    private final IMonitorRuntimeService monitorRuntimeService;
 
     @Operation(summary = "基础联通性检查")
     @GetMapping("/{id}")

@@ -4,8 +4,11 @@ import org.springframework.stereotype.Indexed;
 import com.peach.common.constant.ServiceContextConstant;
 import com.peach.common.constant.ServiceNameConstant;
 import com.peach.common.constant.ServicePathConstant;
+import com.peach.common.response.Response;
 import com.peach.setting.openfeign.fallback.SettingFeignClientFallbackFactory;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 /**
  * setting 服务 Feign 客户端定义。
@@ -23,4 +26,6 @@ import org.springframework.cloud.openfeign.FeignClient;
 )
 public interface SettingFeignClient {
 
+    @GetMapping("/valueSet/item/list/{valueSetCode}")
+    Response listValueSetItems(@PathVariable("valueSetCode") String valueSetCode);
 }

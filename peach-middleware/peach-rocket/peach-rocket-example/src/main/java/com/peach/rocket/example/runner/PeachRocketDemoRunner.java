@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PeachRocketDemoRunner implements ApplicationRunner {
 
-        private final OrderService orderService;
+    private final OrderService orderService;
 
     @Override
     public void run(ApplicationArguments args) {

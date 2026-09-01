@@ -44,4 +44,12 @@ public class LoginDTO implements Serializable {
 
     @Schema(description = "机构ID")
     private String orgId;
+
+    @Schema(description = "滑块验证码二次校验凭证，启用验证码时须先通过 /auth/checkCaptcha 获取")
+    @Size(max = 2048, message = "验证码凭证长度不能超过2048个字符", groups = {LoginGroup.Login.class})
+    private String captchaVerification;
+
+    @Schema(description = "验证码客户端标识，与 getCaptcha/checkCaptcha 保持一致")
+    @Size(max = 128, message = "clientUid 长度不能超过128个字符", groups = {LoginGroup.Login.class})
+    private String clientUid;
 }

@@ -37,11 +37,11 @@ public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceSer
 
     private static final Integer DISABLED = 0;
 
-        private final CloudStorageInstanceDao cloudStorageInstanceDao;
+    private final CloudStorageInstanceDao cloudStorageInstanceDao;
 
-        private final CloudStorageInstanceSupport cloudStorageInstanceSupport;
+    private final CloudStorageInstanceSupport cloudStorageInstanceSupport;
 
-        private final CloudStorageManagerService cloudStorageManagerService;
+    private final CloudStorageManagerService cloudStorageManagerService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)

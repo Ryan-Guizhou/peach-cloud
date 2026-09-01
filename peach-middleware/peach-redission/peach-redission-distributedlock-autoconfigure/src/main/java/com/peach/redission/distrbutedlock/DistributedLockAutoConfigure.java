@@ -8,6 +8,7 @@ import com.peach.redission.distrbutedlock.aspect.DistrbutedLockAspect;
 import com.peach.redission.distrbutedlock.lockinfo.impl.DistributedLockInfoHandle;
 import com.peach.redission.distrbutedlock.manage.DistrbutedLockerFactory;
 import com.peach.redission.distrbutedlock.manage.DistrbutedLockerManager;
+import com.peach.redission.distrbutedlock.support.DistributedLockTemplate;
 import org.redisson.api.RedissonClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -56,5 +57,11 @@ public class DistributedLockAutoConfigure {
         return new DistrbutedLockAspect(lockInfoHandleFactory, distrbutedLockFactory);
     }
 
+    @Bean
+    @ConditionalOnBean(DistrbutedLockerFactory.class)
+    @ConditionalOnMissingBean(DistributedLockTemplate.class)
+    public DistributedLockTemplate distributedLockTemplate(DistrbutedLockerFactory distrbutedLockerFactory) {
+        return new DistributedLockTemplate(distrbutedLockerFactory);
+    }
 
 }

@@ -18,7 +18,10 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 路由服务实现类。
@@ -33,9 +36,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RouterServiceImpl implements IRouterService {
 
-        private final RouterDao routerDao;
+    private final RouterDao routerDao;
 
-        private final CommonValidator commonValidator;
+    private final CommonValidator commonValidator;
 
     @PostConstruct
     public void init() {

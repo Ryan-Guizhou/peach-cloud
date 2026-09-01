@@ -5,10 +5,12 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.peach.redis.constant.MultiCacheConstant;
 import com.peach.redis.common.tool.RedisDao;
 import com.peach.redis.listener.CacheMessage;
+import com.peach.redis.listener.CacheMessageCodec;
 import com.peach.redis.config.MultiCacheConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.support.AbstractValueAdaptingCache;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.util.CollectionUtils;
 
@@ -193,7 +195,12 @@ public class MultiCache extends AbstractValueAdaptingCache {
      * @description 缓存变更时通知其他节点清理本地缓存
      */
     private void push(CacheMessage message) {
-        redisTemplate.convertAndSend(ecivtCacheTopic, message);
+        byte[] payload = CacheMessageCodec.serialize(message);
+        redisTemplate.execute((RedisCallback<Void>) connection -> {
+            byte[] channel = redisTemplate.getStringSerializer().serialize(ecivtCacheTopic);
+            connection.publish(channel, payload);
+            return null;
+        });
     }
 
     /**

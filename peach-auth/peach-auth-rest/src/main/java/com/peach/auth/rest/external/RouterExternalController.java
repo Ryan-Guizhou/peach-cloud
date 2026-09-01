@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class RouterExternalController {
 
-        private final IRouterService routerService;
+    private final IRouterService routerService;
 
     @GetMapping("/router/{routerId}")
     @Operation(summary = "服务间调用外部接口,根据路由ID查询路由信息")

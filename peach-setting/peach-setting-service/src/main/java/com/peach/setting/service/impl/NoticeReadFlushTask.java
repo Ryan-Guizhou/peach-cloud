@@ -36,13 +36,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class NoticeReadFlushTask {
 
-        private final RedisDao redisDao;
+    private final RedisDao redisDao;
 
-        private final NoticeReadRecordDao noticeReadRecordDao;
+    private final NoticeReadRecordDao noticeReadRecordDao;
 
-        private final NoticeDao noticeDao;
+    private final NoticeDao noticeDao;
 
-        private final MultiCacheManagerService multiCacheManagerService;
+    private final MultiCacheManagerService multiCacheManagerService;
 
     @Scheduled(fixedRate = 15000)
     public void flushNoticeReadRecord() {
