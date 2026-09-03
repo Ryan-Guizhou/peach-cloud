@@ -1,0 +1,92 @@
+/**
+ * Peach Manual design tokens
+ * Sync source: peach-cloud-front/src/style.css
+ * Layer: primitive → semantic (console-light / workspace-dark)
+ */
+
+:root,
+html:not(.dark) {
+  color-scheme: light;
+
+  --pm-font: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --pm-radius-sm: 10px;
+  --pm-radius-md: 16px;
+  --pm-sidebar-width: 256px;
+  --pm-topbar-height: 68px;
+  --pm-aside-width: 220px;
+  --pm-content-max: 920px;
+
+  --pm-bg-canvas: #f5f8fc;
+  --pm-bg-surface: #ffffff;
+  --pm-bg-soft: #f6f8fb;
+  --pm-border: #e5eaf1;
+  --pm-text-primary: #172033;
+  --pm-text-secondary: #556176;
+  --pm-text-muted: #8893a3;
+  --pm-text-heading: #314056;
+  --pm-link: #1f5dd1;
+  --pm-link-hover: #2563eb;
+  --pm-active-bg: #edf4ff;
+  --pm-brand-gradient: linear-gradient(145deg, #2563eb, #06b6d4);
+  --pm-primary-gradient: linear-gradient(120deg, #087a99, #1a67d8);
+  --pm-success: #169c67;
+  --pm-shadow-brand: 0 12px 28px rgba(37, 99, 235, 0.22);
+
+  --vp-c-brand-1: #2563eb;
+  --vp-c-brand-2: #087a99;
+  --vp-c-brand-3: #1f5dd1;
+  --vp-c-brand-soft: rgba(37, 99, 235, 0.1);
+  --vp-c-bg: var(--pm-bg-canvas);
+  --vp-c-bg-soft: var(--pm-bg-soft);
+  --vp-c-bg-alt: var(--pm-bg-soft);
+  --vp-c-bg-elv: var(--pm-bg-surface);
+  --vp-c-text-1: var(--pm-text-primary);
+  --vp-c-text-2: var(--pm-text-secondary);
+  --vp-c-text-3: var(--pm-text-muted);
+  --vp-c-divider: var(--pm-border);
+  --vp-c-border: var(--pm-border);
+  --vp-c-gutter: var(--pm-border);
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --pm-bg-canvas: #050b14;
+  --pm-bg-surface: #07111f;
+  --pm-bg-soft: rgba(16, 32, 54, 0.72);
+  --pm-border: rgba(135, 180, 222, 0.14);
+  --pm-text-primary: #eaf4ff;
+  --pm-text-secondary: #aebdd0;
+  --pm-text-muted: #697b92;
+  --pm-text-heading: #eaf4ff;
+  --pm-link: #66e3ff;
+  --pm-link-hover: #21c8ef;
+  --pm-active-bg: rgba(33, 200, 239, 0.14);
+  --pm-brand-gradient: linear-gradient(145deg, #2475ff, #21c8ef);
+  --pm-primary-gradient: linear-gradient(120deg, #087a99, #1a67d8);
+  --pm-shadow-brand: 0 24px 70px rgba(0, 6, 16, 0.35);
+
+  --vp-c-brand-1: #66e3ff;
+  --vp-c-brand-2: #21c8ef;
+  --vp-c-brand-3: #66e3ff;
+  --vp-c-brand-soft: rgba(33, 200, 239, 0.12);
+  --vp-c-bg: var(--pm-bg-canvas);
+  --vp-c-bg-soft: var(--pm-bg-soft);
+  --vp-c-bg-alt: rgba(11, 23, 40, 0.82);
+  --vp-c-bg-elv: var(--pm-bg-surface);
+  --vp-c-text-1: var(--pm-text-primary);
+  --vp-c-text-2: var(--pm-text-secondary);
+  --vp-c-text-3: var(--pm-text-muted);
+  --vp-c-divider: var(--pm-border);
+  --vp-c-border: var(--pm-border);
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  margin: 0;
+  background: var(--pm-bg-canvas);
+  color: var(--pm-text-primary);
+  font-family: var(--pm-font);
+}
