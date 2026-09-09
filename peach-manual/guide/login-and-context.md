@@ -1,6 +1,6 @@
 # 登录与机构上下文
 
-Peach Cloud 使用 **Sa-Token** 管理登录会话。登录成功后，后端会装配 **权限快照**（菜单、路由、按钮资源、数据权限等），前端据此渲染控制台。
+Peach Cloud 使用 **Sa-Token** 管理登录会话。登录成功后，后端会装配 **权限快照**（菜单、路由、按钮资源等），前端据此渲染控制台。
 
 ## 登录流程概览
 
@@ -66,5 +66,5 @@ Authorization: <token>
 ## 相关文档
 
 - [快速开始](/guide/getting-started)
-- [授权与数据权限](/guide/authorization)
+- [授权管理](/guide/authorization)
 - [FAQ：手册提示未登录](/faq/#manual-auth)

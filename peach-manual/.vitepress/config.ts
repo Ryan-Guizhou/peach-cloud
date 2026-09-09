@@ -13,7 +13,7 @@ const guideSidebar = [
     text: '功能导引',
     items: [
       { text: '工作台与消息', link: '/guide/workspace' },
-      { text: '授权与数据权限', link: '/guide/authorization' },
+      { text: '授权管理', link: '/guide/authorization' },
       { text: '文件与存储', link: '/guide/file-storage' },
       { text: '日志与审计', link: '/guide/logs-and-audit' },
     ],

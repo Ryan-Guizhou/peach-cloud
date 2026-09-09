@@ -38,7 +38,7 @@ features:
 
 <a class="manual-home-card" href="/guide/authorization">
   <strong>我是管理员</strong>
-  <span>用户、角色、授权与数据权限</span>
+  <span>用户、角色与授权</span>
 </a>
 
 <a class="manual-home-card" href="/guide/file-storage">

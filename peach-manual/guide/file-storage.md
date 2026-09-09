@@ -31,7 +31,7 @@ Peach Cloud 文件能力基于统一存储组件（`peach-storage`），控制�
 - `fileRecord:view`
 - `objectBrowser:view`
 
-无权限时菜单不可见；有菜单无数据时，还需检查数据权限范围。
+无权限时菜单不可见；有菜单无数据时，请检查当前机构上下文是否正确。
 
 ## 安全注意
 

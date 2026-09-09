@@ -38,7 +38,7 @@ Peach Cloud **用户手册**站点：基于 [VitePress](https://vitepress.dev/) 
 - [x] [平台功能概览](guide/platform-overview.md) — 对齐当前控制台菜单分组
 - [x] [登录与机构上下文](guide/login-and-context.md)
 - [x] [工作台与消息](guide/workspace.md)
-- [x] [授权与数据权限](guide/authorization.md)
+- [x] [授权管理](guide/authorization.md)
 - [x] [文件与存储](guide/file-storage.md) — 概要级
 - [x] [日志与审计](guide/logs-and-audit.md)
 - [x] [常见问题](faq/index.md)

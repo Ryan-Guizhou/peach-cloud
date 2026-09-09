@@ -1,6 +1,6 @@
 # 平台功能概览
 
-Peach Cloud 控制台采用 **后端驱动菜单与路由**：你能看到什么，取决于登录后返回的权限快照（菜单、路由、按钮资源、数据权限）。
+Peach Cloud 控制台采用 **后端驱动菜单与路由**：你能看到什么，取决于登录后返回的权限快照（菜单、路由、按钮资源）。
 
 左侧导航按以下业务域分组（与 `peach-cloud-front` 中菜单分组规则一致）：
 
@@ -21,13 +21,13 @@ Peach Cloud 控制台采用 **后端驱动菜单与路由**：你能看到什么
 | 机构管理 | `/organization` | 组织树与机构信息 |
 | 用户管理 | `/user` | 账号、关联机构 |
 | 角色管理 | `/role` | 角色定义 |
-| 角色授权 | `/authorization` | 菜单 / 资源 / 数据权限授权 |
+| 角色授权 | `/authorization` | 功能 / 资源授权与用户角色绑定 |
 | 功能定义字段 | `/function` | 功能与字段元数据 |
 | 资源管理 | `/resource` | 按钮、接口等资源码 |
 | 菜单管理 | `/menu` | 菜单结构维护 |
 | 路由管理 | `/router` | 前端路由与组件映射 |
 
-配置顺序与细节见 [授权与数据权限](/guide/authorization)。
+配置顺序与细节见 [授权管理](/guide/authorization)。
 
 ## 文件与存储
 
@@ -71,9 +71,9 @@ Peach Cloud 控制台采用 **后端驱动菜单与路由**：你能看到什么
     ↓
 后端装配 LoginPermissionSnapshot
     ↓
-前端写入 menuList / routerList / resourceList / dataScopeList
+前端写入 menuList / routerList / resourceList
     ↓
-动态注册路由 + 渲染菜单 + 按钮显隐 + 列表数据范围
+动态注册路由 + 渲染菜单 + 按钮显隐
 ```
 
 ::: tip 重要
