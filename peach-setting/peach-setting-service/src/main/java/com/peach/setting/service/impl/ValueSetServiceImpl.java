@@ -5,11 +5,11 @@ import com.github.pagehelper.page.PageMethod;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.PageResult;
 import com.peach.common.util.DateUtil;
-import com.peach.satoken.context.SecurityContextHolder;
-import com.peach.setting.comon.enums.SettingConst;
+import com.peach.common.audit.AuditContext;
+import com.peach.setting.common.enums.SettingConst;
 import com.peach.setting.dao.ValueSetDao;
 import com.peach.setting.dao.ValueSetItemDao;
 import com.peach.setting.dto.ValueSetDTO;
@@ -73,7 +73,7 @@ public class ValueSetServiceImpl implements IValueSetService {
     public void save(ValueSetDTO data) {
         ValueSetDO valueSetDO = new ValueSetDO();
         BeanUtils.copyProperties(data, valueSetDO);
-        valueSetDO.setId(IDGeneratorUtil.generateUuid());
+        valueSetDO.setId(UniqueIdFacade.nextId());
         valueSetDO.fillCreateTime();
         valueSetDao.insert(valueSetDO);
     }
@@ -133,7 +133,7 @@ public class ValueSetServiceImpl implements IValueSetService {
     public void saveItem(ValueSetItemDTO data) {
         ValueSetItemDO valueSetItemDO = new ValueSetItemDO();
         BeanUtils.copyProperties(data, valueSetItemDO);
-        valueSetItemDO.setId(IDGeneratorUtil.generateUuid());
+        valueSetItemDO.setId(UniqueIdFacade.nextId());
         valueSetItemDO.fillCreateTime();
         valueSetItemDao.insert(valueSetItemDO);
     }
@@ -166,19 +166,11 @@ public class ValueSetServiceImpl implements IValueSetService {
     }
 
     private String requireTenantId() {
-        String tenantId = SecurityContextHolder.currentTenantId();
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new IllegalStateException("Current tenant context is missing");
-        }
-        return tenantId;
+        return AuditContext.requireTenantId();
     }
 
     private String requireOrgId() {
-        String orgId = SecurityContextHolder.currentOrgId();
-        if (orgId == null || orgId.isBlank()) {
-            throw new IllegalStateException("Current organization context is missing");
-        }
-        return orgId;
+        return AuditContext.requireOrgId();
     }
 }
 

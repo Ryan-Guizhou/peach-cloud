@@ -5,7 +5,7 @@ import com.github.pagehelper.page.PageMethod;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.PageResult;
 import com.peach.common.constant.PubCommonConst;
 import com.peach.common.response.Response;
@@ -21,7 +21,7 @@ import com.peach.message.qo.SiteMessageQO;
 import com.peach.message.service.IMessageService;
 import com.peach.message.service.IWebSocketPushService;
 import com.peach.message.vo.SiteMessageVO;
-import com.peach.satoken.context.SecurityContextHolder;
+import com.peach.common.audit.AuditContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.ObjectProvider;
@@ -237,8 +237,8 @@ public class MessageServiceImpl implements IMessageService {
 
     private SiteMessageDO buildSiteMessage(MessagePublishDTO data, String receiverId) {
         SiteMessageDO message = new SiteMessageDO();
-        message.setId(IDGeneratorUtil.generateUuid());
-        message.setMessageCode(IDGeneratorUtil.generateUuid());
+        message.setId(UniqueIdFacade.nextId());
+        message.setMessageCode(UniqueIdFacade.nextId());
         message.setReceiverId(receiverId);
         message.setTitleMessageKey(StringUtils.defaultIfBlank(data.getTitleMessageKey(), data.getTitle()));
         message.setContentMessageKey(StringUtils.defaultIfBlank(data.getContentMessageKey(), data.getContent()));
@@ -280,25 +280,10 @@ public class MessageServiceImpl implements IMessageService {
     }
 
     private void fillCurrentTenantOrg(SiteMessageQO qo) {
-        qo.setTenantId(requireTenantId());
-        qo.setOrgId(requireOrgId());
+        qo.setTenantId(AuditContext.requireTenantId());
+        qo.setOrgId(AuditContext.requireOrgId());
     }
 
-    private String requireTenantId() {
-        String tenantId = SecurityContextHolder.currentTenantId();
-        if (StringUtils.isBlank(tenantId)) {
-            throw new IllegalStateException("Current tenant context is missing");
-        }
-        return tenantId;
-    }
-
-    private String requireOrgId() {
-        String orgId = SecurityContextHolder.currentOrgId();
-        if (StringUtils.isBlank(orgId)) {
-            throw new IllegalStateException("Current organization context is missing");
-        }
-        return orgId;
-    }
 
     private List<String> resolveMessageTypes(String messageCategory) {
         if (StringUtils.isBlank(messageCategory)) {

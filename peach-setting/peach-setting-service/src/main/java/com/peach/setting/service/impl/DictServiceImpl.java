@@ -5,11 +5,11 @@ import com.github.pagehelper.page.PageMethod;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.PageResult;
+import com.peach.common.audit.AuditContext;
 import com.peach.common.util.DateUtil;
-import com.peach.satoken.context.SecurityContextHolder;
-import com.peach.setting.comon.enums.SettingConst;
+import com.peach.setting.common.enums.SettingConst;
 import com.peach.setting.dao.DictItemDao;
 import com.peach.setting.dao.DictTypeDao;
 import com.peach.setting.dto.DictItemDTO;
@@ -73,7 +73,7 @@ public class DictServiceImpl implements IDictService {
     public void saveType(DictTypeDTO data) {
         DictTypeDO dictTypeDO = new DictTypeDO();
         BeanUtils.copyProperties(data, dictTypeDO);
-        dictTypeDO.setId(IDGeneratorUtil.generateUuid());
+        dictTypeDO.setId(UniqueIdFacade.nextId());
         dictTypeDO.fillCreateTime();
         dictTypeDao.insert(dictTypeDO);
     }
@@ -133,7 +133,7 @@ public class DictServiceImpl implements IDictService {
     public void saveItem(DictItemDTO data) {
         DictItemDO dictItemDO = new DictItemDO();
         BeanUtils.copyProperties(data, dictItemDO);
-        dictItemDO.setId(IDGeneratorUtil.generateUuid());
+        dictItemDO.setId(UniqueIdFacade.nextId());
         dictItemDO.fillCreateTime();
         dictItemDao.insert(dictItemDO);
     }
@@ -166,18 +166,10 @@ public class DictServiceImpl implements IDictService {
     }
 
     private String requireTenantId() {
-        String tenantId = SecurityContextHolder.currentTenantId();
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new IllegalStateException("Current tenant context is missing");
-        }
-        return tenantId;
+        return AuditContext.requireTenantId();
     }
 
     private String requireOrgId() {
-        String orgId = SecurityContextHolder.currentOrgId();
-        if (orgId == null || orgId.isBlank()) {
-            throw new IllegalStateException("Current organization context is missing");
-        }
-        return orgId;
+        return AuditContext.requireOrgId();
     }
 }

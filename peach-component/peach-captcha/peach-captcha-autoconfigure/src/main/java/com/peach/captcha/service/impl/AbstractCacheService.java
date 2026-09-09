@@ -1,5 +1,8 @@
 package com.peach.captcha.service.impl;
 
+import com.peach.captcha.key.CaptchaRedisKey;
+import com.peach.common.key.KeyBuilder;
+
 import com.peach.captcha.constant.CaptchaPropertiesConst;
 import com.peach.captcha.constant.CaptchaEnum;
 import com.peach.captcha.limit.DefaultFrequencyLimitHandler;
@@ -11,8 +14,6 @@ import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.util.AesUtil;
 import com.peach.captcha.util.CaptchaImageUtil;
 import com.peach.captcha.util.MemoryCacheUtil;
-import com.peach.common.keymanager.RedisKeyBuild;
-import com.peach.common.keymanager.RedisKeyManage;
 import com.peach.common.util.Md5Util;
 import com.peach.common.response.Response;
 import com.peach.common.util.StringUtil;
@@ -260,8 +261,8 @@ public abstract class AbstractCacheService implements CaptchaService {
      */
     protected void afterValidateFail(CaptchaVO data) {
         if (frequencyLimitHandler != null) {
-            String fails = RedisKeyBuild
-                    .createRedisKey(RedisKeyManage.CAPTCHA_REQ_LIMIT,data.getClientUid(),CaptchaEnum.CaptchaOpertionType.FAIL.getCode())
+            String fails = KeyBuilder
+                    .from(CaptchaRedisKey.CAPTCHA_REQ_LIMIT,data.getClientUid(),CaptchaEnum.CaptchaOpertionType.FAIL.getCode())
                     .getRealKey();
             CaptchaCacheService cs = getCacheService(CACHE_TYPE);
             if (!cs.exists(fails)) {

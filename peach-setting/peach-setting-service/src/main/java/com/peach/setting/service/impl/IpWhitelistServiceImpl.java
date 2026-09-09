@@ -5,18 +5,18 @@ import com.github.pagehelper.page.PageMethod;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.PageResult;
 import com.peach.common.constant.PubCommonConst;
 import com.peach.common.util.DateUtil;
-import com.peach.common.util.TransactionUtils;
-import com.peach.satoken.context.SecurityContextHolder;
-import com.peach.setting.comon.enums.SettingConst;
+import com.peach.common.audit.AuditContext;
+import com.peach.setting.common.enums.SettingConst;
 import com.peach.setting.dao.IpWhitelistDao;
 import com.peach.setting.dto.IpWhitelistDTO;
 import com.peach.setting.entity.IpWhitelistDO;
 import com.peach.setting.qo.IpWhitelistQO;
 import com.peach.setting.service.IIpWhitelistService;
+import com.peach.setting.service.support.TransactionUtils;
 import com.peach.setting.vo.IpWhitelistVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -63,7 +63,7 @@ public class IpWhitelistServiceImpl implements IIpWhitelistService {
     public void save(IpWhitelistDTO data) {
         IpWhitelistDO ipWhitelistDO = new IpWhitelistDO();
         BeanUtils.copyProperties(data, ipWhitelistDO);
-        ipWhitelistDO.setId(IDGeneratorUtil.generateUuid());
+        ipWhitelistDO.setId(UniqueIdFacade.nextId());
         ipWhitelistDO.fillCreateTime();
         if (ipWhitelistDO.getStatus() == null) {
             ipWhitelistDO.setStatus(PubCommonConst.LOGIC_TRUE);
@@ -127,23 +127,8 @@ public class IpWhitelistServiceImpl implements IIpWhitelistService {
     }
 
     private void fillCurrentTenantOrg(IpWhitelistQO qo) {
-        qo.setTenantId(requireTenantId());
-        qo.setOrgId(requireOrgId());
+        qo.setTenantId(AuditContext.requireTenantId());
+        qo.setOrgId(AuditContext.requireOrgId());
     }
 
-    private String requireTenantId() {
-        String tenantId = SecurityContextHolder.currentTenantId();
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new IllegalStateException("Current tenant context is missing");
-        }
-        return tenantId;
-    }
-
-    private String requireOrgId() {
-        String orgId = SecurityContextHolder.currentOrgId();
-        if (orgId == null || orgId.isBlank()) {
-            throw new IllegalStateException("Current organization context is missing");
-        }
-        return orgId;
-    }
 }

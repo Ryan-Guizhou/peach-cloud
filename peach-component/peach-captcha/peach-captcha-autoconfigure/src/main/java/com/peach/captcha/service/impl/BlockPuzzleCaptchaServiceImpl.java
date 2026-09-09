@@ -1,5 +1,8 @@
 package com.peach.captcha.service.impl;
 
+import com.peach.captcha.key.CaptchaRedisKey;
+import com.peach.common.key.KeyBuilder;
+
 
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.model.PointVO;
@@ -8,8 +11,6 @@ import com.peach.captcha.util.CaptchaImageUtil;
 import com.peach.captcha.util.JsonUtil;
 import com.peach.captcha.util.RandomUtils;
 import com.peach.common.util.PeachSecureRandom;
-import com.peach.common.keymanager.RedisKeyBuild;
-import com.peach.common.keymanager.RedisKeyManage;
 import com.peach.common.response.Response;
 import com.peach.common.response.StatusEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -83,8 +84,8 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         if (!validatedReq(check)){
             return check;
         }
-        String codeKey = RedisKeyBuild
-                .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA, captchaVO.getToken())
+        String codeKey = KeyBuilder
+                .from(CaptchaRedisKey.RUNNING_CAPTCHA, captchaVO.getToken())
                 .getRealKey();
         if (!existCaptchaKey(codeKey)){
             log.error("captcha check not found, key: {}", codeKey);
@@ -123,8 +124,8 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
             afterValidateFail(captchaVO);
             return Response.fail(e.getMessage());
         }
-        String secondKey = RedisKeyBuild
-                .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA_SECOND,value)
+        String secondKey = KeyBuilder
+                .from(CaptchaRedisKey.RUNNING_CAPTCHA_SECOND,value)
                 .getRealKey();
         setCaptchaCahche(secondKey, captchaVO.getToken());
         captchaVO.setResult(true);
@@ -141,8 +142,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         }
 
         try {
-            String codeKey = RedisKeyBuild
-                    .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA_SECOND,captchaVO.getCaptchaVerification())
+            String codeKey = KeyBuilder.from(CaptchaRedisKey.RUNNING_CAPTCHA_SECOND,captchaVO.getCaptchaVerification())
                     .getRealKey();
             if (!existCaptchaKey(codeKey)) {
                 log.error("captcha verification not found, key: {}", codeKey);
@@ -215,8 +215,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
             dataVO.setToken(RandomUtils.getUuid());
             dataVO.setSecretKey(point.secretKey());
             //将坐标信息存入redis中
-            String codeKey = RedisKeyBuild
-                    .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA, dataVO.getToken())
+            String codeKey = KeyBuilder.from(CaptchaRedisKey.RUNNING_CAPTCHA, dataVO.getToken())
                     .getRealKey();
             setCaptchaCahche(codeKey,point.toJsonString());
             log.debug("token：{},point:{}", dataVO.getToken(), JsonUtil.toJsonString(point));

@@ -2,7 +2,7 @@ package com.peach.setting.dto;
 
 import java.io.Serial;
 
-import com.peach.setting.comon.enums.DictTypeGroup;
+import com.peach.setting.common.enums.DictTypeGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 

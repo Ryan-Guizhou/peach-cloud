@@ -18,6 +18,10 @@
     <dependencies>
         <dependency>
             <groupId>com.peach</groupId>
+            <artifactId>peach-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
             <artifactId>peach-scheduler-core</artifactId>
         </dependency>
         <dependency>

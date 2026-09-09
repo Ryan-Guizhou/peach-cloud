@@ -2,11 +2,11 @@ package com.peach.setting.service.impl;
 
 import lombok.RequiredArgsConstructor;
 
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.util.DateUtil;
 import com.peach.redis.common.tool.RedisDao;
 import com.peach.redis.manager.MultiCacheManagerService;
-import com.peach.setting.comon.enums.SettingConst;
+import com.peach.setting.common.enums.SettingConst;
 import com.peach.setting.dao.NoticeDao;
 import com.peach.setting.dao.NoticeReadRecordDao;
 import com.peach.setting.entity.NoticeReadRecordDO;
@@ -92,7 +92,7 @@ public class NoticeReadFlushTask {
             return;
         }
         NoticeReadRecordDO readRecord = new NoticeReadRecordDO();
-        readRecord.setId(IDGeneratorUtil.generateUuid());
+        readRecord.setId(UniqueIdFacade.nextId());
         readRecord.setNoticeCode(noticeCode);
         readRecord.setTenantId(notice.getTenantId());
         readRecord.setOrgId(notice.getOrgId());

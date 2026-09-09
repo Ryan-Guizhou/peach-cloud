@@ -16,4 +16,9 @@ import org.springframework.stereotype.Indexed;
 @Indexed
 @MybatisDao
 public interface AuthPartyDao extends PeachDao<AuthPartyDO, AuthPartyVO> {
+
+    /**
+     * 查询绑定指定角色的用户账号列表。
+     */
+    java.util.List<String> selectUserCodesByRole(AuthPartyDO query);
 }

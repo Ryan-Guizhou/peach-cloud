@@ -1,9 +1,10 @@
 package com.peach.auth;
 
+import com.peach.auth.vo.AuthResourceVO;
+import com.peach.auth.vo.LoginPermissionSnapshotVO;
 import com.peach.auth.vo.MenuVO;
 import com.peach.auth.vo.RoleVO;
 import com.peach.auth.vo.RouterVO;
-import com.peach.auth.vo.AuthResourceVO;
 import com.peach.auth.vo.UserOrgVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -72,4 +73,7 @@ public class LoginInfo {
 
     @Schema(description = "已授权权限编码列表")
     private List<String> permissionList;
+
+    @Schema(description = "结构化权限快照")
+    private LoginPermissionSnapshotVO permissionSnapshot;
 }

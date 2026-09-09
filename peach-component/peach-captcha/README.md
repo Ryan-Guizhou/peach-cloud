@@ -46,11 +46,13 @@ artifactId：`peach-captcha`
 3. 根据配置装配验证码生成服务和缓存服务。
 4. 生成验证码时写入缓存，校验时读取并比对。
 5. 频控处理器可限制同一用户、IP 或业务 key 的调用频率。
+6. 验证码 Redis key 由 `com.peach.captcha.key.CaptchaRedisKey` 维护，通过 `peach-common` 的 `KeyBuilder` 格式化。
 
 ## 边界与限制
 
 - 验证码不能替代登录风控、账号锁定和设备识别。
 - 缓存实现决定验证码是否支持多实例共享；生产环境不应依赖单机内存缓存。
+- CAPTCHA 相关 Redis key 属于验证码组件，不放入全局 `peach-common`；公共层只提供 `KeyDefinition` 和 `KeyBuilder`。
 - 校验成功后是否删除验证码、失败次数如何限制，需要结合当前实现和业务策略确认。
 - 不应在日志中输出验证码明文。
 

@@ -1,12 +1,13 @@
 package com.peach.captcha.service.impl;
 
+import com.peach.captcha.key.CaptchaRedisKey;
+import com.peach.common.key.KeyBuilder;
+
 import com.alibaba.fastjson.JSON;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.util.AesUtil;
 import com.peach.captcha.util.CaptchaImageUtil;
 import com.peach.captcha.util.RandomUtils;
-import com.peach.common.keymanager.RedisKeyBuild;
-import com.peach.common.keymanager.RedisKeyManage;
 import com.peach.common.response.Response;
 import com.peach.common.response.StatusEnum;
 import com.peach.common.util.StringUtil;
@@ -75,8 +76,8 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
             captchaVO.setSecretKey(secretKey);
         }
 
-        String codeKey = RedisKeyBuild
-                .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA, captchaVO.getToken())
+        String codeKey = KeyBuilder
+                .from(CaptchaRedisKey.RUNNING_CAPTCHA, captchaVO.getToken())
                 .getRealKey();
 
         // Store correct angle and secret key / 存储正确角度和密钥
@@ -96,8 +97,8 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
             return response;
         }
 
-        String codeKey = RedisKeyBuild
-                .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA, captchaVO.getToken())
+        String codeKey = KeyBuilder
+                .from(CaptchaRedisKey.RUNNING_CAPTCHA, captchaVO.getToken())
                 .getRealKey();
 
         if (!existCaptchaKey(codeKey)) {
@@ -143,8 +144,8 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
 
             // Generate secondary verification / 生成二次校验
             String value = AesUtil.aesEncrypt(captchaVO.getToken().concat("@").concat(String.valueOf(userAngle)), secretKey);
-            String secondKey = RedisKeyBuild
-                .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA_SECOND, value)
+            String secondKey = KeyBuilder
+                .from(CaptchaRedisKey.RUNNING_CAPTCHA_SECOND, value)
                 .getRealKey();
             setCaptchaCahche(secondKey, captchaVO.getToken());
 
@@ -165,8 +166,8 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
             return response;
         }
 
-        String codeKey = RedisKeyBuild
-                .createRedisKey(RedisKeyManage.RUNNING_CAPTCHA_SECOND, captchaVO.getCaptchaVerification())
+        String codeKey = KeyBuilder
+                .from(CaptchaRedisKey.RUNNING_CAPTCHA_SECOND, captchaVO.getCaptchaVerification())
                 .getRealKey();
 
         if (!existCaptchaKey(codeKey)){

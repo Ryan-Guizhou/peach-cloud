@@ -5,12 +5,12 @@ import com.github.pagehelper.page.PageMethod;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.common.validate.CommonValidator;
 import com.peach.auth.dao.RouterDao;
 import com.peach.auth.dto.RouterDTO;
 import com.peach.auth.entity.RouterDO;
 import com.peach.auth.qo.RouterQO;
 import com.peach.auth.service.IRouterService;
+import com.peach.auth.service.support.CommonValidator;
 import com.peach.auth.vo.RouterVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;

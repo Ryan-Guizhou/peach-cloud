@@ -1,14 +1,14 @@
-package com.peach.setting.comon.enums;
+package com.peach.setting.common.enums;
 
 /**
- * 字典类型分组校验接口。
+ * 多语言消息分组校验接口。
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/6 21:20
- * @Description 字典类型分组校验接口
+ * @Description 多语言消息分组校验接口
  */
-public interface DictTypeGroup {
+public interface MultiMessageGroup {
 
     interface InsertGroup {}
 

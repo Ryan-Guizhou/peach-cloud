@@ -5,9 +5,10 @@ import com.github.pagehelper.page.PageMethod;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.PageResult;
 import com.peach.common.util.DateUtil;
+import com.peach.common.audit.AuditContext;
 import com.peach.common.util.StringUtil;
 import com.peach.content.UploadContent;
 import com.peach.fileservice.common.FileDomainConstant;
@@ -211,8 +212,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
         }
         byte[] bytes = readFileBytes(file);
         verifyDigest(data, bytes);
-        String objectId = IDGeneratorUtil.generateUuid();
-        String fileId = IDGeneratorUtil.generateUuid();
+        String objectId = UniqueIdFacade.nextId();
+        String fileId = UniqueIdFacade.nextId();
         String objectKey = buildObjectKey(data.getBizType(), data.getFileName());
         UploadObjectRequest request = UploadObjectRequest.builder()
                 .bucketName(null)
@@ -248,9 +249,9 @@ public class FileDomainServiceImpl implements IFileDomainService {
             result.setFileId(uploadVO.getFileId());
             return result;
         }
-        String sessionId = IDGeneratorUtil.generateUuid();
-        String fileId = IDGeneratorUtil.generateUuid();
-        String objectId = IDGeneratorUtil.generateUuid();
+        String sessionId = UniqueIdFacade.nextId();
+        String fileId = UniqueIdFacade.nextId();
+        String objectId = UniqueIdFacade.nextId();
         String objectKey = buildObjectKey(data.getBizType(), data.getFileName());
         String providerName = resolveProvider(data.getStorageProvider());
         InitiateMultipartUploadResult initiateResult = initiateMultipart(providerName, objectKey,
@@ -545,7 +546,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     private FileRecordDO buildFileRecord(FileUploadCheckDTO data, String objectId, Long fileSize) {
         FileRecordDO recordDO = new FileRecordDO();
-        recordDO.setFileId(IDGeneratorUtil.generateUuid());
+        recordDO.setFileId(UniqueIdFacade.nextId());
         recordDO.setObjectId(objectId);
         recordDO.setBizType(data.getBizType());
         recordDO.setBizId(data.getBizId());
@@ -564,7 +565,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     private FileRecordDO buildFileRecord(FileUploadSessionVO sessionVO, String objectId, Long fileSize) {
         FileRecordDO recordDO = new FileRecordDO();
-        recordDO.setFileId(IDGeneratorUtil.generateUuid());
+        recordDO.setFileId(UniqueIdFacade.nextId());
         recordDO.setObjectId(objectId);
         recordDO.setBizType(sessionVO.getBizType());
         recordDO.setBizId(sessionVO.getBizId());
@@ -775,7 +776,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         key.append(fileDomainProperties.getObjectKeyPrefix()).append(FileDomainConstant.OBJECT_KEY_SEPARATOR)
                 .append(normalizePathSegment(bizType)).append(FileDomainConstant.OBJECT_KEY_SEPARATOR)
                 .append(datePart).append(FileDomainConstant.OBJECT_KEY_SEPARATOR)
-                .append(IDGeneratorUtil.generateUuid());
+                .append(UniqueIdFacade.nextId());
         if (StringUtil.isNotBlank(ext)) {
             key.append(".").append(ext.toLowerCase(Locale.ROOT));
         }
@@ -834,19 +835,11 @@ public class FileDomainServiceImpl implements IFileDomainService {
     }
 
     private String requireTenantId() {
-        String tenantId = SecurityContextHolder.currentTenantId();
-        if (StringUtil.isBlank(tenantId)) {
-            throw new IllegalStateException("Current tenant context is missing");
-        }
-        return tenantId;
+        return AuditContext.requireTenantId();
     }
 
     private String requireOrgId() {
-        String orgId = SecurityContextHolder.currentOrgId();
-        if (StringUtil.isBlank(orgId)) {
-            throw new IllegalStateException("Current organization context is missing");
-        }
-        return orgId;
+        return AuditContext.requireOrgId();
     }
 
     private String format(LocalDateTime localDateTime) {

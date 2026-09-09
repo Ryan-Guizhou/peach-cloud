@@ -23,4 +23,22 @@ public class AuthPartyQO extends PeachEntity implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -5377212985478753324L;
+
+    @Schema(description = "租户ID")
+    private String tenantId;
+
+    @Schema(description = "机构ID")
+    private String orgId;
+
+    @Schema(description = "参与者编码（用户账号）")
+    private String partyCode;
+
+    @Schema(description = "参与者类型")
+    private String partyType;
+
+    @Schema(description = "角色编码")
+    private String roleCode;
+
+    @Schema(description = "年度")
+    private Integer fiscal;
 }

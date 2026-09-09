@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.common.response.Response;
-import com.peach.setting.comon.enums.NoticeGroup;
+import com.peach.setting.common.enums.NoticeGroup;
 import com.peach.setting.dto.NoticeDTO;
 import com.peach.setting.dto.NoticePublishDTO;
 import com.peach.setting.qo.NoticeQO;

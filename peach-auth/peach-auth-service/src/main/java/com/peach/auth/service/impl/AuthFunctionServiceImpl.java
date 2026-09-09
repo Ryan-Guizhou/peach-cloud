@@ -4,25 +4,25 @@ import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
 
-import cn.dev33.satoken.stp.StpUtil;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dao.AuthFunctionDao;
 import com.peach.auth.dto.RoleFunctionAuthDTO;
 import com.peach.auth.entity.AuthFunctionDO;
-import com.peach.auth.entity.AuthLogDO;
 import com.peach.auth.qo.AuthFunctionQO;
 import com.peach.auth.service.IAuthFunctionService;
-import com.peach.auth.service.IAuthLogService;
+import com.peach.auth.service.support.AuthLogSupport;
+import com.peach.auth.service.support.LoginPermissionCacheRefresher;
 import com.peach.auth.vo.AuthFunctionVO;
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.constant.PubCommonConst;
-import com.peach.common.util.DateUtil;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+
+import cn.dev33.satoken.stp.StpUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +42,9 @@ public class AuthFunctionServiceImpl implements IAuthFunctionService {
 
     private final AuthFunctionDao authFunctionDao;
 
-    private final IAuthLogService authLogService;
+    private final AuthLogSupport authLogSupport;
+
+    private final LoginPermissionCacheRefresher loginPermissionCacheRefresher;
 
     @Override
     public PageInfo<AuthFunctionVO> pageList(AuthFunctionQO authFunctionQO) {
@@ -72,7 +74,7 @@ public class AuthFunctionServiceImpl implements IAuthFunctionService {
                     continue;
                 }
                 AuthFunctionDO authFunctionDO = new AuthFunctionDO();
-                authFunctionDO.setId(IDGeneratorUtil.generateUuid());
+                authFunctionDO.setId(UniqueIdFacade.nextId());
                 authFunctionDO.setTenantId(roleFunctionAuthDTO.getTenantId());
                 authFunctionDO.setOrgId(roleFunctionAuthDTO.getOrgId());
                 authFunctionDO.setPartyCode(roleFunctionAuthDTO.getPartyCode());
@@ -89,7 +91,19 @@ public class AuthFunctionServiceImpl implements IAuthFunctionService {
         if (!functionList.isEmpty()) {
             authFunctionDao.batchInsert(functionList);
         }
-        recordAuthLog(roleFunctionAuthDTO, functionList.size());
+
+        authLogSupport.recordRoleGrant(
+                roleFunctionAuthDTO.getTenantId(),
+                roleFunctionAuthDTO.getOrgId(),
+                roleFunctionAuthDTO.getPartyCode(),
+                "角色功能授权，角色编码：" + roleFunctionAuthDTO.getPartyCode()
+                        + "，功能数量：" + functionList.size());
+
+        loginPermissionCacheRefresher.refreshUsersByRole(
+                roleFunctionAuthDTO.getTenantId(),
+                roleFunctionAuthDTO.getOrgId(),
+                roleFunctionAuthDTO.getPartyCode(),
+                roleFunctionAuthDTO.getFiscal());
     }
 
     private AuthFunctionDO buildQuery(AuthFunctionQO authFunctionQO) {
@@ -107,18 +121,6 @@ public class AuthFunctionServiceImpl implements IAuthFunctionService {
         authFunctionDO.setAppId(authFunctionQO.getAppId());
         authFunctionDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
         return authFunctionDO;
-    }
-
-    private void recordAuthLog(RoleFunctionAuthDTO roleFunctionAuthDTO, int functionCount) {
-        AuthLogDO authLogDO = new AuthLogDO();
-        authLogDO.setTenantId(roleFunctionAuthDTO.getTenantId());
-        authLogDO.setOrgId(roleFunctionAuthDTO.getOrgId());
-        authLogDO.setOperatorUserId(currentOperator());
-        authLogDO.setUserCode(roleFunctionAuthDTO.getPartyCode());
-        authLogDO.setAuthDescribe("角色功能授权，角色编码：" + roleFunctionAuthDTO.getPartyCode()
-                + "，功能数量：" + functionCount);
-        authLogDO.setOperatTime(DateUtil.nowTime());
-        authLogService.saveLog(authLogDO);
     }
 
     private String currentOperator() {

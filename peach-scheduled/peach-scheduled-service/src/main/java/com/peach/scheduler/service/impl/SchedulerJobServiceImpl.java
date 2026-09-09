@@ -2,7 +2,7 @@ package com.peach.scheduler.service.impl;
 
 import org.springframework.stereotype.Indexed;
 
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.scheduler.service.ISchedulerJobService;
 import com.peach.scheduler.service.SchedulerJobLifecycleService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -91,7 +91,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
             throw new IllegalArgumentException("Job code already exists");
         }
         SchedulerJobDO job = map(data, new SchedulerJobDO());
-        job.setId(IDGeneratorUtil.generateUuid());
+        job.setId(UniqueIdFacade.nextId());
         job.setState(JobState.DRAFT);
         job.setScheduleVersion(1L);
         job.setSyncStatus(SyncStatus.PENDING);

@@ -6,7 +6,7 @@ import cn.hutool.crypto.asymmetric.RSA;
 import cn.hutool.crypto.digest.DigestUtil;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.peach.common.util.InstanceLazyLoader;
+import com.peach.auth.common.util.InstanceLazyLoader;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;

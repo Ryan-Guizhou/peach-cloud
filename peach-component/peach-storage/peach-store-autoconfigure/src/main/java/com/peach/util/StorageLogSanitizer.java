@@ -1,8 +1,8 @@
 package com.peach.util;
 
+import com.peach.common.util.desensitize.DesensitizeUtil;
 import com.peach.config.StorageProperties;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,10 +29,10 @@ public final class StorageLogSanitizer {
                 + ", type=" + provider.getType()
                 + ", bucketName='" + safe(provider.getBucketName()) + '\''
                 + ", prefix='" + safe(provider.getPrefix()) + '\''
-                + ", endpoint='" + maskEndpoint(provider.getEndpoint()) + '\''
+                + ", endpoint='" + DesensitizeUtil.maskEndpoint(provider.getEndpoint()) + '\''
                 + ", region='" + safe(provider.getRegion()) + '\''
-                + ", rootPath='" + maskPath(provider.getRootPath()) + '\''
-                + ", domain='" + maskEndpoint(provider.getDomain()) + '\''
+                + ", rootPath='" + DesensitizeUtil.maskStoragePath(provider.getRootPath()) + '\''
+                + ", domain='" + DesensitizeUtil.maskEndpoint(provider.getDomain()) + '\''
                 + ", pathStyleAccess=" + provider.isPathStyleAccess()
                 + ", publicRead=" + provider.isPublicRead()
                 + ", extraPropertiesKeys=" + mapKeys(provider.getExtraProperties())
@@ -55,75 +55,6 @@ public final class StorageLogSanitizer {
             names.add(providerName);
         }
         return names.toString();
-    }
-
-    private static String maskEndpoint(String value) {
-        if (value == null || value.isBlank()) {
-            return value;
-        }
-        String trimmed = value.trim();
-        try {
-            URI uri = URI.create(trimmed.contains("://") ? trimmed : "https://" + trimmed);
-            String host = uri.getHost();
-            String scheme = uri.getScheme();
-            if (host == null || host.isBlank()) {
-                return maskPlain(trimmed);
-            }
-            return (scheme == null ? "" : scheme + "://") + maskHost(host);
-        } catch (Exception ex) {
-            return maskPlain(trimmed);
-        }
-    }
-
-    private static String maskPath(String value) {
-        if (value == null || value.isBlank()) {
-            return value;
-        }
-        String normalized = value.trim().replace('\\', '/');
-        String[] parts = normalized.split("/");
-        String last = null;
-        for (int i = parts.length - 1; i >= 0; i--) {
-            if (parts[i] != null && !parts[i].isBlank()) {
-                last = parts[i].trim();
-                break;
-            }
-        }
-        if (last == null) {
-            return "***";
-        }
-        return "***" + "/" + last;
-    }
-
-    private static String maskHost(String host) {
-        String[] labels = host.split("\\.");
-        if (labels.length == 0) {
-            return maskPlain(host);
-        }
-        if (labels.length == 1) {
-            return maskPlain(host);
-        }
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < labels.length; i++) {
-            if (i > 0) {
-                builder.append('.');
-            }
-            if (i < labels.length - 2) {
-                builder.append("***");
-            } else {
-                builder.append(labels[i]);
-            }
-        }
-        return builder.toString();
-    }
-
-    private static String maskPlain(String value) {
-        if (value == null || value.isEmpty()) {
-            return value;
-        }
-        if (value.length() <= 4) {
-            return "***";
-        }
-        return value.substring(0, 2) + "***" + value.substring(value.length() - 2);
     }
 
     private static String safe(String value) {

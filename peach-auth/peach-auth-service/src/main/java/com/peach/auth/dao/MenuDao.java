@@ -5,8 +5,10 @@ import com.peach.common.PeachDao;
 import com.peach.common.annoation.MybatisDao;
 import com.peach.auth.entity.MenuDO;
 import com.peach.auth.vo.MenuVO;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Indexed;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -21,4 +23,8 @@ import java.util.List;
 public interface MenuDao extends PeachDao<MenuDO, MenuVO> {
 
     List<MenuVO> selectByQO(MenuQO menuQO);
+
+    List<MenuVO> selectByFuncCodes(@Param("tenantId") String tenantId,
+                                   @Param("appId") String appId,
+                                   @Param("funcCodes") Collection<String> funcCodes);
 }

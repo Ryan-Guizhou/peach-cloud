@@ -5,15 +5,14 @@ import com.github.pagehelper.page.PageMethod;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.PageResult;
 import com.peach.common.constant.PubCommonConst;
 import com.peach.common.util.DateUtil;
-import com.peach.common.util.PeachCollectionUtil;
 import com.peach.redis.common.tool.RedisDao;
-import com.peach.satoken.context.SecurityContextHolder;
-import com.peach.setting.comon.enums.SettingConst;
-import com.peach.setting.comon.enums.SettingEnum;
+import com.peach.common.audit.AuditContext;
+import com.peach.setting.common.enums.SettingConst;
+import com.peach.setting.common.enums.SettingEnum;
 import com.peach.setting.dao.NoticeDao;
 import com.peach.setting.dao.SiteMessageDao;
 import com.peach.setting.dto.NoticeDTO;
@@ -78,7 +77,7 @@ public class NoticeServiceImpl implements INoticeService {
     public void saveNotice(NoticeDTO data) {
         NoticeDO noticeDO = new NoticeDO();
         BeanUtils.copyProperties(data, noticeDO);
-        noticeDO.setId(IDGeneratorUtil.generateUuid());
+        noticeDO.setId(UniqueIdFacade.nextId());
         noticeDO.setReadCount(Optional.ofNullable(noticeDO.getReadCount()).orElse(PubCommonConst.LOGIC_FLASE));
         noticeDO.setPublishStatus(Optional.ofNullable(noticeDO.getPublishStatus()).orElse(SettingEnum.PublishStatus.DRAFT.getCode()));
         noticeDO.setInboxEnabled(Optional.ofNullable(noticeDO.getInboxEnabled()).orElse(PubCommonConst.LOGIC_FLASE));
@@ -124,8 +123,8 @@ public class NoticeServiceImpl implements INoticeService {
         List<SiteMessageDO> list = new ArrayList<>();
         for (String receiverId : data.getReceiverIdList()) {
             SiteMessageDO message = new SiteMessageDO();
-            message.setId(IDGeneratorUtil.generateUuid());
-            message.setMessageCode(IDGeneratorUtil.generateUuid());
+            message.setId(UniqueIdFacade.nextId());
+            message.setMessageCode(UniqueIdFacade.nextId());
             message.setReceiverId(receiverId);
             message.setTitleMessageKey(db.getTitleMessageKey());
             message.setContentMessageKey(db.getContentMessageKey());
@@ -188,29 +187,13 @@ public class NoticeServiceImpl implements INoticeService {
     }
 
     private void fillCurrentTenantOrg(NoticeQO qo) {
-        qo.setTenantId(requireTenantId());
-        qo.setOrgId(requireOrgId());
+        qo.setTenantId(AuditContext.requireTenantId());
+        qo.setOrgId(AuditContext.requireOrgId());
     }
 
     private void fillCurrentTenantOrg(SiteMessageQO qo) {
-        qo.setTenantId(requireTenantId());
-        qo.setOrgId(requireOrgId());
-    }
-
-    private String requireTenantId() {
-        String tenantId = SecurityContextHolder.currentTenantId();
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new IllegalStateException("Current tenant context is missing");
-        }
-        return tenantId;
-    }
-
-    private String requireOrgId() {
-        String orgId = SecurityContextHolder.currentOrgId();
-        if (orgId == null || orgId.isBlank()) {
-            throw new IllegalStateException("Current organization context is missing");
-        }
-        return orgId;
+        qo.setTenantId(AuditContext.requireTenantId());
+        qo.setOrgId(AuditContext.requireOrgId());
     }
 }
 

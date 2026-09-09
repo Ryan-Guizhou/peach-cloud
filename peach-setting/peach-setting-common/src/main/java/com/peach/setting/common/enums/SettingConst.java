@@ -1,4 +1,4 @@
-package com.peach.setting.comon.enums;
+package com.peach.setting.common.enums;
 
 /**
  * setting 模块常量。

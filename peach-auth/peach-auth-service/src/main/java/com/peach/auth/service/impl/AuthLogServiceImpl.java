@@ -10,7 +10,7 @@ import com.peach.auth.entity.AuthLogDO;
 import com.peach.auth.qo.AuthLogQO;
 import com.peach.auth.service.IAuthLogService;
 import com.peach.auth.vo.AuthLogVO;
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.util.DateUtil;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +44,7 @@ public class AuthLogServiceImpl implements IAuthLogService {
             return;
         }
         if (StringUtil.isBlank(authLogDO.getLogId())) {
-            authLogDO.setLogId(IDGeneratorUtil.generateUuid());
+            authLogDO.setLogId(UniqueIdFacade.nextId());
         }
         if (StringUtil.isBlank(authLogDO.getOperatTime())) {
             authLogDO.setOperatTime(DateUtil.nowTime());

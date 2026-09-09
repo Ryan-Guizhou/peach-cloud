@@ -5,8 +5,10 @@ import com.peach.common.annoation.MybatisDao;
 import com.peach.auth.entity.RouterDO;
 import com.peach.auth.qo.RouterQO;
 import com.peach.auth.vo.RouterVO;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Indexed;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -23,4 +25,11 @@ public interface RouterDao extends PeachDao<RouterDO, RouterVO> {
     List<RouterVO> selectByQO(RouterQO routerQO);
 
     int countByRouterCode(RouterDO routerDO);
+
+    List<RouterVO> selectByFuncCodes(@Param("tenantId") String tenantId,
+                                     @Param("appId") String appId,
+                                     @Param("funcCodes") Collection<String> funcCodes);
+
+    List<RouterVO> selectPublicRouters(@Param("tenantId") String tenantId,
+                                       @Param("appId") String appId);
 }

@@ -281,4 +281,25 @@
             <include refid="allColumnCond" />
         </where>
     </select>
+
+    <select id="selectUserCodesByRole" parameterType="com.peach.auth.entity.AuthPartyDO" resultType="java.lang.String">
+        SELECT DISTINCT PARTY_CODE
+        FROM PEACH_AUTH_PARTY
+        <where>
+            (IS_DELETE IS NULL OR IS_DELETE != 1)
+            AND PARTY_TYPE = 'USER'
+            <if test="tenantId != null and tenantId != ''">
+                AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+            </if>
+            <if test="orgId != null and orgId != ''">
+                AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+            </if>
+            <if test="roleCode != null and roleCode != ''">
+                AND ROLE_CODE = #{roleCode,jdbcType=VARCHAR}
+            </if>
+            <if test="fiscal != null">
+                AND FISCAL = #{fiscal,jdbcType=INTEGER}
+            </if>
+        </where>
+    </select>
 </mapper>

@@ -11,57 +11,41 @@ import com.github.pagehelper.PageInfo;
 import com.peach.auth.LoginInfo;
 import com.peach.auth.common.RsaPasswordUtil;
 import com.peach.auth.common.SensitiveFieldCipher;
-import com.peach.auth.dao.AuthFunctionDao;
-import com.peach.auth.dao.AuthResourceDao;
-import com.peach.auth.dao.MenuDao;
-import com.peach.auth.dao.RouterDao;
 import com.peach.auth.dao.UserDao;
 import com.peach.auth.dao.UserOrgDao;
 import com.peach.auth.dto.LoginDTO;
 import com.peach.auth.dto.RegisterDTO;
 import com.peach.auth.dto.SwitchContextDTO;
 import com.peach.auth.dto.UserDTO;
-import com.peach.auth.entity.AuthFunctionDO;
-import com.peach.auth.entity.AuthResourceDO;
-import com.peach.auth.entity.MenuDO;
-import com.peach.auth.entity.RouterDO;
 import com.peach.auth.entity.UserDO;
 import com.peach.auth.qo.RoleQO;
 import com.peach.auth.qo.UserQO;
 import com.peach.auth.service.IRoleService;
 import com.peach.auth.service.IUserService;
 import com.peach.auth.service.LoginLockService;
+import com.peach.auth.service.assembler.LoginPermissionAssembler;
+import com.peach.auth.service.support.LoginPermissionCacheRefresher;
 import com.peach.auth.service.support.LoginInitConfigSupport;
 import com.peach.auth.service.support.UserSensitiveFieldSupport;
-import com.peach.auth.vo.AuthFunctionVO;
-import com.peach.auth.vo.AuthResourceVO;
-import com.peach.auth.vo.MenuVO;
 import com.peach.auth.vo.LoginInitVO;
 import com.peach.auth.vo.LoginLockStatusVO;
+import com.peach.auth.vo.LoginPermissionSnapshotVO;
 import com.peach.auth.vo.RoleVO;
-import com.peach.auth.vo.RouterVO;
 import com.peach.auth.vo.UserOrgVO;
 import com.peach.auth.vo.UserVO;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.service.CaptchaService;
 import com.peach.common.constant.PubCommonConst;
 import com.peach.common.response.Response;
-import com.peach.satoken.constant.SatokenConstant;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.data.redis.core.StringRedisTemplate;
 
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * 用户服务实现类。
@@ -77,21 +61,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class UserServiceImpl implements IUserService {
 
-    private static final String INIT_APP_ID = "f73b300578a5436d82ec7fca2c07c284";
-
     private final UserDao userDao;
 
     private final UserOrgDao userOrgDao;
-
-    private final MenuDao menuDao;
-
-    private final RouterDao routerDao;
-
-    private final AuthFunctionDao authFunctionDao;
-
-    private final AuthResourceDao authResourceDao;
-
-    private final StringRedisTemplate stringRedisTemplate;
 
     private final IRoleService iRoleService;
 
@@ -101,13 +73,17 @@ public class UserServiceImpl implements IUserService {
 
     private final LoginInitConfigSupport loginInitConfigSupport;
 
+    private final LoginPermissionAssembler loginPermissionAssembler;
+
+    private final LoginPermissionCacheRefresher loginPermissionCacheRefresher;
+
 
     @Override
     public PageInfo<UserVO> pageList(UserQO userQO) {
         PageInfo<UserVO> pageInfo = PageMethod.startPage(userQO.getPageNum(), userQO.getPageSize())
                 .doSelectPageInfo(() -> userDao.selectByQO(userQO));
         if (pageInfo.getList() != null) {
-            pageInfo.getList().forEach(UserSensitiveFieldSupport::decryptUserFields);
+            pageInfo.getList().forEach(UserSensitiveFieldSupport::decryptAndMaskUserFields);
         }
         return pageInfo;
     }
@@ -121,7 +97,7 @@ public class UserServiceImpl implements IUserService {
             users = userDao.select(buildUserDO(userQO));
         }
         if (users != null) {
-            users.forEach(UserSensitiveFieldSupport::decryptUserFields);
+            users.forEach(UserSensitiveFieldSupport::decryptAndMaskUserFields);
         }
         return users;
     }
@@ -187,30 +163,11 @@ public class UserServiceImpl implements IUserService {
         roleQO.setTenantId(currentUserOrg.getTenantId());
         roleQO.setOrgId(currentUserOrg.getOrgId());
         List<RoleVO> roleList = iRoleService.selectByUserCode(roleQO);
-        List<AuthResourceVO> resourceList = selectResources(roleList, currentUserOrg.getTenantId(),
-                currentUserOrg.getOrgId(), loginDTO.getFiscal());
-        refreshLoginPermissionCache(userVO, currentUserOrg, loginDTO.getFiscal(), resourceList);
-        List<MenuVO> menuList = selectMenus(roleList, currentUserOrg.getTenantId(), currentUserOrg.getOrgId(), loginDTO.getFiscal());
-        List<RouterVO> routerList = selectRouters(roleList, currentUserOrg.getTenantId(), currentUserOrg.getOrgId(), loginDTO.getFiscal());
+        LoginPermissionSnapshotVO snapshot = loginPermissionAssembler.assemble(
+                currentUserOrg, loginDTO.getFiscal(), roleList);
+        refreshLoginPermissionCache(userVO, currentUserOrg, loginDTO.getFiscal(), snapshot);
 
-        LoginInfo loginInfo = new LoginInfo();
-        loginInfo.setUserId(userVO.getUserId());
-        loginInfo.setUserName(userVO.getUserName());
-        loginInfo.setFiscal(String.valueOf(loginDTO.getFiscal()));
-        loginInfo.setTenantId(currentUserOrg.getTenantId());
-        loginInfo.setTenantCode(currentUserOrg.getTenantCode());
-        loginInfo.setTenantName(currentUserOrg.getTenantName());
-        loginInfo.setOrgId(currentUserOrg.getOrgId());
-        loginInfo.setOrgCode(currentUserOrg.getOrgCode());
-        loginInfo.setOrgName(currentUserOrg.getOrgName());
-        loginInfo.setIsDefaultPwd(resolveIsDefaultPwd(userVO.getIsModify()));
-        loginInfo.setUserOrgList(userOrgList);
-        loginInfo.setRoleList(roleList);
-        loginInfo.setMenuList(menuList);
-        loginInfo.setRouterList(routerList);
-        loginInfo.setResourceList(resourceList);
-        loginInfo.setPermissionList(buildPermissionList(resourceList));
-        loginInfo.setToken(token);
+        LoginInfo loginInfo = buildLoginInfo(userVO, currentUserOrg, loginDTO.getFiscal(), token, userOrgList, snapshot);
         return Response.success(loginInfo);
     }
 
@@ -243,32 +200,15 @@ public class UserServiceImpl implements IUserService {
         roleQO.setTenantId(currentUserOrg.getTenantId());
         roleQO.setOrgId(currentUserOrg.getOrgId());
         List<RoleVO> roleList = iRoleService.selectByUserCode(roleQO);
-        List<AuthResourceVO> resourceList = selectResources(roleList, currentUserOrg.getTenantId(),
-                currentUserOrg.getOrgId(), switchContextDTO.getFiscal());
-        refreshLoginPermissionCache(userVO, currentUserOrg, switchContextDTO.getFiscal(), resourceList);
-        List<MenuVO> menuList = selectMenus(roleList, currentUserOrg.getTenantId(),
-                currentUserOrg.getOrgId(), switchContextDTO.getFiscal());
-        List<RouterVO> routerList = selectRouters(roleList, currentUserOrg.getTenantId(),
-                currentUserOrg.getOrgId(), switchContextDTO.getFiscal());
+        LoginPermissionSnapshotVO snapshot = loginPermissionAssembler.assemble(
+                currentUserOrg, switchContextDTO.getFiscal(), roleList);
+        refreshLoginPermissionCache(userVO, currentUserOrg, switchContextDTO.getFiscal(), snapshot);
 
-        LoginInfo loginInfo = new LoginInfo();
-        loginInfo.setUserId(userVO.getUserId());
-        loginInfo.setUserName(userVO.getUserName());
-        loginInfo.setFiscal(String.valueOf(switchContextDTO.getFiscal()));
-        loginInfo.setTenantId(currentUserOrg.getTenantId());
-        loginInfo.setTenantCode(currentUserOrg.getTenantCode());
-        loginInfo.setTenantName(currentUserOrg.getTenantName());
-        loginInfo.setOrgId(currentUserOrg.getOrgId());
-        loginInfo.setOrgCode(currentUserOrg.getOrgCode());
-        loginInfo.setOrgName(currentUserOrg.getOrgName());
-        loginInfo.setIsDefaultPwd(resolveIsDefaultPwd(userVO.getIsModify()));
-        loginInfo.setUserOrgList(userOrgDao.selectByUserId(userId));
-        loginInfo.setRoleList(roleList);
-        loginInfo.setMenuList(menuList);
-        loginInfo.setRouterList(routerList);
-        loginInfo.setResourceList(resourceList);
-        loginInfo.setPermissionList(buildPermissionList(resourceList));
-        loginInfo.setToken(StpUtil.getTokenValue());
+        log.info("User context switched, userId={}, tenantId={}, orgId={}, fiscal={}",
+                userId, currentUserOrg.getTenantId(), currentUserOrg.getOrgId(), switchContextDTO.getFiscal());
+
+        LoginInfo loginInfo = buildLoginInfo(userVO, currentUserOrg, switchContextDTO.getFiscal(),
+                StpUtil.getTokenValue(), userOrgDao.selectByUserId(userId), snapshot);
         return Response.success(loginInfo);
     }
 
@@ -310,48 +250,36 @@ public class UserServiceImpl implements IUserService {
      * <p>数据库授权关系仍是事实源；缓存仅用于请求期快速判断。</p>
      */
     private void refreshLoginPermissionCache(UserVO userVO, UserOrgVO currentUserOrg,
-                                             Integer fiscal, List<AuthResourceVO> resourceList) {
-        String userId = userVO.getUserId();
-        String profileKey = SatokenConstant.USER_PROFILE_CACHE_PREFIX + userId;
-        String apiKey = "peach:security:user:api-resources:" + userId;
-        String buttonKey = "peach:security:user:button-resources:" + userId;
-        stringRedisTemplate.delete(profileKey);
-        stringRedisTemplate.delete(apiKey);
-        stringRedisTemplate.delete(buttonKey);
+                                             Integer fiscal, LoginPermissionSnapshotVO snapshot) {
+        loginPermissionCacheRefresher.writeCache(userVO, currentUserOrg, fiscal, snapshot);
+    }
 
-        Map<String, String> profile = new LinkedHashMap<>();
-        profile.put(SatokenConstant.USER_PROFILE_FIELD_USER_ID, userId);
-        profile.put(SatokenConstant.USER_PROFILE_FIELD_USER_CODE, userVO.getUserCode());
-        profile.put(SatokenConstant.USER_PROFILE_FIELD_USER_NAME, userVO.getUserName());
-        profile.put(SatokenConstant.USER_PROFILE_FIELD_TENANT_ID, currentUserOrg.getTenantId());
-        profile.put(SatokenConstant.USER_PROFILE_FIELD_TENANT_NAME, currentUserOrg.getTenantName());
-        profile.put(SatokenConstant.USER_PROFILE_FIELD_ORG_ID, currentUserOrg.getOrgId());
-        profile.put(SatokenConstant.USER_PROFILE_FIELD_ORG_CODE, currentUserOrg.getOrgCode());
-        profile.put(SatokenConstant.USER_PROFILE_FIELD_ORG_NAME, currentUserOrg.getOrgName());
-        profile.put(SatokenConstant.USER_PROFILE_FIELD_FISCAL, fiscal == null ? "" : String.valueOf(fiscal));
-        profile.put(SatokenConstant.USER_PROFILE_FIELD_CONTEXT_VERSION, "1");
-        stringRedisTemplate.opsForHash().putAll(profileKey, profile);
-
-        Set<String> apiResources = new LinkedHashSet<>();
-        Set<String> buttonResources = new LinkedHashSet<>();
-        if (!CollectionUtils.isEmpty(resourceList)) {
-            for (AuthResourceVO resource : resourceList) {
-                if (resource == null || StringUtil.isBlank(resource.getResourceCode())) {
-                    continue;
-                }
-                if ("API".equalsIgnoreCase(resource.getOpType())) {
-                    apiResources.add(resource.getResourceCode());
-                } else if ("BUTTON".equalsIgnoreCase(resource.getOpType())) {
-                    buttonResources.add(resource.getResourceCode());
-                }
-            }
-        }
-        if (!apiResources.isEmpty()) {
-            stringRedisTemplate.opsForSet().add(apiKey, apiResources.toArray(new String[0]));
-        }
-        if (!buttonResources.isEmpty()) {
-            stringRedisTemplate.opsForSet().add(buttonKey, buttonResources.toArray(new String[0]));
-        }
+    private LoginInfo buildLoginInfo(UserVO userVO,
+                                     UserOrgVO currentUserOrg,
+                                     Integer fiscal,
+                                     String token,
+                                     List<UserOrgVO> userOrgList,
+                                     LoginPermissionSnapshotVO snapshot) {
+        LoginInfo loginInfo = new LoginInfo();
+        loginInfo.setUserId(userVO.getUserId());
+        loginInfo.setUserName(userVO.getUserName());
+        loginInfo.setFiscal(String.valueOf(fiscal));
+        loginInfo.setTenantId(currentUserOrg.getTenantId());
+        loginInfo.setTenantCode(currentUserOrg.getTenantCode());
+        loginInfo.setTenantName(currentUserOrg.getTenantName());
+        loginInfo.setOrgId(currentUserOrg.getOrgId());
+        loginInfo.setOrgCode(currentUserOrg.getOrgCode());
+        loginInfo.setOrgName(currentUserOrg.getOrgName());
+        loginInfo.setIsDefaultPwd(resolveIsDefaultPwd(userVO.getIsModify()));
+        loginInfo.setUserOrgList(userOrgList);
+        loginInfo.setRoleList(snapshot.getRoleList());
+        loginInfo.setMenuList(snapshot.getMenuList());
+        loginInfo.setRouterList(snapshot.getRouterList());
+        loginInfo.setResourceList(snapshot.getResourceList());
+        loginInfo.setPermissionList(snapshot.getPermissionList());
+        loginInfo.setPermissionSnapshot(snapshot);
+        loginInfo.setToken(token);
+        return loginInfo;
     }
 
     private Integer resolveIsDefaultPwd(Integer isModify) {
@@ -359,150 +287,6 @@ public class UserServiceImpl implements IUserService {
             return null;
         }
         return isModify == 0 ? 1 : 0;
-    }
-
-    private List<AuthResourceVO> selectResources(List<RoleVO> roleList, String tenantId, String orgId, Integer fiscal) {
-        Map<String, AuthResourceVO> resourceMap = new LinkedHashMap<>();
-        if (CollectionUtils.isEmpty(roleList)) {
-            return List.of();
-        }
-        for (RoleVO role : roleList) {
-            mergeResourcesFromRole(resourceMap, role, tenantId, orgId, fiscal);
-        }
-        return new ArrayList<>(resourceMap.values());
-    }
-
-    private void mergeResourcesFromRole(Map<String, AuthResourceVO> resourceMap, RoleVO role,
-                                        String tenantId, String orgId, Integer fiscal) {
-        if (role == null || StringUtil.isBlank(role.getRoleCode())) {
-            return;
-        }
-        AuthResourceDO query = new AuthResourceDO();
-        query.setTenantId(tenantId);
-        query.setOrgId(orgId);
-        query.setPartyCode(role.getRoleCode());
-        query.setFiscal(fiscal);
-        query.setIsDelete(PubCommonConst.LOGIC_FLASE);
-        List<AuthResourceVO> resources = authResourceDao.select(query);
-        if (CollectionUtils.isEmpty(resources)) {
-            return;
-        }
-        for (AuthResourceVO resource : resources) {
-            if (resource == null || StringUtil.isBlank(resource.getResourceCode())) {
-                continue;
-            }
-            String key = resource.getOpType() + ":" + resource.getResourceCode();
-            resourceMap.put(key, resource);
-        }
-    }
-
-    private List<String> buildPermissionList(List<AuthResourceVO> resourceList) {
-        if (CollectionUtils.isEmpty(resourceList)) {
-            return List.of();
-        }
-        Set<String> permissionSet = new LinkedHashSet<>();
-        for (AuthResourceVO resourceVO : resourceList) {
-            if (resourceVO != null && StringUtil.isNotBlank(resourceVO.getResourceCode())) {
-                permissionSet.add(resourceVO.getResourceCode());
-            }
-        }
-        return new ArrayList<>(permissionSet);
-    }
-
-    private List<MenuVO> selectMenus(List<RoleVO> roleList, String tenantId, String orgId, Integer fiscal) {
-        Set<String> funcCodeSet = collectFuncCodesFromRoles(roleList, tenantId, orgId, fiscal);
-        Map<String, MenuVO> menuMap = new LinkedHashMap<>();
-        if (!funcCodeSet.isEmpty()) {
-            for (String funcCode : funcCodeSet) {
-                MenuDO menuDO = buildMenuQuery(tenantId, funcCode);
-                List<MenuVO> menuVOList = menuDao.select(menuDO);
-                if (CollectionUtils.isEmpty(menuVOList)) {
-                    continue;
-                }
-                for (MenuVO menuVO : menuVOList) {
-                    if (menuVO != null && StringUtil.isNotBlank(menuVO.getMenuId())) {
-                        menuMap.put(menuVO.getMenuId(), menuVO);
-                    }
-                }
-            }
-            return new ArrayList<>(menuMap.values());
-        }
-
-        return List.of();
-    }
-
-    private List<RouterVO> selectRouters(List<RoleVO> roleList, String tenantId, String orgId, Integer fiscal) {
-        Set<String> routerCodeSet = collectFuncCodesFromRoles(roleList, tenantId, orgId, fiscal);
-        Map<String, RouterVO> routerMap = new LinkedHashMap<>();
-        if (!routerCodeSet.isEmpty()) {
-            for (String routerCode : routerCodeSet) {
-                RouterDO routerDO = buildRouterQuery(tenantId, routerCode);
-                List<RouterVO> routerVOList = routerDao.select(routerDO);
-                if (CollectionUtils.isEmpty(routerVOList)) {
-                    continue;
-                }
-                for (RouterVO routerVO : routerVOList) {
-                    if (routerVO != null && StringUtil.isNotBlank(routerVO.getRouterId())) {
-                        routerMap.put(routerVO.getRouterId(), routerVO);
-                    }
-                }
-            }
-            return new ArrayList<>(routerMap.values());
-        }
-
-        return List.of();
-    }
-
-    private Set<String> collectFuncCodesFromRoles(List<RoleVO> roleList, String tenantId, String orgId, Integer fiscal) {
-        Set<String> funcCodeSet = new LinkedHashSet<>();
-        if (CollectionUtils.isEmpty(roleList)) {
-            return funcCodeSet;
-        }
-        for (RoleVO roleVO : roleList) {
-            addFuncCodesFromRole(funcCodeSet, roleVO, tenantId, orgId, fiscal);
-        }
-        return funcCodeSet;
-    }
-
-    private void addFuncCodesFromRole(Set<String> funcCodeSet, RoleVO roleVO,
-                                      String tenantId, String orgId, Integer fiscal) {
-        if (roleVO == null || StringUtil.isBlank(roleVO.getRoleCode())) {
-            return;
-        }
-        AuthFunctionDO authFunctionVOQO = new AuthFunctionDO();
-        authFunctionVOQO.setTenantId(tenantId);
-        authFunctionVOQO.setOrgId(orgId);
-        authFunctionVOQO.setFiscal(fiscal);
-        authFunctionVOQO.setPartyCode(roleVO.getRoleCode());
-        authFunctionVOQO.setIsDelete(PubCommonConst.LOGIC_FLASE);
-        List<AuthFunctionVO> authFunctionVOList = authFunctionDao.select(authFunctionVOQO);
-        if (CollectionUtils.isEmpty(authFunctionVOList)) {
-            return;
-        }
-        for (AuthFunctionVO authFunctionVO : authFunctionVOList) {
-            if (authFunctionVO != null && StringUtil.isNotBlank(authFunctionVO.getFuncCode())) {
-                funcCodeSet.add(authFunctionVO.getFuncCode());
-            }
-        }
-    }
-
-    private MenuDO buildMenuQuery(String tenantId, String funcCode) {
-        MenuDO menuDO = new MenuDO();
-        menuDO.setAppId(INIT_APP_ID);
-        menuDO.setTenantId(tenantId);
-        menuDO.setFuncCode(funcCode);
-        menuDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
-        menuDO.setIsShow(1);
-        menuDO.setIsDisable(0);
-        return menuDO;
-    }
-
-    private RouterDO buildRouterQuery(String tenantId, String routerCode) {
-        RouterDO routerDO = new RouterDO();
-        routerDO.setAppId(INIT_APP_ID);
-        routerDO.setTenantId(tenantId);
-        routerDO.setRouterCode(routerCode);
-        return routerDO;
     }
 
     private UserOrgVO resolveUserOrg(LoginDTO loginDTO, UserVO userVO, List<UserOrgVO> userOrgList) {

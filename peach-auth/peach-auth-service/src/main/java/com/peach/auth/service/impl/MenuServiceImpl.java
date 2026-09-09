@@ -55,6 +55,8 @@ public class MenuServiceImpl implements IMenuService {
         MenuDO menuDO = new MenuDO();
         BeanUtils.copyProperties(menuDTO, menuDO);
         menuDO.fillCreateTime(null);
+        menuDO.setAppId("111");
+        menuDO.setTenantId("111");
         Optional.ofNullable(menuDO.getIsDelete()).ifPresent(menuDO::setIsDelete);
         if (menuDO.getIsDelete() == null) {
             menuDO.setIsDelete(PubCommonConst.LOGIC_FLASE);

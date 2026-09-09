@@ -478,4 +478,20 @@
             </if>
         </where>
     </select>
+
+    <select id="selectByFuncCodes" resultType="com.peach.auth.vo.MenuVO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_MENU
+        WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+          AND APP_ID = #{appId,jdbcType=VARCHAR}
+          AND IS_DELETE = 0
+          AND IS_DISABLE = 0
+          AND IS_SHOW = 1
+          AND FUNC_CODE IN
+        <foreach collection="funcCodes" item="item" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+        ORDER BY SORT_NO ASC, MENU_SEQ ASC
+    </select>
 </mapper>

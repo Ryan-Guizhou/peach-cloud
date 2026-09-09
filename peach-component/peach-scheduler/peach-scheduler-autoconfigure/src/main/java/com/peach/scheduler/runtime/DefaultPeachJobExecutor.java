@@ -2,6 +2,7 @@ package com.peach.scheduler.runtime;
 
 import org.springframework.stereotype.Indexed;
 
+import com.peach.common.util.desensitize.DesensitizeUtil;
 import com.peach.scheduler.config.PeachSchedulerProperties;
 import com.peach.scheduler.core.JobContext;
 import com.peach.scheduler.core.JobHandler;
@@ -21,7 +22,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,9 +38,6 @@ import org.slf4j.LoggerFactory;
 @Indexed
 public class DefaultPeachJobExecutor implements PeachJobExecutor {
     private static final Logger log = LoggerFactory.getLogger(DefaultPeachJobExecutor.class);
-    private static final Pattern SENSITIVE_VALUE_PATTERN = Pattern.compile(
-            "(?i)(password|passwd|token|secret|access[_-]?key|secret[_-]?key|credential)(\\s*[:=]\\s*)[^,;\\s}\\]]+");
-    private static final Pattern BEARER_PATTERN = Pattern.compile("(?i)Bearer\\s+[^,;\\s]+");
     private final JobRegistry registry;
     private final ThreadPoolManager threadPoolManager;
     private final ExecutionLeaseClient leaseClient;
@@ -94,7 +91,9 @@ public class DefaultPeachJobExecutor implements PeachJobExecutor {
             if (result == null || !result.isSuccess()) {
                 eventBuilder.status(ExecutionResultStatus.FAILED)
                         .resultCode(result == null ? "NULL_RESULT" : result.getCode())
-                        .errorMessage(sanitize(result == null ? "Handler returned null result" : result.getMessage()));
+                        .errorMessage(DesensitizeUtil.sanitizeErrorMessage(
+                                result == null ? "Handler returned null result" : result.getMessage(),
+                                Math.max(64, properties.getExecutor().getMaxErrorMessageLength())));
             } else {
                 eventBuilder.status(ExecutionResultStatus.SUCCEEDED)
                         .resultCode(result.getCode());
@@ -113,7 +112,8 @@ public class DefaultPeachJobExecutor implements PeachJobExecutor {
             Throwable cause = ex.getCause() == null ? ex : ex.getCause();
             eventBuilder.status(ExecutionResultStatus.FAILED)
                     .resultCode(cause.getClass().getSimpleName())
-                    .errorMessage(sanitize(cause.getMessage()));
+                    .errorMessage(DesensitizeUtil.sanitizeErrorMessage(cause.getMessage(),
+                            Math.max(64, properties.getExecutor().getMaxErrorMessageLength())));
             log.error("Scheduler execution failed, executionId={}, jobCode={}, errorType={}",
                     command.executionId(), command.jobCode(), cause.getClass().getName());
         }
@@ -152,17 +152,6 @@ public class DefaultPeachJobExecutor implements PeachJobExecutor {
         } catch (Exception ex) {
             return "unknown-instance";
         }
-    }
-
-    private String sanitize(String message) {
-        if (message == null) {
-            return null;
-        }
-        String normalized = message.replace('\r', ' ').replace('\n', ' ');
-        normalized = SENSITIVE_VALUE_PATTERN.matcher(normalized).replaceAll("$1$2***");
-        normalized = BEARER_PATTERN.matcher(normalized).replaceAll("Bearer ***");
-        int max = Math.max(64, properties.getExecutor().getMaxErrorMessageLength());
-        return normalized.length() <= max ? normalized : normalized.substring(0, max);
     }
 
     private static boolean blank(String value) {

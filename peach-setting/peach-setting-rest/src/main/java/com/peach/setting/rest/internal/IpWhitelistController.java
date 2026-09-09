@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.common.response.Response;
-import com.peach.setting.comon.enums.IpWhitelistGroup;
+import com.peach.setting.common.enums.IpWhitelistGroup;
 import com.peach.setting.dto.IpWhitelistDTO;
 import com.peach.setting.qo.IpWhitelistQO;
 import com.peach.setting.service.IIpWhitelistService;

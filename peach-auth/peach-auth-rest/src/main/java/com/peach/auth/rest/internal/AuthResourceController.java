@@ -3,7 +3,9 @@ package com.peach.auth.rest.internal;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
+import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.dto.RoleResourceAuthDTO;
+import com.peach.auth.enums.UserLogEnum;
 import com.peach.auth.qo.AuthResourceQO;
 import com.peach.auth.service.IAuthResourceService;
 import com.peach.auth.vo.AuthResourceVO;
@@ -51,6 +53,9 @@ public class AuthResourceController {
 
     @PostMapping("/saveRoleResources")
     @Operation(summary = "保存角色资源授权")
+    @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
+            optLevel = UserLogEnum.LogLevel.INFO,
+            optContent = "'保存角色资源授权,角色编码:['+#p0.partyCode+']'")
     public Response saveRoleResources(@Validated @RequestBody RoleResourceAuthDTO roleResourceAuthDTO) {
         authResourceService.saveRoleResources(roleResourceAuthDTO);
         return Response.success();

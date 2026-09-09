@@ -50,7 +50,7 @@ public class OrganizationServiceImpl implements IOrganizationService {
     @Override
     public OrganizationVO selectById(String id) {
         if (StringUtil.isBlank(id)) {
-            log.info("id is blank");
+            log.debug("Organization selectById skipped: blank id");
             return new OrganizationVO();
         }
         return organizationDao.selectById(id);
@@ -76,7 +76,7 @@ public class OrganizationServiceImpl implements IOrganizationService {
     @Override
     public void delById(String id) {
         if (StringUtil.isBlank(id)) {
-            log.info("id is blank");
+            log.debug("Organization delById skipped: blank id");
             return;
         }
         organizationDao.delById(id);

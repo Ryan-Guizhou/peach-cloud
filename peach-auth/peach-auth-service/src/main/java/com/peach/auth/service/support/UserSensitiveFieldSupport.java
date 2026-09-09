@@ -3,9 +3,10 @@ package com.peach.auth.service.support;
 import com.peach.auth.common.SensitiveFieldCipher;
 import com.peach.auth.entity.UserDO;
 import com.peach.auth.vo.UserVO;
+import com.peach.common.util.desensitize.DesensitizeUtil;
 
 /**
- * 用户敏感字段加解密辅助。
+ * 用户敏感字段加解密与展示脱敏辅助。
  */
 public final class UserSensitiveFieldSupport {
 
@@ -29,5 +30,25 @@ public final class UserSensitiveFieldSupport {
         user.setMobilePhone(SensitiveFieldCipher.decrypt(user.getMobilePhone()));
         user.setEmail(SensitiveFieldCipher.decrypt(user.getEmail()));
         user.setIdentityCode(SensitiveFieldCipher.decrypt(user.getIdentityCode()));
+    }
+
+    /**
+     * 对展示字段脱敏，调用前需确保字段已解密。
+     */
+    public static void maskUserFields(UserVO user) {
+        if (user == null) {
+            return;
+        }
+        user.setMobilePhone(DesensitizeUtil.maskMobile(user.getMobilePhone()));
+        user.setEmail(DesensitizeUtil.maskEmail(user.getEmail()));
+        user.setIdentityCode(DesensitizeUtil.maskIdCard(user.getIdentityCode()));
+    }
+
+    /**
+     * 解密后按展示规则脱敏。
+     */
+    public static void decryptAndMaskUserFields(UserVO user) {
+        decryptUserFields(user);
+        maskUserFields(user);
     }
 }

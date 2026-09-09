@@ -1,5 +1,6 @@
 package com.peach;
 
+import com.peach.common.loader.CustomServiceLoader;
 import com.peach.config.StorageProperties;
 import com.peach.manager.impl.DefaultCloudStorageManagerService;
 import com.peach.manager.support.RuntimeStorageProviderFactory;
@@ -24,7 +25,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 
 /**
  * Peach存储自动配置。
@@ -45,18 +45,17 @@ import java.util.ServiceLoader;
 public class PeachStorageAutoConfiguration {
 
     /**
-     * 通过 Java SPI 加载所有 provider 工厂。
+     * 通过 {@link CustomServiceLoader} 加载所有 provider 工厂。
      *
      * @return provider 工厂列表
      */
     @Bean
     @ConditionalOnMissingBean(name = "storageProviderFactories")
     public List<StorageProviderFactory> storageProviderFactories() {
-        List<StorageProviderFactory> factories = new ArrayList<>();
-        ServiceLoader.load(StorageProviderFactory.class).forEach(factories::add);
+        List<StorageProviderFactory> factories = new ArrayList<>(CustomServiceLoader.load(StorageProviderFactory.class));
         if (factories.isEmpty()) {
             log.error("No storage providers found. Please check your configuration.");
-            throw new IllegalStateException("No StorageProviderFactory loaded by Java SPI. "
+            throw new IllegalStateException("No StorageProviderFactory loaded by SPI. "
                     + "Please check META-INF/services/com.peach.storage.spi.StorageProviderFactory");
         }
         List<String> storageTypes = new ArrayList<String>();

@@ -8,15 +8,14 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.dao.AuthResourceDao;
 import com.peach.auth.dto.RoleResourceAuthDTO;
-import com.peach.auth.entity.AuthLogDO;
 import com.peach.auth.entity.AuthResourceDO;
 import com.peach.auth.qo.AuthResourceQO;
-import com.peach.auth.service.IAuthLogService;
 import com.peach.auth.service.IAuthResourceService;
+import com.peach.auth.service.support.AuthLogSupport;
+import com.peach.auth.service.support.LoginPermissionCacheRefresher;
 import com.peach.auth.vo.AuthResourceVO;
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.constant.PubCommonConst;
-import com.peach.common.util.DateUtil;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
@@ -42,7 +41,9 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
 
     private final AuthResourceDao authResourceDao;
 
-    private final IAuthLogService authLogService;
+    private final AuthLogSupport authLogSupport;
+
+    private final LoginPermissionCacheRefresher loginPermissionCacheRefresher;
 
     @Override
     public PageInfo<AuthResourceVO> pageList(AuthResourceQO authResourceQO) {
@@ -68,8 +69,12 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
         List<AuthResourceDO> resourceList = new ArrayList<>();
         if (!CollectionUtils.isEmpty(roleResourceAuthDTO.getResourceList())) {
             for (RoleResourceAuthDTO.RoleResourceItemDTO itemDTO : roleResourceAuthDTO.getResourceList()) {
+                if (itemDTO == null || StringUtil.isBlank(itemDTO.getFuncCode())
+                        || StringUtil.isBlank(itemDTO.getResourceCode())) {
+                    continue;
+                }
                 AuthResourceDO authResourceDO = new AuthResourceDO();
-                authResourceDO.setResourceId(IDGeneratorUtil.generateUuid());
+                authResourceDO.setResourceId(UniqueIdFacade.nextId());
                 authResourceDO.setTenantId(roleResourceAuthDTO.getTenantId());
                 authResourceDO.setOrgId(roleResourceAuthDTO.getOrgId());
                 authResourceDO.setPartyCode(roleResourceAuthDTO.getPartyCode());
@@ -87,7 +92,19 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
         if (!resourceList.isEmpty()) {
             authResourceDao.batchInsert(resourceList);
         }
-        recordAuthLog(roleResourceAuthDTO, resourceList.size());
+
+        authLogSupport.recordRoleGrant(
+                roleResourceAuthDTO.getTenantId(),
+                roleResourceAuthDTO.getOrgId(),
+                roleResourceAuthDTO.getPartyCode(),
+                "角色资源授权，角色编码：" + roleResourceAuthDTO.getPartyCode()
+                        + "，资源数量：" + resourceList.size());
+
+        loginPermissionCacheRefresher.refreshUsersByRole(
+                roleResourceAuthDTO.getTenantId(),
+                roleResourceAuthDTO.getOrgId(),
+                roleResourceAuthDTO.getPartyCode(),
+                roleResourceAuthDTO.getFiscal());
     }
 
     private AuthResourceDO buildQuery(AuthResourceQO authResourceQO) {
@@ -105,18 +122,6 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
         authResourceDO.setFiscal(authResourceQO.getFiscal());
         authResourceDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
         return authResourceDO;
-    }
-
-    private void recordAuthLog(RoleResourceAuthDTO roleResourceAuthDTO, int resourceCount) {
-        AuthLogDO authLogDO = new AuthLogDO();
-        authLogDO.setTenantId(roleResourceAuthDTO.getTenantId());
-        authLogDO.setOrgId(roleResourceAuthDTO.getOrgId());
-        authLogDO.setOperatorUserId(currentOperator());
-        authLogDO.setUserCode(roleResourceAuthDTO.getPartyCode());
-        authLogDO.setAuthDescribe("角色资源授权，角色编码：" + roleResourceAuthDTO.getPartyCode()
-                + "，资源数量：" + resourceCount);
-        authLogDO.setOperatTime(DateUtil.nowTime());
-        authLogService.saveLog(authLogDO);
     }
 
     private String currentOperator() {

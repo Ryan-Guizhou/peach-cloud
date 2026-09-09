@@ -3,6 +3,7 @@ package com.peach.fileservice.service.impl;
 import org.springframework.stereotype.Indexed;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+import com.peach.common.util.desensitize.DesensitizeUtil;
 import com.peach.common.util.StringUtil;
 import com.peach.common.util.encrypt.EncryptConst;
 import com.peach.common.util.encrypt.EncryptFactory;
@@ -112,7 +113,7 @@ public class CloudStorageInstanceSupport {
         result.setPrefix(instanceDO.getPrefix());
         result.setAccessKey(instanceDO.getAccessKey());
         result.setSecretKey(instanceDO.getSecretKey());
-        result.setSecretKeyMasked(maskSecret(instanceDO.getSecretKey()));
+        result.setSecretKeyMasked(DesensitizeUtil.maskSecret(instanceDO.getSecretKey()));
         result.setRootPath(instanceDO.getRootPath());
         result.setDomain(instanceDO.getDomain());
         result.setPathStyleAccess(instanceDO.getPathStyleAccess());
@@ -221,23 +222,4 @@ public class CloudStorageInstanceSupport {
     private static final class ExtraMapTypeReference extends TypeReference<Map<String, String>> {
     }
 
-    /**
-     * 对敏感密钥进行脱敏处理。
-     *
-     * <p>
-     * 保留密钥末尾部分字符用于页面展示，
-     * 避免完整密钥泄露。
-     * </p>
-     *
-     * @param secretKey 原始密钥
-     * @return 脱敏后的密钥
-     */
-    private String maskSecret(String secretKey) {
-        if (StringUtil.isBlank(secretKey)) {
-            return null;
-        }
-        int visible = Math.min(4, secretKey.length());
-        String suffix = secretKey.substring(secretKey.length() - visible);
-        return "****" + suffix;
-    }
 }

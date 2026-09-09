@@ -25,6 +25,7 @@ import com.peach.response.UploadResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -166,7 +167,7 @@ public class CloudStorageBrowserServiceImpl implements ICloudStorageBrowserServi
         nodeVO.setEtag(item.getEtag());
         nodeVO.setContentType(item.getContentType());
         nodeVO.setLastModified(item.getLastModified() == null ? null
-                : DateUtil.formatLocalDateTime(item.getLastModified().atZone(ZoneId.systemDefault()).toLocalDateTime()));
+                : DateUtil.formatDate(LocalDate.from(item.getLastModified().atZone(ZoneId.systemDefault()).toLocalDateTime())));
         return nodeVO;
     }
 

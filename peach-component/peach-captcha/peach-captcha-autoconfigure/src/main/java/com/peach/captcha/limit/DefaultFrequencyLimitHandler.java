@@ -1,11 +1,12 @@
 package com.peach.captcha.limit;
 
+import com.peach.captcha.key.CaptchaRedisKey;
+import com.peach.common.key.KeyBuilder;
+
 import com.peach.captcha.constant.CaptchaConst;
 import com.peach.captcha.constant.CaptchaEnum;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.service.CaptchaCacheService;
-import com.peach.common.keymanager.RedisKeyBuild;
-import com.peach.common.keymanager.RedisKeyManage;
 import com.peach.common.response.Response;
 import com.peach.common.response.StatusEnum;
 import com.peach.common.util.StringUtil;
@@ -131,8 +132,8 @@ public class DefaultFrequencyLimitHandler implements FrequencyLimitHandler {
      * @return
      */
     private String getClientCid(CaptchaVO captchaVO, String type){
-        return RedisKeyBuild
-                .createRedisKey(RedisKeyManage.CAPTCHA_REQ_LIMIT,captchaVO.getClientUid(),type)
+        return KeyBuilder
+                .from(CaptchaRedisKey.CAPTCHA_REQ_LIMIT,captchaVO.getClientUid(),type)
                 .getRealKey();
     }
     /**

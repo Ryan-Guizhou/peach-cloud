@@ -1,15 +1,16 @@
 package com.peach.captcha.factory;
 
-import com.peach.captcha.service.CaptchaCacheService;
 import com.peach.captcha.constant.CaptchaConst;
-import com.peach.captcha.service.CaptchaService;
 import com.peach.captcha.provider.CaptchaCacheProvider;
 import com.peach.captcha.provider.CaptchaServiceProvider;
+import com.peach.captcha.service.CaptchaCacheService;
+import com.peach.captcha.service.CaptchaService;
+import com.peach.common.loader.CustomServiceLoader;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -31,14 +32,14 @@ public class CaptchaServiceFactory {
     protected static final Map<String, CaptchaService> INSTANCES = new ConcurrentHashMap<>();
 
     static {
-        ServiceLoader<CaptchaCacheProvider> cacheProvider = ServiceLoader.load(CaptchaCacheProvider.class);
-        for (CaptchaCacheProvider provider : cacheProvider) {
+        List<CaptchaCacheProvider> cacheProviders = CustomServiceLoader.load(CaptchaCacheProvider.class);
+        for (CaptchaCacheProvider provider : cacheProviders) {
             PROVIDERS.put(provider.type(), provider.createCaptchaCacheService());
             log.info("Captcha autoconfig loaded captcha cache provider: [{}]", provider.type());
         }
 
-        ServiceLoader<CaptchaServiceProvider> captchaProvider = ServiceLoader.load(CaptchaServiceProvider.class);
-        for (CaptchaServiceProvider provider : captchaProvider) {
+        List<CaptchaServiceProvider> captchaProviders = CustomServiceLoader.load(CaptchaServiceProvider.class);
+        for (CaptchaServiceProvider provider : captchaProviders) {
             INSTANCES.put(provider.type(), provider.createCaptchaService());
             log.info("Captcha autoconfig loaded captcha provider: [{}]", provider.type());
         }
@@ -60,7 +61,8 @@ public class CaptchaServiceFactory {
 
     /**
      * 获取验证码服务
-     * @param type 验证码类型
+     *
+     * @param config 验证码配置
      * @return 验证码服务
      */
     public static CaptchaService getCaptchaService(Properties config) {

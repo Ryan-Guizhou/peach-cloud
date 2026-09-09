@@ -2,7 +2,7 @@ package com.peach.scheduler.service.impl;
 
 import org.springframework.stereotype.Indexed;
 
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.scheduler.service.ISchedulerHandlerService;
 import com.peach.scheduler.dao.SchedulerHandlerDao;
 import com.peach.scheduled.dto.HandlerRegistrationDTO;
@@ -44,7 +44,7 @@ public class SchedulerHandlerServiceImpl implements ISchedulerHandlerService {
     public void register(HandlerRegistrationDTO request) {
         for (HandlerRegistrationDTO.Item item : request.getHandlers()) {
             SchedulerHandlerDO handler = new SchedulerHandlerDO();
-            handler.setId(IDGeneratorUtil.generateUuid());
+            handler.setId(UniqueIdFacade.nextId());
             handler.setApplicationName(request.getApplicationName());
             handler.setHandlerName(item.getHandlerName());
             handler.setDescription(item.getDescription());

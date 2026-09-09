@@ -2,7 +2,7 @@ package com.peach.scheduler.service;
 
 import org.springframework.stereotype.Indexed;
 
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.redission.distrbutedlock.support.DistributedLockTemplate;
 import com.peach.scheduled.common.ExecutionEvent;
 import com.peach.scheduled.common.ExecutionState;
@@ -102,7 +102,7 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
         if (job == null || job.getState() == JobState.DELETED) {
             throw new IllegalArgumentException("Scheduler job not found: " + jobId);
         }
-        String occurrenceKey = "manual:" + jobId + ":" + IDGeneratorUtil.generateUuid();
+        String occurrenceKey = "manual:" + jobId + ":" + UniqueIdFacade.nextId();
         String executionId = createOccurrence(job, TriggerType.MANUAL, Instant.now(), occurrenceKey);
         if (executionId != null) {
             operationLogDao.insertSuccess("RUN", "JOB", String.valueOf(jobId), operatorId, null);
@@ -177,7 +177,7 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
             }
 
             SchedulerExecutionDO execution = new SchedulerExecutionDO();
-            execution.setExecutionId(IDGeneratorUtil.generateUuid());
+            execution.setExecutionId(UniqueIdFacade.nextId());
             execution.setJobId(job.getId());
             execution.setJobCode(job.getJobCode());
             execution.setOccurrenceKey(occurrenceKey);
@@ -186,7 +186,7 @@ public class SchedulerTriggerService implements ScheduleTriggerHandler {
             execution.setState(ExecutionState.CREATED);
             execution.setAttempt(1);
             execution.setVersion(0L);
-            execution.setTraceId(IDGeneratorUtil.generateUuid());
+            execution.setTraceId(UniqueIdFacade.nextId());
 
             if (executionDao.insertIgnore(execution) != 1) {
                 log.info("Duplicate scheduler occurrence ignored, jobCode={}, occurrenceKey={}",

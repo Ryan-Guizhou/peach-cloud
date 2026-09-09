@@ -14,4 +14,11 @@
         <artifactId>peach-scheduled</artifactId>
         <version>${revision}</version>
     </parent>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-common</artifactId>
+        </dependency>
+    </dependencies>
 </project>

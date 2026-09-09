@@ -6,11 +6,10 @@ import com.alibaba.fastjson.JSON;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.auth.vo.UserOperLogVO;
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.constant.PubCommonConst;
 import com.peach.common.response.Response;
 import com.peach.common.util.DateUtil;
-import com.peach.common.util.IpUtil;
 import com.peach.common.util.StringUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -62,7 +61,7 @@ public class TransferUtil {
 
         DiviceInfo diviceInfo = getDiviceInfo(request);
         UserOperLogVO userOperLogVO = new UserOperLogVO();
-        userOperLogVO.setId(IDGeneratorUtil.generateUuid());
+        userOperLogVO.setId(UniqueIdFacade.nextId());
         userOperLogVO.setOptTypeCode(optTypeCode);
         userOperLogVO.setModuleCode(moduleCode);
         //从登录状态中获取
@@ -154,7 +153,7 @@ public class TransferUtil {
      * @CreateTime 2026/3/20 16:58
      */
 
-    
+
     @Data
     public static class DiviceInfo {
 

@@ -1,13 +1,11 @@
 package com.peach.auth.service.impl;
 
 import com.peach.satoken.context.SecurityContextHolder;
-import com.peach.satoken.support.UserContextSupport;
 import jakarta.annotation.Nullable;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Indexed;
-import cn.dev33.satoken.stp.StpUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.peach.auth.common.SensitiveFieldCipher;
 import com.peach.auth.service.support.UserSensitiveFieldSupport;
@@ -20,7 +18,7 @@ import com.peach.auth.service.IUserProfileService;
 import com.peach.auth.vo.AvatarHistoryVO;
 import com.peach.auth.vo.UserProfileVO;
 import com.peach.auth.vo.UserVO;
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.response.Response;
 import com.peach.common.util.DateUtil;
 import com.peach.common.util.StringUtil;
@@ -140,7 +138,7 @@ public class UserProfileServiceImpl implements IUserProfileService {
                 }
 
                 UserAvatarHistoryDO historyDO = new UserAvatarHistoryDO();
-                historyDO.setAvatarHistoryId(IDGeneratorUtil.generateUuid());
+                historyDO.setAvatarHistoryId(UniqueIdFacade.nextId());
                 historyDO.setUserId(userId);
                 historyDO.setFileId(uploaded.getFileId());
                 historyDO.setSortNo(1);

@@ -2,6 +2,7 @@ package com.peach.scheduler.service;
 
 import org.springframework.stereotype.Indexed;
 
+import com.peach.common.util.desensitize.DesensitizeUtil;
 import com.peach.scheduled.common.JobState;
 import com.peach.scheduler.dao.SchedulerJobDao;
 import com.peach.scheduled.entity.SchedulerJobDO;
@@ -50,7 +51,7 @@ public class SchedulerReconciler {
                 apply(job);
                 jobDao.markSyncSuccess(job.getId(), job.getScheduleVersion());
             } catch (RuntimeException ex) {
-                String message = sanitize(ex.getMessage(), ex.getClass().getSimpleName());
+                String message = DesensitizeUtil.sanitizeErrorMessage(ex.getMessage(), 1000, ex.getClass().getSimpleName());
                 jobDao.markSyncFailure(job.getId(), job.getScheduleVersion(), message);
                 log.error("Scheduler provider reconciliation failed, jobCode={}, scheduleVersion={}, errorType={}",
                         job.getJobCode(), job.getScheduleVersion(), ex.getClass().getName(), ex);
@@ -85,10 +86,5 @@ public class SchedulerReconciler {
         definition.setParameters(job.getParametersJson());
         definition.setEnabled(job.getState() == JobState.ENABLED);
         return definition;
-    }
-
-    private String sanitize(String message, String fallback) {
-        String value = message == null ? fallback : message.replace('\r', ' ').replace('\n', ' ');
-        return value.length() <= 1000 ? value : value.substring(0, 1000);
     }
 }

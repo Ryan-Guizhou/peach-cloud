@@ -13,3 +13,8 @@ sa-token:
   is-read-header: true
   is-read-cookie: false
   is-log: true
+
+peach:
+  captcha:
+    cache-type: REDIS
+    service-type: BLOCKPUZZLE

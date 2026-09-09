@@ -1,5 +1,6 @@
 package com.peach.redission.delayqueue.core;
 
+import com.peach.common.util.desensitize.DesensitizeUtil;
 import com.peach.redission.delayqueue.context.DelayQueuePart;
 import lombok.extern.slf4j.Slf4j;
 
@@ -135,22 +136,10 @@ public class DelayConsumerQueue extends DelayBaseQueue{
                 if (retryCount > maxRetryAttempts) {
                     log.error("Message processing failed after {} attempts for topic: {}. Moving to dead letter queue.", 
                             maxRetryAttempts, getTopicName(), e);
-                    deadLetterQueueManager.moveToDeadLetterQueue(getTopicName(), maskSensitiveContent(content), e, retryCount);
+                    deadLetterQueueManager.moveToDeadLetterQueue(getTopicName(), DesensitizeUtil.maskForLog(content), e, retryCount);
                 }
             }
         }
-    }
-    
-    /**
-     * 掩盖敏感内容，避免记录到日志中
-     * 
-     * @param content 原始内容
-     * @return 掩盖后的内容
-     */
-    private String maskSensitiveContent(String content) {
-        // 简单实现：只记录内容长度，避免敏感信息泄露
-        // 在实际应用中，可以根据具体内容格式进行更精确的掩盖
-        return "[CONTENT_LENGTH:" + (content != null ? content.length() : 0) + "]";
     }
     
     private String getTopicName() {

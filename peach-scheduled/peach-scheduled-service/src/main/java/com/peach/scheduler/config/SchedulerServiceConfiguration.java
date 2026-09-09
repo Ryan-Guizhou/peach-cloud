@@ -3,6 +3,7 @@ package com.peach.scheduler.config;
 import org.springframework.stereotype.Indexed;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.peach.redission.distrbutedlock.support.DistributedLockTemplate;
 import com.peach.rocket.outbox.MqOutboxPublisher;
 import com.peach.scheduler.dao.SchedulerExecutionAttemptDao;
 import com.peach.scheduler.dao.SchedulerExecutionDao;
@@ -128,6 +129,7 @@ public class SchedulerServiceConfiguration {
      * @param lifecycleService lifecycle Service。
      * @param dispatcher dispatcher。
      * @param operationLogDao operation Log Dao。
+     * @param distributedLockTemplate 分布式锁模板。
      * @return 执行结果。
      */
     @Bean
@@ -136,9 +138,10 @@ public class SchedulerServiceConfiguration {
             SchedulerExecutionDao executionDao,
             SchedulerExecutionLifecycleService lifecycleService,
             JobDispatcher dispatcher,
-            SchedulerOperationLogDao operationLogDao) {
+            SchedulerOperationLogDao operationLogDao,
+            DistributedLockTemplate distributedLockTemplate) {
         return new SchedulerTriggerService(
-                jobDao, executionDao, lifecycleService, dispatcher, operationLogDao);
+                jobDao, executionDao, lifecycleService, dispatcher, operationLogDao, distributedLockTemplate);
     }
 
     /**

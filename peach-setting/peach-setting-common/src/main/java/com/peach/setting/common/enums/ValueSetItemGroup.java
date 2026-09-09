@@ -1,4 +1,4 @@
-package com.peach.setting.comon.enums;
+package com.peach.setting.common.enums;
 
 /**
  * 值集项分组校验接口。

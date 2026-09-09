@@ -1,11 +1,17 @@
 package com.peach.auth.service;
 
+import com.peach.auth.dto.UserRoleAuthDTO;
+import com.peach.auth.qo.AuthPartyQO;
+import com.peach.auth.vo.AuthPartyVO;
+
+import java.util.List;
+
 /**
- * IAuth参与方服务类。
- *
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2026/1/17 18:25
+ * 用户角色绑定服务。
  */
 public interface IAuthPartyService {
+
+    List<AuthPartyVO> listUserRoles(AuthPartyQO authPartyQO);
+
+    void saveUserRoles(UserRoleAuthDTO userRoleAuthDTO);
 }

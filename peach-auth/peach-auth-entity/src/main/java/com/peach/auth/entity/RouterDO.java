@@ -50,6 +50,10 @@ public class RouterDO extends PeachDO implements Serializable {
     @Schema(description = "文件路径")
     private String filePath;
 
+    @Column(name = "FUNC_CODE")
+    @Schema(description = "关联功能编码")
+    private String funcCode;
+
     @Column(name = "IS_AUTH")
     @Schema(description = "是否需要授权")
     private Integer isAuth;

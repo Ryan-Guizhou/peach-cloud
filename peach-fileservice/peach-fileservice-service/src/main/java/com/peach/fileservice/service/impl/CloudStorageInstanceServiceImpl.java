@@ -2,7 +2,8 @@ package com.peach.fileservice.service.impl;
 
 import lombok.RequiredArgsConstructor;
 
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
+import com.peach.common.util.desensitize.DesensitizeUtil;
 import com.peach.common.util.StringUtil;
 import com.peach.fileservice.dao.CloudStorageInstanceDao;
 import com.peach.fileservice.dto.CloudStorageInstanceSaveDTO;
@@ -11,7 +12,7 @@ import com.peach.fileservice.qo.CloudStorageInstanceQO;
 import com.peach.fileservice.service.ICloudStorageInstanceService;
 import com.peach.fileservice.vo.CloudStorageInstanceVO;
 import com.peach.manager.CloudStorageManagerService;
-import com.peach.satoken.context.SecurityContextHolder;
+import com.peach.common.audit.AuditContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
@@ -48,7 +49,7 @@ public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceSer
     public CloudStorageInstanceVO add(CloudStorageInstanceSaveDTO data) {
         validateSaveRequest(data, false);
         CloudStorageInstanceDO instanceDO = buildForSave(data, null);
-        instanceDO.setInstanceId(IDGeneratorUtil.generateUuid());
+        instanceDO.setInstanceId(UniqueIdFacade.nextId());
         instanceDO.fillCreateTime();
         cloudStorageInstanceDao.insert(instanceDO);
         return selectById(instanceDO.getInstanceId());
@@ -161,7 +162,7 @@ public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceSer
         if (instanceVO == null) {
             throw new IllegalArgumentException("cloud storage instance not found");
         }
-        instanceVO.setSecretKeyMasked(maskSecret(instanceVO.getSecretKey()));
+        instanceVO.setSecretKeyMasked(DesensitizeUtil.maskSecret(instanceVO.getSecretKey()));
         instanceVO.setSecretKey(null);
         return instanceVO;
     }
@@ -181,19 +182,11 @@ public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceSer
             if (instanceVo == null) {
                 continue;
             }
-            instanceVo.setSecretKeyMasked(maskSecret(instanceVo.getSecretKey()));
+            instanceVo.setSecretKeyMasked(DesensitizeUtil.maskSecret(instanceVo.getSecretKey()));
             instanceVo.setSecretKey(null);
             result.add(instanceVo);
         }
         return result;
-    }
-
-    private String maskSecret(String secretKey) {
-        if (StringUtil.isBlank(secretKey)) {
-            return null;
-        }
-        int visible = Math.min(4, secretKey.length());
-        return "****" + secretKey.substring(secretKey.length() - visible);
     }
 
     private void fillCurrentTenantOrg(CloudStorageInstanceQO qo) {
@@ -202,18 +195,10 @@ public class CloudStorageInstanceServiceImpl implements ICloudStorageInstanceSer
     }
 
     private String requireTenantId() {
-        String tenantId = SecurityContextHolder.currentTenantId();
-        if (StringUtil.isBlank(tenantId)) {
-            throw new IllegalStateException("Current tenant context is missing");
-        }
-        return tenantId;
+        return AuditContext.requireTenantId();
     }
 
     private String requireOrgId() {
-        String orgId = SecurityContextHolder.currentOrgId();
-        if (StringUtil.isBlank(orgId)) {
-            throw new IllegalStateException("Current organization context is missing");
-        }
-        return orgId;
+        return AuditContext.requireOrgId();
     }
 }

@@ -3,7 +3,9 @@ package com.peach.auth.rest.internal;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
+import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.dto.RoleFunctionAuthDTO;
+import com.peach.auth.enums.UserLogEnum;
 import com.peach.auth.qo.AuthFunctionQO;
 import com.peach.auth.service.IAuthFunctionService;
 import com.peach.auth.vo.AuthFunctionVO;
@@ -51,6 +53,9 @@ public class AuthFunctionController {
 
     @PostMapping("/saveRoleFunctions")
     @Operation(summary = "保存角色功能授权")
+    @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
+            optLevel = UserLogEnum.LogLevel.INFO,
+            optContent = "'保存角色功能授权,角色编码:['+#p0.partyCode+']'")
     public Response saveRoleFunctions(@Validated @RequestBody RoleFunctionAuthDTO roleFunctionAuthDTO) {
         authFunctionService.saveRoleFunctions(roleFunctionAuthDTO);
         return Response.success();

@@ -5,7 +5,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 
 import com.alibaba.fastjson.JSON;
-import com.peach.common.IDGeneratorUtil;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.message.common.MessageConst;
 import com.peach.message.common.enums.MessageEnum;
 import com.peach.message.dto.WebSocketMessageDTO;
@@ -37,7 +37,7 @@ public class WebSocketPushServiceImpl implements IWebSocketPushService {
             return;
         }
         if (message.getTraceId() == null) {
-            message.setTraceId(IDGeneratorUtil.generateUuid());
+            message.setTraceId(UniqueIdFacade.nextId());
         }
         if (message.getTimestamp() == null) {
             message.setTimestamp(System.currentTimeMillis());

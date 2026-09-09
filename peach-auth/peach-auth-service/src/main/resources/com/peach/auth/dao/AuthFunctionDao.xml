@@ -296,4 +296,19 @@
             <include refid="allColumnCond" />
         </where>
     </select>
+
+    <select id="selectByPartyCodes" resultType="com.peach.auth.vo.AuthFunctionVO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_AUTH_FUNCTION
+        WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+          AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+          AND APP_ID = #{appId,jdbcType=VARCHAR}
+          AND FISCAL = #{fiscal,jdbcType=INTEGER}
+          AND IS_DELETE = 0
+          AND PARTY_CODE IN
+        <foreach collection="partyCodes" item="item" open="(" separator="," close=")">
+            #{item,jdbcType=VARCHAR}
+        </foreach>
+    </select>
 </mapper>
