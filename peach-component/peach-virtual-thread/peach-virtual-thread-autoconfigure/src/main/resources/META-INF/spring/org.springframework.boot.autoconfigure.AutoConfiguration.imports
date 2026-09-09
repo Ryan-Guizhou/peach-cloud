@@ -1,0 +1,2 @@
+com.peach.virtualthread.autoconfigure.PeachVirtualThreadAutoConfiguration
+com.peach.virtualthread.autoconfigure.PeachVirtualThreadMetricsAutoConfiguration

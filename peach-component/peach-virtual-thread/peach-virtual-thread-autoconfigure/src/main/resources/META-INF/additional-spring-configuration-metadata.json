@@ -1,0 +1,47 @@
+{
+  "properties": [
+    {
+      "name": "peach.virtual-thread.groups.*.max-concurrency",
+      "type": "java.lang.Integer",
+      "description": "业务组最大真实运行并发数。必须大于 0，用于严格限制真正占用下游物理资源（如数据库连接池、外部服务连接）的并发任务数。",
+      "sourceType": "com.peach.virtualthread.config.VirtualThreadProperties$Group",
+      "defaultValue": 256
+    },
+    {
+      "name": "peach.virtual-thread.groups.*.max-pending",
+      "type": "java.lang.Integer",
+      "description": "业务组最大排队等待执行许可的虚拟线程数。必须大于或等于 0。准入总容量限制为 max-concurrency + max-pending。",
+      "sourceType": "com.peach.virtualthread.config.VirtualThreadProperties$Group",
+      "defaultValue": 512
+    },
+    {
+      "name": "peach.virtual-thread.groups.*.backpressure",
+      "type": "com.peach.virtualthread.config.BackpressurePolicy",
+      "description": "准入总容量（max-concurrency + max-pending）耗尽时的背压策略：\n- REJECT: 立即抛出 VirtualTaskRejectedException 拒绝任务；\n- BLOCK: 在调用线程上最多等待 acquire-timeout 指定时间。\n网关或 EventLoop 线程严禁使用 BLOCK。",
+      "sourceType": "com.peach.virtualthread.config.VirtualThreadProperties$Group",
+      "defaultValue": "REJECT"
+    },
+    {
+      "name": "peach.virtual-thread.groups.*.acquire-timeout",
+      "type": "java.time.Duration",
+      "description": "BLOCK 背压策略下，调用线程等待获取准入许可的最大超时时间。当 backpressure 为 BLOCK 时必须大于 0。",
+      "sourceType": "com.peach.virtualthread.config.VirtualThreadProperties$Group",
+      "defaultValue": "50ms"
+    }
+  ],
+  "hints": [
+    {
+      "name": "peach.virtual-thread.groups.*.backpressure",
+      "values": [
+        {
+          "value": "REJECT",
+          "description": "立即抛出 VirtualTaskRejectedException 拒绝任务（快速失败，适合延迟敏感场景）"
+        },
+        {
+          "value": "BLOCK",
+          "description": "在提交线程上进行限时有界等待，等待超时则抛出异常（调峰缓冲，严禁在 Gateway/EventLoop 线程使用）"
+        }
+      ]
+    }
+  ]
+}

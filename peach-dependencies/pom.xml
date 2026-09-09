@@ -14,6 +14,8 @@
     <properties>
         <!-- 按属性名长度从短到长排列 -->
         <revision>1.0.0-SNAPSHOT</revision>
+        <!-- 与根 pom 保持一致；独立 BOM 无 parent，deploy 需自带 distributionManagement -->
+        <peach.nexus.url>http://nexus.peachsoft.com</peach.nexus.url>
         <bos.version>0.10.228</bos.version>
         <cos.version>5.6.227</cos.version>
         <obs.version>3.24.12</obs.version>
@@ -26,6 +28,7 @@
         <guava.version>33.4.8-jre</guava.version>
         <minio.version>8.5.17</minio.version>
         <hutool.version>5.8.39</hutool.version>
+        <bouncycastle.version>1.78.1</bouncycastle.version>
         <jasypt.version>3.0.5</jasypt.version>
         <mybatis.version>3.0.4</mybatis.version>
         <esdk-obs.version>3.25.10</esdk-obs.version>
@@ -48,6 +51,20 @@
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <spring-statemachine.version>3.2.1</spring-statemachine.version>
     </properties>
+
+    <!-- 独立 BOM，不继承根 pom；发布目标与根 pom distributionManagement 对齐 -->
+    <distributionManagement>
+        <repository>
+            <id>peach-releases</id>
+            <name>Peach Nexus Releases</name>
+            <url>${peach.nexus.url}/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>peach-snapshots</id>
+            <name>Peach Nexus Snapshots</name>
+            <url>${peach.nexus.url}/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <dependencyManagement>
         <dependencies>
@@ -209,6 +226,11 @@
                 <groupId>cn.hutool</groupId>
                 <artifactId>hutool-all</artifactId>
                 <version>${hutool.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
             </dependency>
             <!-- OpenAPI -->
             <dependency>
@@ -591,6 +613,18 @@
             <dependency>
                 <groupId>com.peach</groupId>
                 <artifactId>peach-scheduler-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- ==================== peach-component / peach-virtual-thread ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-virtual-thread-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-virtual-thread-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
 
