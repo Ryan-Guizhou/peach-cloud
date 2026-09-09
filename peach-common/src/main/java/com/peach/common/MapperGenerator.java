@@ -2,11 +2,10 @@ package com.peach.common;
 
 
 import com.peach.common.util.StringUtil;
-
-import lombok.extern.slf4j.Slf4j;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;

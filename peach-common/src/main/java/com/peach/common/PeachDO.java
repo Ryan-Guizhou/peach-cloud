@@ -2,13 +2,14 @@ package com.peach.common;
 
 import java.io.Serial;
 
+import com.peach.common.audit.AuditContext;
+import com.peach.common.audit.PeachAuditFiller;
 import com.peach.common.util.DateUtil;
 import com.peach.common.util.StringUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.springframework.util.ObjectUtils;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
@@ -43,9 +44,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Data
 public class PeachDO implements Serializable {
 
-    private static final String CURRENT_USER_ID_FIELD = "currentUserId";
-
-
     @Serial
     private static final long serialVersionUID = -3930151180455626026L;
 
@@ -53,8 +51,6 @@ public class PeachDO implements Serializable {
      * 缓存每个实体类上的主键字段，避免重复反射扫描。
      */
     private static final Map<Class<?>, Field> ID_FIELD_CACHE = new ConcurrentHashMap<>();
-
-    private static final String SECURITY_CONTEXT_HOLDER_CLASS = "com.peach.satoken.context.SecurityContextHolder";
 
     private static final String TENANT_ID_FIELD = "tenantId";
 
@@ -263,29 +259,27 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * 从当前安全上下文自动填充创建审计字段、租户及组织信息。
+     * 从当前审计上下文自动填充创建审计字段、租户及组织信息。
      * <p>
-     * 说明：框架内部通过反射调用安全上下文以避免直接包依赖。
+     * 说明：通过 {@link com.peach.common.audit.AuditContext} 读取当前用户、租户和组织信息。
      * 若实体定义了 {@code tenantId} 或 {@code orgId} 可写属性，会自动进行填充和非空校验。
      * </p>
      *
      * @throws IllegalStateException 当租户或组织信息在当前上下文中缺失时抛出
      */
     public void fillCreateTime() {
-        fillCreateTime(currentContextValue(CURRENT_USER_ID_FIELD));
-        fillCurrentTenantOrg();
-        requireTenantOrgIfPresent();
+        PeachAuditFiller.fillCreateFromContext(this);
     }
 
     /**
-     * 从当前安全上下文自动填充创建审计字段，并显式指定租户及组织 ID。
+     * 从当前审计上下文自动填充创建审计字段，并显式指定租户及组织 ID。
      *
      * @param tenantId 租户 ID
      * @param orgId    组织 ID
      * @throws IllegalStateException 当租户或组织信息缺失时抛出
      */
     public void fillCreateTime(String tenantId, String orgId) {
-        fillCreateTime(currentContextValue(CURRENT_USER_ID_FIELD));
+        fillCreateTime(AuditContext.currentUserId().orElse(null));
         fillTenantOrg(tenantId, orgId);
     }
 
@@ -300,18 +294,18 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * 从当前安全上下文自动填充修改审计字段（修改时间和修改人 ID）。
+     * 从当前审计上下文自动填充修改审计字段（修改时间和修改人 ID）。
      */
     public void fillModifyTime() {
-        fillModifyTime(currentContextValue(CURRENT_USER_ID_FIELD));
+        PeachAuditFiller.fillModifyFromContext(this);
     }
 
     /**
-     * 从当前安全上下文自动填充租户 ID 和组织 ID（若实体存在对应可写属性）。
+     * 从当前审计上下文自动填充租户 ID 和组织 ID（若实体存在对应可写属性）。
      */
     public void fillCurrentTenantOrg() {
-        setPropertyIfWritable(TENANT_ID_FIELD, currentContextValue("currentTenantId"));
-        setPropertyIfWritable(ORG_ID_FIELD, currentContextValue("currentOrgId"));
+        setPropertyIfWritable(TENANT_ID_FIELD, AuditContext.currentTenantId().orElse(null));
+        setPropertyIfWritable(ORG_ID_FIELD, AuditContext.currentOrgId().orElse(null));
     }
 
     /**
@@ -424,28 +418,6 @@ public class PeachDO implements Serializable {
     }
 
     /**
-     * 通过反射从安全上下文（{@code SecurityContextHolder}）中获取静态无参方法的返回值。
-     *
-     * @param methodName 无参静态方法名
-     * @return 方法调用的字符串结果；若类/方法不存在或返回值为 null/空串，则返回 {@code null}
-     * @throws RuntimeException 当反射调用过程中发生非反射找不到的异常时抛出
-     */
-    private static String currentContextValue(String methodName) {
-        try {
-            Class<?> holderClass = Class.forName(SECURITY_CONTEXT_HOLDER_CLASS);
-            Object value = holderClass.getMethod(methodName).invoke(null);
-            if (value == null || StringUtil.isEmpty(value.toString())) {
-                return null;
-            }
-            return value.toString();
-        } catch (ClassNotFoundException | NoSuchMethodException e) {
-            return null;
-        } catch (Exception e) {
-            throw new RuntimeException("Get current security context failed, method: " + methodName, e);
-        }
-    }
-
-    /**
      * 若当前对象存在指定名称的可写属性，则为其设置属性值。
      *
      * @param field 属性名
@@ -487,7 +459,7 @@ public class PeachDO implements Serializable {
      * @throws IllegalArgumentException 当属性名为 null 或空字符串时抛出
      */
     private void checkFieldName(String field) {
-        if (ObjectUtils.isEmpty(field)) {
+        if (StringUtil.isBlank(field)) {
             throw new IllegalArgumentException("field must not be empty");
         }
     }

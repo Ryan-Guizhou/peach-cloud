@@ -25,6 +25,22 @@ public class BusinessException extends RuntimeException {
 
     private final String language;
 
+    private static final String DEFAULT_LANGUAGE = "zh-CN";
+
+    public BusinessException(String message) {
+        super(message);
+        this.code = StatusEnum.BUSINESS_FAIL_CODE.getCode();
+        this.msg = message;
+        this.language = DEFAULT_LANGUAGE;
+    }
+
+    public BusinessException(Integer code ,String message) {
+        super(message);
+        this.code = String.valueOf(code);
+        this.msg = message;
+        this.language = DEFAULT_LANGUAGE;
+    }
+
     public BusinessException(String message,String language) {
         super(message);
         this.code = StatusEnum.BUSINESS_FAIL_CODE.getCode();

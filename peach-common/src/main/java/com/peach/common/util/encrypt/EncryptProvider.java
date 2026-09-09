@@ -1,7 +1,7 @@
 package com.peach.common.util.encrypt;
 
 /**
- * Encrypt提供者。
+ * 加解密实现 SPI 提供者。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -10,14 +10,16 @@ package com.peach.common.util.encrypt;
 public interface EncryptProvider {
 
     /**
-     * 加密类型
-     * @return 加密类型
+     * 支持的算法类型标识。
+     *
+     * @return 算法类型，例如 {@link EncryptConst#AES}
      */
     String type();
 
     /**
-     * 获取加密服务
-     * @return 加密服务
+     * 创建对应算法的加解密服务实例。
+     *
+     * @return 加解密服务
      */
     EncryptService getEncrypt();
 }

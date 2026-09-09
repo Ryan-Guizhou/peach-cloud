@@ -1,0 +1,3 @@
+com.peach.common.unique.impl.provider.UuidUniqueGeneratorProvider
+com.peach.common.unique.impl.provider.NanoUniqueProvider
+com.peach.common.unique.impl.provider.SnowflakeProvider

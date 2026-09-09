@@ -37,15 +37,27 @@ public final class Base64Util {
         return src.length == 0 ? "" : new String(encode(src), StandardCharsets.UTF_8);
     }
 
+    /**
+     * 将标准 Base64 字符串解码为字节数组。
+     *
+     * @param src Base64 字符串，null 或空白字符串返回空数组
+     * @return 解码后的字节数组
+     */
     public static byte[] decodeFromString(String src) {
-        return StringUtil.isBlank(src) ? new byte[0] : decode(src.getBytes(StandardCharsets.UTF_8));
+        return src == null || src.isBlank() ? new byte[0] : decode(src.getBytes(StandardCharsets.UTF_8));
     }
 
     public static String safeEncodeToString(byte[] src) {
         return src.length == 0 ? "" : new String(safeEncode(src), StandardCharsets.UTF_8);
     }
 
+    /**
+     * 将 URL 安全 Base64 字符串解码为字节数组。
+     *
+     * @param src URL 安全 Base64 字符串，null 或空白字符串返回空数组
+     * @return 解码后的字节数组
+     */
     public static byte[] safeDecodeFromString(String src) {
-        return StringUtil.isBlank(src) ? new byte[0] : safeDecode(src.getBytes(StandardCharsets.UTF_8));
+        return src == null || src.isBlank() ? new byte[0] : safeDecode(src.getBytes(StandardCharsets.UTF_8));
     }
 }

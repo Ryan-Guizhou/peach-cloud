@@ -1,2 +1,3 @@
 com.peach.common.util.encrypt.impl.provider.AesEncryptProvider
 com.peach.common.util.encrypt.impl.provider.DesEncryptProvider
+com.peach.common.util.encrypt.impl.provider.Sm4EncryptProvider

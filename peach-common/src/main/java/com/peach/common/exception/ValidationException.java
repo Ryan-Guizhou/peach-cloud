@@ -1,9 +1,4 @@
 package com.peach.common.exception;
-
-
-
-import com.peach.common.validate.CommonValidator;
-
 import jakarta.validation.ConstraintViolation;
 import java.util.HashSet;
 import java.util.Set;
@@ -19,30 +14,30 @@ import java.util.stream.Collectors;
  */
 public class ValidationException extends RuntimeException{
 
-    private final transient Set<CommonValidator.ValidationDetail> fieldErrors;
+    private final transient Set<ValidationDetail> fieldErrors;
 
-    // 保留一个主要构造方法，避免冲突
-    public ValidationException(String message, Set<CommonValidator.ValidationDetail> fieldErrors) {
+
+    public ValidationException(String message, Set<ValidationDetail> fieldErrors) {
         super(message);
         this.fieldErrors = fieldErrors != null ? new HashSet<>(fieldErrors) : Set.of();
     }
 
-    public Set<CommonValidator.ValidationDetail> getFieldErrors() {
+    public Set<ValidationDetail> getFieldErrors() {
         return fieldErrors;
     }
 
-    // 从ConstraintViolation创建
+
     public ValidationException(Set<? extends ConstraintViolation<?>> constraintViolations) {
         super(buildMessage(constraintViolations));
         this.fieldErrors = constraintViolations.stream()
-                .map(v -> new CommonValidator.ValidationDetail(
+                .map(v -> new ValidationDetail(
                         v.getPropertyPath().toString(),
                         v.getMessage()
                 ))
                 .collect(Collectors.toUnmodifiableSet());
     }
 
-    // 简单错误消息
+
     public ValidationException(String message) {
         super(message);
         this.fieldErrors = Set.of();
@@ -57,4 +52,23 @@ public class ValidationException extends RuntimeException{
                 .collect(Collectors.joining("; "));
     }
 
+    public static final class ValidationDetail {
+
+        private final String field;
+
+        private final String message;
+
+        public ValidationDetail(String field, String message) {
+            this.field = field;
+            this.message = message;
+        }
+
+        public String getField() {
+            return field;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+    }
 }

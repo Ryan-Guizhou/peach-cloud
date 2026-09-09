@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
  * @Version 1.0.0
  * @CreateTime 2025/12/13 12:44
  */
-
 public final class MultiLanguage {
 
     static final String DEFAULT_LANGUAGE = "zh";

@@ -1,10 +1,9 @@
 package com.peach.common.util.encrypt;
 
 import java.security.GeneralSecurityException;
-import java.util.Map;
 
 /**
- * Encrypt服务类。
+ * 对称加解密服务契约。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -13,23 +12,20 @@ import java.util.Map;
 public interface EncryptService {
 
     /**
-     * AES 加密
+     * 加密明文。
+     *
      * @param plainText 明文
-     * @return 加密后的 Base64 字符串
+     * @return 十六进制密文
+     * @throws GeneralSecurityException 底层 Cipher 初始化或运算失败
      */
     String encrypt(String plainText) throws GeneralSecurityException;
 
-
     /**
-     * AES 解密
-     * @param cipherText Base64 加密内容
-     * @return 解密后的字符串
+     * 解密十六进制密文。
+     *
+     * @param cipherText 十六进制密文
+     * @return 明文
+     * @throws GeneralSecurityException 底层 Cipher 初始化或运算失败
      */
     String decrypt(String cipherText) throws GeneralSecurityException;
-
-    /**
-     * 获取 RSA 公钥和私钥
-     * @return RSA 公钥和私钥
-     */
-    Map<String, String> getRsaInfo();
 }

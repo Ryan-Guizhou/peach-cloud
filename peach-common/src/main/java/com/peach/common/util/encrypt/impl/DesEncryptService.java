@@ -1,97 +1,68 @@
 package com.peach.common.util.encrypt.impl;
 
-import com.peach.common.util.StringUtil;
-import com.peach.common.util.encrypt.AbstractEncrypt;
+import com.peach.common.util.encrypt.AbstractCbcEncrypt;
+import com.peach.common.util.encrypt.EncryptConst;
+import com.peach.common.util.encrypt.EncryptKeyProfile;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.DESKeySpec;
+import javax.crypto.spec.IvParameterSpec;
 import java.nio.charset.StandardCharsets;
-import com.peach.common.util.PeachSecureRandom;
-import java.util.Base64;
 import java.security.GeneralSecurityException;
-import java.util.Map;
 
 /**
- * DesEncrypt 服务类。
- * <p>此类保留了历史构造方法和 EncryptService 契约，但不再使用 DES 算法或硬编码密钥。
- * 密钥必须在运行时通过系统属性 {@code peach.common.encrypt.legacy.key}
- * 或环境变量 {@code PEACH_COMMON_ENCRYPT_LEGACY_KEY} 提供。
- * 当密钥为 Base64 编码时，请使用 {@code base64:<值>} 格式。</p>
+ * DES/CBC/PKCS5Padding 实现。
+ *
+ * <p>密钥加载顺序见 {@link com.peach.common.util.encrypt.EncryptKeyResolver}，
+ * 对应配置项为 {@link EncryptConst#DES_KEY_PROPERTY}、{@link EncryptConst#DES_KEY_ENV}
+ * 与 {@link EncryptConst#DES_DEFAULT_KEY_FILE}。{@link DESKeySpec} 仅使用前 8 字节。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2026/3/20 16:58
+ * @CreateTime 2025/12/30 16:13
  */
-public class DesEncryptService extends AbstractEncrypt {
+public class DesEncryptService extends AbstractCbcEncrypt {
 
-    private static final String KEY_PROPERTY = "peach.common.encrypt.legacy.key";
+    private static final String PAYLOAD_ALGORITHM = "DES-CBC";
 
-    private static final String KEY_ENV = "PEACH_COMMON_ENCRYPT_LEGACY_KEY";
+    private static final String CIPHER_TRANSFORMATION = "DES/CBC/PKCS5Padding";
 
-    private static final String KEY_ALGORITHM = "AES";
+    private static final int IV_LENGTH_BYTES = 8;
 
-    private static final String CIPHER_TRANSFORMATION = "AES/GCM/NoPadding";
+    private static final byte[] LEGACY_IV = "SHA1PRNG".getBytes(StandardCharsets.UTF_8);
 
-    private static final int GCM_IV_LENGTH_BYTES = 12;
-
-    private static final int GCM_TAG_LENGTH_BITS = 128;
-
-    private static final String PAYLOAD_SEPARATOR = ":";
-
-    public DesEncryptService(String type) {
-        if (type == null || type.isBlank()) {
-            throw new IllegalArgumentException("Encryption type must not be blank");
-        }
+    public DesEncryptService(String algorithm) {
+        super(EncryptKeyProfile.DES, algorithm);
     }
 
     @Override
-    public String encrypt(String plaintext) throws GeneralSecurityException {
-        byte[] iv = new byte[GCM_IV_LENGTH_BYTES];
-        PeachSecureRandom.get().nextBytes(iv);
-        Cipher cipher = initCipher(Cipher.ENCRYPT_MODE, iv);
-        byte[] bytes = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
-        return byteToHex(iv) + PAYLOAD_SEPARATOR + byteToHex(bytes);
+    protected String payloadAlgorithm() {
+        return PAYLOAD_ALGORITHM;
     }
 
     @Override
-    public String decrypt(String plaintext) throws GeneralSecurityException {
-        String[] payload = plaintext.split(PAYLOAD_SEPARATOR, 2);
-        if (payload.length != 2) {
-            throw new IllegalArgumentException("Cipher text is missing initialization vector");
-        }
-        Cipher cipher = initCipher(Cipher.DECRYPT_MODE, hexToByte(payload[0]));
-        byte[] bytes = hexToByte(payload[1]);
-        return new String(cipher.doFinal(bytes), StandardCharsets.UTF_8);
+    protected int ivLengthBytes() {
+        return IV_LENGTH_BYTES;
     }
 
     @Override
-    public Map<String, String> getRsaInfo() {
-        return Map.of();
+    protected Cipher createCipher(int mode, byte[] iv) throws GeneralSecurityException {
+        return createCbcCipher(mode, iv);
     }
 
-    private Cipher initCipher(int mode, byte[] iv) throws GeneralSecurityException {
-        SecretKeySpec secretKey = new SecretKeySpec(resolveKey(), KEY_ALGORITHM);
-        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv);
+    @Override
+    protected Cipher createLegacyCipher(int mode) throws GeneralSecurityException {
+        return createCbcCipher(mode, LEGACY_IV);
+    }
+
+    private Cipher createCbcCipher(int mode, byte[] iv) throws GeneralSecurityException {
+        DESKeySpec desKeySpec = new DESKeySpec(resolveKeyBytes());
+        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(keyAlgorithm());
+        SecretKey secretKey = keyFactory.generateSecret(desKeySpec);
         Cipher cipher = Cipher.getInstance(CIPHER_TRANSFORMATION);
-        cipher.init(mode, secretKey, gcmParameterSpec);
+        cipher.init(mode, secretKey, new IvParameterSpec(iv));
         return cipher;
-    }
-
-    private byte[] resolveKey() {
-        String configuredKey = System.getProperty(KEY_PROPERTY);
-        if (StringUtil.isBlank(configuredKey)) {
-            configuredKey = System.getenv(KEY_ENV);
-        }
-        if (StringUtil.isBlank(configuredKey)) {
-            throw new IllegalStateException("Legacy encryption key is not configured");
-        }
-        byte[] keyBytes = configuredKey.startsWith("base64:")
-                ? Base64.getDecoder().decode(configuredKey.substring("base64:".length()))
-                : configuredKey.getBytes(StandardCharsets.UTF_8);
-        if (keyBytes.length != 16 && keyBytes.length != 24 && keyBytes.length != 32) {
-            throw new IllegalStateException("Legacy encryption key must be 16, 24 or 32 bytes");
-        }
-        return keyBytes;
     }
 }

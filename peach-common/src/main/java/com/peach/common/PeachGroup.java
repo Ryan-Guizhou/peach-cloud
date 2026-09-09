@@ -10,19 +10,27 @@ package com.peach.common;
  */
 public class PeachGroup {
 
-    /** 新增操作分组 */
+    /**
+     * 新增操作分组
+     */
     public interface InsertGroup {
     }
 
-    /** 更新操作分组 */
+    /**
+     * 更新操作分组
+     */
     public interface UpdateGroup {
     }
 
-    /** 删除操作分组 */
+    /**
+     * 删除操作分组
+     */
     public interface DeleteGroup {
     }
 
-    /** 查询操作分组 */
+    /**
+     * 查询操作分组
+     */
     public interface QueryGroup {
     }
 }

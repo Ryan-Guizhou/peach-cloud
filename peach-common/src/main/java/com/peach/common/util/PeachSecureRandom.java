@@ -1,5 +1,7 @@
 package com.peach.common.util;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
@@ -10,6 +12,7 @@ import java.security.SecureRandom;
  * @Version 1.0.0
  * @CreateTime 2026/3/20 16:58
  */
+@Slf4j
 public final class PeachSecureRandom {
 
     private static final SecureRandom INSTANCE = createInstance();
@@ -22,6 +25,7 @@ public final class PeachSecureRandom {
         try {
             return SecureRandom.getInstanceStrong();
         } catch (NoSuchAlgorithmException ex) {
+            log.warn("create secureRandom instance error ,noSuchAlgorithmException");
             return new SecureRandom();
         }
     }
