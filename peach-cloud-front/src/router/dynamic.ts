@@ -15,6 +15,20 @@ export interface AdminRouteConfig {
   meta: AdminRouteMeta
 }
 
+export interface AdminMenuGroup {
+  title: string
+  items: AdminRouteConfig[]
+}
+
+const menuGroupRules: Array<{ title: string; codes: string[] }> = [
+  { title: '工作空间', codes: ['workspace', 'profile', 'messageCenter'] },
+  { title: '身份与权限', codes: ['organization', 'user', 'role', 'authorization', 'function', 'resource', 'menu', 'router'] },
+  { title: '文件与存储', codes: ['objectBrowser', 'fileRecord', 'storageInstance'] },
+  { title: '系统设置', codes: ['dict', 'valueSet', 'multiMessage', 'notice', 'ipWhitelist'] },
+  { title: '运行与监控', codes: ['runtimeMonitor'] },
+  { title: '中间件与审计', codes: ['authLog', 'operationLog'] },
+]
+
 const viewModules = import.meta.glob('../views/**/index.vue')
 
 export const fallbackAdminRoutes: AdminRouteConfig[] = [
@@ -88,6 +102,7 @@ function fallbackByAnyCode(...codes: Array<string | undefined>): AdminRouteConfi
 function buildRouterMaps(routerList: RouterInfo[]) {
   const pathMap = new Map<string, RouterInfo>()
   const codeMap = new Map<string, RouterInfo>()
+  const funcMap = new Map<string, RouterInfo>()
   routerList.forEach((routerInfo) => {
     const path = normalizePath(routerInfo.routerUrl)
     if (path) {
@@ -97,8 +112,12 @@ function buildRouterMaps(routerList: RouterInfo[]) {
     if (routerCode) {
       codeMap.set(routerCode, routerInfo)
     }
+    const funcCode = normalizeCode(routerInfo.funcCode)
+    if (funcCode) {
+      funcMap.set(funcCode, routerInfo)
+    }
   })
-  return { pathMap, codeMap }
+  return { pathMap, codeMap, funcMap }
 }
 
 export function buildAdminRoutes(loginInfo: LoginInfo | null): RouteRecordRaw[] {
@@ -128,20 +147,9 @@ export function buildAdminRoutes(loginInfo: LoginInfo | null): RouteRecordRaw[] 
     })
     .filter((route): route is AdminRouteConfig => route !== null)
 
-  const menuFallbackRoutes = (loginInfo?.menuList ?? [])
-    .map((menuInfo): AdminRouteConfig | null => {
-      const menuPath = normalizePath(menuInfo.menuUrl)
-      const fallback = fallbackByPath(menuPath) ?? fallbackByAnyCode(menuInfo.funcCode, menuInfo.menuCode)
-      if (!fallback) {
-        return null
-      }
-      return fallback
-    })
-    .filter((route): route is AdminRouteConfig => route !== null)
-
   const routeByPath = new Map<string, AdminRouteConfig>()
   const candidateRoutes = dynamicRoutes.length > 0
-    ? [...dynamicRoutes, ...menuFallbackRoutes]
+    ? dynamicRoutes
     : fallbackAdminRoutes
   candidateRoutes.forEach((route) => {
     if (!routeByPath.has(route.path)) {
@@ -176,8 +184,9 @@ export function buildMenuItems(loginInfo: LoginInfo | null): AdminRouteConfig[] 
       const key = menuInfo.menuCode ?? ''
       const menuPath = normalizePath(menuInfo.menuUrl)
       const matchedRouter = routerMaps.pathMap.get(menuPath)
-        ?? routerMaps.codeMap.get(normalizeCode(menuInfo.funcCode))
+        ?? routerMaps.funcMap.get(normalizeCode(menuInfo.funcCode))
         ?? routerMaps.codeMap.get(normalizeCode(menuInfo.menuCode))
+        ?? routerMaps.codeMap.get(normalizeCode(menuInfo.funcCode))
       const matchedRouterPath = normalizePath(matchedRouter?.routerUrl)
       const fallback = routeMap.get(key)
         ?? fallbackByPath(menuPath)
@@ -200,4 +209,27 @@ export function buildMenuItems(loginInfo: LoginInfo | null): AdminRouteConfig[] 
     })
     .filter((item): item is AdminRouteConfig => item !== null)
   return items.length > 0 ? items : fallbackAdminRoutes
+}
+
+export function buildMenuGroups(loginInfo: LoginInfo | null): AdminMenuGroup[] {
+  const items = buildMenuItems(loginInfo)
+  const itemByCode = new Map(items.map(item => [item.meta.menuCode, item]))
+  const used = new Set<string>()
+  const groups: AdminMenuGroup[] = []
+
+  menuGroupRules.forEach((rule) => {
+    const groupItems = rule.codes
+      .map(code => itemByCode.get(code))
+      .filter((item): item is AdminRouteConfig => item != null)
+    groupItems.forEach(item => used.add(item.meta.menuCode))
+    if (groupItems.length > 0) {
+      groups.push({ title: rule.title, items: groupItems })
+    }
+  })
+
+  const others = items.filter(item => !used.has(item.meta.menuCode))
+  if (others.length > 0) {
+    groups.push({ title: '其他', items: others })
+  }
+  return groups.length > 0 ? groups : [{ title: '导航', items }]
 }

@@ -79,6 +79,17 @@ export interface RouterInfo {
   routerName?: string
   routerUrl?: string
   filePath?: string
+  funcCode?: string
+}
+
+export interface LoginPermissionSnapshot {
+  roleList: RoleInfo[]
+  menuList: MenuInfo[]
+  routerList: RouterInfo[]
+  resourceList: AuthResourceInfo[]
+  permissionList: string[]
+  apiResourceCodes?: string[]
+  buttonResourceCodes?: string[]
 }
 
 export interface AuthResourceInfo {
@@ -112,6 +123,7 @@ export interface LoginInfo {
   routerList: RouterInfo[]
   resourceList?: AuthResourceInfo[]
   permissionList?: string[]
+  permissionSnapshot?: LoginPermissionSnapshot
 }
 
 export interface AuthSession {

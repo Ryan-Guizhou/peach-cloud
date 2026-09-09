@@ -4,6 +4,20 @@ import { buildAdminRoutes } from './dynamic'
 import pinia from '../stores'
 import { useAuthStore } from '../stores/auth'
 
+function hasRoutePermission(authStore: ReturnType<typeof useAuthStore>, permissionCode?: string): boolean {
+  if (!permissionCode) {
+    return true
+  }
+  if (!authStore.isAuthenticated) {
+    return false
+  }
+  const permissionList = authStore.loginInfo?.permissionList ?? []
+  if (permissionList.length === 0) {
+    return false
+  }
+  return permissionList.includes(permissionCode)
+}
+
 const dynamicRouteNames = new Set<string>()
 
 const staticRoutes: RouteRecordRaw[] = [
@@ -67,6 +81,10 @@ router.beforeEach((to) => {
   }
   if (to.meta.requiresAuth && !hasValidSession) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+  const permissionCode = typeof to.meta.permissionCode === 'string' ? to.meta.permissionCode : undefined
+  if (to.meta.requiresAuth && permissionCode && !hasRoutePermission(authStore, permissionCode)) {
+    return { name: 'workspace-overview' }
   }
   if (to.name === 'login' && hasValidSession) {
     return { name: 'workspace-overview' }

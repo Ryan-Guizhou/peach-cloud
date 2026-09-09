@@ -25,6 +25,27 @@ function normalizeRequiredString(value: unknown): string | null {
   return null
 }
 
+function parsePermissionSnapshot(value: unknown): LoginInfo['permissionSnapshot'] {
+  if (!isRecord(value)) {
+    return undefined
+  }
+  return {
+    roleList: Array.isArray(value.roleList) ? value.roleList as LoginInfo['roleList'] : [],
+    menuList: Array.isArray(value.menuList) ? value.menuList as LoginInfo['menuList'] : [],
+    routerList: Array.isArray(value.routerList) ? value.routerList as LoginInfo['routerList'] : [],
+    resourceList: Array.isArray(value.resourceList) ? value.resourceList as NonNullable<LoginInfo['resourceList']> : [],
+    permissionList: Array.isArray(value.permissionList)
+      ? value.permissionList.filter((item): item is string => typeof item === 'string')
+      : [],
+    apiResourceCodes: Array.isArray(value.apiResourceCodes)
+      ? value.apiResourceCodes.filter((item): item is string => typeof item === 'string')
+      : undefined,
+    buttonResourceCodes: Array.isArray(value.buttonResourceCodes)
+      ? value.buttonResourceCodes.filter((item): item is string => typeof item === 'string')
+      : undefined,
+  }
+}
+
 function parseSession(raw: string | null): AuthSession | null {
   if (!raw) {
     return null
@@ -119,6 +140,7 @@ export function readAuthLoginInfo(): LoginInfo | null {
       permissionList: Array.isArray(value.permissionList)
         ? value.permissionList.filter((item): item is string => typeof item === 'string' && item.length > 0)
         : undefined,
+      permissionSnapshot: parsePermissionSnapshot(value.permissionSnapshot),
     }
   } catch {
     return null
@@ -163,4 +185,20 @@ export function clearAuthSession(): void {
   window.localStorage.removeItem(LOGIN_INFO_KEY)
   window.sessionStorage.removeItem(SESSION_KEY)
   window.sessionStorage.removeItem(LOGIN_INFO_KEY)
+}
+
+/** 将仅存在于 sessionStorage 的会话镜像到 localStorage，供新标签页手册站点读取。 */
+export function mirrorSessionStorageForNewTab(): void {
+  if (window.localStorage.getItem(SESSION_KEY)) {
+    return
+  }
+  const sessionRaw = window.sessionStorage.getItem(SESSION_KEY)
+  if (!sessionRaw) {
+    return
+  }
+  window.localStorage.setItem(SESSION_KEY, sessionRaw)
+  const loginInfoRaw = window.sessionStorage.getItem(LOGIN_INFO_KEY)
+  if (loginInfoRaw) {
+    window.localStorage.setItem(LOGIN_INFO_KEY, loginInfoRaw)
+  }
 }

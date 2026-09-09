@@ -4,6 +4,7 @@ import { message } from 'ant-design-vue'
 
 import { deleteById, fetchPage, postRecord, type CrudEndpoint, type DataRecord } from '../../api/admin'
 import { usePermission } from '../../composables/usePermission'
+import { useAuthStore } from '../../stores/auth'
 import AdminLayout from '../../layouts/admin/index.vue'
 
 export interface CrudColumn {
@@ -31,6 +32,7 @@ const props = defineProps<{
 }>()
 
 const { hasPermission } = usePermission()
+const authStore = useAuthStore()
 const query = reactive<DataRecord>({ pageNum: 1, pageSize: 10 })
 const rows = ref<DataRecord[]>([])
 const total = ref(0)
@@ -49,7 +51,7 @@ const emptyDescription = computed(() => {
   if (canAdd.value) {
     return `暂无${props.title}数据，可点击右上角新增创建第一条记录。`
   }
-  return `暂无${props.title}数据，可点击刷新重新获取，或确认当前账号是否有对应数据权限。`
+  return `暂无${props.title}数据，可点击刷新重新获取，或确认当前账号是否有对应权限。`
 })
 const tableColumns = computed(() => {
   const columns = props.columns.map(column => ({ ellipsis: true, ...column }))
@@ -67,7 +69,20 @@ const tableColumns = computed(() => {
   ]
 })
 
+function applySessionScope() {
+  if (authStore.session?.tenantId) {
+    query.tenantId = authStore.session.tenantId
+  }
+  if (authStore.session?.orgId) {
+    query.orgId = authStore.session.orgId
+  }
+  if (authStore.session?.fiscal) {
+    query.fiscal = Number(authStore.session.fiscal)
+  }
+}
+
 async function loadData() {
+  applySessionScope()
   loading.value = true
   errorMessage.value = ''
   try {
@@ -175,7 +190,10 @@ function handleTableChange(pagination: { current?: number; pageSize?: number }) 
   void loadData()
 }
 
-onMounted(loadData)
+onMounted(() => {
+  applySessionScope()
+  void loadData()
+})
 </script>
 
 <template>

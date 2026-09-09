@@ -11,8 +11,11 @@ export function usePermission() {
     if (!permissionCode) {
       return true
     }
+    if (!authStore.isAuthenticated) {
+      return false
+    }
     if (permissionSet.value.size === 0) {
-      return true
+      return false
     }
     return permissionSet.value.has(permissionCode)
   }
@@ -21,8 +24,11 @@ export function usePermission() {
     if (permissionCodes.length === 0) {
       return true
     }
+    if (!authStore.isAuthenticated) {
+      return false
+    }
     if (permissionSet.value.size === 0) {
-      return true
+      return false
     }
     return permissionCodes.some(permissionCode => permissionSet.value.has(permissionCode))
   }

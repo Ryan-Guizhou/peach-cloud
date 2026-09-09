@@ -49,6 +49,19 @@ export interface RoleResourceAuthRequest {
   resourceList: RoleResourceItem[]
 }
 
+export interface UserRoleAuthRequest {
+  tenantId: string
+  orgId: string
+  userCode: string
+  fiscal: number
+  roleCodeList: string[]
+}
+
+export interface AuthPartyRecord {
+  roleCode: string
+  partyCode?: string
+}
+
 export async function fetchPage<T extends DataRecord>(
   url: string,
   query: DataRecord,
@@ -102,5 +115,15 @@ export async function fetchAuthResources(query: DataRecord): Promise<DataRecord[
 
 export async function saveRoleResources(request: RoleResourceAuthRequest): Promise<void> {
   const { data } = await http.post<ApiResponse<void>>('/auth/authResource/saveRoleResources', request)
+  unwrapApiResponse(data)
+}
+
+export async function fetchUserRoles(query: DataRecord): Promise<AuthPartyRecord[]> {
+  const { data } = await http.post<ApiResponse<AuthPartyRecord[]>>('/auth/authParty/listUserRoles', query)
+  return unwrapApiResponse(data) ?? []
+}
+
+export async function saveUserRoles(request: UserRoleAuthRequest): Promise<void> {
+  const { data } = await http.post<ApiResponse<void>>('/auth/authParty/saveUserRoles', request)
   unwrapApiResponse(data)
 }
