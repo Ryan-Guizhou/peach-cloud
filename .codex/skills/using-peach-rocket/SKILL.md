@@ -1,44 +1,21 @@
 ---
 name: using-peach-rocket
-description: 规范 peach-cloud 项目中 peach-rocket-starter / peach-rocket-autoconfigure / peach-rocket-quickstart 的 RocketMQ 接入、事件建模、生产消费、事务消息、Outbox、幂等、加密、Topic 治理和排障。Use when editing or reviewing RocketMQ code, adding @MqEvent/@MqConsumer/MqPublisher usage, extending peach-rocket SPI, or writing README for peach-middleware/peach-rocket.
+description: 修改或审查 peach-middleware/peach-rocket 的 @MqEvent、@MqConsumer、MqPublisher、顺序消息、事务消息、Outbox、消费幂等、加密、Topic 治理、Store SPI 和 RocketMQ 可靠性边界时使用。
 ---
 
-# Peach Rocket Starter
+# Peach Rocket
 
-## 工作流
+## 核心不变量
 
-1. 先读取当前任务涉及的源码，不直接照搬旧 README；旧 README 可能存在编码显示问题。
-2. 修改业务接入时，优先使用 `peach-rocket-starter` 对外暴露的 API，不直接散落使用 RocketMQ 原生注解和客户端。
-3. 维护 starter 标准结构：autoconfigure 放现有 API、自动配置、默认实现和配置元数据，starter 聚合最小接入依赖，quickstart 提供可运行示例；禁止新增或保留 example 模块。新增独立 core/provider 需要真实隔离理由，不在普通功能修改中拆包；装配/依赖变化读取基础骨架的 `references/starter.md`。
-4. 需要详细模块边界、配置项、SPI、示例路径时，读取 `references/module-guide.md`。
-5. 完成后运行 `node scripts/check-utf8.mjs`、受影响模块 Maven 编译/测试和 `git diff --check`；无法运行时说明原因和残余风险。
+- 业务依赖 starter 并使用 Peach 对外契约，不把 RocketMQ 原生 API/注解散落到业务层。
+- 事件路由保持稳定；顺序消息使用稳定 shardingKey。
+- At-Least-Once 是默认可靠性心智模型；消费者必须业务幂等，不能因为框架存在幂等 Store 就假设 Exactly-Once。
+- 需要可靠投递时明确选择事务消息或 Outbox；“发送返回成功”不等于业务最终一致。
+- 生产环境不把内存 `MqIdempotentStore` / `MqOutboxStore` 描述成持久化或集群级保证。
+- Topic 自动创建默认只用于受控开发环境；生产 Topic 由治理流程管理。
+- payload 加密通过现有安全配置/注解/SPI，不在业务代码手写另一套协议。
+- 重试必须评估外部副作用、重复扣减、重复回调和状态更新失败。
 
-## 使用规则
+事务/Outbox 变化验证业务事务与消息持久化的真实提交顺序、重启恢复、并发领取、重放和重复消费。具体 API、配置、SPI 按需读取现有 `references/module-guide.md`。
 
-- 引入依赖时使用 `com.peach:peach-rocket-starter`，不要让业务模块直接依赖 `peach-rocket-autoconfigure`。
-- 发送消息时注入 `MqPublisher`，优先让事件类通过 `@MqEvent(topic, tag, key, version)` 声明默认路由。
-- 消费消息时让 Spring Bean 实现 `MqMessageHandler<T>` 并标注 `@MqConsumer`；不要同时混用 RocketMQ Spring 原生消费注解。
-- 顺序消息必须提供稳定的 `shardingKey`，通常使用订单号、聚合根 ID 或业务实体 ID。
-- 需要可靠投递时优先评估事务消息或 Outbox，不要只依赖同步发送成功作为业务最终一致性保障。
-- 生产环境不要依赖默认内存幂等或内存 Outbox；通过显式 `@Bean` 覆盖 `MqIdempotentStore`、`MqOutboxStore` 等 SPI。
-- Topic 自动创建默认应保持关闭；只在开发、测试或平台明确授权环境开启。
-- 加密 payload 时统一通过 `peach.rocket.security.*`、`@MqEncrypted` 或加密策略 SPI，不在业务代码手写加解密。
-
-## 代码审查重点
-
-- 检查 `topic`、`tag`、`consumerGroup` 是否稳定、可读、无环境硬编码冲突。
-- 检查消费者是否具备幂等语义；即使框架启用幂等，也要确认幂等 key 与业务唯一性一致。
-- 检查失败重试是否会重复调用外部系统、重复扣减、重复落库。
-- 检查 `MqSendOptions` 覆盖路由时是否破坏事件注解约定。
-- 检查 `outbox.enabled=true` 时是否存在生产级 `MqOutboxStore`。
-- 检查事务消息是否存在匹配的 `@MqTransaction` / `MqTransactionHandler<T>`。
-
-## README 提醒
-
-用户要求文档或公共 API、配置、扩展点、运行机制、生产边界变化时，使用 `$using-peach-readme-writer` 更新受影响 README；纯内部等价重构不强制刷新。README 必须写清楚能力边界、接入示例、有效配置、SPI 覆盖方式、构建验证和排障表。
-
-## 可靠性验收
-
-- 持久化 Store 不自动等于与业务写入同事务；核对事务管理器、数据源与提交顺序。
-- 新增可靠投递能力验证重启恢复、并发领取、发送成功后状态更新失败、重放及消费者重复执行；不承诺跨数据库/MQ exactly-once。
-- 内存默认实现仅说明开发/测试用途；生产可靠性要求有显式配置/实现及实际验证，不把接口或 Bean 存在视为完成。
+需要文档时进入 `project-doc-engineer`。

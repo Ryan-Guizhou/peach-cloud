@@ -1,25 +1,11 @@
-# peach-cloud Rules
+# Peach Cloud Rules
 
-`AGENTS.md` 是仓库入口；本目录只保存可复用的专项规则。Agent 必须按任务路由读取，不得默认把全部规则装入上下文。
+Rules 只保存跨领域、稳定、应长期遵守的通用约束：
 
-| 文件 | 触发场景 |
-| --- | --- |
-| `01-mcp-and-skills.md` | MCP、历史记忆、第三方文档、skill 选择 |
-| `02-output-and-evidence.md` | 结论、证据、验证结果表达 |
-| `03-module-and-change-boundaries.md` | 模块归属、跨层联动、改动范围 |
-| `04-documentation-and-readme.md` | README 和模块文档 |
-| `05-language-and-encoding.md` | Java/框架兼容性、UTF-8 无 BOM |
-| `06-layered-java-style.md` | DO/DTO/QO/VO、DAO、REST/Service |
-| `07-comments-and-logging.md` | Javadoc、普通日志、操作审计 |
-| `08-security-and-quality-gates.md` | 敏感数据、正确性优先级、完成门禁 |
+- `java.md`：Java 21、分层、Javadoc/日志、正确性与统一代码风格。
+- `frontend.md`：Vue 3/TypeScript/Vite/权限/状态管理通用边界。
+- `documentation.md`：Markdown、双语 README 和图表格式。
+- `security.md`：跨代码/配置/日志/文档的安全底线。
+- `quality.md`：统一质量门禁入口。
 
-规则级别：`REQUIRED` 必须满足，`PREFERRED` 是新代码目标，`LEGACY_COMPATIBLE` 仅用于存量兼容，`FORBIDDEN` 不得复制。冲突时遵守 `AGENTS.md` 的优先级。
-
-## Additional Routing
-
-| 文件 | 触发场景 |
-| --- | --- |
-| `09-java21-coding-style.md` | Java 21、构造器注入、集合语义与虚拟线程 |
-| `10-architecture-and-starters.md` | 依赖与契约、分包/抽象、starter 三层结构、条件装配、配置提示、生成器验收 |
-
-Codex 通过 AGENTS.md 按需读取本目录；文件存在不代表客户端自动加载。
+领域规则放在对应 Skill；不要再次把领域细节复制回 Rules。

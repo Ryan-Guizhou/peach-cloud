@@ -1,0 +1,6 @@
+interface:
+  display_name: "Peach 项目文档工程师"
+  short_description: "基于源码证据编写 README、设计、需求与新手文档"
+  default_prompt: "Use $project-doc-engineer to create or improve project documentation from current source evidence."
+policy:
+  allow_implicit_invocation: true
