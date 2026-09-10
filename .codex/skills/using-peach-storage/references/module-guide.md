@@ -23,7 +23,7 @@ peach-component/peach-storage/
 │       └── test/java/com/peach/storage/
 ├── peach-store-starter/
 │   └── pom.xml                            # 业务接入依赖
-└── peach-store-example/
+└── peach-store-quickstart/
     ├── pom.xml
     └── src/main/                          # 可运行接入示例
 ```

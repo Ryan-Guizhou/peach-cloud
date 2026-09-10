@@ -3,7 +3,7 @@ package com.peach.scheduler.dispatch;
 import com.peach.scheduler.transport.JobExecutionCommand;
 
 /**
- * 任务Dispatcher接口。
+ * 调度执行命令分发接口。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -12,9 +12,9 @@ import com.peach.scheduler.transport.JobExecutionCommand;
 public interface JobDispatcher {
 
     /**
-     * 调度模块说明。
+     * 将调度触发生成的执行命令发送到执行端。
      *
-     * @param command command。
+     * @param command 执行命令。
      */
     void dispatch(JobExecutionCommand command);
 }

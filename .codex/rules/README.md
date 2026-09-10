@@ -14,3 +14,12 @@
 | `08-security-and-quality-gates.md` | 敏感数据、正确性优先级、完成门禁 |
 
 规则级别：`REQUIRED` 必须满足，`PREFERRED` 是新代码目标，`LEGACY_COMPATIBLE` 仅用于存量兼容，`FORBIDDEN` 不得复制。冲突时遵守 `AGENTS.md` 的优先级。
+
+## Additional Routing
+
+| 文件 | 触发场景 |
+| --- | --- |
+| `09-java21-coding-style.md` | Java 21、构造器注入、集合语义与虚拟线程 |
+| `10-architecture-and-starters.md` | 依赖与契约、分包/抽象、starter 三层结构、条件装配、配置提示、生成器验收 |
+
+Codex 通过 AGENTS.md 按需读取本目录；文件存在不代表客户端自动加载。

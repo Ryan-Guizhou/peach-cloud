@@ -16,16 +16,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 
 /**
- * 调度RocketMQDurability自动配置。
+ * 调度 RocketMQ 可靠性校验自动配置。
  *
- * <p>调度模块说明。
- * 调度模块说明。
- * 调度模块说明。
- * 调度模块说明。</p>
- *
- * <p>调度模块说明。
- * 调度模块说明。
- * 调度模块说明。</p>
+ * <p>启用 JDBC 可靠投递要求时，启动阶段校验 outbox 与幂等存储不能退回内存实现。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -39,11 +32,11 @@ import org.springframework.context.annotation.Bean;
 public class SchedulerRocketDurabilityAutoConfiguration {
 
     /**
-     * 创建实例。
+     * 创建 RocketMQ 可靠性存储校验器。
      *
-     * @param outboxStoreProvider outbox Store Provider。
-     * @param idempotentStoreProvider idempotent Store Provider。
-     * @return 执行结果。
+     * @param outboxStoreProvider outbox 存储提供器。
+     * @param idempotentStoreProvider 幂等存储提供器。
+     * @return Spring 单例初始化完成后的可靠性校验器。
      */
     @Bean
     public SmartInitializingSingleton schedulerRocketDurabilityVerifier(

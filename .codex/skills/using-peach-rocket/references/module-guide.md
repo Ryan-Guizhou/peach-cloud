@@ -25,7 +25,7 @@ peach-middleware/peach-rocket/
 │       └── resources/META-INF/
 ├── peach-rocket-starter/
 │   └── pom.xml                            # 业务接入依赖
-└── peach-rocket-example/
+└── peach-rocket-quickstart/
     ├── pom.xml
     └── src/main/                          # 事件、消费者、发送与 SPI 示例
 ```

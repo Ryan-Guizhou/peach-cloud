@@ -34,9 +34,10 @@ alwaysApply: false
 
 - REST、Entity、DAO/XML、Service、common：`using-peach-code-skeleton`。
 - README 或公共 API/配置/扩展点变化需要同步文档：`using-peach-readme-writer`。
+- Scheduler、Quartz、调度执行、租约和结果上报：代码骨架 skill + `using-peach-scheduler`；涉及 MQ transport 时再叠加 `using-peach-rocket`，涉及 Handler 阻塞 IO 时再叠加 `using-peach-virtual-thread`。
 - RocketMQ：代码骨架 skill + `using-peach-rocket`。
 - Storage：代码骨架 skill + `using-peach-storage`。
-- Threadpool/异步：代码骨架 skill + `using-peach-threadpool`。
+- 虚拟线程、阻塞 IO 异步、旧线程池迁移：代码骨架 skill + `using-peach-virtual-thread`。
 - Email、SMTP、模板、邮件重试与幂等：代码骨架 skill + `using-peach-email`。
 - Redis、Redisson、多级缓存、Stream、分布式锁、延迟队列、布隆过滤器与防重复：代码骨架 skill + `using-peach-redis`。
 

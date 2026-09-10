@@ -30,9 +30,10 @@
 
 - REST、Entity、DAO/XML、Service、common：`using-peach-code-skeleton`。
 - README 或公共 API/配置/扩展点变化需要同步文档：`using-peach-readme-writer`。
+- Scheduler、Quartz、调度执行、租约和结果上报：代码骨架 skill + `using-peach-scheduler`；涉及 MQ transport 时再叠加 `using-peach-rocket`，涉及 Handler 阻塞 IO 时再叠加 `using-peach-virtual-thread`。
 - RocketMQ：代码骨架 skill + `using-peach-rocket`。
 - Storage：代码骨架 skill + `using-peach-storage`。
-- Threadpool/异步：代码骨架 skill + `using-peach-threadpool`。
+- 虚拟线程、阻塞 IO 异步、旧线程池迁移：代码骨架 skill + `using-peach-virtual-thread`。
 - Email、SMTP、模板、邮件重试与幂等：代码骨架 skill + `using-peach-email`。
 - Redis、Redisson、多级缓存、Stream、分布式锁、延迟队列、布隆过滤器与防重复：代码骨架 skill + `using-peach-redis`。
 
@@ -40,7 +41,7 @@
 
 ## Skill Quality
 
-- skill 中的事实必须能绑定到当前源码、POM、配置类或测试；reference 必须区分可验证事实、目标规则和存量兼容，不能把现有代码数量当成正确性依据。
+- skill 中的事实必须能绑定到当前源码、POM、配置类或测试；reference 必须区分可验证事实、目标规则、迁移要求和存量兼容，不能把现有代码数量当成正确性依据。
 - 模块 reference 的路径使用 `text` 目录树展示聚合模块、子模块和核心入口，忽略 `target`、`.flattened-pom.xml` 等构建产物。
 - 示例必须符合 Java 21 和当前依赖；不得把存量缺陷包装为范式。
 - 安全与正确性高于局部风格；完整 DTO 日志、敏感字段 VO、错误事务边界和资源泄漏即使存在先例也不得复制。

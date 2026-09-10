@@ -15,11 +15,12 @@ alwaysApply: false
 - `*-entity`：DO、DTO、QO、VO 等模型。
 - `*-common`：当前业务域共享对象，不反向依赖上层模块。
 - `*-openfeign-external`：跨服务 Feign 契约。
-- `*-autoconfigure`：starter 核心 API、自动配置、默认实现和 SPI。
-- `*-starter`：接入依赖聚合，不承载复杂业务逻辑。
-- `*-example`：可运行示例和覆盖默认实现的样例。
+- `*-autoconfigure`：自动配置、配置属性、配置元数据、默认实现、条件装配和 SPI 装配；不承载 quickstart 示例和业务接入文档主体。
+- `*-starter`：对外依赖聚合，只暴露业务接入所需最小依赖，不承载复杂业务逻辑、默认实现和示例代码。
+- `*-quickstart`：可运行接入样例，展示最小配置、最小业务代码、默认 Bean 覆盖和失败排查；不作为生产依赖被业务模块引用。
+- `*-quickstart`：可运行接入示例和覆盖默认实现的样例；禁止使用 `*-example` 命名。
 
-业务模块优先依赖 starter；RocketMQ 使用 `MqPublisher`/`@MqConsumer`，Storage 使用 `StorageTemplate`，异步使用 `ThreadPoolManager`/`@AsyncExecuted`。`peach-common` 只承载无业务域语义的稳定基础能力。
+业务模块优先依赖 starter；RocketMQ 使用 `MqPublisher`/`@MqConsumer`，Storage 使用 `StorageTemplate`，阻塞 IO 异步使用 `peach-virtual-thread` 的 `VirtualExecutorService`、`VirtualExecutorRegistry` 或 `@VirtualGroup`。`peach-common` 只承载无业务域语义的稳定基础能力。
 
 ## Change Scope
 
@@ -35,3 +36,7 @@ alwaysApply: false
 - 单 DTO + JSR-303 分组是 `PREFERRED`；当前模块明确采用拆分 DTO 时可以兼容。
 - 历史 CRUD 路由、VO 继承 DO、固定注解组合、接口命名等属于 `LEGACY_COMPATIBLE`，不得无条件扩散到新公共 API。
 - 完整 DTO 日志、敏感字段响应、错误事务位置、资源泄漏和跨层依赖属于 `FORBIDDEN`，即使相邻代码存在也不能复制。
+
+## Architecture Routing
+
+涉及依赖、公共契约、starter 或生成器时读取 `10-architecture-and-starters.mdc`。目标边界不授权普通任务自动拆分现有模块；新增与存量调整范围遵循 AGENTS.md 的 Generation Contract。

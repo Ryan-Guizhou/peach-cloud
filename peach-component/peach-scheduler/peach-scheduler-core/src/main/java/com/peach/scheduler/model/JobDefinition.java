@@ -3,7 +3,7 @@ package com.peach.scheduler.model;
 import java.time.Instant;
 
 /**
- * JobDefinition相关类。
+ * 调度任务定义。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -24,8 +24,9 @@ public class JobDefinition {
     private boolean enabled;
 
     /**
-     * 校验相关数据。
-     * @throws IllegalArgumentException 异常说明
+     * 校验调度定义必填字段和不同调度类型的参数约束。
+     *
+     * @throws IllegalArgumentException 调度定义不完整或参数非法时抛出。
      */
     public void validate() {
         requireText(jobCode, "jobCode");
@@ -46,193 +47,193 @@ public class JobDefinition {
     }
 
     /**
-     * 获取相关数据。
+     * 获取任务编码。
      *
-     * @return 执行结果。
+     * @return 任务编码。
      */
     public String getJobCode() {
         return jobCode;
     }
     /**
-     * 设置相关数据。
+     * 设置任务编码。
      *
-     * @param jobCode job Code。
+     * @param jobCode 任务编码。
      */
     public void setJobCode(String jobCode) {
         this.jobCode = jobCode;
     }
     /**
-     * 获取相关数据。
+     * 获取目标应用名称。
      *
-     * @return 执行结果。
+     * @return 目标应用名称。
      */
     public String getApplicationName() {
         return applicationName;
     }
     /**
-     * 设置相关数据。
+     * 设置目标应用名称。
      *
-     * @param applicationName application Name。
+     * @param applicationName 目标应用名称。
      */
     public void setApplicationName(String applicationName) {
         this.applicationName = applicationName;
     }
     /**
-     * 获取相关数据。
+     * 获取业务处理器名称。
      *
-     * @return 执行结果。
+     * @return 业务处理器名称。
      */
     public String getHandlerName() {
         return handlerName;
     }
     /**
-     * 设置相关数据。
+     * 设置业务处理器名称。
      *
-     * @param handlerName handler Name。
+     * @param handlerName 业务处理器名称。
      */
     public void setHandlerName(String handlerName) {
         this.handlerName = handlerName;
     }
     /**
-     * 获取相关数据。
+     * 获取调度类型。
      *
-     * @return 执行结果。
+     * @return 调度类型。
      */
     public ScheduleType getScheduleType() {
         return scheduleType;
     }
     /**
-     * 设置相关数据。
+     * 设置调度类型。
      *
-     * @param scheduleType schedule Type。
+     * @param scheduleType 调度类型。
      */
     public void setScheduleType(ScheduleType scheduleType) {
         this.scheduleType = scheduleType;
     }
     /**
-     * 获取相关数据。
+     * 获取 cron 表达式。
      *
-     * @return 执行结果。
+     * @return cron 表达式。
      */
     public String getCronExpression() {
         return cronExpression;
     }
     /**
-     * 设置相关数据。
+     * 设置 cron 表达式。
      *
-     * @param cronExpression cron Expression。
+     * @param cronExpression cron 表达式。
      */
     public void setCronExpression(String cronExpression) {
         this.cronExpression = cronExpression;
     }
     /**
-     * 获取相关数据。
+     * 获取固定间隔秒数。
      *
-     * @return 执行结果。
+     * @return 固定间隔秒数。
      */
     public long getIntervalSeconds() {
         return intervalSeconds;
     }
     /**
-     * 设置相关数据。
+     * 设置固定间隔秒数。
      *
-     * @param intervalSeconds interval Seconds。
+     * @param intervalSeconds 固定间隔秒数。
      */
     public void setIntervalSeconds(long intervalSeconds) {
         this.intervalSeconds = intervalSeconds;
     }
     /**
-     * 获取相关数据。
+     * 获取一次性调度开始时间。
      *
-     * @return 执行结果。
+     * @return 一次性调度开始时间。
      */
     public Instant getStartAt() {
         return startAt;
     }
     /**
-     * 设置相关数据。
+     * 设置一次性调度开始时间。
      *
-     * @param startAt start At。
+     * @param startAt 一次性调度开始时间。
      */
     public void setStartAt(Instant startAt) {
         this.startAt = startAt;
     }
     /**
-     * 获取相关数据。
+     * 获取调度时区。
      *
-     * @return 执行结果。
+     * @return 调度时区。
      */
     public String getTimezone() {
         return timezone;
     }
     /**
-     * 设置相关数据。
+     * 设置调度时区。
      *
-     * @param timezone timezone。
+     * @param timezone 调度时区。
      */
     public void setTimezone(String timezone) {
         this.timezone = timezone;
     }
     /**
-     * 获取相关数据。
+     * 获取错过触发时的处理策略。
      *
-     * @return 执行结果。
+     * @return 错过触发处理策略。
      */
     public MisfirePolicy getMisfirePolicy() {
         return misfirePolicy;
     }
     /**
-     * 设置相关数据。
+     * 设置错过触发时的处理策略。
      *
-     * @param misfirePolicy misfire Policy。
+     * @param misfirePolicy 错过触发处理策略。
      */
     public void setMisfirePolicy(MisfirePolicy misfirePolicy) {
         this.misfirePolicy = misfirePolicy;
     }
     /**
-     * 获取相关数据。
+     * 获取并发触发策略。
      *
-     * @return 执行结果。
+     * @return 并发触发策略。
      */
     public ConcurrencyPolicy getConcurrencyPolicy() {
         return concurrencyPolicy;
     }
     /**
-     * 设置相关数据。
+     * 设置并发触发策略。
      *
-     * @param concurrencyPolicy concurrency Policy。
+     * @param concurrencyPolicy 并发触发策略。
      */
     public void setConcurrencyPolicy(ConcurrencyPolicy concurrencyPolicy) {
         this.concurrencyPolicy = concurrencyPolicy;
     }
     /**
-     * 获取相关数据。
+     * 获取任务参数。
      *
-     * @return 执行结果。
+     * @return 任务参数。
      */
     public String getParameters() {
         return parameters;
     }
     /**
-     * 设置相关数据。
+     * 设置任务参数。
      *
-     * @param parameters parameters。
+     * @param parameters 任务参数。
      */
     public void setParameters(String parameters) {
         this.parameters = parameters;
     }
     /**
-     * 获取相关数据。
+     * 判断任务是否启用。
      *
-     * @return 执行结果。
+     * @return 启用返回 {@code true}。
      */
     public boolean isEnabled() {
         return enabled;
     }
     /**
-     * 设置相关数据。
+     * 设置任务启用状态。
      *
-     * @param enabled enabled。
+     * @param enabled 任务启用状态。
      */
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;

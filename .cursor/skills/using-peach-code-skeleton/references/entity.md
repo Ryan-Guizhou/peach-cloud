@@ -24,7 +24,7 @@ peach-auth/peach-auth-entity/src/main/java/com/peach/auth/
 
 - DO 映射持久化结构；DTO 表达新增/更新或业务命令；QO 只表达查询；VO 只包含允许返回的数据。
 - 含 password、token、secret、privateKey、身份证等敏感字段的 DO 禁止直接作为 VO 或被响应序列化。
-- 前端不得控制创建人、修改人、租户、逻辑删除、权限和安全状态等服务端字段。
+- 前端不得直接控制创建人、修改人、最终租户上下文、逻辑删除、权限和安全状态；切换租户/授权管理等命令可接受目标标识，但由服务端鉴权与业务校验决定最终值。
 - DTO/QO 的校验分组必须由 REST 真实触发，Service 继续校验业务语义。
 - DO 字段、数据库列和 DAO XML 同步；时间、金额、状态等字段使用能表达真实语义的类型。
 - 含敏感字段的 Lombok 模型必须排除 `toString()`/日志暴露风险。
@@ -45,7 +45,7 @@ peach-auth/peach-auth-entity/src/main/java/com/peach/auth/
 ## FORBIDDEN
 
 - DTO/QO 添加持久化注解或承担数据库实体职责。
-- VO 因继承 DO 暴露密码、审计内部字段、逻辑删除或权限字段。
+- VO 因继承 DO 意外暴露密码、审计内部字段、逻辑删除或权限字段；确需展示的审计/权限信息由授权的专用 VO 显式定义。
 - 使用无类型 Map 代替稳定业务模型。
 - 为减少类数量混用查询、命令、持久化和响应职责。
 

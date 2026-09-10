@@ -123,7 +123,7 @@ RequestIdGenerator requestIdGenerator() {
 3. 过滤器把 RequestId 写入响应头、Servlet 请求属性和 MDC。
 4. Micrometer/OpenTelemetry 自动创建和传播 traceId、spanId。
 5. Feign 使用框架观测能力传播标准 Trace Context，现有拦截器继续传播 `X-Request-Id`。
-6. `peach-threadpool` 在 `enable-mdc=true` 时传播 Micrometer ThreadLocal 和 MDC。
+6. `peach-virtual-thread` 默认不隐式传播 ThreadLocal；需要异步日志关联时应通过明确的上下文包装或后续 verified decorator 传递 requestId、traceId 和 spanId。
 7. `peach-rocket` 通过中立 SPI 注入和提取 Trace Context，消费端创建 Consumer Span。
 
 各运行模块的 `ALL_FILE` 使用 Spring Boot 3.5 内置 Logstash JSON Encoder，MDC 中的 requestId、traceId、spanId 会作为结构化字段写入；控制台和按级别文件保留便于人工阅读的键值格式。

@@ -12,7 +12,7 @@ English | [中文](README.md)
 | --- | --- |
 | `peach-store-autoconfigure` | Core APIs, request/response models, provider SPI, auto-configuration, and defaults |
 | `peach-store-starter` | Starter exposed to business modules |
-| `peach-store-example` | Minimal example project |
+| `peach-store-quickstart` | Minimal example project |
 
 ## Core Objects
 

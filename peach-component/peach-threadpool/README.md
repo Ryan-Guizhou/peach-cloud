@@ -2,13 +2,15 @@
 
 [English](README.en-US.md) | 中文
 
-最后更新时间：2026-07-03  
-artifactId：`peach-threadpool`  
-类型：线程池组件聚合模块
+最后更新时间：2026-09-10
+artifactId：`peach-threadpool`
+类型：存量线程池兼容模块
 
 ## 模块定位
 
-`peach-threadpool` 提供配置化线程池、`ThreadPoolManager` 和 `@AsyncExecuted` 方法级异步执行注解，统一管理业务线程资源，避免业务代码随意创建游离线程池。
+`peach-threadpool` 是存量线程池兼容模块，当前仅为已有代码保留 `ThreadPoolManager`、`@AsyncExecuted` 和 `peach.threadpool` 配置契约。新建或实质修改的阻塞 IO 异步能力应迁移到 `peach-virtual-thread`，通过 `VirtualExecutorService`、`VirtualExecutorRegistry` 或 `@VirtualGroup` 按资源组执行。
+
+本模块不再作为新业务异步能力推荐入口，也不承载 Java 21 虚拟线程的容量隔离、背压、取消和优雅关闭治理。
 
 ## 子模块
 
@@ -29,7 +31,7 @@ artifactId：`peach-threadpool`
 | `NamedThreadFactory` | 线程名前缀控制 |
 | `@AsyncExecuted` | 方法级 AOP 注解，包名当前为 `com.peach.threadpool.annoation.AsyncExecuted` |
 
-## 接入方式
+## 存量接入方式
 
 ```xml
 <dependency>
@@ -57,6 +59,8 @@ peach:
 ```
 
 ## 使用示例
+
+以下示例仅用于维护旧调用点；新代码不要复制。
 
 ```java
 @Service
@@ -88,6 +92,7 @@ public CompletableFuture<String> loadRemote() {
 - `timeoutMs > 0` 限制等待结果的时间，不等于可靠取消底层任务。
 - 拒绝策略支持 `ABORT`、`CALLER_RUNS`、`DISCARD`、`DISCARD_OLDEST`。
 - `enable-mdc=true` 时会传播 Micrometer ThreadLocal 与完整 MDC，包括 requestId、traceId 和 spanId；任务完成后恢复工作线程原上下文。
+- `PoolType.VIRTUAL` 仅是旧模块中的存量枚举能力，不具备 `peach-virtual-thread` 的分组并发、Pending 背压和受管取消语义。
 
 ## 边界与限制
 
@@ -96,6 +101,7 @@ public CompletableFuture<String> loadRemote() {
 - 关闭 MDC/Micrometer 传播前，需要确认异步 Trace 和日志关联不受影响。
 - 关闭 SecurityContext 传递前，需要确认权限上下文不受影响。
 - 自调用不会经过 Spring AOP，注解可能不生效。
+- 新业务阻塞 IO 异步不要继续新增 `ThreadPoolManager` 或 `@AsyncExecuted`。
 
 ## 构建与验证
 
@@ -114,6 +120,7 @@ mvn -pl peach-component/peach-threadpool -am clean package -DskipTests -Pdevelop
 | 队列堆积 | `queueCapacity`、线程数、任务耗时 | 调整池参数，增加监控和拒绝策略 |
 | 异步日志缺少 requestId/traceId | `enable-mdc` 是否开启；任务是否通过 `ThreadPoolManager` 提交 | 开启上下文传播，不要绕过受管线程池 |
 | 权限上下文丢失 | SecurityContext 传递是否开启 | 检查 `enable-security-context` |
+| 新功能需要阻塞 IO 异步 | 是否仍在新增 `ThreadPoolManager` | 改用 `peach-virtual-thread-starter` 并配置业务 group |
 
 
 ## 项目约定

@@ -8,7 +8,7 @@ import com.peach.scheduler.transport.ExecutionResultReporter;
 import com.peach.scheduler.transport.JobExecutionResultEvent;
 
 /**
- * RocketExecutionResultReporter相关类。
+ * 基于 RocketMQ outbox 上报调度执行结果。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -19,16 +19,16 @@ public class RocketExecutionResultReporter implements ExecutionResultReporter {
     private final MqOutboxPublisher outboxPublisher;
 
     /**
-     * 创建实例。
+     * 创建执行结果上报器。
      *
-     * @param outboxPublisher outbox Publisher。
+     * @param outboxPublisher RocketMQ outbox 发布器。
      */
     public RocketExecutionResultReporter(MqOutboxPublisher outboxPublisher) {
         this.outboxPublisher = outboxPublisher;
     }
 
     /**
-     * 接口实现。
+     * 将执行结果事件发布到调度结果 topic。
      */
     @Override
     public void report(JobExecutionResultEvent event) {

@@ -19,7 +19,7 @@
     <modules>
         <module>peach-store-autoconfigure</module>
         <module>peach-store-starter</module>
-        <module>peach-store-example</module>
+        <module>peach-store-quickstart</module>
     </modules>
 
 </project>

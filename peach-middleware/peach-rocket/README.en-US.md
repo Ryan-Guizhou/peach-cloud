@@ -12,7 +12,7 @@ English | [中文](README.md)
 | --- | --- |
 | `peach-rocket-autoconfigure` | Core APIs, auto-configuration, default implementations, and SPI |
 | `peach-rocket-starter` | Starter exposed to business modules |
-| `peach-rocket-example` | Example application and JDBC idempotency/Outbox override samples |
+| `peach-rocket-quickstart` | Example application and JDBC idempotency/Outbox override samples |
 
 ## Core Objects
 

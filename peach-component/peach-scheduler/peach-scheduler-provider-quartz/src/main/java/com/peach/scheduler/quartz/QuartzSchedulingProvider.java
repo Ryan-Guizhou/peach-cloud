@@ -70,7 +70,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 接口实现。
+     * 获取 Quartz provider 标识。
      */
     @Override
     public String getProviderId() {
@@ -78,7 +78,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 接口实现。
+     * 获取 Quartz provider 支持的调度能力。
      */
     @Override
     public Set<SchedulerCapability> getCapabilities() {
@@ -86,7 +86,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 接口实现。
+     * 在 Quartz 中新建调度任务。
      */
     @Override
     public void schedule(JobDefinition definition) {
@@ -109,7 +109,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 接口实现。
+     * 在 Quartz 中更新调度任务和触发器。
      */
     @Override
     public void reschedule(JobDefinition definition) {
@@ -144,7 +144,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 接口实现。
+     * 暂停 Quartz 任务。
      */
     @Override
     public void pause(String jobCode) {
@@ -152,7 +152,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 接口实现。
+     * 恢复 Quartz 任务。
      */
     @Override
     public void resume(String jobCode) {
@@ -160,7 +160,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 接口实现。
+     * 删除 Quartz 任务。
      */
     @Override
     public void delete(String jobCode) {
@@ -168,7 +168,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 接口实现。
+     * 立即触发 Quartz 任务。
      */
     @Override
     public void trigger(String jobCode, String parameters) {
@@ -183,7 +183,7 @@ public class QuartzSchedulingProvider implements SchedulingProvider {
     }
 
     /**
-     * 接口实现。
+     * 判断 Quartz 任务是否存在。
      */
     @Override
     public boolean exists(String jobCode) {

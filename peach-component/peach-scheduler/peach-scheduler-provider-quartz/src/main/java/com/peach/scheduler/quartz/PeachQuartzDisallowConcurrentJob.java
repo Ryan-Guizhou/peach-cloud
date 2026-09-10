@@ -3,9 +3,7 @@ package com.peach.scheduler.quartz;
 import org.quartz.DisallowConcurrentExecution;
 
 /**
- * PeachQuartzDisallowConcurrentJob相关类。
- * <p>调度模块说明。
- * 调度模块说明。</p>
+ * 禁止同一任务并发触发的 Quartz Job。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -15,7 +13,7 @@ import org.quartz.DisallowConcurrentExecution;
 public class PeachQuartzDisallowConcurrentJob extends AbstractPeachQuartzJob {
 
     /**
-     * 创建实例。
+     * 创建禁止并发触发的 Quartz Job。
      */
     public PeachQuartzDisallowConcurrentJob() {
         super();

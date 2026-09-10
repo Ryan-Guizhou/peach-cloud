@@ -448,12 +448,6 @@
                 <artifactId>peach-rocket-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
-            <dependency>
-                <groupId>com.peach</groupId>
-                <artifactId>peach-rocket-example</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
             <!-- ==================== peach-middleware / peach-openfeign ==================== -->
             <dependency>
                 <groupId>com.peach</groupId>

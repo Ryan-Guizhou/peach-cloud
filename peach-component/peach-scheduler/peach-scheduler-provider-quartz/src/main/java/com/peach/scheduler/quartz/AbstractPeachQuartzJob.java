@@ -8,8 +8,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 /**
- * AbstractPeachQuartzJob相关类。
- * <p>调度模块说明。</p>
+ * Quartz Job 基类，负责把 Quartz 触发转换为 Peach 调度触发上下文。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -17,26 +16,26 @@ import org.quartz.JobExecutionException;
  */
 public abstract class AbstractPeachQuartzJob implements Job {
     /**
-     * 调度模块说明。
+     * Quartz SchedulerContext 中保存触发处理器的 key。
      */
     public static final String CONTEXT_TRIGGER_HANDLER = "peachScheduleTriggerHandler";
     /**
-     * 调度模块说明。
+     * Quartz JobDataMap 中保存任务编码的 key。
      */
     public static final String KEY_JOB_CODE = "jobCode";
     /**
-     * 调度模块说明。
+     * Quartz JobDataMap 中保存任务参数的 key。
      */
     public static final String KEY_PARAMETERS = "parameters";
 
     /**
-     * 创建实例。
+     * 创建 Quartz Job 基类实例。
      */
     protected AbstractPeachQuartzJob() {
     }
 
     /**
-     * 接口实现。
+     * 处理 Quartz 触发并委托给 Peach 调度触发处理器。
      */
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {

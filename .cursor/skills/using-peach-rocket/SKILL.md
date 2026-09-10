@@ -1,6 +1,6 @@
 ---
 name: using-peach-rocket
-description: 规范 peach-cloud 项目中 peach-rocket-starter / peach-rocket-autoconfigure / peach-rocket-example 的 RocketMQ 接入、事件建模、生产消费、事务消息、Outbox、幂等、加密、Topic 治理和排障。Use when editing or reviewing RocketMQ code, adding @MqEvent/@MqConsumer/MqPublisher usage, extending peach-rocket SPI, or writing README for peach-middleware/peach-rocket.
+description: 规范 peach-cloud 项目中 peach-rocket-starter / peach-rocket-autoconfigure / peach-rocket-quickstart 的 RocketMQ 接入、事件建模、生产消费、事务消息、Outbox、幂等、加密、Topic 治理和排障。Use when editing or reviewing RocketMQ code, adding @MqEvent/@MqConsumer/MqPublisher usage, extending peach-rocket SPI, or writing README for peach-middleware/peach-rocket.
 ---
 
 # Peach Rocket Starter
@@ -9,7 +9,7 @@ description: 规范 peach-cloud 项目中 peach-rocket-starter / peach-rocket-au
 
 1. 先读取当前任务涉及的源码，不直接照搬旧 README；旧 README 可能存在编码显示问题。
 2. 修改业务接入时，优先使用 `peach-rocket-starter` 对外暴露的 API，不直接散落使用 RocketMQ 原生注解和客户端。
-3. 修改 starter 能力时，保持三段式结构：`peach-rocket-autoconfigure` 放核心 API/自动配置/默认实现，`peach-rocket-starter` 只做依赖聚合，`peach-rocket-example` 放可运行示例和业务覆盖示例。
+3. 维护 starter 标准结构：autoconfigure 放现有 API、自动配置、默认实现和配置元数据，starter 聚合最小接入依赖，quickstart 提供可运行示例；禁止新增或保留 example 模块。新增独立 core/provider 需要真实隔离理由，不在普通功能修改中拆包；装配/依赖变化读取基础骨架的 `references/starter.md`。
 4. 需要详细模块边界、配置项、SPI、示例路径时，读取 `references/module-guide.md`。
 5. 完成后运行 `node scripts/check-utf8.mjs`、受影响模块 Maven 编译/测试和 `git diff --check`；无法运行时说明原因和残余风险。
 
@@ -35,4 +35,10 @@ description: 规范 peach-cloud 项目中 peach-rocket-starter / peach-rocket-au
 
 ## README 提醒
 
-编辑 `peach-middleware/peach-rocket` 或子模块后，使用 `$using-peach-readme-writer` 刷新 README。README 必须写清楚能力边界、接入示例、有效配置、SPI 覆盖方式、构建验证和排障表。
+用户要求文档或公共 API、配置、扩展点、运行机制、生产边界变化时，使用 `$using-peach-readme-writer` 更新受影响 README；纯内部等价重构不强制刷新。README 必须写清楚能力边界、接入示例、有效配置、SPI 覆盖方式、构建验证和排障表。
+
+## 可靠性验收
+
+- 持久化 Store 不自动等于与业务写入同事务；核对事务管理器、数据源与提交顺序。
+- 新增可靠投递能力验证重启恢复、并发领取、发送成功后状态更新失败、重放及消费者重复执行；不承诺跨数据库/MQ exactly-once。
+- 内存默认实现仅说明开发/测试用途；生产可靠性要求有显式配置/实现及实际验证，不把接口或 Bean 存在视为完成。

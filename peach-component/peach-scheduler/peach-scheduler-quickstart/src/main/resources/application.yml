@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: peach-scheduler-quickstart
+
+peach:
+  scheduler:
+    enabled: true
+    rocket:
+      require-jdbc: false
+    executor:
+      application-name: ${spring.application.name}
+      default-timeout-ms: 1800000
+  virtual-thread:
+    enabled: true
+    groups:
+      scheduler:
+        max-concurrency: 16
+        max-pending: 200
+        backpressure: REJECT
+  rocket:
+    enabled: true
+    app-name: ${spring.application.name}
+    consumer:
+      dynamic-register: true
+      enable-idempotent: true
+    outbox:
+      enabled: true
+    topic:
+      auto-create: false

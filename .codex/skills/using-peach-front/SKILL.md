@@ -1,6 +1,6 @@
 ---
 name: using-peach-front
-description: 约束 peach-cloud-front 的 Vue 3、TypeScript、Vite、Axios、Pinia、Ant Design Vue 与 Vue Router 代码编写、迁移和审查；用于新增或修改页面、组件、路由、权限、状态、接口请求、样式、响应式、可访问性、UI/UX 设计审查及前端目录结构时，并按任务类型协调 ui-ux-pro-max、design-system、web-design-guidelines 或 ui-styling。
+description: 约束 peach-cloud-front 的 Vue 3、TypeScript、Vite、Axios、Pinia、Ant Design Vue 与 Vue Router 代码编写、迁移和审查；用于新增或修改页面、组件、路由、权限、状态、接口请求、样式、响应式、可访问性、UI/UX 设计审查及前端目录结构时，并按任务类型协调 ui-ux-pro-max、design-system 或 ui-styling。
 ---
 
 # Peach Frontend
@@ -40,7 +40,7 @@ description: 约束 peach-cloud-front 的 Vue 3、TypeScript、Vite、Axios、Pi
 | --- | --- | --- |
 | 新页面视觉方案、交互流程、布局重构、响应式行为、动效或体验优化 | `ui-ux-pro-max` | 实现前形成设计决策，完成前复核可访问性和体验质量 |
 | 设计 token、主题变量、间距/字体尺度、组件状态规范或系统化组件库 | `design-system` + `ui-ux-pro-max` | 先确定 token/组件规范，再按本项目技术栈实现 |
-| 用户要求审查 UI、检查可访问性、审计 UX 或对照 Web 最佳实践 | `web-design-guidelines` | 只读审查时输出问题，不自动修改；用户要求修复时再按本 skill 实现 |
+| 用户要求审查 UI、可访问性或 UX | `ui-ux-pro-max`（可用时） | 结合本 skill 的 coding-style reference 只读评估；不得把未安装的 web-design-guidelines 当作已调用工具 |
 | 用户明确要求 Tailwind、shadcn/ui、Canvas 视觉方案，或任务只需其框架无关的视觉方法 | `ui-styling` | 先确认与 Vue 3 + Ant Design Vue 的兼容边界；未经明确授权不得引入 React、shadcn/ui 或 Tailwind |
 
 以下任务不要自动叠加 UX/UI skills：仅移动目录、保持行为的重命名、纯 API/类型/Store/路由权限逻辑、依赖维护、构建修复或不改变界面外观与交互的代码整理。用户明确点名某个 skill 时按用户要求使用，但仍遵守本项目技术栈和安全边界。
@@ -55,3 +55,7 @@ description: 约束 peach-cloud-front 的 Vue 3、TypeScript、Vite、Axios、Pi
 - 在 `peach-cloud-front` 执行 `npm run build`。
 - 在仓库根目录执行 `node scripts/check-utf8.mjs` 和 `git diff --check`。
 - 无法执行的检查及残余风险在最终回复中明确说明。
+
+## 改动范围
+
+新增组件/composable 先确认独立职责或真实复用，不把简单页面拆为多层转发。内部类型/权限逻辑修改不触发页面重设计；共享 CRUD 组件变化核对消费者的筛选、分页、权限和空/错/加载状态，不为单页需求扩成万能配置引擎。

@@ -14,8 +14,7 @@ import com.peach.scheduler.transport.ExecutionLeaseClient;
 import com.peach.scheduler.transport.ExecutionResultReporter;
 import com.peach.scheduler.transport.JobExecutionCommand;
 import com.peach.scheduler.transport.JobExecutionResultEvent;
-import com.peach.threadpool.core.PoolType;
-import com.peach.threadpool.manager.ThreadPoolManager;
+import com.peach.virtualthread.registry.VirtualExecutorRegistry;
 import java.net.InetAddress;
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
@@ -26,10 +25,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * DefaultPeachJobExecutor相关类。
- * <p>调度模块说明。
- * 调度模块说明。
- * 调度模块说明。</p>
+ * Scheduler 默认任务执行编排器。
+ *
+ * <p>执行器先使用 {@link ExecutionLeaseClient} 抢占控制面下发的 execution 租约，成功后
+ * 将业务 Handler 提交到 {@code scheduler} 虚拟线程业务组执行，并把成功、失败、超时或中断
+ * 结果通过 {@link ExecutionResultReporter} 回传。该类不负责 Quartz 触发、任务定义管理或
+ * Handler 内部业务幂等。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -38,33 +39,41 @@ import org.slf4j.LoggerFactory;
 @Indexed
 public class DefaultPeachJobExecutor implements PeachJobExecutor {
     private static final Logger log = LoggerFactory.getLogger(DefaultPeachJobExecutor.class);
+    private static final String SCHEDULER_EXECUTOR_GROUP = "scheduler";
+
     private final JobRegistry registry;
-    private final ThreadPoolManager threadPoolManager;
+    private final VirtualExecutorRegistry virtualExecutorRegistry;
     private final ExecutionLeaseClient leaseClient;
     private final ExecutionResultReporter resultReporter;
     private final PeachSchedulerProperties properties;
 
     /**
-     * 创建相关对象。
+     * 创建默认任务执行编排器。
      *
-     * @param registry 参数说明
-     * @param threadPoolManager 参数说明
-     * @param leaseClient 参数说明
-     * @param resultReporter 参数说明
-     * @param properties 参数说明
+     * @param registry Handler 注册表
+     * @param virtualExecutorRegistry 虚拟线程执行器注册中心
+     * @param leaseClient 执行租约客户端
+     * @param resultReporter 执行结果上报器
+     * @param properties Scheduler 配置属性
      */
-    public DefaultPeachJobExecutor(JobRegistry registry, ThreadPoolManager threadPoolManager,
+    public DefaultPeachJobExecutor(JobRegistry registry, VirtualExecutorRegistry virtualExecutorRegistry,
                                    ExecutionLeaseClient leaseClient, ExecutionResultReporter resultReporter,
                                    PeachSchedulerProperties properties) {
         this.registry = registry;
-        this.threadPoolManager = threadPoolManager;
+        this.virtualExecutorRegistry = virtualExecutorRegistry;
         this.leaseClient = leaseClient;
         this.resultReporter = resultReporter;
         this.properties = properties;
+        this.virtualExecutorRegistry.get(SCHEDULER_EXECUTOR_GROUP);
     }
 
     /**
-     * 接口实现。
+     * 执行控制面下发的单次任务命令。
+     *
+     * <p>该方法会同步等待 Handler 结果或超时，超时后会取消受管 Future。业务副作用是否能被
+     * 取消取决于 Handler 和底层 IO 对中断的响应能力。</p>
+     *
+     * @param command 任务执行命令
      */
     @Override
     public void execute(JobExecutionCommand command) {
@@ -79,7 +88,7 @@ public class DefaultPeachJobExecutor implements PeachJobExecutor {
         Instant startedAt = Instant.now();
         log.info("Scheduler execution started, executionId={}, jobCode={}, handlerName={}, attempt={}, executorInstance={}",
                 command.executionId(), command.jobCode(), command.handlerName(), command.attempt(), instanceId);
-        Future<JobResult> future = threadPoolManager.submit(PoolType.SCHEDULED, () -> handler.execute(new JobContext(
+        Future<JobResult> future = virtualExecutorRegistry.submit(SCHEDULER_EXECUTOR_GROUP, () -> handler.execute(new JobContext(
                 command.executionId(), command.jobCode(), command.applicationName(), command.parameters(),
                 Math.max(1, command.attempt()), command.traceId())));
         JobExecutionResultEvent.Builder eventBuilder = JobExecutionResultEvent.builder()

@@ -8,13 +8,13 @@ artifactId：`peach-component`
 
 ## 模块定位
 
-`peach-component` 聚合与业务域无关、可被多个服务复用的组件 starter。组件通过 `autoconfigure` 提供核心 API、配置绑定、默认实现和扩展点，通过 `starter` 对业务模块暴露依赖入口。
+`peach-component` 聚合与业务域无关、可被多个服务复用的组件 starter。组件采用 `autoconfigure / starter / quickstart` 三层结构：`autoconfigure` 提供配置绑定、配置元数据、默认实现和扩展点，`starter` 对业务模块暴露最小依赖入口，`quickstart` 提供可运行接入示例。
 
 本模块解决：
 
-- 验证码、邮件、初始化、存储、线程池等通用能力复用。
-- starter 和 autoconfigure 的统一组织。
-- 示例模块与业务接入说明的归口。
+- 验证码、邮件、初始化、存储、虚拟线程等通用能力复用。
+- autoconfigure、starter 和 quickstart 的统一组织。
+- 快速接入示例与业务接入说明的归口。
 
 本模块不解决：
 
@@ -30,7 +30,8 @@ artifactId：`peach-component`
 | `peach-email` | 邮件发送、模板、路由、重试和幂等 |
 | `peach-storage` | 统一存储模板、provider SPI、对象存储和本地存储接入 |
 | `peach-initialize` | 应用初始化处理器和编排 |
-| `peach-threadpool` | 配置化线程池、异步注解和上下文传递 |
+| `peach-threadpool` | 存量线程池模块，暂时保留兼容，不再作为新异步能力推荐入口 |
+| `peach-virtual-thread` | Java 21 虚拟线程分组执行、背压、取消和优雅关闭 |
 
 ## 通用接入方式
 
@@ -39,7 +40,7 @@ artifactId：`peach-component`
 ```xml
 <dependency>
     <groupId>com.peach</groupId>
-    <artifactId>peach-threadpool-starter</artifactId>
+    <artifactId>peach-virtual-thread-starter</artifactId>
 </dependency>
 ```
 
@@ -50,8 +51,8 @@ artifactId：`peach-component`
 | 层级 | 说明 |
 | --- | --- |
 | `*-autoconfigure` | 核心 API、配置类、自动配置、默认实现、SPI |
-| `*-starter` | 对外依赖聚合，业务接入优先使用 |
-| `*-example` | 可运行示例、覆盖默认 Bean 示例、配置样例 |
+| `*-starter` | 对外最小依赖聚合，业务接入优先使用 |
+| `*-quickstart` | 可运行示例、覆盖默认 Bean 示例和配置样例；starter 相关示例统一使用 quickstart |
 
 ## 运行机制
 
@@ -78,7 +79,7 @@ mvn -pl peach-component -am clean package -DskipTests -Pdevelopment
 
 ```bash
 mvn -pl peach-component/peach-storage -am clean package -DskipTests -Pdevelopment
-mvn -pl peach-component/peach-threadpool -am clean package -DskipTests -Pdevelopment
+mvn -pl peach-component/peach-virtual-thread -am clean package -DskipTests -Pdevelopment
 ```
 
 ## 排障指南

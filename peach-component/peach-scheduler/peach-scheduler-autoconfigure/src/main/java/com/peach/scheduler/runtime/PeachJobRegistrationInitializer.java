@@ -8,7 +8,7 @@ import java.util.List;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 
 /**
- * 注册相关能力。
+ * Spring 单例初始化完成后注册所有 {@link JobHandler}。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -20,9 +20,10 @@ public class PeachJobRegistrationInitializer implements SmartInitializingSinglet
     private final List<JobHandler> handlers;
 
     /**
-     * 创建相关对象。
-     * @param registry 参数说明
-     * @param handlers 参数说明
+     * 创建任务注册初始化器。
+     *
+     * @param registry 任务处理器注册表。
+     * @param handlers Spring 容器中的任务处理器列表。
      */
     public PeachJobRegistrationInitializer(JobRegistry registry, List<JobHandler> handlers) {
         this.registry = registry;
@@ -30,7 +31,7 @@ public class PeachJobRegistrationInitializer implements SmartInitializingSinglet
     }
 
     /**
-     * 注册相关能力。
+     * 注册容器中声明的全部任务处理器。
      */
     @Override
     public void afterSingletonsInstantiated() {

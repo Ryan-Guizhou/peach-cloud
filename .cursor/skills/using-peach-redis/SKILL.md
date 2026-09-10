@@ -65,3 +65,7 @@ mvn -f "peach-middleware/peach-redission/pom.xml" clean package -DskipTests -Pde
 node scripts/check-utf8.mjs
 git diff --check
 ```
+
+## 装配与验证边界
+
+修改 starter 装配或依赖时，按 AGENTS.md 读取当前客户端的 `10-architecture-and-starters` 和基础骨架的 `references/starter.md`。本文件中的 `-DskipTests package`（若列出）仅是编译/打包检查，不代表行为测试；按变化执行相关测试。仅规范、文档或注释修改不机械运行全项目构建。

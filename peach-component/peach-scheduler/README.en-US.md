@@ -2,7 +2,7 @@
 
 English | [中文](README.md)
 
-- Last updated: 2026-08-14
+- Last updated: 2026-09-10
 - artifactId: `peach-scheduler`
 - Type: distributed scheduler executor SDK (Provider SPI + RocketMQ transport)
 - Target stack: Java 21, Spring Boot 3.5.4
@@ -16,6 +16,7 @@ English | [中文](README.md)
 - Business task SDK (`@PeachJob`, `JobHandler`, `PeachJobExecutor`)
 - Scheduling Provider SPI and the default Quartz implementation
 - RocketMQ command/result transport with JDBC Outbox and consume-idempotency adapters
+- Handler execution isolation through the `peach-virtual-thread` scheduler group
 - `peach-scheduler-starter` aggregation dependency
 
 **Not provided:**
@@ -37,7 +38,7 @@ English | [中文](README.md)
 | `peach-scheduler-provider-quartz` | Quartz `SchedulingProvider` and trigger bridge |
 | `peach-scheduler-transport-rocket` | RocketMQ transport and JDBC durability stores |
 | `peach-scheduler-starter` | Business integration starter |
-| `peach-scheduler-example` | Local integration example |
+| `peach-scheduler-quickstart` | Local integration example |
 
 ## Core Objects
 
@@ -63,7 +64,7 @@ Typical production dependencies:
 </dependency>
 <dependency>
     <groupId>com.peach</groupId>
-    <artifactId>peach-threadpool-starter</artifactId>
+    <artifactId>peach-virtual-thread-starter</artifactId>
 </dependency>
 <dependency>
     <groupId>com.peach</groupId>
@@ -90,13 +91,13 @@ peach:
     executor:
       application-name: ${spring.application.name}
       default-timeout-ms: 1800000
-  threadpool:
-    pools:
-      - type: SCHEDULED
-        core-size: 4
-        max-size: 16
-        queue-capacity: 200
-        rejected-policy: ABORT
+  virtual-thread:
+    enabled: true
+    groups:
+      scheduler:
+        max-concurrency: 16
+        max-pending: 200
+        backpressure: REJECT
   rocket:
     enabled: true
     consumer:
@@ -134,7 +135,7 @@ public class SchedulerExecutionConsumer implements MqMessageHandler<JobExecution
 }
 ```
 
-See `DemoSchedulerExecutionConsumer` in `peach-scheduler-example`.
+See `DemoSchedulerExecutionConsumer` in `peach-scheduler-quickstart`.
 
 ## Configuration Keys
 
@@ -145,6 +146,8 @@ See `DemoSchedulerExecutionConsumer` in `peach-scheduler-example`.
 | `peach.scheduler.executor.default-timeout-ms` | `1800000` | Default handler wait timeout |
 | `peach.scheduler.rocket.require-jdbc` | `false` | Fail fast if durable JDBC stores are missing |
 | `peach.scheduler.quartz.group` | `PEACH_SCHEDULER` | Quartz job/trigger group |
+| `peach.virtual-thread.groups.scheduler.max-concurrency` | `256` | Maximum concurrent scheduler handler executions |
+| `peach.virtual-thread.groups.scheduler.max-pending` | `512` | Maximum pending scheduler handler executions |
 
 ## Runtime Flow
 
@@ -153,7 +156,7 @@ Control-plane Outbox → RocketMQ scheduler-execute-{app}
   → business @MqConsumer
   → PeachJobExecutor.execute()
   → ExecutionLeaseClient.claim()
-  → ThreadPoolManager / PoolType.SCHEDULED
+  → VirtualExecutorRegistry / scheduler group
   → @PeachJob handler
   → scheduler-execution-result
 ```
@@ -174,7 +177,8 @@ Control-plane tables: `PEACH_SCHEDULER_*.sql`, `QRTZ_MYSQL.sql`.
 ## Boundaries
 
 - Handlers must not depend on Quartz APIs or execute dynamic code from the admin UI.
-- Use `PoolType.SCHEDULED` only; do not create ad-hoc thread pools.
+- Use `peach.virtual-thread.groups.scheduler` for blocking IO handler execution; do not create ad-hoc thread pools.
+- Quartz triggers and listener lifecycle threads remain platform-thread concerns unless explicitly migrated and verified.
 - Do not log full payloads or credentials.
 - Timeout means control-plane wait timeout, not guaranteed rollback of external side effects.
 
@@ -189,7 +193,7 @@ node scripts/check-utf8.mjs
 
 | Symptom | Check | Action |
 | --- | --- | --- |
-| `PeachJobExecutor` missing | `ExecutionLeaseClient`, `ThreadPoolManager`, Rocket beans | Add required starters |
+| `PeachJobExecutor` missing | `ExecutionLeaseClient`, `VirtualExecutorRegistry`, Rocket beans | Add required starters and configure the `scheduler` virtual-thread group |
 | Claim always rejected | execution state, Same-Token, application name | Verify Feign target `peach-scheduler` |
 | Handler not whitelisted | registration heartbeat, application name | Check `openfeign-external` |
 | Duplicate side effects | claim alone is insufficient | Add handler idempotency by `executionId` |

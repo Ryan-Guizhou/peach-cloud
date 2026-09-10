@@ -54,7 +54,7 @@ artifactId：`peach-middleware`
 | `*-autoconfigure` | 核心 API、配置绑定、自动配置、默认实现、SPI |
 | `*-starter` | 对业务暴露的依赖入口 |
 | `*-common` | 同一中间件家族共享基础能力 |
-| `*-example` | 可运行示例和生产覆盖方式样例 |
+| `*-quickstart` | 可运行示例和生产覆盖方式样例 |
 
 ## 运行机制
 

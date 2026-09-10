@@ -16,7 +16,7 @@ artifactId：`peach-storage`
 | --- | --- |
 | `peach-store-autoconfigure` | 核心 API、请求响应模型、provider SPI、自动配置和默认实现 |
 | `peach-store-starter` | 对业务模块暴露的 starter |
-| `peach-store-example` | 可运行示例 |
+| `peach-store-quickstart` | 可运行示例 |
 
 ## 核心对象
 

@@ -4,7 +4,7 @@ English | [中文](README.md)
 
 ## Purpose
 
-`peach-component` aggregates reusable components that are not tied to a specific business domain.
+`peach-component` aggregates reusable components that are not tied to a specific business domain. Components follow the `autoconfigure / starter / quickstart` structure: autoconfigure owns configuration binding, configuration metadata, default beans, and extension points; starter exposes the minimal dependency entrypoint; quickstart provides runnable integration examples.
 
 ## Submodules
 
@@ -14,12 +14,14 @@ English | [中文](README.md)
 | `peach-email` | Email sending, templates, retry, idempotency, and provider routing |
 | `peach-storage` | Unified storage abstraction for local, SFTP/NAS, OSS/S3/MinIO, and other providers |
 | `peach-initialize` | Application startup initialization task orchestration |
-| `peach-threadpool` | Configurable thread pools and `@AsyncExecuted` annotation |
+| `peach-threadpool` | Legacy thread-pool module retained temporarily for compatibility |
+| `peach-virtual-thread` | Java 21 virtual-thread grouped execution, backpressure, cancellation, and graceful shutdown |
 
 ## Usage Rules
 
 - Business services should import concrete starters only.
-- Starters expose public entrypoints; autoconfigure modules provide auto-configuration and defaults.
+- Starters expose the smallest public dependency entrypoint; autoconfigure modules provide auto-configuration and defaults.
+- Quickstart modules demonstrate runnable integration, custom Bean overrides, and configuration examples.
 - New components must include README, configuration, boundaries, and build verification commands.
 
 ## Verification

@@ -7,7 +7,7 @@ import org.quartz.Scheduler;
 import org.springframework.beans.factory.InitializingBean;
 
 /**
- * QuartzTrigger处理器注册器。
+ * 将 Peach 调度触发处理器注册到 Quartz SchedulerContext。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -19,10 +19,10 @@ public class QuartzTriggerHandlerRegistrar implements InitializingBean {
     private final ScheduleTriggerHandler triggerHandler;
 
     /**
-     * 创建实例。
+     * 创建 Quartz 触发处理器注册器。
      *
-     * @param scheduler scheduler。
-     * @param triggerHandler trigger Handler。
+     * @param scheduler Quartz Scheduler。
+     * @param triggerHandler Peach 调度触发处理器。
      */
     public QuartzTriggerHandlerRegistrar(Scheduler scheduler, ScheduleTriggerHandler triggerHandler) {
         this.scheduler = scheduler;
@@ -30,7 +30,7 @@ public class QuartzTriggerHandlerRegistrar implements InitializingBean {
     }
 
     /**
-     * 接口实现。
+     * 在属性设置完成后写入 Quartz SchedulerContext。
      */
     @Override
     public void afterPropertiesSet() throws Exception {

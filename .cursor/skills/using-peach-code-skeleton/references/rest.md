@@ -21,7 +21,7 @@ peach-auth/peach-auth-rest/src/main/java/com/peach/auth/rest/
 - 主键、查询和路径参数显式使用 `@RequestParam`、`@PathVariable` 等绑定注解，不依赖参数名推断。
 - 请求体按场景使用 `@Validated(Group.class)`；类级 `@Validated` 用于方法参数约束。
 - internal/external 路径、权限和暴露范围必须与包职责一致。
-- 返回模型逐字段检查敏感数据；不得返回含 password/token/secret 的 DO/VO。
+- 返回模型逐字段检查敏感数据，禁止将含凭据的持久化 DO/VO 直接序列化。登录 token、授权签名 URL 等必要输出遵循 `08-security-and-quality-gates` 的 Authorized Outputs。
 - 操作审计只记录经确认的非敏感字段白名单，不引用完整 DTO、请求或对象 `toString()`。
 
 ## PREFERRED

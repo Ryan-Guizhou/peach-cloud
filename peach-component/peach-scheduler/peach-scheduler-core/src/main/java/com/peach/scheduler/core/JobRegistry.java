@@ -3,13 +3,12 @@ package com.peach.scheduler.core;
 import org.springframework.stereotype.Indexed;
 
 import com.peach.scheduler.annotation.PeachJob;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * JobRegistry相关类。
+ * 基于 {@link PeachJob} 注解维护任务处理器注册表。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -22,10 +21,10 @@ public class JobRegistry {
     private final Map<String, JobDescriptor> descriptors = new LinkedHashMap<>();
 
     /**
-     * 注册相关能力。
+     * 注册任务处理器。
      *
-     * @param handler 参数说明
-     * @throws IllegalArgumentException 异常说明
+     * @param handler 带有 {@link PeachJob} 注解的任务处理器。
+     * @throws IllegalArgumentException 处理器未声明名称或名称重复时抛出。
      */
     public synchronized void register(JobHandler handler) {
         PeachJob annotation = handler.getClass().getAnnotation(PeachJob.class);
@@ -44,11 +43,11 @@ public class JobRegistry {
     }
 
     /**
-     * 获取相关数据。
+     * 获取指定名称的任务处理器。
      *
-     * @param handlerName handler Name。
-     * @return 执行结果。
-     * @throws IllegalArgumentException 异常说明
+     * @param handlerName 任务处理器名称。
+     * @return 任务处理器。
+     * @throws IllegalArgumentException 处理器不存在时抛出。
      */
     public synchronized JobHandler getRequired(String handlerName) {
         JobHandler handler = handlers.get(handlerName);
@@ -59,9 +58,9 @@ public class JobRegistry {
     }
 
     /**
-     * 获取相关数据。
+     * 获取已注册任务处理器描述。
      *
-     * @return 执行结果。
+     * @return 任务处理器描述列表。
      */
     public synchronized List<JobDescriptor> descriptors() {
         return List.copyOf(descriptors.values());

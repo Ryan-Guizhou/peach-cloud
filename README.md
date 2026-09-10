@@ -70,7 +70,7 @@ peach-cloud
 | `peach-generator` | `common`，`entity`，`service`，`rest`，`launch` | 数据源、表元数据、模板、预览和代码生成 |
 | `peach-scheduled` | `common`，`entity`，`service`，`rest`，`openfeign-external`，`launch` | 调度任务管理、执行与对外 Feign 接口 |
 | `peach-common` | 单模块 | 公共响应、异常、常量、基础模型和工具类 |
-| `peach-component` | `peach-captcha`，`peach-email`，`peach-storage`，`peach-initialize`，`peach-threadpool` | 与业务无关的通用组件 starter |
+| `peach-component` | `peach-captcha`，`peach-email`，`peach-storage`，`peach-initialize`，`peach-virtual-thread`，`peach-threadpool` | 与业务无关的通用组件 starter；`peach-threadpool` 暂作存量兼容 |
 | `peach-middleware` | `peach-kafka`，`peach-rocket`，`peach-redis`，`peach-redission`，`peach-mongo`，`peach-satoken`，`peach-openfeign` | 中间件接入、自动配置、starter 和示例 |
 | `peach-sample` | `SampleApplication` | 组件和中间件能力的本地示例应用 |
 | `peach-cloud-front` | `src/`，`vite.config.ts` | Vue 3 + Vite + TypeScript 前端 |
@@ -88,8 +88,8 @@ peach-cloud
 | 代码生成服务 | `com.peach.generator.launch.PeachGeneratorApplication` | `peach-generator/peach-generator-launch/src/main/resources` |
 | 调度服务 | `com.peach.scheduled.PeachScheduledApplication` | `peach-scheduled/peach-scheduled-launch/src/main/resources` |
 | 示例服务 | `com.peach.sample.SampleApplication` | `peach-sample/src/main/resources` |
-| 存储示例 | `com.peach.example.PeachStoreExampleApplication` | `peach-component/peach-storage/peach-store-example/src/main/resources` |
-| RocketMQ 示例 | `com.peach.rocket.example.PeachRocketExampleApplication` | `peach-middleware/peach-rocket/peach-rocket-example/src/main/resources` |
+| 存储 quickstart | `com.peach.quickstart.PeachStoreQuickstartApplication` | `peach-component/peach-storage/peach-store-quickstart/src/main/resources` |
+| RocketMQ quickstart | `com.peach.rocket.quickstart.PeachRocketQuickstartApplication` | `peach-middleware/peach-rocket/peach-rocket-quickstart/src/main/resources` |
 
 ## 技术栈与版本
 
@@ -152,7 +152,7 @@ mvn -pl peach-fileservice/peach-fileservice-launch -am clean package -DskipTests
 构建组件或中间件模块：
 
 ```bash
-mvn -pl peach-component/peach-threadpool -am clean package -DskipTests -Pdevelopment
+mvn -pl peach-component/peach-virtual-thread -am clean package -DskipTests -Pdevelopment
 mvn -pl peach-middleware/peach-rocket -am clean package -DskipTests -Pdevelopment
 ```
 
@@ -399,7 +399,7 @@ npm run preview
 
 后端配置主要由三类来源共同决定：
 
-1. 启动模块内的 `application.yml` 或 `application-*.yml`。
+1. 启动模块内的 `application.yaml` 或 `application-*.yml`。
 2. Nacos 等外部配置中心。
 3. Docker Compose 或运行环境注入的环境变量。
 
@@ -426,7 +426,8 @@ npm run preview
 - `peach-email`：邮件发送、模板、重试、路由等能力。
 - `peach-storage`：对象存储和本地/云厂商 provider 封装。
 - `peach-initialize`：初始化执行能力。
-- `peach-threadpool`：线程池、异步执行和上下文传递能力。
+- `peach-virtual-thread`：Java 21 虚拟线程分组执行、背压、取消和优雅关闭能力。
+- `peach-threadpool`：存量线程池兼容模块，暂时保留，不作为新异步能力推荐入口。
 
 `peach-middleware` 主要沉淀中间件接入：
 
@@ -452,7 +453,7 @@ npm run preview
 - 模块 README 应优先描述当前模块真实存在的类、配置项、命令和限制。
 - 不应把构建产物、IDE 目录、日志目录写入源码结构。
 - 不应在 README 中写入真实生产地址、密钥、token、签名 URL 或账号密码。
-- 当模块同时包含 `starter`、`autoconfigure`、`example` 时，文档要区分各 artifact 的职责。
+- 标准 starter 文档区分 `autoconfigure`、`starter`、`quickstart` 三层职责；示例模块统一按 quickstart 语义和路径说明。
 
 ## 验证建议
 

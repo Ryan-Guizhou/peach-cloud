@@ -1,7 +1,7 @@
 package com.peach.scheduler.core;
 
 /**
- * 任务结果。
+ * 任务执行结果。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -20,45 +20,47 @@ public final class JobResult {
     }
 
     /**
-     * 创建实例。
+     * 创建成功结果。
      *
-     * @return 执行结果。
+     * @return 成功任务结果。
      */
     public static JobResult success() {
         return new JobResult(true, "SUCCESS", null);
     }
 
     /**
-     * 创建实例。
+     * 创建失败结果。
      *
-     * @param code code。
-     * @param message message。
-     * @return 执行结果。
+     * @param code 失败编码。
+     * @param message 失败摘要。
+     * @return 失败任务结果。
      */
     public static JobResult failure(String code, String message) {
         return new JobResult(false, code, message);
     }
 
     /**
-     * 获取相关数据。
+     * 判断任务是否执行成功。
      *
-     * @return 执行结果。
+     * @return 成功返回 {@code true}。
      */
     public boolean isSuccess() {
         return success;
     }
+
     /**
-     * 获取相关数据。
+     * 获取结果编码。
      *
-     * @return 执行结果。
+     * @return 结果编码。
      */
     public String getCode() {
         return code;
     }
+
     /**
-     * 获取相关数据。
+     * 获取结果摘要。
      *
-     * @return 执行结果。
+     * @return 结果摘要。
      */
     public String getMessage() {
         return message;

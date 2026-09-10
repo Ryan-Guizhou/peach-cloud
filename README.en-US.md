@@ -70,7 +70,7 @@ Notes:
 | `peach-generator` | `common`, `entity`, `service`, `rest`, `launch` | Datasources, table metadata, templates, preview, code generation |
 | `peach-scheduled` | `common`, `entity`, `service`, `rest`, `openfeign-external`, `launch` | Scheduler jobs, execution, OpenFeign external APIs |
 | `peach-common` | Single module | Shared responses, exceptions, constants, base models, utilities |
-| `peach-component` | `peach-captcha`, `peach-email`, `peach-storage`, `peach-initialize`, `peach-threadpool` | Business-neutral reusable component starters |
+| `peach-component` | `peach-captcha`, `peach-email`, `peach-storage`, `peach-initialize`, `peach-virtual-thread`, `peach-threadpool` | Business-neutral reusable component starters; `peach-threadpool` is retained temporarily for compatibility |
 | `peach-middleware` | `peach-kafka`, `peach-rocket`, `peach-redis`, `peach-redission`, `peach-mongo`, `peach-satoken`, `peach-openfeign` | Middleware integration, autoconfigure modules, starters, examples |
 | `peach-sample` | `SampleApplication` | Local sample application for components and middleware |
 | `peach-cloud-front` | `src/`, `vite.config.ts` | Vue 3 + Vite + TypeScript frontend |
@@ -88,8 +88,8 @@ Notes:
 | Generator | `com.peach.generator.launch.PeachGeneratorApplication` | `peach-generator/peach-generator-launch/src/main/resources` |
 | Scheduled | `com.peach.scheduled.PeachScheduledApplication` | `peach-scheduled/peach-scheduled-launch/src/main/resources` |
 | Sample | `com.peach.sample.SampleApplication` | `peach-sample/src/main/resources` |
-| Storage example | `com.peach.example.PeachStoreExampleApplication` | `peach-component/peach-storage/peach-store-example/src/main/resources` |
-| RocketMQ example | `com.peach.rocket.example.PeachRocketExampleApplication` | `peach-middleware/peach-rocket/peach-rocket-example/src/main/resources` |
+| Storage quickstart | `com.peach.quickstart.PeachStoreQuickstartApplication` | `peach-component/peach-storage/peach-store-quickstart/src/main/resources` |
+| RocketMQ quickstart | `com.peach.rocket.quickstart.PeachRocketQuickstartApplication` | `peach-middleware/peach-rocket/peach-rocket-quickstart/src/main/resources` |
 
 ## Stack And Versions
 
@@ -152,7 +152,7 @@ mvn -pl peach-fileservice/peach-fileservice-launch -am clean package -DskipTests
 Build a component or middleware module:
 
 ```bash
-mvn -pl peach-component/peach-threadpool -am clean package -DskipTests -Pdevelopment
+mvn -pl peach-component/peach-virtual-thread -am clean package -DskipTests -Pdevelopment
 mvn -pl peach-middleware/peach-rocket -am clean package -DskipTests -Pdevelopment
 ```
 
@@ -342,7 +342,7 @@ Frontend notes:
 
 Backend configuration usually comes from three sources:
 
-1. `application.yml` or `application-*.yml` inside each launch module.
+1. `application.yaml` or `application-*.yml` inside each launch module.
 2. External configuration such as Nacos.
 3. Environment variables from Docker Compose or the runtime platform.
 
@@ -369,7 +369,8 @@ Configuration guidance:
 - `peach-email`: mail sending, templates, retry, routing.
 - `peach-storage`: object storage and local / cloud provider integration.
 - `peach-initialize`: initialization execution support.
-- `peach-threadpool`: thread pools, async execution, context propagation.
+- `peach-virtual-thread`: Java 21 virtual-thread grouped execution, backpressure, cancellation, and graceful shutdown.
+- `peach-threadpool`: legacy thread-pool compatibility module, retained temporarily and not recommended for new async work.
 
 `peach-middleware` contains middleware integrations:
 
@@ -395,7 +396,7 @@ Module READMEs should state:
 - Module READMEs should describe real classes, configuration keys, commands, and limitations present in the current source.
 - Build artifacts, IDE directories, and logs should not be documented as source layout.
 - Do not write production addresses, secrets, tokens, signed URLs, or credentials into README files.
-- When a module contains `starter`, `autoconfigure`, and `example` artifacts, document their responsibilities separately.
+- Standard starter documentation separates `autoconfigure`, `starter`, and `quickstart` responsibilities. Starter examples use quickstart module names and paths.
 
 ## Verification
 

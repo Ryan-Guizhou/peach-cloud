@@ -21,7 +21,7 @@
         <module>peach-scheduler-provider-quartz</module>
         <module>peach-scheduler-transport-rocket</module>
         <module>peach-scheduler-starter</module>
-        <module>peach-scheduler-example</module>
+        <module>peach-scheduler-quickstart</module>
     </modules>
 
 </project>

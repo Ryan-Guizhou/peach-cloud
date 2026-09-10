@@ -24,7 +24,7 @@ Redis 不可用时使用 MySQL 原子自增；两端恢复时取最大值同步�
 peach-code/
 ├── peach-code-autoconfigure  # CodeGenerator、JdbcTemplate 实现、自动配置
 ├── peach-code-starter        # 业务模块接入依赖
-├── peach-code-example        # 可运行示例与接入边界示例
+├── peach-code-quickstart        # 可运行示例与接入边界示例
 └── README.md
 ```
 
@@ -118,17 +118,17 @@ MAX_CODE_WIDTH=8, value=100000000 -> 拒绝，序号超出配置
 
 ## 示例与验证
 
-示例模块为 `peach-code-example`。应用就绪后，`PeachCodeEvent` 会调用 `ExampleCodeService`
+quickstart 模块为 `peach-code-quickstart`。应用就绪后，`PeachCodeEvent` 会调用 `QuickstartCodeService`
 生成 MENU 和 NOTICE 编码，并在日志中输出编码及格式校验结果。
 
 ```bash
 mvn -pl peach-component/peach-code -am compile -Pdevelopment
-mvn -f peach-component/peach-code/peach-code-example/pom.xml spring-boot:run
+mvn -f peach-component/peach-code/peach-code-quickstart/pom.xml spring-boot:run
 ```
 
 启动示例前，需要准备数据库并执行 `sql/PEACH_CODE_RULE.sql`，并配置 Redis 密码。
-`peach.code.example.tenant-id` 默认使用 `T001`；设置
-`peach.code.example.verify-on-startup=false` 可关闭启动验证。示例不会自动创建生产数据库资源。
+`peach.code.quickstart.tenant-id` 默认使用 `T001`；设置
+`peach.code.quickstart.verify-on-startup=false` 可关闭启动验证。quickstart 不会自动创建生产数据库资源。
 
 ## 排障
 

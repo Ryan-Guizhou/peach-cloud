@@ -8,10 +8,11 @@ description: 约束 peach-cloud 的 REST、Entity、DAO/XML、Service、common �
 ## Workflow
 
 1. 判断任务层级：`rest`、`entity`、`dao.xml`、`service`、`common`，只读取对应 reference。
-2. 扫描当前模块同类实现，区分目标风格与仅供兼容的历史模式。
+2. 选择当前模块相关实现确认契约，明确本次新增/实质修改/兼容保留的范围；不能整类照抄。先依据 `06-layered-java-style`、`09-java21-coding-style` 决定模型、注入和返回风格。
 3. 修改公共 API、DAO/Service 签名、XML `id`、公共模型前评估影响面。
 4. 先检查敏感数据、事务、资源、权限和模块边界，再检查命名与排版。
-5. 完成后运行 UTF-8 无 BOM检查、受影响模块编译/测试和差异检查。
+5. 涉及模块、依赖、公共契约、基础实体或生成器，按 AGENTS.md 读取当前客户端的 `10-architecture-and-starters`；涉及 starter 同时读取 `references/starter.md`。
+6. 按实际改动完成验证；纯审查只报告证据与建议，纯文档/规范调整验证引用、UTF-8 与 diff，不自动运行业务构建。
 
 ## Precedence
 
@@ -31,6 +32,7 @@ description: 约束 peach-cloud 的 REST、Entity、DAO/XML、Service、common �
 - DAO 与 MyBatis XML：`references/dao-xml.md`
 - Service：`references/service.md`
 - common / peach-common：`references/common.md`
+- starter / autoconfigure / SPI：`references/starter.md`（按 AGENTS.md 的 starter 路由读取）
 
 涉及 README、RocketMQ、Storage、Threadpool 时叠加对应 skill；不加载无关 reference。
 

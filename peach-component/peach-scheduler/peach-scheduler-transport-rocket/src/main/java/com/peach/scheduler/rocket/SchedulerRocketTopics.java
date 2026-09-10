@@ -1,7 +1,7 @@
 package com.peach.scheduler.rocket;
 
 /**
- * SchedulerRocketTopics相关类。
+ * 调度 RocketMQ topic 与 tag 命名工具。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -9,7 +9,7 @@ package com.peach.scheduler.rocket;
  */
 public final class SchedulerRocketTopics {
     /**
-     * 执行结果相关说明。
+     * 调度执行结果 topic。
      */
     public static final String EXECUTION_RESULT_TOPIC = "scheduler-execution-result";
     /**
@@ -18,9 +18,10 @@ public final class SchedulerRocketTopics {
     public static final String EXECUTION_RESULT_TAG = "result";
     private SchedulerRocketTopics() { }
     /**
-     * 构建相关数据。
-     * @param applicationName application Name。
-     * @return 执行结果。
+     * 根据应用名称构建执行命令 topic。
+     *
+     * @param applicationName 目标应用名称。
+     * @return 执行命令 topic。
      */
     public static String executionTopic(String applicationName) {
         return "scheduler-execute-" + applicationName;

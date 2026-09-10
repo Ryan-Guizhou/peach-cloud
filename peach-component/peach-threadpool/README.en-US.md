@@ -4,7 +4,9 @@ English | [中文](README.md)
 
 ## Purpose
 
-`peach-threadpool` provides configurable thread pools and the `@AsyncExecuted` annotation, centralizing async task execution and avoiding ad-hoc thread pool creation in business code.
+`peach-threadpool` is a legacy compatibility module. It remains available for existing `ThreadPoolManager`, `@AsyncExecuted`, and `peach.threadpool` contracts, but new blocking IO async work should use `peach-virtual-thread` with `VirtualExecutorService`, `VirtualExecutorRegistry`, or `@VirtualGroup`.
+
+This module is no longer the recommended entrypoint for new async code and does not provide the grouped capacity, pending backpressure, managed cancellation, or graceful shutdown semantics of `peach-virtual-thread`.
 
 ## Submodules
 
@@ -22,6 +24,8 @@ English | [中文](README.md)
 - `PoolProperties`: thread pool parameters.
 
 ## Configuration Example
+
+The following configuration is for maintaining existing integrations only.
 
 ```yaml
 peach:
@@ -43,6 +47,7 @@ peach:
 - Normal return values wait on `Future.get()`, so this is not fire-and-forget behavior.
 - `CompletableFuture` paths must be checked against the expected executor usage.
 - `timeoutMs` limits wait time but does not guarantee reliable cancellation of the underlying task.
+- Do not add new `ThreadPoolManager`, `@AsyncExecuted`, or `PoolType.VIRTUAL` usage for blocking IO async work.
 
 ## Verification
 

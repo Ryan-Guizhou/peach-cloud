@@ -29,7 +29,7 @@ peach-cloud/
 
 ## PREFERRED
 
-- 必需依赖使用构造器注入；维护存量类时可继续一致使用 `@Resource`，但不在同一类混用。
+- 必需依赖使用构造器注入 + `private final`；新代码和存量迁移范围统一遵循 `09-java21-coding-style`，本 reference 不提供字段注入例外。
 - 公开方法保留可读主流程，局部组装使用 `build/require/resolve/validate` 等私有方法。
 - DTO→DO 可以使用 `BeanUtils.copyProperties`，随后显式覆盖安全与审计字段。
 - 返回显式 VO/结果对象，不把持久化 DO 直接交给 REST。
@@ -38,12 +38,12 @@ peach-cloud/
 ## LEGACY_COMPATIBLE
 
 - `IUserService` 式 `I` 前缀、`pageList/add/delById` 等命名在既有模块内兼容。
-- `@Resource`、`PageHelper`、`PageInfo/PageResult` 可按当前模块保持一致。
+- `PageHelper`、`PageInfo/PageResult` 可按当前模块保持一致；已有 Response 返回签名仅在兼容维护时保留，新方法遵循 `06-layered-java-style`。
 - `@Slf4j`、`@Indexed` 只在实际需要时保留，不机械复制固定注解组合。
 
 ## FORBIDDEN
 
-- Service 处理 HTTP 参数绑定或直接返回 Controller 响应对象。
+- Service 处理 HTTP 参数绑定；新增内部服务把 Controller 响应包装当作业务结果。存量签名按上述兼容边界维护。
 - `new Thread`、游离线程池、未关闭资源或吞掉 Future/异步异常。
 - 在日志中输出完整 DTO、凭据、签名 URL 或敏感消息体。
 - 用静态可变字段保存业务状态或请求上下文。
@@ -55,3 +55,7 @@ peach-cloud/
 - DTO→DO→VO 是否阻断敏感字段。
 - 外部副作用是否具备幂等或补偿。
 - 运行受影响模块测试、`node scripts/check-utf8.mjs` 和 `git diff --check`。
+
+## 失败路径复核
+
+涉及数据库加外部系统时，列出外部成功/数据库失败、提交后执行失败、重复请求和补偿失败的结果；按 `08-security-and-quality-gates` 选择必要行为测试。只用一个 `@Transactional` 或 afterCommit 回调不能证明跨系统原子性。

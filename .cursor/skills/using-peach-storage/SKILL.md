@@ -8,7 +8,7 @@ description: 规范 peach-cloud 项目中 peach-store-starter / peach-store-auto
 ## 工作流
 
 1. 先确认改动目标是业务接入、provider 扩展、配置调整、示例补充还是 README 更新。
-2. 业务接入统一通过 `StorageTemplate`，不要在业务模块直接调用厂商 SDK。
+2. 新通用业务接入优先通过 `StorageTemplate`；当前业务已使用 `MultiZoneStorage` 时先核实多区域语义和调用链，不为对齐名字直接替换。禁止业务散落调用厂商 SDK。
 3. provider 扩展遵循 `StorageProviderFactory` 负责启动期校验和创建，`StorageProvider` 负责运行期读写。
 4. 涉及配置、能力矩阵、路径语义或扩展细节时，读取 `references/module-guide.md`。
 5. 改动后运行 `node scripts/check-utf8.mjs`、`mvn -f "peach-component/peach-storage/pom.xml" test`（或更小范围测试）和 `git diff --check`。
@@ -33,7 +33,7 @@ description: 规范 peach-cloud 项目中 peach-store-starter / peach-store-auto
 
 ## 代码审查重点
 
-- 检查是否绕过 `StorageTemplate`。
+- 检查是否绕过统一存储契约直接调用厂商 SDK；MultiZoneStorage 等现有适配必须核对真实职责。
 - 检查 `root-path`、`prefix`、`bucket-name` 的语义是否混用。
 - 检查删除和批量删除调用方是否可信，是否有审计或确认来源。
 - 检查 `InputStream` 是否由调用方正确关闭。
@@ -42,4 +42,11 @@ description: 规范 peach-cloud 项目中 peach-store-starter / peach-store-auto
 
 ## README 提醒
 
-编辑 `peach-component/peach-storage` 或子模块后，使用 `$using-peach-readme-writer` 刷新 README。README 必须明确支持的 provider、能力矩阵、配置示例、路径安全边界、前端直传/分片限制和扩展方式。
+用户要求文档或公共 API、配置、扩展点、运行机制、生产边界变化时，使用 `$using-peach-readme-writer` 更新受影响 README；纯内部等价重构不强制刷新。README 必须明确支持的 provider、能力矩阵、配置示例、路径安全边界、前端直传/分片限制和扩展方式。
+
+## 装配与一致性验收
+
+- 修改 starter 装配/依赖时读取基础骨架的 `references/starter.md`，按当前客户端 `10-architecture-and-starters` 检查可选 SDK 和资源所有权。
+- 文件大小、并发数与内存预算决定流式/临时文件/直传方案，不对无上限输入直接全量读入 byte[]。
+- 上传与数据库组合时验证外部成功/落库失败、重复提交和恢复；清理必须验证对象所有权，不能删除其他请求复用的对象。
+- capability、开关、缺失可选 SDK、自定义 provider、初始化失败及关闭场景按本次变化补测试。

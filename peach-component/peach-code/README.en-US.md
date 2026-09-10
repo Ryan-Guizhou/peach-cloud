@@ -19,7 +19,7 @@ This component does not add `TENANT_ID` to business tables and does not derive s
 | --- | --- |
 | `peach-code-autoconfigure` | `CodeGenerator`, JDBC implementation, configuration, and auto-configuration |
 | `peach-code-starter` | Recommended dependency for business modules |
-| `peach-code-example` | Runnable MySQL and Redis startup-event example |
+| `peach-code-quickstart` | Runnable MySQL and Redis startup-event example |
 
 ## Database setup
 
@@ -86,18 +86,18 @@ Redis unavailable
 - A retry must retry the complete transactional service method, not only `CodeGenerator.next`.
 - Database repair or manual sequence changes can still create gaps; uniqueness is prioritized over continuity.
 
-## Example and verification
+## Quickstart and verification
 
-The example uses the configured MySQL and Redis services. After the application is ready,
-`PeachCodeEvent` generates MENU and NOTICE codes through `ExampleCodeService` and logs the format checks.
+The quickstart uses the configured MySQL and Redis services. After the application is ready,
+`PeachCodeEvent` generates MENU and NOTICE codes through `QuickstartCodeService` and logs the format checks.
 
 ```bash
-mvn -f peach-component/peach-code/peach-code-example/pom.xml spring-boot:run
+mvn -f peach-component/peach-code/peach-code-quickstart/pom.xml spring-boot:run
 ```
 
-Before starting the example, configure MySQL, ensure `PEACH_CODE_RULE` exists, and configure the Redis
-password. The default `peach.code.example.tenant-id` is `T001`; set
-`peach.code.example.verify-on-startup=false` to disable startup verification. The example does not create
+Before starting the quickstart, configure MySQL, ensure `PEACH_CODE_RULE` exists, and configure the Redis
+password. The default `peach.code.quickstart.tenant-id` is `T001`; set
+`peach.code.quickstart.verify-on-startup=false` to disable startup verification. The quickstart does not create
 production database resources.
 
 ## Boundaries

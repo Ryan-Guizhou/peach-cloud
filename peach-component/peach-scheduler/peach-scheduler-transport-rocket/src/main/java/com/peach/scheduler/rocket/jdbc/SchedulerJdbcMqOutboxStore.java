@@ -18,14 +18,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
- * 调度JdbcMQ发件箱存储。
- * <p>调度模块说明。
- * 调度模块说明。
- * 调度模块说明。
- * 调度模块说明。
- * 调度模块说明。</p>
- * <p>调度模块说明。
- * 调度模块说明。</p>
+ * 调度 RocketMQ JDBC outbox 存储。
+ *
+ * <p>通过 MQ_OUTBOX_EVENT 保存待发送消息，支持批量认领、成功标记、失败重试和失败重放。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -46,9 +41,9 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     private final String claimantId;
 
     /**
-     * 创建实例。
+     * 创建 JDBC outbox 存储。
      *
-     * @param jdbcTemplate jdbc Template。
+     * @param jdbcTemplate JDBC 操作模板。
      */
     public SchedulerJdbcMqOutboxStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -56,7 +51,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 接口实现。
+     * 保存待发送消息。
      */
     @Override
     public void save(MqOutboxEvent event) {
@@ -76,7 +71,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 接口实现。
+     * 查询并认领待发送消息。
      */
     @Override
     public List<MqOutboxEvent> findPending(int batchSize) {
@@ -100,7 +95,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 接口实现。
+     * 标记消息已发送。
      */
     @Override
     public void markSent(String messageId) {
@@ -113,7 +108,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 接口实现。
+     * 标记消息发送失败并计算下一次重试时间。
      */
     @Override
     public void markFailed(String messageId) {
@@ -132,7 +127,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 接口实现。
+     * 将最终失败消息重新放回重试队列。
      */
     @Override
     public boolean replay(String messageId) {
@@ -145,7 +140,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 获取相关数据。
+     * 恢复超时未完成发送的认领记录。
      */
     private void recoverStaleClaims() {
         jdbcTemplate.update(
@@ -166,7 +161,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     private static final class OutboxRowMapper implements RowMapper<MqOutboxEvent> {
 
         /**
-         * 接口实现。
+         * 将 outbox 表记录映射为消息事件。
          */
         @Override
         public MqOutboxEvent mapRow(ResultSet resultSet, int rowNum) throws SQLException {

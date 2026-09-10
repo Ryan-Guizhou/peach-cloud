@@ -1,7 +1,7 @@
 package com.peach.scheduler.core;
 
 /**
- * 任务处理器。
+ * 业务任务处理器。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -10,12 +10,10 @@ package com.peach.scheduler.core;
 public interface JobHandler {
 
     /**
-     * 调度模块说明。
+     * 执行业务任务。
      *
-     * <p>调度模块说明。</p>
-     *
-     * @param context context。
-     * @return 执行结果。
+     * @param context 调度执行上下文。
+     * @return 任务执行结果。
      */
     JobResult execute(JobContext context);
 }

@@ -18,7 +18,7 @@ artifactId：`peach-rocket`
 | --- | --- |
 | `peach-rocket-autoconfigure` | 核心 API、自动配置、默认实现和 SPI |
 | `peach-rocket-starter` | 对业务模块暴露的 starter |
-| `peach-rocket-example` | 示例应用和 JDBC 幂等 / Outbox 覆盖示例 |
+| `peach-rocket-quickstart` | 示例应用和 JDBC 幂等 / Outbox 覆盖示例 |
 
 ## 核心对象
 
@@ -118,12 +118,12 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 
 | 示例 | 路径 |
 | --- | --- |
-| 启动类 | `peach-rocket-example/src/main/java/com/peach/rocket/example/PeachRocketExampleApplication.java` |
-| 配置 | `peach-rocket-example/src/main/resources/application.yml` |
-| 事件 | `peach-rocket-example/src/main/java/com/peach/rocket/example/event` |
-| 消费者 | `peach-rocket-example/src/main/java/com/peach/rocket/example/consumer` |
-| JDBC 覆盖 | `peach-rocket-example/src/main/java/com/peach/rocket/example/config` |
-| 表结构 | `peach-rocket-example/src/main/resources/schema` |
+| 启动类 | `peach-rocket-quickstart/src/main/java/com/peach/rocket/quickstart/PeachRocketQuickstartApplication.java` |
+| 配置 | `peach-rocket-quickstart/src/main/resources/application.yml` |
+| 事件 | `peach-rocket-quickstart/src/main/java/com/peach/rocket/quickstart/event` |
+| 消费者 | `peach-rocket-quickstart/src/main/java/com/peach/rocket/quickstart/consumer` |
+| JDBC 覆盖 | `peach-rocket-quickstart/src/main/java/com/peach/rocket/quickstart/config` |
+| 表结构 | `peach-rocket-quickstart/src/main/resources/schema` |
 
 ## 生产边界
 

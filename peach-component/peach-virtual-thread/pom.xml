@@ -18,6 +18,6 @@
     <modules>
         <module>peach-virtual-thread-autoconfigure</module>
         <module>peach-virtual-thread-starter</module>
-        <module>peach-virtual-thread-example</module>
+        <module>peach-virtual-thread-quickstart</module>
     </modules>
 </project>

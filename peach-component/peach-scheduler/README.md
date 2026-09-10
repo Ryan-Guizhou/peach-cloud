@@ -2,7 +2,7 @@
 
 [English](README.en-US.md) | 中文
 
-- 最后更新时间：2026-08-14
+- 最后更新时间：2026-09-10
 - artifactId：`peach-scheduler`
 - 类型：定时任务执行侧组件（SDK + Provider SPI + RocketMQ Transport）
 - 适用版本：Java 21、Spring Boot 3.5.4
@@ -16,6 +16,7 @@
 - 业务任务 SDK（`@PeachJob`、`JobHandler`、`PeachJobExecutor`）
 - 调度 Provider SPI 与 Quartz 默认实现
 - RocketMQ 执行命令/结果传输与 JDBC Outbox/消费幂等适配
+- 基于 `peach-virtual-thread` 的业务 Handler 阻塞 IO 执行隔离
 - `peach-scheduler-starter` 聚合依赖
 
 **本组件不提供：**
@@ -39,7 +40,7 @@ peach-component/peach-scheduler/
 ├── peach-scheduler-provider-quartz/   # Quartz SchedulingProvider
 ├── peach-scheduler-transport-rocket/  # RocketMQ + JDBC 持久化
 ├── peach-scheduler-starter/           # 业务接入 starter
-├── peach-scheduler-example/           # 本地示例
+├── peach-scheduler-quickstart/           # 本地示例
 └── docs/architecture/                 # 架构图源文件
 ```
 
@@ -52,7 +53,7 @@ peach-component/peach-scheduler/
 | `peach-scheduler-provider-quartz` | `QuartzSchedulingProvider`、Quartz 触发桥接（主要用于控制面） |
 | `peach-scheduler-transport-rocket` | 执行结果 Outbox、`SchedulerJdbcMqOutboxStore`、`SchedulerJdbcMqIdempotentStore` |
 | `peach-scheduler-starter` | 聚合 `autoconfigure` + `transport-rocket` |
-| `peach-scheduler-example` | 示例 Consumer 与本地 Claim 桩 |
+| `peach-scheduler-quickstart` | 示例 Consumer 与本地 Claim 桩 |
 
 ## 核心对象
 
@@ -79,7 +80,7 @@ peach-component/peach-scheduler/
 </dependency>
 <dependency>
     <groupId>com.peach</groupId>
-    <artifactId>peach-threadpool-starter</artifactId>
+    <artifactId>peach-virtual-thread-starter</artifactId>
 </dependency>
 <dependency>
     <groupId>com.peach</groupId>
@@ -91,7 +92,7 @@ peach-component/peach-scheduler/
 </dependency>
 ```
 
-`peach-scheduled-openfeign-external` 提供 Claim 与 Handler 注册 Feign 客户端；`peach-threadpool-starter` 提供 `PoolType.SCHEDULED` 执行线程池。
+`peach-scheduled-openfeign-external` 提供 Claim 与 Handler 注册 Feign 客户端；`peach-virtual-thread-starter` 提供 `scheduler` 分组执行器。
 
 ### 配置示例
 
@@ -108,14 +109,13 @@ peach:
     executor:
       application-name: ${spring.application.name}
       default-timeout-ms: 1800000
-  threadpool:
-    pools:
-      - type: SCHEDULED
-        core-size: 4
-        max-size: 16
-        queue-capacity: 200
-        thread-name-prefix: scheduler-business-
-        rejected-policy: ABORT
+  virtual-thread:
+    enabled: true
+    groups:
+      scheduler:
+        max-concurrency: 16
+        max-pending: 200
+        backpressure: REJECT
   rocket:
     enabled: true
     app-name: ${spring.application.name}
@@ -167,7 +167,7 @@ public class SchedulerExecutionConsumer implements MqMessageHandler<JobExecution
 }
 ```
 
-参考：`peach-scheduler-example` 中的 `DemoSchedulerExecutionConsumer`。
+参考：`peach-scheduler-quickstart` 中的 `DemoSchedulerExecutionConsumer`。
 
 ## 配置说明
 
@@ -178,9 +178,10 @@ public class SchedulerExecutionConsumer implements MqMessageHandler<JobExecution
 | `peach.scheduler.executor.instance-id` | 运行时生成 | 执行器实例标识，Claim 时上报 |
 | `peach.scheduler.executor.default-timeout-ms` | `1800000` | Handler 未指定超时时的默认等待毫秒数 |
 | `peach.scheduler.executor.max-error-message-length` | `1000` | 回传错误摘要最大长度 |
-| `peach.scheduler.executor.handler-heartbeat-ms` | `60000` | Handler 注册心跳间隔（需引入 `openfeign-external`） |
 | `peach.scheduler.rocket.require-jdbc` | `false` | 为 `true` 时强制 JDBC Outbox/幂等，禁止内存实现 |
 | `peach.scheduler.quartz.group` | `PEACH_SCHEDULER` | Quartz Provider 的 Job/Trigger 分组 |
+| `peach.virtual-thread.groups.scheduler.max-concurrency` | `256` | Scheduler Handler 真实执行业务代码的最大并发数 |
+| `peach.virtual-thread.groups.scheduler.max-pending` | `512` | Scheduler Handler 等待执行许可的最大 Pending 数 |
 
 ## 运行机制
 
@@ -189,7 +190,7 @@ public class SchedulerExecutionConsumer implements MqMessageHandler<JobExecution
   → 业务 @MqConsumer
   → PeachJobExecutor.execute()
   → ExecutionLeaseClient.claim(executionId)   # 失败则丢弃，不执行 Handler
-  → ThreadPoolManager / PoolType.SCHEDULED
+  → VirtualExecutorRegistry / scheduler group
   → @PeachJob JobHandler
   → ExecutionResultReporter → scheduler-execution-result
 ```
@@ -229,7 +230,8 @@ public class SchedulerExecutionConsumer implements MqMessageHandler<JobExecution
 ## 边界与限制
 
 - Handler 不得依赖 Quartz API，不得动态执行页面传入的 class/method/SpEL/Shell/SQL。
-- 禁止自建游离线程池；统一使用 `PoolType.SCHEDULED`。
+- 禁止自建游离线程池；Handler 阻塞 IO 执行统一使用 `peach.virtual-thread.groups.scheduler`。
+- Quartz 触发、Redisson listener 等平台线程生命周期不由 Scheduler Handler 虚拟线程组替代。
 - 日志只记录 `executionId`、`jobCode`、`handlerName` 等稳定字段，禁止输出完整参数 JSON 或凭据。
 - `require-jdbc=true` 时若最终装配内存 Outbox/幂等存储，应用启动 fail-fast。
 - 超时仅表示控制面等待超时，不宣称回滚外部副作用。
@@ -246,7 +248,7 @@ git diff --check -- peach-component/peach-scheduler
 
 | 现象 | 检查点 | 处理方式 |
 | --- | --- | --- |
-| `PeachJobExecutor` 未创建 | 是否缺少 `ExecutionLeaseClient` / `ExecutionResultReporter` / `ThreadPoolManager` | 补齐 starter 与 Feign/Rocket 依赖 |
+| `PeachJobExecutor` 未创建 | 是否缺少 `ExecutionLeaseClient` / `ExecutionResultReporter` / `VirtualExecutorRegistry` | 补齐 virtual-thread、Feign/Rocket 依赖并配置 `scheduler` group |
 | Claim 始终失败 | 控制面 execution 状态、Same-Token、`applicationName` 是否一致 | 核对 Feign 目标服务 `peach-scheduler` 与内部接口可达 |
 | Handler 未出现在控制面白名单 | `peach.scheduler.executor.application-name`、Feign 注册是否成功 | 检查 `openfeign-external` 与 `/internal/scheduler/handlers/register` |
 | 重复执行业务副作用 | 仅依赖 Claim 不够 | 在 Handler 内基于 `executionId` 做幂等 |

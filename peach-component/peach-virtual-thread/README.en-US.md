@@ -54,7 +54,7 @@ peach-virtual-thread/
 │   └── src/main/resources/
 │       └── META-INF/additional-spring-configuration-metadata.json
 ├── peach-virtual-thread-starter/            # Starter dependency aggregating autoconfigure
-└── peach-virtual-thread-example/            # Example service (Web/MyBatis/Feign/Storage)
+└── peach-virtual-thread-quickstart/            # Example service (Web/MyBatis/Feign/Storage)
 ```
 
 ---
