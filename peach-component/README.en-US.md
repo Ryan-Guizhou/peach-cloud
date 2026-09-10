@@ -2,38 +2,47 @@
 
 English | [中文](README.md)
 
-## Purpose
+`peach-component` aggregates reusable, business-neutral components shared across Peach Cloud services. Business services normally depend only on the corresponding `*-starter`; implementation and auto-configuration stay in `*-autoconfigure`, while runnable integration samples live in `*-quickstart`.
 
-`peach-component` aggregates reusable components that are not tied to a specific business domain. Components follow the `autoconfigure / starter / quickstart` structure: autoconfigure owns configuration binding, configuration metadata, default beans, and extension points; starter exposes the minimal dependency entrypoint; quickstart provides runnable integration examples.
+## Standard Structure
 
-## Submodules
-
-| Submodule | Responsibility |
-| --- | --- |
-| `peach-captcha` | Image captcha, click-word captcha, slider/puzzle captcha capabilities |
-| `peach-email` | Email sending, templates, retry, idempotency, and provider routing |
-| `peach-storage` | Unified storage abstraction for local, SFTP/NAS, OSS/S3/MinIO, and other providers |
-| `peach-initialize` | Application startup initialization task orchestration |
-| `peach-threadpool` | Legacy thread-pool module retained temporarily for compatibility |
-| `peach-virtual-thread` | Java 21 virtual-thread grouped execution, backpressure, cancellation, and graceful shutdown |
-
-## Usage Rules
-
-- Business services should import concrete starters only.
-- Starters expose the smallest public dependency entrypoint; autoconfigure modules provide auto-configuration and defaults.
-- Quickstart modules demonstrate runnable integration, custom Bean overrides, and configuration examples.
-- New components must include README, configuration, boundaries, and build verification commands.
-
-## Verification
-
-```bash
-mvn -f "peach-component/pom.xml" -DskipTests package
+```mermaid
+flowchart LR
+    Business[Business Service] --> Starter[*-starter]
+    Starter --> Auto[*-autoconfigure]
+    Quick[*-quickstart] --> Starter
 ```
 
+See [`../docs/starter-architecture.md`](../docs/starter-architecture.md) for the complete convention.
 
-## Project conventions
+## Component Navigation
 
-- Backend documentation follows the current peach-cloud baseline: Java 21, Spring Boot 3.5.4, Spring Cloud 2025.0.0, and Spring Cloud Alibaba 2025.0.0.0.
-- Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
-- Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
-- Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+| Component | Responsibility | Quickstart |
+| --- | --- | --- |
+| [`peach-captcha`](peach-captcha/README.en-US.md) | Captcha generation, cache, validation and throttling | `peach-captcha-quickstart` |
+| [`peach-code`](peach-code/README.en-US.md) | Code-generation foundations | `peach-code-quickstart` |
+| [`peach-email`](peach-email/README.en-US.md) | SMTP, providers, templates, retry and idempotency | `peach-email-quickstart` |
+| [`peach-initialize`](peach-initialize/README.en-US.md) | Application initialization orchestration | `peach-initialize-quickstart` |
+| [`peach-observability`](peach-observability/README.en-US.md) | Metrics, tracing, RequestId and OTLP integration | `peach-observability-quickstart` |
+| [`peach-scheduler`](peach-scheduler/README.en-US.md) | Scheduler execution SDK, providers and transports | `peach-scheduler-quickstart` |
+| [`peach-storage`](peach-storage/README.en-US.md) | Unified storage contracts, providers, direct and multipart upload | `peach-store-quickstart` |
+| [`peach-threadpool`](peach-threadpool/README.en-US.md) | Legacy platform-thread-pool compatibility | `peach-threadpool-quickstart` |
+| [`peach-virtual-thread`](peach-virtual-thread/README.en-US.md) | Java 21 virtual-thread groups, backpressure, cancellation and lifecycle | `peach-virtual-thread-quickstart` |
+
+`peach-threadpool` remains for compatibility only. New blocking-I/O asynchronous work should prefer `peach-virtual-thread`.
+
+## Development Convention
+
+- `autoconfigure` contains properties, public contracts, defaults and extension assembly; no demos.
+- `starter` is a minimal dependency aggregator and contains no complex implementation.
+- `quickstart` depends on the starter, provides a minimal runnable verification path and is never a production dependency.
+- Extra `core/common/provider/transport` modules require a real independent responsibility.
+- A new starter capability must also provide a matching autoconfigure module, quickstart and bilingual family README.
+
+## Build
+
+```bash
+mvn -pl peach-component -am test -Pdevelopment
+```
+
+Use each component README as the source for dependencies, configuration, APIs and production boundaries.

@@ -6,25 +6,21 @@
     <artifactId>peach-redission</artifactId>
     <name>peach-redission</name>
     <description>peach-redission</description>
-
     <packaging>pom</packaging>
-
-    <parent>
-        <groupId>com.peach</groupId>
-        <artifactId>peach-middleware</artifactId>
-        <version>${revision}</version>
-    </parent>
-
+    <parent><groupId>com.peach</groupId><artifactId>peach-middleware</artifactId><version>${revision}</version></parent>
     <modules>
+        <module>peach-redission-common</module>
         <module>peach-redission-bloomfilter-autoconfigure</module>
         <module>peach-redission-bloomfilter-starter</module>
+        <module>peach-redission-bloomfilter-quickstart</module>
         <module>peach-redission-delayqueue-autoconfigure</module>
         <module>peach-redission-delayqueue-starter</module>
-        <module>peach-redission-common</module>
+        <module>peach-redission-delayqueue-quickstart</module>
         <module>peach-redission-distributedlock-autoconfigure</module>
         <module>peach-redission-distributedlock-starter</module>
+        <module>peach-redission-distributedlock-quickstart</module>
         <module>peach-redission-repeat-autoconfigure</module>
         <module>peach-redission-repeat-starter</module>
+        <module>peach-redission-repeat-quickstart</module>
     </modules>
-
 </project>

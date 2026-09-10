@@ -17,5 +17,6 @@
     <modules>
         <module>peach-threadpool-autoconfigure</module>
         <module>peach-threadpool-starter</module>
+        <module>peach-threadpool-quickstart</module>
     </modules>
 </project>

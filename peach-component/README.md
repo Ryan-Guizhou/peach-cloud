@@ -2,99 +2,47 @@
 
 [English](README.en-US.md) | 中文
 
-最后更新时间：2026-07-03  
-artifactId：`peach-component`  
-类型：通用组件聚合模块
+`peach-component` 聚合与业务域无关、可被多个服务复用的通用组件。业务服务通常只依赖对应 `*-starter`，实现和自动装配保留在 `*-autoconfigure`，可运行接入样例统一放入 `*-quickstart`。
 
-## 模块定位
+## 统一结构
 
-`peach-component` 聚合与业务域无关、可被多个服务复用的组件 starter。组件采用 `autoconfigure / starter / quickstart` 三层结构：`autoconfigure` 提供配置绑定、配置元数据、默认实现和扩展点，`starter` 对业务模块暴露最小依赖入口，`quickstart` 提供可运行接入示例。
-
-本模块解决：
-
-- 验证码、邮件、初始化、存储、虚拟线程等通用能力复用。
-- autoconfigure、starter 和 quickstart 的统一组织。
-- 快速接入示例与业务接入说明的归口。
-
-本模块不解决：
-
-- 具体业务域接口。
-- 中间件协议封装，例如 Redis、RocketMQ、Sa-Token，这些位于 `peach-middleware`。
-- 生产外部服务部署，例如 SMTP、对象存储、文件服务器等。
-
-## 子模块
-
-| 子模块 | 职责 |
-| --- | --- |
-| `peach-captcha` | 验证码生成、缓存、校验和频控扩展 |
-| `peach-email` | 邮件发送、模板、路由、重试和幂等 |
-| `peach-storage` | 统一存储模板、provider SPI、对象存储和本地存储接入 |
-| `peach-initialize` | 应用初始化处理器和编排 |
-| `peach-threadpool` | 存量线程池模块，暂时保留兼容，不再作为新异步能力推荐入口 |
-| `peach-virtual-thread` | Java 21 虚拟线程分组执行、背压、取消和优雅关闭 |
-
-## 通用接入方式
-
-业务模块一般只引入对应 `*-starter`：
-
-```xml
-<dependency>
-    <groupId>com.peach</groupId>
-    <artifactId>peach-virtual-thread-starter</artifactId>
-</dependency>
+```mermaid
+flowchart LR
+    Business[业务服务] --> Starter[*-starter]
+    Starter --> Auto[*-autoconfigure]
+    Quick[*-quickstart] --> Starter
 ```
 
-不要在业务模块中直接依赖 `*-autoconfigure`，除非正在扩展组件内部能力。
+完整结构约束见 [`../docs/starter-architecture.md`](../docs/starter-architecture.md)。
 
-## 组件分层约定
+## 组件导航
 
-| 层级 | 说明 |
-| --- | --- |
-| `*-autoconfigure` | 核心 API、配置类、自动配置、默认实现、SPI |
-| `*-starter` | 对外最小依赖聚合，业务接入优先使用 |
-| `*-quickstart` | 可运行示例、覆盖默认 Bean 示例和配置样例；starter 相关示例统一使用 quickstart |
-
-## 运行机制
-
-1. 业务模块引入组件 starter。
-2. Spring Boot 读取 starter 中的自动配置声明。
-3. autoconfigure 根据配置项和 Bean 条件注册默认实现。
-4. 业务可以通过自定义 `@Bean` 或 SPI 覆盖默认行为。
-5. 组件运行依赖的外部服务由业务环境提供。
-
-## 边界与限制
-
-- 组件默认实现通常偏向开发和基础场景，生产环境需要确认外部依赖、幂等、超时、重试、资源释放等策略。
-- starter 不应隐藏高风险行为，例如批量删除、自动创建资源、无限队列、明文密钥日志。
-- 每个组件 README 应写明真实配置项、默认值、扩展方式和排障表。
-
-## 构建与验证
-
-```bash
-mvn -f "peach-component/pom.xml" clean package -DskipTests -Pdevelopment
-mvn -pl peach-component -am clean package -DskipTests -Pdevelopment
-```
-
-单组件验证示例：
-
-```bash
-mvn -pl peach-component/peach-storage -am clean package -DskipTests -Pdevelopment
-mvn -pl peach-component/peach-virtual-thread -am clean package -DskipTests -Pdevelopment
-```
-
-## 排障指南
-
-| 现象 | 检查点 | 处理方式 |
+| 组件 | 主要职责 | Quickstart |
 | --- | --- | --- |
-| starter Bean 未注入 | 是否引入 `*-starter`；自动配置条件是否满足 | 检查依赖树和 Spring Boot 条件报告 |
-| 配置未生效 | 配置前缀、profile、Nacos 配置是否正确 | 对照组件 README 和配置类字段 |
-| 默认实现不满足生产 | 是否提供自定义 `@Bean` 或 SPI | 用业务实现覆盖默认 Bean |
-| 构建失败 | 是否从根目录构建；是否需要 `-am` | 使用聚合模块命令构建 |
+| [`peach-captcha`](peach-captcha/README.md) | 验证码生成、缓存、校验与频控 | `peach-captcha-quickstart` |
+| [`peach-code`](peach-code/README.md) | 代码生成基础能力 | `peach-code-quickstart` |
+| [`peach-email`](peach-email/README.md) | SMTP、Provider、模板、重试与幂等 | `peach-email-quickstart` |
+| [`peach-initialize`](peach-initialize/README.md) | 应用初始化处理器编排 | `peach-initialize-quickstart` |
+| [`peach-observability`](peach-observability/README.md) | Metrics、Trace、RequestId 与 OTLP 接入 | `peach-observability-quickstart` |
+| [`peach-scheduler`](peach-scheduler/README.md) | 调度执行侧 SDK、Provider 与 Transport | `peach-scheduler-quickstart` |
+| [`peach-storage`](peach-storage/README.md) | 统一存储契约、Provider、直传与分片 | `peach-store-quickstart` |
+| [`peach-threadpool`](peach-threadpool/README.md) | 存量平台线程池兼容能力 | `peach-threadpool-quickstart` |
+| [`peach-virtual-thread`](peach-virtual-thread/README.md) | Java 21 虚拟线程分组、背压、取消与生命周期 | `peach-virtual-thread-quickstart` |
 
+`peach-threadpool` 仅用于兼容历史调用，新建阻塞 IO 异步任务优先使用 `peach-virtual-thread`。
 
-## 项目约定
+## 开发约定
 
-- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
-- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
-- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
-- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。
+- `autoconfigure` 承载配置、公共契约、默认实现和扩展装配，不放 demo。
+- `starter` 只做最小依赖聚合，不放复杂实现。
+- `quickstart` 依赖 starter，用于最小可运行验证，不被生产模块依赖。
+- 额外 `core/common/provider/transport` 必须有真实独立职责。
+- 新组件若引入 Starter，必须同时提供匹配的 autoconfigure、quickstart 和中英文家族 README。
+
+## 构建
+
+```bash
+mvn -pl peach-component -am test -Pdevelopment
+```
+
+具体依赖、配置、API 和生产边界以各组件 README 为准。

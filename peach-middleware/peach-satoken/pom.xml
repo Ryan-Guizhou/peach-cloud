@@ -7,17 +7,10 @@
     <name>peach-satoken</name>
     <description>peach-satoken</description>
     <packaging>pom</packaging>
-
-    <parent>
-        <groupId>com.peach</groupId>
-        <artifactId>peach-middleware</artifactId>
-        <version>${revision}</version>
-    </parent>
-
+    <parent><groupId>com.peach</groupId><artifactId>peach-middleware</artifactId><version>${revision}</version></parent>
     <modules>
         <module>peach-satoken-autoconfigure</module>
         <module>peach-satoken-starter</module>
+        <module>peach-satoken-quickstart</module>
     </modules>
-
-
 </project>

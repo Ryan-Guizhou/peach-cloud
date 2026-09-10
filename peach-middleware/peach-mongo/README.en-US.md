@@ -2,56 +2,25 @@
 
 English | [中文](README.md)
 
-## Purpose
+`peach-mongo` provides MongoDB auto-configuration and a shared access entry point. Business modules integrate through `peach-mongo-starter`.
 
-`peach-mongo` is a MongoDB starter that configures `MongoClient`, `MongoTemplate`, transaction manager, and a generic `IMongoService<T>` operation entrypoint.
+## Structure
 
-## Submodules
-
-| Submodule | Responsibility |
+| Module | Responsibility |
 | --- | --- |
-| `peach-mongo-autoconfigure` | Mongo auto-configuration, properties, and generic service |
-| `peach-mongo-starter` | Starter exposed to business modules |
+| `peach-mongo-autoconfigure` | Mongo configuration, auto-configuration and shared service contracts |
+| `peach-mongo-starter` | Business integration dependency entry point |
+| `peach-mongo-quickstart` | Minimal connection and auto-configuration verification |
 
-## Core Objects
-
-- `PeachMongoProperties`: binds `peach.mongo.*`.
-- `MongoAutoConfigure`: creates MongoDB related beans.
-- `IMongoService<T>` / `MongoService<T>`: generic Mongo operation service.
-
-## Configuration Example
-
-```yaml
-peach:
-  mongo:
-    uri: mongodb://localhost:27017
-    database: peach
-    pool:
-      max-size: 100
-      min-size: 5
-    socket:
-      connect-timeout-ms: 10000
-      read-timeout-ms: 10000
-    transaction:
-      enabled: false
+```xml
+<dependency><groupId>com.peach</groupId><artifactId>peach-mongo-starter</artifactId></dependency>
 ```
+
+Quickstart: [`peach-mongo-quickstart`](peach-mongo-quickstart/README.en-US.md).
 
 ## Boundaries
 
-- Mongo transactions require replica set or cluster deployment; standalone MongoDB usually does not satisfy transaction requirements.
-- `removeClassField=true` removes `_class`; this reduces document noise but may affect polymorphic deserialization.
-- The generic service does not replace complex aggregation queries or business index design.
-
-## Verification
-
-```bash
-mvn -f "peach-middleware/peach-mongo/pom.xml" -DskipTests package
-```
-
-
-## Project conventions
-
-- Backend documentation follows the current peach-cloud baseline: Java 21, Spring Boot 3.5.4, Spring Cloud 2025.0.0, and Spring Cloud Alibaba 2025.0.0.0.
-- Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
-- Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
-- Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+- The starter does not deploy MongoDB.
+- Mongo URI and credentials must come from secure configuration sources, never README or source code.
+- Generic access APIs do not replace business aggregation queries, indexing or data-lifecycle design.
+- Document-schema evolution requires explicit old-data compatibility and migration planning.

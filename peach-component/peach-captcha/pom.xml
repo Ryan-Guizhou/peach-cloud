@@ -4,7 +4,6 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.peach</groupId>
     <artifactId>peach-captcha</artifactId>
-
     <name>peach-captcha</name>
     <description>peach-captcha</description>
     <packaging>pom</packaging>
@@ -15,13 +14,9 @@
         <version>${revision}</version>
     </parent>
 
-    <dependencies>
-
-    </dependencies>
-
     <modules>
         <module>peach-captcha-autoconfigure</module>
         <module>peach-captcha-starter</module>
+        <module>peach-captcha-quickstart</module>
     </modules>
-
 </project>

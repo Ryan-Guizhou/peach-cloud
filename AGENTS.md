@@ -1,6 +1,6 @@
 # Peach Cloud Agent Guide
 
-本文件只定义 peach-cloud 的仓库级事实来源、最小上下文路由、MCP 使用边界和交付门禁。具体编码风格由 Rules 管理；领域实现约束由对应 Skill 管理；文档生产统一由 `project-doc-engineer` 管理。
+本文件是 peach-cloud 仓库级唯一工作入口，只定义事实优先级、最小上下文路由、MCP 触发边界、Starter 架构和统一交付门禁。具体编码风格由 Rules 管理；领域不变量由 Domain Skill 管理；项目文档统一由 `project-doc-engineer` 管理。
 
 ## 1. Source of Truth
 
@@ -12,80 +12,58 @@
 4. Rules / Skills。
 5. 历史实现、历史 README 与模型记忆。
 
-源码与 README、Skill、历史实现冲突时，以当前分支源码为准。禁止根据旧文档、Skill 或记忆推断项目已经实现某项能力。
+源码与 README、Skill 或历史实现冲突时，以当前分支源码为准。禁止根据旧文档、Skill、相邻模块或模型记忆推断项目已经实现某项能力。
 
 ## 2. Project Baseline
 
 - 后端：Java 21，Maven 多模块，Spring Boot `3.5.4`，Spring Cloud `2025.0.0`，Spring Cloud Alibaba `2025.0.0.0`。
 - 前端：`peach-cloud-front`，Vue 3 + TypeScript + Vite，独立 npm 工程，不属于 Maven reactor。
-- starter 组件优先采用 `autoconfigure / starter / quickstart` 结构；是否存在额外 `core/provider/transport` 必须由真实隔离职责决定。
-- 具体依赖版本始终以当前 `pom.xml`、`peach-dependencies` 与 `package.json` 为准。
+- 具体依赖版本始终以当前根 `pom.xml`、`peach-dependencies` 与 `package.json` 为准。
 
 ## 3. Minimal Context
 
 只加载当前任务真正需要的 Rule、Skill 和源码，不为了“保险”读取全部规则、全部 Skill 或整个仓库。
 
-- 普通 Java 修改：读取 Java Rule；涉及领域组件时再读取一个对应 Domain Skill。
-- 前端修改：读取 Frontend Rule + `using-peach-front`；只有视觉/交互任务才按需叠加设计 Skill。
-- README、设计文档、需求文档、新手指引、Reference、ADR、排障文档：使用 `project-doc-engineer`。
-- 代码 + 文档：先完成代码事实与验证，再进入文档工作流；文档阶段不重复加载无关领域材料。
+- 普通 Java 修改：Java Rule；命中复杂领域时再读取一个对应 Domain Skill。
+- 前端修改：Frontend Rule + `using-peach-front`；只有视觉/交互任务才叠加设计 Skill。
+- README、设计、需求、新手指引、Reference、ADR、排障：使用 `project-doc-engineer`。
+- 代码 + 文档：先完成代码事实与行为验证，再进入文档工作流。
 
-一次任务默认只使用一个主 Domain Skill。跨领域事实确实耦合时才增加第二个，避免 Skill 链式叠加。
+一次任务默认一个主 Domain Skill。只有真实跨领域耦合才增加第二个，禁止 Skill 链式叠加。
 
 ## 4. MCP Routing
 
-MCP 是“证据缺口补全工具”，不是每个任务的默认前置步骤。优先使用当前文件和仓库证据；只有出现明确证据缺口时才触发对应 MCP。
+MCP 是证据缺口补全工具，不是默认前置步骤。当前源码已经足够时不要额外调用 MCP。
 
 ### CodeGraph
 
-在以下情况使用：
+用于：
 
-- 判断 Java / TypeScript 符号引用关系、调用方或被调用方。
-- 分析跨模块调用链、公共 API 影响面、starter 自动装配链或生命周期关系。
-- 需要确认“改这个符号会影响谁”，且单文件阅读不足以回答。
+- Java / TypeScript 符号引用、caller/callee。
+- 跨模块调用链、公共 API 影响面。
+- Starter 自动装配链、生命周期和依赖关系。
 
-不要在以下情况机械调用：
-
-- 纯 README 文案、SQL、脚本或静态配置调整。
-- 已知文件内的局部实现且依赖关系清晰。
-- 当前源码、测试或 POM 已经能直接证明结论。
-
-约束：
-
-- 查询范围限定到 peach-cloud 仓库。
-- 默认只分析目标符号上下 `1~2` 层关系；影响面分析才扩大。
-- 只保留当前任务需要的 symbol、file、caller/callee 与关键关系，不把大图原样灌入上下文。
-- CodeGraph 用于结构关系；最终运行事实仍由源码、配置和测试确认。
+默认只分析目标符号上下 `1~2` 层；影响面分析才扩大。只保留当前任务所需 symbol、path 和关键关系。CodeGraph 证明结构关系，运行事实仍由源码、配置和测试确认。
 
 ### Context7
 
-仅在第三方框架或 SDK 的当前版本 API、配置或行为存在不确定性时使用，例如 Spring Boot、Spring Cloud、MyBatis、RocketMQ、Redis/Redisson、存储 SDK、Vue/Vite 等。
-
-- 先从当前 POM/package.json 确认实际版本，再查对应版本资料。
-- 不使用 Context7 推断 peach-cloud 自身的业务语义。
-- 当前源码已经明确第三方调用方式时，不重复查询。
+仅在第三方框架或 SDK 的当前版本 API、配置、生命周期或行为存在不确定性时使用。先从 POM/package.json 确认实际版本；不得使用 Context7 推断 peach-cloud 自身业务语义。
 
 ### GitHub
 
-仅在以下场景使用：
-
-- 用户明确要求查看远程仓库、PR、Issue、Commit、Branch、Release 或 Actions。
-- 需要比较远程分支/提交，或确认远程仓库最新状态。
-- 需要创建 PR、评论、合并或执行其他远程协作动作。
-
-本地/当前分支源码足够时，不额外调用 GitHub 重复取证。Push、PR/Issue 修改、评论、合并等远程写操作必须有用户明确授权。
+仅用于远程仓库、Branch、Commit、PR、Issue、Release、Actions 和明确授权的远程协作动作。本地/当前分支证据足够时不重复查询 GitHub。
 
 ### Evidence Escalation
 
-默认按下列顺序补证据，并跳过无关步骤：
+按实际缺口选择最短路径：
 
 `Current File -> Related Source/Test/Config/POM -> CodeGraph -> Context7 -> GitHub Remote`
 
-如果一个工具已经解决当前证据缺口，不继续调用其他 MCP 做重复验证。
+一个工具已经解决问题时停止升级，不做重复取证。
 
 ## 5. Skill Routing
 
-Domain Skill 只保存领域中容易写错的非通用规则，不重复 Java 风格、UTF-8、构建、日志或 README 通用规范。
+Domain Skill 只保存领域中容易写错的非通用规则，不重复 Java 风格、UTF-8、日志、构建或文档门禁。
 
 | 任务范围 | Skill |
 | --- | --- |
@@ -98,48 +76,68 @@ Domain Skill 只保存领域中容易写错的非通用规则，不重复 Java �
 | Vue 3、路由、权限、Pinia、Axios、UI | `using-peach-front` |
 | README、Design、Requirement、Tutorial、Reference、ADR | `project-doc-engineer` |
 
-不存在对应 Domain Skill 时，优先依赖当前源码和通用 Rule，不为了覆盖所有模块而新建低价值 Skill。
+没有对应 Domain Skill 时依赖当前源码和通用 Rule，不为了覆盖模块数量新增低价值 Skill。
 
-## 6. Engineering Principles
+## 6. Starter Architecture
+
+`peach-component` 与 `peach-middleware` 下可复用 Starter 能力统一采用以下对外结构：
+
+```text
+peach-<family>/
+├── README.md
+├── README.en-US.md
+├── peach-<capability>-autoconfigure/
+├── peach-<capability>-starter/
+└── peach-<capability>-quickstart/
+```
+
+职责：
+
+- `*-autoconfigure`：公共契约、`ConfigurationProperties`、自动配置、默认 Bean、SPI/Provider 装配和配置 metadata；不放 demo。
+- `*-starter`：业务接入的最小依赖聚合；不承载复杂实现和示例代码。
+- `*-quickstart`：可运行最小接入样例；可以依赖 starter，生产模块不得反向依赖 quickstart。
+
+`core`、`common`、`provider-*`、`transport-*` 等模块只有存在真实独立职责时保留，不为了目录对称拆模块。
+
+非业务 Starter 家族禁止新增 `example` / `*-example` 模块；示例统一使用 `quickstart`。业务服务自己的 sample/test fixture 不受该命名约束。
+
+Starter 家族主 README 负责定位、模块关系、最小接入、关键边界和深入文档导航；复杂设计进入 `docs/`。中文 `README.md` 与英文 `README.en-US.md` 必须语义等价同步。Quickstart 只保留完成最小闭环所需代码和配置，不复制生产配置或真实凭据。
+
+## 7. Engineering Principles
 
 优先级：`Correctness > Security > Maintainability > Consistency`。
 
-- peach-cloud 采用统一目标风格，不再根据相邻历史代码临时选择风格。
-- 公共 API、公共模型、DAO/XML、配置契约、starter 装配变化必须检查受影响调用方。
-- 不复制已知错误的历史模式，包括事务失效、资源泄漏、错误日志级别、敏感数据泄露、跨层依赖与无效注解。
-- Spring Bean 使用构造器注入；具体 Java 规则由 Java Rule 定义。
-- 中文 Javadoc、English log；类型级 Javadoc 保留并统一 `@Author / @Version / @CreateTime`。
+- peach-cloud 采用统一目标风格，不再按相邻历史代码临时选择风格。
+- 公共 API、公共模型、DAO/XML、配置契约和 Starter 装配变化必须检查影响面。
+- 不复制事务失效、资源泄漏、敏感日志、跨层依赖、静默吞错等历史错误。
+- Spring Bean 使用构造器注入。
+- 中文 Javadoc、English log；类型级 Javadoc 统一保留 `@Author / @Version / @CreateTime`。
 - 所有文本文件使用 UTF-8 无 BOM。
-- 禁止把 secret、token、password、私钥、签名 URL、身份证号等敏感数据写入源码、日志、文档、测试快照或回复。
+- secret、token、password、私钥、签名 URL 等敏感数据不得进入源码、日志、文档、测试快照或回复。
 
-## 7. Documentation Principles
+## 8. Documentation Principles
 
 Documentation is part of the product.
 
-- 所有技术事实必须能追溯到 source、configuration、test、POM、SQL、quickstart 或当前版本官方文档。
-- 无法证明的事实不得写入正式文档；规划能力明确标记 `Planned`，实验能力标记 `Experimental`，已废弃能力标记 `Deprecated`。
+- 技术事实必须能追溯到 source、configuration、test、POM、SQL、quickstart 或当前版本官方文档。
+- 无法证明的事实不写入正式文档；明确区分 `Supported / Experimental / Planned / Deprecated / Unsupported`。
 - `README.md` 为中文主文档，`README.en-US.md` 为英文等价文档；有效内容变更必须同步。
-- README 只承担入口、定位、Quick Start、关键边界和深入文档导航；复杂实现原理下沉到 `docs/`。
-- 小模块不要机械创建一套空洞 docs；文档数量由真实复杂度决定。
-- 架构、关系、流程、调用链、状态、生命周期、部署、数据模型优先用 Mermaid / PlantUML / draw.io 表达；简单列表和配置不要为了“图文并茂”硬画图。
+- README 只承担入口、定位、Quick Start、关键边界和深入阅读；复杂实现下沉 `docs/`。
+- 文档数量由复杂度决定，不为模板齐全制造空文件。
+- 架构、关系、流程、调用链、状态、生命周期、部署和数据模型优先用 Mermaid / PlantUML / draw.io；简单信息不硬画图。
 
-## 8. Verification
+## 9. Verification
 
-优先运行：
+所有任务完成后统一执行仓库级入口：
 
 ```bash
 node scripts/verify-changes.mjs
 ```
 
-代码变更还应运行受影响模块的编译/测试；前端变更运行对应 npm 类型检查、测试或构建。无法执行的检查必须说明原因和残余风险，不得声称已经验证。
+这是 Agent 唯一需要知道的门禁命令。其内部子检查、执行顺序和新增检查由脚本维护，Rules 与 Skills 不复制脚本名称或执行命令。
 
-## 9. Output Contract
+行为代码变更仍需按统一入口给出的提示执行受影响模块最小充分的 Maven/npm 编译、测试或构建。无法执行的检查必须说明原因和残余风险，不得声称已验证。
 
-最终回复只保留对用户有价值的内容：
+## 10. Output Contract
 
-1. 实际修改内容。
-2. 关键设计与影响面。
-3. 实际运行的验证及结果。
-4. 未验证项与残余风险。
-
-不要输出 Rules/Skills/MCP 的加载流水账，也不要粘贴大段工具原始结果。
+最终只报告：实际修改、关键设计/影响面、实际验证结果、未验证项与残余风险。不要输出 Rule/Skill/MCP 加载流水账，也不要粘贴大段工具原始结果。

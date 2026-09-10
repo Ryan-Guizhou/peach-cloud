@@ -4,7 +4,6 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.peach</groupId>
     <artifactId>peach-initialize</artifactId>
-
     <name>peach-initialize</name>
     <description>peach-initialize</description>
     <packaging>pom</packaging>
@@ -15,13 +14,9 @@
         <version>${revision}</version>
     </parent>
 
-    <dependencies>
-
-    </dependencies>
-
     <modules>
         <module>peach-initialize-autoconfigure</module>
         <module>peach-initialize-starter</module>
+        <module>peach-initialize-quickstart</module>
     </modules>
-
 </project>
