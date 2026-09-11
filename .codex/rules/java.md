@@ -1,0 +1,43 @@
+# Java Engineering Rule
+
+适用于 peach-cloud 全部 Java 源码。目标是统一项目风格，不以相邻历史代码作为新的风格模板。
+
+## Baseline
+
+- Java 21 / `jakarta.*`；框架 API 必须符合当前 POM 锁定版本。
+- Spring 管理 Bean 使用构造器注入，依赖字段使用 `private final`；单构造器优先 `@RequiredArgsConstructor`，需要 qualifier/特殊装配时显式构造器。
+- 业务层次保持清晰：REST 负责协议适配，Service 负责业务/事务，DAO/XML 负责持久化，Entity/DTO/QO/VO 表达明确模型职责。
+- 业务模块优先依赖 starter，不直接耦合 autoconfigure 或厂商 SDK。
+
+## Javadoc And Logs
+
+- Javadoc 使用中文；日志消息使用英文。
+- Class、Interface、Enum、Annotation、Record 的类型级 Javadoc 统一保留：
+
+```text
+@Author Mr Shu
+@Version 1.0.0
+@CreateTime yyyy/M/d HH:mm
+```
+
+- 公共 API、SPI、配置对象、复杂并发/事务/资源方法必须写有信息价值的 Javadoc，重点说明契约、边界、线程安全、阻塞行为、异常、生命周期、副作用和所有权。
+- 不写“获取名称 / @return 名称”这类仅翻译方法名的机械注释；简单 getter/setter 无额外语义时保持简洁。
+- 日志只记录排障需要的非敏感白名单字段，不直接打印完整 DTO、Command、请求对象或响应对象。
+
+## Correctness
+
+- 事务边界放在可被 Spring 代理的业务入口；避免类内自调用导致事务/切面失效。
+- 资源必须有清晰所有权和关闭路径；Stream、client、executor、临时文件、锁等不能依赖偶然回收。
+- 并发代码必须明确取消、中断、超时、拒绝、关闭和异常路径，不以 happy path 证明正确性。
+- 公共签名、配置、序列化模型、数据库映射和 XML `id` 变化必须检查调用方和兼容性。
+- 不用 `Optional`、Stream、record、`var` 或新 API 仅为“看起来现代”；只有在语义更清晰且不改变可变性/null 行为时使用。
+
+## Naming And Structure
+
+- 新代码使用完整、稳定、可搜索的英文标识符；历史拼写错误只做兼容，不作为新命名模板。
+- 一个类只承担一个清晰职责；不为简单转发制造多层 Wrapper，也不把多个独立职责堆进 God Class。
+- 常量、异常、枚举和配置项表达业务语义，避免 magic string / magic number 散落。
+
+## Change Scope
+
+统一目标风格已经确定。修改文件时直接按本规则整理受影响文件，不再反复讨论“是否沿用旧风格”；但不要把与任务无关的行为重构混入同一变更。需要全仓机械格式迁移时使用独立、可审查的 formatting change。

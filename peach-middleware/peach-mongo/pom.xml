@@ -6,21 +6,11 @@
     <artifactId>peach-mongo</artifactId>
     <name>peach-mongo</name>
     <description>peach-mongo</description>
-
-    <parent>
-        <groupId>com.peach</groupId>
-        <artifactId>peach-middleware</artifactId>
-        <version>${revision}</version>
-    </parent>
-
+    <parent><groupId>com.peach</groupId><artifactId>peach-middleware</artifactId><version>${revision}</version></parent>
     <packaging>pom</packaging>
-
-
     <modules>
         <module>peach-mongo-autoconfigure</module>
         <module>peach-mongo-starter</module>
+        <module>peach-mongo-quickstart</module>
     </modules>
-
-
-
 </project>

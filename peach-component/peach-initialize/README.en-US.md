@@ -2,40 +2,27 @@
 
 English | [中文](README.md)
 
-## Purpose
+`peach-initialize` organizes application-startup initialization handlers such as cache warm-up, required-resource checks and in-memory mapping initialization.
 
-`peach-initialize` is an application startup initialization component. It organizes initialization handlers during Spring Boot startup and supports normal and composite initialization scenarios.
+## Structure
 
-## Submodules
-
-| Submodule | Responsibility |
+| Module | Responsibility |
 | --- | --- |
-| `peach-initialize-autoconfigure` | Initialization handlers, composite handlers, and auto-configuration |
-| `peach-initialize-starter` | Starter exposed to business modules |
+| `peach-initialize-autoconfigure` | `InitializeHandler` contract, orchestration and auto-configuration |
+| `peach-initialize-starter` | Business integration dependency entry point |
+| `peach-initialize-quickstart` | Minimal handler-integration verification |
 
-## Core Objects
+Business dependency:
 
-- `InitializeHandler`: initialization handler interface.
-- `InitializeHandlerType`: handler type constants.
-- `InitializeAutoConfig`: registers default initialization beans.
-- `CompositeAutoConfig`: registers composite initialization support.
-
-## Usage Notes
-
-- Initialization logic must be idempotent to avoid dirty data after restart.
-- Long-running initialization tasks need explicit timeout, failure handling, and logging.
-- If a task depends on database, Redis, or external services, ensure dependencies are ready first.
-
-## Verification
-
-```bash
-mvn -f "peach-component/peach-initialize/pom.xml" -DskipTests package
+```xml
+<dependency><groupId>com.peach</groupId><artifactId>peach-initialize-starter</artifactId></dependency>
 ```
 
+Quickstart: [`peach-initialize-quickstart`](peach-initialize-quickstart/README.en-US.md).
 
-## Project conventions
+## Boundaries
 
-- Backend documentation follows the current peach-cloud baseline: Java 21, Spring Boot 3.5.4, Spring Cloud 2025.0.0, and Spring Cloud Alibaba 2025.0.0.0.
-- Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
-- Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
-- Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+- Initialization work must be bounded and must not wait forever or perform uncontrolled large jobs.
+- Initialization is not a database migration mechanism.
+- Multi-instance deployments must define duplicate execution, concurrency and idempotency semantics.
+- Whether initialization failure blocks startup or degrades operation must follow the current handler contract and configuration.

@@ -2,63 +2,21 @@
 
 English | [中文](README.md)
 
-## Purpose
+`peach-threadpool` is the legacy platform-thread-pool compatibility component, preserving `ThreadPoolManager`, `@AsyncExecuted` and the `peach.threadpool` contract. New blocking-I/O asynchronous work should prefer `peach-virtual-thread`.
 
-`peach-threadpool` is a legacy compatibility module. It remains available for existing `ThreadPoolManager`, `@AsyncExecuted`, and `peach.threadpool` contracts, but new blocking IO async work should use `peach-virtual-thread` with `VirtualExecutorService`, `VirtualExecutorRegistry`, or `@VirtualGroup`.
+## Structure
 
-This module is no longer the recommended entrypoint for new async code and does not provide the grouped capacity, pending backpressure, managed cancellation, or graceful shutdown semantics of `peach-virtual-thread`.
-
-## Submodules
-
-| Submodule | Responsibility |
+| Module | Responsibility |
 | --- | --- |
-| `peach-threadpool-autoconfigure` | Auto-configuration, thread pool manager, and annotation aspect |
-| `peach-threadpool-starter` | Starter exposed to business modules |
+| `peach-threadpool-autoconfigure` | Properties, manager, annotation aspect and default pool implementation |
+| `peach-threadpool-starter` | Legacy business integration dependency entry point |
+| `peach-threadpool-quickstart` | Minimal compatibility verification; not a new-business template |
 
-## Core Objects
+Quickstart: [`peach-threadpool-quickstart`](peach-threadpool-quickstart/README.en-US.md).
 
-- `ThreadPoolProperties`: binds `peach.threadpool`.
-- `ThreadPoolManager`: gets, submits, and executes tasks by `PoolType`.
-- `@AsyncExecuted`: method-level async execution annotation.
-- `TaskWrapper`: propagates SecurityContext.
-- `PoolProperties`: thread pool parameters.
+## Current Boundaries
 
-## Configuration Example
-
-The following configuration is for maintaining existing integrations only.
-
-```yaml
-peach:
-  threadpool:
-    global:
-      enable-security-context: true
-    pools:
-      - type: IO
-        core-size: 16
-        max-size: 64
-        queue-capacity: 1000
-        thread-name-prefix: io-task-
-        rejected-policy: CALLER_RUNS
-```
-
-## Boundaries
-
-- The current aspect matches method annotations only; class-level annotations do not automatically apply to all methods.
-- Normal return values wait on `Future.get()`, so this is not fire-and-forget behavior.
-- `CompletableFuture` paths must be checked against the expected executor usage.
-- `timeoutMs` limits wait time but does not guarantee reliable cancellation of the underlying task.
-- Do not add new `ThreadPoolManager`, `@AsyncExecuted`, or `PoolType.VIRTUAL` usage for blocking IO async work.
-
-## Verification
-
-```bash
-mvn -f "peach-component/peach-threadpool/pom.xml" -DskipTests package
-```
-
-
-## Project conventions
-
-- Backend documentation follows the current peach-cloud baseline: Java 21, Spring Boot 3.5.4, Spring Cloud 2025.0.0, and Spring Cloud Alibaba 2025.0.0.0.
-- Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
-- Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
-- Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+- Platform pools remain suitable for CPU-intensive work or workloads requiring explicitly bounded worker resources.
+- New blocking-I/O code should prefer `peach-virtual-thread` group concurrency, pending and backpressure semantics.
+- Thread-pool context propagation must not be interpreted as Spring transaction propagation across threads.
+- Queueing, rejection, timeout and cancellation semantics follow the current implementation, not copied historical examples.

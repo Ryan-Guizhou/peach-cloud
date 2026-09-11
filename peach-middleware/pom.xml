@@ -16,7 +16,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>peach-kafka</module>
         <module>peach-rocket</module>
         <module>peach-redis</module>
         <module>peach-redission</module>
@@ -24,5 +23,4 @@
         <module>peach-satoken</module>
         <module>peach-openfeign</module>
     </modules>
-
 </project>

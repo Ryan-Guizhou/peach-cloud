@@ -1,124 +1,143 @@
-# peach-cloud Agent Guidelines
+# Peach Cloud Agent Guide
 
-本文件只规定仓库级工作边界、Rules/Skills/MCP 路由和验证门禁。具体编码细节放在当前 Agent 原生 rules 与 skills 中维护。
+本文件是 peach-cloud 仓库级唯一工作入口，只定义事实优先级、最小上下文路由、MCP 触发边界、Starter 架构和统一交付门禁。具体编码风格由 Rules 管理；领域不变量由 Domain Skill 管理；项目文档统一由 `project-doc-engineer` 管理。
 
-## Agent Native Configuration
+## 1. Source of Truth
 
-- Codex 使用 `.codex/rules/*.md`、`.codex/skills/*/SKILL.md` 和 `.codex/config.toml`。
-- Cursor 使用 `.cursor/rules/*.mdc`、`.cursor/skills/*/SKILL.md` 和 `.cursor/mcp.json`。
-- Agent 优先使用自身原生目录；另一套目录只作为只读参考，不能宣称已自动加载。
-- 两套目录独立维护，不使用符号链接；同步语义时保留客户端专属格式。
+技术事实按以下优先级确认：
 
-## Project Context
+1. 当前分支源码、测试、POM、配置、SQL 与可执行 quickstart。
+2. 当前依赖版本的官方文档。
+3. 当前仓库正式文档。
+4. Rules / Skills。
+5. 历史实现、历史 README 与模型记忆。
 
-- 后端：Maven 多模块，Java 21，Spring Boot `3.5.4`，Spring Cloud `2025.0.0`，Spring Cloud Alibaba `2025.0.0.0`。
-- 前端：`peach-cloud-front`，Vue 3 + Vite + TypeScript，独立 npm 工程，不属于 Maven reactor。
-- 项目版本：`${revision}`，根 POM 默认 `1.0.0-SNAPSHOT`；`development` 为默认 profile。
-- 核心业务域：`peach-auth`、`peach-fileservice`、`peach-message`、`peach-setting`、`peach-generator`。
-- 基础设施：`peach-common`、`peach-component`、`peach-middleware`。
+源码与 README、Skill 或历史实现冲突时，以当前分支源码为准。禁止根据旧文档、Skill、相邻模块或模型记忆推断项目已经实现某项能力。
 
-## Precedence
+## 2. Project Baseline
 
-冲突时按以下顺序处理：
+- 后端：Java 21，Maven 多模块，Spring Boot `3.5.4`，Spring Cloud `2025.0.0`，Spring Cloud Alibaba `2025.0.0.0`。
+- 前端：`peach-cloud-front`，Vue 3 + TypeScript + Vite，独立 npm 工程，不属于 Maven reactor。
+- 具体依赖版本始终以当前根 `pom.xml`、`peach-dependencies` 与 `package.json` 为准。
 
-1. 用户最新明确要求。
-2. 安全、隐私、数据完整性和可验证正确性。
-3. 本文件的仓库级边界。
-4. 当前 Agent 原生 rules。
-5. 当前任务命中的 skills。
-6. 当前模块局部风格。
-7. 存量代码。
+## 3. Minimal Context
 
-存量代码只能作为兼容性证据。敏感数据泄露、错误日志级别、事务失效、资源泄漏、无效注解和占位注释不能继续复制。
+只加载当前任务真正需要的 Rule、Skill 和源码，不为了“保险”读取全部规则、全部 Skill 或整个仓库。
 
-## Standard Workflow
+- 普通 Java 修改：Java Rule；命中复杂领域时再读取一个对应 Domain Skill。
+- 前端修改：Frontend Rule + `using-peach-front`；只有视觉/交互任务才叠加设计 Skill。
+- README、设计、需求、新手指引、Reference、ADR、排障：使用 `project-doc-engineer`。
+- 代码 + 文档：先完成代码事实与行为验证，再进入文档工作流。
 
-### 1. 先分类，再加载最小上下文
+一次任务默认一个主 Domain Skill。只有真实跨领域耦合才增加第二个，禁止 Skill 链式叠加。
 
-1. 判断任务属于代码修改、代码审查、文档/配置、外部系统操作还是纯问答。
-2. 代码修改/审查先读取当前 Agent 原生 rules：`02-output-and-evidence`、`03-module-and-change-boundaries`、`05-language-and-encoding`、`08-security-and-quality-gates`。
-3. Java/XML 或后端生成器任务再读取 `06-layered-java-style`、`09-java21-coding-style`；README/模块文档读取 `04-documentation-and-readme`；starter/SPI/公共契约读取 `10-architecture-and-starters`；注释或日志读取 `07-comments-and-logging`；MCP/Skill/外部文档读取 `01-mcp-and-skills`。
-4. 需要判断 Java/TypeScript 符号、调用链、影响面、starter 装配或运行机制时，先用 CodeGraph 建立事实。纯文本 README、SQL、脚本和静态配置可直接读文件。
-5. 按 Skill 路由表选择最小必要集合，完整读取命中 `SKILL.md`，再按其说明只读取必要 reference。
-6. 用当前源码、POM、配置、测试和 SQL 复核事实；Skill、记忆、README 和相邻代码不能替代当前证据。
+## 4. MCP Routing
 
-### 2. 编辑中控制范围
+MCP 是证据缺口补全工具，不是默认前置步骤。当前源码已经足够时不要额外调用 MCP。
 
-- 只修改完成用户目标所需的代码、测试和行为相关文档。
-- 保留用户已有未提交改动，不执行破坏性 Git/文件操作。
-- Controller、Service、DTO/VO、DAO/XML、配置和文档存在契约联动时同步检查。
-- 不确定第三方 API 或版本行为时查当前依赖源码或官方文档。
+### CodeGraph
 
-### 3. 完成后验证
+用于：
 
-- Java/XML 修改优先使用 IDEA 构建与文件问题检查；IDE 工具不可用时运行受影响 Maven 模块编译/测试。
-- 前端修改运行匹配范围的 npm 类型检查、构建或测试；不要用 Maven 验证 `peach-cloud-front`。
-- 所有代码、配置、README、rules、skills 修改至少运行 `node scripts/check-utf8.mjs` 和 `git diff --check`。
-- 无法执行的门禁必须说明原因、未验证范围和残余风险。
+- Java / TypeScript 符号引用、caller/callee。
+- 跨模块调用链、公共 API 影响面。
+- Starter 自动装配链、生命周期和依赖关系。
 
-## MCP Routing
+默认只分析目标符号上下 `1~2` 层；影响面分析才扩大。只保留当前任务所需 symbol、path 和关键关系。CodeGraph 证明结构关系，运行事实仍由源码、配置和测试确认。
 
-| 意图 | 首选工具 | 要求 |
-| --- | --- | --- |
-| 当前代码结构、符号、调用链、影响面 | CodeGraph | 查询范围限定到 `peach-cloud` 根目录；结果出现 `.m2`、`target`、IDE 插件或仓外目录时不得作为证据 |
-| 框架、SDK、配置语法和版本差异 | Context7 或官方文档 | 不用不明博客替代版本事实 |
-| PR、Issue、Actions、远程仓库 | GitHub MCP/App | 仅用户明确要求；推送、评论、开 PR 需明确授权 |
-| schema、样例数据、只读 SQL | MySQL MCP | 仅用户明确要求且只读连接可用；禁止未经授权写库 |
-| 运行时状态、断点、调用时值 | IDEA Debugger | 静态证据不足时使用 |
-| README、SQL、脚本、配置精确文本 | 本地读取或 `rg` | 不用全文搜索替代调用链分析 |
+### Context7
 
-CodeGraph 不可用时，先用项目内 CodeGraph CLI；CLI 不可用再用 IDEA 索引；仍不可用才用 `rg` + 精确源码读取，并在最终回复说明降级。
+仅在第三方框架或 SDK 的当前版本 API、配置、生命周期或行为存在不确定性时使用。先从 POM/package.json 确认实际版本；不得使用 Context7 推断 peach-cloud 自身业务语义。
 
-MCP 配置不得写入 secret。secret 只通过环境变量传入，不写源码、文档、记忆或回复。
+### GitHub
 
-## Skill Routing
+仅用于远程仓库、Branch、Commit、PR、Issue、Release、Actions 和明确授权的远程协作动作。本地/当前分支证据足够时不重复查询 GitHub。
 
-Skill 是执行规范，不是背景材料。命中后先读 `SKILL.md`，再按需读取 reference；不得一次性加载全部 skills。
+### Evidence Escalation
 
-### 后端与基础设施
+按实际缺口选择最短路径：
 
-| 修改范围 | 必用 Skill | 叠加条件 |
-| --- | --- | --- |
-| REST、Entity、DAO/XML、Service、common | `using-peach-code-skeleton` | 按任务层级读取对应 reference |
-| starter、autoconfigure、quickstart、SPI、provider 装配与依赖 | `using-peach-code-skeleton` | 读取 `references/starter.md` 和 `10-architecture-and-starters`；检查配置提示、条件装配、传递依赖和 quickstart |
-| Scheduler、Quartz、调度执行、租约、结果上报 | `using-peach-code-skeleton` + `using-peach-scheduler` | 先用 CodeGraph 分析定义、触发、分发、执行和上报链路；涉及 MQ transport 叠加 `using-peach-rocket`；涉及 Handler 阻塞 IO 叠加 `using-peach-virtual-thread` |
-| RocketMQ、事件、事务消息、Outbox | `using-peach-code-skeleton` + `using-peach-rocket` | 生产、消费、幂等、Topic 或 SPI 相关均触发 |
-| Storage、上传下载、签名 URL、provider | `using-peach-code-skeleton` + `using-peach-storage` | 路径安全、分片、直传、多 provider 均触发 |
-| 虚拟线程、阻塞 IO 异步、旧线程池迁移 | `using-peach-code-skeleton` + `using-peach-virtual-thread` | `VirtualExecutorService`、`VirtualExecutorRegistry`、`@VirtualGroup`、`peach.virtual-thread`、旧 `ThreadPoolManager` 迁移均触发 |
-| Email、SMTP、模板、附件、重试 | `using-peach-code-skeleton` + `using-peach-email` | transport、resolver、幂等或扩展点均触发 |
-| Redis、Redisson、缓存、锁、队列 | `using-peach-code-skeleton` + `using-peach-redis` | Stream、多级缓存、Bloom、repeat 等均触发 |
-| README 或模块接入文档 | `using-peach-readme-writer` | starter、autoconfigure、quickstart、业务模块或公共配置/API 变化时同步使用 |
+`Current File -> Related Source/Test/Config/POM -> CodeGraph -> Context7 -> GitHub Remote`
 
-### 前端与设计
+一个工具已经解决问题时停止升级，不做重复取证。
 
-| 修改范围 | 必用 Skill | 叠加条件 |
-| --- | --- | --- |
-| Vue 3、TypeScript、Vite、Axios、Pinia、Router、Ant Design Vue | `using-peach-front` | 页面、组件、API、状态、路由权限和目录结构均触发 |
-| 新页面视觉、布局、交互、响应式、可访问体验 | `using-peach-front` + `ui-ux-pro-max` | 仅视觉体验任务叠加 |
-| 设计 token、主题、字体/间距尺度、组件状态规范 | `using-peach-front` + `design-system` + `ui-ux-pro-max` | 保持 Ant Design Vue 技术栈 |
-| Tailwind、shadcn/ui、Canvas | `using-peach-front` + `ui-styling` | 仅用户明确要求 |
-| Banner、品牌、演示稿等设计资产 | 对应设计 Skill | 仅设计交付物明确命中时使用 |
+## 5. Skill Routing
 
-## Non-Negotiable Boundaries
+Domain Skill 只保存领域中容易写错的非通用规则，不重复 Java 风格、UTF-8、日志、构建或文档门禁。
 
-- Java 代码必须使用 Java 21；Spring API 必须符合项目锁定版本。
-- Spring Bean 使用构造器注入；新增或实质修改依赖时不使用字段 `@Resource` 或 `@Autowired`。
-- 所有文本文件必须为 UTF-8 无 BOM。
-- 禁止在日志、异常、文档、审计或非授权响应中暴露密码、token、secret、私钥、签名 URL、身份证号等敏感数据。
-- 操作日志不得直接打印完整 DTO、完整 command 或完整业务参数。
-- `*-rest` 只做接口适配，业务与事务在 `*-service`，模型在 `*-entity`。
-- 业务模块优先依赖 starter，不直接耦合 autoconfigure 或厂商 SDK。
-- 标准 starter 结构为 `autoconfigure / starter / quickstart`；禁止新增或保留 `example` 层，现有示例统一迁移为 quickstart。
-- 公共 API、公共响应、DAO/XML、生成器模板、starter 配置改动前必须评估影响面。
-- 数据库默认只读；GitHub 推送、PR、评论以及数据库写入必须有用户明确授权。
+| 任务范围 | Skill |
+| --- | --- |
+| Virtual Thread、背压、Permit、取消、关闭 | `using-peach-virtual-thread` |
+| Scheduler、Claim、执行侧、Provider、Transport | `using-peach-scheduler` |
+| RocketMQ、事件、消费、事务消息、Outbox | `using-peach-rocket` |
+| Storage、对象路径、Provider、直传、分片 | `using-peach-storage` |
+| Redis / Redisson、缓存、Stream、锁、队列 | `using-peach-redis` |
+| Email、SMTP、模板、幂等、附件 | `using-peach-email` |
+| Vue 3、路由、权限、Pinia、Axios、UI | `using-peach-front` |
+| README、Design、Requirement、Tutorial、Reference、ADR | `project-doc-engineer` |
 
-## Output Contract
+没有对应 Domain Skill 时依赖当前源码和通用 Rule，不为了覆盖模块数量新增低价值 Skill。
 
-默认中文，先给结论，再给证据。非平凡代码或配置任务最终回复包含：
+## 6. Starter Architecture
 
-1. 实际使用的 CodeGraph/IDE/CLI 能力和读取的 Skills；发生降级时说明原因。
-2. 关键符号与调用链，绑定文件或符号。
-3. 检查过的关键文件、实际修改文件和受影响调用方。
-4. 实际运行的构建、测试、UTF-8、MCP 配置和 diff 检查；未执行项单列。
+`peach-component` 与 `peach-middleware` 下可复用 Starter 能力统一采用以下对外结构：
 
-不要倾倒原始命令流水账，也不要声称使用了当前会话未提供的工具。
+```text
+peach-<family>/
+├── README.md
+├── README.en-US.md
+├── peach-<capability>-autoconfigure/
+├── peach-<capability>-starter/
+└── peach-<capability>-quickstart/
+```
+
+职责：
+
+- `*-autoconfigure`：公共契约、`ConfigurationProperties`、自动配置、默认 Bean、SPI/Provider 装配和配置 metadata；不放 demo。
+- `*-starter`：业务接入的最小依赖聚合；不承载复杂实现和示例代码。
+- `*-quickstart`：可运行最小接入样例；可以依赖 starter，生产模块不得反向依赖 quickstart。
+
+`core`、`common`、`provider-*`、`transport-*` 等模块只有存在真实独立职责时保留，不为了目录对称拆模块。
+
+非业务 Starter 家族禁止新增 `example` / `*-example` 模块；示例统一使用 `quickstart`。业务服务自己的 sample/test fixture 不受该命名约束。
+
+Starter 家族主 README 负责定位、模块关系、最小接入、关键边界和深入文档导航；复杂设计进入 `docs/`。中文 `README.md` 与英文 `README.en-US.md` 必须语义等价同步。Quickstart 只保留完成最小闭环所需代码和配置，不复制生产配置或真实凭据。
+
+## 7. Engineering Principles
+
+优先级：`Correctness > Security > Maintainability > Consistency`。
+
+- peach-cloud 采用统一目标风格，不再按相邻历史代码临时选择风格。
+- 公共 API、公共模型、DAO/XML、配置契约和 Starter 装配变化必须检查影响面。
+- 不复制事务失效、资源泄漏、敏感日志、跨层依赖、静默吞错等历史错误。
+- Spring Bean 使用构造器注入。
+- 中文 Javadoc、English log；类型级 Javadoc 统一保留 `@Author / @Version / @CreateTime`。
+- 所有文本文件使用 UTF-8 无 BOM。
+- secret、token、password、私钥、签名 URL 等敏感数据不得进入源码、日志、文档、测试快照或回复。
+
+## 8. Documentation Principles
+
+Documentation is part of the product.
+
+- 技术事实必须能追溯到 source、configuration、test、POM、SQL、quickstart 或当前版本官方文档。
+- 无法证明的事实不写入正式文档；明确区分 `Supported / Experimental / Planned / Deprecated / Unsupported`。
+- `README.md` 为中文主文档，`README.en-US.md` 为英文等价文档；有效内容变更必须同步。
+- README 只承担入口、定位、Quick Start、关键边界和深入阅读；复杂实现下沉 `docs/`。
+- 文档数量由复杂度决定，不为模板齐全制造空文件。
+- 架构、关系、流程、调用链、状态、生命周期、部署和数据模型优先用 Mermaid / PlantUML / draw.io；简单信息不硬画图。
+
+## 9. Verification
+
+所有任务完成后统一执行仓库级入口：
+
+```bash
+node scripts/verify-changes.mjs
+```
+
+这是 Agent 唯一需要知道的门禁命令。其内部子检查、执行顺序和新增检查由脚本维护，Rules 与 Skills 不复制脚本名称或执行命令。
+
+行为代码变更仍需按统一入口给出的提示执行受影响模块最小充分的 Maven/npm 编译、测试或构建。无法执行的检查必须说明原因和残余风险，不得声称已验证。
+
+## 10. Output Contract
+
+最终只报告：实际修改、关键设计/影响面、实际验证结果、未验证项与残余风险。不要输出 Rule/Skill/MCP 加载流水账，也不要粘贴大段工具原始结果。

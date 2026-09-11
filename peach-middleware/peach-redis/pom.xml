@@ -7,23 +7,17 @@
     <name>peach-redis</name>
     <description>peach-redis</description>
     <packaging>pom</packaging>
-
-
-    <parent>
-        <groupId>com.peach</groupId>
-        <artifactId>peach-middleware</artifactId>
-        <version>${revision}</version>
-    </parent>
-
+    <parent><groupId>com.peach</groupId><artifactId>peach-middleware</artifactId><version>${revision}</version></parent>
     <modules>
         <module>peach-redis-common</module>
         <module>peach-redis-multicache-autoconfigure</module>
         <module>peach-redis-multicache-starter</module>
+        <module>peach-redis-multicache-quickstart</module>
         <module>peach-redis-stream-autoconfigure</module>
         <module>peach-redis-stream-starter</module>
+        <module>peach-redis-stream-quickstart</module>
         <module>peach-redis-tool-autoconfigure</module>
         <module>peach-redis-tool-starter</module>
+        <module>peach-redis-tool-quickstart</module>
     </modules>
-
-
 </project>

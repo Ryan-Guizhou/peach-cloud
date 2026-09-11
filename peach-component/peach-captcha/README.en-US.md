@@ -2,53 +2,39 @@
 
 English | [中文](README.md)
 
-## Purpose
+`peach-captcha` provides captcha generation, caching, validation and throttling extension points. Business modules depend only on `peach-captcha-starter`.
 
-`peach-captcha` is a captcha starter providing text captcha, click-word captcha, slider/puzzle captcha, rotate puzzle captcha, and knowledge-question captcha. It supports in-memory or Redis-backed cache.
+## Structure
 
-## Submodules
-
-| Submodule | Responsibility |
+| Module | Responsibility |
 | --- | --- |
-| `peach-captcha-autoconfigure` | Captcha services, cache, providers, and auto-configuration |
-| `peach-captcha-starter` | Starter exposed to business modules |
+| `peach-captcha-autoconfigure` | `CaptchaService`, cache/providers, configuration and auto-configuration |
+| `peach-captcha-starter` | Business integration dependency entry point |
+| `peach-captcha-quickstart` | Minimal runnable integration verification |
 
-## Core Objects
+```mermaid
+flowchart LR
+    App[Business Service] --> Starter[peach-captcha-starter]
+    Starter --> Auto[peach-captcha-autoconfigure]
+    Quick[peach-captcha-quickstart] --> Starter
+    Auto --> Service[CaptchaService]
+    Service --> Cache[CaptchaCacheService]
+```
 
-- `CaptchaProperties`: captcha configuration binding.
-- `CaptchaService`: generation and verification entrypoint.
-- `CaptchaServiceFactory`: routes by captcha type.
-- `CaptchaCacheService`: captcha cache abstraction.
-- `CaptchaRedisKey`: Redis key definitions owned by the captcha component and formatted via `peach-common` `KeyBuilder`.
-- `MemoryCaptchaCacheService` / `RedisCaptchaCacheService`: cache implementations.
-- `CaptchaServiceProvider`: provider extension point.
+## Integration
 
-## Supported Types
+```xml
+<dependency>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-captcha-starter</artifactId>
+</dependency>
+```
 
-- Text captcha: `TextCaptchaServiceImpl`
-- Click-word captcha: `ClickWordCaptchServiceImpl`
-- Block puzzle captcha: `BlockPuzzleCaptchaServiceImpl`
-- Rotate puzzle captcha: `RotatePuzzleCaptchaServiceImpl`
-- Knowledge captcha: `KnowledgeCaptchaServiceImpl`
+Quickstart: [`peach-captcha-quickstart`](peach-captcha-quickstart/README.en-US.md).
 
 ## Boundaries
 
-- In-memory cache is suitable only for single-instance development.
-- Cluster deployment should use Redis cache.
-- Anti-bruteforce, replay protection, and frequency control must be combined with `FrequencyLimitHandler` and gateway rate limits.
-- Images, fonts, and noise parameters should be tuned for product experience.
-
-## Verification
-
-```bash
-mvn -f "peach-component/peach-captcha/pom.xml" -DskipTests package
-```
-
-
-## Project conventions
-
-- Backend documentation follows the current peach-cloud baseline: Java 21, Spring Boot 3.5.4, Spring Cloud 2025.0.0, and Spring Cloud Alibaba 2025.0.0.0.
-- Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
-- Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
-- CAPTCHA Redis keys stay in `peach-captcha-autoconfigure`; `peach-common` only provides the business-neutral `KeyDefinition` and `KeyBuilder` contracts.
-- Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+- Captcha does not replace login risk control, account lockout or device identification.
+- Cluster deployments require cache semantics shared across instances; in-memory cache is not a production shared-cache guarantee.
+- Never log plaintext captcha values, cache credentials or user-sensitive data.
+- Successful-validation deletion, failure counts and throttling follow current implementation/configuration, not historical README assumptions.

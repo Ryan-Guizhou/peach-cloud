@@ -18,5 +18,6 @@
     <modules>
         <module>peach-observability-autoconfigure</module>
         <module>peach-observability-starter</module>
+        <module>peach-observability-quickstart</module>
     </modules>
 </project>

@@ -7,16 +7,10 @@
     <name>peach-openfeign</name>
     <description>peach-openfeign</description>
     <packaging>pom</packaging>
-
-    <parent>
-        <groupId>com.peach</groupId>
-        <artifactId>peach-middleware</artifactId>
-        <version>${revision}</version>
-    </parent>
-
+    <parent><groupId>com.peach</groupId><artifactId>peach-middleware</artifactId><version>${revision}</version></parent>
     <modules>
         <module>peach-openfeign-autoconfigure</module>
         <module>peach-openfeign-starter</module>
+        <module>peach-openfeign-quickstart</module>
     </modules>
-
 </project>

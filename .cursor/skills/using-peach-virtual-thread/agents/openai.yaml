@@ -1,0 +1,6 @@
+interface:
+  display_name: "Peach Virtual Thread"
+  short_description: "约束虚拟线程并发、背压、取消与生命周期"
+  default_prompt: "Use $using-peach-virtual-thread to implement or review peach virtual-thread behavior."
+policy:
+  allow_implicit_invocation: true

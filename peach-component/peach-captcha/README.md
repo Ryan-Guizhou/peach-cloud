@@ -2,33 +2,26 @@
 
 [English](README.en-US.md) | 中文
 
-最后更新时间：2026-07-03  
-artifactId：`peach-captcha`  
-类型：验证码组件聚合模块
+`peach-captcha` 提供验证码生成、缓存、校验和频控扩展。业务侧只依赖 `peach-captcha-starter`。
 
-## 模块定位
+## 结构
 
-`peach-captcha` 提供验证码生成、缓存、校验、频控和扩展点。业务模块通过 `peach-captcha-starter` 接入，避免在业务代码中重复实现验证码缓存和校验流程。
-
-## 子模块
-
-| 子模块 | 职责 |
+| 模块 | 职责 |
 | --- | --- |
-| `peach-captcha-autoconfigure` | 核心 API、配置绑定、自动配置、默认实现 |
-| `peach-captcha-starter` | 对业务模块暴露的 starter |
+| `peach-captcha-autoconfigure` | `CaptchaService`、缓存/Provider、配置和自动装配 |
+| `peach-captcha-starter` | 业务接入依赖入口 |
+| `peach-captcha-quickstart` | 最小可运行接入验证 |
 
-## 核心对象
+```mermaid
+flowchart LR
+    App[业务服务] --> Starter[peach-captcha-starter]
+    Starter --> Auto[peach-captcha-autoconfigure]
+    Quick[peach-captcha-quickstart] --> Starter
+    Auto --> Service[CaptchaService]
+    Service --> Cache[CaptchaCacheService]
+```
 
-| 对象 | 说明 |
-| --- | --- |
-| `CaptchaProperties` | 绑定验证码配置，配置前缀由 `CaptchaConst.CAPTCHA_SUFFIX` 声明 |
-| `CaptchaService` | 验证码生成和校验服务 |
-| `CaptchaCacheService` | 验证码缓存服务 |
-| `CaptchaServiceProvider` | 验证码服务 provider |
-| `CaptchaCacheProvider` | 缓存 provider |
-| `FrequencyLimitHandler` | 频控扩展点 |
-
-## 接入方式
+## 接入
 
 ```xml
 <dependency>
@@ -37,45 +30,11 @@ artifactId：`peach-captcha`
 </dependency>
 ```
 
-业务侧优先注入 `CaptchaService` 使用验证码能力。需要替换缓存、生成器或频控策略时，通过自定义 Bean 或 provider 覆盖默认实现。
+Quickstart：[`peach-captcha-quickstart`](peach-captcha-quickstart/README.md)。
 
-## 运行机制
+## 边界
 
-1. starter 引入 autoconfigure。
-2. 自动配置读取 `CaptchaProperties`。
-3. 根据配置装配验证码生成服务和缓存服务。
-4. 生成验证码时写入缓存，校验时读取并比对。
-5. 频控处理器可限制同一用户、IP 或业务 key 的调用频率。
-6. 验证码 Redis key 由 `com.peach.captcha.key.CaptchaRedisKey` 维护，通过 `peach-common` 的 `KeyBuilder` 格式化。
-
-## 边界与限制
-
-- 验证码不能替代登录风控、账号锁定和设备识别。
-- 缓存实现决定验证码是否支持多实例共享；生产环境不应依赖单机内存缓存。
-- CAPTCHA 相关 Redis key 属于验证码组件，不放入全局 `peach-common`；公共层只提供 `KeyDefinition` 和 `KeyBuilder`。
-- 校验成功后是否删除验证码、失败次数如何限制，需要结合当前实现和业务策略确认。
-- 不应在日志中输出验证码明文。
-
-## 构建与验证
-
-```bash
-mvn -f "peach-component/peach-captcha/pom.xml" clean package -DskipTests -Pdevelopment
-mvn -pl peach-component/peach-captcha -am clean package -DskipTests -Pdevelopment
-```
-
-## 排障指南
-
-| 现象 | 检查点 | 处理方式 |
-| --- | --- | --- |
-| `CaptchaService` 未注入 | 是否引入 `peach-captcha-starter`；自动配置条件是否满足 | 检查依赖树和 Spring 条件报告 |
-| 多实例校验失败 | 缓存是否跨实例共享 | 使用 Redis 等共享缓存实现 |
-| 验证码频繁失效 | 过期时间、缓存 key、系统时间是否正确 | 检查配置和缓存记录 |
-| 频控不生效 | `FrequencyLimitHandler` 是否注册 | 检查自定义 Bean 和默认实现 |
-
-
-## 项目约定
-
-- 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
-- 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
-- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
-- README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。
+- 验证码不替代登录风控、账号锁定和设备识别。
+- 集群场景的缓存必须具备跨实例共享语义，不能把单机内存缓存描述为生产级共享能力。
+- 不记录验证码明文、缓存凭据或用户敏感信息。
+- 验证码成功后删除、失败次数和频控策略以当前实现与业务配置为准，不从历史 README 推断。
