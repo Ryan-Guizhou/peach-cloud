@@ -138,11 +138,9 @@ peach-middleware
 - 延迟队列：验证分区一致、消费者幂等、重试与死信。
 - 布隆：验证容量、FPP、扩容上限、清理权限和权威源回查。
 
-## 验证
+## 变更验证关注点
 
-```bash
-mvn -f "peach-middleware/peach-redis/pom.xml" clean package -DskipTests -Pdevelopment
-mvn -f "peach-middleware/peach-redission/pom.xml" clean package -DskipTests -Pdevelopment
-node scripts/check-utf8.mjs
-git diff --check
-```
+- Redis/Redisson 行为变化：按能力覆盖连接、序列化、TTL、ACK、锁、重试、幂等和异常路径。
+- key、codec、默认 TTL、Stream ACK 或分区变化：必须验证兼容性和迁移路径。
+- 配置变化：同步核对配置类、metadata、Quickstart 和根 README。
+- 验证入口与具体命令统一遵循仓库根 `AGENTS.md`，本 reference 不维护门禁命令。
