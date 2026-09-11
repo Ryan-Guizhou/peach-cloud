@@ -8,6 +8,7 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - com.peach.redis.common.RedisConfig
 
 # Dev-only placeholders. Do not use in production.
 sa-token:
