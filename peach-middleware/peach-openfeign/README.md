@@ -21,7 +21,13 @@ flowchart LR
     Feign --> Remote[目标服务]
 ```
 
-Quickstart：[`peach-openfeign-quickstart`](peach-openfeign-quickstart/README.md)。
+## QuickStart
+
+示例代码位于 [`peach-openfeign-quickstart`](./peach-openfeign-quickstart/)，用于验证 starter 的最小接入和治理自动配置。真实 Feign 契约仍应来自业务 `*-openfeign-external` 模块，QuickStart 不复制业务接口。
+
+```bash
+mvn -f peach-middleware/peach-openfeign/peach-openfeign-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
 
 ## 边界
 

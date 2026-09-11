@@ -18,7 +18,13 @@
 <dependency><groupId>com.peach</groupId><artifactId>peach-initialize-starter</artifactId></dependency>
 ```
 
-Quickstart：[`peach-initialize-quickstart`](peach-initialize-quickstart/README.md)。
+## QuickStart
+
+示例代码位于 [`peach-initialize-quickstart`](./peach-initialize-quickstart/)，用于验证 starter 的最小接入。实际初始化处理器应注册为业务 Bean，并保持可控超时、幂等和明确的启动失败语义。
+
+```bash
+mvn -f peach-component/peach-initialize/peach-initialize-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
 
 ## 边界
 

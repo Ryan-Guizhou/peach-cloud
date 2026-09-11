@@ -21,7 +21,13 @@ flowchart LR
     Feign --> Remote[Target Service]
 ```
 
-Quickstart: [`peach-openfeign-quickstart`](peach-openfeign-quickstart/README.en-US.md).
+## QuickStart
+
+The example lives in [`peach-openfeign-quickstart`](./peach-openfeign-quickstart/) and verifies minimal starter integration and governance auto-configuration. Real Feign contracts remain in business `*-openfeign-external` modules; the QuickStart does not duplicate business APIs.
+
+```bash
+mvn -f peach-middleware/peach-openfeign/peach-openfeign-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
 
 ## Boundaries
 
