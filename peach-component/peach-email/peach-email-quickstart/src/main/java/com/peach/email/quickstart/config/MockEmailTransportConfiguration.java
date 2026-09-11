@@ -1,5 +1,6 @@
 package com.peach.email.quickstart.config;
 
+import org.springframework.stereotype.Indexed;
 import com.peach.email.core.EmailContext;
 import com.peach.email.core.EmailMessage;
 import com.peach.email.core.EmailTransport;
@@ -22,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @Version 1.0.0
  * @CreateTime 2026/9/11 16:40
  */
+@Indexed
 @Component
 public class MockEmailTransportConfiguration {
 
@@ -63,6 +65,9 @@ public class MockEmailTransportConfiguration {
 
         private final AtomicInteger sendCount = new AtomicInteger();
         private final List<String> subjects = Collections.synchronizedList(new ArrayList<>());
+        private final AtomicInteger lastToCount = new AtomicInteger();
+        private final AtomicInteger lastAttachmentCount = new AtomicInteger();
+        private volatile boolean lastHadHtml;
 
         @Override
         public String getName() {
@@ -75,6 +80,17 @@ public class MockEmailTransportConfiguration {
             if (emailMessage != null && emailMessage.getSubject() != null) {
                 subjects.add(emailMessage.getSubject());
             }
+            if (emailMessage != null && emailMessage.getTo() != null) {
+                lastToCount.set(emailMessage.getTo().size());
+            } else {
+                lastToCount.set(0);
+            }
+            lastAttachmentCount.set(emailMessage != null && emailMessage.getAttachments() != null
+                    ? emailMessage.getAttachments().size()
+                    : 0);
+            lastHadHtml = emailMessage != null
+                    && emailMessage.getHtml() != null
+                    && !emailMessage.getHtml().isBlank();
             return new SendResult(PROVIDER_NAME, UUID.randomUUID().toString(), 1L, true, null);
         }
 
@@ -86,9 +102,24 @@ public class MockEmailTransportConfiguration {
             return List.copyOf(subjects);
         }
 
+        public int getLastToCount() {
+            return lastToCount.get();
+        }
+
+        public int getLastAttachmentCount() {
+            return lastAttachmentCount.get();
+        }
+
+        public boolean isLastHadHtml() {
+            return lastHadHtml;
+        }
+
         public void reset() {
             sendCount.set(0);
             subjects.clear();
+            lastToCount.set(0);
+            lastAttachmentCount.set(0);
+            lastHadHtml = false;
         }
     }
 }

@@ -2,7 +2,7 @@
 
 English | [中文](README.md)
 
-- Last updated: 2026-09-10
+- Last updated: 2026-09-11
 - artifactId: `peach-scheduler`
 - Type: distributed scheduler executor SDK (Provider SPI + RocketMQ transport)
 - Target stack: Java 21, Spring Boot 3.5.4
@@ -38,7 +38,7 @@ English | [中文](README.md)
 | `peach-scheduler-provider-quartz` | Quartz `SchedulingProvider` and trigger bridge |
 | `peach-scheduler-transport-rocket` | RocketMQ transport and JDBC durability stores |
 | `peach-scheduler-starter` | Business integration starter |
-| `peach-scheduler-quickstart` | Local integration example |
+| `peach-scheduler-quickstart` | Locally provable Handler / Claim / executor orchestration samples |
 
 ## Core Objects
 
@@ -137,6 +137,22 @@ public class SchedulerExecutionConsumer implements MqMessageHandler<JobExecution
 
 See `DemoSchedulerExecutionConsumer` in `peach-scheduler-quickstart`.
 
+### Quickstart local demo
+
+[`peach-scheduler-quickstart`](./peach-scheduler-quickstart/) (`web-application-type: none`) covers only executor-side capabilities that can be proven locally. It does not depend on the production control plane or a real RocketMQ cluster:
+
+- **JobHandler / `@PeachJob`**: `DemoCleanupJob` executes directly and is registered
+- **Claim gate**: in-memory `ExecutionLeaseClient` allows then rejects
+- **PeachJobExecutor orchestration**: `command -> claim -> handler -> reporter`; a rejected claim skips the handler and does not report
+- In-memory stubs: `DemoExecutionLeaseClient` / `DemoExecutionResultReporter` (production replaces them with Feign + RocketMQ Outbox)
+- `DemoSchedulerExecutionConsumer` is a production wiring sample only; default `peach.rocket.enabled=false` leaves it unregistered
+- `SchedulerDemoRunner` is off by default; enable with `quickstart.scheduler.demo.enabled=true`
+- Tests: no-container `SchedulerSliceTest` plus a small integration `SchedulerCapabilityTest`
+
+```bash
+mvn -f peach-component/peach-scheduler/peach-scheduler-quickstart/pom.xml test
+```
+
 ## Configuration Keys
 
 | Key | Default | Description |
@@ -193,7 +209,7 @@ node scripts/check-utf8.mjs
 
 | Symptom | Check | Action |
 | --- | --- | --- |
-| `PeachJobExecutor` missing | `ExecutionLeaseClient`, `VirtualExecutorRegistry`, Rocket beans | Add required starters and configure the `scheduler` virtual-thread group |
+| `PeachJobExecutor` missing | `ExecutionLeaseClient`, `ExecutionResultReporter`, `VirtualExecutorRegistry`, or Scheduler auto-config evaluating before the VT registry | Add required starters and configure the `scheduler` virtual-thread group; the starter now runs after `PeachVirtualThreadAutoConfiguration` |
 | Claim always rejected | execution state, Same-Token, application name | Verify Feign target `peach-scheduler` |
 | Handler not whitelisted | registration heartbeat, application name | Check `openfeign-external` |
 | Duplicate side effects | claim alone is insufficient | Add handler idempotency by `executionId` |

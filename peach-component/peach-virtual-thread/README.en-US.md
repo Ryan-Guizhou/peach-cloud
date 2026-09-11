@@ -92,7 +92,22 @@ public class UserQueryService {
 
 `VirtualExecutorService` extends `ExecutorService`, so existing `execute`, `submit`, `invokeAll`, `invokeAny`, shutdown, and termination patterns remain available. Use the starter's `supplyAsync` / `runAsync` when you need managed `CompletableFuture` composition and cancellation semantics.
 
-The repository [`peach-virtual-thread-quickstart`](./peach-virtual-thread-quickstart/) demonstrates `database`, `storage`, and `remote` groups plus `submit`, managed `CompletableFuture`, and `VirtualExecutorRegistry` access.
+### 3.4 Runnable Quickstart
+
+[`peach-virtual-thread-quickstart`](./peach-virtual-thread-quickstart/) is non-web and only verifies `VirtualExecutorService` grouped submit, managed cancellation, and REJECT backpressure. Production modules must not depend on it.
+
+| Item | Detail |
+| --- | --- |
+| Capability samples (inject `VirtualExecutorService`) | **Grouped submit**: `@VirtualGroup("database")` submits a Callable and awaits the Future; **Managed cancel**: `supplyAsync` then `cancel(true)` interrupts the runner; **REJECT backpressure**: a `burst` group with `max-concurrency=1` / `max-pending=0` rejects overflow with `VirtualTaskRejectedException(CAPACITY_FULL)` |
+| Runner | `VirtualThreadDemoRunner`; disable with `quickstart.virtual-thread.demo.enabled=false` |
+| Minimal config | `peach.virtual-thread.groups.database` (BLOCK), `peach.virtual-thread.groups.burst` (REJECT) |
+| Prerequisites | No external dependencies |
+| Port | No REST: `spring.main.web-application-type=none` |
+
+```bash
+mvn -f peach-component/peach-virtual-thread/peach-virtual-thread-quickstart/pom.xml spring-boot:run
+mvn -f peach-component/peach-virtual-thread/peach-virtual-thread-quickstart/pom.xml test
+```
 
 <!-- doc-sync:api-choice -->
 ## 4. Choosing an API

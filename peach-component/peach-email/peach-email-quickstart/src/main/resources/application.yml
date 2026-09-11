@@ -15,10 +15,6 @@ peach:
         port: 25
         ssl: false
         priority: 0
-      qq:
-        username: ${PEACH_EMAIL_QQ_USERNAME:}
-        password: ${PEACH_EMAIL_QQ_PASSWORD:}
-        priority: 10
     retry:
       max-attempts: 1
       base-delay-millis: 50

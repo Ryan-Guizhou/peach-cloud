@@ -92,7 +92,22 @@ public class UserQueryService {
 
 `VirtualExecutorService` 继承 `ExecutorService`，因此可以继续使用熟悉的 `execute`、`submit`、`invokeAll`、`invokeAny` 等标准入口。需要 `CompletableFuture` 编排和组件受管取消时，使用组件提供的 `supplyAsync` / `runAsync`。
 
-仓库中的 [`peach-virtual-thread-quickstart`](./peach-virtual-thread-quickstart/) 展示了 `database`、`storage`、`remote` 三类分组，以及 `submit`、受管 `CompletableFuture` 和 `VirtualExecutorRegistry` 三种调用方式。
+### 3.4 可运行 Quickstart
+
+[`peach-virtual-thread-quickstart`](./peach-virtual-thread-quickstart/) 无 Web 端口，只验证 `VirtualExecutorService` 的分组提交、受管取消与 REJECT 背压，不作为生产依赖。
+
+| 项 | 说明 |
+| --- | --- |
+| 能力样例（注入 `VirtualExecutorService`） | **分组 submit**：`@VirtualGroup("database")` 提交 Callable 并等待 Future；**受管取消**：`supplyAsync` 后 `cancel(true)` 中断 runner；**REJECT 背压**：`burst` 组 `max-concurrency=1` / `max-pending=0` 时超额提交抛出 `VirtualTaskRejectedException(CAPACITY_FULL)` |
+| Runner | `VirtualThreadDemoRunner`；关闭演示：`quickstart.virtual-thread.demo.enabled=false` |
+| 最小配置 | `peach.virtual-thread.groups.database`（BLOCK）、`peach.virtual-thread.groups.burst`（REJECT） |
+| 前置 | 无外部依赖 |
+| 端口 | 无 REST：`spring.main.web-application-type=none` |
+
+```bash
+mvn -f peach-component/peach-virtual-thread/peach-virtual-thread-quickstart/pom.xml spring-boot:run
+mvn -f peach-component/peach-virtual-thread/peach-virtual-thread-quickstart/pom.xml test
+```
 
 <!-- doc-sync:api-choice -->
 ## 4. 如何选择调用入口

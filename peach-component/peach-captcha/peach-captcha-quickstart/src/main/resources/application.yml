@@ -1,9 +1,8 @@
-server:
-  port: 18083
-
 spring:
   application:
     name: peach-captcha-quickstart
+  main:
+    web-application-type: none
 
 peach:
   captcha:

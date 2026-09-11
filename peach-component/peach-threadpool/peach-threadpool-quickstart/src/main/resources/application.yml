@@ -4,7 +4,6 @@ spring:
   main:
     web-application-type: none
 
-# Compat demo only. Prefer peach-virtual-thread for new blocking IO work.
 peach:
   threadpool:
     global:

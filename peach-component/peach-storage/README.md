@@ -2,8 +2,8 @@
 
 [English](README.en-US.md) | 中文
 
-最后更新时间：2026-07-03  
-artifactId：`peach-storage`  
+最后更新时间：2026-09-11
+artifactId：`peach-storage`
 类型：统一存储组件聚合模块
 
 ## 模块定位
@@ -16,7 +16,7 @@ artifactId：`peach-storage`
 | --- | --- |
 | `peach-store-autoconfigure` | 核心 API、请求响应模型、provider SPI、自动配置和默认实现 |
 | `peach-store-starter` | 对业务模块暴露的 starter |
-| `peach-store-quickstart` | 可运行示例 |
+| `peach-store-quickstart` | LOCAL provider 最小闭环示例，生产模块不得反向依赖 |
 
 ## 核心对象
 
@@ -75,6 +75,41 @@ public UploadResult upload(UploadContent content) {
 ```java
 storageTemplate.upload("archive", request);
 storageTemplate.download("archive", downloadRequest);
+```
+
+## Quick Start（可运行示例）
+
+[`peach-store-quickstart`](./peach-store-quickstart/) 无 Web 端口，只接入 `peach-store-starter`，用 LOCAL provider 和临时目录证明最小闭环，不依赖真实云凭据。生产模块不得反向依赖 quickstart。
+
+公开入口是自动装配的 `StorageTemplate`（见 `PeachStorageAutoConfiguration`）。Quickstart 注入该 Bean，覆盖 LOCAL 真实可用的 3 个场景：
+
+| 项 | 说明 |
+| --- | --- |
+| 能力样例 | **上传+下载**：`upload` 后 `download` 校验正文；**Head**：上传后读元数据；**删除**：删除后 `exists=false` |
+| Runner | `StorageDemoRunner`；关闭演示：`quickstart.store.demo.enabled=false` |
+| 最小配置 | `peach.storage.enabled=true`、`primary=local`、`providers.local.type=LOCAL`、`root-path`、`bucket-name` |
+| 前置 | 本地文件系统，无外部中间件 |
+
+```yaml
+peach:
+  storage:
+    enabled: true
+    primary: local
+    providers:
+      local:
+        type: LOCAL
+        bucket-name: quickstart
+        root-path: ${java.io.tmpdir}/peach-store-quickstart
+        domain: http://localhost/files
+quickstart:
+  store:
+    demo:
+      enabled: true
+```
+
+```bash
+mvn -f peach-component/peach-storage/peach-store-quickstart/pom.xml spring-boot:run
+mvn -f peach-component/peach-storage/peach-store-quickstart/pom.xml test
 ```
 
 ## Provider 扩展

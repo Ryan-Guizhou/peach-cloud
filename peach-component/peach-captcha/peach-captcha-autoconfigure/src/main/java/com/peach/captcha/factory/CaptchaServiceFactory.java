@@ -34,8 +34,13 @@ public class CaptchaServiceFactory {
     static {
         List<CaptchaCacheProvider> cacheProviders = CustomServiceLoader.load(CaptchaCacheProvider.class);
         for (CaptchaCacheProvider provider : cacheProviders) {
-            PROVIDERS.put(provider.type(), provider.createCaptchaCacheService());
-            log.info("Captcha autoconfig loaded captcha cache provider: [{}]", provider.type());
+            try {
+                PROVIDERS.put(provider.type(), provider.createCaptchaCacheService());
+                log.info("Captcha autoconfig loaded captcha cache provider: [{}]", provider.type());
+            } catch (Throwable ex) {
+                // Redis 等可选 Provider 在缺少依赖或 Spring 上下文未就绪时跳过，避免拖垮 MEMORY 场景。
+                log.warn("Skip captcha cache provider [{}]: {}", provider.type(), ex.toString());
+            }
         }
 
         List<CaptchaServiceProvider> captchaProviders = CustomServiceLoader.load(CaptchaServiceProvider.class);

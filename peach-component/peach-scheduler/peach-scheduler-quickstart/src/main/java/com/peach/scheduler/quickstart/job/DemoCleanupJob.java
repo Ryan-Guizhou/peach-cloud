@@ -1,39 +1,67 @@
 package com.peach.scheduler.quickstart.job;
 
-import org.springframework.stereotype.Indexed;
-
 import com.peach.scheduler.annotation.PeachJob;
 import com.peach.scheduler.core.JobContext;
 import com.peach.scheduler.core.JobHandler;
 import com.peach.scheduler.core.JobResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Indexed;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * quickstart 示例清理任务。
+ * Quickstart 示例清理任务，用于证明 {@code @PeachJob} / {@link JobHandler} 本地可执行。
  *
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2025/12/29 17:42
+ * @CreateTime 2026/9/11 19:00
  */
-@Component
-@PeachJob(value = "demoCleanupJob", description = "清理过期示例数据")
+@Slf4j
 @Indexed
+@Component
+@PeachJob(value = DemoCleanupJob.HANDLER_NAME, description = "清理过期示例数据")
 public class DemoCleanupJob implements JobHandler {
-    private static final Logger log = LoggerFactory.getLogger(DemoCleanupJob.class);
+
     /**
-     * 创建示例清理任务。
+     * 与控制面任务定义对齐的 Handler 名称。
      */
-    public DemoCleanupJob() {
-        // Intentionally empty.
-    }
+    public static final String HANDLER_NAME = "demoCleanupJob";
+
+    private final AtomicInteger executeCount = new AtomicInteger();
+    private volatile String lastExecutionId;
+
     /**
-     * 执行示例清理任务并输出调度定位日志。
+     * 执行示例清理并记录次数，供 Claim 门闩与执行器编排断言。
      */
     @Override
     public JobResult execute(JobContext context) {
-        log.info("Demo scheduler handler executed, executionId={}, jobCode={}", context.executionId(), context.jobCode());
+        lastExecutionId = context.executionId();
+        int count = executeCount.incrementAndGet();
+        log.info("demo handler executed, executionId={}, jobCode={}, count={}",
+                context.executionId(), context.jobCode(), count);
         return JobResult.success();
+    }
+
+    /**
+     * @return 已执行次数
+     */
+    public int executeCount() {
+        return executeCount.get();
+    }
+
+    /**
+     * @return 最近一次执行的 executionId，未执行时为 {@code null}
+     */
+    public String lastExecutionId() {
+        return lastExecutionId;
+    }
+
+    /**
+     * 清空执行计数，保证演示与测试互相隔离。
+     */
+    public void reset() {
+        executeCount.set(0);
+        lastExecutionId = null;
     }
 }

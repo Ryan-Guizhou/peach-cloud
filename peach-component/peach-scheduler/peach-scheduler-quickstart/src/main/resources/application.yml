@@ -1,6 +1,8 @@
 spring:
   application:
     name: peach-scheduler-quickstart
+  main:
+    web-application-type: none
 
 peach:
   scheduler:
@@ -9,21 +11,28 @@ peach:
       require-jdbc: false
     executor:
       application-name: ${spring.application.name}
-      default-timeout-ms: 1800000
+      instance-id: qs-scheduler-instance
+      default-timeout-ms: 5000
   virtual-thread:
     enabled: true
     groups:
       scheduler:
-        max-concurrency: 16
-        max-pending: 200
+        max-concurrency: 4
+        max-pending: 8
         backpressure: REJECT
   rocket:
-    enabled: true
+    enabled: false
     app-name: ${spring.application.name}
     consumer:
       dynamic-register: true
       enable-idempotent: true
     outbox:
-      enabled: true
+      enabled: false
     topic:
       auto-create: false
+
+# 默认关闭：避免每次启动都跑完整执行器编排；需要日志演示时设为 true
+quickstart:
+  scheduler:
+    demo:
+      enabled: false

@@ -15,15 +15,33 @@ English | [中文](README.md)
 Business dependency:
 
 ```xml
-<dependency><groupId>com.peach</groupId><artifactId>peach-initialize-starter</artifactId></dependency>
+<dependency>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-initialize-starter</artifactId>
+</dependency>
 ```
 
-## QuickStart
+The public entry is a business `InitializeHandler` (or a lifecycle abstract class). Four auto-configured executors group handlers by `type()` and invoke `executeInitialize(ConfigurableApplicationContext)` in ascending `executeOrder`:
 
-The example lives in [`peach-initialize-quickstart`](./peach-initialize-quickstart/) and verifies minimal starter integration. Real initialization handlers should be registered as business beans with bounded timeouts, idempotency, and explicit startup-failure semantics.
+- `APP_INITIALIZING_BEAN`: `InitializingBean#afterPropertiesSet`
+- `APP_POSTCONSTRUCT`: `@PostConstruct`
+- `APP_EVENT_LISTENER`: `ApplicationStartedEvent`
+- `APP_COMMAND_LINE_RUNNER`: `ApplicationRunner`
+
+## Quick Start
+
+The example lives in [`peach-initialize-quickstart`](./peach-initialize-quickstart/). It is non-web and only verifies minimal starter integration. Production modules must not depend on it.
+
+| Item | Detail |
+| --- | --- |
+| Capability samples (register `InitializeHandler`) | **Custom handler**: extend `AbstractAppStartedEventHandler` for cache warm-up; **Success marker**: after startup `warmedUp=true` / `payload=cache-ready`; **Order**: same-type handlers run by ascending `executeOrder` (warm-up `10` → resource check `20`) |
+| Runner | `InitializeDemoRunner`; disable with `quickstart.initialize.demo.enabled=false` |
+| Prerequisites | No external dependencies |
+| Port | No REST: `spring.main.web-application-type=none` |
 
 ```bash
-mvn -f peach-component/peach-initialize/peach-initialize-quickstart/pom.xml spring-boot:run -Pdevelopment
+mvn -f peach-component/peach-initialize/peach-initialize-quickstart/pom.xml spring-boot:run
+mvn -f peach-component/peach-initialize/peach-initialize-quickstart/pom.xml test
 ```
 
 ## Boundaries

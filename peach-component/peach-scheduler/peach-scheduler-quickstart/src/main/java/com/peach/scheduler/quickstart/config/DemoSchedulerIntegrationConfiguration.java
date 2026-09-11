@@ -1,38 +1,38 @@
 package com.peach.scheduler.quickstart.config;
 
-import org.springframework.stereotype.Indexed;
-
 import com.peach.scheduler.transport.ExecutionLeaseClient;
+import com.peach.scheduler.transport.ExecutionResultReporter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Indexed;
 
 /**
- * 调度示例集成配置，提供 quickstart 场景所需的默认执行租约实现。
+ * 本地集成桩：提供 Claim 与结果上报，使 {@code PeachJobExecutor} 能在无控制面 / 无 MQ 时装配。
  *
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2025/12/29 17:42
+ * @CreateTime 2026/9/11 19:00
  */
-@Configuration
 @Indexed
+@Configuration
 public class DemoSchedulerIntegrationConfiguration {
 
     /**
-     * 创建示例集成配置。
-     */
-    public DemoSchedulerIntegrationConfiguration() {
-        // Intentionally empty.
-    }
-
-    /**
-     * 创建始终允许执行的示例租约客户端。
-     *
-     * @return 示例执行租约客户端。
+     * 可切换允许 / 拒绝的 Claim 桩；生产环境由 Feign 控制面客户端覆盖。
      */
     @Bean
     @ConditionalOnMissingBean(ExecutionLeaseClient.class)
-    public ExecutionLeaseClient demoExecutionLeaseClient() {
-        return (executionId, executorInstance) -> true;
+    public DemoExecutionLeaseClient demoExecutionLeaseClient() {
+        return new DemoExecutionLeaseClient();
+    }
+
+    /**
+     * 内存结果上报桩；生产环境由 RocketMQ Outbox Reporter 覆盖。
+     */
+    @Bean
+    @ConditionalOnMissingBean(ExecutionResultReporter.class)
+    public DemoExecutionResultReporter demoExecutionResultReporter() {
+        return new DemoExecutionResultReporter();
     }
 }

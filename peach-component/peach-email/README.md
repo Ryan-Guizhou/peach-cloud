@@ -34,13 +34,17 @@ Provider 凭据从环境变量、配置中心或密钥服务提供。
 
 ### QuickStart
 
-示例代码位于 [`peach-email-quickstart`](./peach-email-quickstart/)，用于验证 starter 最小启动和自动装配：
+- 模块：[`peach-email-quickstart`](./peach-email-quickstart/)
+- 能力样例（注入 `EmailSendService`，默认内存 Mock `EmailTransport`，不外发）：
+  - **欢迎邮件**：`send(provider, message)` 同时发送纯文本降级正文与 HTML
+  - **幂等发送**：`sendAuto` 相同幂等键第二次调用不再走 Transport
+  - **附件**：`EmailMessage` 携带带字节内容的 `Attachment`，Mock 记录附件数量
+- 启动后 `EmailDemoRunner` 依次执行；关闭演示：`quickstart.email.demo.enabled=false`
+- 端口：无 REST（`web-application-type=none`）
+- 运行：`mvn -f peach-component/peach-email/peach-email-quickstart/pom.xml spring-boot:run`
+- 测试：`mvn -f peach-component/peach-email/peach-email-quickstart/pom.xml test`
 
-```bash
-mvn -f peach-component/peach-email/peach-email-quickstart/pom.xml spring-boot:run -Pdevelopment
-```
-
-SMTP provider、用户名和授权码继续通过本地环境变量或配置中心提供，QuickStart 不保存真实凭据。
+SMTP provider、用户名和授权码只通过环境变量或配置中心提供，QuickStart 不保存真实凭据。模板渲染不在 `sendAuto` 内自动发生，本样例直接设置 HTML。
 
 ## 边界
 

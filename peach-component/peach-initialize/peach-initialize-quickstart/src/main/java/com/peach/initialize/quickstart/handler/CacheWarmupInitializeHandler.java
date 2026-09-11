@@ -1,58 +1,37 @@
 package com.peach.initialize.quickstart.handler;
 
-import com.peach.initialize.base.InitializeHandler;
-import com.peach.initialize.constant.InitializeHandlerType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.peach.initialize.base.AbstractAppStartedEventHandler;
+import com.peach.initialize.quickstart.status.InitializeStatus;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import org.springframework.stereotype.Indexed;
 
 /**
- * 启动预热处理器：在 ApplicationStartedEvent 阶段执行一次缓存预热演示。
+ * 自定义启动预热 Handler：在 {@code ApplicationStartedEvent} 阶段写入成功标记。
  *
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2026/9/11 16:40
+ * @CreateTime 2026/9/11 18:20
  */
+@Slf4j
+@Indexed
 @Component
-public class CacheWarmupInitializeHandler implements InitializeHandler {
+@RequiredArgsConstructor
+public class CacheWarmupInitializeHandler extends AbstractAppStartedEventHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(CacheWarmupInitializeHandler.class);
-
-    private final AtomicBoolean warmedUp = new AtomicBoolean(false);
-    private final AtomicReference<String> warmupPayload = new AtomicReference<>();
-
-    @Override
-    public String type() {
-        return InitializeHandlerType.APP_EVENT_LISTENER;
-    }
+    private final InitializeStatus initializeStatus;
 
     @Override
     public Integer executeOrder() {
-        return 100;
+        return 10;
     }
 
     @Override
     public void executeInitialize(ConfigurableApplicationContext context) {
-        warmupPayload.set("cache-ready");
-        warmedUp.set(true);
-        log.info("initialize quickstart warmup finished, beanCount={}", context.getBeanDefinitionCount());
-    }
-
-    /**
-     * @return 是否已完成预热
-     */
-    public boolean isWarmedUp() {
-        return warmedUp.get();
-    }
-
-    /**
-     * @return 预热结果摘要
-     */
-    public String getWarmupPayload() {
-        return warmupPayload.get();
+        initializeStatus.record(InitializeStatus.HANDLER_CACHE_WARMUP);
+        initializeStatus.markWarmedUp(InitializeStatus.WARMUP_PAYLOAD);
+        log.info("cache warmup finished, beanCount={}", context.getBeanDefinitionCount());
     }
 }
