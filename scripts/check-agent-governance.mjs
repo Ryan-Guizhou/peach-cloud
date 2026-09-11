@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 
 const root = process.cwd();
-const errors = [];
+const fail = [];
 const rules = ['java', 'frontend', 'documentation', 'security', 'quality'];
 const skills = [
   'project-doc-engineer',
@@ -16,12 +16,8 @@ const skills = [
   'using-peach-front',
 ];
 const deprecated = ['using-peach-code-skeleton', 'using-peach-readme-writer'];
-const forbiddenGatePatterns = [
-  /node\s+scripts\/verify-changes\.mjs/i,
-  /node\s+scripts\/check-[\w.-]+\.mjs/i,
-];
 
-function normalizeText(path) {
+function read(path) {
   return readFileSync(resolve(root, path), 'utf8').replace(/\r\n/g, '\n').trim();
 }
 
@@ -31,84 +27,74 @@ function stripCursorFrontmatter(text) {
   return end < 0 ? text.trim() : text.slice(end + 5).trim();
 }
 
-function walkFiles(baseDir) {
-  const absoluteBase = resolve(root, baseDir);
-  if (!existsSync(absoluteBase)) return [];
+function filesUnder(path) {
+  const base = resolve(root, path);
+  if (!existsSync(base)) return [];
   const result = [];
-  const stack = [absoluteBase];
-  while (stack.length) {
-    const current = stack.pop();
-    for (const name of readdirSync(current)) {
-      const path = resolve(current, name);
-      if (statSync(path).isDirectory()) stack.push(path);
-      else result.push(relative(absoluteBase, path).replaceAll('\\', '/'));
+  const visit = current => {
+    for (const entry of readdirSync(current)) {
+      const full = resolve(current, entry);
+      if (statSync(full).isDirectory()) visit(full);
+      else result.push(relative(base, full).replaceAll('\\', '/'));
     }
-  }
+  };
+  visit(base);
   return result.sort();
-}
-
-function compareSkillTree(name) {
-  const codexRoot = `.codex/skills/${name}`;
-  const cursorRoot = `.cursor/skills/${name}`;
-  if (!existsSync(codexRoot)) errors.push(`Missing Codex skill: ${codexRoot}`);
-  if (!existsSync(cursorRoot)) errors.push(`Missing Cursor skill: ${cursorRoot}`);
-  if (!existsSync(codexRoot) || !existsSync(cursorRoot)) return;
-
-  const codexFiles = walkFiles(codexRoot);
-  const cursorFiles = walkFiles(cursorRoot);
-  if (JSON.stringify(codexFiles) !== JSON.stringify(cursorFiles)) {
-    errors.push(`Skill file sets are not synchronized: ${name}`);
-    return;
-  }
-  for (const file of codexFiles) {
-    const codexPath = `${codexRoot}/${file}`;
-    const cursorPath = `${cursorRoot}/${file}`;
-    if (normalizeText(codexPath) !== normalizeText(cursorPath)) {
-      errors.push(`Skill file is not synchronized: ${name}/${file}`);
-    }
-  }
-}
-
-function checkGateOwnership(baseDir) {
-  for (const file of walkFiles(baseDir)) {
-    if (!/\.(md|mdc)$/i.test(file)) continue;
-    const path = `${baseDir}/${file}`;
-    const text = normalizeText(path);
-    for (const pattern of forbiddenGatePatterns) {
-      if (pattern.test(text)) {
-        errors.push(`Central gate command must stay in AGENTS.md/scripts only: ${path}`);
-        break;
-      }
-    }
-  }
 }
 
 for (const name of rules) {
   const codex = `.codex/rules/${name}.md`;
   const cursor = `.cursor/rules/${name}.mdc`;
-  if (!existsSync(codex)) errors.push(`Missing Codex rule: ${codex}`);
-  if (!existsSync(cursor)) errors.push(`Missing Cursor rule: ${cursor}`);
-  if (existsSync(codex) && existsSync(cursor)
-      && normalizeText(codex) !== stripCursorFrontmatter(normalizeText(cursor))) {
-    errors.push(`Rule bodies are not synchronized: ${name}`);
+  if (!existsSync(codex)) fail.push(`Missing Codex rule: ${codex}`);
+  if (!existsSync(cursor)) fail.push(`Missing Cursor rule: ${cursor}`);
+  if (existsSync(codex) && existsSync(cursor) && read(codex) !== stripCursorFrontmatter(read(cursor))) {
+    fail.push(`Rule bodies are not synchronized: ${name}`);
   }
 }
 
-for (const name of skills) compareSkillTree(name);
+for (const name of skills) {
+  const codexRoot = `.codex/skills/${name}`;
+  const cursorRoot = `.cursor/skills/${name}`;
+  if (!existsSync(`${codexRoot}/SKILL.md`)) fail.push(`Missing Codex skill: ${codexRoot}/SKILL.md`);
+  if (!existsSync(`${cursorRoot}/SKILL.md`)) fail.push(`Missing Cursor skill: ${cursorRoot}/SKILL.md`);
+
+  const codexFiles = filesUnder(codexRoot);
+  const cursorFiles = filesUnder(cursorRoot);
+  if (JSON.stringify(codexFiles) !== JSON.stringify(cursorFiles)) {
+    fail.push(`Skill file sets are not synchronized: ${name}`);
+    continue;
+  }
+
+  for (const file of codexFiles) {
+    if (read(`${codexRoot}/${file}`) !== read(`${cursorRoot}/${file}`)) {
+      fail.push(`Skill file is not synchronized: ${name}/${file}`);
+    }
+  }
+}
 
 for (const name of deprecated) {
   for (const base of ['.codex/skills', '.cursor/skills']) {
-    if (existsSync(`${base}/${name}`)) errors.push(`Deprecated skill still exists: ${base}/${name}`);
+    if (existsSync(`${base}/${name}`)) fail.push(`Deprecated skill still exists: ${base}/${name}`);
   }
 }
 
-checkGateOwnership('.codex/rules');
-checkGateOwnership('.codex/skills');
-checkGateOwnership('.cursor/rules');
-checkGateOwnership('.cursor/skills');
+const governanceRoots = [
+  '.codex/rules',
+  '.cursor/rules',
+  ...skills.flatMap(name => [`.codex/skills/${name}`, `.cursor/skills/${name}`]),
+];
+for (const base of governanceRoots) {
+  for (const file of filesUnder(base)) {
+    const path = `${base}/${file}`;
+    const text = read(path);
+    if (/scripts\/(?:check-[\w.-]+|verify-changes\.mjs)/.test(text)) {
+      fail.push(`Gate command must be owned by AGENTS.md, not ${path}`);
+    }
+  }
+}
 
-if (errors.length) {
-  for (const error of errors) console.error(`[governance] ${error}`);
+if (fail.length) {
+  for (const item of fail) console.error(`[governance] ${item}`);
   process.exit(1);
 }
-console.log('[governance] Rule/Skill mirrors, deprecations and central gate ownership are valid.');
+console.log('[governance] Codex/Cursor rules, core skill contents, and gate ownership are synchronized.');
