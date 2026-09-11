@@ -80,10 +80,9 @@ peach:
       enabled: false
 ```
 
-## 验证
+## 变更验证关注点
 
-```bash
-mvn -f "peach-middleware/peach-rocket/pom.xml" test
-mvn -f "peach-middleware/peach-rocket/pom.xml" -DskipTests package
-node scripts/check-utf8.mjs
-```
+- 事件路由变化：核对 topic、tag、consumerGroup、shardingKey 和版本兼容。
+- 可靠性变化：覆盖重复投递、幂等、重试、事务消息/Outbox 和故障恢复。
+- 配置变化：同步核对 `PeachRocketProperties`、metadata、Quickstart 和根 README。
+- 验证入口与具体命令统一遵循仓库根 `AGENTS.md`，本 reference 不维护门禁命令。
