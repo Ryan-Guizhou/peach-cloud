@@ -12,7 +12,13 @@
 | `peach-satoken-starter` | 业务接入依赖入口 |
 | `peach-satoken-quickstart` | 最小 Web 接入验证 |
 
-Quickstart：[`peach-satoken-quickstart`](peach-satoken-quickstart/README.md)。
+## QuickStart
+
+示例代码位于 [`peach-satoken-quickstart`](./peach-satoken-quickstart/)，用于验证 starter 的最小 Web 接入。业务登录、权限数据和 Same-Token 上游来源仍由实际服务提供，QuickStart 不写入生产 Token 或固定密钥。
+
+```bash
+mvn -f peach-middleware/peach-satoken/peach-satoken-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
 
 ## 边界
 

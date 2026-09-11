@@ -95,13 +95,13 @@ peach-<family>/
 
 - `*-autoconfigure`：公共契约、`ConfigurationProperties`、自动配置、默认 Bean、SPI/Provider 装配和配置 metadata；不放 demo。
 - `*-starter`：业务接入的最小依赖聚合；不承载复杂实现和示例代码。
-- `*-quickstart`：可运行最小接入样例；可以依赖 starter，生产模块不得反向依赖 quickstart。
+- `*-quickstart`：可运行最小接入样例；可以依赖 starter，生产模块不得反向依赖 quickstart；必须提供无需生产外部基础设施即可执行的最小自动化测试。
 
 `core`、`common`、`provider-*`、`transport-*` 等模块只有存在真实独立职责时保留，不为了目录对称拆模块。
 
 非业务 Starter 家族禁止新增 `example` / `*-example` 模块；示例统一使用 `quickstart`。业务服务自己的 sample/test fixture 不受该命名约束。
 
-Starter 家族主 README 负责定位、模块关系、最小接入、关键边界和深入文档导航；复杂设计进入 `docs/`。中文 `README.md` 与英文 `README.en-US.md` 必须语义等价同步。Quickstart 只保留完成最小闭环所需代码和配置，不复制生产配置或真实凭据。
+Starter 家族主 README 负责定位、模块关系、最小接入、QuickStart 运行方式、关键边界和深入文档导航；复杂设计进入 `docs/`。中文 `README.md` 与英文 `README.en-US.md` 必须语义等价同步。QuickStart 不维护独立 README，只保留完成最小闭环所需代码、配置和自动化测试，不复制生产配置或真实凭据。
 
 ## 7. Engineering Principles
 

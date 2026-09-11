@@ -12,7 +12,15 @@
 | `peach-threadpool-starter` | 存量业务接入依赖入口 |
 | `peach-threadpool-quickstart` | 兼容行为最小验证，不作为新业务模板 |
 
-Quickstart：[`peach-threadpool-quickstart`](peach-threadpool-quickstart/README.md)。
+## QuickStart
+
+示例代码位于 [`peach-threadpool-quickstart`](./peach-threadpool-quickstart/)，仅用于验证存量 starter 的兼容接入：
+
+```bash
+mvn -f peach-component/peach-threadpool/peach-threadpool-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
+
+新建阻塞 IO 异步能力继续优先使用 `peach-virtual-thread`，不要把该 QuickStart 当成新业务模板。
 
 ## 当前边界
 

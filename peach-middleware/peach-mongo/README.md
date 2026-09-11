@@ -16,7 +16,13 @@
 <dependency><groupId>com.peach</groupId><artifactId>peach-mongo-starter</artifactId></dependency>
 ```
 
-Quickstart：[`peach-mongo-quickstart`](peach-mongo-quickstart/README.md)。
+## QuickStart
+
+示例代码位于 [`peach-mongo-quickstart`](./peach-mongo-quickstart/)，用于验证 starter 的最小启动和自动装配。MongoDB URI、账号和密码只通过本地配置或环境变量提供。
+
+```bash
+mvn -f peach-middleware/peach-mongo/peach-mongo-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
 
 ## 边界
 

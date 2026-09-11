@@ -30,7 +30,15 @@ flowchart LR
 </dependency>
 ```
 
-Quickstart: [`peach-captcha-quickstart`](peach-captcha-quickstart/README.en-US.md).
+### QuickStart
+
+The example lives in [`peach-captcha-quickstart`](./peach-captcha-quickstart/) and only verifies minimal starter integration and auto-configuration. Production modules must not depend on it.
+
+```bash
+mvn -f peach-component/peach-captcha/peach-captcha-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
+
+When an external Redis cache is required, supply development configuration through local environment variables or configuration services and never store production credentials in the QuickStart.
 
 ## Boundaries
 

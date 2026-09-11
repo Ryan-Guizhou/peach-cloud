@@ -28,7 +28,13 @@ Business dependency:
 <dependency><groupId>com.peach</groupId><artifactId>peach-observability-starter</artifactId></dependency>
 ```
 
-Quickstart: [`peach-observability-quickstart`](peach-observability-quickstart/README.en-US.md).
+### QuickStart
+
+The example lives in [`peach-observability-quickstart`](./peach-observability-quickstart/) and verifies Actuator/Micrometer dependencies plus RequestId auto-configuration in a Servlet application:
+
+```bash
+mvn -f peach-component/peach-observability/peach-observability-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
 
 ## Boundaries
 

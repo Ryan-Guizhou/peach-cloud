@@ -16,7 +16,13 @@ English | [中文](README.md)
 <dependency><groupId>com.peach</groupId><artifactId>peach-mongo-starter</artifactId></dependency>
 ```
 
-Quickstart: [`peach-mongo-quickstart`](peach-mongo-quickstart/README.en-US.md).
+## QuickStart
+
+The example lives in [`peach-mongo-quickstart`](./peach-mongo-quickstart/) and verifies minimal starter bootstrap and auto-configuration. MongoDB URIs and credentials are supplied only through local configuration or environment variables.
+
+```bash
+mvn -f peach-middleware/peach-mongo/peach-mongo-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
 
 ## Boundaries
 

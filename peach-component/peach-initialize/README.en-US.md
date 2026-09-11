@@ -18,7 +18,13 @@ Business dependency:
 <dependency><groupId>com.peach</groupId><artifactId>peach-initialize-starter</artifactId></dependency>
 ```
 
-Quickstart: [`peach-initialize-quickstart`](peach-initialize-quickstart/README.en-US.md).
+## QuickStart
+
+The example lives in [`peach-initialize-quickstart`](./peach-initialize-quickstart/) and verifies minimal starter integration. Real initialization handlers should be registered as business beans with bounded timeouts, idempotency, and explicit startup-failure semantics.
+
+```bash
+mvn -f peach-component/peach-initialize/peach-initialize-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
 
 ## Boundaries
 

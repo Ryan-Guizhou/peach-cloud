@@ -12,7 +12,13 @@ English | [中文](README.md)
 | `peach-satoken-starter` | Business integration dependency entry point |
 | `peach-satoken-quickstart` | Minimal Web integration verification |
 
-Quickstart: [`peach-satoken-quickstart`](peach-satoken-quickstart/README.en-US.md).
+## QuickStart
+
+The example lives in [`peach-satoken-quickstart`](./peach-satoken-quickstart/) and verifies minimal Web integration. Business login, permission data, and the upstream Same-Token source remain owned by real services; the QuickStart stores no production token or fixed secret.
+
+```bash
+mvn -f peach-middleware/peach-satoken/peach-satoken-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
 
 ## Boundaries
 

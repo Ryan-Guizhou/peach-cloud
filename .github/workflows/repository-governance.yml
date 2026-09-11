@@ -15,12 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
 
@@ -28,3 +28,76 @@ jobs:
         env:
           DOC_BASE: origin/main
         run: node scripts/verify-changes.mjs
+
+  maven-verify:
+    name: Java 21 Maven verification
+    needs: governance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Show build environment
+        run: |
+          java -version
+          mvn -version
+
+      - name: Resolve Maven build scope
+        id: scope
+        env:
+          MAVEN_BUILD_BASE: ${{ github.event.pull_request.base.sha }}
+          MAVEN_FORCE_FULL: ${{ github.event_name == 'push' }}
+        run: node scripts/resolve-maven-build-scope.mjs
+
+      - name: Verify full Maven reactor
+        if: steps.scope.outputs.mode == 'full'
+        shell: bash
+        run: |
+          set -o pipefail
+          mvn -B -ntp verify 2>&1 | tee maven-build.log
+
+      - name: Verify affected Maven reactor
+        if: steps.scope.outputs.mode == 'affected'
+        shell: bash
+        run: |
+          set -o pipefail
+          mvn -B -ntp -pl "${{ steps.scope.outputs.projects }}" -am -amd verify 2>&1 | tee maven-build.log
+
+      - name: Skip Maven for non-Java changes
+        if: steps.scope.outputs.mode == 'none'
+        run: echo "No Maven reactor changes detected."
+
+      - name: Extract build warnings
+        if: always() && steps.scope.outputs.mode != 'none'
+        shell: bash
+        run: |
+          if [ -f maven-build.log ]; then
+            grep -Ei '\[WARNING\]|warning:|uses or overrides a deprecated API|uses unchecked or unsafe operations' maven-build.log > maven-warnings.txt || true
+            echo "Project build warning candidates:"
+            cat maven-warnings.txt
+          fi
+
+      - name: Upload Maven diagnostics
+        if: always() && steps.scope.outputs.mode != 'none'
+        uses: actions/upload-artifact@v7
+        with:
+          name: maven-build-diagnostics
+          path: |
+            maven-build.log
+            maven-warnings.txt
+          if-no-files-found: ignore
+          retention-days: 7
