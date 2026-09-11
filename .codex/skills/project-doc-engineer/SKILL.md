@@ -7,7 +7,7 @@ description: 基于当前项目源码和可验证证据创建、重构、审查�
 
 ## 核心原则
 
-文档是产品和代码契约的一部分。先证明事实，再组织文档；不能证明的能力不写成“已支持”。成熟项目的文档组织模式已经沉淀在 references 中，日常任务不重复联网调研。
+文档是产品和代码契约的一部分。先证明事实，再组织文档；不能证明的能力不写成“已支持”。成熟项目的信息架构基准已经沉淀在 references 中，日常任务直接复用，不重复联网调研。
 
 ## 工作流
 
@@ -29,6 +29,11 @@ description: 基于当前项目源码和可验证证据创建、重构、审查�
 - API / 配置 / SPI / Troubleshooting：`references/reference.md`
 - 图示：`references/diagrams.md`
 - 事实核验：`references/evidence.md`
+- 文档规范本身调整、首次建立新文档类型、复杂平台级模块或用户明确要求外部对标：`references/benchmarking.md`
+
+## Benchmarking Boundary
+
+普通 README、配置/API 同步、补图、排障和同类 Starter 文档不得默认重新搜索成熟项目；直接使用已沉淀 reference。只有 `references/benchmarking.md` 定义的触发条件成立时才重新对标 2~4 个成熟项目的官方资料，并把稳定结论沉淀回 reference，避免后续重复消耗上下文。
 
 ## 文档复杂度
 
@@ -54,6 +59,6 @@ README 只负责“是什么、为什么、如何最小接入、关键边界、�
 
 - class、method、annotation、artifactId、配置 key、默认值、endpoint、SPI、状态和运行行为都有当前证据。
 - 不把历史 README、注释、Skill 或模型记忆当成源码事实。
-- 不复制成熟项目文案，只吸收信息架构和读者路径。
+- 不复制成熟项目文案，只吸收信息架构、读者路径和可维护机制。
 - 示例优先来自可运行 quickstart/test；不能验证时明确标记。
 - 文档帮助目标读者完成任务或建立正确心智模型，不重复源码、堆术语或写营销文案。
