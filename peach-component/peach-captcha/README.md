@@ -30,7 +30,15 @@ flowchart LR
 </dependency>
 ```
 
-Quickstart：[`peach-captcha-quickstart`](peach-captcha-quickstart/README.md)。
+### QuickStart
+
+示例代码位于 [`peach-captcha-quickstart`](./peach-captcha-quickstart/)，只用于验证 starter 的最小接入和自动装配，不作为生产依赖。
+
+```bash
+mvn -f peach-component/peach-captcha/peach-captcha-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
+
+需要验证码缓存或外部 Redis 时，通过本地环境变量或配置中心提供开发环境配置，不在 QuickStart 中保存生产凭据。
 
 ## 边界
 

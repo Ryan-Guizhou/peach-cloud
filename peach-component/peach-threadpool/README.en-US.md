@@ -12,7 +12,15 @@ English | [中文](README.md)
 | `peach-threadpool-starter` | Legacy business integration dependency entry point |
 | `peach-threadpool-quickstart` | Minimal compatibility verification; not a new-business template |
 
-Quickstart: [`peach-threadpool-quickstart`](peach-threadpool-quickstart/README.en-US.md).
+## QuickStart
+
+The example lives in [`peach-threadpool-quickstart`](./peach-threadpool-quickstart/) and only verifies legacy starter compatibility:
+
+```bash
+mvn -f peach-component/peach-threadpool/peach-threadpool-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
+
+Continue to prefer `peach-virtual-thread` for new blocking-I/O asynchronous work; do not use this QuickStart as a new-business template.
 
 ## Current Boundaries
 

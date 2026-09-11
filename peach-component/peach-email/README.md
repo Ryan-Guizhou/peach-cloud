@@ -30,7 +30,17 @@ flowchart LR
 </dependency>
 ```
 
-Provider 凭据从环境变量、配置中心或密钥服务提供。Quickstart：[`peach-email-quickstart`](peach-email-quickstart/README.md)。
+Provider 凭据从环境变量、配置中心或密钥服务提供。
+
+### QuickStart
+
+示例代码位于 [`peach-email-quickstart`](./peach-email-quickstart/)，用于验证 starter 最小启动和自动装配：
+
+```bash
+mvn -f peach-component/peach-email/peach-email-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
+
+SMTP provider、用户名和授权码继续通过本地环境变量或配置中心提供，QuickStart 不保存真实凭据。
 
 ## 边界
 

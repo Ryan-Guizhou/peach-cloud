@@ -30,7 +30,17 @@ flowchart LR
 </dependency>
 ```
 
-Supply provider credentials through environment variables, configuration services or secret management. Quickstart: [`peach-email-quickstart`](peach-email-quickstart/README.en-US.md).
+Supply provider credentials through environment variables, configuration services or secret management.
+
+### QuickStart
+
+The example lives in [`peach-email-quickstart`](./peach-email-quickstart/) and verifies minimal starter bootstrap and auto-configuration:
+
+```bash
+mvn -f peach-component/peach-email/peach-email-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
+
+Continue to supply the SMTP provider, username and authorization code through local environment variables or configuration services. The QuickStart stores no real credentials.
 
 ## Boundaries
 

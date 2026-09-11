@@ -28,7 +28,13 @@ flowchart LR
 <dependency><groupId>com.peach</groupId><artifactId>peach-observability-starter</artifactId></dependency>
 ```
 
-Quickstart：[`peach-observability-quickstart`](peach-observability-quickstart/README.md)。
+### QuickStart
+
+示例代码位于 [`peach-observability-quickstart`](./peach-observability-quickstart/)，用于验证 Servlet 应用中的 Actuator/Micrometer 依赖和 RequestId 自动配置链路：
+
+```bash
+mvn -f peach-component/peach-observability/peach-observability-quickstart/pom.xml spring-boot:run -Pdevelopment
+```
 
 ## 边界
 
