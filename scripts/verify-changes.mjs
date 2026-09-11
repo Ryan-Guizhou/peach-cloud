@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 const commands = [
   ['node', ['scripts/check-utf8.mjs']],
   ['node', ['scripts/check-agent-governance.mjs']],
+  ['node', ['scripts/check-java-style.mjs']],
   ['node', ['scripts/check-starter-layout.mjs']],
   ['node', ['scripts/check-readme-sync.mjs']],
   ['node', ['scripts/check-docs.mjs']],
