@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: peach-initialize-quickstart
+  main:
+    web-application-type: none
+
+quickstart:
+  initialize:
+    demo:
+      enabled: true

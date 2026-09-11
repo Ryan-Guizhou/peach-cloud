@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: peach-threadpool-quickstart
+  main:
+    web-application-type: none
+
+# Compat demo only. Prefer peach-virtual-thread for new blocking IO work.
+peach:
+  threadpool:
+    global:
+      enable-mdc: true
+      enable-security-context: false
+
+quickstart:
+  threadpool:
+    demo:
+      enabled: true

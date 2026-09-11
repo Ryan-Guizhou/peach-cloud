@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: peach-redission-delayqueue-quickstart
+  main:
+    web-application-type: none
+
+peach:
+  redis:
+    mode: standalone
+    host: ${PEACH_REDIS_HOST:127.0.0.1:6379}
+    password: ${PEACH_REDIS_PASSWORD:}
+    database: 0
+  delay:
+    queue:
+      isolation-region-count: 1
+      use-reliable-queue: true
+      max-retry-attempts: 1
+      retry-interval-millis: 1000
+
+quickstart:
+  delayqueue:
+    demo:
+      enabled: true

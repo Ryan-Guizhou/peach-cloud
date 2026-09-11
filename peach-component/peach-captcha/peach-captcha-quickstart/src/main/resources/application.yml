@@ -1,0 +1,17 @@
+server:
+  port: 18083
+
+spring:
+  application:
+    name: peach-captcha-quickstart
+
+peach:
+  captcha:
+    cache-type: MEMORY
+    service-type: TEXT
+    req-frequency-limit-enable: "0"
+
+quickstart:
+  captcha:
+    demo:
+      enabled: true

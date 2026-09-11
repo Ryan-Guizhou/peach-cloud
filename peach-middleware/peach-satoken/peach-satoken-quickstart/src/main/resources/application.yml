@@ -1,0 +1,44 @@
+server:
+  port: 18084
+
+spring:
+  application:
+    name: peach-satoken-quickstart
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+# Dev-only placeholders. Do not use in production.
+sa-token:
+  token-name: Authorization
+  timeout: 86400
+  active-timeout: -1
+  is-concurrent: true
+  is-share: true
+  token-style: uuid
+  is-log: false
+  is-read-header: true
+  is-read-cookie: false
+  check-same-token: false
+
+peach:
+  satoken:
+    dao:
+      enabled: false
+    same-token:
+      enabled: false
+    user-context:
+      enabled: false
+    token-strategy:
+      enabled: false
+    session-strategy:
+      enabled: false
+
+quickstart:
+  satoken:
+    demo:
+      enabled: true
+      # Documented development login only; not a production credential.
+      username: demo
+      password: ${PEACH_SATOKEN_DEMO_PASSWORD:demo-password}
