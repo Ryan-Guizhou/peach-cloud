@@ -76,10 +76,9 @@ peach:
         prefix: dev/app
 ```
 
-## 验证
+## 变更验证关注点
 
-```bash
-mvn -f "peach-component/peach-storage/pom.xml" test
-mvn -f "peach-component/peach-storage/pom.xml" -DskipTests package
-node scripts/check-utf8.mjs
-```
+- Provider 行为变化：覆盖成功、失败、超时、资源关闭和 capability 分支。
+- 配置变化：同步核对 `StorageProperties`、metadata、Quickstart 和根 README。
+- 对象路径变化：验证相对 key、前缀、越界拒绝和平台差异。
+- 验证入口与具体命令统一遵循仓库根 `AGENTS.md`，本 reference 不维护门禁命令。
