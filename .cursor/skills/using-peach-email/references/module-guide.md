@@ -83,10 +83,9 @@ peach-component/peach-email
 - 可靠性调整：明确幂等写入时机、重试分类、故障转移重复风险和中断处理。
 - 公共 API 改名：先做影响分析，保留兼容层或说明迁移。
 
-## 验证
+## 变更验证关注点
 
-```bash
-mvn -f "peach-component/peach-email/pom.xml" clean package -DskipTests -Pdevelopment
-node scripts/check-utf8.mjs
-git diff --check
-```
+- 发送链路变化：覆盖 provider 选择、重试、故障转移、幂等和异常路径。
+- 模板或附件变化：验证资源解析、变量安全、附件来源和失败行为。
+- 配置变化：同步核对 `EmailProperties`、metadata、Quickstart 和根 README。
+- 验证入口与具体命令统一遵循仓库根 `AGENTS.md`，本 reference 不维护门禁命令。
