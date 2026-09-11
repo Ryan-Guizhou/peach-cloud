@@ -8,8 +8,8 @@ peach:
   redis:
     mode: standalone
     host: ${PEACH_REDIS_HOST:127.0.0.1:6379}
-    password: ${PEACH_REDIS_PASSWORD:}
-    database: 0
+    password: ${PEACH_REDIS_PASSWORD:123456}
+    database: 1
 
 quickstart:
   repeat:
