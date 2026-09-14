@@ -1,12 +1,9 @@
 package com.peach.redis.stream;
 
-import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.stream.RecordId;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -49,9 +46,8 @@ public class RedisStreamHandler {
     public void streamBindingGroup(String streamName, String group){
         boolean hasKey = hasKey(streamName);
         if(!hasKey){
-            Map<String,Object> map = HashMap.newHashMap(2);
-            map.put("key","value");
-            RecordId recordId = redisStreamPushHandler.push(JSON.toJSONString(map));
+            // Bootstrap record so XGROUP CREATE has a stream key; payload is discarded immediately.
+            RecordId recordId = redisStreamPushHandler.push("{\"bootstrap\":true}");
             addGroup(streamName,group);
             del(streamName,recordId);
             log.info("initStream streamName : {} group : {}",streamName,group);
