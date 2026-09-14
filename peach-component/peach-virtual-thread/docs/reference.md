@@ -43,7 +43,7 @@ peach:
         acquire-timeout: 50ms
 ```
 
-仓库 quickstart 还给出了 `storage` 与 `remote` 分组示例。生产配置应依据数据库连接池、HTTP 客户端并发限制、对象存储吞吐等真实资源边界调整。
+仓库 quickstart 给出了 `database`（BLOCK）与 `burst`（REJECT，小容量）两个分组示例。生产配置应依据数据库连接池、HTTP 客户端并发限制、对象存储吞吐等真实资源边界调整。
 
 ## 3. VirtualExecutorService
 
@@ -146,5 +146,7 @@ Admission 已满时立即拒绝。调用方应结合接口语义决定返回错�
 - `executor/ManagedFutureTask.java`
 - `executor/ManagedCompletableTask.java`
 - `registry/VirtualExecutorRegistry.java`
-- `peach-virtual-thread-quickstart/src/main/java/.../VirtualThreadScenarioService.java`
+- `peach-virtual-thread-quickstart/src/main/java/.../example/VirtualGroupSubmitExample.java`
+- `peach-virtual-thread-quickstart/src/main/java/.../example/VirtualCancelExample.java`
+- `peach-virtual-thread-quickstart/src/main/java/.../example/VirtualRejectExample.java`
 - `peach-virtual-thread-quickstart/src/main/resources/application.yml`

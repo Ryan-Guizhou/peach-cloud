@@ -4,7 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Peach ThreadPool 兼容 Quickstart 启动入口。
+ * Peach ThreadPool Quickstart 启动入口。
  *
  * @Author Mr Shu
  * @Version 1.0.0

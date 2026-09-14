@@ -10,7 +10,7 @@
 | --- | --- |
 | `peach-openfeign-autoconfigure` | 拦截器、超时/重试、异常治理、Sentinel 和自动配置 |
 | `peach-openfeign-starter` | 业务接入依赖入口 |
-| `peach-openfeign-quickstart` | 最小治理自动装配验证，不复制业务 API |
+| `peach-openfeign-quickstart` | 本机 Stub + Feign Client 闭环，验证治理自动装配 |
 
 ```mermaid
 flowchart LR
@@ -21,12 +21,23 @@ flowchart LR
     Feign --> Remote[目标服务]
 ```
 
-## QuickStart
+## Quick Start
 
-示例代码位于 [`peach-openfeign-quickstart`](./peach-openfeign-quickstart/)，用于验证 starter 的最小接入和治理自动配置。真实 Feign 契约仍应来自业务 `*-openfeign-external` 模块，QuickStart 不复制业务接口。
+示例代码位于 [`peach-openfeign-quickstart`](./peach-openfeign-quickstart/)。真实 Feign 契约仍应来自业务 `*-openfeign-external` 模块，QuickStart 不复制业务接口，也不依赖外部真实服务。
+
+| 项 | 说明 |
+| --- | --- |
+| 能力样例 | 本机 `DownstreamStubController` + `LocalStubClient` 闭环 |
+| 成功调用 | Feign `GET /stub/echo` 回显 `source=stub` |
+| 错误分类 | Stub 返回 500，`PeachOpenFeignErrorDecoder` 转为 `PeachFeignRemoteException` |
+| 超时分类 | Stub 返回 408，ErrorDecoder 转为 `PeachFeignTimeoutException` |
+| Runner | `OpenFeignDemoRunner`；测试设 `quickstart.openfeign.demo.enabled=false` |
+| 前置 | 已关闭 Same-Token、Sentinel、fallback 启动强校验与重试，以便直接观察 ErrorDecoder 分类 |
+| 端口 | 演示运行默认 `18085`（Stub 与调用方同进程）；测试使用 `RANDOM_PORT` + `local.server.port` |
 
 ```bash
-mvn -f peach-middleware/peach-openfeign/peach-openfeign-quickstart/pom.xml spring-boot:run -Pdevelopment
+mvn -pl peach-middleware/peach-openfeign/peach-openfeign-quickstart -am spring-boot:run
+mvn -pl peach-middleware/peach-openfeign/peach-openfeign-quickstart -am test
 ```
 
 ## 边界

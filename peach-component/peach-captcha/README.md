@@ -30,15 +30,29 @@ flowchart LR
 </dependency>
 ```
 
-### QuickStart
+公开入口是自动装配的 `CaptchaService`：
 
-示例代码位于 [`peach-captcha-quickstart`](./peach-captcha-quickstart/)，只用于验证 starter 的最小接入和自动装配，不作为生产依赖。
+- `get(CaptchaVO)`：生成验证码
+- `check(CaptchaVO)`：前端一次校验
+- `verification(CaptchaVO)`：后端二次校验，令牌一次性失效
+
+默认 `peach.captcha.cache-type=MEMORY`、`peach.captcha.service-type=BLOCKPUZZLE`。集群共享缓存需改为 `REDIS`，并自行接入 Redis。
+
+## Quick Start
+
+示例位于 [`peach-captcha-quickstart`](./peach-captcha-quickstart/)，无 Web 端口，只验证 starter 最小接入，不作为生产依赖。
+
+| 项 | 说明 |
+| --- | --- |
+| 能力样例（注入 `CaptchaService`） | **生成**：`get` 返回 token 与图片；**成功校验**：`check` 后 `verification`；**失败路径**：错误答案、缓存过期/缺失 token 返回 `API_CAPTCHA_INVALID` |
+| Runner | `CaptchaDemoRunner`；关闭演示：`quickstart.captcha.demo.enabled=false` |
+| 最小配置 | `peach.captcha.cache-type=MEMORY`、`peach.captcha.service-type=TEXT`、`peach.captcha.req-frequency-limit-enable=0` |
+| 前置 | 无需 Redis |
 
 ```bash
-mvn -f peach-component/peach-captcha/peach-captcha-quickstart/pom.xml spring-boot:run -Pdevelopment
+mvn -pl peach-component/peach-captcha/peach-captcha-quickstart -am spring-boot:run
+mvn -pl peach-component/peach-captcha/peach-captcha-quickstart -am test
 ```
-
-需要验证码缓存或外部 Redis 时，通过本地环境变量或配置中心提供开发环境配置，不在 QuickStart 中保存生产凭据。
 
 ## 边界
 

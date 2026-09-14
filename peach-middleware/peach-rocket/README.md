@@ -2,23 +2,26 @@
 
 [English](README.en-US.md) | 中文
 
-最后更新时间：2026-07-03  
-artifactId：`peach-rocket`  
-类型：RocketMQ 中间件聚合模块
-
-## 模块定位
-
 `peach-rocket` 是 RocketMQ 业务接入 starter，提供统一发送、事件路由、动态消费者、消费幂等、异常处理、事务消息、Topic 管理、payload 加密和 Outbox 可靠消息能力。
 
 `peach-rocket-starter` 会聚合 RocketMQ Spring Boot 与 Topic Admin 运行时依赖；业务模块不需要重复声明 `rocketmq-spring-boot-starter` 或 `rocketmq-tools`。仅直接依赖 autoconfigure 时，RocketMQ 客户端或管理类缺失会使相关自动配置安全退场，但这种方式不作为业务接入入口。
 
-## 子模块
+## 结构
 
 | 子模块 | 职责 |
 | --- | --- |
 | `peach-rocket-autoconfigure` | 核心 API、自动配置、默认实现和 SPI |
 | `peach-rocket-starter` | 对业务模块暴露的 starter |
-| `peach-rocket-quickstart` | 示例应用和 JDBC 幂等 / Outbox 覆盖示例 |
+| `peach-rocket-quickstart` | 订单发布-消费、顺序发布与内存幂等能力样例 |
+
+```mermaid
+flowchart LR
+    App[业务服务] --> Starter[peach-rocket-starter]
+    Starter --> Auto[peach-rocket-autoconfigure]
+    Quick[peach-rocket-quickstart] --> Starter
+    Auto --> Pub[MqPublisher]
+    Auto --> Consumer["@MqConsumer"]
+```
 
 ## 核心对象
 
@@ -36,7 +39,7 @@ artifactId：`peach-rocket`
 | `MqPayloadEncryptor`、`MqEncryptionPolicy`、`MqKeyProvider` | payload 加密 SPI |
 | `MqTraceContextPropagator` | 可选的 MQ 链路上下文传播 SPI |
 
-## 接入方式
+## 接入
 
 ```xml
 <dependency>
@@ -71,7 +74,7 @@ peach:
       enabled: false
 ```
 
-## 发送与消费示例
+## 发送与消费
 
 ```java
 @MqEvent(topic = "order", tag = "created", key = "#orderId")
@@ -114,16 +117,20 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 
 生产环境优先通过 `@Bean` 覆盖内存幂等、内存 Outbox 等默认实现。
 
-## 示例位置
+## Quick Start
 
-| 示例 | 路径 |
-| --- | --- |
-| 启动类 | `peach-rocket-quickstart/src/main/java/com/peach/rocket/quickstart/PeachRocketQuickstartApplication.java` |
-| 配置 | `peach-rocket-quickstart/src/main/resources/application.yml` |
-| 事件 | `peach-rocket-quickstart/src/main/java/com/peach/rocket/quickstart/event` |
-| 消费者 | `peach-rocket-quickstart/src/main/java/com/peach/rocket/quickstart/consumer` |
-| JDBC 覆盖 | `peach-rocket-quickstart/src/main/java/com/peach/rocket/quickstart/config` |
-| 表结构 | `peach-rocket-quickstart/src/main/resources/schema` |
+[`peach-rocket-quickstart`](./peach-rocket-quickstart/) 用进程内 `MqPublisher` 跑通订单闭环（`web-application-type: none`），不连接外部 NameServer / Broker。
+
+- 能力样例：
+  - **发布-消费**：`MqPublisher.publish` 订单创建事件，按 `@MqEvent` / `@MqConsumer` 的 topic+tag 同步投递给 Handler
+  - **顺序发布**：`publishOrderly` 使用稳定 `orderId` 作为 `shardingKey`，再投递给 paid 消费者
+  - **消费幂等**：starter 默认 `InMemoryMqIdempotentStore`，同一键 `tryStart + markSuccess` 后再次 `tryStart` 被拒绝
+- 启动后 `RocketDemoRunner` 依次执行；关闭演示：`quickstart.rocket.demo.enabled=false`
+- 事务消息 / Outbox / Broker 队列级顺序需要真实 RocketMQ，不在本样例覆盖
+- 运行：`mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am test`
+
+Quickstart 将 `peach.rocket.enabled` 设为 `false` 并排除 `RocketMQAutoConfiguration`，避免启动期连接 Broker。业务接入仍按上方配置开启 starter。
 
 ## 生产边界
 
@@ -140,7 +147,6 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 ```bash
 mvn -f "peach-middleware/peach-rocket/pom.xml" test
 mvn -f "peach-middleware/peach-rocket/pom.xml" clean package -DskipTests -Pdevelopment
-mvn -pl peach-middleware/peach-rocket -am clean package -DskipTests -Pdevelopment
 ```
 
 ## 排障指南
@@ -155,10 +161,9 @@ mvn -pl peach-middleware/peach-rocket -am clean package -DskipTests -Pdevelopmen
 | 启动提示缺少 `RocketMQTemplate` | 是否只传递了 autoconfigure、最终运行包是否包含 RocketMQ Spring | 使用 `peach-rocket-starter` 并重新构建最终应用 |
 | 开启 Topic 自动创建后缺少 `DefaultMQAdminExt` | 最终运行包是否包含 `rocketmq-tools` | 升级并使用最新 `peach-rocket-starter`，重新构建最终应用 |
 
-
 ## 项目约定
 
 - 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
 - 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
-- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 target/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
 - README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。

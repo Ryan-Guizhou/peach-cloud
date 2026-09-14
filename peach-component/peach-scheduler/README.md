@@ -2,7 +2,7 @@
 
 [English](README.en-US.md) | 中文
 
-- 最后更新时间：2026-09-10
+- 最后更新时间：2026-09-11
 - artifactId：`peach-scheduler`
 - 类型：定时任务执行侧组件（SDK + Provider SPI + RocketMQ Transport）
 - 适用版本：Java 21、Spring Boot 3.5.4
@@ -53,7 +53,7 @@ peach-component/peach-scheduler/
 | `peach-scheduler-provider-quartz` | `QuartzSchedulingProvider`、Quartz 触发桥接（主要用于控制面） |
 | `peach-scheduler-transport-rocket` | 执行结果 Outbox、`SchedulerJdbcMqOutboxStore`、`SchedulerJdbcMqIdempotentStore` |
 | `peach-scheduler-starter` | 聚合 `autoconfigure` + `transport-rocket` |
-| `peach-scheduler-quickstart` | 示例 Consumer 与本地 Claim 桩 |
+| `peach-scheduler-quickstart` | 本地可证明的 Handler / Claim / 执行器编排样例 |
 
 ## 核心对象
 
@@ -169,6 +169,22 @@ public class SchedulerExecutionConsumer implements MqMessageHandler<JobExecution
 
 参考：`peach-scheduler-quickstart` 中的 `DemoSchedulerExecutionConsumer`。
 
+### Quickstart 本地演示
+
+[`peach-scheduler-quickstart`](./peach-scheduler-quickstart/)（`web-application-type: none`）只覆盖能在本地证明的执行侧能力，不依赖生产控制面或真实 RocketMQ：
+
+- **JobHandler / `@PeachJob`**：`DemoCleanupJob` 直接执行并完成注册
+- **Claim 门闩**：内存 `ExecutionLeaseClient` 先允许再拒绝
+- **PeachJobExecutor 编排**：`command -> claim -> handler -> reporter`；Claim 失败时不执行 Handler、不上报
+- 内存桩：`DemoExecutionLeaseClient` / `DemoExecutionResultReporter`（`peach.scheduler.quickstart.local-mode=true`，缺省即本地模式；设为 `false` 时不注册，以便 RocketMQ Reporter 装配）
+- `DemoSchedulerExecutionConsumer` 仅作生产接线样例，默认 `peach.rocket.enabled=false` 不装配
+- `SchedulerDemoRunner` 默认关闭；打开演示：`quickstart.scheduler.demo.enabled=true`
+- 测试：无容器切片 `SchedulerSliceTest` + 少量集成 `SchedulerCapabilityTest`
+
+```bash
+mvn -pl peach-component/peach-scheduler/peach-scheduler-quickstart -am test
+```
+
 ## 配置说明
 
 | 配置项 | 默认值 | 说明 |
@@ -248,7 +264,7 @@ git diff --check -- peach-component/peach-scheduler
 
 | 现象 | 检查点 | 处理方式 |
 | --- | --- | --- |
-| `PeachJobExecutor` 未创建 | 是否缺少 `ExecutionLeaseClient` / `ExecutionResultReporter` / `VirtualExecutorRegistry` | 补齐 virtual-thread、Feign/Rocket 依赖并配置 `scheduler` group |
+| `PeachJobExecutor` 未创建 | 是否缺少 `ExecutionLeaseClient` / `ExecutionResultReporter` / `VirtualExecutorRegistry`，或 Scheduler 自动配置早于虚拟线程注册中心 | 补齐 virtual-thread、Feign/Rocket 依赖并配置 `scheduler` group；Starter 已保证排在 `PeachVirtualThreadAutoConfiguration` 之后 |
 | Claim 始终失败 | 控制面 execution 状态、Same-Token、`applicationName` 是否一致 | 核对 Feign 目标服务 `peach-scheduler` 与内部接口可达 |
 | Handler 未出现在控制面白名单 | `peach.scheduler.executor.application-name`、Feign 注册是否成功 | 检查 `openfeign-external` 与 `/internal/scheduler/handlers/register` |
 | 重复执行业务副作用 | 仅依赖 Claim 不够 | 在 Handler 内基于 `executionId` 做幂等 |

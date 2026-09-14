@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: peach-store-quickstart
+  main:
+    web-application-type: none
+
+peach:
+  storage:
+    enabled: true
+    primary: local
+    providers:
+      local:
+        type: LOCAL
+        bucket-name: quickstart
+        root-path: ${java.io.tmpdir}/peach-store-quickstart
+        domain: http://localhost/files
+
+quickstart:
+  store:
+    demo:
+      enabled: true

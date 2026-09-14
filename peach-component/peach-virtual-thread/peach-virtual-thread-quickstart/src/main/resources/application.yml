@@ -1,3 +1,9 @@
+spring:
+  application:
+    name: peach-virtual-thread-quickstart
+  main:
+    web-application-type: none
+
 peach:
   virtual-thread:
     enabled: true
@@ -5,17 +11,16 @@ peach:
     shutdown-await: 30s
     groups:
       database:
-        max-concurrency: 50
-        max-pending: 100
-        backpressure: BLOCK
-        acquire-timeout: 50ms
-      storage:
-        max-concurrency: 50
-        max-pending: 100
+        max-concurrency: 4
+        max-pending: 8
         backpressure: BLOCK
         acquire-timeout: 200ms
-      remote:
-        max-concurrency: 100
-        max-pending: 200
-        backpressure: BLOCK
-        acquire-timeout: 100ms
+      burst:
+        max-concurrency: 1
+        max-pending: 0
+        backpressure: REJECT
+
+quickstart:
+  virtual-thread:
+    demo:
+      enabled: true

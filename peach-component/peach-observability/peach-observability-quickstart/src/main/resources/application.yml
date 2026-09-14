@@ -1,0 +1,31 @@
+server:
+  port: 18086
+
+spring:
+  application:
+    name: peach-observability-quickstart
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: never
+  tracing:
+    sampling:
+      probability: 0.0
+
+peach:
+  observability:
+    enabled: true
+    request-id:
+      enabled: true
+      header-name: X-Request-Id
+      trust-incoming: true
+
+quickstart:
+  observability:
+    demo:
+      enabled: true

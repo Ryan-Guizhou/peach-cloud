@@ -25,13 +25,15 @@ import org.springframework.context.annotation.Bean;
  *
  * <p>该配置只负责业务应用中的 Handler 注册、执行器编排 Bean 和执行结果上报入口装配。
  * 业务 Handler 的阻塞 IO 执行通过 {@link VirtualExecutorRegistry} 中名为 {@code scheduler}
- * 的虚拟线程业务组隔离；Quartz 触发和控制面状态管理不在本配置中完成。</p>
+ * 的虚拟线程业务组隔离；Quartz 触发和控制面状态管理不在本配置中完成。必须排在
+ * {@code PeachVirtualThreadAutoConfiguration} 之后，否则 {@code @ConditionalOnBean(VirtualExecutorRegistry)}
+ * 会在注册中心创建前求值，导致 {@link PeachJobExecutor} 缺失。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:42
  */
-@AutoConfiguration
+@AutoConfiguration(afterName = "com.peach.virtualthread.autoconfigure.PeachVirtualThreadAutoConfiguration")
 @EnableConfigurationProperties(PeachSchedulerProperties.class)
 @ConditionalOnProperty(prefix = "peach.scheduler", name = "enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnClass(VirtualExecutorRegistry.class)

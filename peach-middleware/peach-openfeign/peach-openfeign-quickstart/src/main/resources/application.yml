@@ -1,0 +1,35 @@
+server:
+  port: 18085
+
+spring:
+  application:
+    name: peach-openfeign-quickstart
+  cloud:
+    openfeign:
+      okhttp:
+        enabled: true
+
+sa-token:
+  token-name: Authorization
+  is-log: false
+  check-same-token: false
+
+peach:
+  openfeign:
+    enabled: true
+    same-token-enabled: false
+    same-token-fail-fast: false
+    request-id-enabled: true
+    sentinel:
+      enabled: false
+    fallback:
+      validate-on-startup: false
+      fail-fast-if-missing: false
+    retry:
+      enabled: false
+
+quickstart:
+  openfeign:
+    downstream-url: http://127.0.0.1:18085
+    demo:
+      enabled: true

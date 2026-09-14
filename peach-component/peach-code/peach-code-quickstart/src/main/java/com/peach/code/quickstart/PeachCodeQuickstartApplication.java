@@ -4,12 +4,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Peach代码Quickstart启动类。
- * <p>配置可访问的测试 MySQL 与 Redis 后启动应用，由 {@link PeachCodeEvent} 输出实际发号及格式校验结果。</p>
+ * Peach Code Quickstart 启动入口。
  *
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2026/3/20 16:58
+ * @CreateTime 2026/9/11 17:55
  */
 @SpringBootApplication
 public class PeachCodeQuickstartApplication {

@@ -70,12 +70,18 @@ jobs:
           set -o pipefail
           mvn -B -ntp verify 2>&1 | tee maven-build.log
 
+      # Use -am only. Sibling *-quickstart modules are selected by
+      # scripts/resolve-maven-build-scope.mjs when autoconfigure/starter (or another
+      # non-quickstart module in a starter family) changes. Do not restore bare -amd:
+      # it pulls business apps (e.g. peach-auth-service) that depend on starters, but
+      # does not recursively add their in-repo deps, so GitHub Actions then hits
+      # private HTTP Nexus and fails under maven-default-http-blocker.
       - name: Verify affected Maven reactor
         if: steps.scope.outputs.mode == 'affected'
         shell: bash
         run: |
           set -o pipefail
-          mvn -B -ntp -pl "${{ steps.scope.outputs.projects }}" -am -amd verify 2>&1 | tee maven-build.log
+          mvn -B -ntp -pl "${{ steps.scope.outputs.projects }}" -am verify 2>&1 | tee maven-build.log
 
       - name: Skip Maven for non-Java changes
         if: steps.scope.outputs.mode == 'none'

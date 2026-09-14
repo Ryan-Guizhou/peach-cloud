@@ -34,13 +34,17 @@ Supply provider credentials through environment variables, configuration service
 
 ### QuickStart
 
-The example lives in [`peach-email-quickstart`](./peach-email-quickstart/) and verifies minimal starter bootstrap and auto-configuration:
+- Module: [`peach-email-quickstart`](./peach-email-quickstart/)
+- Capability samples (inject `EmailSendService`; in-memory Mock `EmailTransport`, no outbound SMTP):
+  - **Welcome mail**: `send(provider, message)` with plain-text fallback plus HTML
+  - **Idempotent send**: `sendAuto` skips Transport on the second call with the same key
+  - **Attachment**: `EmailMessage` carries an `Attachment` with byte content; the mock records the count
+- `EmailDemoRunner` runs these on startup; disable with `quickstart.email.demo.enabled=false`
+- Port: no REST (`web-application-type=none`)
+- Run: `mvn -pl peach-component/peach-email/peach-email-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-component/peach-email/peach-email-quickstart -am test`
 
-```bash
-mvn -f peach-component/peach-email/peach-email-quickstart/pom.xml spring-boot:run -Pdevelopment
-```
-
-Continue to supply the SMTP provider, username and authorization code through local environment variables or configuration services. The QuickStart stores no real credentials.
+Continue to supply SMTP credentials via environment variables or configuration services. The QuickStart stores no real credentials. Template rendering does not happen inside `sendAuto`; this sample sets HTML directly.
 
 ## Boundaries
 

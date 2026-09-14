@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: peach-redis-multicache-quickstart
+  main:
+    web-application-type: none
+
+peach:
+  redis:
+    mode: standalone
+    host: ${PEACH_REDIS_HOST:127.0.0.1:6379}
+    password: ${PEACH_REDIS_PASSWORD:}
+    database: 1
+  multicache:
+    enabled: true
+    cache-names:
+      - product-manager
+      - product-annotation
+    cache-prefix: peach:qs:multicache
+    redis:
+      default-expiration: PT1H
+
+quickstart:
+  multicache:
+    demo:
+      enabled: true

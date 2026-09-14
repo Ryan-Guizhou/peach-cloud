@@ -15,15 +15,33 @@
 业务模块依赖：
 
 ```xml
-<dependency><groupId>com.peach</groupId><artifactId>peach-initialize-starter</artifactId></dependency>
+<dependency>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-initialize-starter</artifactId>
+</dependency>
 ```
 
-## QuickStart
+公开入口是业务侧实现的 `InitializeHandler`（或继承对应生命周期抽象类）。自动装配的四个执行器按 `type()` 分组，再按 `executeOrder` 升序调用 `executeInitialize(ConfigurableApplicationContext)`：
 
-示例代码位于 [`peach-initialize-quickstart`](./peach-initialize-quickstart/)，用于验证 starter 的最小接入。实际初始化处理器应注册为业务 Bean，并保持可控超时、幂等和明确的启动失败语义。
+- `APP_INITIALIZING_BEAN`：`InitializingBean#afterPropertiesSet`
+- `APP_POSTCONSTRUCT`：`@PostConstruct`
+- `APP_EVENT_LISTENER`：`ApplicationStartedEvent`
+- `APP_COMMAND_LINE_RUNNER`：`ApplicationRunner`
+
+## Quick Start
+
+示例位于 [`peach-initialize-quickstart`](./peach-initialize-quickstart/)，无 Web 端口，只验证 starter 最小接入，不作为生产依赖。
+
+| 项 | 说明 |
+| --- | --- |
+| 能力样例（注册 `InitializeHandler`） | **自定义 Handler**：继承 `AbstractAppStartedEventHandler` 做缓存预热；**成功标记**：启动后 `warmedUp=true` / `payload=cache-ready`；**执行顺序**：同类型 Handler 按 `executeOrder` 升序（预热 `10` → 资源检查 `20`） |
+| Runner | `InitializeDemoRunner`；关闭演示：`quickstart.initialize.demo.enabled=false` |
+| 前置 | 无外部依赖 |
+| 端口 | 无 REST：`spring.main.web-application-type=none` |
 
 ```bash
-mvn -f peach-component/peach-initialize/peach-initialize-quickstart/pom.xml spring-boot:run -Pdevelopment
+mvn -pl peach-component/peach-initialize/peach-initialize-quickstart -am spring-boot:run
+mvn -pl peach-component/peach-initialize/peach-initialize-quickstart -am test
 ```
 
 ## 边界

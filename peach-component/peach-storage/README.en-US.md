@@ -12,7 +12,7 @@ English | [中文](README.md)
 | --- | --- |
 | `peach-store-autoconfigure` | Core APIs, request/response models, provider SPI, auto-configuration, and defaults |
 | `peach-store-starter` | Starter exposed to business modules |
-| `peach-store-quickstart` | Minimal example project |
+| `peach-store-quickstart` | Minimal LOCAL-provider loop; production modules must not depend on it |
 
 ## Core Objects
 
@@ -60,6 +60,41 @@ Named provider:
 ```java
 storageTemplate.upload("archive", request);
 storageTemplate.download("archive", downloadRequest);
+```
+
+## Quick Start (runnable sample)
+
+[`peach-store-quickstart`](./peach-store-quickstart/) is non-web. It depends on `peach-store-starter` only and uses the LOCAL provider plus a temp directory. No cloud credentials are required. Production modules must not depend on the quickstart.
+
+The public entry is the auto-configured `StorageTemplate` (`PeachStorageAutoConfiguration`). The sample injects that bean and covers three LOCAL-supported cases:
+
+| Item | Detail |
+| --- | --- |
+| Capability samples | **Upload + download**: `upload` then `download` and compare payload; **Head**: read metadata after upload; **Delete**: object is gone (`exists=false`) |
+| Runner | `StorageDemoRunner`; disable with `quickstart.store.demo.enabled=false` |
+| Minimal config | `peach.storage.enabled=true`, `primary=local`, `providers.local.type=LOCAL`, `root-path`, `bucket-name` |
+| Prerequisites | Local filesystem only |
+
+```yaml
+peach:
+  storage:
+    enabled: true
+    primary: local
+    providers:
+      local:
+        type: LOCAL
+        bucket-name: quickstart
+        root-path: ${java.io.tmpdir}/peach-store-quickstart
+        domain: http://localhost/files
+quickstart:
+  store:
+    demo:
+      enabled: true
+```
+
+```bash
+mvn -pl peach-component/peach-storage/peach-store-quickstart -am spring-boot:run
+mvn -pl peach-component/peach-storage/peach-store-quickstart -am test
 ```
 
 ## Provider Extension

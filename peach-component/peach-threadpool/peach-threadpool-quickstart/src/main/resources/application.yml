@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: peach-threadpool-quickstart
+  main:
+    web-application-type: none
+
+peach:
+  threadpool:
+    global:
+      enable-mdc: true
+      enable-security-context: false
+
+quickstart:
+  threadpool:
+    demo:
+      enabled: true

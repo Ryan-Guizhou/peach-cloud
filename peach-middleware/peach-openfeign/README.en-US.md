@@ -10,7 +10,7 @@ English | [中文](README.md)
 | --- | --- |
 | `peach-openfeign-autoconfigure` | Interceptors, timeout/retry, error governance, Sentinel and auto-configuration |
 | `peach-openfeign-starter` | Business integration dependency entry point |
-| `peach-openfeign-quickstart` | Minimal governance auto-configuration verification without duplicating business APIs |
+| `peach-openfeign-quickstart` | In-process Stub + Feign Client loop that verifies governance auto-configuration |
 
 ```mermaid
 flowchart LR
@@ -21,12 +21,23 @@ flowchart LR
     Feign --> Remote[Target Service]
 ```
 
-## QuickStart
+## Quick Start
 
-The example lives in [`peach-openfeign-quickstart`](./peach-openfeign-quickstart/) and verifies minimal starter integration and governance auto-configuration. Real Feign contracts remain in business `*-openfeign-external` modules; the QuickStart does not duplicate business APIs.
+The example lives in [`peach-openfeign-quickstart`](./peach-openfeign-quickstart/). Real Feign contracts remain in business `*-openfeign-external` modules; the QuickStart does not duplicate business APIs and does not call external services.
+
+| Item | Detail |
+| --- | --- |
+| Capability sample | In-process `DownstreamStubController` + `LocalStubClient` loop |
+| Success call | Feign `GET /stub/echo` echoes `source=stub` |
+| Error classification | Stub returns 500; `PeachOpenFeignErrorDecoder` maps it to `PeachFeignRemoteException` |
+| Timeout classification | Stub returns 408; ErrorDecoder maps it to `PeachFeignTimeoutException` |
+| Runner | `OpenFeignDemoRunner`; tests set `quickstart.openfeign.demo.enabled=false` |
+| Prerequisites | Same-Token, Sentinel, fallback fail-fast and retry are disabled so ErrorDecoder classification is visible |
+| Port | Demo run defaults to `18085` (stub and caller in-process); tests use `RANDOM_PORT` + `local.server.port` |
 
 ```bash
-mvn -f peach-middleware/peach-openfeign/peach-openfeign-quickstart/pom.xml spring-boot:run -Pdevelopment
+mvn -pl peach-middleware/peach-openfeign/peach-openfeign-quickstart -am spring-boot:run
+mvn -pl peach-middleware/peach-openfeign/peach-openfeign-quickstart -am test
 ```
 
 ## Boundaries

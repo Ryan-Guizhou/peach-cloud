@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: peach-mongo-quickstart
+  main:
+    web-application-type: none
+
+peach:
+  mongo:
+    uri: ${PEACH_MONGO_URI:mongodb://127.0.0.1:27017/peach_qs}
+    database: ${PEACH_MONGO_DATABASE:peach_qs}
+    transaction:
+      enabled: false
+
+quickstart:
+  mongo:
+    demo:
+      enabled: true

@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: peach-captcha-quickstart
+  main:
+    web-application-type: none
+
+peach:
+  captcha:
+    cache-type: MEMORY
+    service-type: TEXT
+    req-frequency-limit-enable: "0"
+
+quickstart:
+  captcha:
+    demo:
+      enabled: true

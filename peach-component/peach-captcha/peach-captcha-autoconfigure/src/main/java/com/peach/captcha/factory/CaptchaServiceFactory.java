@@ -34,8 +34,13 @@ public class CaptchaServiceFactory {
     static {
         List<CaptchaCacheProvider> cacheProviders = CustomServiceLoader.load(CaptchaCacheProvider.class);
         for (CaptchaCacheProvider provider : cacheProviders) {
-            PROVIDERS.put(provider.type(), provider.createCaptchaCacheService());
-            log.info("Captcha autoconfig loaded captcha cache provider: [{}]", provider.type());
+            try {
+                PROVIDERS.put(provider.type(), provider.createCaptchaCacheService());
+                log.info("Captcha autoconfig loaded captcha cache provider: [{}]", provider.type());
+            } catch (Exception | LinkageError ex) {
+                // Redis 等可选 Provider：缺类/缺 Bean 时跳过；OOM 等 Error 仍向上抛。
+                log.warn("Skip captcha cache provider [{}]: {}", provider.type(), ex.toString());
+            }
         }
 
         List<CaptchaServiceProvider> captchaProviders = CustomServiceLoader.load(CaptchaServiceProvider.class);

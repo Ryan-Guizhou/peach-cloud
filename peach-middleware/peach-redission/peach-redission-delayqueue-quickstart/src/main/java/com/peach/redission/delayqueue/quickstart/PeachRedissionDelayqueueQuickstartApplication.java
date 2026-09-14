@@ -8,9 +8,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2026/9/10 18:30
+ * @CreateTime 2026/9/11 16:40
  */
 @SpringBootApplication
 public class PeachRedissionDelayqueueQuickstartApplication {
-    public static void main(String[] args) { SpringApplication.run(PeachRedissionDelayqueueQuickstartApplication.class, args); }
+    public static void main(String[] args) {
+        SpringApplication.run(PeachRedissionDelayqueueQuickstartApplication.class, args);
+    }
 }

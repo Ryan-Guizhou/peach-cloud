@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: peach-redission-bloomfilter-quickstart
+  main:
+    web-application-type: none
+
+peach:
+  redis:
+    mode: standalone
+    host: ${PEACH_REDIS_HOST:127.0.0.1:6379}
+    password: ${PEACH_REDIS_PASSWORD:}
+    database: 1
+    bloom:
+      enabled: true
+      key-prefix: peach:qs:bloom
+      initial-capacity: 1000
+      false-positive-probability: 0.01
+      default-namespace: product-sku
+
+quickstart:
+  bloomfilter:
+    demo:
+      enabled: true

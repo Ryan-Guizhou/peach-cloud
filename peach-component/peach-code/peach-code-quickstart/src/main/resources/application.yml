@@ -1,21 +1,22 @@
+spring:
+  application:
+    name: peach-code-quickstart
+  main:
+    web-application-type: none
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
 peach:
   code:
     enabled: true
-    redis-enabled: true
+    redis-enabled: false
     redis-key-prefix: "peach:code:generate:"
-    quickstart:
-      verify-on-startup: true
-      tenant-id: T001
 
-# Configure a test database before starting the quickstart.
-# The schema is in sql/PEACH_CODE_RULE.sql.
-spring:
-  datasource:
-    url: jdbc:mysql://127.0.0.1:3306/peach_cloud?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: ${PEACH_TEST_DB_USERNAME:root}
-    password: ${PEACH_TEST_DB_PASSWORD:123456}
-  redis:
-    host: 127.0.0.1
-    port: 6379
-    database: 0
-    password: ${PEACH_TEST_REDIS_PASSWORD:123456}
+quickstart:
+  code:
+    demo:
+      enabled: true

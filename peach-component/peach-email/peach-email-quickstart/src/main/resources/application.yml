@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: peach-email-quickstart
+  main:
+    web-application-type: none
+
+peach:
+  email:
+    default-provider: mock
+    providers:
+      mock:
+        username: ${PEACH_EMAIL_MOCK_USERNAME:demo@example.com}
+        password: ${PEACH_EMAIL_MOCK_PASSWORD:unused-placeholder}
+        host: localhost
+        port: 25
+        ssl: false
+        priority: 0
+    retry:
+      max-attempts: 1
+      base-delay-millis: 50
+
+quickstart:
+  email:
+    demo:
+      enabled: true
+      from: ${PEACH_EMAIL_FROM:demo@example.com}
+      to: ${PEACH_EMAIL_TO:welcome@example.com}

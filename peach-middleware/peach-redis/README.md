@@ -28,7 +28,46 @@ flowchart LR
 - 本地 + Redis 多级缓存：`peach-redis-multicache-starter`。
 - Redis Stream 消费/生产：`peach-redis-stream-starter`。
 
-对应 quickstart 仅用于接入验证，运行前提供开发 Redis。
+## Quick Start
+
+各能力均提供无 Web 端口的 quickstart（`spring.main.web-application-type=none`），依赖对应 starter + `peach-redis-common`，并通过 Testcontainers Redis（`redis:7.2-alpine`）做最小闭环验证。本地演示前提供开发 Redis，或直接跑 IT。
+
+### Tool
+
+- 模块：[`peach-redis-tool-quickstart`](./peach-redis-tool-quickstart/)
+- 能力样例（注入 `RedisDao`）：
+  - **String + TTL**：会话 token 写入 / 读取 / 存在判断 / 删除
+  - **Hash**：用户资料批量写入、按字段读取与字段删除
+  - **Set**：用户标签添加 / 列表 / 移除
+- 启动后 `RedisToolDemoRunner` 依次执行；关闭演示：`quickstart.redis-tool.demo.enabled=false`
+- 运行：`mvn -pl peach-middleware/peach-redis/peach-redis-tool-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-middleware/peach-redis/peach-redis-tool-quickstart -am test`
+
+### MultiCache
+
+- 模块：[`peach-redis-multicache-quickstart`](./peach-redis-multicache-quickstart/)
+- 能力样例（商品详情场景，两种接入方式）：
+  - **CacheManager**：注入自动装配的 `CacheManager`，显式 `put/get`、未命中回源、`evict` 后再次回源
+  - **分层证明**：仅清 L1(Caffeine) 后仍命中 L2(Redis) 并回填本地，且不回源
+  - **注解**：`@EnableCaching` + `@Cacheable` / `@CacheEvict`，同样走该 `CacheManager`
+- 启动后 `MulticacheDemoRunner` 依次跑上述演示；测试用 `InMemoryProductStore#loadCount` 与 `clearLocal` 证明命中路径
+- 最小配置：`peach.multicache.enabled=true`、`peach.multicache.cache-names`（`product-manager` / `product-annotation`），以及 `peach.redis.*`
+- 运行：`mvn -pl peach-middleware/peach-redis/peach-redis-multicache-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-middleware/peach-redis/peach-redis-multicache-quickstart -am test`
+- 关闭启动演示：`quickstart.multicache.demo.enabled=false`
+
+### Stream
+
+- 模块：[`peach-redis-stream-quickstart`](./peach-redis-stream-quickstart/)
+- 能力样例（订单状态流）：
+  - **Push + Consume**：`RedisStreamPushHandler#push` 拿 `RecordId`，业务实现 `MessageConsumer` 消费确认
+  - **幂等**：同一 `RecordId` 回放时业务侧去重（accepted=1 / duplicate=1）
+- 启动后 `RedisStreamDemoRunner` 执行；关闭演示：`quickstart.stream.demo.enabled=false`
+- 最小配置：`peach.redis.stream.enable=true`（`consumer-type=group`），以及 `peach.redis.*`
+- 运行：`mvn -pl peach-middleware/peach-redis/peach-redis-stream-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-middleware/peach-redis/peach-redis-stream-quickstart -am test`
+
+`peach.redis.host` 格式为 `host:port`。Quickstart 统一默认：`password` 默认为空（通过 `PEACH_REDIS_PASSWORD` 覆盖）、`database=1`。
 
 ## 边界
 

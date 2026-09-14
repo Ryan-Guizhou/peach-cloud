@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2026/9/10 18:30
+ * @CreateTime 2026/9/11 18:00
  */
 @SpringBootApplication
 public class PeachObservabilityQuickstartApplication {

@@ -25,6 +25,58 @@ flowchart LR
     Repeat --> Redisson
 ```
 
+## Quick Start
+
+Each capability ships a non-web quickstart (`spring.main.web-application-type=none`). Because many autoconfigure dependencies such as `peach-redis-common` are optional, quickstarts declare them explicitly. Provide a development Redis for local demos, or run the Testcontainers IT suite (`redis:7.2-alpine`).
+
+### Distributed Lock
+
+- Module: [`peach-redission-distributedlock-quickstart`](./peach-redission-distributedlock-quickstart/)
+- Dependencies: `peach-redission-distributedlock-starter` + `peach-redis-common` (also `peach-redission-common`, `spring-boot-starter-aop`, `caffeine`)
+- Capability samples (inventory deduct):
+  - **Annotation**: `@DistrbutedLock` protects stock deduct
+  - **Template**: inject `DistributedLockTemplate` for programmatic deduct
+  - **Concurrency proof**: two threads compete with short `waitTime` (1 success / 1 failure)
+- `DistributedLockDemoRunner` runs on startup; disable with `quickstart.distributedlock.demo.enabled=false`
+- Run: `mvn -pl peach-middleware/peach-redission/peach-redission-distributedlock-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-middleware/peach-redission/peach-redission-distributedlock-quickstart -am test`
+
+### Delay Queue
+
+- Module: [`peach-redission-delayqueue-quickstart`](./peach-redission-delayqueue-quickstart/)
+- Capability samples (order timeout):
+  - **Single message**: `DelayQueueContext#sendMessage` with short delay + implement `ConsumerTask` to confirm consume
+  - **Multi message**: under reliable-queue config, send several messages and confirm all are consumed
+- `DelayQueueDemoRunner` runs on startup; disable with `quickstart.delayqueue.demo.enabled=false`
+- Minimal config: `peach.delay.queue.*` (example uses `isolation-region-count=1`, `use-reliable-queue=true`) plus `peach.redis.*`; consumer bootstrap needs `peach-initialize-starter`
+- Run: `mvn -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am test`
+
+### Bloom Filter
+
+- Module: [`peach-redission-bloomfilter-quickstart`](./peach-redission-bloomfilter-quickstart/)
+- Capability samples (inject `BloomFilterService`, product SKU pre-filter):
+  - **Membership**: `initNamespace` + `add` + `mightContain` (present / absent)
+  - **Batch**: `addAll` / `mightContainAll`
+  - **Status and clear**: `status` / `segments` / `clear`
+- `BloomFilterDemoRunner` runs on startup; disable with `quickstart.bloomfilter.demo.enabled=false`
+- Minimal config: `peach.redis.bloom.enabled=true` (enabled by default) plus capacity/FPP settings, and `peach.redis.*`
+- Run: `mvn -pl peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart -am test`
+
+### Repeat Guard
+
+- Module: [`peach-redission-repeat-quickstart`](./peach-redission-repeat-quickstart/)
+- Dependencies: `peach-redission-repeat-starter` + `peach-redission-distributedlock-starter` + `peach-redis-common` (also `peach-redission-common`, `spring-boot-starter-aop`, `caffeine`)
+- Capability samples (order submit, public API is `@RepeatLimit`):
+  - **Same-key reject**: second submit with the same requestId throws `IllegalStateException`
+  - **Different-key isolation**: different requestIds do not interfere
+- `RepeatDemoRunner` runs on startup; disable with `quickstart.repeat.demo.enabled=false`
+- Run: `mvn -pl peach-middleware/peach-redission/peach-redission-repeat-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-middleware/peach-redission/peach-redission-repeat-quickstart -am test`
+
+`peach.redis.host` uses `host:port`. Quickstarts share defaults: `password` is empty by default (override via `PEACH_REDIS_PASSWORD`), `database=1`.
+
 ## Boundaries
 
 - Distributed locks protect the smallest critical section and do not replace database uniqueness, transactions or state validation.
