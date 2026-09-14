@@ -70,12 +70,15 @@ jobs:
           set -o pipefail
           mvn -B -ntp verify 2>&1 | tee maven-build.log
 
+      # Use -am only: -amd pulls business apps (e.g. peach-auth-service) that depend on
+      # starters, but does not recursively add their in-repo deps, so GitHub Actions then
+      # hits private HTTP Nexus and fails under maven-default-http-blocker.
       - name: Verify affected Maven reactor
         if: steps.scope.outputs.mode == 'affected'
         shell: bash
         run: |
           set -o pipefail
-          mvn -B -ntp -pl "${{ steps.scope.outputs.projects }}" -am -amd verify 2>&1 | tee maven-build.log
+          mvn -B -ntp -pl "${{ steps.scope.outputs.projects }}" -am verify 2>&1 | tee maven-build.log
 
       - name: Skip Maven for non-Java changes
         if: steps.scope.outputs.mode == 'none'
