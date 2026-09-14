@@ -33,11 +33,11 @@ The example lives in [`peach-openfeign-quickstart`](./peach-openfeign-quickstart
 | Timeout classification | Stub returns 408; ErrorDecoder maps it to `PeachFeignTimeoutException` |
 | Runner | `OpenFeignDemoRunner`; tests set `quickstart.openfeign.demo.enabled=false` |
 | Prerequisites | Same-Token, Sentinel, fallback fail-fast and retry are disabled so ErrorDecoder classification is visible |
-| Port | `18085` (stub and caller in-process) |
+| Port | Demo run defaults to `18085` (stub and caller in-process); tests use `RANDOM_PORT` + `local.server.port` |
 
 ```bash
-mvn -f peach-middleware/peach-openfeign/peach-openfeign-quickstart/pom.xml spring-boot:run
-mvn -f peach-middleware/peach-openfeign/peach-openfeign-quickstart/pom.xml test
+mvn -pl peach-middleware/peach-openfeign/peach-openfeign-quickstart -am spring-boot:run
+mvn -pl peach-middleware/peach-openfeign/peach-openfeign-quickstart -am test
 ```
 
 ## Boundaries

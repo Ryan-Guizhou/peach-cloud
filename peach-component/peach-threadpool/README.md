@@ -51,8 +51,8 @@ flowchart LR
 | 前置 | 无外部依赖 |
 
 ```bash
-mvn -f peach-component/peach-threadpool/peach-threadpool-quickstart/pom.xml spring-boot:run
-mvn -f peach-component/peach-threadpool/peach-threadpool-quickstart/pom.xml test
+mvn -pl peach-component/peach-threadpool/peach-threadpool-quickstart -am spring-boot:run
+mvn -pl peach-component/peach-threadpool/peach-threadpool-quickstart -am test
 ```
 
 新建阻塞 IO 异步能力继续优先使用 `peach-virtual-thread`。

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Template 方式：注入 {@link DistributedLockTemplate} 做编程式加锁与并发竞争。
@@ -48,6 +49,7 @@ public class InventoryTemplateLockExample {
         CountDownLatch start = new CountDownLatch(1);
         AtomicInteger success = new AtomicInteger();
         AtomicInteger failed = new AtomicInteger();
+        AtomicReference<Throwable> unexpected = new AtomicReference<>();
 
         Runnable worker = () -> {
             ready.countDown();
@@ -70,9 +72,16 @@ public class InventoryTemplateLockExample {
                             success.incrementAndGet();
                             return remain;
                         });
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                unexpected.compareAndSet(null, ex);
             } catch (Exception ex) {
-                failed.incrementAndGet();
-                log.info("compete worker failed: {}", ex.getMessage());
+                if (isLockAcquisitionFailure(ex)) {
+                    failed.incrementAndGet();
+                    log.info("compete worker failed to acquire lock: {}", ex.getMessage());
+                    return;
+                }
+                unexpected.compareAndSet(null, ex);
             }
         };
 
@@ -92,9 +101,18 @@ public class InventoryTemplateLockExample {
             throw new IllegalStateException("compete interrupted", ex);
         }
 
+        if (unexpected.get() != null) {
+            throw new IllegalStateException("compete worker failed unexpectedly", unexpected.get());
+        }
         log.info("compete result success={}, failed={}, remain={}", success.get(), failed.get(), stockStore.get(sku));
         if (success.get() != 1 || failed.get() != 1 || stockStore.get(sku) != 0) {
             throw new IllegalStateException("compete self-check failed");
         }
+    }
+
+    private static boolean isLockAcquisitionFailure(Throwable ex) {
+        return ex instanceof IllegalStateException
+                && ex.getMessage() != null
+                && ex.getMessage().contains("Failed to acquire distributed lock");
     }
 }

@@ -40,8 +40,8 @@
 | 端口 | 无 REST：`spring.main.web-application-type=none` |
 
 ```bash
-mvn -f peach-component/peach-initialize/peach-initialize-quickstart/pom.xml spring-boot:run
-mvn -f peach-component/peach-initialize/peach-initialize-quickstart/pom.xml test
+mvn -pl peach-component/peach-initialize/peach-initialize-quickstart -am spring-boot:run
+mvn -pl peach-component/peach-initialize/peach-initialize-quickstart -am test
 ```
 
 ## 边界

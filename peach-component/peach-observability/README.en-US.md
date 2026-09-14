@@ -46,8 +46,8 @@ The example lives in [`peach-observability-quickstart`](./peach-observability-qu
 | Port | `18086` |
 
 ```bash
-mvn -f peach-component/peach-observability/peach-observability-quickstart/pom.xml spring-boot:run
-mvn -f peach-component/peach-observability/peach-observability-quickstart/pom.xml test
+mvn -pl peach-component/peach-observability/peach-observability-quickstart -am spring-boot:run
+mvn -pl peach-component/peach-observability/peach-observability-quickstart -am test
 ```
 
 ## Boundaries

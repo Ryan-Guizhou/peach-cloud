@@ -127,8 +127,8 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
   - **消费幂等**：starter 默认 `InMemoryMqIdempotentStore`，同一键 `tryStart + markSuccess` 后再次 `tryStart` 被拒绝
 - 启动后 `RocketDemoRunner` 依次执行；关闭演示：`quickstart.rocket.demo.enabled=false`
 - 事务消息 / Outbox / Broker 队列级顺序需要真实 RocketMQ，不在本样例覆盖
-- 运行：`mvn -f peach-middleware/peach-rocket/peach-rocket-quickstart/pom.xml spring-boot:run`
-- 测试：`mvn -f peach-middleware/peach-rocket/peach-rocket-quickstart/pom.xml test`
+- 运行：`mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am test`
 
 Quickstart 将 `peach.rocket.enabled` 设为 `false` 并排除 `RocketMQAutoConfiguration`，避免启动期连接 Broker。业务接入仍按上方配置开启 starter。
 

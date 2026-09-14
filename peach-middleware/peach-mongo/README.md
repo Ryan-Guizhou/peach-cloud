@@ -33,8 +33,8 @@
 | 前置 | 本地 Mongo 或 `PEACH_MONGO_URI` |
 
 ```bash
-mvn -f peach-middleware/peach-mongo/peach-mongo-quickstart/pom.xml spring-boot:run
-mvn -f peach-middleware/peach-mongo/peach-mongo-quickstart/pom.xml test
+mvn -pl peach-middleware/peach-mongo/peach-mongo-quickstart -am spring-boot:run
+mvn -pl peach-middleware/peach-mongo/peach-mongo-quickstart -am test
 ```
 
 MongoDB URI、账号和密码只通过本地配置或环境变量提供。

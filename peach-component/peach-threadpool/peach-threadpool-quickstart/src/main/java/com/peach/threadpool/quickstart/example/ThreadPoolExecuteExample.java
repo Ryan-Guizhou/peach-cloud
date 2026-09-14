@@ -59,12 +59,16 @@ public class ThreadPoolExecuteExample {
      * 向 IO 池 {@code submit} 一个 Runnable，并等待 {@link Future} 完成。
      */
     public void submitRunnable() {
+        Runnable noop = () -> {
+        };
+        Future<?> future = threadPoolManager.submit(PoolType.IO, noop);
         try {
-            Runnable noop = () -> {
-            };
-            Future<?> future = threadPoolManager.submit(PoolType.IO, noop);
             future.get(AWAIT_SECONDS, TimeUnit.SECONDS);
             log.info("submit runnable finished");
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            future.cancel(true);
+            throw new IllegalStateException("submit runnable interrupted", ex);
         } catch (Exception ex) {
             throw new IllegalStateException("submit runnable failed", ex);
         }

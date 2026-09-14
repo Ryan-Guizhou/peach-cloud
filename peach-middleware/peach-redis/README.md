@@ -40,8 +40,8 @@ flowchart LR
   - **Hash**：用户资料批量写入、按字段读取与字段删除
   - **Set**：用户标签添加 / 列表 / 移除
 - 启动后 `RedisToolDemoRunner` 依次执行；关闭演示：`quickstart.redis-tool.demo.enabled=false`
-- 运行：`mvn -f peach-middleware/peach-redis/peach-redis-tool-quickstart/pom.xml spring-boot:run`
-- 测试：`mvn -f peach-middleware/peach-redis/peach-redis-tool-quickstart/pom.xml test`
+- 运行：`mvn -pl peach-middleware/peach-redis/peach-redis-tool-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-middleware/peach-redis/peach-redis-tool-quickstart -am test`
 
 ### MultiCache
 
@@ -52,8 +52,8 @@ flowchart LR
   - **注解**：`@EnableCaching` + `@Cacheable` / `@CacheEvict`，同样走该 `CacheManager`
 - 启动后 `MulticacheDemoRunner` 依次跑上述演示；测试用 `InMemoryProductStore#loadCount` 与 `clearLocal` 证明命中路径
 - 最小配置：`peach.multicache.enabled=true`、`peach.multicache.cache-names`（`product-manager` / `product-annotation`），以及 `peach.redis.*`
-- 运行：`mvn -f peach-middleware/peach-redis/peach-redis-multicache-quickstart/pom.xml spring-boot:run`
-- 测试：`mvn -f peach-middleware/peach-redis/peach-redis-multicache-quickstart/pom.xml test`
+- 运行：`mvn -pl peach-middleware/peach-redis/peach-redis-multicache-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-middleware/peach-redis/peach-redis-multicache-quickstart -am test`
 - 关闭启动演示：`quickstart.multicache.demo.enabled=false`
 
 ### Stream
@@ -64,10 +64,10 @@ flowchart LR
   - **幂等**：同一 `RecordId` 回放时业务侧去重（accepted=1 / duplicate=1）
 - 启动后 `RedisStreamDemoRunner` 执行；关闭演示：`quickstart.stream.demo.enabled=false`
 - 最小配置：`peach.redis.stream.enable=true`（`consumer-type=group`），以及 `peach.redis.*`
-- 运行：`mvn -f peach-middleware/peach-redis/peach-redis-stream-quickstart/pom.xml spring-boot:run`
-- 测试：`mvn -f peach-middleware/peach-redis/peach-redis-stream-quickstart/pom.xml test`
+- 运行：`mvn -pl peach-middleware/peach-redis/peach-redis-stream-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-middleware/peach-redis/peach-redis-stream-quickstart -am test`
 
-`peach.redis.host` 格式为 `host:port`。Quickstart 统一默认：`password=${PEACH_REDIS_PASSWORD:123456}`、`database=1`（可用环境变量覆盖）。
+`peach.redis.host` 格式为 `host:port`。Quickstart 统一默认：`password` 默认为空（通过 `PEACH_REDIS_PASSWORD` 覆盖）、`database=1`。
 
 ## 边界
 

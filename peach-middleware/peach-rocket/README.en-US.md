@@ -127,8 +127,8 @@ Prefer explicit `@Bean` overrides for in-memory idempotency and in-memory Outbox
   - **Consume idempotency**: starter default `InMemoryMqIdempotentStore`; a second `tryStart` after `tryStart + markSuccess` is rejected
 - `RocketDemoRunner` runs these on startup; disable with `quickstart.rocket.demo.enabled=false`
 - Transaction messages, Outbox, and broker-level queue ordering require a real RocketMQ and are not covered here
-- Run: `mvn -f peach-middleware/peach-rocket/peach-rocket-quickstart/pom.xml spring-boot:run`
-- Test: `mvn -f peach-middleware/peach-rocket/peach-rocket-quickstart/pom.xml test`
+- Run: `mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am test`
 
 The quickstart sets `peach.rocket.enabled` to `false` and excludes `RocketMQAutoConfiguration` so startup does not contact a broker. Business integration should still enable the starter with the configuration above.
 

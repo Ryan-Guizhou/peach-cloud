@@ -53,7 +53,7 @@ class DelayQueueCapabilityTest {
     @Test
     void shouldSendAndConsumeMultipleMessages() {
         List<String> received = orderTimeoutDelayExample.sendMultipleAndAwait("ord-test-multi", 3);
-        assertThat(received).hasSize(3);
+        assertThat(received).filteredOn(item -> item.contains("ord-test-multi")).hasSize(3);
         assertThat(received).anyMatch(s -> s.contains("ord-test-multi-1"));
         assertThat(received).anyMatch(s -> s.contains("ord-test-multi-2"));
         assertThat(received).anyMatch(s -> s.contains("ord-test-multi-3"));

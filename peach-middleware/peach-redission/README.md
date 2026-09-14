@@ -38,8 +38,8 @@ flowchart LR
   - **Template**：注入 `DistributedLockTemplate` 编程式扣库存
   - **并发证明**：双线程短 `waitTime` 竞争同一把锁（1 成功 / 1 失败）
 - 启动后 `DistributedLockDemoRunner` 执行；关闭演示：`quickstart.distributedlock.demo.enabled=false`
-- 运行：`mvn -f peach-middleware/peach-redission/peach-redission-distributedlock-quickstart/pom.xml spring-boot:run`
-- 测试：`mvn -f peach-middleware/peach-redission/peach-redission-distributedlock-quickstart/pom.xml test`
+- 运行：`mvn -pl peach-middleware/peach-redission/peach-redission-distributedlock-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-middleware/peach-redission/peach-redission-distributedlock-quickstart -am test`
 
 ### Delay Queue
 
@@ -49,8 +49,8 @@ flowchart LR
   - **多消息**：可靠队列配置下连续投递多条并全部消费确认
 - 启动后 `DelayQueueDemoRunner` 执行；关闭演示：`quickstart.delayqueue.demo.enabled=false`
 - 最小配置：`peach.delay.queue.*`（示例 `isolation-region-count=1`、`use-reliable-queue=true`），以及 `peach.redis.*`；消费初始化依赖 `peach-initialize-starter`
-- 运行：`mvn -f peach-middleware/peach-redission/peach-redission-delayqueue-quickstart/pom.xml spring-boot:run`
-- 测试：`mvn -f peach-middleware/peach-redission/peach-redission-delayqueue-quickstart/pom.xml test`
+- 运行：`mvn -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am test`
 
 ### Bloom Filter
 
@@ -61,8 +61,8 @@ flowchart LR
   - **状态与清理**：`status` / `segments` / `clear`
 - 启动后 `BloomFilterDemoRunner` 依次执行；关闭演示：`quickstart.bloomfilter.demo.enabled=false`
 - 最小配置：`peach.redis.bloom.enabled=true`（缺省启用）及容量/FPP 等，以及 `peach.redis.*`
-- 运行：`mvn -f peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart/pom.xml spring-boot:run`
-- 测试：`mvn -f peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart/pom.xml test`
+- 运行：`mvn -pl peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart -am test`
 
 ### Repeat Guard
 
@@ -72,10 +72,10 @@ flowchart LR
   - **同 key 拒绝**：同一 requestId 第二次提交抛出 `IllegalStateException`
   - **不同 key 隔离**：不同 requestId 互不影响
 - 启动后 `RepeatDemoRunner` 执行；关闭演示：`quickstart.repeat.demo.enabled=false`
-- 运行：`mvn -f peach-middleware/peach-redission/peach-redission-repeat-quickstart/pom.xml spring-boot:run`
-- 测试：`mvn -f peach-middleware/peach-redission/peach-redission-repeat-quickstart/pom.xml test`
+- 运行：`mvn -pl peach-middleware/peach-redission/peach-redission-repeat-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-middleware/peach-redission/peach-redission-repeat-quickstart -am test`
 
-`peach.redis.host` 格式为 `host:port`。Quickstart 统一默认：`password=${PEACH_REDIS_PASSWORD:123456}`、`database=1`（可用环境变量覆盖）。
+`peach.redis.host` 格式为 `host:port`。Quickstart 统一默认：`password` 默认为空（通过 `PEACH_REDIS_PASSWORD` 覆盖）、`database=1`。
 
 ## 边界
 

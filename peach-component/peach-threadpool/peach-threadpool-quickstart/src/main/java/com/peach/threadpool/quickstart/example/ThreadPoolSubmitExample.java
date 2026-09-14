@@ -35,13 +35,17 @@ public class ThreadPoolSubmitExample {
      * @return 任务结果与工作线程名
      */
     public SubmitObservation submitCallable(String payload) {
+        Future<SubmitObservation> future = threadPoolManager.submit(PoolType.IO, () ->
+                new SubmitObservation(payload, Thread.currentThread().getName()));
         try {
-            Future<SubmitObservation> future = threadPoolManager.submit(PoolType.IO, () ->
-                    new SubmitObservation(payload, Thread.currentThread().getName()));
             SubmitObservation observed = future.get(AWAIT_SECONDS, TimeUnit.SECONDS);
             log.info("submit callable finished, payload={}, workerThread={}",
                     observed.getPayload(), observed.getThreadName());
             return observed;
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            future.cancel(true);
+            throw new IllegalStateException("submit callable interrupted", ex);
         } catch (Exception ex) {
             throw new IllegalStateException("submit callable failed", ex);
         }

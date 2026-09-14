@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(properties = {
         "quickstart.scheduler.demo.enabled=false",
+        "peach.scheduler.quickstart.local-mode=true",
         "peach.rocket.enabled=false"
 })
 class SchedulerCapabilityTest {

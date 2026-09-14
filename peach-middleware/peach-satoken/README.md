@@ -33,11 +33,11 @@ flowchart LR
 | 前置 | 无需 Redis |
 
 ```bash
-mvn -f peach-middleware/peach-satoken/peach-satoken-quickstart/pom.xml spring-boot:run
-mvn -f peach-middleware/peach-satoken/peach-satoken-quickstart/pom.xml test
+mvn -pl peach-middleware/peach-satoken/peach-satoken-quickstart -am spring-boot:run
+mvn -pl peach-middleware/peach-satoken/peach-satoken-quickstart -am test
 ```
 
-开发占位密码可通过 `PEACH_SATOKEN_DEMO_PASSWORD` 覆盖；禁止写入生产密钥。
+启动前必须设置 `PEACH_SATOKEN_DEMO_PASSWORD`（或 `quickstart.satoken.demo.password`），无默认值。测试通过测试属性注入该值。禁止写入生产密钥。
 
 ## 边界
 

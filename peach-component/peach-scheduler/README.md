@@ -176,13 +176,13 @@ public class SchedulerExecutionConsumer implements MqMessageHandler<JobExecution
 - **JobHandler / `@PeachJob`**：`DemoCleanupJob` 直接执行并完成注册
 - **Claim 门闩**：内存 `ExecutionLeaseClient` 先允许再拒绝
 - **PeachJobExecutor 编排**：`command -> claim -> handler -> reporter`；Claim 失败时不执行 Handler、不上报
-- 内存桩：`DemoExecutionLeaseClient` / `DemoExecutionResultReporter`（生产由 Feign + RocketMQ Outbox 覆盖）
+- 内存桩：`DemoExecutionLeaseClient` / `DemoExecutionResultReporter`（`peach.scheduler.quickstart.local-mode=true`，缺省即本地模式；设为 `false` 时不注册，以便 RocketMQ Reporter 装配）
 - `DemoSchedulerExecutionConsumer` 仅作生产接线样例，默认 `peach.rocket.enabled=false` 不装配
 - `SchedulerDemoRunner` 默认关闭；打开演示：`quickstart.scheduler.demo.enabled=true`
 - 测试：无容器切片 `SchedulerSliceTest` + 少量集成 `SchedulerCapabilityTest`
 
 ```bash
-mvn -f peach-component/peach-scheduler/peach-scheduler-quickstart/pom.xml test
+mvn -pl peach-component/peach-scheduler/peach-scheduler-quickstart -am test
 ```
 
 ## 配置说明

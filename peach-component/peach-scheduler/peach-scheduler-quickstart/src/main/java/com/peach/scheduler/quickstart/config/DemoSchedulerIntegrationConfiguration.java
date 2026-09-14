@@ -3,12 +3,14 @@ package com.peach.scheduler.quickstart.config;
 import com.peach.scheduler.transport.ExecutionLeaseClient;
 import com.peach.scheduler.transport.ExecutionResultReporter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Indexed;
 
 /**
  * 本地集成桩：提供 Claim 与结果上报，使 {@code PeachJobExecutor} 能在无控制面 / 无 MQ 时装配。
+ * {@code peach.scheduler.quickstart.local-mode=false} 时不注册，以便 RocketMQ Reporter 装配。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Indexed;
  */
 @Indexed
 @Configuration
+@ConditionalOnProperty(name = "peach.scheduler.quickstart.local-mode", havingValue = "true", matchIfMissing = true)
 public class DemoSchedulerIntegrationConfiguration {
 
     /**

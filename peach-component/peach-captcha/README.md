@@ -50,8 +50,8 @@ flowchart LR
 | 前置 | 无需 Redis |
 
 ```bash
-mvn -f peach-component/peach-captcha/peach-captcha-quickstart/pom.xml spring-boot:run
-mvn -f peach-component/peach-captcha/peach-captcha-quickstart/pom.xml test
+mvn -pl peach-component/peach-captcha/peach-captcha-quickstart -am spring-boot:run
+mvn -pl peach-component/peach-captcha/peach-captcha-quickstart -am test
 ```
 
 ## 边界

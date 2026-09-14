@@ -40,8 +40,8 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
   - **Hash**: user profile write-all, field get, field delete
   - **Set**: user tags add / list / remove
 - `RedisToolDemoRunner` runs the demos on startup; disable with `quickstart.redis-tool.demo.enabled=false`
-- Run: `mvn -f peach-middleware/peach-redis/peach-redis-tool-quickstart/pom.xml spring-boot:run`
-- Test: `mvn -f peach-middleware/peach-redis/peach-redis-tool-quickstart/pom.xml test`
+- Run: `mvn -pl peach-middleware/peach-redis/peach-redis-tool-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-middleware/peach-redis/peach-redis-tool-quickstart -am test`
 
 ### MultiCache
 
@@ -52,8 +52,8 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
   - **Annotation**: `@EnableCaching` + `@Cacheable` / `@CacheEvict` on the same `CacheManager`
 - `MulticacheDemoRunner` runs the demos on startup; tests use `InMemoryProductStore#loadCount` and `clearLocal` to prove the hit path
 - Minimal config: `peach.multicache.enabled=true`, `peach.multicache.cache-names` (`product-manager` / `product-annotation`), plus `peach.redis.*`
-- Run: `mvn -f peach-middleware/peach-redis/peach-redis-multicache-quickstart/pom.xml spring-boot:run`
-- Test: `mvn -f peach-middleware/peach-redis/peach-redis-multicache-quickstart/pom.xml test`
+- Run: `mvn -pl peach-middleware/peach-redis/peach-redis-multicache-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-middleware/peach-redis/peach-redis-multicache-quickstart -am test`
 - Disable startup demo: `quickstart.multicache.demo.enabled=false`
 
 ### Stream
@@ -64,10 +64,10 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
   - **Idempotency**: replay the same `RecordId` and skip duplicates in business code (accepted=1 / duplicate=1)
 - `RedisStreamDemoRunner` runs on startup; disable with `quickstart.stream.demo.enabled=false`
 - Minimal config: `peach.redis.stream.enable=true` (`consumer-type=group`), plus `peach.redis.*`
-- Run: `mvn -f peach-middleware/peach-redis/peach-redis-stream-quickstart/pom.xml spring-boot:run`
-- Test: `mvn -f peach-middleware/peach-redis/peach-redis-stream-quickstart/pom.xml test`
+- Run: `mvn -pl peach-middleware/peach-redis/peach-redis-stream-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-middleware/peach-redis/peach-redis-stream-quickstart -am test`
 
-`peach.redis.host` uses `host:port`. Quickstarts share defaults: `password=${PEACH_REDIS_PASSWORD:123456}`, `database=1` (override via env vars).
+`peach.redis.host` uses `host:port`. Quickstarts share defaults: `password` is empty by default (override via `PEACH_REDIS_PASSWORD`), `database=1`.
 
 ## Boundaries
 

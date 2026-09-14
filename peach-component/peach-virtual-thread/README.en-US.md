@@ -105,8 +105,8 @@ public class UserQueryService {
 | Port | No REST: `spring.main.web-application-type=none` |
 
 ```bash
-mvn -f peach-component/peach-virtual-thread/peach-virtual-thread-quickstart/pom.xml spring-boot:run
-mvn -f peach-component/peach-virtual-thread/peach-virtual-thread-quickstart/pom.xml test
+mvn -pl peach-component/peach-virtual-thread/peach-virtual-thread-quickstart -am spring-boot:run
+mvn -pl peach-component/peach-virtual-thread/peach-virtual-thread-quickstart -am test
 ```
 
 <!-- doc-sync:api-choice -->

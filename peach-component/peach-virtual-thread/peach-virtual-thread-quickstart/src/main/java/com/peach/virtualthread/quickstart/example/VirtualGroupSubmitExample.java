@@ -38,13 +38,17 @@ public class VirtualGroupSubmitExample {
      * @return 分组提交观察结果
      */
     public SubmitObservation submitCallable(String payload) {
+        Future<SubmitObservation> future = databaseExecutor.submit(() ->
+                new SubmitObservation(payload, Thread.currentThread().getName(), databaseExecutor.groupName()));
         try {
-            Future<SubmitObservation> future = databaseExecutor.submit(() ->
-                    new SubmitObservation(payload, Thread.currentThread().getName(), databaseExecutor.groupName()));
             SubmitObservation observed = future.get(AWAIT_SECONDS, TimeUnit.SECONDS);
             log.info("grouped submit finished, payload={}, workerThread={}, group={}",
                     observed.getPayload(), observed.getThreadName(), observed.getGroupName());
             return observed;
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            future.cancel(true);
+            throw new IllegalStateException("grouped submit interrupted", ex);
         } catch (Exception ex) {
             throw new IllegalStateException("grouped submit failed", ex);
         }

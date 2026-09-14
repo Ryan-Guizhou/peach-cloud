@@ -24,9 +24,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @CreateTime 2026/9/11 19:10
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "quickstart.satoken.demo.enabled=false")
+        properties = {
+                "quickstart.satoken.demo.enabled=false",
+                "quickstart.satoken.demo.password=" + SaTokenCapabilityTest.TEST_DEMO_PASSWORD
+        })
 @AutoConfigureMockMvc
 class SaTokenCapabilityTest {
+
+    static final String TEST_DEMO_PASSWORD = "satoken-capability-test";
 
     @Autowired
     private MockMvc mockMvc;
@@ -68,7 +73,7 @@ class SaTokenCapabilityTest {
     private TokenHolder login() throws Exception {
         MvcResult loginResult = mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"demo\",\"password\":\"demo-password\"}"))
+                        .content("{\"username\":\"demo\",\"password\":\"" + TEST_DEMO_PASSWORD + "\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tokenValue").isNotEmpty())
                 .andReturn();

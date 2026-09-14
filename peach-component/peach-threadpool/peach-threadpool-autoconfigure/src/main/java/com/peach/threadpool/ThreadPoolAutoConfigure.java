@@ -21,7 +21,7 @@ import org.springframework.context.annotation.Bean;
 public class ThreadPoolAutoConfigure {
 
     @Bean
-    @ConditionalOnMissingBean(ThreadPoolProperties.class)
+    @ConditionalOnMissingBean(ThreadPoolManager.class)
     public ThreadPoolManager threadPoolManager(ThreadPoolProperties threadPoolProperties) {
         return new ThreadPoolManager(threadPoolProperties);
     }

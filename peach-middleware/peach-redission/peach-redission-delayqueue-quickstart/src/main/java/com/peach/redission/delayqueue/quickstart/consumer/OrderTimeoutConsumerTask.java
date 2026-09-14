@@ -33,18 +33,24 @@ public class OrderTimeoutConsumerTask implements ConsumerTask {
 
     @Override
     public void execute(String content) {
-        String filter = expectContains.get();
-        if (filter != null && (content == null || !content.contains(filter))) {
-            log.info("order-timeout ignored by filter, content={}", content);
-            return;
-        }
         lastContent.set(content);
         received.add(content);
+        log.info("order-timeout consumed, content={}", content);
+        countDownIfCorrelated(content);
+    }
+
+    /**
+     * 消费与测试等待解耦：每条消息都处理，latch 只等待关联内容。
+     */
+    private void countDownIfCorrelated(String content) {
+        String filter = expectContains.get();
+        if (filter != null && (content == null || !content.contains(filter))) {
+            return;
+        }
         CountDownLatch latch = latchRef.get();
         if (latch != null) {
             latch.countDown();
         }
-        log.info("order-timeout consumed, content={}", content);
     }
 
     @Override

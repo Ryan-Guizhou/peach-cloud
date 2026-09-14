@@ -41,8 +41,8 @@ Supply provider credentials through environment variables, configuration service
   - **Attachment**: `EmailMessage` carries an `Attachment` with byte content; the mock records the count
 - `EmailDemoRunner` runs these on startup; disable with `quickstart.email.demo.enabled=false`
 - Port: no REST (`web-application-type=none`)
-- Run: `mvn -f peach-component/peach-email/peach-email-quickstart/pom.xml spring-boot:run`
-- Test: `mvn -f peach-component/peach-email/peach-email-quickstart/pom.xml test`
+- Run: `mvn -pl peach-component/peach-email/peach-email-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-component/peach-email/peach-email-quickstart -am test`
 
 Continue to supply SMTP credentials via environment variables or configuration services. The QuickStart stores no real credentials. Template rendering does not happen inside `sendAuto`; this sample sets HTML directly.
 

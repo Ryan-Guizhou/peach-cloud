@@ -46,8 +46,8 @@ Peach 公开入口是 `RequestIdResolver` / `RequestIdGenerator` 与 Servlet `Re
 | 端口 | `18086` |
 
 ```bash
-mvn -f peach-component/peach-observability/peach-observability-quickstart/pom.xml spring-boot:run
-mvn -f peach-component/peach-observability/peach-observability-quickstart/pom.xml test
+mvn -pl peach-component/peach-observability/peach-observability-quickstart -am spring-boot:run
+mvn -pl peach-component/peach-observability/peach-observability-quickstart -am test
 ```
 
 ## 边界

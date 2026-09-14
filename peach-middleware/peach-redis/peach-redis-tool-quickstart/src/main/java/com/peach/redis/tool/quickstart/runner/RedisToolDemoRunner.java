@@ -45,7 +45,9 @@ public class RedisToolDemoRunner implements ApplicationRunner {
         log.info("=== Session String + TTL demo ===");
         sessionStringExample.delete("s-1001");
         sessionStringExample.save("s-1001", "token-abc", Duration.ofMinutes(30));
-        log.info("session exists={}, value={}", sessionStringExample.exists("s-1001"), sessionStringExample.get("s-1001"));
+        String token = sessionStringExample.get("s-1001");
+        log.info("session exists={}, tokenPresent={}, tokenLength={}",
+                sessionStringExample.exists("s-1001"), token != null, token == null ? 0 : token.length());
         sessionStringExample.delete("s-1001");
         log.info("session after delete exists={}", sessionStringExample.exists("s-1001"));
     }

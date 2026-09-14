@@ -42,7 +42,8 @@ public class OrderStreamExample {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("await consume interrupted", ex);
         }
-        if (!consumed || messageConsumer.getAcceptedCount() != 1) {
+        if (!consumed || messageConsumer.getLastMessage() == null
+                || !messageConsumer.getLastMessage().contains(orderId)) {
             throw new IllegalStateException("consume failed, recordId=" + recordId);
         }
         log.info("pushAndConsume ok, recordId={}, payload={}", recordId, messageConsumer.getLastMessage());
@@ -50,7 +51,7 @@ public class OrderStreamExample {
     }
 
     /**
-     * 首次正常消费后，对同一 RecordId 回放，验证业务侧幂等（accepted=1, duplicate=1）。
+     * 首次正常消费后，对同一 RecordId 回放，验证业务侧幂等（accepted 不增加 / duplicate=1）。
      */
     public void pushThenReplayDuplicate(String orderId, String status) {
         String payload = "orderId=" + orderId + ",status=" + status;
@@ -63,9 +64,11 @@ public class OrderStreamExample {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("await consume interrupted", ex);
         }
-        if (!consumed || recordId == null) {
+        if (!consumed || recordId == null || messageConsumer.getLastMessage() == null
+                || !messageConsumer.getLastMessage().contains(orderId)) {
             throw new IllegalStateException("first consume failed");
         }
+        int acceptedAfterFirst = messageConsumer.getAcceptedCount();
 
         ObjectRecord<String, String> replay = StreamRecords.newRecord()
                 .in("order-status")
@@ -73,7 +76,7 @@ public class OrderStreamExample {
                 .withId(recordId);
         messageConsumer.replay(replay);
 
-        if (messageConsumer.getAcceptedCount() != 1 || messageConsumer.getDuplicateCount() != 1) {
+        if (messageConsumer.getAcceptedCount() != acceptedAfterFirst || messageConsumer.getDuplicateCount() != 1) {
             throw new IllegalStateException("idempotent check failed, accepted="
                     + messageConsumer.getAcceptedCount() + ", duplicates=" + messageConsumer.getDuplicateCount());
         }

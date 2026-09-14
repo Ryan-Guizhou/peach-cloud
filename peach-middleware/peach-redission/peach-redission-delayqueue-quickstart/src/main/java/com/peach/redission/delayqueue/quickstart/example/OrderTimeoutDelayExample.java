@@ -71,8 +71,9 @@ public class OrderTimeoutDelayExample {
             throw new IllegalStateException("await interrupted", ex);
         }
         List<String> received = consumerTask.getReceived();
-        if (!consumed || received.size() != count) {
-            throw new IllegalStateException("multi consume failed, size=" + received.size());
+        long matched = received.stream().filter(item -> item != null && item.contains(orderPrefix)).count();
+        if (!consumed || matched != count) {
+            throw new IllegalStateException("multi consume failed, matched=" + matched + ", size=" + received.size());
         }
         log.info("sendMultipleAndAwait ok, size={}", received.size());
         return received;

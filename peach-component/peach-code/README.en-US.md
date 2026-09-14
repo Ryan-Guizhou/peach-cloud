@@ -87,8 +87,8 @@ Redis unavailable
   - **Isolation**: `T001/MENU`, `T001/NOTICE`, and `T002/MENU` keep independent sequences
   - **Invalid input**: unsupported tenant or prefix characters throw `CodeGeneratorException`
 - `CodeDemoRunner` runs on startup; disable with `quickstart.code.demo.enabled=false`
-- Run: `mvn -f peach-component/peach-code/peach-code-quickstart/pom.xml spring-boot:run`
-- Test: `mvn -f peach-component/peach-code/peach-code-quickstart/pom.xml test`
+- Run: `mvn -pl peach-component/peach-code/peach-code-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-component/peach-code/peach-code-quickstart -am test`
 
 Production use still needs `PEACH_CODE_RULE`, a datasource, and optional Redis (`peach.code.redis-enabled=true`).
 

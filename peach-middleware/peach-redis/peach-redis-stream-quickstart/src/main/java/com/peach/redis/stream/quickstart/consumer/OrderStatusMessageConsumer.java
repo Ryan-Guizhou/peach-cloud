@@ -37,11 +37,6 @@ public class OrderStatusMessageConsumer implements MessageConsumer {
     public void accept(ObjectRecord<String, String> message) {
         String recordId = message.getId() == null ? null : message.getId().getValue();
         String payload = message.getValue();
-        String filter = expectContains.get();
-        if (filter != null && (payload == null || !payload.contains(filter))) {
-            log.info("stream ignored by filter, recordId={}", recordId);
-            return;
-        }
         if (recordId != null && !seenRecordIds.add(recordId)) {
             duplicateCount.incrementAndGet();
             log.info("stream duplicate skipped, recordId={}", recordId);
@@ -50,15 +45,26 @@ public class OrderStatusMessageConsumer implements MessageConsumer {
         lastRecordId.set(recordId);
         lastMessage.set(payload);
         acceptedCount.incrementAndGet();
+        log.info("stream consumed, recordId={}, payload={}", recordId, payload);
+        countDownIfCorrelated(payload);
+    }
+
+    /**
+     * 消费与测试等待解耦：每条消息都处理，latch 只等待关联 payload。
+     */
+    private void countDownIfCorrelated(String payload) {
+        String filter = expectContains.get();
+        if (filter != null && (payload == null || !payload.contains(filter))) {
+            return;
+        }
         CountDownLatch latch = latchRef.get();
         if (latch != null) {
             latch.countDown();
         }
-        log.info("stream consumed, recordId={}, payload={}", recordId, payload);
     }
 
     /**
-     * 重置统计，仅接受 payload 包含指定片段的消息。
+     * 重置统计，并按 payload 片段关联等待（仍处理全部消息）。
      */
     public void resetForExpect(int expected, String payloadContains) {
         lastMessage.set(null);

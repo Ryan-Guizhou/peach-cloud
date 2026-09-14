@@ -40,8 +40,8 @@ The example lives in [`peach-initialize-quickstart`](./peach-initialize-quicksta
 | Port | No REST: `spring.main.web-application-type=none` |
 
 ```bash
-mvn -f peach-component/peach-initialize/peach-initialize-quickstart/pom.xml spring-boot:run
-mvn -f peach-component/peach-initialize/peach-initialize-quickstart/pom.xml test
+mvn -pl peach-component/peach-initialize/peach-initialize-quickstart -am spring-boot:run
+mvn -pl peach-component/peach-initialize/peach-initialize-quickstart -am test
 ```
 
 ## Boundaries

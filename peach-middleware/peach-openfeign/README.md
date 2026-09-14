@@ -33,11 +33,11 @@ flowchart LR
 | 超时分类 | Stub 返回 408，ErrorDecoder 转为 `PeachFeignTimeoutException` |
 | Runner | `OpenFeignDemoRunner`；测试设 `quickstart.openfeign.demo.enabled=false` |
 | 前置 | 已关闭 Same-Token、Sentinel、fallback 启动强校验与重试，以便直接观察 ErrorDecoder 分类 |
-| 端口 | `18085`（Stub 与调用方同进程） |
+| 端口 | 演示运行默认 `18085`（Stub 与调用方同进程）；测试使用 `RANDOM_PORT` + `local.server.port` |
 
 ```bash
-mvn -f peach-middleware/peach-openfeign/peach-openfeign-quickstart/pom.xml spring-boot:run
-mvn -f peach-middleware/peach-openfeign/peach-openfeign-quickstart/pom.xml test
+mvn -pl peach-middleware/peach-openfeign/peach-openfeign-quickstart -am spring-boot:run
+mvn -pl peach-middleware/peach-openfeign/peach-openfeign-quickstart -am test
 ```
 
 ## 边界

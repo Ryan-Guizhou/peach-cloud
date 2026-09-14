@@ -42,4 +42,4 @@ quickstart:
       enabled: true
       # Documented development login only; not a production credential.
       username: demo
-      password: ${PEACH_SATOKEN_DEMO_PASSWORD:demo-password}
+      password: ${PEACH_SATOKEN_DEMO_PASSWORD}

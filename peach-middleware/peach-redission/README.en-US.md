@@ -38,8 +38,8 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
   - **Template**: inject `DistributedLockTemplate` for programmatic deduct
   - **Concurrency proof**: two threads compete with short `waitTime` (1 success / 1 failure)
 - `DistributedLockDemoRunner` runs on startup; disable with `quickstart.distributedlock.demo.enabled=false`
-- Run: `mvn -f peach-middleware/peach-redission/peach-redission-distributedlock-quickstart/pom.xml spring-boot:run`
-- Test: `mvn -f peach-middleware/peach-redission/peach-redission-distributedlock-quickstart/pom.xml test`
+- Run: `mvn -pl peach-middleware/peach-redission/peach-redission-distributedlock-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-middleware/peach-redission/peach-redission-distributedlock-quickstart -am test`
 
 ### Delay Queue
 
@@ -49,8 +49,8 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
   - **Multi message**: under reliable-queue config, send several messages and confirm all are consumed
 - `DelayQueueDemoRunner` runs on startup; disable with `quickstart.delayqueue.demo.enabled=false`
 - Minimal config: `peach.delay.queue.*` (example uses `isolation-region-count=1`, `use-reliable-queue=true`) plus `peach.redis.*`; consumer bootstrap needs `peach-initialize-starter`
-- Run: `mvn -f peach-middleware/peach-redission/peach-redission-delayqueue-quickstart/pom.xml spring-boot:run`
-- Test: `mvn -f peach-middleware/peach-redission/peach-redission-delayqueue-quickstart/pom.xml test`
+- Run: `mvn -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am test`
 
 ### Bloom Filter
 
@@ -61,8 +61,8 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
   - **Status and clear**: `status` / `segments` / `clear`
 - `BloomFilterDemoRunner` runs on startup; disable with `quickstart.bloomfilter.demo.enabled=false`
 - Minimal config: `peach.redis.bloom.enabled=true` (enabled by default) plus capacity/FPP settings, and `peach.redis.*`
-- Run: `mvn -f peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart/pom.xml spring-boot:run`
-- Test: `mvn -f peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart/pom.xml test`
+- Run: `mvn -pl peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart -am test`
 
 ### Repeat Guard
 
@@ -72,10 +72,10 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
   - **Same-key reject**: second submit with the same requestId throws `IllegalStateException`
   - **Different-key isolation**: different requestIds do not interfere
 - `RepeatDemoRunner` runs on startup; disable with `quickstart.repeat.demo.enabled=false`
-- Run: `mvn -f peach-middleware/peach-redission/peach-redission-repeat-quickstart/pom.xml spring-boot:run`
-- Test: `mvn -f peach-middleware/peach-redission/peach-redission-repeat-quickstart/pom.xml test`
+- Run: `mvn -pl peach-middleware/peach-redission/peach-redission-repeat-quickstart -am spring-boot:run`
+- Test: `mvn -pl peach-middleware/peach-redission/peach-redission-repeat-quickstart -am test`
 
-`peach.redis.host` uses `host:port`. Quickstarts share defaults: `password=${PEACH_REDIS_PASSWORD:123456}`, `database=1` (override via env vars).
+`peach.redis.host` uses `host:port`. Quickstarts share defaults: `password` is empty by default (override via `PEACH_REDIS_PASSWORD`), `database=1`.
 
 ## Boundaries
 

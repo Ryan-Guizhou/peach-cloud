@@ -51,8 +51,8 @@ The example lives in [`peach-threadpool-quickstart`](./peach-threadpool-quicksta
 | Prerequisites | No external dependencies |
 
 ```bash
-mvn -f peach-component/peach-threadpool/peach-threadpool-quickstart/pom.xml spring-boot:run
-mvn -f peach-component/peach-threadpool/peach-threadpool-quickstart/pom.xml test
+mvn -pl peach-component/peach-threadpool/peach-threadpool-quickstart -am spring-boot:run
+mvn -pl peach-component/peach-threadpool/peach-threadpool-quickstart -am test
 ```
 
 Continue to prefer `peach-virtual-thread` for new blocking-I/O asynchronous work.

@@ -33,11 +33,11 @@ The example lives in [`peach-satoken-quickstart`](./peach-satoken-quickstart/). 
 | Prerequisites | No Redis |
 
 ```bash
-mvn -f peach-middleware/peach-satoken/peach-satoken-quickstart/pom.xml spring-boot:run
-mvn -f peach-middleware/peach-satoken/peach-satoken-quickstart/pom.xml test
+mvn -pl peach-middleware/peach-satoken/peach-satoken-quickstart -am spring-boot:run
+mvn -pl peach-middleware/peach-satoken/peach-satoken-quickstart -am test
 ```
 
-Override the demo password with `PEACH_SATOKEN_DEMO_PASSWORD`. Do not store production secrets.
+`PEACH_SATOKEN_DEMO_PASSWORD` (or `quickstart.satoken.demo.password`) is required; there is no default. Tests inject the property via test configuration. Do not store production secrets.
 
 ## Boundaries
 

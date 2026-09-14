@@ -144,13 +144,13 @@ See `DemoSchedulerExecutionConsumer` in `peach-scheduler-quickstart`.
 - **JobHandler / `@PeachJob`**: `DemoCleanupJob` executes directly and is registered
 - **Claim gate**: in-memory `ExecutionLeaseClient` allows then rejects
 - **PeachJobExecutor orchestration**: `command -> claim -> handler -> reporter`; a rejected claim skips the handler and does not report
-- In-memory stubs: `DemoExecutionLeaseClient` / `DemoExecutionResultReporter` (production replaces them with Feign + RocketMQ Outbox)
+- In-memory stubs: `DemoExecutionLeaseClient` / `DemoExecutionResultReporter` (`peach.scheduler.quickstart.local-mode=true`, the default; set `false` so the RocketMQ reporter can assemble)
 - `DemoSchedulerExecutionConsumer` is a production wiring sample only; default `peach.rocket.enabled=false` leaves it unregistered
 - `SchedulerDemoRunner` is off by default; enable with `quickstart.scheduler.demo.enabled=true`
 - Tests: no-container `SchedulerSliceTest` plus a small integration `SchedulerCapabilityTest`
 
 ```bash
-mvn -f peach-component/peach-scheduler/peach-scheduler-quickstart/pom.xml test
+mvn -pl peach-component/peach-scheduler/peach-scheduler-quickstart -am test
 ```
 
 ## Configuration Keys

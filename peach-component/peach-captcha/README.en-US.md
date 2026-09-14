@@ -50,8 +50,8 @@ The example lives in [`peach-captcha-quickstart`](./peach-captcha-quickstart/). 
 | Prerequisites | No Redis |
 
 ```bash
-mvn -f peach-component/peach-captcha/peach-captcha-quickstart/pom.xml spring-boot:run
-mvn -f peach-component/peach-captcha/peach-captcha-quickstart/pom.xml test
+mvn -pl peach-component/peach-captcha/peach-captcha-quickstart -am spring-boot:run
+mvn -pl peach-component/peach-captcha/peach-captcha-quickstart -am test
 ```
 
 ## Boundaries

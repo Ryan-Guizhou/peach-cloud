@@ -118,8 +118,8 @@ MAX_CODE_WIDTH=8, value=100000000 -> 拒绝，序号超出配置
   - **隔离**：`T001/MENU`、`T001/NOTICE`、`T002/MENU` 序列互不影响
   - **非法参数**：租户或前缀含不支持字符时抛出 `CodeGeneratorException`
 - 启动后 `CodeDemoRunner` 依次执行；关闭演示：`quickstart.code.demo.enabled=false`
-- 运行：`mvn -f peach-component/peach-code/peach-code-quickstart/pom.xml spring-boot:run`
-- 测试：`mvn -f peach-component/peach-code/peach-code-quickstart/pom.xml test`
+- 运行：`mvn -pl peach-component/peach-code/peach-code-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-component/peach-code/peach-code-quickstart -am test`
 
 生产接入需准备 `PEACH_CODE_RULE`、数据源，以及可选的 Redis（`peach.code.redis-enabled=true`）。
 

@@ -41,8 +41,8 @@ Provider 凭据从环境变量、配置中心或密钥服务提供。
   - **附件**：`EmailMessage` 携带带字节内容的 `Attachment`，Mock 记录附件数量
 - 启动后 `EmailDemoRunner` 依次执行；关闭演示：`quickstart.email.demo.enabled=false`
 - 端口：无 REST（`web-application-type=none`）
-- 运行：`mvn -f peach-component/peach-email/peach-email-quickstart/pom.xml spring-boot:run`
-- 测试：`mvn -f peach-component/peach-email/peach-email-quickstart/pom.xml test`
+- 运行：`mvn -pl peach-component/peach-email/peach-email-quickstart -am spring-boot:run`
+- 测试：`mvn -pl peach-component/peach-email/peach-email-quickstart -am test`
 
 SMTP provider、用户名和授权码只通过环境变量或配置中心提供，QuickStart 不保存真实凭据。模板渲染不在 `sendAuto` 内自动发生，本样例直接设置 HTML。
 

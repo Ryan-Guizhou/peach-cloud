@@ -37,8 +37,8 @@ public class CaptchaServiceFactory {
             try {
                 PROVIDERS.put(provider.type(), provider.createCaptchaCacheService());
                 log.info("Captcha autoconfig loaded captcha cache provider: [{}]", provider.type());
-            } catch (Throwable ex) {
-                // Redis 等可选 Provider 在缺少依赖或 Spring 上下文未就绪时跳过，避免拖垮 MEMORY 场景。
+            } catch (Exception | LinkageError ex) {
+                // Redis 等可选 Provider：缺类/缺 Bean 时跳过；OOM 等 Error 仍向上抛。
                 log.warn("Skip captcha cache provider [{}]: {}", provider.type(), ex.toString());
             }
         }

@@ -33,8 +33,8 @@ The example lives in [`peach-mongo-quickstart`](./peach-mongo-quickstart/). It h
 | Prerequisites | Local Mongo or `PEACH_MONGO_URI` |
 
 ```bash
-mvn -f peach-middleware/peach-mongo/peach-mongo-quickstart/pom.xml spring-boot:run
-mvn -f peach-middleware/peach-mongo/peach-mongo-quickstart/pom.xml test
+mvn -pl peach-middleware/peach-mongo/peach-mongo-quickstart -am spring-boot:run
+mvn -pl peach-middleware/peach-mongo/peach-mongo-quickstart -am test
 ```
 
 MongoDB URIs and credentials are supplied only through local configuration or environment variables.
