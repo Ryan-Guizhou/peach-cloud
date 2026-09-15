@@ -120,9 +120,11 @@ Mongo 数据只保存在 `peach-mongo-data`。数据库日志使用 Docker stdou
 - `peach-rocketmq-broker`
 - `peach-rocketmq-dashboard`
 
-Dashboard 默认映射 `127.0.0.1:18088 -> 8080`，并通过 `rocketmq-namesrv:9876` 查询集群。
+当前 Dashboard 镜像实际监听容器 `8082`，Compose 默认映射为 `127.0.0.1:18088 -> 8082`，并通过 `rocketmq-namesrv:9876` 查询集群。宿主机访问地址为 `http://localhost:18088`。
 
 Dashboard 主要用于观察和运维 Topic、Consumer、Broker 和消息。生产环境修改 Topic/Consumer 配置时仍应遵循项目的 RocketMQ 治理约定，不应把 Dashboard 当作绕过配置治理的入口。
+
+健康验证不仅检查 Dashboard 容器运行状态，还会从宿主机请求 Dashboard HTTP 首页，避免“容器 running 但端口映射错误”的假健康。
 
 ## 6. 已有环境迁移策略
 
