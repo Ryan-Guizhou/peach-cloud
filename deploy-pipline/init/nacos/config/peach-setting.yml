@@ -1,0 +1,18 @@
+server:
+  port: 18085
+
+peach:
+  multicache:
+    enabled: true
+  openapi:
+    version: V1.0.0
+    server-url: /api/setting
+    server-description: Gateway
+
+springdoc:
+  servers:
+    - url: /api/setting
+      description: Gateway
+  packages-to-scan:
+    - com.peach.setting.rest.internal
+    - com.peach.setting.launch.health

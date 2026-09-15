@@ -1,0 +1,43 @@
+[
+  {
+    "resource": "authFeignClient",
+    "grade": 1,
+    "count": 0.5,
+    "timeWindow": 30,
+    "minRequestAmount": 20,
+    "statIntervalMs": 10000
+  },
+  {
+    "resource": "fileFeignClient",
+    "grade": 0,
+    "count": 1000,
+    "timeWindow": 30,
+    "minRequestAmount": 10,
+    "statIntervalMs": 10000,
+    "slowRatioThreshold": 0.5
+  },
+  {
+    "resource": "messageFeignClient",
+    "grade": 1,
+    "count": 0.5,
+    "timeWindow": 30,
+    "minRequestAmount": 20,
+    "statIntervalMs": 10000
+  },
+  {
+    "resource": "settingFeginClient",
+    "grade": 1,
+    "count": 0.5,
+    "timeWindow": 30,
+    "minRequestAmount": 20,
+    "statIntervalMs": 10000
+  },
+  {
+    "resource": "monitorFeignClient",
+    "grade": 1,
+    "count": 0.5,
+    "timeWindow": 30,
+    "minRequestAmount": 20,
+    "statIntervalMs": 10000
+  }
+]
