@@ -10,23 +10,25 @@ set -a; . "$ENV_FILE"; set +a
 mode=${ROCKETMQ_TOPIC_PROVISION_MODE:-ensure}; case "$mode" in ensure|verify|off) ;; *) echo "Unsupported ROCKETMQ_TOPIC_PROVISION_MODE: $mode" >&2; exit 2 ;; esac
 mkdir -p "$REPORT_DIR"; tmp_topics="$REPORT_DIR/.rocketmq-topics.tmp"; trap 'rm -f "$tmp_topics"' EXIT
 mqadmin() { docker exec peach-rocketmq-broker sh mqadmin "$@"; }
-mqadmin clusterList -n "${ROCKETMQ_NAME_SERVER:-rocketmq-namesrv:9876}" >/dev/null
-mqadmin topicList -n "${ROCKETMQ_NAME_SERVER:-rocketmq-namesrv:9876}" | sed '/^[[:space:]]*$/d' | sort -u > "$tmp_topics"
+name_server=${ROCKETMQ_NAME_SERVER:-rocketmq-namesrv:9876}
+local_broker=127.0.0.1:10911
+mqadmin clusterList -n "$name_server" >/dev/null
+mqadmin topicList -n "$name_server" | sed '/^[[:space:]]*$/d' | sort -u > "$tmp_topics"
 auto_create=$(docker exec peach-rocketmq-broker sh -c "sed -n 's/^[[:space:]]*autoCreateTopicEnable[[:space:]]*=[[:space:]]*//p' /home/rocketmq/rocketmq-*/conf/broker.conf | tail -n 1" 2>/dev/null || true); [ -n "$auto_create" ] || auto_create=unknown
 expected_count=$(node -e 'const f=require(process.argv[1]); console.log((f.topics||[]).length)' "$TOPICS_FILE"); existing_count=$(wc -l < "$tmp_topics" | tr -d ' ')
 {
- echo "================ RocketMQ ================="; echo "NameServer               : ${ROCKETMQ_NAME_SERVER:-rocketmq-namesrv:9876}"; echo "Cluster                  : ${ROCKETMQ_CLUSTER_NAME:-PeachCluster}"; echo "Broker autoCreateTopic   : $auto_create"; echo "Peach topic auto-create  : ${PEACH_ROCKET_TOPIC_AUTO_CREATE:-false}"; echo "CI topic provisioning    : $mode"; echo "Expected Topics          : $expected_count"; echo "Existing Topics          : $existing_count"; echo "";
+ echo "================ RocketMQ ================="; echo "NameServer               : $name_server"; echo "Cluster                  : ${ROCKETMQ_CLUSTER_NAME:-PeachCluster}"; echo "Broker target            : $local_broker"; echo "Broker autoCreateTopic   : $auto_create"; echo "Peach topic auto-create  : ${PEACH_ROCKET_TOPIC_AUTO_CREATE:-false}"; echo "CI topic provisioning    : $mode"; echo "Expected Topics          : $expected_count"; echo "Existing Topics          : $existing_count"; echo "";
 } > "$REPORT_FILE"
 node -e 'const c=require(process.argv[1]); for(const t of c.topics||[]) console.log([t.name,t.readQueueNums??8,t.writeQueueNums??8,t.perm??6].join("\t"));' "$TOPICS_FILE" | while IFS="$(printf '\t')" read -r topic read_queues write_queues perm; do
  [ -n "$topic" ] || continue
  if grep -Fxq "$topic" "$tmp_topics"; then echo "[rocketmq-topic] preserved: $topic" | tee -a "$REPORT_FILE"; continue; fi
  case "$mode" in
-  ensure) echo "[rocketmq-topic] creating: $topic" | tee -a "$REPORT_FILE"; mqadmin updateTopic -n "${ROCKETMQ_NAME_SERVER:-rocketmq-namesrv:9876}" -c "${ROCKETMQ_CLUSTER_NAME:-PeachCluster}" -t "$topic" -r "$read_queues" -w "$write_queues" -p "$perm" >/dev/null ;;
+  ensure) echo "[rocketmq-topic] creating: $topic" | tee -a "$REPORT_FILE"; mqadmin updateTopic -n "$name_server" -b "$local_broker" -t "$topic" -r "$read_queues" -w "$write_queues" -p "$perm" >/dev/null ;;
   verify) echo "[rocketmq-topic] missing: $topic" | tee -a "$REPORT_FILE" ;;
   off) echo "[rocketmq-topic] unmanaged/missing: $topic" | tee -a "$REPORT_FILE" ;;
  esac
 done
-mqadmin topicList -n "${ROCKETMQ_NAME_SERVER:-rocketmq-namesrv:9876}" | sed '/^[[:space:]]*$/d' | sort -u > "$tmp_topics"
+mqadmin topicList -n "$name_server" | sed '/^[[:space:]]*$/d' | sort -u > "$tmp_topics"
 missing_topics=$(node -e 'const f=require(process.argv[1]); for(const t of f.topics||[]) console.log(t.name)' "$TOPICS_FILE" | while IFS= read -r topic; do grep -Fxq "$topic" "$tmp_topics" || echo "$topic"; done)
 if [ -n "$missing_topics" ]; then final_missing=$(printf '%s\n' "$missing_topics" | sed '/^[[:space:]]*$/d' | wc -l | tr -d ' '); else final_missing=0; fi
 {
