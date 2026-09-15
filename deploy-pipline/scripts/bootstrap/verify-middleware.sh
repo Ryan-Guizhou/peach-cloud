@@ -1,6 +1,14 @@
 #!/usr/bin/env sh
 set -eu
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
+ENV_FILE=${PEACH_ENV_FILE:-$ROOT/env/deploy.env}
+[ -f "$ENV_FILE" ] || { echo "Missing env file: $ENV_FILE" >&2; exit 1; }
+set -a
+. "$ENV_FILE"
+set +a
+
 wait_container() {
   container=$1
   attempts=${2:-90}
@@ -50,7 +58,20 @@ verify_rocketmq() {
   wait_container peach-rocketmq-dashboard
   docker exec peach-rocketmq-broker sh mqadmin clusterList -n rocketmq-namesrv:9876 >/dev/null
   echo "[OK] RocketMQ broker is registered with NameServer"
-  echo "[OK] RocketMQ Dashboard container is running"
+
+  dashboard_port=${ROCKETMQ_DASHBOARD_HOST_PORT:-18088}
+  attempts=60
+  i=0
+  while [ "$i" -lt "$attempts" ]; do
+    if curl -fsS "http://127.0.0.1:${dashboard_port}/" >/dev/null 2>&1; then
+      echo "[OK] RocketMQ Dashboard HTTP endpoint is reachable on port ${dashboard_port}"
+      return 0
+    fi
+    i=$((i + 1))
+    sleep 2
+  done
+  echo "[FAIL] RocketMQ Dashboard HTTP endpoint is not reachable on port ${dashboard_port}" >&2
+  return 1
 }
 
 verify_target() {
