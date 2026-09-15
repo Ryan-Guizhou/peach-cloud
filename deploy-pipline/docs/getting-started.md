@@ -169,7 +169,7 @@ docker compose --env-file deploy-pipline/env/deploy.env \
 PEACH_ENV_FILE=deploy-pipline/env/deploy.env deploy-pipline/scripts/bootstrap/verify-middleware.sh
 ```
 
-该验证会执行 MySQL authenticated ping、Redis authenticated PING、Nacos health、MongoDB authenticated ping、RocketMQ Broker 注册检查，并确认 Dashboard 容器运行。
+该验证会执行 MySQL authenticated ping、Redis authenticated PING、Nacos health、MongoDB authenticated ping、RocketMQ Broker 注册检查，并实际请求 RocketMQ Dashboard 的 HTTP 首页确认可访问。
 
 ### 5.3 只创建 MongoDB 业务用户
 
@@ -211,6 +211,12 @@ docker exec peach-rocketmq-broker sh mqadmin clusterList -n rocketmq-namesrv:987
 ```
 
 **作用：** 直接确认 Broker 已经注册到 NameServer；Dashboard 无数据时优先执行它判断 RocketMQ 本身是否正常。
+
+```bash
+curl -fsS http://127.0.0.1:18088/ > /dev/null
+```
+
+**作用：** 从宿主机实际访问 Dashboard HTTP 服务；命令退出码为 `0` 表示 Web 入口可达。统一 `verify-middleware.sh` 已包含这项检查。
 
 ## 7. 常用访问地址
 
