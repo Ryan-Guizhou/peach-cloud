@@ -93,7 +93,7 @@ jobs:
           MONGO_ROOT_PASSWORD=ci_mongo_root_password
           MONGO_APP_USERNAME=peach
           MONGO_APP_PASSWORD=ci_mongo_app_password
-          MONGO_URI=mongodb://peach:ci_mongo_app_password@mongodb:27017/peach_cloud?authSource=peach_cloud
+          PEACH_MONGO_URI=mongodb://peach:ci_mongo_app_password@mongodb:27017/peach_cloud?authSource=peach_cloud
           ROCKETMQ_NAMESRV_HOST_PORT=9876
           ROCKETMQ_BROKER_HOST_PORT=10911
           ROCKETMQ_NAME_SERVER=rocketmq-namesrv:9876
@@ -127,7 +127,11 @@ jobs:
         shell: bash
         run: |
           docker ps -a || true
-          for c in peach-mysql peach-redis peach-nacos peach-mongo peach-rocketmq-namesrv peach-rocketmq-broker; do docker logs "$c" --tail 100 || true; done
+          for c in peach-mysql peach-redis peach-nacos peach-mongo peach-rocketmq-namesrv peach-rocketmq-broker; do
+            echo "===== $c ====="
+            docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$c" 2>/dev/null || true
+            docker logs "$c" --tail 100 || true
+          done
       - name: Stop middleware without deleting data volumes
         if: always()
         shell: bash

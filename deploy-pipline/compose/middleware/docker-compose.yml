@@ -100,11 +100,6 @@ services:
     volumes:
       - mongo-data:/data/db
       - ../../config/mongodb/mongod.conf:/etc/mongod.conf:ro
-      - type: bind
-        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/middleware/mongodb
-        target: /var/log/mongodb
-        bind:
-          create_host_path: true
     command: ["mongod", "--config", "/etc/mongod.conf", "--auth"]
     healthcheck:
       test: ["CMD-SHELL", "mongosh --quiet --username \"$${MONGO_INITDB_ROOT_USERNAME}\" --password \"$${MONGO_INITDB_ROOT_PASSWORD}\" --authenticationDatabase admin --eval 'db.runCommand({ ping: 1 }).ok' | grep -q 1"]
