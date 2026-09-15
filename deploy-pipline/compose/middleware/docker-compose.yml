@@ -177,7 +177,7 @@ services:
     environment:
       JAVA_OPTS: "-Drocketmq.namesrv.addr=rocketmq-namesrv:9876"
     ports:
-      - "127.0.0.1:${ROCKETMQ_DASHBOARD_HOST_PORT:-18088}:8080"
+      - "127.0.0.1:${ROCKETMQ_DASHBOARD_HOST_PORT:-18088}:8082"
     depends_on:
       rocketmq-namesrv:
         condition: service_started
