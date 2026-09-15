@@ -109,18 +109,30 @@ jobs:
         run: docker compose --env-file deploy-pipline/runtime/generated/deploy.env -f deploy-pipline/compose/middleware/docker-compose.yml up -d mysql redis nacos mongodb rocketmq-namesrv rocketmq-broker rocketmq-dashboard
       - name: Verify middleware
         run: PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env" deploy-pipline/scripts/bootstrap/verify-middleware.sh
-      - name: Validate idempotent data and topic initialization
+      - name: Verify MySQL initialization is idempotent
         shell: bash
         run: |
           set -euo pipefail
           export PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env"
-          for iteration in 1 2; do
-            echo "Initialization iteration: $iteration"
-            deploy-pipline/scripts/init/init-mysql.sh
-            deploy-pipline/scripts/init/ensure-mongodb-user.sh
-            deploy-pipline/scripts/init/init-nacos.sh
-            deploy-pipline/scripts/init/reconcile-rocketmq-topics.sh
-          done
+          for iteration in 1 2; do echo "MySQL initialization iteration: $iteration"; deploy-pipline/scripts/init/init-mysql.sh; done
+      - name: Verify MongoDB user initialization is idempotent
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env"
+          for iteration in 1 2; do echo "MongoDB initialization iteration: $iteration"; deploy-pipline/scripts/init/ensure-mongodb-user.sh; done
+      - name: Verify Nacos initialization is idempotent
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env"
+          for iteration in 1 2; do echo "Nacos initialization iteration: $iteration"; deploy-pipline/scripts/init/init-nacos.sh; done
+      - name: Verify RocketMQ topic reconciliation is idempotent
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env"
+          for iteration in 1 2; do echo "RocketMQ topic reconciliation iteration: $iteration"; deploy-pipline/scripts/init/reconcile-rocketmq-topics.sh; done
           docker exec peach-rocketmq-broker sh mqadmin topicList -n rocketmq-namesrv:9876 | grep -Fxq scheduler-execution-result
       - name: Show diagnostics on failure
         if: failure()
