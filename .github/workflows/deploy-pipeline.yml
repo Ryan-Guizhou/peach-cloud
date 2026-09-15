@@ -6,7 +6,6 @@ on:
       - 'deploy-pipline/**'
       - '.github/workflows/deploy-pipeline.yml'
   push:
-    branches: [main]
     paths:
       - 'deploy-pipline/**'
       - '.github/workflows/deploy-pipeline.yml'
