@@ -105,12 +105,21 @@ jobs:
           mkdir -p /tmp/peach-runtime/logs
           docker network create peach-cloud-runtime
           for v in peach-mysql-data peach-redis-data peach-nacos-data peach-mongo-data peach-rocketmq-store; do docker volume create "$v"; done
-      - name: Start middleware
+      - name: Start middleware containers
         shell: bash
         run: |
           set -euo pipefail
           docker compose --env-file deploy-pipline/env/deploy.env -f deploy-pipline/compose/middleware/docker-compose.yml up -d mysql redis nacos mongodb rocketmq-namesrv rocketmq-broker
-          deploy-pipline/scripts/bootstrap/verify-middleware.sh
+      - name: Verify MySQL
+        run: deploy-pipline/scripts/bootstrap/verify-middleware.sh mysql
+      - name: Verify Redis
+        run: deploy-pipline/scripts/bootstrap/verify-middleware.sh redis
+      - name: Verify Nacos
+        run: deploy-pipline/scripts/bootstrap/verify-middleware.sh nacos
+      - name: Verify MongoDB
+        run: deploy-pipline/scripts/bootstrap/verify-middleware.sh mongodb
+      - name: Verify RocketMQ
+        run: deploy-pipline/scripts/bootstrap/verify-middleware.sh rocketmq
       - name: Validate idempotent initialization
         shell: bash
         run: |
