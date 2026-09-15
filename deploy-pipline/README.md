@@ -2,14 +2,14 @@
 
 [English](README.en-US.md)
 
-`deploy-pipline` 是 Peach Cloud 独立的 Docker 构建、基础设施与持续交付目录。它把 DevOps、Middleware、Observability 和 Application 四个生命周期分开：基础设施提前启动并长期保留，Jenkins 只验证依赖、构建 Maven 构件、推送 Nexus/Registry 并更新业务容器。
+`deploy-pipline` 是 Peach Cloud 独立的 Docker 基础设施与持续交付目录。DevOps、Middleware、Observability、Application 四个运行域彼此解耦：基础设施长期保留，Jenkins 只负责验证、构建、发布与更新业务容器。
 
 ## 架构
 
 ```mermaid
 flowchart LR
     GitLab -->|Webhook| Jenkins
-    Jenkins -->|download / deploy| Nexus
+    Jenkins -->|Maven download/deploy| Nexus
     Jenkins -->|docker push| Registry
     Registry --> Application
     Application --> MySQL
@@ -17,6 +17,7 @@ flowchart LR
     Application --> Nacos
     Application --> MongoDB
     Application --> RocketMQ
+    Dashboard["RocketMQ Dashboard"] --> RocketMQ
     Application --> OTel
     Prometheus --> Application
 ```
@@ -26,54 +27,44 @@ flowchart LR
 | 域 | Compose | 主要组件 | 生命周期 |
 | --- | --- | --- | --- |
 | DevOps | [`compose/devops/docker-compose.yml`](compose/devops/docker-compose.yml) | GitLab、Jenkins、Nexus、Registry、Registry UI、Nginx | 长期常驻 |
-| Middleware | [`compose/middleware/docker-compose.yml`](compose/middleware/docker-compose.yml) | MySQL、Redis、Nacos、MongoDB、RocketMQ | 长期常驻，业务发布前必须就绪 |
+| Middleware | [`compose/middleware/docker-compose.yml`](compose/middleware/docker-compose.yml) | MySQL、Redis、Nacos、MongoDB、RocketMQ、RocketMQ Dashboard | 长期常驻，发布前必须就绪 |
 | Observability | [`compose/observability/docker-compose.yml`](compose/observability/docker-compose.yml) | Prometheus、Tempo、OTel、Loki、Alloy、Grafana | 长期常驻 |
 | Application | [`compose/application/docker-compose.yml`](compose/application/docker-compose.yml) | Peach Cloud 后端服务与前端 | Jenkins 按服务更新 |
 
-## 第一次部署或现有环境迁移
+## 最短启动路径
 
-1. 阅读 [`docs/migration.md`](docs/migration.md)，确认现有 Container、Volume、Network 名称。
-2. 复制 `env/deploy.env.example` 为 `env/deploy.env`，替换 `change_me_*`。
-3. 确保 `PEACH_LOG_ROOT` 是 Docker daemon 可见的绝对路径，并指向 `deploy-pipline/runtime/logs`。
-4. 执行：
+1. 复制 `env/deploy.env.example` 为私有 `env/deploy.env`。
+2. 修改 `change_me_*`、`PEACH_RUNTIME_ROOT`、`PEACH_LOG_ROOT`。
+3. 在仓库根目录执行：
 
 ```bash
 PEACH_ENV_FILE=deploy-pipline/env/deploy.env deploy-pipline/scripts/bootstrap/bootstrap.sh
 ```
 
-Bootstrap 会复用已存在的受保护容器和 named volume，不会执行 `down -v`、volume prune 或 destructive database reset。
+Bootstrap 会复用已有受保护容器/Volume，启动 DevOps、Middleware、Observability，执行 MySQL/Nacos 幂等初始化，并仅确保 MongoDB 业务用户存在。**MongoDB 不做 schema/index/seed 数据初始化。**
 
-## 日常发布
-
-日常发布由 GitLab Webhook 触发 [`Jenkinsfile`](Jenkinsfile)：
+RocketMQ 可视化控制台默认访问：
 
 ```text
-Checkout
-→ Validate credentials
-→ Verify infrastructure
-→ Maven clean deploy (Nexus only)
-→ Docker build
-→ Docker push Registry
-→ Application Compose pull/up
-→ Application health verification
+http://localhost:18088
 ```
 
-Jenkins **不会**启动或初始化 MySQL、Redis、Nacos、MongoDB、RocketMQ。
+## 验证
+
+```bash
+PEACH_ENV_FILE=deploy-pipline/env/deploy.env deploy-pipline/scripts/bootstrap/verify-infrastructure.sh
+```
+
+该命令验证 Registry、Nexus、中间件与关键网络连通性。业务发布由 [`Jenkinsfile`](Jenkinsfile) 完成，Jenkins 不启动数据库或中间件。
 
 ## 数据保护
 
-现有核心数据身份保持不变，包括 `peach-gitlab-data`、`peach-jenkins-data`、`peach-nexus-data`、`peach-registry-data`、`peach-mysql-data`、`peach-redis-data`、`peach-nacos-data`、`peach-rocketmq-store` 等。MongoDB 只新增 `peach-mongo-data`。详见 [`docs/network-and-storage.md`](docs/network-and-storage.md)。
+核心 named volume 使用固定 external identity，例如 `peach-gitlab-data`、`peach-jenkins-data`、`peach-nexus-data`、`peach-mysql-data`、`peach-redis-data`、`peach-nacos-data`、`peach-mongo-data`、`peach-rocketmq-store`。普通脚本禁止 `down -v`、`docker volume prune`、`docker volume rm` 等 destructive 操作。
 
 ## 文档
 
-- [总体架构](docs/architecture.md)
-- [基础设施 Bootstrap](docs/bootstrap.md)
-- [网络与存储](docs/network-and-storage.md)
-- [中间件](docs/middleware.md)
-- [初始化策略](docs/initialization.md)
-- [Jenkins 流水线](docs/jenkins-pipeline.md)
-- [Maven 与 Nexus](docs/nexus-maven.md)
-- [Docker Registry](docs/registry.md)
-- [可观测性](docs/observability.md)
-- [现有环境迁移](docs/migration.md)
-- [排障](docs/troubleshooting.md)
+`docs/` 只保留三份真正需要长期维护的文档：
+
+- [启动手册：从 0 启动全部服务、逐条解释命令](docs/getting-started.md)
+- [架构与运维：网络、Volume、数据保护、迁移、日志、健康检查](docs/architecture-and-operations.md)
+- [CI/CD：Jenkins、Nexus、Registry、Webhook 与发布流程](docs/ci-cd.md)

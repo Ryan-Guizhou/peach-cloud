@@ -36,6 +36,7 @@ ensure_service "$MIDDLEWARE" nacos peach-nacos
 ensure_service "$MIDDLEWARE" mongodb peach-mongo
 ensure_service "$MIDDLEWARE" rocketmq-namesrv peach-rocketmq-namesrv
 ensure_service "$MIDDLEWARE" rocketmq-broker peach-rocketmq-broker
+ensure_service "$MIDDLEWARE" rocketmq-dashboard peach-rocketmq-dashboard
 ensure_service "$OBS" prometheus peach-prometheus
 ensure_service "$OBS" tempo peach-tempo
 ensure_service "$OBS" otel-collector peach-otel-collector
@@ -43,5 +44,5 @@ ensure_service "$OBS" loki peach-loki
 ensure_service "$OBS" alloy peach-alloy
 ensure_service "$OBS" grafana peach-grafana
 for container in jenkins peach-devops-nginx peach-prometheus peach-otel-collector; do connect_network peach-devops "$container"; connect_network peach-cloud-runtime "$container"; done
-for container in peach-mysql peach-redis peach-nacos peach-mongo peach-rocketmq-namesrv peach-rocketmq-broker; do connect_network peach-cloud-runtime "$container"; done
+for container in peach-mysql peach-redis peach-nacos peach-mongo peach-rocketmq-namesrv peach-rocketmq-broker peach-rocketmq-dashboard; do connect_network peach-cloud-runtime "$container"; done
 echo "Infrastructure containers are started without recreating existing protected containers."

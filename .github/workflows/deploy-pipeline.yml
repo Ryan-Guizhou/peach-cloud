@@ -97,6 +97,7 @@ jobs:
           ROCKETMQ_NAMESRV_HOST_PORT=9876
           ROCKETMQ_BROKER_HOST_PORT=10911
           ROCKETMQ_NAME_SERVER=rocketmq-namesrv:9876
+          ROCKETMQ_DASHBOARD_HOST_PORT=18088
           OSS_ACCESS_KEY=ci_oss_key
           OSS_SECRET_KEY=ci_oss_secret
           COS_ACCESS_KEY=ci_cos_key
@@ -109,7 +110,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker compose --env-file deploy-pipline/env/deploy.env -f deploy-pipline/compose/middleware/docker-compose.yml up -d mysql redis nacos mongodb rocketmq-namesrv rocketmq-broker
+          docker compose --env-file deploy-pipline/env/deploy.env -f deploy-pipline/compose/middleware/docker-compose.yml up -d mysql redis nacos mongodb rocketmq-namesrv rocketmq-broker rocketmq-dashboard
       - name: Verify MySQL
         run: deploy-pipline/scripts/bootstrap/verify-middleware.sh mysql
       - name: Verify Redis
@@ -120,23 +121,23 @@ jobs:
         run: deploy-pipline/scripts/bootstrap/verify-middleware.sh mongodb
       - name: Verify RocketMQ
         run: deploy-pipline/scripts/bootstrap/verify-middleware.sh rocketmq
-      - name: Validate idempotent initialization
+      - name: Validate idempotent infrastructure initialization
         shell: bash
         run: |
           set -euo pipefail
           export PEACH_ENV_FILE="$PWD/deploy-pipline/env/deploy.env"
           deploy-pipline/scripts/init/init-mysql.sh
-          deploy-pipline/scripts/init/init-mongodb.sh
+          deploy-pipline/scripts/init/ensure-mongodb-user.sh
           deploy-pipline/scripts/init/init-nacos.sh
           deploy-pipline/scripts/init/init-mysql.sh
-          deploy-pipline/scripts/init/init-mongodb.sh
+          deploy-pipline/scripts/init/ensure-mongodb-user.sh
           deploy-pipline/scripts/init/init-nacos.sh
       - name: Show diagnostics on failure
         if: failure()
         shell: bash
         run: |
           docker ps -a || true
-          for c in peach-mysql peach-redis peach-nacos peach-mongo peach-rocketmq-namesrv peach-rocketmq-broker; do
+          for c in peach-mysql peach-redis peach-nacos peach-mongo peach-rocketmq-namesrv peach-rocketmq-broker peach-rocketmq-dashboard; do
             echo "===== $c ====="
             docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$c" 2>/dev/null || true
             docker logs "$c" --tail 100 || true

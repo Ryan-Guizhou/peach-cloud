@@ -169,6 +169,23 @@ services:
     networks:
       - runtime
 
+  rocketmq-dashboard:
+    image: apacherocketmq/rocketmq-dashboard:${ROCKETMQ_DASHBOARD_VERSION:-latest}
+    container_name: peach-rocketmq-dashboard
+    hostname: rocketmq-dashboard
+    restart: unless-stopped
+    environment:
+      JAVA_OPTS: "-Drocketmq.namesrv.addr=rocketmq-namesrv:9876"
+    ports:
+      - "127.0.0.1:${ROCKETMQ_DASHBOARD_HOST_PORT:-18088}:8080"
+    depends_on:
+      rocketmq-namesrv:
+        condition: service_started
+      rocketmq-broker:
+        condition: service_started
+    networks:
+      - runtime
+
 networks:
   runtime:
     external: true

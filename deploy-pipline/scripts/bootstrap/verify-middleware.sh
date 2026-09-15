@@ -47,8 +47,10 @@ verify_mongodb() {
 verify_rocketmq() {
   wait_container peach-rocketmq-namesrv
   wait_container peach-rocketmq-broker
+  wait_container peach-rocketmq-dashboard
   docker exec peach-rocketmq-broker sh mqadmin clusterList -n rocketmq-namesrv:9876 >/dev/null
   echo "[OK] RocketMQ broker is registered with NameServer"
+  echo "[OK] RocketMQ Dashboard container is running"
 }
 
 verify_target() {
