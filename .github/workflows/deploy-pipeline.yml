@@ -133,7 +133,7 @@ jobs:
           set -euo pipefail
           export PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env"
           for iteration in 1 2; do echo "RocketMQ topic reconciliation iteration: $iteration"; deploy-pipline/scripts/init/reconcile-rocketmq-topics.sh; done
-          docker exec peach-rocketmq-broker sh mqadmin topicList -n rocketmq-namesrv:9876 | grep -Fxq scheduler-execution-result
+          docker exec peach-rocketmq-broker sh -c "grep -Fq '\"topicName\":\"scheduler-execution-result\"' /home/rocketmq/store/config/topics.json"
       - name: Show diagnostics on failure
         if: failure()
         shell: bash
@@ -144,6 +144,7 @@ jobs:
             docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$c" 2>/dev/null || true
             docker logs "$c" --tail 100 || true
           done
+          docker exec peach-rocketmq-broker cat /home/rocketmq/store/config/topics.json 2>/dev/null || true
           cat deploy-pipline/runtime/reports/rocketmq-status.txt 2>/dev/null || true
       - name: Stop middleware without deleting data volumes
         if: always()
