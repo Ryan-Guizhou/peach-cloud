@@ -4,15 +4,16 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 CONFIG_DIR="$ROOT/init/nacos/config"
 GENERATED_DIR="$ROOT/runtime/generated/nacos"
-ENV_FILE=${PEACH_ENV_FILE:-$ROOT/env/deploy.env}
+ENV_FILE=${PEACH_ENV_FILE:-$ROOT/runtime/generated/deploy.env}
 SYNC=false
 [ "${1:-}" = "--sync" ] && SYNC=true
 [ -f "$ENV_FILE" ] || { echo "Missing env file: $ENV_FILE" >&2; exit 1; }
 set -a; . "$ENV_FILE"; set +a
-NACOS_ADDR=${NACOS_ADDR:-"http://127.0.0.1:${NACOS_HOST_PORT:-8849}"}
 NACOS_NAMESPACE_ID=${NACOS_NAMESPACE_ID:-peach-cloud}; NACOS_NAMESPACE_NAME=${NACOS_NAMESPACE_NAME:-$NACOS_NAMESPACE_ID}; NACOS_GROUP=${NACOS_GROUP:-PEACH-CLOUD}; NACOS_USERNAME=${NACOS_USERNAME:-nacos}; NACOS_PASSWORD=${NACOS_PASSWORD:-nacos}; NACOS_AUTH_ENABLE=${NACOS_AUTH_ENABLE:-false}; MYSQL_DATABASE=${MYSQL_DATABASE:-peach_cloud}; MYSQL_HOST=${MYSQL_HOST:-mysql:3306}; REDIS_HOST=${REDIS_HOST:-redis:6379}
+resolve_nacos_addr() { if [ -n "${NACOS_ADDR:-}" ]; then printf '%s' "$NACOS_ADDR"; return 0; fi; if curl --max-time 2 -fsS http://nacos:8848/nacos/actuator/health >/dev/null 2>&1; then printf '%s' 'http://nacos:8848'; else printf 'http://127.0.0.1:%s' "${NACOS_HOST_PORT:-8849}"; fi; }
+NACOS_ADDR=$(resolve_nacos_addr)
 mkdir -p "$GENERATED_DIR"
-wait_nacos() { i=0; while [ "$i" -lt 90 ]; do if curl -fsS "$NACOS_ADDR/nacos/actuator/health" >/dev/null 2>&1; then return 0; fi; i=$((i + 1)); sleep 2; done; echo "Nacos is not ready: $NACOS_ADDR" >&2; exit 1; }
+wait_nacos() { i=0; while [ "$i" -lt 90 ]; do if curl --max-time 3 -fsS "$NACOS_ADDR/nacos/actuator/health" >/dev/null 2>&1; then return 0; fi; i=$((i + 1)); sleep 2; done; echo "Nacos is not ready: $NACOS_ADDR" >&2; exit 1; }
 login() { [ "$NACOS_AUTH_ENABLE" = "true" ] || return 0; curl -fsS -X POST "$NACOS_ADDR/nacos/v1/auth/users/login" -d "username=$NACOS_USERNAME" --data-urlencode "password=$NACOS_PASSWORD" | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p'; }
 with_token() { url=$1; if [ -n "${ACCESS_TOKEN:-}" ]; then case "$url" in *\?*) printf '%s&accessToken=%s' "$url" "$ACCESS_TOKEN" ;; *) printf '%s?accessToken=%s' "$url" "$ACCESS_TOKEN" ;; esac; else printf '%s' "$url"; fi; }
 ensure_namespace() { url=$(with_token "$NACOS_ADDR/nacos/v1/console/namespaces"); if curl -fsS "$url" | grep -q "\"namespace\":\"$NACOS_NAMESPACE_ID\""; then echo "[nacos-init] namespace preserved: $NACOS_NAMESPACE_ID"; return 0; fi; create_url=$(with_token "$NACOS_ADDR/nacos/v1/console/namespaces"); curl -fsS -X POST "$create_url" -d "customNamespaceId=$NACOS_NAMESPACE_ID" --data-urlencode "namespaceName=$NACOS_NAMESPACE_NAME" --data-urlencode "namespaceDesc=Created by Peach Docker bootstrap" >/dev/null; echo "[nacos-init] namespace created: $NACOS_NAMESPACE_ID"; }
@@ -23,4 +24,4 @@ publish() { file=$1; data_id=$(basename "$file"); if [ "$SYNC" != "true" ] && ex
 wait_nacos; ACCESS_TOKEN=$(login); ensure_namespace
 for file in "$CONFIG_DIR"/*.yml "$CONFIG_DIR"/*.yaml "$CONFIG_DIR"/*.json; do [ -f "$file" ] && publish "$file"; done
 rm -f "$GENERATED_DIR/existing.tmp"
-echo "[nacos-init] completed (sync=$SYNC)."
+echo "[nacos-init] completed (sync=$SYNC, addr=$NACOS_ADDR)."

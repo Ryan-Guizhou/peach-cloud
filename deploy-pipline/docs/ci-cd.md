@@ -1,4 +1,4 @@
-# Jenkins、Nexus、Registry 与应用发布
+# Jenkins、Nexus、Registry 与全自动发布
 
 ## 1. 发布链路
 
@@ -6,160 +6,79 @@
 sequenceDiagram
     participant G as GitLab
     participant J as Jenkins
+    participant D as Existing DevOps
+    participant M as Runtime
     participant N as Nexus
     participant R as Registry
-    participant A as Application Compose
-    G->>J: Webhook
-    J->>J: Checkout + resolve Git SHA
-    J->>J: Validate deploy.env secret
-    J->>N: Verify Nexus connectivity
-    J->>J: Maven clean deploy
-    J->>N: Publish Peach Maven artifacts
-    J->>J: Build backend/frontend images
-    J->>R: Push <service>:<12-char-git-sha>
-    J->>A: docker compose pull/up selected services
-    J->>A: health verification
+    participant A as Application
+    G->>J: Webhook / SCM commit
+    J->>J: Checkout requested branch
+    J->>J: Resolve affected/selected services
+    J->>J: Merge defaults + Secret file
+    J->>D: Read-only preflight
+    J->>M: Reconcile missing/stopped runtime resources
+    J->>M: Idempotent MySQL/Mongo/Nacos/RocketMQ init
+    J->>N: Selective Maven -pl/-am clean deploy
+    J->>R: Push selected service images
+    J->>A: Pull/up selected services only
+    J->>A: Health verification
+    J->>J: Compatibility + RocketMQ reports
 ```
 
-Jenkins 不负责 `docker compose up` MySQL/Redis/Nacos/Mongo/RocketMQ，也不执行这些中间件的初始化脚本。
+## 2. Existing DevOps 保护策略
 
-## 2. Jenkins 必备 Secret file
+流水线不执行 DevOps Compose 生命周期操作。`preflight.sh` 要求已有 `peach-devops` network，以及 running `local-registry`、`nexus`、`jenkins`，并检查 Jenkins 到 Nexus/Registry 的连通性。GitLab/Jenkins/Nexus/Registry 原有容器、配置与 external volume 不被自动重建；缺失时 fail-fast。
 
-Jenkins Credentials 中需要一个 **Secret file**：
+## 3. Secret file
+
+继续使用现有 Jenkins Credential：
 
 ```text
 ID: peach-deploy-env
+Kind: Secret file
 ```
 
-文件内容使用 `env/deploy.env` 格式，包含真实数据库密码、Nexus 凭据、Mongo URI 等。仓库中的 `deploy.env.example` 只提供字段模板。
+模板为 `env/deploy.env.example`；仓库默认配置在 `env/defaults.env`。`render-runtime-env.mjs` 合成为临时文件并设置 `0600` 权限，Pipeline `post` 删除生成的 runtime env。
 
-## 3. Pipeline 关键参数
+## 4. 分支和服务参数
 
-### `DEPLOY_SERVICES`
+- `BUILD_BRANCH`：`AUTO` 使用当前 SCM/Webhook；手工可填具体分支。
+- `BUILD_MODE=AUTO`：根据上一次成功 commit 到当前 HEAD 的 diff 计算服务；首次或跨分支安全回退全量应用。
+- `BUILD_MODE=SELECTED`：使用 `DEPLOY_SERVICES`。
+- `BUILD_MODE=ALL`：所有应用。
 
-指定本次构建/部署服务，例如：
+服务清单 Source of Truth 为 `config/services.json`。为不改变现有 Jenkins 插件集合，本次使用原生参数而不安装 Git Parameter/Active Choices。
+
+## 5. Maven 真正按服务构建
+
+`SELECTED`/`AUTO` 使用：
 
 ```text
-peach-gateway peach-auth peach-front
+mvn ... -pl peach-auth,peach-gateway -am clean deploy
 ```
 
-填写 `all` 表示全部服务。
+公共后端基础模块变化时 resolver 选择全部后端；`ALL` 使用完整 reactor。只修改前端时跳过 Maven。
 
-### `STOP_UNSELECTED_SERVICES`
+## 6. Runtime Reconcile 与初始化
 
-默认 `false`。关闭时，本次没选择的业务容器保持当前状态；只有显式打开时才允许流水线处理未选服务。
+Jenkins 在 DevOps preflight 后执行 `reconcile-runtime.sh`。已有 Middleware/Observability 容器不会 recreate；停止的 existing container 只 start；缺失服务才创建。
 
-## 4. Maven 为什么只走 Nexus
+初始化全部幂等：MySQL 空库 baseline、MongoDB application user、Nacos 已有 config 默认 preserve、RocketMQ 按 `topics.json` ensure/verify/off。
 
-CI 渲染 `config/maven/settings.xml`，其中：
+## 7. RocketMQ 状态输出
 
-```xml
-<mirrorOf>*</mirrorOf>
-```
+每次 reconcile Archive `runtime/reports/rocketmq-status.txt`，包括 NameServer、Cluster、Broker `autoCreateTopicEnable`、`PEACH_ROCKET_TOPIC_AUTO_CREATE`、CI provisioning mode 和 Topic 对账结果。
 
-表示所有 Maven repository 请求统一先经过 Nexus `maven-public`。这样 Jenkins 构建不会因为每个 POM 单独配置外部仓库而产生不可控的网络行为。
+当前保留原有 `PEACH_ROCKET_TOPIC_AUTO_CREATE=true` 和 Broker `autoCreateTopicEnable=true`，保证改造后的能力与之前版本一致；同时新增显式 Topic catalog，逐步把生产 Topic 转为可治理资源。
 
-流水线执行的是：
+## 8. 兼容性报告
 
-```text
-mvn clean deploy
-```
+`generate-compatibility-report.mjs` 对照 `compatibility-baseline.json` 检查非业务镜像默认版本和 9 个应用服务合同，并只读记录实际容器/受保护 DevOps volume 状态，输出 `runtime/reports/compatibility-report.md`。仓库默认版本发生非预期漂移时 Pipeline 失败，不会自动升级现有基础设施。
 
-含义：
+## 9. Webhook 与手工构建
 
-- `clean`：删除当前 Maven 构建目录。
-- `deploy`：完成编译、测试、打包，并把可发布 Maven 构件上传到 Nexus 对应 hosted repository。
+Webhook 推荐 `BUILD_BRANCH=AUTO` + `BUILD_MODE=AUTO`。手工构建填写目标 branch，选择 `SELECTED`，在 `DEPLOY_SERVICES` 填目标服务。未选服务默认保持原状态，除非显式打开 `STOP_UNSELECTED_SERVICES`。
 
-Nexus 上传账号密码必须存在；Pipeline 会在构建前 fail-fast，而不是构建到最后再失败。
+## 10. 失败排查
 
-## 5. Docker 镜像版本
-
-Jenkins 用：
-
-```bash
-git rev-parse --short=12 HEAD
-```
-
-得到 12 位 Git SHA，并作为 `PEACH_IMAGE_TAG`。这样运行中的容器可以直接追溯到源代码 commit，避免只有 `latest` 无法审计。
-
-镜像前缀默认：
-
-```text
-localhost:5000/peach-cloud
-```
-
-Registry API：
-
-```text
-http://localhost:5000/v2/
-```
-
-Registry UI 默认：
-
-```text
-http://localhost:5001
-```
-
-## 6. Jenkins 发布前验证什么
-
-`scripts/ci/preflight.sh` 会：
-
-1. 加载 Jenkins Secret file。
-2. 检查 MySQL/Redis/Mongo/Nexus 等必须变量。
-3. 检查 Docker CLI、Docker daemon 与 Compose。
-4. 检查 `peach-devops`、`peach-cloud-runtime` 网络。
-5. 调用 `verify-infrastructure.sh` 做真实基础设施连通性验证。
-
-任何一步失败，发布立即停止；不会尝试“自动重建数据库”来规避错误。
-
-## 7. 手动构建时怎么模拟 Jenkins
-
-先确认本机环境文件：
-
-```bash
-export PEACH_ENV_FILE="$PWD/deploy-pipline/env/deploy.env"
-```
-
-**作用：** 告诉后续脚本使用哪个 Secret env 文件。
-
-执行预检：
-
-```bash
-deploy-pipline/scripts/ci/preflight.sh
-```
-
-**作用：** 只校验依赖和连通性，不发布业务。
-
-执行 Maven 构建/发布：
-
-```bash
-deploy-pipline/scripts/ci/maven-build.sh
-```
-
-**作用：** 在 CI 镜像中执行 Maven 构建，并通过渲染后的 settings 访问 Nexus。该命令会向 Nexus deploy 项目 Maven 构件，因此不是只读操作。
-
-应用部署由 `deploy-services.sh` 完成。建议日常仍通过 Jenkins 调用，不要同时手工和 Jenkins 操作同一批业务容器。
-
-## 8. GitLab Webhook
-
-GitLab Webhook 只负责通知 Jenkins “有代码变化”；真正 checkout 哪个 commit、构建什么、发布什么由 Jenkinsfile 决定。
-
-Webhook 构建正常但 Jenkins 手动构建异常时，优先比较：
-
-- 是否使用同一个分支/commit。
-- 是否加载同一个 `peach-deploy-env`。
-- Jenkins 构建参数是否一致。
-- Docker daemon / network 是否可访问。
-- 手动构建是否跳过了 GitLab Webhook 自动传入的 SCM 上下文。
-
-## 9. 发布失败排查顺序
-
-1. `preflight.sh`：基础设施是否健康。
-2. Nexus `/service/rest/v1/status`：Jenkins 是否能访问。
-3. Maven settings：是否仍为 `<mirrorOf>*</mirrorOf>`。
-4. Registry `/v2/`：Jenkins 是否能访问。
-5. `docker ps -a`：业务容器是否退出。
-6. `docker logs --tail 200 <service>`：查看应用启动失败原因。
-7. Nacos：配置/namespace/group 是否和 env 一致。
-
-不要用删除 Volume 的方式解决发布错误。
+先定位失败阶段：Existing DevOps → Runtime Reconcile → Maven → Image/Deploy → Compatibility。任何阶段都不应通过 `down -v` / volume prune 解决。

@@ -1,203 +1,57 @@
 pipeline {
     agent any
-
-    options {
-        disableConcurrentBuilds()
-        skipDefaultCheckout(true)
-        timestamps()
-        buildDiscarder(logRotator(numToKeepStr: '20'))
-    }
-
+    options { disableConcurrentBuilds(); skipDefaultCheckout(true); timestamps(); buildDiscarder(logRotator(numToKeepStr: '20')) }
     parameters {
-        string(
-            name: 'DEPLOY_SERVICES',
-            defaultValue: 'peach-gateway peach-auth peach-monitor peach-fileservice peach-message peach-setting peach-generator peach-scheduled peach-front',
-            description: '本次构建和部署的业务服务，使用空格或逗号分隔；可填写 all。',
-            trim: true
-        )
-        booleanParam(
-            name: 'STOP_UNSELECTED_SERVICES',
-            defaultValue: false,
-            description: '是否停止本次未选择的业务服务；默认保留其当前运行状态。'
-        )
+        string(name: 'BUILD_BRANCH', defaultValue: 'AUTO', description: 'AUTO 使用 Webhook/Job 当前 SCM 分支；也可填写 main、develop、feature/xxx 等远程分支。', trim: true)
+        choice(name: 'BUILD_MODE', choices: ['AUTO', 'SELECTED', 'ALL'], description: 'AUTO 根据 Git diff 自动识别受影响服务；SELECTED 使用 DEPLOY_SERVICES；ALL 构建全部应用服务。')
+        string(name: 'DEPLOY_SERVICES', defaultValue: 'peach-gateway', description: 'BUILD_MODE=SELECTED 时生效，使用空格或逗号分隔，例如 peach-auth,peach-gateway。', trim: true)
+        booleanParam(name: 'STOP_UNSELECTED_SERVICES', defaultValue: false, description: '是否停止本次未选择的业务服务；默认保留其当前运行状态。')
     }
-
-    environment {
-        REGISTRY = 'localhost:5000'
-        IMAGE_PREFIX = "${REGISTRY}/peach-cloud"
-        MAVEN_IMAGE = 'peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22'
-        DEPLOY_ENV_CREDENTIAL = 'peach-deploy-env'
-        ALL_APPLICATION_SERVICES = 'peach-gateway peach-auth peach-monitor peach-fileservice peach-message peach-setting peach-generator peach-scheduled peach-front'
-    }
-
+    environment { REGISTRY='localhost:5000'; IMAGE_PREFIX="${REGISTRY}/peach-cloud"; MAVEN_IMAGE='peach-ci/maven-node:3.9.11-eclipse-temurin-21-node22'; DEPLOY_ENV_CREDENTIAL='peach-deploy-env' }
     stages {
-        stage('Checkout') {
-            steps {
-                deleteDir()
-                checkout scm
-                script {
-                    env.IMAGE_TAG = sh(script: 'git rev-parse --short=12 HEAD', returnStdout: true).trim()
-                }
-            }
-        }
-
-        stage('Resolve deployment targets') {
-            steps {
-                script {
-                    def allowed = env.ALL_APPLICATION_SERVICES.tokenize(' ')
-                    def requested = params.DEPLOY_SERVICES.split(/[\\s,]+/).findAll { it }.unique()
-                    if (requested.contains('all')) {
-                        requested = allowed
-                    }
-                    if (requested.isEmpty()) {
-                        error 'DEPLOY_SERVICES must contain at least one service or all.'
-                    }
-                    def invalid = requested - allowed
-                    if (!invalid.isEmpty()) {
-                        error "Unsupported DEPLOY_SERVICES value: ${invalid.join(', ')}"
-                    }
-                    env.SELECTED_SERVICES = requested.join(' ')
-                    env.UNSELECTED_SERVICES = (allowed - requested).join(' ')
-                    env.STOP_UNSELECTED = params.STOP_UNSELECTED_SERVICES.toString()
-                    echo "Selected application services: ${env.SELECTED_SERVICES}"
-                }
-            }
-        }
-
-        stage('Validate credentials') {
-            steps {
-                withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
-                    sh '''
-                        set -eu
-                        set -a
-                        . "$DEPLOY_ENV_FILE"
-                        set +a
-                        : "${PEACH_LOG_ROOT:?PEACH_LOG_ROOT is required}"
-                        : "${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}"
-                        : "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"
-                        : "${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD is required}"
-                        : "${MONGO_APP_PASSWORD:?MONGO_APP_PASSWORD is required}"
-                        : "${PEACH_MONGO_URI:?PEACH_MONGO_URI is required}"
-                        : "${MAVEN_NEXUS_URL:?MAVEN_NEXUS_URL is required}"
-                        : "${MAVEN_NEXUS_USERNAME:?MAVEN_NEXUS_USERNAME is required for Maven deploy}"
-                        : "${MAVEN_NEXUS_PASSWORD:?MAVEN_NEXUS_PASSWORD is required for Maven deploy}"
-                    '''
-                }
-            }
-        }
-
-        stage('Build CI image') {
-            steps {
-                sh '''
-                    docker build \
-                      -f deploy-pipline/images/ci/Dockerfile \
-                      -t "$MAVEN_IMAGE" \
-                      deploy-pipline/images/ci
-                '''
-            }
-        }
-
-        stage('Verify infrastructure') {
-            steps {
-                withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
-                    sh '''
-                        export PEACH_ENV_FILE="$DEPLOY_ENV_FILE"
-                        deploy-pipline/scripts/ci/preflight.sh
-                    '''
-                }
-            }
-        }
-
-        stage('Maven build and deploy') {
-            options {
-                timeout(time: 60, unit: 'MINUTES')
-            }
-            steps {
-                withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
-                    sh '''
-                        export PEACH_ENV_FILE="$DEPLOY_ENV_FILE"
-                        export MAVEN_IMAGE="$MAVEN_IMAGE"
-                        deploy-pipline/scripts/ci/maven-build.sh
-                    '''
-                }
-            }
-        }
-
-        stage('Build and push backend images') {
-            steps {
-                withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
-                    sh '''
-                        set -eu
-                        set -a
-                        . "$DEPLOY_ENV_FILE"
-                        set +a
-                        export IMAGE_PREFIX="$IMAGE_PREFIX"
-                        for service in $SELECTED_SERVICES; do
-                          [ "$service" = "peach-front" ] && continue
-                          deploy-pipline/scripts/deploy/build-image.sh "$service" "$IMAGE_TAG"
-                          deploy-pipline/scripts/deploy/push-image.sh "$service" "$IMAGE_TAG"
-                        done
-                    '''
-                }
-            }
-        }
-
-        stage('Build and push frontend image') {
-            when {
-                expression { return env.SELECTED_SERVICES.tokenize(' ').contains('peach-front') }
-            }
-            steps {
-                withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
-                    sh '''
-                        set -eu
-                        set -a
-                        . "$DEPLOY_ENV_FILE"
-                        set +a
-                        export IMAGE_PREFIX="$IMAGE_PREFIX"
-                        deploy-pipline/scripts/ci/build-frontend.sh
-                        deploy-pipline/scripts/deploy/build-frontend-image.sh "$IMAGE_TAG"
-                        deploy-pipline/scripts/deploy/push-image.sh peach-front "$IMAGE_TAG"
-                    '''
-                }
-            }
-        }
-
-        stage('Deploy applications') {
-            steps {
-                withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
-                    sh '''
-                        export PEACH_ENV_FILE="$DEPLOY_ENV_FILE"
-                        export PEACH_IMAGE_TAG="$IMAGE_TAG"
-                        export IMAGE_PREFIX="$IMAGE_PREFIX"
-                        deploy-pipline/scripts/deploy/deploy-services.sh
-                    '''
-                }
-            }
-        }
-
-        stage('Verify applications') {
-            steps {
-                withCredentials([file(credentialsId: env.DEPLOY_ENV_CREDENTIAL, variable: 'DEPLOY_ENV_FILE')]) {
-                    sh '''
-                        set -a
-                        . "$DEPLOY_ENV_FILE"
-                        set +a
-                        deploy-pipline/scripts/deploy/verify-services.sh
-                    '''
-                }
-            }
-        }
+        stage('Checkout') { steps { deleteDir(); script {
+            def requestedBranch=params.BUILD_BRANCH?.trim()
+            if(!requestedBranch || requestedBranch=='AUTO'){ checkout scm; env.BUILD_SOURCE_BRANCH=env.GIT_BRANCH ?: 'SCM' }
+            else { def normalized=requestedBranch.replaceFirst('^origin/',''); def branchSpec=normalized.startsWith('refs/')?normalized:"*/${normalized}"; def remote=scm.userRemoteConfigs[0]; checkout([$class:'GitSCM',branches:[[name:branchSpec]],doGenerateSubmoduleConfigurations:false,extensions:[[$class:'CleanBeforeCheckout']],userRemoteConfigs:[[url:remote.url,credentialsId:remote.credentialsId]]]); env.BUILD_SOURCE_BRANCH=normalized }
+            env.IMAGE_TAG=sh(script:'git rev-parse --short=12 HEAD',returnStdout:true).trim(); echo "Build source branch: ${env.BUILD_SOURCE_BRANCH}; image tag: ${env.IMAGE_TAG}"
+        } } }
+        stage('Resolve application scope') { steps { script {
+            sh '''set -eu
+mkdir -p deploy-pipline/runtime/generated
+changed_file=deploy-pipline/runtime/generated/changed-files.txt
+: > "$changed_file"
+if [ "${BUILD_MODE}" = "AUTO" ]; then
+  base="${GIT_PREVIOUS_SUCCESSFUL_COMMIT:-}"
+  if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null && git merge-base --is-ancestor "$base" HEAD 2>/dev/null; then git diff --name-only "$base" HEAD > "$changed_file"; else printf '%s\n' 'deploy-pipline/first-build' > "$changed_file"; fi
+fi'''
+            def resolutionText=withEnv(["PEACH_BUILD_MODE=${params.BUILD_MODE}","PEACH_SELECTED_SERVICES=${params.DEPLOY_SERVICES ?: ''}"]){ sh(script:'node deploy-pipline/scripts/ci/resolve-services.mjs --mode "$PEACH_BUILD_MODE" --selected "$PEACH_SELECTED_SERVICES" --changed-file-list deploy-pipline/runtime/generated/changed-files.txt --format json',returnStdout:true).trim() }
+            def resolution=new groovy.json.JsonSlurperClassic().parseText(resolutionText); def allServices=new groovy.json.JsonSlurperClassic().parseText(sh(script:'node deploy-pipline/scripts/ci/resolve-services.mjs --mode ALL --format json',returnStdout:true).trim()).selectedServices
+            env.SELECTED_SERVICES=resolution.selectedServices.join(' '); env.MAVEN_PROJECTS=resolution.mavenProjects ?: ''; env.HAS_BACKEND=resolution.hasBackend.toString(); env.HAS_FRONTEND=resolution.hasFrontend.toString(); env.UNSELECTED_SERVICES=(allServices-resolution.selectedServices).join(' '); env.STOP_UNSELECTED=params.STOP_UNSELECTED_SERVICES.toString(); echo "Selected application services: ${env.SELECTED_SERVICES ?: '(none)'}; Maven projects: ${env.MAVEN_PROJECTS ?: '(none)'}"
+        } } }
+        stage('Render runtime configuration') { steps { withCredentials([file(credentialsId:env.DEPLOY_ENV_CREDENTIAL,variable:'DEPLOY_ENV_FILE')]) { sh '''set -eu
+node deploy-pipline/scripts/config/render-runtime-env.mjs --secrets "$DEPLOY_ENV_FILE" --output "$WORKSPACE/deploy-pipline/runtime/generated/deploy.env"
+chmod 600 "$WORKSPACE/deploy-pipline/runtime/generated/deploy.env"''' }; script { env.RUNTIME_ENV_FILE="${env.WORKSPACE}/deploy-pipline/runtime/generated/deploy.env" } } }
+        stage('Validate existing DevOps') { steps { sh 'export PEACH_ENV_FILE="$RUNTIME_ENV_FILE"; deploy-pipline/scripts/ci/preflight.sh' } }
+        stage('Reconcile runtime infrastructure') { steps { sh 'export PEACH_ENV_FILE="$RUNTIME_ENV_FILE"; deploy-pipline/scripts/bootstrap/reconcile-runtime.sh' } }
+        stage('Build CI image') { when { expression { env.HAS_BACKEND=='true' } } steps { sh 'docker build -f deploy-pipline/images/ci/Dockerfile -t "$MAVEN_IMAGE" deploy-pipline/images/ci' } }
+        stage('Maven build and deploy') { when { expression { env.HAS_BACKEND=='true' } } options { timeout(time:60,unit:'MINUTES') } steps { sh 'export PEACH_ENV_FILE="$RUNTIME_ENV_FILE" MAVEN_IMAGE="$MAVEN_IMAGE" MAVEN_PROJECTS="$MAVEN_PROJECTS"; deploy-pipline/scripts/ci/maven-build.sh' } }
+        stage('Build and push backend images') { when { expression { env.HAS_BACKEND=='true' } } steps { sh '''set -eu
+set -a; . "$RUNTIME_ENV_FILE"; set +a
+export IMAGE_PREFIX="$IMAGE_PREFIX"
+for service in $SELECTED_SERVICES; do [ "$service" = "peach-front" ] && continue; deploy-pipline/scripts/deploy/build-image.sh "$service" "$IMAGE_TAG"; deploy-pipline/scripts/deploy/push-image.sh "$service" "$IMAGE_TAG"; done''' } }
+        stage('Build and push frontend image') { when { expression { env.HAS_FRONTEND=='true' } } steps { sh '''set -eu
+set -a; . "$RUNTIME_ENV_FILE"; set +a
+export IMAGE_PREFIX="$IMAGE_PREFIX"
+deploy-pipline/scripts/ci/build-frontend.sh
+deploy-pipline/scripts/deploy/build-frontend-image.sh "$IMAGE_TAG"
+deploy-pipline/scripts/deploy/push-image.sh peach-front "$IMAGE_TAG"''' } }
+        stage('Deploy applications') { when { expression { env.SELECTED_SERVICES?.trim() } } steps { sh 'export PEACH_ENV_FILE="$RUNTIME_ENV_FILE" PEACH_IMAGE_TAG="$IMAGE_TAG" IMAGE_PREFIX="$IMAGE_PREFIX" SELECTED_SERVICES="$SELECTED_SERVICES" UNSELECTED_SERVICES="$UNSELECTED_SERVICES" STOP_UNSELECTED="$STOP_UNSELECTED"; deploy-pipline/scripts/deploy/deploy-services.sh' } }
+        stage('Verify applications') { when { expression { env.SELECTED_SERVICES?.trim() } } steps { sh 'set -a; . "$RUNTIME_ENV_FILE"; set +a; export SELECTED_SERVICES="$SELECTED_SERVICES"; deploy-pipline/scripts/deploy/verify-services.sh' } }
+        stage('Compatibility report') { steps { sh 'node deploy-pipline/scripts/ci/generate-compatibility-report.mjs'; archiveArtifacts artifacts:'deploy-pipline/runtime/reports/*',allowEmptyArchive:true } }
     }
-
     post {
-        success {
-            echo "Deployment succeeded: ${IMAGE_PREFIX}:${IMAGE_TAG}"
-        }
-        failure {
-            sh 'docker ps --format "table {{.Names}}\\t{{.Image}}\\t{{.Status}}" || true'
-        }
-        always {
-            sh 'rm -rf deploy-pipline/runtime/generated/build-context deploy-pipline/runtime/generated/front-dist || true'
-        }
+        success { echo "Deployment succeeded: branch=${BUILD_SOURCE_BRANCH}, tag=${IMAGE_TAG}, services=${SELECTED_SERVICES ?: '(none)'}" }
+        failure { sh 'docker ps --format "table {{.Names}}\\t{{.Image}}\\t{{.Status}}" || true' }
+        always { sh 'rm -f deploy-pipline/runtime/generated/deploy.env || true; rm -rf deploy-pipline/runtime/generated/build-context deploy-pipline/runtime/generated/front-dist deploy-pipline/runtime/generated/nacos || true' }
     }
 }

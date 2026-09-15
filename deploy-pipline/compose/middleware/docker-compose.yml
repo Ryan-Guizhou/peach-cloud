@@ -30,8 +30,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 30
-    networks:
-      - runtime
+    networks: [runtime]
 
   redis:
     image: redis:${REDIS_VERSION:-7.2-alpine}
@@ -56,8 +55,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 30
-    networks:
-      - runtime
+    networks: [runtime]
 
   nacos:
     image: nacos/nacos-server:${NACOS_VERSION:-v2.3.2}
@@ -86,8 +84,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 60
-    networks:
-      - runtime
+    networks: [runtime]
 
   mongodb:
     image: mongo:${MONGO_VERSION:-7.0}
@@ -102,15 +99,14 @@ services:
       - "127.0.0.1:${MONGO_HOST_PORT:-27017}:27017"
     volumes:
       - mongo-data:/data/db
-      - ../../config/mongodb/mongod.conf:/etc/mongod.conf:ro
+      - ${PEACH_RUNTIME_ROOT:?Set PEACH_RUNTIME_ROOT}/config/mongodb/mongod.conf:/etc/mongod.conf:ro
     command: ["mongod", "--config", "/etc/mongod.conf", "--auth"]
     healthcheck:
       test: ["CMD-SHELL", "mongosh --quiet --username \"$${MONGO_INITDB_ROOT_USERNAME}\" --password \"$${MONGO_INITDB_ROOT_PASSWORD}\" --authenticationDatabase admin --eval 'db.runCommand({ ping: 1 }).ok' | grep -q 1"]
       interval: 10s
       timeout: 5s
       retries: 30
-    networks:
-      - runtime
+    networks: [runtime]
 
   rocketmq-volume-init:
     image: apache/rocketmq:${ROCKETMQ_VERSION:-5.3.1}
@@ -118,10 +114,8 @@ services:
     user: "0:0"
     restart: "no"
     command: sh -c "chown -R 3000:3000 /home/rocketmq/store"
-    volumes:
-      - rocketmq-store:/home/rocketmq/store
-    networks:
-      - runtime
+    volumes: [rocketmq-store:/home/rocketmq/store]
+    networks: [runtime]
 
   rocketmq-namesrv:
     image: apache/rocketmq:${ROCKETMQ_VERSION:-5.3.1}
@@ -139,8 +133,7 @@ services:
         target: /home/rocketmq/logs
         bind:
           create_host_path: true
-    networks:
-      - runtime
+    networks: [runtime]
 
   rocketmq-broker:
     image: apache/rocketmq:${ROCKETMQ_VERSION:-5.3.1}
@@ -154,7 +147,7 @@ services:
     ports:
       - "127.0.0.1:${ROCKETMQ_BROKER_HOST_PORT:-10911}:10911"
     volumes:
-      - ../../config/rocketmq/broker.conf:/home/rocketmq/rocketmq-${ROCKETMQ_VERSION:-5.3.1}/conf/broker.conf:ro
+      - ${PEACH_RUNTIME_ROOT:?Set PEACH_RUNTIME_ROOT}/config/rocketmq/broker.conf:/home/rocketmq/rocketmq-${ROCKETMQ_VERSION:-5.3.1}/conf/broker.conf:ro
       - rocketmq-store:/home/rocketmq/store
       - type: bind
         source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/middleware/rocketmq/broker
@@ -162,12 +155,9 @@ services:
         bind:
           create_host_path: true
     depends_on:
-      rocketmq-namesrv:
-        condition: service_started
-      rocketmq-volume-init:
-        condition: service_completed_successfully
-    networks:
-      - runtime
+      rocketmq-namesrv: {condition: service_started}
+      rocketmq-volume-init: {condition: service_completed_successfully}
+    networks: [runtime]
 
   rocketmq-dashboard:
     image: apacherocketmq/rocketmq-dashboard:${ROCKETMQ_DASHBOARD_VERSION:-latest}
@@ -179,12 +169,9 @@ services:
     ports:
       - "127.0.0.1:${ROCKETMQ_DASHBOARD_HOST_PORT:-18088}:8082"
     depends_on:
-      rocketmq-namesrv:
-        condition: service_started
-      rocketmq-broker:
-        condition: service_started
-    networks:
-      - runtime
+      rocketmq-namesrv: {condition: service_started}
+      rocketmq-broker: {condition: service_started}
+    networks: [runtime]
 
 networks:
   runtime:
@@ -192,18 +179,8 @@ networks:
     name: peach-cloud-runtime
 
 volumes:
-  mysql-data:
-    external: true
-    name: peach-mysql-data
-  redis-data:
-    external: true
-    name: peach-redis-data
-  nacos-data:
-    external: true
-    name: peach-nacos-data
-  mongo-data:
-    external: true
-    name: peach-mongo-data
-  rocketmq-store:
-    external: true
-    name: peach-rocketmq-store
+  mysql-data: {external: true, name: peach-mysql-data}
+  redis-data: {external: true, name: peach-redis-data}
+  nacos-data: {external: true, name: peach-nacos-data}
+  mongo-data: {external: true, name: peach-mongo-data}
+  rocketmq-store: {external: true, name: peach-rocketmq-store}

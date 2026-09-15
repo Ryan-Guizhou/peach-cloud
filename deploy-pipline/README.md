@@ -2,69 +2,57 @@
 
 [English](README.en-US.md)
 
-`deploy-pipline` 是 Peach Cloud 独立的 Docker 基础设施与持续交付目录。DevOps、Middleware、Observability、Application 四个运行域彼此解耦：基础设施长期保留，Jenkins 只负责验证、构建、发布与更新业务容器。
+`deploy-pipline` 是 Peach Cloud 的 Docker 基础设施与持续交付目录。当前目标是：**日常只维护 Jenkins Secret file，Jenkins/Webhook 自动完成运行时配置合成、基础设施对账、数据初始化、按需构建、部署和验证，同时保护已经跑通的 GitLab/Jenkins/Nexus/Registry 数据。**
 
-## 架构
+## 自动化边界
 
 ```mermaid
 flowchart LR
-    GitLab -->|Webhook| Jenkins
-    Jenkins -->|Maven download/deploy| Nexus
-    Jenkins -->|docker push| Registry
-    Registry --> Application
-    Application --> MySQL
-    Application --> Redis
-    Application --> Nacos
-    Application --> MongoDB
-    Application --> RocketMQ
-    Dashboard["RocketMQ Dashboard"] --> RocketMQ
-    Application --> OTel
-    Prometheus --> Application
+    S[Secret file] --> J[Jenkins]
+    G[GitLab Webhook] --> J
+    J --> P[只读检查现有 DevOps]
+    J --> R[Runtime Reconcile]
+    R --> M[Middleware / Observability]
+    R --> D[MySQL / Mongo User / Nacos]
+    R --> Q[RocketMQ Topic Reconcile]
+    J --> B[按服务 Maven / Frontend Build]
+    B --> I[Registry Images]
+    I --> A[Selected Applications]
+    J --> C[Compatibility Report]
 ```
 
-## 四个运行域
+- **DevOps 保护区**：已有 `gitlab`、`jenkins`、`nexus`、`local-registry`、`registry-ui` 和对应 external volumes 不由 Jenkins 重建。
+- **运行时自动对账**：Middleware/Observability 已存在则复用或启动，缺失才创建。
+- **初始化幂等**：MySQL 只在空库执行 baseline；MongoDB 只确保业务用户；Nacos 默认保留已有配置；RocketMQ Topic 按声明确保存在。
+- **禁止破坏性动作**：自动化门禁禁止 `down -v`、`docker volume prune`、`docker volume rm`。
 
-| 域 | Compose | 主要组件 | 生命周期 |
-| --- | --- | --- | --- |
-| DevOps | [`compose/devops/docker-compose.yml`](compose/devops/docker-compose.yml) | GitLab、Jenkins、Nexus、Registry、Registry UI、Nginx | 长期常驻 |
-| Middleware | [`compose/middleware/docker-compose.yml`](compose/middleware/docker-compose.yml) | MySQL、Redis、Nacos、MongoDB、RocketMQ、RocketMQ Dashboard | 长期常驻，发布前必须就绪 |
-| Observability | [`compose/observability/docker-compose.yml`](compose/observability/docker-compose.yml) | Prometheus、Tempo、OTel、Loki、Alloy、Grafana | 长期常驻 |
-| Application | [`compose/application/docker-compose.yml`](compose/application/docker-compose.yml) | Peach Cloud 后端服务与前端 | Jenkins 按服务更新 |
+## 你需要维护的唯一私有文件
 
-## 最短启动路径
+以 [`env/deploy.env.example`](env/deploy.env.example) 为模板保存 Jenkins Secret file，Credential ID 继续使用 `peach-deploy-env`。仓库维护的非敏感默认值位于 [`env/defaults.env`](env/defaults.env)。旧版完整 `deploy.env` 仍兼容，私有文件中的同名值会覆盖默认值。
 
-1. 复制 `env/deploy.env.example` 为私有 `env/deploy.env`。
-2. 修改 `change_me_*`、`PEACH_RUNTIME_ROOT`、`PEACH_LOG_ROOT`。
-3. 在仓库根目录执行：
+## Jenkins 构建模式
+
+- `BUILD_BRANCH=AUTO`：Webhook/当前 SCM 分支；也可手工填写 `main`、`develop`、`feature/...`。
+- `BUILD_MODE=AUTO`：根据 Git diff 自动计算受影响服务。
+- `BUILD_MODE=SELECTED`：`DEPLOY_SERVICES` 填空格或逗号分隔的服务名。
+- `BUILD_MODE=ALL`：构建全部应用。
+
+为避免升级或重建现有 Jenkins，本次不新增 Git Parameter/Active Choices 插件，因此分支和多服务选择使用 Jenkins 原生参数。
+
+## RocketMQ
+
+[`config/rocketmq/topics.json`](config/rocketmq/topics.json) 保存受治理 Topic。默认 `ROCKETMQ_TOPIC_PROVISION_MODE=ensure`：缺失时自动创建；`verify` 只检查；`off` 不治理。每次执行生成 `runtime/reports/rocketmq-status.txt`，同时显示 Broker `autoCreateTopicEnable`、Peach Starter 自动创建开关和 Topic 对账结果。
+
+## 冷启动与日常运行
+
+已有 Jenkins/GitLab 环境下，**日常无需手动执行 bootstrap/init 脚本**，直接使用 Webhook 或 Jenkins 参数构建。只有全新 Docker 主机尚未存在 Jenkins 时，才使用一次性冷启动入口：
 
 ```bash
 PEACH_ENV_FILE=deploy-pipline/env/deploy.env deploy-pipline/scripts/bootstrap/bootstrap.sh
 ```
 
-Bootstrap 会复用已有受保护容器/Volume，启动 DevOps、Middleware、Observability，执行 MySQL/Nacos 幂等初始化，并仅确保 MongoDB 业务用户存在。**MongoDB 不做 schema/index/seed 数据初始化。**
-
-RocketMQ 可视化控制台默认访问：
-
-```text
-http://localhost:18088
-```
-
-## 验证
-
-```bash
-PEACH_ENV_FILE=deploy-pipline/env/deploy.env deploy-pipline/scripts/bootstrap/verify-infrastructure.sh
-```
-
-该命令验证 Registry、Nexus、中间件与关键网络连通性。业务发布由 [`Jenkinsfile`](Jenkinsfile) 完成，Jenkins 不启动数据库或中间件。
-
-## 数据保护
-
-核心 named volume 使用固定 external identity，例如 `peach-gitlab-data`、`peach-jenkins-data`、`peach-nexus-data`、`peach-mysql-data`、`peach-redis-data`、`peach-nacos-data`、`peach-mongo-data`、`peach-rocketmq-store`。普通脚本禁止 `down -v`、`docker volume prune`、`docker volume rm` 等 destructive 操作。
-
 ## 文档
 
-`docs/` 只保留三份真正需要长期维护的文档：
-
-- [启动手册：从 0 启动全部服务、逐条解释命令](docs/getting-started.md)
-- [架构与运维：网络、Volume、数据保护、迁移、日志、健康检查](docs/architecture-and-operations.md)
-- [CI/CD：Jenkins、Nexus、Registry、Webhook 与发布流程](docs/ci-cd.md)
+- [启动与迁移](docs/getting-started.md)
+- [架构、数据保护与运维](docs/architecture-and-operations.md)
+- [Jenkins / Nexus / Registry / Webhook 发布流程](docs/ci-cd.md)

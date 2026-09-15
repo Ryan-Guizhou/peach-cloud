@@ -1,196 +1,81 @@
-# 架构、网络、存储与运维
+# 架构、数据保护与运维
 
 ## 1. 生命周期边界
 
 ```mermaid
-flowchart LR
-    subgraph DevOps
-        GitLab --> Jenkins
-        Jenkins --> Nexus
-        Jenkins --> Registry
+flowchart TB
+    subgraph ProtectedDevOps[Protected DevOps - Jenkins 只读校验]
+        GitLab
+        Jenkins
+        Nexus
+        Registry
     end
-    subgraph Middleware
+    subgraph ReconciledRuntime[Reconciled Runtime]
         MySQL
         Redis
         Nacos
         MongoDB
-        RocketMQ["RocketMQ NameServer + Broker"]
-        Dashboard["RocketMQ Dashboard"]
-        Dashboard --> RocketMQ
+        RocketMQ
+        Observability
     end
-    subgraph Observability
-        OTel["OTel Collector"]
-        Prometheus
-        Loki
-        Tempo
-        Grafana
+    subgraph Application[Application]
+        Services[Selected Peach Services]
     end
-    subgraph Application
-        Services["Peach Cloud Services"]
-    end
+    GitLab --> Jenkins
+    Jenkins --> ReconciledRuntime
     Jenkins --> Services
-    Services --> MySQL
-    Services --> Redis
-    Services --> Nacos
-    Services --> MongoDB
-    Services --> RocketMQ
-    Services --> OTel
+    Jenkins --> Nexus
+    Jenkins --> Registry
+    Services --> ReconciledRuntime
 ```
 
-核心原则：**基础设施长生命周期，Application 短生命周期；Jenkins 只能发布业务，不拥有数据库和中间件生命周期。**
+核心原则：**已经跑通的 DevOps 是受保护资产；Jenkins 可以对账 Runtime，但不能把自己、GitLab、Nexus、Registry 当作发布对象重建。**
 
-## 2. Docker 网络
+## 2. Reconcile 语义
 
-### `peach-devops`
+`scripts/bootstrap/reconcile-runtime.sh` 依次确保网络/受保护 external volume、同步仓库配置到 `PEACH_RUNTIME_ROOT/config`、复用/启动/创建缺失 Runtime 服务、健康检查、执行 MySQL/MongoDB/Nacos/RocketMQ 幂等初始化并再次验证。该脚本不引用 DevOps Compose。
 
-用于 GitLab、Jenkins、Nexus、Registry 等 CI/CD 组件互通。
-
-### `peach-cloud-runtime`
-
-用于业务服务与 MySQL、Redis、Nacos、MongoDB、RocketMQ、可观测组件互通。
-
-Jenkins 和部分观测组件会同时加入两个网络，用于构建发布和探测；数据库不需要加入 `peach-devops`。
-
-查看网络成员：
-
-```bash
-docker network inspect peach-cloud-runtime
-```
-
-该命令只读取 Docker 网络信息，不修改容器。
-
-## 3. 受保护数据 Volume
-
-关键 named volume：
-
-| 组件 | Volume |
-| --- | --- |
-| GitLab | `peach-gitlab-config`、`peach-gitlab-data` |
-| Jenkins | `peach-jenkins-data` |
-| Nexus | `peach-nexus-data` |
-| Registry | `peach-registry-data` |
-| MySQL | `peach-mysql-data` |
-| Redis | `peach-redis-data` |
-| Nacos | `peach-nacos-data` |
-| MongoDB | `peach-mongo-data` |
-| RocketMQ | `peach-rocketmq-store` |
-| Prometheus | `peach-prometheus-data` |
-| Tempo | `peach-tempo-data` |
-| Loki | `peach-loki-data` |
-| Grafana | `peach-grafana-data` |
-
-这些 Volume 在 Compose 中声明为 `external: true`，目的是把“删除 Compose 项目”和“删除真实数据”解耦。
-
-查看一个 Volume：
-
-```bash
-docker volume inspect peach-mysql-data
-```
-
-该命令只读取 metadata 和真实挂载位置。
-
-## 4. 数据初始化边界
+## 3. 数据初始化边界
 
 ### MySQL
 
-`scripts/init/init-mysql.sh` 负责幂等执行仓库定义的 SQL 初始化。重复执行不应 destructive reset 已有数据库。
-
-### Nacos
-
-`scripts/init/init-nacos.sh` 负责 namespace/config 导入。它属于基础设施 Bootstrap，不属于 Jenkins 发布流程。
+数据库无表时执行 baseline schema + seed；检测到已有表则保留数据库。
 
 ### MongoDB
 
-MongoDB **不做业务数据初始化**：
+只确保业务用户存在，不创建业务 collection/index/seed 数据。
 
-- 不维护 `init/mongodb/schema`。
-- 不维护 `init/mongodb/indexes`。
-- 不维护 `init/mongodb/data`。
-- 不自动插入 seed 文档。
+### Nacos
 
-`scripts/init/ensure-mongodb-user.sh` 仅负责最小权限业务账号的幂等创建，避免应用使用 root；这不是业务数据初始化。
+Namespace 不存在则创建；已有 DataId 默认保留。只有显式 `--sync` 才允许用仓库模板同步覆盖配置。
 
-Mongo 数据只保存在 `peach-mongo-data`。数据库日志使用 Docker stdout/stderr，通过 `docker logs peach-mongo` 查看，避免宿主机 UID/GID 导致日志目录权限问题。
+### RocketMQ
 
-## 5. RocketMQ 与 Dashboard
+`topics.json` 是声明式 catalog。`ensure` 创建缺失 Topic、`verify` 只检查、`off` 不治理。Broker 配置和 Peach Starter 自动创建开关都会写入状态报告。
 
-运行容器：
+## 4. 受保护 Docker Identity
 
-- `peach-rocketmq-namesrv`
-- `peach-rocketmq-broker`
-- `peach-rocketmq-dashboard`
+| 组件 | 固定容器/Volume |
+| --- | --- |
+| GitLab | `gitlab` / `peach-gitlab-config` / `peach-gitlab-data` |
+| Jenkins | `jenkins` / `peach-jenkins-data` |
+| Nexus | `nexus` / `peach-nexus-data` |
+| Registry | `local-registry` / `peach-registry-data` |
 
-当前 Dashboard 镜像实际监听容器 `8082`，Compose 默认映射为 `127.0.0.1:18088 -> 8082`，并通过 `rocketmq-namesrv:9876` 查询集群。宿主机访问地址为 `http://localhost:18088`。
+MySQL/Redis/Nacos/MongoDB/RocketMQ 和 Observability 继续沿用 PR #7 已确定的 fixed external volume identity。
 
-Dashboard 主要用于观察和运维 Topic、Consumer、Broker 和消息。生产环境修改 Topic/Consumer 配置时仍应遵循项目的 RocketMQ 治理约定，不应把 Dashboard 当作绕过配置治理的入口。
+## 5. 版本兼容性
 
-健康验证不仅检查 Dashboard 容器运行状态，还会从宿主机请求 Dashboard HTTP 首页，避免“容器 running 但端口映射错误”的假健康。
+[`config/compatibility-baseline.json`](../config/compatibility-baseline.json) 固化本次要求保持的非业务镜像引用；[`env/defaults.env`](../env/defaults.env) 提供实际默认版本。`generate-compatibility-report.mjs` 检查仓库配置漂移，并只读记录当前容器 `Config.Image`/状态和 DevOps volume 是否存在。
 
-## 6. 已有环境迁移策略
+为保护现有环境，本次不主动升级 `gitlab/gitlab-ce:latest`、Jenkins LTS、Registry UI、RocketMQ Dashboard 等既有浮动标签。后续版本锁定应作为独立迁移任务处理，而不是夹在自动化改造中重建容器。
 
-迁移前先执行：
+## 6. 网络
 
-```bash
-docker ps -a
-docker volume ls
-docker network ls
-```
+- `peach-devops`：现有 Jenkins/Nexus/Registry/GitLab 通讯网络，Jenkins preflight 要求它已经存在。
+- `peach-cloud-runtime`：应用与 Runtime 通讯网络，reconcile 可在缺失时创建。
+- Jenkins 只会在需要时附加到 runtime network，不会因此重建 Jenkins 容器。
 
-分别盘点容器、Volume 和 Network。它们都是只读命令。
+## 7. 排障原则
 
-然后执行：
-
-```bash
-PEACH_ENV_FILE=deploy-pipline/env/deploy.env deploy-pipline/scripts/bootstrap/inspect-existing.sh
-```
-
-该脚本用于比较 V2 期望的 Docker identity 与当前环境；发现已有容器时，Bootstrap 优先复用并启动，不主动重建。
-
-### 绝对禁止的日常命令
-
-```text
-docker compose down -v
-docker volume prune
-docker system prune --volumes
-docker volume rm <protected-volume>
-```
-
-这些命令可能删除不可恢复的持久化数据，除非明确执行灾难恢复/重建方案，否则不要使用。
-
-## 7. 日志
-
-统一日志根目录来自：
-
-```dotenv
-PEACH_LOG_ROOT=...
-```
-
-应用日志落在 `runtime/logs/application/*`；中间件中支持文件日志的组件落在 `runtime/logs/middleware/*`。MongoDB 保持 stdout 日志。
-
-常见命令：
-
-```bash
-docker logs --tail 200 peach-mysql
-docker logs --tail 200 peach-nacos
-docker logs --tail 200 peach-rocketmq-broker
-```
-
-这些命令只读取容器日志。
-
-## 8. 健康验证
-
-统一验证：
-
-```bash
-PEACH_ENV_FILE=deploy-pipline/env/deploy.env deploy-pipline/scripts/bootstrap/verify-infrastructure.sh
-```
-
-覆盖：Registry、Nexus、MySQL、Redis、Nacos、MongoDB、RocketMQ，以及 Jenkins 到 Nexus/Registry 的网络连通性。
-
-Middleware 单独验证：
-
-```bash
-PEACH_ENV_FILE=deploy-pipline/env/deploy.env deploy-pipline/scripts/bootstrap/verify-middleware.sh
-```
-
-如果某项失败，先看失败容器的 `docker logs`，再看网络成员和环境变量，不要先删 Volume 重建。
+先看 `compatibility-report.md` 和 `rocketmq-status.txt`，再看 `docker ps -a`、`docker logs`、network/volume inspect。不要使用删除 volume 或重建 DevOps 的方式处理业务发布失败。

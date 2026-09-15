@@ -1,0 +1,15 @@
+{
+  "services": {
+    "peach-gateway": {"type":"backend","module":"peach-gateway","composeService":"peach-gateway","paths":["peach-gateway/"]},
+    "peach-auth": {"type":"backend","module":"peach-auth","composeService":"peach-auth","paths":["peach-auth/"]},
+    "peach-monitor": {"type":"backend","module":"peach-monitor","composeService":"peach-monitor","paths":["peach-monitor/"]},
+    "peach-fileservice": {"type":"backend","module":"peach-fileservice","composeService":"peach-fileservice","paths":["peach-fileservice/"]},
+    "peach-message": {"type":"backend","module":"peach-message","composeService":"peach-message","paths":["peach-message/"]},
+    "peach-setting": {"type":"backend","module":"peach-setting","composeService":"peach-setting","paths":["peach-setting/"]},
+    "peach-generator": {"type":"backend","module":"peach-generator","composeService":"peach-generator","paths":["peach-generator/"]},
+    "peach-scheduled": {"type":"backend","module":"peach-scheduled","composeService":"peach-scheduled","paths":["peach-scheduled/"]},
+    "peach-front": {"type":"frontend","module":null,"composeService":"peach-front","paths":["peach-cloud-front/"]}
+  },
+  "globalBackendPaths": ["pom.xml","peach-dependencies/","peach-common/","peach-component/","peach-middleware/","peach-sample/"],
+  "globalAllPaths": ["deploy-pipline/",".github/workflows/deploy-pipeline.yml"]
+}

@@ -1,0 +1,11 @@
+{
+  "topics": [
+    {
+      "name": "scheduler-execution-result",
+      "readQueueNums": 8,
+      "writeQueueNums": 8,
+      "perm": 6,
+      "description": "Scheduler execution result events returned by business services"
+    }
+  ]
+}

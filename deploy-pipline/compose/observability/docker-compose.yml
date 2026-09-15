@@ -15,11 +15,9 @@ services:
     ports:
       - "127.0.0.1:${PROMETHEUS_HOST_PORT:-9090}:9090"
     volumes:
-      - ../../config/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ${PEACH_RUNTIME_ROOT:?Set PEACH_RUNTIME_ROOT}/config/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
-    networks:
-      - devops
-      - runtime
+    networks: [devops, runtime]
 
   tempo:
     image: grafana/tempo:${TEMPO_VERSION:-2.10.7}
@@ -28,10 +26,9 @@ services:
     restart: unless-stopped
     command: ["-config.file=/etc/tempo/tempo.yml"]
     volumes:
-      - ../../config/observability/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - ${PEACH_RUNTIME_ROOT:?Set PEACH_RUNTIME_ROOT}/config/observability/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
       - tempo-data:/var/tempo
-    networks:
-      - devops
+    networks: [devops]
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:${OTEL_COLLECTOR_VERSION:-0.153.0}
@@ -40,13 +37,10 @@ services:
     restart: unless-stopped
     command: ["--config=/etc/otelcol-contrib/config.yml"]
     volumes:
-      - ../../config/observability/otel-collector/config.yml:/etc/otelcol-contrib/config.yml:ro
+      - ${PEACH_RUNTIME_ROOT:?Set PEACH_RUNTIME_ROOT}/config/observability/otel-collector/config.yml:/etc/otelcol-contrib/config.yml:ro
     depends_on:
-      tempo:
-        condition: service_started
-    networks:
-      - devops
-      - runtime
+      tempo: {condition: service_started}
+    networks: [devops, runtime]
 
   loki:
     image: grafana/loki:${LOKI_VERSION:-3.7.4}
@@ -55,10 +49,9 @@ services:
     restart: unless-stopped
     command: ["-config.file=/etc/loki/loki.yml"]
     volumes:
-      - ../../config/observability/loki/loki.yml:/etc/loki/loki.yml:ro
+      - ${PEACH_RUNTIME_ROOT:?Set PEACH_RUNTIME_ROOT}/config/observability/loki/loki.yml:/etc/loki/loki.yml:ro
       - loki-data:/loki
-    networks:
-      - devops
+    networks: [devops]
 
   alloy:
     image: grafana/alloy:${ALLOY_VERSION:-v1.18.0}
@@ -67,7 +60,7 @@ services:
     restart: unless-stopped
     command: ["run", "--storage.path=/var/lib/alloy/data", "/etc/alloy/config.alloy"]
     volumes:
-      - ../../config/observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ${PEACH_RUNTIME_ROOT:?Set PEACH_RUNTIME_ROOT}/config/observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
       - alloy-data:/var/lib/alloy/data
       - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/peach-gateway:/var/log/peach/gateway:ro
       - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/peach-auth:/var/log/peach/auth:ro
@@ -78,10 +71,8 @@ services:
       - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/peach-generator:/var/log/peach/generator:ro
       - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/peach-scheduled:/var/log/peach/scheduled:ro
     depends_on:
-      loki:
-        condition: service_started
-    networks:
-      - devops
+      loki: {condition: service_started}
+    networks: [devops]
 
   grafana:
     image: grafana/grafana:${GRAFANA_VERSION:-13.1.0}
@@ -98,39 +89,21 @@ services:
     ports:
       - "127.0.0.1:${GRAFANA_HOST_PORT:-3000}:3000"
     volumes:
-      - ../../config/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${PEACH_RUNTIME_ROOT:?Set PEACH_RUNTIME_ROOT}/config/observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana-data:/var/lib/grafana
     depends_on:
-      prometheus:
-        condition: service_started
-      tempo:
-        condition: service_started
-      loki:
-        condition: service_started
-    networks:
-      - devops
+      prometheus: {condition: service_started}
+      tempo: {condition: service_started}
+      loki: {condition: service_started}
+    networks: [devops]
 
 networks:
-  devops:
-    external: true
-    name: peach-devops
-  runtime:
-    external: true
-    name: peach-cloud-runtime
+  devops: {external: true, name: peach-devops}
+  runtime: {external: true, name: peach-cloud-runtime}
 
 volumes:
-  prometheus-data:
-    external: true
-    name: peach-prometheus-data
-  tempo-data:
-    external: true
-    name: peach-tempo-data
-  loki-data:
-    external: true
-    name: peach-loki-data
-  alloy-data:
-    external: true
-    name: peach-alloy-data
-  grafana-data:
-    external: true
-    name: peach-grafana-data
+  prometheus-data: {external: true, name: peach-prometheus-data}
+  tempo-data: {external: true, name: peach-tempo-data}
+  loki-data: {external: true, name: peach-loki-data}
+  alloy-data: {external: true, name: peach-alloy-data}
+  grafana-data: {external: true, name: peach-grafana-data}
