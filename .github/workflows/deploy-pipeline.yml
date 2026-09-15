@@ -1,0 +1,151 @@
+name: Deploy Pipeline Validation
+
+on:
+  pull_request:
+    paths:
+      - 'deploy-pipline/**'
+      - '.github/workflows/deploy-pipeline.yml'
+  push:
+    paths:
+      - 'deploy-pipline/**'
+      - '.github/workflows/deploy-pipeline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  static-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate automation contracts and script syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find deploy-pipline/scripts -type f -name '*.sh' -print0 | sort -z | xargs -0 -n1 bash -n
+          find deploy-pipline/scripts -type f -name '*.mjs' -print0 | sort -z | xargs -0 -n1 node --check
+          node --test deploy-pipline/tests/automation-contract.test.mjs
+          node deploy-pipline/scripts/validate-deploy-pipeline.mjs
+      - name: Render validation configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/deploy.secrets.env" <<EOF_ENV
+          PEACH_RUNTIME_ROOT=/tmp/peach-runtime
+          PEACH_LOG_ROOT=/tmp/peach-runtime/logs
+          MYSQL_ROOT_PASSWORD=ci_mysql_password
+          REDIS_PASSWORD=ci_redis_password
+          MONGO_ROOT_PASSWORD=ci_mongo_root_password
+          MONGO_APP_PASSWORD=ci_mongo_app_password
+          MAVEN_NEXUS_USERNAME=ci
+          MAVEN_NEXUS_PASSWORD=ci_nexus_password
+          GRAFANA_ADMIN_PASSWORD=ci_grafana_password
+          OSS_ACCESS_KEY=ci_oss_key
+          OSS_SECRET_KEY=ci_oss_secret
+          COS_ACCESS_KEY=ci_cos_key
+          COS_SECRET_KEY=ci_cos_secret
+          EOF_ENV
+          node deploy-pipline/scripts/config/render-runtime-env.mjs --secrets "$RUNNER_TEMP/deploy.secrets.env" --output "$PWD/deploy-pipline/runtime/generated/deploy.env"
+          mkdir -p /tmp/peach-runtime/logs
+      - name: Validate Compose models
+        shell: bash
+        run: |
+          set -euo pipefail
+          for compose in deploy-pipline/compose/devops/docker-compose.yml deploy-pipline/compose/middleware/docker-compose.yml deploy-pipline/compose/observability/docker-compose.yml deploy-pipline/compose/application/docker-compose.yml; do
+            docker compose --env-file deploy-pipline/runtime/generated/deploy.env -f "$compose" config --quiet
+          done
+      - name: Validate Maven settings rendering
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -a; . deploy-pipline/runtime/generated/deploy.env; set +a
+          export MAVEN_SETTINGS_TEMPLATE="$PWD/deploy-pipline/config/maven/settings.xml"
+          export MAVEN_SETTINGS_GENERATED="$RUNNER_TEMP/settings.generated.xml"
+          export MAVEN_LOCAL_REPOSITORY="$RUNNER_TEMP/m2/repository"
+          node deploy-pipline/scripts/ci/render-maven-settings.mjs
+          grep -q '<mirrorOf>\*</mirrorOf>' "$MAVEN_SETTINGS_GENERATED"
+          grep -q 'http://nexus:8081/repository/maven-public/' "$MAVEN_SETTINGS_GENERATED"
+          if grep -Eq '@[A-Z0-9_]+@' "$MAVEN_SETTINGS_GENERATED"; then exit 1; fi
+      - name: Validate repository version parity
+        run: node deploy-pipline/scripts/ci/generate-compatibility-report.mjs
+
+  middleware-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare isolated middleware environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/deploy.secrets.env" <<EOF_ENV
+          PEACH_RUNTIME_ROOT=/tmp/peach-runtime
+          PEACH_LOG_ROOT=/tmp/peach-runtime/logs
+          MYSQL_ROOT_PASSWORD=ci_mysql_password
+          REDIS_PASSWORD=ci_redis_password
+          MONGO_ROOT_PASSWORD=ci_mongo_root_password
+          MONGO_APP_PASSWORD=ci_mongo_app_password
+          MAVEN_NEXUS_USERNAME=ci
+          MAVEN_NEXUS_PASSWORD=ci_nexus_password
+          GRAFANA_ADMIN_PASSWORD=ci_grafana_password
+          OSS_ACCESS_KEY=ci_oss_key
+          OSS_SECRET_KEY=ci_oss_secret
+          COS_ACCESS_KEY=ci_cos_key
+          COS_SECRET_KEY=ci_cos_secret
+          EOF_ENV
+          node deploy-pipline/scripts/config/render-runtime-env.mjs --secrets "$RUNNER_TEMP/deploy.secrets.env" --output "$PWD/deploy-pipline/runtime/generated/deploy.env"
+          mkdir -p /tmp/peach-runtime/logs /tmp/peach-runtime/config
+          cp -R deploy-pipline/config/. /tmp/peach-runtime/config/
+          docker network create peach-cloud-runtime
+          for v in peach-mysql-data peach-redis-data peach-nacos-data peach-mongo-data peach-rocketmq-store; do docker volume create "$v"; done
+      - name: Start middleware containers
+        run: docker compose --env-file deploy-pipline/runtime/generated/deploy.env -f deploy-pipline/compose/middleware/docker-compose.yml up -d mysql redis nacos mongodb rocketmq-namesrv rocketmq-broker rocketmq-dashboard
+      - name: Verify middleware
+        run: PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env" deploy-pipline/scripts/bootstrap/verify-middleware.sh
+      - name: Verify MySQL initialization is idempotent
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env"
+          for iteration in 1 2; do echo "MySQL initialization iteration: $iteration"; deploy-pipline/scripts/init/init-mysql.sh; done
+      - name: Verify MongoDB user initialization is idempotent
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env"
+          for iteration in 1 2; do echo "MongoDB initialization iteration: $iteration"; deploy-pipline/scripts/init/ensure-mongodb-user.sh; done
+      - name: Verify Nacos initialization is idempotent
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env"
+          for iteration in 1 2; do echo "Nacos initialization iteration: $iteration"; deploy-pipline/scripts/init/init-nacos.sh; done
+      - name: Verify RocketMQ topic reconciliation is idempotent
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env"
+          for iteration in 1 2; do echo "RocketMQ topic reconciliation iteration: $iteration"; deploy-pipline/scripts/init/reconcile-rocketmq-topics.sh; done
+          docker exec peach-rocketmq-broker sh -c "grep -Fq '\"topicName\":\"scheduler-execution-result\"' /home/rocketmq/store/config/topics.json"
+      - name: Show diagnostics on failure
+        if: failure()
+        shell: bash
+        run: |
+          docker ps -a || true
+          for c in peach-mysql peach-redis peach-nacos peach-mongo peach-rocketmq-namesrv peach-rocketmq-broker peach-rocketmq-dashboard; do
+            echo "===== $c ====="
+            docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$c" 2>/dev/null || true
+            docker logs "$c" --tail 100 || true
+          done
+          docker exec peach-rocketmq-broker cat /home/rocketmq/store/config/topics.json 2>/dev/null || true
+          cat deploy-pipline/runtime/reports/rocketmq-status.txt 2>/dev/null || true
+      - name: Stop middleware without deleting data volumes
+        if: always()
+        run: docker compose --env-file deploy-pipline/runtime/generated/deploy.env -f deploy-pipline/compose/middleware/docker-compose.yml down --remove-orphans || true

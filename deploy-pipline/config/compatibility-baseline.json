@@ -1,0 +1,25 @@
+{
+  "images": {
+    "registry": "registry:3",
+    "registryUi": "joxit/docker-registry-ui:latest",
+    "gitlab": "gitlab/gitlab-ce:latest",
+    "nexus": "sonatype/nexus3:3.75.1",
+    "jenkins": "peach-jenkins:lts-jdk21",
+    "nginx": "nginx:1.25-alpine",
+    "mysql": "mysql:8.0",
+    "redis": "redis:7.2-alpine",
+    "nacos": "nacos/nacos-server:v2.3.2",
+    "mongodb": "mongo:7.0",
+    "rocketmq": "apache/rocketmq:5.3.1",
+    "rocketmqDashboard": "apacherocketmq/rocketmq-dashboard:latest",
+    "prometheus": "prom/prometheus:v3.12.0",
+    "tempo": "grafana/tempo:2.10.7",
+    "otelCollector": "otel/opentelemetry-collector-contrib:0.153.0",
+    "loki": "grafana/loki:3.7.4",
+    "alloy": "grafana/alloy:v1.18.0",
+    "grafana": "grafana/grafana:13.1.0"
+  },
+  "protectedDevopsContainers": ["local-registry","registry-ui","gitlab","nexus","jenkins","peach-devops-nginx"],
+  "protectedVolumes": ["peach-registry-data","peach-gitlab-config","peach-gitlab-data","peach-jenkins-data","peach-nexus-data"],
+  "applicationServices": ["peach-gateway","peach-auth","peach-monitor","peach-fileservice","peach-message","peach-setting","peach-generator","peach-scheduled","peach-front"]
+}
