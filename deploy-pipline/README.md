@@ -53,6 +53,6 @@ PEACH_ENV_FILE=deploy-pipline/env/deploy.env deploy-pipline/scripts/bootstrap/bo
 
 ## 文档
 
-- [启动与迁移](docs/getting-started.md)
+- [启动与配置手册（Windows / Linux）](docs/getting-started.md)
 - [架构、数据保护与运维](docs/architecture-and-operations.md)
 - [Jenkins / Nexus / Registry / Webhook 发布流程](docs/ci-cd.md)
