@@ -89,13 +89,18 @@ test('storage rendering defaults to local and omits cloud providers without comp
   assert.match(partial.stderr, /Incomplete COS credentials/);
 });
 
-test('runtime reconciliation reapplies Compose definitions and only replaces legacy runtime containers', () => {
-  const script = read('scripts/bootstrap/start-runtime.sh');
-  assert.doesNotMatch(script, /docker\s+start\s+"?\$container/);
-  assert.match(script, /com\.docker\.compose\.project/);
-  assert.match(script, /docker\s+rm\s+-f\s+"\$container"/);
-  assert.match(script, /docker\s+compose[\s\S]*up\s+-d\s+--no-deps/);
-  assert.doesNotMatch(script, /docker\s+rm\s+-f[^\n]*(?:jenkins|gitlab|nexus|local-registry|registry-ui)/);
+test('runtime reconciliation reapplies Compose definitions in both daily and cold-start paths', () => {
+  const runtime = read('scripts/bootstrap/start-runtime.sh');
+  assert.doesNotMatch(runtime, /docker\s+start\s+"?\$container/);
+  assert.match(runtime, /com\.docker\.compose\.project/);
+  assert.match(runtime, /docker\s+rm\s+-f\s+"\$container"/);
+  assert.match(runtime, /docker\s+compose[\s\S]*up\s+-d\s+--no-deps/);
+  assert.doesNotMatch(runtime, /docker\s+rm\s+-f[^\n]*(?:jenkins|gitlab|nexus|local-registry|registry-ui)/);
+
+  const coldStart = read('scripts/bootstrap/start.sh');
+  assert.match(coldStart, /"\$SCRIPT_DIR\/start-runtime\.sh"/);
+  assert.match(coldStart, /ensure_protected_service\s+jenkins\s+jenkins/);
+  assert.doesNotMatch(coldStart, /ensure_protected_service\s+(?:mysql|redis|nacos|mongodb|rocketmq|prometheus|grafana)/);
 });
 
 test('MySQL baseline rendering emits only missing table segments', () => {
