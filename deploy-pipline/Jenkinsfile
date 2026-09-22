@@ -52,6 +52,6 @@ deploy-pipline/scripts/deploy/push-image.sh peach-front "$IMAGE_TAG"''' } }
     post {
         success { echo "Deployment succeeded: branch=${BUILD_SOURCE_BRANCH}, tag=${IMAGE_TAG}, services=${SELECTED_SERVICES ?: '(none)'}" }
         failure { sh 'docker ps --format "table {{.Names}}\\t{{.Image}}\\t{{.Status}}" || true' }
-        always { sh 'rm -f deploy-pipline/runtime/generated/deploy.env || true; rm -rf deploy-pipline/runtime/generated/build-context deploy-pipline/runtime/generated/front-dist deploy-pipline/runtime/generated/nacos || true' }
+        always { sh 'rm -f deploy-pipline/runtime/generated/deploy.env || true; rm -rf deploy-pipline/runtime/generated/build-context deploy-pipline/runtime/generated/front-dist deploy-pipline/runtime/generated/nacos.* deploy-pipline/runtime/generated/mysql-init.* deploy-pipline/runtime/generated/secrets || true' }
     }
 }

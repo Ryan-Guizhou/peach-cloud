@@ -28,7 +28,7 @@ jobs:
           set -euo pipefail
           find deploy-pipline/scripts -type f -name '*.sh' -print0 | sort -z | xargs -0 -n1 bash -n
           find deploy-pipline/scripts -type f -name '*.mjs' -print0 | sort -z | xargs -0 -n1 node --check
-          node --test deploy-pipline/tests/automation-contract.test.mjs
+          node --test deploy-pipline/tests/automation-contract.test.mjs deploy-pipline/tests/deployment-regression.test.mjs
           node deploy-pipline/scripts/validate-deploy-pipeline.mjs
       - name: Render validation configuration
         shell: bash
@@ -109,12 +109,21 @@ jobs:
         run: docker compose --env-file deploy-pipline/runtime/generated/deploy.env -f deploy-pipline/compose/middleware/docker-compose.yml up -d mysql redis nacos mongodb rocketmq-namesrv rocketmq-broker rocketmq-dashboard
       - name: Verify middleware
         run: PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env" deploy-pipline/scripts/bootstrap/verify-middleware.sh
-      - name: Verify MySQL initialization is idempotent
+      - name: Verify MySQL initialization and partial recovery
         shell: bash
         run: |
           set -euo pipefail
           export PEACH_ENV_FILE="$PWD/deploy-pipline/runtime/generated/deploy.env"
-          for iteration in 1 2; do echo "MySQL initialization iteration: $iteration"; deploy-pipline/scripts/init/init-mysql.sh; done
+          for iteration in 1 2; do
+            echo "MySQL initialization iteration: $iteration"
+            deploy-pipline/scripts/init/init-mysql.sh
+          done
+          docker exec peach-mysql sh -c 'mysql --default-character-set=utf8mb4 -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" -e "SET FOREIGN_KEY_CHECKS=0; DROP TABLE PEACH_LANGUAGE; DELETE FROM PEACH_DEPLOY_SCHEMA_HISTORY WHERE VERSION = '\''baseline-v1'\''; SET FOREIGN_KEY_CHECKS=1;"'
+          echo "MySQL partial baseline recovery iteration"
+          deploy-pipline/scripts/init/init-mysql.sh
+          recovery_result=$(docker exec peach-mysql sh -c 'mysql --default-character-set=utf8mb4 -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" -Nse "SELECT COUNT(*) FROM PEACH_LANGUAGE WHERE LANGUAGE_CODE = '\''zh_CN'\''; SELECT COUNT(*) FROM PEACH_DEPLOY_SCHEMA_HISTORY WHERE VERSION = '\''baseline-v1'\'';"')
+          [ "$(printf '%s\n' "$recovery_result" | sed -n '1p')" = "1" ]
+          [ "$(printf '%s\n' "$recovery_result" | sed -n '2p')" = "1" ]
       - name: Verify MongoDB user initialization is idempotent
         shell: bash
         run: |

@@ -1,14 +1,15 @@
 # 存储相关配置
 peach.storage:
   enabled: true
-  primary: aliyun
+  primary: @PEACH_STORAGE_PRIMARY@
   providers:
     local:
       type: LOCAL
       bucket-name: peach-example
-      root-path: ./data/peach-storage
+      root-path: /app/upload/peach-storage
       prefix: example/app
       domain: http://localhost/files
+# @if-configured OSS@
     aliyun:
       type: OSS
       name: aliyun
@@ -17,6 +18,8 @@ peach.storage:
       accessKey: "@OSS_ACCESS_KEY@"
       secretKey: "@OSS_SECRET_KEY@"
       region: cn-beijing
+# @endif-configured OSS@
+# @if-configured COS@
     cos:
       type: COS
       name: cos
@@ -26,6 +29,8 @@ peach.storage:
       secretKey: "@COS_SECRET_KEY@"
       prefix: /cos/peach
       region: ap-beijing
+# @endif-configured COS@
+# @if-configured BOS@
     bos:
       type: BOS
       name: BOS
@@ -35,6 +40,8 @@ peach.storage:
       secretKey: "@BOS_SECRET_KEY@"
       prefix: /bos/peach
       region: cn-beijing
+# @endif-configured BOS@
+# @if-configured OBS@
     obs:
       type: OBS
       name: OBS
@@ -44,3 +51,4 @@ peach.storage:
       secretKey: "@OBS_SECRET_KEY@"
       prefix: /obs/peach
       region: cn-beijing
+# @endif-configured OBS@

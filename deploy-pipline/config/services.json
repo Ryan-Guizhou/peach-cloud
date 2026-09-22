@@ -1,15 +1,15 @@
 {
   "services": {
-    "peach-gateway": {"type":"backend","module":"peach-gateway","composeService":"peach-gateway","paths":["peach-gateway/"]},
-    "peach-auth": {"type":"backend","module":"peach-auth","composeService":"peach-auth","paths":["peach-auth/"]},
-    "peach-monitor": {"type":"backend","module":"peach-monitor","composeService":"peach-monitor","paths":["peach-monitor/"]},
-    "peach-fileservice": {"type":"backend","module":"peach-fileservice","composeService":"peach-fileservice","paths":["peach-fileservice/"]},
-    "peach-message": {"type":"backend","module":"peach-message","composeService":"peach-message","paths":["peach-message/"]},
-    "peach-setting": {"type":"backend","module":"peach-setting","composeService":"peach-setting","paths":["peach-setting/"]},
-    "peach-generator": {"type":"backend","module":"peach-generator","composeService":"peach-generator","paths":["peach-generator/"]},
-    "peach-scheduled": {"type":"backend","module":"peach-scheduled","composeService":"peach-scheduled","paths":["peach-scheduled/"]},
+    "peach-gateway": {"type":"backend","module":"peach-gateway/peach-gateway-launch","composeService":"peach-gateway","paths":["peach-gateway/"]},
+    "peach-auth": {"type":"backend","module":"peach-auth/peach-auth-launch","composeService":"peach-auth","paths":["peach-auth/"]},
+    "peach-monitor": {"type":"backend","module":"peach-monitor/peach-monitor-launch","composeService":"peach-monitor","paths":["peach-monitor/"]},
+    "peach-fileservice": {"type":"backend","module":"peach-fileservice/peach-fileservice-launch","composeService":"peach-fileservice","paths":["peach-fileservice/"]},
+    "peach-message": {"type":"backend","module":"peach-message/peach-message-launch","composeService":"peach-message","paths":["peach-message/"]},
+    "peach-setting": {"type":"backend","module":"peach-setting/peach-setting-launch","composeService":"peach-setting","paths":["peach-setting/"]},
+    "peach-generator": {"type":"backend","module":"peach-generator/peach-generator-launch","composeService":"peach-generator","paths":["peach-generator/"]},
+    "peach-scheduled": {"type":"backend","module":"peach-scheduled/peach-scheduled-launch","composeService":"peach-scheduled","paths":["peach-scheduled/"]},
     "peach-front": {"type":"frontend","module":null,"composeService":"peach-front","paths":["peach-cloud-front/"]}
   },
-  "globalBackendPaths": ["pom.xml","peach-dependencies/","peach-common/","peach-component/","peach-middleware/","peach-sample/"],
+  "globalBackendPaths": ["pom.xml",".mvn/","scripts/","peach-dependencies/","peach-common/","peach-component/","peach-middleware/","peach-sample/"],
   "globalAllPaths": ["deploy-pipline/",".github/workflows/deploy-pipeline.yml"]
 }
