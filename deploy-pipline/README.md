@@ -2,7 +2,7 @@
 
 [English](README.en-US.md)
 
-`deploy-pipline` 是 Peach Cloud 的 Docker 基础设施与持续交付目录。当前目标是：**日常只维护 Jenkins Secret file，Jenkins/Webhook 自动完成运行时配置合成、基础设施对账、数据初始化、按需构建、部署和验证，同时保护已经跑通的 GitLab/Jenkins/Nexus/Registry 数据。**
+`deploy-pipline` 是 Peach Cloud 的 Docker 基础设施与持续交付目录。当前目标是：**日常只维护一份 Jenkins Secret file，由 Jenkins/Webhook 自动完成运行时配置合成、基础设施对账、数据初始化、按需构建、镜像发布、应用部署和验证，同时保护已经跑通的 GitLab/Jenkins/Nexus/Registry 数据。**
 
 ## 自动化边界
 
@@ -10,25 +10,27 @@
 flowchart LR
     S[Secret file] --> J[Jenkins]
     G[GitLab Webhook] --> J
-    J --> P[只读检查现有 DevOps]
-    J --> R[Runtime Reconcile]
+    J --> P[只读检查 Existing DevOps]
+    J --> R[Runtime Compose Reconcile]
     R --> M[Middleware / Observability]
     R --> D[MySQL / Mongo User / Nacos]
     R --> Q[RocketMQ Topic Reconcile]
-    J --> B[按服务 Maven / Frontend Build]
+    J --> B[按服务 Maven launch / Frontend Build]
     B --> I[Registry Images]
     I --> A[Selected Applications]
     J --> C[Compatibility Report]
 ```
 
-- **DevOps 保护区**：已有 `gitlab`、`jenkins`、`nexus`、`local-registry`、`registry-ui` 和对应 external volumes 不由 Jenkins 重建。
-- **运行时自动对账**：Middleware/Observability 已存在则复用或启动，缺失才创建。
-- **初始化幂等**：MySQL 只在空库执行 baseline；MongoDB 只确保业务用户；Nacos 默认保留已有配置；RocketMQ Topic 按声明确保存在。
-- **禁止破坏性动作**：自动化门禁禁止 `down -v`、`docker volume prune`、`docker volume rm`。
+- **DevOps 保护区**：已有 `gitlab`、`jenkins`、`nexus`、`local-registry`、`registry-ui` 及其 external volume 不由日常 Jenkins Pipeline 重建。
+- **Runtime 自动对账**：Middleware/Observability 使用当前 Compose 定义执行 `up -d`；旧 Runtime 容器可被替换，但 external volume 和数据继续保留。
+- **初始化可恢复**：MySQL 按预期表集合补建缺失表并记录 baseline checksum；MongoDB 只确保业务用户；Nacos 默认保留已有 DataId；RocketMQ Topic 按声明式目录对账。
+- **安全默认值**：文件存储默认使用 `local`；未完整配置凭据的 OSS/COS/BOS/OBS 不会写入 Nacos。
+- **Secret 清理**：Runtime env、Maven settings、Nacos 渲染文件和初始化临时文件在正常、失败和中断路径中清理。
+- **禁止破坏性动作**：自动化门禁禁止 `down -v`、`docker volume prune`、`docker volume rm` 等危险操作。
 
-## 你需要维护的唯一私有文件
+## 唯一私有配置
 
-以 [`env/deploy.env.example`](env/deploy.env.example) 为模板保存 Jenkins Secret file，Credential ID 继续使用 `peach-deploy-env`。仓库维护的非敏感默认值位于 [`env/defaults.env`](env/defaults.env)。旧版完整 `deploy.env` 仍兼容，私有文件中的同名值会覆盖默认值。
+以 [`env/deploy.env.example`](env/deploy.env.example) 为模板维护本地私有配置或 Jenkins Secret file，Credential ID 使用 `peach-deploy-env`。仓库维护的非敏感默认值位于 [`env/defaults.env`](env/defaults.env)。旧版完整 `deploy.env` 仍兼容，私有文件中的同名值覆盖默认值。
 
 ## Jenkins 构建模式
 
@@ -37,22 +39,20 @@ flowchart LR
 - `BUILD_MODE=SELECTED`：`DEPLOY_SERVICES` 填空格或逗号分隔的服务名。
 - `BUILD_MODE=ALL`：构建全部应用。
 
-为避免升级或重建现有 Jenkins，本次不新增 Git Parameter/Active Choices 插件，因此分支和多服务选择使用 Jenkins 原生参数。
-
-## RocketMQ
-
-[`config/rocketmq/topics.json`](config/rocketmq/topics.json) 保存受治理 Topic。默认 `ROCKETMQ_TOPIC_PROVISION_MODE=ensure`：缺失时自动创建；`verify` 只检查；`off` 不治理。每次执行生成 `runtime/reports/rocketmq-status.txt`，同时显示 Broker `autoCreateTopicEnable`、Peach Starter 自动创建开关和 Topic 对账结果。
+后端服务目录直接映射到可执行 `*-launch` Maven 模块；公共模块、`.mvn/` 或仓库构建脚本变化时会安全扩大后端构建范围。
 
 ## 冷启动与日常运行
 
-已有 Jenkins/GitLab 环境下，**日常无需手动执行 bootstrap/init 脚本**，直接使用 Webhook 或 Jenkins 参数构建。只有全新 Docker 主机尚未存在 Jenkins 时，才使用一次性冷启动入口：
+已有 Jenkins/GitLab 环境下，日常无需手工执行 bootstrap/init 脚本，直接使用 Webhook 或 Jenkins 参数构建。只有全新 Docker 主机尚未存在 Jenkins 时，才使用一次性冷启动入口：
 
 ```bash
-PEACH_ENV_FILE=deploy-pipline/env/deploy.env deploy-pipline/scripts/bootstrap/bootstrap.sh
+PEACH_ENV_FILE=deploy-pipline/env/deploy.env \
+  sh deploy-pipline/scripts/bootstrap/bootstrap.sh
 ```
 
 ## 文档
 
-- [启动与配置手册（Windows / Linux）](docs/getting-started.md)
+- [完整启动、配置、使用与故障排查手册](docs/startup-and-configuration.md)
+- [快速开始（Windows / Linux）](docs/getting-started.md)
 - [架构、数据保护与运维](docs/architecture-and-operations.md)
 - [Jenkins / Nexus / Registry / Webhook 发布流程](docs/ci-cd.md)
