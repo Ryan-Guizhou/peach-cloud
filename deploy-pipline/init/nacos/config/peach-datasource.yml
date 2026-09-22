@@ -1,0 +1,12 @@
+# 数据源相关配置
+spring.datasource:
+  driver-class-name: com.mysql.cj.jdbc.Driver
+  hikari:
+    jdbc-url: jdbc:mysql://@MYSQL_HOST@/@MYSQL_DATABASE@?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+    username: root
+    password: "@MYSQL_ROOT_PASSWORD@"
+    maximum-pool-size: 20
+    minimum-idle: 5
+    connection-timeout: 30000
+    idle-timeout: 600000
+    max-lifetime: 1800000

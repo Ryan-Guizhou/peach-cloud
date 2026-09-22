@@ -1,0 +1,156 @@
+name: ${COMPOSE_PROJECT_NAME:-peach-cloud}
+
+x-common-env: &common-env
+  TZ: ${TZ:-Asia/Shanghai}
+  JAVA_OPTS: ${JAVA_OPTS:-}
+  SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+  NACOS_SERVER_ADDR: ${NACOS_SERVER_ADDR:-nacos:8848}
+  SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: ${NACOS_SERVER_ADDR:-nacos:8848}
+  SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR:-nacos:8848}
+  SPRING_CLOUD_NACOS_CONFIG_NAMESPACE: ${NACOS_NAMESPACE_ID:-peach-cloud}
+  SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE: ${NACOS_NAMESPACE_ID:-peach-cloud}
+  SPRING_CLOUD_NACOS_CONFIG_GROUP: ${NACOS_GROUP:-PEACH-CLOUD}
+  SPRING_CLOUD_NACOS_DISCOVERY_GROUP: ${NACOS_GROUP:-PEACH-CLOUD}
+  SPRING_CLOUD_NACOS_CONFIG_FILE_EXTENSION: yml
+  SPRING_CLOUD_NACOS_CONFIG_ENCODE: UTF-8
+  SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-peach_cloud}?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+  SPRING_DATASOURCE_USERNAME: root
+  SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+  REDIS_HOST: redis:6379
+  PEACH_REDIS_HOST: redis:6379
+  REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+  PEACH_REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+  REDIS_DATABASE: 0
+  SPRING_REDIS_HOST: redis
+  SPRING_REDIS_PORT: 6379
+  SPRING_REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+  PEACH_MONGO_URI: ${PEACH_MONGO_URI:?Set PEACH_MONGO_URI}
+  PEACH_MONGO_DATABASE: ${MONGO_DATABASE:-peach_cloud}
+  ROCKETMQ_NAME_SERVER: ${ROCKETMQ_NAME_SERVER:-rocketmq-namesrv:9876}
+  PEACH_ROCKET_TOPIC_AUTO_CREATE: ${PEACH_ROCKET_TOPIC_AUTO_CREATE:-true}
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:-health,info,prometheus}
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:-never}
+  MANAGEMENT_TRACING_SAMPLING_PROBABILITY: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:-0.1}
+  MANAGEMENT_OTLP_TRACING_EXPORT_ENABLED: ${MANAGEMENT_OTLP_TRACING_EXPORT_ENABLED:-true}
+  MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://otel-collector:4318/v1/traces}
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - runtime
+
+services:
+  peach-gateway:
+    <<: *service-defaults
+    image: ${PEACH_IMAGE_PREFIX:-localhost:5000/peach-cloud}/peach-gateway:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-gateway
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${GATEWAY_PORT:-18080}
+      SPRING_APPLICATION_NAME: peach-gateway
+    volumes:
+      - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/peach-gateway:/app/logs
+      - peach-gateway-config:/app/config
+  peach-auth:
+    <<: *service-defaults
+    image: ${PEACH_IMAGE_PREFIX:-localhost:5000/peach-cloud}/peach-auth:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-auth
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${AUTH_PORT:-18081}
+      SPRING_APPLICATION_NAME: peach-auth
+    volumes:
+      - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/peach-auth:/app/logs
+      - peach-auth-config:/app/config
+  peach-monitor:
+    <<: *service-defaults
+    image: ${PEACH_IMAGE_PREFIX:-localhost:5000/peach-cloud}/peach-monitor:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-monitor
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${MONITOR_PORT:-18082}
+      SPRING_APPLICATION_NAME: peach-monitor
+    volumes:
+      - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/peach-monitor:/app/logs
+      - peach-monitor-config:/app/config
+  peach-fileservice:
+    <<: *service-defaults
+    image: ${PEACH_IMAGE_PREFIX:-localhost:5000/peach-cloud}/peach-fileservice:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-fileservice
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${FILESERVICE_PORT:-18083}
+      SPRING_APPLICATION_NAME: peach-fileservice
+      PEACH_UPLOAD_ROOT: /app/upload
+    volumes:
+      - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/peach-fileservice:/app/logs
+      - peach-fileservice-config:/app/config
+      - peach-fileservice-upload:/app/upload
+  peach-message:
+    <<: *service-defaults
+    image: ${PEACH_IMAGE_PREFIX:-localhost:5000/peach-cloud}/peach-message:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-message
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${MESSAGE_PORT:-18084}
+      SPRING_APPLICATION_NAME: peach-message
+    volumes:
+      - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/peach-message:/app/logs
+      - peach-message-config:/app/config
+  peach-setting:
+    <<: *service-defaults
+    image: ${PEACH_IMAGE_PREFIX:-localhost:5000/peach-cloud}/peach-setting:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-setting
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${SETTING_PORT:-18085}
+      SPRING_APPLICATION_NAME: peach-setting
+    volumes:
+      - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/peach-setting:/app/logs
+      - peach-setting-config:/app/config
+  peach-generator:
+    <<: *service-defaults
+    image: ${PEACH_IMAGE_PREFIX:-localhost:5000/peach-cloud}/peach-generator:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-generator
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${GENERATOR_PORT:-18086}
+      SPRING_APPLICATION_NAME: peach-generator
+    volumes:
+      - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/peach-generator:/app/logs
+      - peach-generator-config:/app/config
+  peach-scheduled:
+    <<: *service-defaults
+    image: ${PEACH_IMAGE_PREFIX:-localhost:5000/peach-cloud}/peach-scheduled:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-scheduled
+    environment:
+      <<: *common-env
+      SERVER_PORT: ${SCHEDULED_PORT:-18087}
+      SPRING_APPLICATION_NAME: peach-scheduler
+    volumes:
+      - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/peach-scheduled:/app/logs
+      - peach-scheduled-config:/app/config
+  peach-front:
+    <<: *service-defaults
+    image: ${PEACH_IMAGE_PREFIX:-localhost:5000/peach-cloud}/peach-front:${PEACH_IMAGE_TAG:-latest}
+    container_name: peach-front
+    environment:
+      GATEWAY_PORT: ${GATEWAY_PORT:-18080}
+    volumes:
+      - ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/application/nginx:/var/log/nginx
+
+networks:
+  runtime:
+    external: true
+    name: peach-cloud-runtime
+
+volumes:
+  peach-gateway-config: { external: true, name: peach-gateway-config }
+  peach-auth-config: { external: true, name: peach-auth-config }
+  peach-monitor-config: { external: true, name: peach-monitor-config }
+  peach-fileservice-config: { external: true, name: peach-fileservice-config }
+  peach-fileservice-upload: { external: true, name: peach-fileservice-upload }
+  peach-message-config: { external: true, name: peach-message-config }
+  peach-setting-config: { external: true, name: peach-setting-config }
+  peach-generator-config: { external: true, name: peach-generator-config }
+  peach-scheduled-config: { external: true, name: peach-scheduled-config }

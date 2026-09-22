@@ -1,0 +1,54 @@
+# 存储相关配置
+peach.storage:
+  enabled: true
+  primary: @PEACH_STORAGE_PRIMARY@
+  providers:
+    local:
+      type: LOCAL
+      bucket-name: peach-example
+      root-path: /app/upload/peach-storage
+      prefix: example/app
+      domain: http://localhost/files
+# @if-configured OSS@
+    aliyun:
+      type: OSS
+      name: aliyun
+      endpoint: oss-cn-beijing.aliyuncs.com
+      bucketName: peachsoft
+      accessKey: "@OSS_ACCESS_KEY@"
+      secretKey: "@OSS_SECRET_KEY@"
+      region: cn-beijing
+# @endif-configured OSS@
+# @if-configured COS@
+    cos:
+      type: COS
+      name: cos
+      endpoint: cos.ap-beijing.myqcloud.com
+      bucketName: peachsoft-1305539175
+      accessKey: "@COS_ACCESS_KEY@"
+      secretKey: "@COS_SECRET_KEY@"
+      prefix: /cos/peach
+      region: ap-beijing
+# @endif-configured COS@
+# @if-configured BOS@
+    bos:
+      type: BOS
+      name: BOS
+      endpoint: bj.bcebos.com
+      bucketName: peachsoft
+      accessKey: "@BOS_ACCESS_KEY@"
+      secretKey: "@BOS_SECRET_KEY@"
+      prefix: /bos/peach
+      region: cn-beijing
+# @endif-configured BOS@
+# @if-configured OBS@
+    obs:
+      type: OBS
+      name: OBS
+      endpoint: obs.myhuaweicloud.com
+      bucketName: peachsoft
+      accessKey: "@OBS_ACCESS_KEY@"
+      secretKey: "@OBS_SECRET_KEY@"
+      prefix: /obs/peach
+      region: cn-beijing
+# @endif-configured OBS@

@@ -1,0 +1,186 @@
+name: peach-middleware-runtime
+
+services:
+  mysql:
+    image: mysql:${MYSQL_VERSION:-8.0}
+    container_name: peach-mysql
+    hostname: mysql
+    restart: unless-stopped
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --lower-case-table-names=1
+      - --bind-address=0.0.0.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-peach_cloud}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${MYSQL_HOST_PORT:-3307}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/middleware/mysql
+        target: /var/log/mysql
+        bind:
+          create_host_path: true
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [runtime]
+
+  redis:
+    image: redis:${REDIS_VERSION:-7.2-alpine}
+    container_name: peach-redis
+    hostname: redis
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD}", "--appendonly", "yes"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${REDIS_HOST_PORT:-6380}:6379"
+    volumes:
+      - redis-data:/data
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/middleware/redis
+        target: /var/log/redis
+        bind:
+          create_host_path: true
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [runtime]
+
+  nacos:
+    image: nacos/nacos-server:${NACOS_VERSION:-v2.3.2}
+    container_name: peach-nacos
+    hostname: nacos
+    restart: unless-stopped
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: ${NACOS_AUTH_ENABLE:-false}
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+      JVM_XMN: 128m
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${NACOS_HOST_PORT:-8849}:8848"
+      - "${NACOS_GRPC_HOST_PORT:-9850}:9848"
+    volumes:
+      - nacos-data:/home/nacos/data
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/middleware/nacos
+        target: /home/nacos/logs
+        bind:
+          create_host_path: true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8848/nacos/actuator/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+    networks: [runtime]
+
+  mongodb:
+    image: mongo:${MONGO_VERSION:-7.0}
+    container_name: peach-mongo
+    hostname: mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?Set MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "127.0.0.1:${MONGO_HOST_PORT:-27017}:27017"
+    volumes:
+      - mongo-data:/data/db
+      - ${PEACH_RUNTIME_ROOT:?Set PEACH_RUNTIME_ROOT}/config/mongodb/mongod.conf:/etc/mongod.conf:ro
+    command: ["mongod", "--config", "/etc/mongod.conf", "--auth"]
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --username \"$${MONGO_INITDB_ROOT_USERNAME}\" --password \"$${MONGO_INITDB_ROOT_PASSWORD}\" --authenticationDatabase admin --eval 'db.runCommand({ ping: 1 }).ok' | grep -q 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [runtime]
+
+  rocketmq-volume-init:
+    image: apache/rocketmq:${ROCKETMQ_VERSION:-5.3.1}
+    container_name: peach-rocketmq-volume-init
+    user: "0:0"
+    restart: "no"
+    command: sh -c "chown -R 3000:3000 /home/rocketmq/store"
+    volumes: [rocketmq-store:/home/rocketmq/store]
+    networks: [runtime]
+
+  rocketmq-namesrv:
+    image: apache/rocketmq:${ROCKETMQ_VERSION:-5.3.1}
+    container_name: peach-rocketmq-namesrv
+    hostname: rocketmq-namesrv
+    restart: unless-stopped
+    command: sh mqnamesrv
+    environment:
+      JAVA_OPT_EXT: "-server -Xms256m -Xmx256m -Xmn128m -Duser.home=/home/rocketmq"
+    ports:
+      - "127.0.0.1:${ROCKETMQ_NAMESRV_HOST_PORT:-9876}:9876"
+    volumes:
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/middleware/rocketmq/namesrv
+        target: /home/rocketmq/logs
+        bind:
+          create_host_path: true
+    networks: [runtime]
+
+  rocketmq-broker:
+    image: apache/rocketmq:${ROCKETMQ_VERSION:-5.3.1}
+    container_name: peach-rocketmq-broker
+    hostname: rocketmq-broker
+    restart: unless-stopped
+    command: sh mqbroker -c ../conf/broker.conf
+    environment:
+      NAMESRV_ADDR: rocketmq-namesrv:9876
+      JAVA_OPT_EXT: "-server -Xms256m -Xmx512m -Duser.home=/home/rocketmq"
+    ports:
+      - "127.0.0.1:${ROCKETMQ_BROKER_HOST_PORT:-10911}:10911"
+    volumes:
+      - ${PEACH_RUNTIME_ROOT:?Set PEACH_RUNTIME_ROOT}/config/rocketmq/broker.conf:/home/rocketmq/rocketmq-${ROCKETMQ_VERSION:-5.3.1}/conf/broker.conf:ro
+      - rocketmq-store:/home/rocketmq/store
+      - type: bind
+        source: ${PEACH_LOG_ROOT:?Set PEACH_LOG_ROOT}/middleware/rocketmq/broker
+        target: /home/rocketmq/logs
+        bind:
+          create_host_path: true
+    depends_on:
+      rocketmq-namesrv: {condition: service_started}
+      rocketmq-volume-init: {condition: service_completed_successfully}
+    networks: [runtime]
+
+  rocketmq-dashboard:
+    image: apacherocketmq/rocketmq-dashboard:${ROCKETMQ_DASHBOARD_VERSION:-latest}
+    container_name: peach-rocketmq-dashboard
+    hostname: rocketmq-dashboard
+    restart: unless-stopped
+    environment:
+      JAVA_OPTS: "-Drocketmq.namesrv.addr=rocketmq-namesrv:9876"
+    ports:
+      - "127.0.0.1:${ROCKETMQ_DASHBOARD_HOST_PORT:-18088}:8082"
+    depends_on:
+      rocketmq-namesrv: {condition: service_started}
+      rocketmq-broker: {condition: service_started}
+    networks: [runtime]
+
+networks:
+  runtime:
+    external: true
+    name: peach-cloud-runtime
+
+volumes:
+  mysql-data: {external: true, name: peach-mysql-data}
+  redis-data: {external: true, name: peach-redis-data}
+  nacos-data: {external: true, name: peach-nacos-data}
+  mongo-data: {external: true, name: peach-mongo-data}
+  rocketmq-store: {external: true, name: peach-rocketmq-store}

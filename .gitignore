@@ -38,11 +38,12 @@ build/
 # Flatten Maven plugin output
 .flattened-pom.xml
 
-# Logs
+# Logs and runtime artifacts
 .logs
 /runtime/
+deploy-pipline/runtime/
 
 # Local CI/CD deploy secrets
+deploy-pipline/env/deploy.env
 deploy-pipline/peach-deploy.env
 deploy/nacos/import-nacos.private.json
-deploy-pipline/pipline/runtime

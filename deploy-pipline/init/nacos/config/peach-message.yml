@@ -1,0 +1,20 @@
+server:
+  port: 18084
+
+spring:
+  main:
+    web-application-type: reactive
+
+springdoc:
+  servers:
+    - url: /api/message
+      description: Gateway
+  packages-to-scan:
+    - com.peach.message.rest.internal
+    - com.peach.message.launch.health
+
+peach:
+  openapi:
+    version: V1.0.0
+    server-url: /api/message
+    server-description: Gateway
