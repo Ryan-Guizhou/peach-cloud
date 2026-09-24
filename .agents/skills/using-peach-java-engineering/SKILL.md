@@ -1,5 +1,5 @@
 ---
-name: peach-java-engineering
+name: using-peach-java-engineering
 description: Peach Cloud Java 工程规范。修改或审查 Java 源码、公共 API、Spring Bean、事务、资源生命周期、Javadoc、日志、命名与基础代码结构时使用。
 ---
 
