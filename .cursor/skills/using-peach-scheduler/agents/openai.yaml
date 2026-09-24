@@ -1,6 +1,0 @@
-interface:
-  display_name: "Peach Scheduler"
-  short_description: "约束调度执行侧、Claim、Provider 与结果上报"
-  default_prompt: "Use $using-peach-scheduler to implement or review peach scheduler execution semantics."
-policy:
-  allow_implicit_invocation: true

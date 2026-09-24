@@ -1,16 +1,10 @@
 ---
-description: Peach Cloud documentation repository rule.
+description: Route repository documentation changes to the shared documentation skill.
 globs: "**/*.{md,mdx}"
 alwaysApply: false
 ---
-# Documentation Format Rule
+# Documentation Skill Adapter
 
-本 Rule 只约束 Markdown 与图表的通用格式；“文档写什么、如何从源码取证”由 `project-doc-engineer` 负责。
+README、设计、需求、ADR、Tutorial、Reference、部署与排障文档读取并遵循 `.agents/skills/project-doc-engineer/SKILL.md`。
 
-- 中文主 README 使用 `README.md`，英文等价 README 使用 `README.en-US.md`。
-- 标题层级连续且语义稳定；不要为了套模板制造空章节、重复章节或只有一句话的无用章节。
-- 代码块必须声明语言；命令、artifactId、类名、方法名、配置 key 保持可复制和可搜索。
-- 相对链接必须指向仓库真实文件；禁止链接到不存在的未来文档。
-- Mermaid 只表达架构、关系、流程、时序、状态、数据模型等真正适合图示的信息；图后用简短文字解释关键结论和边界。
-- README 中复杂内部算法、长篇设计论证、完整 API Reference 应下沉 `docs/`，README 保持可快速浏览。
-- 文档不使用真实 secret、token、密码、生产地址、签名 URL 或完整敏感报文作为示例。
+本文件只负责 Cursor 的文档文件路由，不复制文档规范正文。

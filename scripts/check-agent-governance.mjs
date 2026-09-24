@@ -4,9 +4,12 @@ import { relative, resolve } from 'node:path';
 
 const root = process.cwd();
 const fail = [];
-const rules = ['java', 'frontend', 'documentation', 'security', 'quality'];
-const skills = [
+
+const requiredSkills = [
+  'peach-java-engineering',
   'project-doc-engineer',
+  'grill-me',
+  'grilling',
   'using-peach-virtual-thread',
   'using-peach-scheduler',
   'using-peach-storage',
@@ -15,16 +18,21 @@ const skills = [
   'using-peach-email',
   'using-peach-front',
 ];
-const deprecated = ['using-peach-code-skeleton', 'using-peach-readme-writer'];
+
+const allowedCursorRules = new Set([
+  'java.mdc',
+  'frontend.mdc',
+  'documentation.mdc',
+]);
+
+const forbiddenSkillPathPatterns = [
+  /\.cursor\/skills\//,
+  /\.codex\/skills\//,
+  /(?:^|[^\w])~?\/?\.claude\/skills\//,
+];
 
 function read(path) {
   return readFileSync(resolve(root, path), 'utf8').replace(/\r\n/g, '\n').trim();
-}
-
-function stripCursorFrontmatter(text) {
-  if (!text.startsWith('---\n')) return text.trim();
-  const end = text.indexOf('\n---\n', 4);
-  return end < 0 ? text.trim() : text.slice(end + 5).trim();
 }
 
 function filesUnder(path) {
@@ -42,59 +50,83 @@ function filesUnder(path) {
   return result.sort();
 }
 
-for (const name of rules) {
-  const codex = `.codex/rules/${name}.md`;
-  const cursor = `.cursor/rules/${name}.mdc`;
-  if (!existsSync(codex)) fail.push(`Missing Codex rule: ${codex}`);
-  if (!existsSync(cursor)) fail.push(`Missing Cursor rule: ${cursor}`);
-  if (existsSync(codex) && existsSync(cursor) && read(codex) !== stripCursorFrontmatter(read(cursor))) {
-    fail.push(`Rule bodies are not synchronized: ${name}`);
-  }
+if (!existsSync('AGENTS.md')) fail.push('Missing repository AGENTS.md');
+if (!existsSync('.agents/README.md')) fail.push('Missing .agents/README.md');
+if (!existsSync('.agents/evals/golden-tasks.md')) fail.push('Missing shared golden tasks');
+
+for (const legacy of ['.codex/skills', '.codex/rules', '.cursor/skills']) {
+  if (existsSync(legacy)) fail.push(`Legacy duplicated agent directory must not exist: ${legacy}`);
 }
 
-for (const name of skills) {
-  const codexRoot = `.codex/skills/${name}`;
-  const cursorRoot = `.cursor/skills/${name}`;
-  if (!existsSync(`${codexRoot}/SKILL.md`)) fail.push(`Missing Codex skill: ${codexRoot}/SKILL.md`);
-  if (!existsSync(`${cursorRoot}/SKILL.md`)) fail.push(`Missing Cursor skill: ${cursorRoot}/SKILL.md`);
+for (const name of requiredSkills) {
+  const entry = `.agents/skills/${name}/SKILL.md`;
+  if (!existsSync(entry)) fail.push(`Missing required shared skill: ${entry}`);
+}
 
-  const codexFiles = filesUnder(codexRoot);
-  const cursorFiles = filesUnder(cursorRoot);
-  if (JSON.stringify(codexFiles) !== JSON.stringify(cursorFiles)) {
-    fail.push(`Skill file sets are not synchronized: ${name}`);
-    continue;
-  }
-
-  for (const file of codexFiles) {
-    if (read(`${codexRoot}/${file}`) !== read(`${cursorRoot}/${file}`)) {
-      fail.push(`Skill file is not synchronized: ${name}/${file}`);
+const skillRoot = resolve(root, '.agents/skills');
+if (existsSync(skillRoot)) {
+  for (const entry of readdirSync(skillRoot)) {
+    const dir = resolve(skillRoot, entry);
+    if (!statSync(dir).isDirectory()) continue;
+    if (!existsSync(resolve(dir, 'SKILL.md'))) {
+      fail.push(`Skill directory is missing SKILL.md: .agents/skills/${entry}`);
     }
   }
-}
 
-for (const name of deprecated) {
-  for (const base of ['.codex/skills', '.cursor/skills']) {
-    if (existsSync(`${base}/${name}`)) fail.push(`Deprecated skill still exists: ${base}/${name}`);
-  }
-}
-
-const governanceRoots = [
-  '.codex/rules',
-  '.cursor/rules',
-  ...skills.flatMap(name => [`.codex/skills/${name}`, `.cursor/skills/${name}`]),
-];
-for (const base of governanceRoots) {
-  for (const file of filesUnder(base)) {
-    const path = `${base}/${file}`;
+  for (const file of filesUnder('.agents/skills')) {
+    const path = `.agents/skills/${file}`;
     const text = read(path);
-    if (/scripts\/(?:check-[\w.-]+|verify-changes\.mjs)/.test(text)) {
-      fail.push(`Gate command must be owned by AGENTS.md, not ${path}`);
+    for (const pattern of forbiddenSkillPathPatterns) {
+      if (pattern.test(text)) {
+        fail.push(`Shared skill contains agent-specific skill path: ${path}`);
+        break;
+      }
     }
   }
+}
+
+const cursorRuleRoot = resolve(root, '.cursor/rules');
+if (existsSync(cursorRuleRoot)) {
+  for (const entry of readdirSync(cursorRuleRoot)) {
+    if (!allowedCursorRules.has(entry)) {
+      fail.push(`Cursor rule must be a thin routing adapter or be removed: .cursor/rules/${entry}`);
+    }
+  }
+
+  for (const entry of allowedCursorRules) {
+    const path = `.cursor/rules/${entry}`;
+    if (!existsSync(path)) {
+      fail.push(`Missing Cursor routing adapter: ${path}`);
+      continue;
+    }
+    const text = read(path);
+    if (!text.includes('.agents/skills/')) {
+      fail.push(`Cursor routing adapter does not reference shared skills: ${path}`);
+    }
+    if (text.length > 1200) {
+      fail.push(`Cursor routing adapter is too large and likely duplicates shared rules: ${path}`);
+    }
+  }
+}
+
+const agents = existsSync('AGENTS.md') ? read('AGENTS.md') : '';
+for (const name of ['grill-me', 'peach-java-engineering', 'project-doc-engineer', 'using-peach-front']) {
+  if (!agents.includes(`${name}`)) {
+    fail.push(`AGENTS.md does not route required skill: ${name}`);
+  }
+}
+
+if (!agents.includes('Complexity Gate') || !agents.includes('Grill Gate')) {
+  fail.push('AGENTS.md is missing the task complexity / Grill work engine gates');
+}
+
+for (const path of ['.codex/config.toml', '.cursor/mcp.json']) {
+  if (!existsSync(path)) fail.push(`Missing agent runtime adapter: ${path}`);
 }
 
 if (fail.length) {
   for (const item of fail) console.error(`[governance] ${item}`);
   process.exit(1);
 }
-console.log('[governance] Codex/Cursor rules, core skill contents, and gate ownership are synchronized.');
+
+console.log('[governance] shared agent skills, work engine, Cursor adapters, and runtime boundaries are valid.');
