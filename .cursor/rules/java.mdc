@@ -5,6 +5,6 @@ alwaysApply: false
 ---
 # Java Skill Adapter
 
-读取并遵循 `.agents/skills/peach-java-engineering/SKILL.md`。
+读取并遵循 `.agents/skills/using-peach-java-engineering/SKILL.md`。
 
 本文件只负责 Cursor 的 globs 路由，不复制 Java 规范正文。复杂领域再按根目录 `AGENTS.md` 叠加一个对应 Domain Skill。

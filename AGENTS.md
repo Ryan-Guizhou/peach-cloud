@@ -85,7 +85,7 @@ frontier 清空后输出 Implementation Contract，至少包含：
 
 只加载当前任务真正需要的 Skill 和源码。
 
-- Java 修改：`peach-java-engineering`；命中复杂领域时再叠加一个 Domain Skill。
+- Java 修改：`using-peach-java-engineering`；命中复杂领域时再叠加一个 Domain Skill。
 - 前端修改：`using-peach-front`；视觉/交互任务才叠加设计 Skill。
 - README、Design、Requirement、Tutorial、Reference、ADR：`project-doc-engineer`。
 - 用户要求需求/方案拷问：`grill-me`。
@@ -99,7 +99,7 @@ frontier 清空后输出 Implementation Contract，至少包含：
 
 | 任务范围 | Skill |
 | --- | --- |
-| Java 工程规范、Javadoc、日志、事务/资源基础规则 | `peach-java-engineering` |
+| Java 工程规范、Javadoc、日志、事务/资源基础规则 | `using-peach-java-engineering` |
 | Virtual Thread、背压、Permit、取消、关闭 | `using-peach-virtual-thread` |
 | Scheduler、Claim、执行侧、Provider、Transport | `using-peach-scheduler` |
 | RocketMQ、事件、消费、事务消息、Outbox | `using-peach-rocket` |

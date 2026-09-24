@@ -6,7 +6,7 @@ const root = process.cwd();
 const fail = [];
 
 const requiredSkills = [
-  'peach-java-engineering',
+  'using-peach-java-engineering',
   'project-doc-engineer',
   'grill-me',
   'grilling',
@@ -110,7 +110,7 @@ if (existsSync(cursorRuleRoot)) {
 }
 
 const agents = existsSync('AGENTS.md') ? read('AGENTS.md') : '';
-for (const name of ['grill-me', 'peach-java-engineering', 'project-doc-engineer', 'using-peach-front']) {
+for (const name of ['grill-me', 'using-peach-java-engineering', 'project-doc-engineer', 'using-peach-front']) {
   if (!agents.includes(`${name}`)) {
     fail.push(`AGENTS.md does not route required skill: ${name}`);
   }
