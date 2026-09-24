@@ -6,7 +6,7 @@
  * Uses pure Node.js without external image processing dependencies.
  *
  * For full color extraction from images, use an image-reading capability
- * exposed by the current Cursor session or ImageMagick when already installed.
+ * exposed by the current agent session or ImageMagick when already installed.
  *
  * Usage:
  *   node extract-colors.cjs <image-path>
@@ -14,7 +14,7 @@
  *   node extract-colors.cjs --palette  # Show brand palette from guidelines
  *
  * Integration:
- *   For image color analysis, use Cursor image reading or ImageMagick
+ *   For image color analysis, use an available image-reading capability or ImageMagick
  *   magick <image> -colors 10 -depth 8 -format "%c" histogram:info:
  */
 
@@ -287,7 +287,7 @@ function main() {
       "1. Run the ImageMagick command to extract colors:",
       `   ${generateImageMagickCommand(resolvedPath)}`,
       "",
-      "2. Or use an image-reading capability exposed by the current Cursor session",
+      "2. Or use an image-reading capability exposed by the current agent session",
       `   Analyze "${resolvedPath}" and extract the 10 most dominant colors as hex values`,
       "",
       "3. Then compare extracted colors against brand palette",

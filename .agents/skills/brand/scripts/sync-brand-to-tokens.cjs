@@ -17,7 +17,7 @@ const { execFileSync } = require('child_process');
 const BRAND_GUIDELINES = 'docs/brand-guidelines.md';
 const DESIGN_TOKENS_JSON = 'assets/design-tokens.json';
 const DESIGN_TOKENS_CSS = 'assets/design-tokens.css';
-const GENERATE_TOKENS_SCRIPT = '.cursor/skills/design-system/scripts/generate-tokens.cjs';
+const GENERATE_TOKENS_SCRIPT = '.agents/skills/design-system/scripts/generate-tokens.cjs';
 
 /**
  * Extract color info from brand guidelines markdown

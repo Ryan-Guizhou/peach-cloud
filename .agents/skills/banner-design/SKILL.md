@@ -60,7 +60,7 @@ For each art direction option:
 
 2. **Generate visual elements** only when the user explicitly requests generated imagery
 
-   - Use an image-generation tool exposed by the current Cursor session.
+   - Use an image-generation tool exposed by the current agent session.
    - If no image tool is available, use CSS gradients, geometric SVG, licensed user-provided assets, or clearly marked placeholders.
    - Never install an image model, upload private assets, or invent a generated result.
 
@@ -84,7 +84,7 @@ For each art direction option:
 
 ### Step 4: Export Banners to Images
 
-After designing HTML banners, export each to PNG using a browser screenshot or Playwright capability exposed by the current Cursor session:
+After designing HTML banners, export each to PNG using a browser screenshot or Playwright capability exposed by the current agent session:
 
 1. **Serve HTML files** via local server (python http.server or similar)
 2. **Screenshot each banner** at the exact requested viewport dimensions.
