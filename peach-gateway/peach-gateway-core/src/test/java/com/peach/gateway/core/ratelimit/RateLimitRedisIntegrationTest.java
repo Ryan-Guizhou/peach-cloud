@@ -112,6 +112,26 @@ class RateLimitRedisIntegrationTest {
     }
 
     @Test
+    void shouldKeepQuotaExactUnderTenThousandConcurrentRequestsAcrossTwoClients() {
+        String key = "integration:stress:ten-thousand";
+        firstTemplate.delete(key).block(Duration.ofSeconds(3));
+        RateLimitRule rule = new RateLimitRule("integration-stress", true,
+                RateLimitScope.GLOBAL, RateLimitAlgorithm.TOKEN_BUCKET, 1,
+                Set.of(), List.of(), Set.of(), 1000, Duration.ofSeconds(60).toMillis(),
+                0.000001D, 1000, 0.001D, 1);
+
+        List<RateLimitDecision> decisions = Flux.range(0, 10_000)
+                .flatMap(index -> (index % 2 == 0 ? firstExecutor : secondExecutor)
+                        .execute(rule, key), 256)
+                .collectList()
+                .block(Duration.ofSeconds(60));
+
+        assertThat(decisions).isNotNull().hasSize(10_000);
+        assertThat(decisions.stream().filter(RateLimitDecision::allowed).count()).isEqualTo(1000);
+        assertThat(decisions.stream().filter(decision -> !decision.allowed()).count()).isEqualTo(9000);
+    }
+
+    @Test
     void shouldSurfaceLuaExecutionErrorsFromRedis() {
         RateLimitScriptRepository brokenRepository = new RateLimitScriptRepository(
                 new GatewayRateLimitProperties(), new DefaultResourceLoader()) {
