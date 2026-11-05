@@ -1,8 +1,8 @@
 package com.peach.gateway.core;
 
-import com.peach.gateway.core.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.config.GatewayRiskControlProperties;
 import com.peach.gateway.core.config.GatewaySaTokenProperties;
+import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Indexed;
