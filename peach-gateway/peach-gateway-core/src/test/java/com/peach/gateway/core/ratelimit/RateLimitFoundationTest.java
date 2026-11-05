@@ -12,7 +12,7 @@ import com.peach.gateway.core.ratelimit.service.RateLimitRuleRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
-import org.springframework.mock.web.server.reactive.MockServerWebExchange;
+import org.springframework.mock.web.server.MockServerWebExchange;
 
 import java.time.Duration;
 import java.util.List;
