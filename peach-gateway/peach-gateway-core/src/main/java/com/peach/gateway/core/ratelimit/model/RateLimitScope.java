@@ -2,7 +2,11 @@ package com.peach.gateway.core.ratelimit.model;
 
 /**
  * 网关限流维度。
- */
+  *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/05
+*/
 public enum RateLimitScope {
 
     GLOBAL,

@@ -13,6 +13,10 @@ import java.util.Map;
 
 /**
  * 网关多算法限流配置。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/05
  */
 @Data
 @ConfigurationProperties(prefix = "peach.gateway.rate-limit")
@@ -112,7 +116,7 @@ public class GatewayRateLimitProperties {
 
         /**
          * OSS 脚本目录地址。配置后优先从该地址读取各算法脚本。
-         * 目录地址应以斜杠结尾。
+         * 目录地址应以斜杠结尾，远程地址必须是 HTTP(S) URL。
          */
         private String remoteBaseUrl;
 
@@ -132,6 +136,11 @@ public class GatewayRateLimitProperties {
          */
         private boolean fallbackToLocal;
 
+        /**
+         * 远程脚本必须提供 SHA-256 校验值，避免未经校验的脚本被执行。
+         */
+        private boolean requireRemoteChecksum = true;
+
         private Duration connectTimeout = Duration.ofSeconds(2);
 
         private Duration readTimeout = Duration.ofSeconds(5);
@@ -139,7 +148,7 @@ public class GatewayRateLimitProperties {
         private int maxScriptBytes = 65536;
 
         /**
-         * 可选 SHA-256 校验值，Key 支持算法枚举名或 kebab-case 名称。
+         * SHA-256 校验值，Key 支持算法枚举名或 kebab-case 名称。
          */
         private Map<String, String> expectedSha256 = new LinkedHashMap<>();
     }

@@ -2,7 +2,11 @@ package com.peach.gateway.core.ratelimit.model;
 
 /**
  * 一次请求的限流检查结果。
- */
+  *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/05
+*/
 public record RateLimitCheckResult(
         Status status,
         RateLimitRule rule,

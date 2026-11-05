@@ -8,7 +8,11 @@ package com.peach.gateway.core.ratelimit.model;
  * @param resetAfterMs 额度完全恢复或窗口重置所需毫秒数
  * @param retryAfterMs 被拒绝后建议等待的毫秒数
  * @param limit 当前规则的额度上限
- */
+  *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/05
+*/
 public record RateLimitDecision(
         boolean allowed,
         long remaining,

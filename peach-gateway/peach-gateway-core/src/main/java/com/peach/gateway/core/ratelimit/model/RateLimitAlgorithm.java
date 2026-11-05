@@ -2,7 +2,11 @@ package com.peach.gateway.core.ratelimit.model;
 
 /**
  * 网关支持的限流算法。
- */
+  *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/05
+*/
 public enum RateLimitAlgorithm {
 
     FIXED_WINDOW("fixed-window.lua"),

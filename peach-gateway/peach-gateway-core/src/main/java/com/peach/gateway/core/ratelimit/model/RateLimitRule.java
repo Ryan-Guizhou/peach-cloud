@@ -5,7 +5,11 @@ import java.util.Set;
 
 /**
  * 校验完成后的不可变限流规则。
- */
+  *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/05
+*/
 public record RateLimitRule(
         String id,
         boolean enabled,

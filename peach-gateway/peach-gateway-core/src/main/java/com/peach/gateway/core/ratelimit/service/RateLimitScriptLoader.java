@@ -11,7 +11,11 @@ import org.springframework.stereotype.Component;
 
 /**
  * 网关启动及 Nacos 配置刷新时加载限流脚本。
- */
+  *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/05
+*/
 @Slf4j
 @Component
 @RequiredArgsConstructor

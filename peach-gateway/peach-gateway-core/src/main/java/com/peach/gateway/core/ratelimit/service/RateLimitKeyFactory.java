@@ -2,7 +2,6 @@ package com.peach.gateway.core.ratelimit.service;
 
 import com.peach.gateway.core.ratelimit.constant.GatewayRateLimitConstants;
 import com.peach.gateway.core.ratelimit.model.MatchedRateLimitRule;
-import com.peach.gateway.core.ratelimit.model.RateLimitScope;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -12,7 +11,11 @@ import java.util.HexFormat;
 
 /**
  * 生成有界长度、不可逆的限流 Redis Key。
- */
+  *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/05
+*/
 @Component
 public class RateLimitKeyFactory {
 
