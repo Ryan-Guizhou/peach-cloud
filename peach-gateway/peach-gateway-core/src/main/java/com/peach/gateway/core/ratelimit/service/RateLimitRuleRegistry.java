@@ -101,13 +101,6 @@ public class RateLimitRuleRegistry {
         }
 
         List<String> paths = normalizePaths(source.getPaths(), id);
-        if (source.getScope().isUriScope() && paths.isEmpty()) {
-            throw new IllegalArgumentException("URI rate limit scope requires at least one path: " + id);
-        }
-        if (!source.getScope().isUriScope() && !paths.isEmpty()) {
-            throw new IllegalArgumentException("Non-URI rate limit scope cannot declare paths: " + id);
-        }
-
         Set<String> methods = normalizeMethods(source.getMethods());
         Set<String> routeIds = normalizeValues(source.getRouteIds());
 

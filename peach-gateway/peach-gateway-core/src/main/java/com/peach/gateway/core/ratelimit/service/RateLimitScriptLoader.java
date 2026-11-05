@@ -31,8 +31,15 @@ public class RateLimitScriptLoader implements ApplicationRunner {
             log.info("Gateway rate limit is disabled; Lua script loading is skipped");
             return;
         }
-        repository.reload().block();
-        log.info("Gateway rate limit Lua scripts loaded");
+        try {
+            repository.reload().block();
+            log.info("Gateway rate limit Lua scripts loaded");
+        } catch (RuntimeException exception) {
+            log.error("Gateway rate limit Lua script loading failed, errorType={}",
+                    rootCause(exception).getClass().getSimpleName());
+            throw new IllegalStateException(
+                    "Unable to load gateway rate limit scripts; verify OSS URL and SHA-256 configuration");
+        }
     }
 
     @EventListener(EnvironmentChangeEvent.class)
@@ -42,6 +49,15 @@ public class RateLimitScriptLoader implements ApplicationRunner {
         }
         repository.reload().subscribe(
                 ignored -> log.info("Gateway rate limit Lua scripts reloaded"),
-                error -> log.error("Gateway rate limit Lua script reload failed; previous scripts remain active", error));
+                error -> log.error("Gateway rate limit Lua script reload failed, errorType={}",
+                        rootCause(error).getClass().getSimpleName()));
+    }
+
+    private Throwable rootCause(Throwable error) {
+        Throwable current = error;
+        while (current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        return current;
     }
 }

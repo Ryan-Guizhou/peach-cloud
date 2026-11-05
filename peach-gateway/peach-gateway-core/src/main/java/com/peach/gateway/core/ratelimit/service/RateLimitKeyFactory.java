@@ -11,26 +11,36 @@ import java.util.HexFormat;
 
 /**
  * 生成有界长度、不可逆的限流 Redis Key。
-  *
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/05
-*/
+ */
 @Component
 public class RateLimitKeyFactory {
 
     public String create(MatchedRateLimitRule matched, String clientIp, String tenantId,
                          String method, String path) {
         var rule = matched.rule();
+        String uriIdentity = matched.matchedPathPattern() == null || matched.matchedPathPattern().isBlank()
+                ? normalizePath(path) : matched.matchedPathPattern();
         String identity = switch (rule.scope()) {
             case GLOBAL -> "global";
             case IP -> "ip:" + hash(clientIp);
-            case URI -> "uri:" + hash(rule.id() + ':' + method + ':' + matched.matchedPathPattern());
-            case IP_URI -> "ip-uri:" + hash(clientIp + ':' + method + ':' + matched.matchedPathPattern());
+            case URI -> "uri:" + hash(rule.id() + ':' + method + ':' + uriIdentity);
+            case IP_URI -> "ip-uri:" + hash(clientIp + ':' + method + ':' + uriIdentity);
             case TENANT -> "tenant:" + hash(tenantId);
-            case TENANT_URI -> "tenant-uri:" + hash(tenantId + ':' + method + ':' + matched.matchedPathPattern());
+            case TENANT_URI -> "tenant-uri:" + hash(tenantId + ':' + method + ':' + uriIdentity);
         };
         return GatewayRateLimitConstants.REDIS_KEY_PREFIX + rule.id() + ':' + identity;
+    }
+
+    private String normalizePath(String path) {
+        if (path == null || path.isBlank()) {
+            return "/";
+        }
+        String normalized = path.trim();
+        return normalized.startsWith("/") ? normalized : "/" + normalized;
     }
 
     private String hash(String value) {

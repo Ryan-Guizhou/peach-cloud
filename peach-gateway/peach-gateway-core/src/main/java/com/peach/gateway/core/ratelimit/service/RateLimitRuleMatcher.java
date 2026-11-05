@@ -26,7 +26,7 @@ public class RateLimitRuleMatcher {
     public Optional<MatchedRateLimitRule> match(RateLimitRule rule, ServerWebExchange exchange,
                                                 String tenantId, String clientIp) {
         String method = exchange.getRequest().getMethod().name().toUpperCase(Locale.ROOT);
-        String path = exchange.getRequest().getURI().getRawPath();
+        String path = normalizePath(exchange.getRequest().getURI().getRawPath());
         Route route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR);
         String routeId = route == null ? null : route.getId();
 
@@ -46,12 +46,20 @@ public class RateLimitRuleMatcher {
             return Optional.empty();
         }
 
-        if (!rule.scope().isUriScope()) {
-            return Optional.of(new MatchedRateLimitRule(rule, ""));
+        if (rule.paths().isEmpty()) {
+            return Optional.of(new MatchedRateLimitRule(rule, rule.scope().isUriScope() ? path : ""));
         }
         return rule.paths().stream()
                 .filter(pattern -> pathMatcher.match(pattern, path))
                 .findFirst()
                 .map(pattern -> new MatchedRateLimitRule(rule, pattern));
+    }
+
+    private String normalizePath(String path) {
+        if (path == null || path.isBlank()) {
+            return "/";
+        }
+        String normalized = path.trim();
+        return normalized.startsWith("/") ? normalized : "/" + normalized;
     }
 }

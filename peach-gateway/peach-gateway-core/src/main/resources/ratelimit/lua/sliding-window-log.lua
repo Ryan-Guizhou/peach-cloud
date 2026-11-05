@@ -1,7 +1,7 @@
 -- KEYS[1] sorted-set key
 -- ARGV[1] limit, ARGV[2] window ms, ARGV[3] cost, ARGV[4] unique request id
 local limit, window, cost = tonumber(ARGV[1]), tonumber(ARGV[2]), tonumber(ARGV[3])
-if not limit or limit <= 0 or not window or window <= 0 or not cost or cost <= 0 then
+if not limit or limit <= 0 or not window or window <= 0 or not cost or cost <= 0 or cost > limit then
   return redis.error_reply('INVALID_RATE_LIMIT_ARGUMENT')
 end
 local time = redis.call('TIME')
@@ -14,7 +14,10 @@ if allowed then
   for i = 1, cost do redis.call('ZADD', KEYS[1], now, ARGV[4] .. ':' .. i) end
 end
 redis.call('PEXPIRE', KEYS[1], window)
-local oldest = redis.call('ZRANGE', KEYS[1], 0, 0, 'WITHSCORES')
 local retry = 0
-if not allowed and #oldest >= 2 then retry = math.max(1, tonumber(oldest[2]) + window - now) end
+if not allowed then
+  local requiredToExpire = used + cost - limit
+  local target = redis.call('ZRANGE', KEYS[1], requiredToExpire - 1, requiredToExpire - 1, 'WITHSCORES')
+  if #target >= 2 then retry = math.max(1, tonumber(target[2]) + window - now) end
+end
 return {allowed and 1 or 0, math.max(0, limit - used - (allowed and cost or 0)), window, retry, limit}
