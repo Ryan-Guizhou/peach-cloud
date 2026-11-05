@@ -2,6 +2,7 @@ package com.peach.gateway.core;
 
 import com.peach.gateway.core.config.GatewayRiskControlProperties;
 import com.peach.gateway.core.config.GatewaySaTokenProperties;
+import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Indexed;
@@ -21,7 +22,8 @@ import org.springframework.stereotype.Indexed;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({
         GatewaySaTokenProperties.class,
-        GatewayRiskControlProperties.class
+        GatewayRiskControlProperties.class,
+        GatewayRateLimitProperties.class
 })
 public class GatewayCorePropertiesConfiguration {
 }
