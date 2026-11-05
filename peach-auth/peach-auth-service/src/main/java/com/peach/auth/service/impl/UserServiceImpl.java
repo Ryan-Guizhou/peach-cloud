@@ -36,6 +36,7 @@ import com.peach.auth.vo.UserVO;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.service.CaptchaService;
 import com.peach.common.constant.PubCommonConst;
+import com.peach.common.constant.SaTokenConstant;
 import com.peach.common.response.Response;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -153,6 +154,7 @@ public class UserServiceImpl implements IUserService {
         }
 
         StpUtil.login(userId);
+        refreshTokenSessionContext(currentUserOrg, loginDTO.getFiscal());
         String token = StpUtil.getTokenValue();
         log.info("User login succeeded, userId={}, tenantId={}, orgId={}", userId,
                 currentUserOrg.getTenantId(), currentUserOrg.getOrgId());
@@ -203,6 +205,7 @@ public class UserServiceImpl implements IUserService {
         LoginPermissionSnapshotVO snapshot = loginPermissionAssembler.assemble(
                 currentUserOrg, switchContextDTO.getFiscal(), roleList);
         refreshLoginPermissionCache(userVO, currentUserOrg, switchContextDTO.getFiscal(), snapshot);
+        refreshTokenSessionContext(currentUserOrg, switchContextDTO.getFiscal());
 
         log.info("User context switched, userId={}, tenantId={}, orgId={}, fiscal={}",
                 userId, currentUserOrg.getTenantId(), currentUserOrg.getOrgId(), switchContextDTO.getFiscal());
@@ -252,6 +255,22 @@ public class UserServiceImpl implements IUserService {
     private void refreshLoginPermissionCache(UserVO userVO, UserOrgVO currentUserOrg,
                                              Integer fiscal, LoginPermissionSnapshotVO snapshot) {
         loginPermissionCacheRefresher.writeCache(userVO, currentUserOrg, fiscal, snapshot);
+    }
+
+    /**
+     * 将当前租户、机构和会计期间写入当前 Token 专属 Session。
+     *
+     * <p>Token Session 按登录凭证隔离，避免同一用户在不同设备切换租户时相互覆盖。</p>
+     *
+     * @param currentUserOrg 当前租户机构
+     * @param fiscal 当前会计期间
+     */
+    private void refreshTokenSessionContext(UserOrgVO currentUserOrg, Integer fiscal) {
+        var tokenSession = StpUtil.getTokenSession();
+        tokenSession.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, currentUserOrg.getTenantId());
+        tokenSession.set(SaTokenConstant.TOKEN_SESSION_ORG_ID, currentUserOrg.getOrgId());
+        tokenSession.set(SaTokenConstant.TOKEN_SESSION_FISCAL, fiscal == null ? "" : String.valueOf(fiscal));
+        tokenSession.set(SaTokenConstant.TOKEN_SESSION_CONTEXT_VERSION, System.currentTimeMillis());
     }
 
     private LoginInfo buildLoginInfo(UserVO userVO,

@@ -44,7 +44,10 @@ public class RateLimitScriptLoader implements ApplicationRunner {
 
     @EventListener(EnvironmentChangeEvent.class)
     public void onEnvironmentChanged(EnvironmentChangeEvent event) {
-        if (!properties.isEnabled()) {
+        boolean reloadRequired = event.getKeys().stream().anyMatch(key ->
+                key.startsWith("peach.gateway.rate-limit.scripts.")
+                        || "peach.gateway.rate-limit.enabled".equals(key));
+        if (!properties.isEnabled() || !reloadRequired) {
             return;
         }
         repository.reload().subscribe(

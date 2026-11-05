@@ -23,8 +23,10 @@ public class RateLimitRuleMatcher {
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    public Optional<MatchedRateLimitRule> match(RateLimitRule rule, ServerWebExchange exchange,
-                                                String tenantId, String clientIp) {
+    /**
+     * 判断请求是否满足规则的路径、方法和路由选择器，不依赖身份信息。
+     */
+    public boolean matchesRequest(RateLimitRule rule, ServerWebExchange exchange) {
         String method = exchange.getRequest().getMethod().name().toUpperCase(Locale.ROOT);
         String path = normalizePath(exchange.getRequest().getURI().getRawPath());
         Route route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR);
@@ -34,25 +36,34 @@ public class RateLimitRuleMatcher {
                 && !rule.methods().contains(method)
                 && !rule.methods().contains("ANY")
                 && !rule.methods().contains("*")) {
-            return Optional.empty();
+            return false;
         }
         if (!rule.routeIds().isEmpty() && (routeId == null || !rule.routeIds().contains(routeId))) {
+            return false;
+        }
+        return rule.paths().isEmpty() || rule.paths().stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+    }
+
+    public Optional<MatchedRateLimitRule> match(RateLimitRule rule, ServerWebExchange exchange,
+                                                String tenantId, String clientIp) {
+        if (!matchesRequest(rule, exchange)) {
             return Optional.empty();
         }
-        if (rule.scope().isTenantScope() && (tenantId == null || tenantId.isBlank())) {
+        if (rule.scope().isTenantScope() && isBlank(tenantId)) {
             return Optional.empty();
         }
-        if (rule.scope().isIpScope() && (clientIp == null || clientIp.isBlank())) {
+        if (rule.scope().isIpScope() && isBlank(clientIp)) {
             return Optional.empty();
         }
 
-        if (rule.paths().isEmpty()) {
-            return Optional.of(new MatchedRateLimitRule(rule, rule.scope().isUriScope() ? path : ""));
-        }
-        return rule.paths().stream()
+        String path = normalizePath(exchange.getRequest().getURI().getRawPath());
+        String matchedPattern = rule.paths().isEmpty()
+                ? (rule.scope().isUriScope() ? path : "")
+                : rule.paths().stream()
                 .filter(pattern -> pathMatcher.match(pattern, path))
                 .findFirst()
-                .map(pattern -> new MatchedRateLimitRule(rule, pattern));
+                .orElse("");
+        return Optional.of(new MatchedRateLimitRule(rule, matchedPattern));
     }
 
     private String normalizePath(String path) {
@@ -61,5 +72,9 @@ public class RateLimitRuleMatcher {
         }
         String normalized = path.trim();
         return normalized.startsWith("/") ? normalized : "/" + normalized;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

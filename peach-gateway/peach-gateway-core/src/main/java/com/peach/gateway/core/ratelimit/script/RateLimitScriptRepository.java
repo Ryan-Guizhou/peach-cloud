@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.client.HttpClient;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.EnumMap;
@@ -22,8 +23,8 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * 限流 Lua 脚本仓库。
  *
- * <p>远程 OSS 地址优先；未配置远程地址时读取本地 classpath。
- * 远程地址配置错误或不可用时，只有显式启用 fallback-to-local 才回退本地资源。</p>
+ * <p>为每种算法独立加载脚本。配置远程 OSS URL 时必须使用远程脚本；只有未配置远程 URL 时才读取本地
+ * classpath。远程下载或校验失败时保留上一份完整脚本快照并报告失败，不静默切换到本地版本。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -48,7 +49,7 @@ public class RateLimitScriptRepository {
         return Mono.defer(() -> {
             EnumMap<RateLimitAlgorithm, String> loaded = new EnumMap<>(RateLimitAlgorithm.class);
             return Flux.fromArray(RateLimitAlgorithm.values())
-                    .concatMap(algorithm -> load(algorithm).doOnNext(script -> loaded.put(algorithm, script)))
+                    .concatMap(algorithm -> load(algorithm).doOnNext(value -> loaded.put(algorithm, value)))
                     .then(Mono.fromRunnable(() -> scripts.set(Map.copyOf(loaded))));
         });
     }
@@ -62,23 +63,25 @@ public class RateLimitScriptRepository {
     }
 
     private Mono<String> load(RateLimitAlgorithm algorithm) {
-        GatewayRateLimitProperties.ScriptProperties config = properties.getScripts();
         String remoteUrl = resolveRemoteUrl(algorithm);
         if (remoteUrl == null) {
             return loadLocal(algorithm);
         }
 
+        URI remoteUri = validateRemoteUrl(remoteUrl, algorithm);
         String expectedChecksum = expectedChecksum(algorithm);
-        if (config.isRequireRemoteChecksum() && (expectedChecksum == null || expectedChecksum.isBlank())) {
-            return fallbackOrError(algorithm,
-                    new IllegalStateException("Remote rate limit script requires SHA-256: " + algorithm));
+        if (properties.getScripts().isRequireRemoteChecksum()
+                && (expectedChecksum == null || expectedChecksum.isBlank())) {
+            return Mono.error(new IllegalStateException(
+                    "Remote rate limit script requires SHA-256 checksum: " + algorithm));
         }
 
-        return webClient().get().uri(remoteUrl).retrieve().bodyToMono(byte[].class)
-                .timeout(config.getReadTimeout())
+        return webClient().get().uri(remoteUri).retrieve().bodyToMono(byte[].class)
+                .timeout(properties.getScripts().getReadTimeout())
                 .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
-                .flatMap(script -> validate(algorithm, script, expectedChecksum).thenReturn(script))
-                .onErrorResume(error -> fallbackOrError(algorithm, error));
+                .flatMap(value -> validate(algorithm, value, expectedChecksum).thenReturn(value))
+                .onErrorMap(error -> new IllegalStateException(
+                        "Failed to load remote rate limit script: " + algorithm, error));
     }
 
     private WebClient webClient() {
@@ -104,14 +107,6 @@ public class RateLimitScriptRepository {
         return current;
     }
 
-    private Mono<String> fallbackOrError(RateLimitAlgorithm algorithm, Throwable error) {
-        if (!properties.getScripts().isFallbackToLocal()) {
-            return Mono.error(new IllegalStateException(
-                    "Failed to load remote rate limit script: " + algorithm, error));
-        }
-        return loadLocal(algorithm);
-    }
-
     private Mono<String> loadLocal(RateLimitAlgorithm algorithm) {
         String location = properties.getScripts().getLocalLocation();
         String path = location.endsWith("/") ? location : location + "/";
@@ -126,12 +121,12 @@ public class RateLimitScriptRepository {
                     }
                 })
                 .subscribeOn(Schedulers.boundedElastic())
-                .flatMap(script -> validate(algorithm, script, expectedChecksum(algorithm)).thenReturn(script));
+                .flatMap(value -> validate(algorithm, value, expectedChecksum(algorithm)).thenReturn(value));
     }
 
-    private Mono<Void> validate(RateLimitAlgorithm algorithm, String script, String expectedChecksum) {
-        if (script == null || script.isBlank()
-                || script.getBytes(StandardCharsets.UTF_8).length > properties.getScripts().getMaxScriptBytes()) {
+    private Mono<Void> validate(RateLimitAlgorithm algorithm, String value, String expectedChecksum) {
+        if (value == null || value.isBlank()
+                || value.getBytes(StandardCharsets.UTF_8).length > properties.getScripts().getMaxScriptBytes()) {
             return Mono.error(new IllegalArgumentException("Invalid rate limit Lua script: " + algorithm));
         }
         if (expectedChecksum == null || expectedChecksum.isBlank()) {
@@ -140,7 +135,7 @@ public class RateLimitScriptRepository {
         return Mono.fromRunnable(() -> {
             try {
                 byte[] digest = MessageDigest.getInstance("SHA-256")
-                        .digest(script.getBytes(StandardCharsets.UTF_8));
+                        .digest(value.getBytes(StandardCharsets.UTF_8));
                 String actual = java.util.HexFormat.of().formatHex(digest);
                 if (!actual.equalsIgnoreCase(expectedChecksum.trim())) {
                     throw new IllegalArgumentException("Rate limit Lua SHA-256 mismatch: " + algorithm);
@@ -172,6 +167,21 @@ public class RateLimitScriptRepository {
             return null;
         }
         return (base.endsWith("/") ? base : base + "/") + algorithm.getScriptFileName();
+    }
+
+    private URI validateRemoteUrl(String value, RateLimitAlgorithm algorithm) {
+        try {
+            URI uri = URI.create(value);
+            String scheme = uri.getScheme();
+            if (uri.getHost() == null || uri.getHost().isBlank()
+                    || uri.getUserInfo() != null
+                    || !("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme))) {
+                throw new IllegalArgumentException("Remote rate limit script URL must be an HTTP(S) URL");
+            }
+            return uri;
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("Invalid remote rate limit script URL: " + algorithm, exception);
+        }
     }
 
     private void validateScriptConfiguration(GatewayRateLimitProperties.ScriptProperties config) {
