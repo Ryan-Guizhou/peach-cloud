@@ -1,5 +1,6 @@
 package com.peach.gateway.core.ratelimit.service;
 
+import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.script.RateLimitScriptRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,28 +12,36 @@ import org.springframework.stereotype.Component;
 
 /**
  * 网关启动及 Nacos 配置刷新时加载限流脚本。
-  *
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/05
-*/
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class RateLimitScriptLoader implements ApplicationRunner {
 
+    private final GatewayRateLimitProperties properties;
     private final RateLimitScriptRepository repository;
 
     @Override
     public void run(ApplicationArguments args) {
+        if (!properties.isEnabled()) {
+            log.info("Gateway rate limit is disabled; Lua script loading is skipped");
+            return;
+        }
         repository.reload().block();
         log.info("Gateway rate limit Lua scripts loaded");
     }
 
     @EventListener(EnvironmentChangeEvent.class)
     public void onEnvironmentChanged(EnvironmentChangeEvent event) {
+        if (!properties.isEnabled()) {
+            return;
+        }
         repository.reload().subscribe(
                 ignored -> log.info("Gateway rate limit Lua scripts reloaded"),
-                error -> log.error("Gateway rate limit Lua script reload failed", error));
+                error -> log.error("Gateway rate limit Lua script reload failed; previous scripts remain active", error));
     }
 }
