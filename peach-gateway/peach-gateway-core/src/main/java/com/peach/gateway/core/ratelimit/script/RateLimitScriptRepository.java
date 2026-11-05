@@ -34,22 +34,14 @@ public class RateLimitScriptRepository {
 
     private final GatewayRateLimitProperties properties;
     private final ResourceLoader resourceLoader;
-    private final WebClient webClient;
+    private volatile WebClient webClient;
     private final AtomicReference<Map<RateLimitAlgorithm, String>> scripts =
             new AtomicReference<>(Map.of());
 
     public RateLimitScriptRepository(GatewayRateLimitProperties properties, ResourceLoader resourceLoader) {
         this.properties = properties;
         this.resourceLoader = resourceLoader;
-        GatewayRateLimitProperties.ScriptProperties config = properties.getScripts();
-        validateScriptConfiguration(config);
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(config.getConnectTimeout().toMillis()))
-                .responseTimeout(config.getReadTimeout());
-        this.webClient = WebClient.builder()
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
-                .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(config.getMaxScriptBytes()))
-                .build();
+        validateScriptConfiguration(properties.getScripts());
     }
 
     public Mono<Void> reload() {
@@ -82,11 +74,34 @@ public class RateLimitScriptRepository {
                     new IllegalStateException("Remote rate limit script requires SHA-256: " + algorithm));
         }
 
-        return webClient.get().uri(remoteUrl).retrieve().bodyToMono(byte[].class)
+        return webClient().get().uri(remoteUrl).retrieve().bodyToMono(byte[].class)
                 .timeout(config.getReadTimeout())
                 .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
                 .flatMap(script -> validate(algorithm, script, expectedChecksum).thenReturn(script))
                 .onErrorResume(error -> fallbackOrError(algorithm, error));
+    }
+
+    private WebClient webClient() {
+        WebClient current = webClient;
+        if (current != null) {
+            return current;
+        }
+        synchronized (this) {
+            current = webClient;
+            if (current == null) {
+                GatewayRateLimitProperties.ScriptProperties config = properties.getScripts();
+                HttpClient httpClient = HttpClient.create()
+                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
+                                Math.toIntExact(config.getConnectTimeout().toMillis()))
+                        .responseTimeout(config.getReadTimeout());
+                current = WebClient.builder()
+                        .clientConnector(new ReactorClientHttpConnector(httpClient))
+                        .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(config.getMaxScriptBytes()))
+                        .build();
+                webClient = current;
+            }
+        }
+        return current;
     }
 
     private Mono<String> fallbackOrError(RateLimitAlgorithm algorithm, Throwable error) {
@@ -160,7 +175,7 @@ public class RateLimitScriptRepository {
     }
 
     private void validateScriptConfiguration(GatewayRateLimitProperties.ScriptProperties config) {
-        if (config.getConnectTimeout() == null || config.getConnectTimeout().isZero()
+        if (config == null || config.getConnectTimeout() == null || config.getConnectTimeout().isZero()
                 || config.getConnectTimeout().isNegative()
                 || config.getReadTimeout() == null || config.getReadTimeout().isZero()
                 || config.getReadTimeout().isNegative()
@@ -168,8 +183,8 @@ public class RateLimitScriptRepository {
             throw new IllegalArgumentException("Invalid gateway rate limit script loading configuration");
         }
         long connectTimeoutMs = config.getConnectTimeout().toMillis();
-        if (connectTimeoutMs > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("Rate limit script connect timeout is too large");
+        if (connectTimeoutMs <= 0 || connectTimeoutMs > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Rate limit script connect timeout is outside supported range");
         }
     }
 }
