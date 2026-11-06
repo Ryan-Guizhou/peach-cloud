@@ -228,7 +228,7 @@ Redis 或限流执行器不可用时：
 
 - ConfigurationProperties 完成 EnvironmentChangeEvent 重绑定后，RateLimitRuleRegistry 在 RefreshScopeRefreshedEvent 到达时校验并原子发布运行时快照；刷新失败保留上一份有效快照。
 - RateLimitScriptLoader 在 EnvironmentChangeEvent 中记录需要重载的配置变化，并在 RefreshScopeRefreshedEvent 后异步加载脚本。
-- 脚本快照整体替换；加载失败保留上一份完整脚本。Mono<Void> 完成回调会更新 readiness Gauge。
+- 脚本快照整体替换；加载失败保留上一份完整脚本。脚本重载返回是否成功发布快照的结果；成功发布后更新 readiness Gauge，已被更新配置取代的旧重载不会误报成功。
 - 指标名称：
   - peach.gateway.rate.limit.requests
   - peach.gateway.rate.limit.execution
