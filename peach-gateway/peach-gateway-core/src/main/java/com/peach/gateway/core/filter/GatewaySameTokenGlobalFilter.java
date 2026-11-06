@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * 网关Same令牌Global过滤器。
@@ -56,24 +57,30 @@ public class GatewaySameTokenGlobalFilter implements GlobalFilter, Ordered {
             }
             return chain.filter(exchange);
         }
-        try {
-            SaReactorSyncHolder.setContext(exchange);
-            String sameToken = SaSameUtil.getToken();
-            ServerHttpRequest request = exchange.getRequest().mutate()
-                    .headers(headers -> {
-                        headers.remove(SaSameUtil.SAME_TOKEN);
-                        headers.add(SaSameUtil.SAME_TOKEN, sameToken);
-                    })
-                    .build();
-            return chain.filter(exchange.mutate().request(request).build())
-                    .doFinally(signal -> SaReactorSyncHolder.clearContext());
-        } catch (Exception e) {
-            SaReactorSyncHolder.clearContext();
-            String requestId = exchange.getRequest().getHeaders().getFirst(GatewayConstant.REQUEST_ID_HEADER);
-            log.warn("Gateway same-token relay failed, requestId={}, method={}, path={}, reason={}",
-                    requestId, method, path, e.getClass().getSimpleName());
-            return Mono.error(e);
-        }
+        return Mono.fromCallable(() -> {
+                    SaReactorSyncHolder.setContext(exchange);
+                    try {
+                        return SaSameUtil.getToken();
+                    } finally {
+                        SaReactorSyncHolder.clearContext();
+                    }
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .onErrorResume(exception -> {
+                    String requestId = exchange.getRequest().getHeaders().getFirst(GatewayConstant.REQUEST_ID_HEADER);
+                    log.warn("Gateway same-token relay failed, requestId={}, method={}, path={}, reason={}",
+                            requestId, method, path, exception.getClass().getSimpleName());
+                    return Mono.error(exception);
+                })
+                .flatMap(sameToken -> {
+                    ServerHttpRequest request = exchange.getRequest().mutate()
+                            .headers(headers -> {
+                                headers.remove(SaSameUtil.SAME_TOKEN);
+                                headers.add(SaSameUtil.SAME_TOKEN, sameToken);
+                            })
+                            .build();
+                    return chain.filter(exchange.mutate().request(request).build());
+                });
     }
 
     @Override

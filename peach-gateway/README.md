@@ -175,7 +175,7 @@ Redis 动态 IP 黑名单使用 Redis Set：
 peach:gateway:risk-control:blocked-ip:
 ```
 
-网关 Redis 连接使用 `peach-redis.yml` 中的 `peach.redis.*` 配置，必须与业务服务连接同一套 Sa-Token Redis 数据。
+网关 Redis 连接使用 `peach-redis.yml` 中的 `peach.redis.*` 配置，必须与业务服务连接同一套 Sa-Token Redis 数据。网关进程只创建一条 Lettuce 连接：限流使用响应式 API，Sa-Token 复用这条连接的阻塞 API，并在 `boundedElastic` 执行。网关不加载 Jedis 和 Redisson，业务服务仍使用 Jedis。
 
 ## 边界与限制
 

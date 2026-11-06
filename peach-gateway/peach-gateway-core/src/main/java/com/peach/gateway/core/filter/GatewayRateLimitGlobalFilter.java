@@ -1,6 +1,5 @@
 package com.peach.gateway.core.filter;
 
-import cn.dev33.satoken.reactor.context.SaReactorSyncHolder;
 import com.peach.gateway.core.constant.GatewayConstant;
 import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.constant.GatewayRateLimitConstants;
@@ -44,15 +43,13 @@ public class GatewayRateLimitGlobalFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        SaReactorSyncHolder.setContext(exchange);
         return enforcementService.check(exchange)
                 .onErrorResume(error -> {
                     log.warn("Gateway rate limit check failed, requestId={}, reason={}",
                             requestId(exchange), error.getClass().getSimpleName());
                     return Mono.just(RateLimitCheckResult.unavailable(error.getClass().getSimpleName()));
                 })
-                .flatMap(result -> handleResult(exchange, chain, result))
-                .doFinally(signal -> SaReactorSyncHolder.clearContext());
+                .flatMap(result -> handleResult(exchange, chain, result));
     }
 
     private Mono<Void> handleResult(ServerWebExchange exchange,
