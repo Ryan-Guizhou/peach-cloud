@@ -6,6 +6,7 @@ import com.peach.gateway.core.ratelimit.model.MatchedRateLimitRule;
 import com.peach.gateway.core.ratelimit.model.RateLimitCheckResult;
 import com.peach.gateway.core.ratelimit.model.RateLimitConfigurationSnapshot;
 import com.peach.gateway.core.ratelimit.model.RateLimitDecision;
+import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitRule;
 import com.peach.gateway.core.ratelimit.script.RateLimitScriptRepository;
 import com.peach.gateway.core.security.GatewaySecurityEndpointMatcher;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 限流规则执行编排器。
@@ -73,6 +75,8 @@ public class RateLimitEnforcementService {
                     && candidates.stream().anyMatch(rule -> rule.scope().isTenantScope());
             boolean tenantPolicyConfigured = !publicEndpoint && (!configuration.allowlistTenants().isEmpty()
                     || !configuration.denylistTenants().isEmpty());
+            Map<RateLimitAlgorithm, String> requestScripts = scriptRepository.getScripts(configuration.scripts());
+            boolean scriptsReady = requestScripts.size() == RateLimitAlgorithm.values().length;
 
             if (candidates.isEmpty() && !tenantPolicyConfigured) {
                 if (ipAllowlisted) {
@@ -85,8 +89,8 @@ public class RateLimitEnforcementService {
                     metrics.recordPolicy("allowlisted");
                     return Mono.just(RateLimitCheckResult.allowed());
                 }
-                return scriptsReady(configuration)
-                        ? evaluate(candidates, exchange, null, clientIp, configuration)
+                return scriptsReady
+                        ? evaluate(candidates, exchange, null, clientIp, configuration, requestScripts)
                         : unavailableWhileScriptsNotReady();
             }
 
@@ -109,8 +113,8 @@ public class RateLimitEnforcementService {
                         if (candidates.isEmpty()) {
                             return Mono.just(RateLimitCheckResult.allowed());
                         }
-                        return scriptsReady(configuration)
-                                ? evaluate(candidates, exchange, tenantId, clientIp, configuration)
+                        return scriptsReady
+                                ? evaluate(candidates, exchange, tenantId, clientIp, configuration, requestScripts)
                                 : unavailableWhileScriptsNotReady();
                     });
         });
@@ -120,7 +124,8 @@ public class RateLimitEnforcementService {
                                                 ServerWebExchange exchange,
                                                 String tenantId,
                                                 String clientIp,
-                                                RateLimitConfigurationSnapshot configuration) {
+                                                RateLimitConfigurationSnapshot configuration,
+                                                Map<RateLimitAlgorithm, String> requestScripts) {
         List<MatchedRateLimitRule> matchedRules = new ArrayList<>();
         for (RateLimitRule rule : candidates) {
             if (rule.scope().isIpScope() && (isBlank(clientIp) || "unknown".equalsIgnoreCase(clientIp))) {
@@ -138,7 +143,7 @@ public class RateLimitEnforcementService {
         }
 
         return Flux.fromIterable(matchedRules)
-                .concatMap(matched -> executeRule(matched, tenantId, clientIp, exchange))
+                .concatMap(matched -> executeRule(matched, tenantId, clientIp, exchange, requestScripts))
                 .takeUntil(result -> result.status() != RateLimitCheckResult.Status.ALLOWED)
                 .collectList()
                 .map(this::selectResult);
@@ -147,13 +152,14 @@ public class RateLimitEnforcementService {
     private Mono<RateLimitCheckResult> executeRule(MatchedRateLimitRule matched,
                                                    String tenantId,
                                                    String clientIp,
-                                                   ServerWebExchange exchange) {
+                                                   ServerWebExchange exchange,
+                                                   Map<RateLimitAlgorithm, String> requestScripts) {
         RateLimitRule rule = matched.rule();
         String method = exchange.getRequest().getMethod().name();
         String path = exchange.getRequest().getURI().getRawPath();
         String key = keyFactory.create(matched, clientIp, tenantId, method, path);
         long startNanos = System.nanoTime();
-        return redisExecutor.execute(rule, key)
+        return redisExecutor.execute(rule, key, requestScripts.get(rule.algorithm()))
                 .doOnNext(decision -> metrics.record(rule,
                         decision.allowed() ? "allowed" : "rejected",
                         System.nanoTime() - startNanos))
@@ -197,10 +203,6 @@ public class RateLimitEnforcementService {
             return snapshot.failureMode();
         }
         return ruleRegistry.getSnapshot().failureMode();
-    }
-
-    private boolean scriptsReady(RateLimitConfigurationSnapshot configuration) {
-        return scriptRepository.isReady(configuration.scripts());
     }
 
     private Mono<RateLimitCheckResult> unavailableWhileScriptsNotReady() {
