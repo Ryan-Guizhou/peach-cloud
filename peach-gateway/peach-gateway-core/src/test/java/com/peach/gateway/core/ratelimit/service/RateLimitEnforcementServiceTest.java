@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -249,6 +250,41 @@ class RateLimitEnforcementServiceTest {
         verify(ipResolver).resolve(any());
         verify(executor, never()).execute(any(), anyString());
         verify(metrics).recordPolicy("scripts-not-ready");
+    }
+
+    @Test
+    void shouldKeepPreviousMatchedRuleCapWhenInvalidRefreshIsRejected() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(true);
+        properties.setMaxMatchedRulesPerRequest(32);
+        properties.setRules(List.of(
+                rule("first", RateLimitScope.GLOBAL, RateLimitAlgorithm.TOKEN_BUCKET, 1),
+                rule("second", RateLimitScope.GLOBAL, RateLimitAlgorithm.TOKEN_BUCKET, 2)));
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+
+        properties.setMaxMatchedRulesPerRequest(0);
+        assertThatThrownBy(registry::refresh)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("max-matched-rules-per-request");
+
+        RedisRateLimitExecutor executor = mock(RedisRateLimitExecutor.class);
+        TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
+        RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
+        RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+        RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
+        when(scriptRepository.isReady()).thenReturn(true);
+        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(executor.execute(any(), anyString()))
+                .thenReturn(Mono.just(new RateLimitDecision(true, 8, 1000, 0, 10)));
+
+        RateLimitEnforcementService service = new RateLimitEnforcementService(properties, registry,
+                new RateLimitRuleMatcher(), new RateLimitKeyFactory(), executor,
+                ipResolver, tenantResolver, metrics, scriptRepository, new GatewaySaTokenProperties());
+        RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
+
+        assertThat(result).isNotNull();
+        assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.ALLOWED);
+        verify(executor, org.mockito.Mockito.times(2)).execute(any(), anyString());
     }
 
     private RateLimitEnforcementService service(GatewayRateLimitProperties properties,
