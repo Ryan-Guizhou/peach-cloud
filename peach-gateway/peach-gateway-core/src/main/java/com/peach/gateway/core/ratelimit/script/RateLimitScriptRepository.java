@@ -224,9 +224,6 @@ public class RateLimitScriptRepository {
     }
 
     private void validateScriptConfiguration(RateLimitScriptConfiguration config) {
-        if (config == null || config.allowedRemotePorts().isEmpty()
-                || config.allowedRemotePorts().stream().anyMatch(port -> port == null || port < 1 || port > 65535)) {
-            throw new IllegalArgumentException("Invalid gateway rate limit script loading configuration");
-        }
+        RateLimitRemoteScriptAddressValidator.validateConfiguration(config);
     }
 }
