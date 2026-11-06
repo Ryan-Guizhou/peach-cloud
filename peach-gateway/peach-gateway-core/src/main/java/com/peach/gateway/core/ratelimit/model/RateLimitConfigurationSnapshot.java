@@ -20,6 +20,7 @@ public record RateLimitConfigurationSnapshot(
         boolean requireTenantContext,
         int maxMatchedRulesPerRequest,
         List<String> trustedProxies,
+        RateLimitScriptConfiguration scripts,
         List<RateLimitRule> rules,
         Set<String> allowlistIps,
         Set<String> allowlistTenants,
@@ -35,6 +36,7 @@ public record RateLimitConfigurationSnapshot(
             throw new IllegalArgumentException("maxMatchedRulesPerRequest must be positive");
         }
         trustedProxies = List.copyOf(trustedProxies);
+        Objects.requireNonNull(scripts, "scripts");
         rules = List.copyOf(rules);
         allowlistIps = Set.copyOf(allowlistIps);
         allowlistTenants = Set.copyOf(allowlistTenants);
@@ -50,6 +52,7 @@ public record RateLimitConfigurationSnapshot(
                 true,
                 32,
                 List.of(),
+                RateLimitScriptConfiguration.empty(),
                 List.of(),
                 Set.of(),
                 Set.of(),
