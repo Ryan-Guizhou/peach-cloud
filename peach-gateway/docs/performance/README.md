@@ -188,3 +188,72 @@ Environment variables:
 | `PEACH_REDIS_SSL` | Set to `true` to enable TLS |
 
 For TLS, configure the JVM truststore to trust the Redis server certificate before running the test. The test confirms connection and Lua behavior; it does not replace failover, certificate rotation, or production load testing.
+
+### Reproducible local Redis topologies
+
+The compose fixtures are in [redis-topologies/](redis-topologies/). They are manual validation environments, not part of the default CI matrix.
+
+Start one topology at a time:
+
+```bash
+docker compose -f peach-gateway/docs/performance/redis-topologies/docker-compose.yml --profile cluster up -d
+docker compose -f peach-gateway/docs/performance/redis-topologies/docker-compose.yml --profile sentinel up -d
+docker compose -f peach-gateway/docs/performance/redis-topologies/docker-compose.yml --profile tls up -d
+```
+
+Run the Maven smoke test from a container attached to the matching network so Redis Cluster redirects and Sentinel-discovered addresses resolve correctly.
+
+**Cluster**
+
+```bash
+docker run --rm --network peach-gateway-rate-limit-cluster \
+  -v "$PWD":/workspace -w /workspace \
+  -e PEACH_REDIS_MODE=cluster \
+  -e PEACH_REDIS_NODES=redis-cluster-1:6379,redis-cluster-2:6379,redis-cluster-3:6379 \
+  maven:3.9.11-eclipse-temurin-21 \
+  mvn -pl peach-gateway/peach-gateway-core -am -Dtest=RedisTopologySmokeTest -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+**Sentinel**
+
+```bash
+docker run --rm --network peach-gateway-rate-limit-sentinel \
+  -v "$PWD":/workspace -w /workspace \
+  -e PEACH_REDIS_MODE=sentinel \
+  -e PEACH_REDIS_SENTINEL_MASTER=peach-master \
+  -e PEACH_REDIS_SENTINELS=redis-sentinel-1:26379,redis-sentinel-2:26379,redis-sentinel-3:26379 \
+  maven:3.9.11-eclipse-temurin-21 \
+  mvn -pl peach-gateway/peach-gateway-core -am -Dtest=RedisTopologySmokeTest -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+**TLS**
+
+After starting the TLS profile, export the generated test certificate and create a JVM truststore:
+
+```bash
+TLS_CONTAINER=$(docker compose -f peach-gateway/docs/performance/redis-topologies/docker-compose.yml --profile tls ps -q redis-tls)
+docker cp "$TLS_CONTAINER":/tls/redis.crt ./redis.crt
+keytool -importcert -noprompt -alias peach-redis -file redis.crt \
+  -keystore redis-truststore.p12 -storetype PKCS12 -storepass changeit
+```
+
+Run the smoke test on the TLS network with the truststore mounted:
+
+```bash
+docker run --rm --network peach-gateway-rate-limit-tls \
+  -v "$PWD":/workspace -w /workspace \
+  -v "$PWD/redis-truststore.p12":/tmp/redis-truststore.p12:ro \
+  -e JAVA_TOOL_OPTIONS='-Djavax.net.ssl.trustStore=/tmp/redis-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit' \
+  -e PEACH_REDIS_MODE=standalone -e PEACH_REDIS_HOST=redis-tls -e PEACH_REDIS_PORT=6379 \
+  -e PEACH_REDIS_SSL=true \
+  maven:3.9.11-eclipse-temurin-21 \
+  mvn -pl peach-gateway/peach-gateway-core -am -Dtest=RedisTopologySmokeTest -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+These fixtures use unauthenticated test-only Redis nodes and self-signed TLS. Do not reuse them as production security configuration. Clean up only after collecting logs and results:
+
+```bash
+docker compose -f peach-gateway/docs/performance/redis-topologies/docker-compose.yml --profile cluster down -v
+docker compose -f peach-gateway/docs/performance/redis-topologies/docker-compose.yml --profile sentinel down -v
+docker compose -f peach-gateway/docs/performance/redis-topologies/docker-compose.yml --profile tls down -v
+```
