@@ -122,6 +122,32 @@ class RateLimitRuleRegistryTest {
     }
 
     @Test
+    void shouldRejectBroadRemoteScriptCidrsWithoutReplacingTheRuntimeSnapshot() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitConfigurationSnapshot previous = registry.getSnapshot();
+        properties.getScripts().setAllowedRemoteCidrs(List.of("0.0.0.0/0"));
+
+        assertThatThrownBy(registry::refresh)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("authorized CIDR");
+        assertThat(registry.getSnapshot()).isSameAs(previous);
+    }
+
+    @Test
+    void shouldRequireAnExactHostAllowlistWhenRemoteScriptsAreConfigured() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitConfigurationSnapshot previous = registry.getSnapshot();
+        properties.getScripts().setRemoteBaseUrl("https://cdn.example.com/lua/");
+
+        assertThatThrownBy(registry::refresh)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("allowed-remote-hosts");
+        assertThat(registry.getSnapshot()).isSameAs(previous);
+    }
+
+    @Test
     void shouldCountOnlyEnabledRulesAgainstMaximum() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setMaxRules(1);
