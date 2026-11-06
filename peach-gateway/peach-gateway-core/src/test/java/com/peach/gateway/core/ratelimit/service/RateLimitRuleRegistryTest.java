@@ -148,6 +148,19 @@ class RateLimitRuleRegistryTest {
     }
 
     @Test
+    void shouldRetainPreviousSnapshotWhenFailureModeIsMissing() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitConfigurationSnapshot previous = registry.getSnapshot();
+        properties.setFailureMode(null);
+
+        assertThatThrownBy(registry::refresh)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("failure-mode");
+        assertThat(registry.getSnapshot()).isSameAs(previous);
+    }
+
+    @Test
     void shouldCountOnlyEnabledRulesAgainstMaximum() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setMaxRules(1);
