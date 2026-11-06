@@ -46,6 +46,33 @@ class RateLimitScriptLoaderTest {
 
             verify(repository).reload();
             verify(metrics).updateScriptReady(true);
+        verify(metrics).recordScriptReload(true);
         }
     }
+    @Test
+    void shouldRecordFailedReloadAndPreservePreviousReadiness() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(false);
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitScriptRepository repository = mock(RateLimitScriptRepository.class);
+        when(repository.reload()).thenReturn(Mono.error(new IllegalStateException("invalid script")));
+        when(repository.isReady()).thenReturn(true);
+        RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.registerBean(RateLimitRuleRegistry.class, () -> registry);
+            context.registerBean(RateLimitScriptLoader.class,
+                    () -> new RateLimitScriptLoader(registry, repository, metrics));
+            context.refresh();
+
+            properties.setEnabled(true);
+            context.publishEvent(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.enabled")));
+            context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-script-failure-test"));
+
+            verify(repository).reload();
+            verify(metrics).updateScriptReady(true);
+            verify(metrics).recordScriptReload(false);
+        }
+    }
+
 }
