@@ -161,6 +161,18 @@ class RateLimitRuleRegistryTest {
     }
 
     @Test
+    void shouldRequireSha256ForEachConfiguredRemoteScript() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.getScripts().setAllowedRemoteHosts(List.of("1.1.1.1"));
+        properties.getScripts().setRemoteUrls(java.util.Map.of(
+                "token-bucket", "https://1.1.1.1/rate-limit/token-bucket.lua"));
+
+        assertThatThrownBy(() -> new RateLimitRuleRegistry(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("requires a SHA-256 checksum");
+    }
+
+    @Test
     void shouldCountOnlyEnabledRulesAgainstMaximum() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setMaxRules(1);
