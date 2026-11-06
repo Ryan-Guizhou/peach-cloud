@@ -82,8 +82,8 @@ public class RateLimitScriptLoader implements ApplicationRunner {
                     log.error("Gateway rate limit Lua script reload failed, errorType={}",
                             rootCause(error).getClass().getSimpleName());
                 })
-                .subscribe(ignored -> {
-                    // Mono<Void> completes without an onNext value; doOnSuccess already updates readiness.
+                .subscribe(published -> {
+                    // The publish outcome is handled by doOnSuccess above.
                 }, error -> {
                     // The failure has been recorded above; consume it to avoid an unhandled reactive error.
                 });
