@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -47,7 +48,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
-        when(executor.execute(any(), anyString()))
+        when(executor.execute(any(), anyString(), anyString()))
                 .thenReturn(Mono.just(new RateLimitDecision(true, 5, 1000, 0, 10)))
                 .thenReturn(Mono.just(new RateLimitDecision(false, 0, 1000, 1500, 10)));
 
@@ -57,7 +58,7 @@ class RateLimitEnforcementServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.REJECTED);
         assertThat(result.rule().id()).isEqualTo("ip");
-        verify(executor, org.mockito.Mockito.times(2)).execute(any(), anyString());
+        verify(executor, org.mockito.Mockito.times(2)).execute(any(), anyString(), anyString());
     }
 
     @Test
@@ -80,7 +81,7 @@ class RateLimitEnforcementServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.TENANT_CONTEXT_MISSING);
-        verify(executor, never()).execute(any(), anyString());
+        verify(executor, never()).execute(any(), anyString(), anyString());
     }
 
     @Test
@@ -102,7 +103,7 @@ class RateLimitEnforcementServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.ALLOWED);
-        verify(executor, never()).execute(any(), anyString());
+        verify(executor, never()).execute(any(), anyString(), anyString());
     }
 
     @Test
@@ -120,7 +121,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
         when(tenantResolver.resolve(any())).thenReturn(Mono.empty());
-        when(executor.execute(any(), anyString()))
+        when(executor.execute(any(), anyString(), anyString()))
                 .thenReturn(Mono.just(new RateLimitDecision(true, 8, 1000, 0, 10)));
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
@@ -129,7 +130,7 @@ class RateLimitEnforcementServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.ALLOWED);
         assertThat(result.rule().id()).isEqualTo("global");
-        verify(executor, org.mockito.Mockito.times(1)).execute(any(), anyString());
+        verify(executor, org.mockito.Mockito.times(1)).execute(any(), anyString(), anyString());
     }
 
 
@@ -153,7 +154,7 @@ class RateLimitEnforcementServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.BLOCKED);
-        verify(executor, never()).execute(any(), anyString());
+        verify(executor, never()).execute(any(), anyString(), anyString());
     }
 
     @Test
@@ -175,7 +176,7 @@ class RateLimitEnforcementServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.BLOCKED);
-        verify(executor, never()).execute(any(), anyString());
+        verify(executor, never()).execute(any(), anyString(), anyString());
     }
 
     @Test
@@ -198,7 +199,7 @@ class RateLimitEnforcementServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.BLOCKED);
-        verify(executor, never()).execute(any(), anyString());
+        verify(executor, never()).execute(any(), anyString(), anyString());
     }
 
     @Test
@@ -221,7 +222,7 @@ class RateLimitEnforcementServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.ALLOWED);
-        verify(executor, never()).execute(any(), anyString());
+        verify(executor, never()).execute(any(), anyString(), anyString());
     }
 
     @Test
@@ -236,7 +237,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
-        when(scriptRepository.isReady(any())).thenReturn(false);
+        when(scriptRepository.getScripts(any())).thenReturn(Map.of());
         when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
 
         RateLimitEnforcementService service = new RateLimitEnforcementService(
@@ -248,7 +249,7 @@ class RateLimitEnforcementServiceTest {
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.UNAVAILABLE);
         assertThat(result.reason()).isEqualTo("rate-limit-scripts-not-ready");
         verify(ipResolver).resolve(any(), any());
-        verify(executor, never()).execute(any(), anyString());
+        verify(executor, never()).execute(any(), anyString(), anyString());
         verify(metrics).recordPolicy("scripts-not-ready");
     }
 
@@ -272,9 +273,9 @@ class RateLimitEnforcementServiceTest {
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
-        when(scriptRepository.isReady(any())).thenReturn(true);
+        when(scriptRepository.getScripts(any())).thenReturn(scriptSources());
         when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
-        when(executor.execute(any(), anyString()))
+        when(executor.execute(any(), anyString(), anyString()))
                 .thenReturn(Mono.just(new RateLimitDecision(true, 8, 1000, 0, 10)));
 
         RateLimitEnforcementService service = new RateLimitEnforcementService(registry,
@@ -284,7 +285,17 @@ class RateLimitEnforcementServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.ALLOWED);
-        verify(executor, org.mockito.Mockito.times(2)).execute(any(), anyString());
+        verify(executor, org.mockito.Mockito.times(2)).execute(any(), anyString(), anyString());
+    }
+
+    private Map<RateLimitAlgorithm, String> scriptSources() {
+        return Map.of(
+                RateLimitAlgorithm.FIXED_WINDOW, "return redis.call('GET', KEYS[1])",
+                RateLimitAlgorithm.SLIDING_WINDOW_LOG, "return redis.call('GET', KEYS[1])",
+                RateLimitAlgorithm.SLIDING_WINDOW_COUNTER, "return redis.call('GET', KEYS[1])",
+                RateLimitAlgorithm.TOKEN_BUCKET, "return redis.call('GET', KEYS[1])",
+                RateLimitAlgorithm.LEAKY_BUCKET, "return redis.call('GET', KEYS[1])",
+                RateLimitAlgorithm.GCRA, "return redis.call('GET', KEYS[1])");
     }
 
     private RateLimitEnforcementService service(GatewayRateLimitProperties properties,
@@ -293,7 +304,7 @@ class RateLimitEnforcementServiceTest {
                                                 RateLimitTenantContextResolver tenantResolver,
                                                 RateLimitMetrics metrics) {
         RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
-        when(scriptRepository.isReady(any())).thenReturn(true);
+        when(scriptRepository.getScripts(any())).thenReturn(scriptSources());
         return new RateLimitEnforcementService(new RateLimitRuleRegistry(properties),
                 new RateLimitRuleMatcher(), new RateLimitKeyFactory(), executor,
                 ipResolver, tenantResolver, metrics, scriptRepository, new GatewaySaTokenProperties());
@@ -338,7 +349,7 @@ class RateLimitEnforcementServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.ALLOWED);
         verify(tenantResolver, never()).resolve(any());
-        verify(executor, never()).execute(any(), anyString());
+        verify(executor, never()).execute(any(), anyString(), anyString());
     }
 
     @Test
@@ -362,7 +373,7 @@ class RateLimitEnforcementServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.UNAVAILABLE);
         assertThat(result.reason()).isEqualTo("matched-rules-exceeded");
-        verify(executor, never()).execute(any(), anyString());
+        verify(executor, never()).execute(any(), anyString(), anyString());
         verify(metrics).recordPolicy("matched-rules-exceeded");
     }
 
