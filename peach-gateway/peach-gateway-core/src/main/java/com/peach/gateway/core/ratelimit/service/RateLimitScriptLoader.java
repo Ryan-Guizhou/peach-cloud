@@ -51,10 +51,8 @@ public class RateLimitScriptLoader implements ApplicationRunner {
         } catch (RuntimeException exception) {
             metrics.updateScriptReady(repository.isReady());
             metrics.recordScriptReload(false);
-            log.error("Gateway rate limit Lua script loading failed, errorType={}",
+            log.error("Gateway rate limit Lua script loading failed; requests will follow the configured failure mode, errorType={}",
                     rootCause(exception).getClass().getSimpleName());
-            throw new IllegalStateException(
-                    "Unable to load gateway rate limit scripts; verify OSS URL and SHA-256 configuration");
         }
     }
 
