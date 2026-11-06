@@ -40,7 +40,7 @@ class RateLimitRuntimeRefreshIntegrationTest {
                     .as("EnvironmentChangeEvent is emitted before ConfigurationProperties rebinding finishes")
                     .isSameAs(previous);
 
-            context.publishEvent(new RefreshScopeRefreshedEvent(this));
+            context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-refresh-test"));
 
             assertThat(registry.getSnapshot()).isNotSameAs(previous);
             assertThat(registry.getSnapshot().allowlistIps()).containsExactly("192.0.2.20");
