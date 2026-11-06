@@ -47,6 +47,22 @@ class TrustedProxyClientIpResolverTest {
         assertThat(resolver.resolve(exchange)).isEqualTo("198.51.100.20");
     }
 
+
+    @Test
+    void shouldCombineDuplicateForwardedForHeaderFieldsInWireOrder() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setTrustedProxies(List.of("10.0.0.0/8"));
+        TrustedProxyClientIpResolver resolver = new TrustedProxyClientIpResolver(properties);
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/orders")
+                        .remoteAddress(new InetSocketAddress("10.0.0.3", 8080))
+                        .header("X-Forwarded-For", "203.0.113.77")
+                        .header("X-Forwarded-For", "198.51.100.20, 10.0.0.2")
+                        .build());
+
+        assertThat(resolver.resolve(exchange)).isEqualTo("198.51.100.20");
+    }
+
     @Test
     void shouldFallbackToTcpPeerWhenForwardedChainIsMalformed() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();

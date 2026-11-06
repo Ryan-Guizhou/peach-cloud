@@ -68,8 +68,10 @@ class RateLimitScriptRepositoryTest {
 
         RateLimitScriptRepository repository = new RateLimitScriptRepository(
                 properties, new DefaultResourceLoader());
+        assertThat(repository.isReady()).isFalse();
         repository.reload().block(Duration.ofSeconds(10));
 
+        assertThat(repository.isReady()).isTrue();
         assertThat(repository.get(RateLimitAlgorithm.TOKEN_BUCKET)).isEqualTo(remoteScript);
         assertThat(repository.get(RateLimitAlgorithm.FIXED_WINDOW))
                 .contains("redis.call")

@@ -5,6 +5,7 @@ import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitScope;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetAddress;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +51,48 @@ class RateLimitRuleRegistryTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Duplicate rate limit rule id");
         assertThat(registry.getSnapshot()).isSameAs(previous);
+    }
+
+
+    @Test
+    void shouldCanonicalizeIpv6IpPolicies() throws Exception {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setAllowlistIps(List.of("2001:db8::1"));
+        properties.setDenylistIps(List.of("2001:db8::2"));
+
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+
+        assertThat(registry.getSnapshot().allowlistIps())
+                .containsExactly(InetAddress.getByName("2001:db8::1").getHostAddress());
+        assertThat(registry.getSnapshot().denylistIps())
+                .containsExactly(InetAddress.getByName("2001:db8::2").getHostAddress());
+    }
+
+    @Test
+    void shouldCountOnlyEnabledRulesAgainstMaximum() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setMaxRules(1);
+        GatewayRateLimitProperties.RuleProperties active = rule("active", RateLimitScope.GLOBAL);
+        GatewayRateLimitProperties.RuleProperties disabledOne = rule("disabled-one", RateLimitScope.IP);
+        GatewayRateLimitProperties.RuleProperties disabledTwo = rule("disabled-two", RateLimitScope.URI);
+        disabledOne.setEnabled(false);
+        disabledTwo.setEnabled(false);
+        properties.setRules(List.of(active, disabledOne, disabledTwo));
+
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+
+        assertThat(registry.getSnapshot().rules()).hasSize(1);
+        assertThat(registry.getSnapshot().rules().get(0).id()).isEqualTo("active");
+    }
+
+    @Test
+    void shouldRejectInvalidIpPolicyAddress() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setDenylistIps(List.of("not-an-ip"));
+
+        assertThatThrownBy(() -> new RateLimitRuleRegistry(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid IP address");
     }
 
     private GatewayRateLimitProperties.RuleProperties rule(String id, RateLimitScope scope) {

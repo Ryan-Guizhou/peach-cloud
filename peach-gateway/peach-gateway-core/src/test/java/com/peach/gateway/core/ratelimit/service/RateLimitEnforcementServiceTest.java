@@ -5,6 +5,7 @@ import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitCheckResult;
 import com.peach.gateway.core.ratelimit.model.RateLimitDecision;
 import com.peach.gateway.core.ratelimit.model.RateLimitScope;
+import com.peach.gateway.core.ratelimit.script.RateLimitScriptRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
@@ -129,14 +130,111 @@ class RateLimitEnforcementServiceTest {
         verify(executor, org.mockito.Mockito.times(1)).execute(any(), anyString());
     }
 
+
+    @Test
+    void shouldEnforceTenantDenylistWithoutTenantScopedRules() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(true);
+        properties.setDenylistTenants(List.of("tenant-blocked"));
+        properties.setRules(List.of(
+                rule("global", RateLimitScope.GLOBAL, RateLimitAlgorithm.TOKEN_BUCKET, 10)));
+
+        RedisRateLimitExecutor executor = mock(RedisRateLimitExecutor.class);
+        TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
+        RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
+        RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(tenantResolver.resolve()).thenReturn(Mono.just("tenant-blocked"));
+
+        RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
+        RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
+
+        assertThat(result).isNotNull();
+        assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.BLOCKED);
+        verify(executor, never()).execute(any(), anyString());
+    }
+
+    @Test
+    void shouldEnforceTenantDenylistWhenNoRateLimitRuleMatches() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(true);
+        properties.setDenylistTenants(List.of("tenant-blocked"));
+        properties.setRules(List.of());
+
+        RedisRateLimitExecutor executor = mock(RedisRateLimitExecutor.class);
+        TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
+        RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
+        RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(tenantResolver.resolve()).thenReturn(Mono.just("tenant-blocked"));
+
+        RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
+        RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
+
+        assertThat(result).isNotNull();
+        assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.BLOCKED);
+        verify(executor, never()).execute(any(), anyString());
+    }
+
+    @Test
+    void shouldBypassGlobalRulesForTenantAllowlistedWithoutTenantRules() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(true);
+        properties.setAllowlistTenants(List.of("tenant-allowed"));
+        properties.setRules(List.of(
+                rule("global", RateLimitScope.GLOBAL, RateLimitAlgorithm.TOKEN_BUCKET, 10)));
+
+        RedisRateLimitExecutor executor = mock(RedisRateLimitExecutor.class);
+        TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
+        RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
+        RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(tenantResolver.resolve()).thenReturn(Mono.just("tenant-allowed"));
+
+        RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
+        RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
+
+        assertThat(result).isNotNull();
+        assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.ALLOWED);
+        verify(executor, never()).execute(any(), anyString());
+    }
+
+    @Test
+    void shouldKeepEnforcementInactiveUntilAllScriptsAreReady() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(true);
+        properties.setRules(List.of(
+                rule("global", RateLimitScope.GLOBAL, RateLimitAlgorithm.TOKEN_BUCKET, 10)));
+
+        RedisRateLimitExecutor executor = mock(RedisRateLimitExecutor.class);
+        TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
+        RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
+        RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+        RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
+        when(scriptRepository.isReady()).thenReturn(false);
+
+        RateLimitEnforcementService service = new RateLimitEnforcementService(properties,
+                new RateLimitRuleRegistry(properties), new RateLimitRuleMatcher(), new RateLimitKeyFactory(),
+                executor, ipResolver, tenantResolver, metrics, scriptRepository);
+        RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
+
+        assertThat(result).isNotNull();
+        assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.ALLOWED);
+        verify(ipResolver, never()).resolve(any());
+        verify(executor, never()).execute(any(), anyString());
+        verify(metrics).recordPolicy("scripts-not-ready");
+    }
+
     private RateLimitEnforcementService service(GatewayRateLimitProperties properties,
                                                 RedisRateLimitExecutor executor,
                                                 TrustedProxyClientIpResolver ipResolver,
                                                 RateLimitTenantContextResolver tenantResolver,
                                                 RateLimitMetrics metrics) {
+        RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
+        when(scriptRepository.isReady()).thenReturn(true);
         return new RateLimitEnforcementService(properties, new RateLimitRuleRegistry(properties),
                 new RateLimitRuleMatcher(), new RateLimitKeyFactory(), executor,
-                ipResolver, tenantResolver, metrics);
+                ipResolver, tenantResolver, metrics, scriptRepository);
     }
 
     private GatewayRateLimitProperties.RuleProperties rule(String id, RateLimitScope scope,
