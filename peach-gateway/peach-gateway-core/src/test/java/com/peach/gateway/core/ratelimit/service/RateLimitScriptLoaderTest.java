@@ -48,7 +48,7 @@ class RateLimitScriptLoaderTest {
             context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-script-loader-test"));
 
             verify(repository).reload();
-            verify(metrics).updateScriptReady(true);
+            verify(metrics, org.mockito.Mockito.times(2)).updateScriptReady(true);
         verify(metrics).recordScriptReload(true);
         }
     }
@@ -73,7 +73,7 @@ class RateLimitScriptLoaderTest {
             context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-superseded-test"));
 
             verify(repository).reload();
-            verify(metrics).updateScriptReady(false);
+            verify(metrics, org.mockito.Mockito.times(2)).updateScriptReady(false);
             verify(metrics, never()).recordScriptReload(true);
             verify(metrics, never()).recordScriptReload(false);
         }
@@ -110,7 +110,7 @@ class RateLimitScriptLoaderTest {
         loader.run(new DefaultApplicationArguments(new String[0]));
 
         verify(metrics).updateScriptReady(false);
-        verify(repository, never()).reload();
+            verify(repository, never()).reload();
     }
 
     @Test
@@ -132,7 +132,7 @@ class RateLimitScriptLoaderTest {
                     "peach.gateway.rate-limit.scripts.local-location")));
             context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-disabled-refresh-test"));
 
-            verify(metrics).updateScriptReady(false);
+            verify(metrics, org.mockito.Mockito.times(2)).updateScriptReady(false);
             verify(repository, never()).reload();
         }
     }
@@ -158,7 +158,7 @@ class RateLimitScriptLoaderTest {
             context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-script-failure-test"));
 
             verify(repository).reload();
-            verify(metrics).updateScriptReady(true);
+            verify(metrics, org.mockito.Mockito.times(2)).updateScriptReady(true);
             verify(metrics).recordScriptReload(false);
         }
     }
