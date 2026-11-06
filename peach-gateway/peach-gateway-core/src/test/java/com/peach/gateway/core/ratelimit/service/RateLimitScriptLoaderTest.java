@@ -132,7 +132,7 @@ class RateLimitScriptLoaderTest {
                     "peach.gateway.rate-limit.scripts.local-location")));
             context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-disabled-refresh-test"));
 
-            verify(metrics, org.mockito.Mockito.times(2)).updateScriptReady(false);
+            verify(metrics).updateScriptReady(false);
             verify(repository, never()).reload();
         }
     }
