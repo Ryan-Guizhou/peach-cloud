@@ -47,6 +47,7 @@ public class RateLimitScriptRepository {
 
     public Mono<Void> reload() {
         return Mono.defer(() -> {
+            validateScriptConfiguration(properties.getScripts());
             EnumMap<RateLimitAlgorithm, String> loaded = new EnumMap<>(RateLimitAlgorithm.class);
             return Flux.fromArray(RateLimitAlgorithm.values())
                     .concatMap(algorithm -> load(algorithm).doOnNext(value -> loaded.put(algorithm, value)))

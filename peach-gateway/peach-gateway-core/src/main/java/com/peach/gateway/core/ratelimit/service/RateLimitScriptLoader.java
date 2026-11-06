@@ -47,15 +47,15 @@ public class RateLimitScriptLoader implements ApplicationRunner {
         boolean reloadRequired = event.getKeys().stream().anyMatch(key ->
                 key.startsWith("peach.gateway.rate-limit.scripts.")
                         || "peach.gateway.rate-limit.enabled".equals(key));
-        if (!properties.isEnabled() || !reloadRequired) {
-            return;
-        }
         boolean transportChanged = event.getKeys().stream().anyMatch(key ->
                 "peach.gateway.rate-limit.scripts.connect-timeout".equals(key)
                         || "peach.gateway.rate-limit.scripts.read-timeout".equals(key)
                         || "peach.gateway.rate-limit.scripts.max-script-bytes".equals(key));
         if (transportChanged) {
             repository.invalidateWebClient();
+        }
+        if (!properties.isEnabled() || !reloadRequired) {
+            return;
         }
         repository.reload().subscribe(
                 ignored -> log.info("Gateway rate limit Lua scripts reloaded"),
