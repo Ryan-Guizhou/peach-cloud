@@ -33,7 +33,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RateLimitEnforcementService {
 
-    private final GatewayRateLimitProperties properties;
     private final RateLimitRuleRegistry ruleRegistry;
     private final RateLimitRuleMatcher ruleMatcher;
     private final RateLimitKeyFactory keyFactory;
@@ -43,16 +42,20 @@ public class RateLimitEnforcementService {
     private final RateLimitMetrics metrics;
     private final RateLimitScriptRepository scriptRepository;
     private final GatewaySaTokenProperties saTokenProperties;
+    private static final String CONFIGURATION_ATTRIBUTE =
+            RateLimitEnforcementService.class.getName() + ".configuration";
+
     private final GatewaySecurityEndpointMatcher endpointMatcher = new GatewaySecurityEndpointMatcher();
 
     public Mono<RateLimitCheckResult> check(ServerWebExchange exchange) {
         return Mono.defer(() -> {
-            if (!properties.isEnabled()) {
+            RateLimitConfigurationSnapshot configuration = ruleRegistry.getSnapshot();
+            exchange.getAttributes().put(CONFIGURATION_ATTRIBUTE, configuration);
+            if (!configuration.enabled()) {
                 return Mono.just(RateLimitCheckResult.allowed());
             }
 
-            RateLimitConfigurationSnapshot configuration = ruleRegistry.getSnapshot();
-            String clientIp = clientIpResolver.resolve(exchange);
+            String clientIp = clientIpResolver.resolve(exchange, configuration);
 
             if (clientIp != null && configuration.denylistIps().contains(clientIp)) {
                 metrics.recordPolicy("blocked");
@@ -83,7 +86,7 @@ public class RateLimitEnforcementService {
                     return Mono.just(RateLimitCheckResult.allowed());
                 }
                 return scriptsReady()
-                        ? evaluate(candidates, exchange, null, clientIp)
+                        ? evaluate(candidates, exchange, null, clientIp, configuration)
                         : unavailableWhileScriptsNotReady();
             }
 
@@ -99,7 +102,7 @@ public class RateLimitEnforcementService {
                             metrics.recordPolicy("allowlisted");
                             return Mono.just(RateLimitCheckResult.allowed());
                         }
-                        if (tenantScopeMatched && isBlank(tenantId) && properties.isRequireTenantContext()) {
+                        if (tenantScopeMatched && isBlank(tenantId) && configuration.requireTenantContext()) {
                             metrics.recordPolicy("tenant-context-missing");
                             return Mono.just(RateLimitCheckResult.tenantContextMissing());
                         }
@@ -107,7 +110,7 @@ public class RateLimitEnforcementService {
                             return Mono.just(RateLimitCheckResult.allowed());
                         }
                         return scriptsReady()
-                                ? evaluate(candidates, exchange, tenantId, clientIp)
+                                ? evaluate(candidates, exchange, tenantId, clientIp, configuration)
                                 : unavailableWhileScriptsNotReady();
                     });
         });
@@ -116,7 +119,8 @@ public class RateLimitEnforcementService {
     private Mono<RateLimitCheckResult> evaluate(List<RateLimitRule> candidates,
                                                 ServerWebExchange exchange,
                                                 String tenantId,
-                                                String clientIp) {
+                                                String clientIp,
+                                                RateLimitConfigurationSnapshot configuration) {
         List<MatchedRateLimitRule> matchedRules = new ArrayList<>();
         for (RateLimitRule rule : candidates) {
             if (rule.scope().isIpScope() && (isBlank(clientIp) || "unknown".equalsIgnoreCase(clientIp))) {
@@ -128,7 +132,7 @@ public class RateLimitEnforcementService {
         if (matchedRules.isEmpty()) {
             return Mono.just(RateLimitCheckResult.allowed());
         }
-        if (matchedRules.size() > matchedRuleLimit()) {
+        if (matchedRules.size() > configuration.maxMatchedRulesPerRequest()) {
             metrics.recordPolicy("matched-rules-exceeded");
             return Mono.just(RateLimitCheckResult.unavailable("matched-rules-exceeded"));
         }
@@ -183,12 +187,16 @@ public class RateLimitEnforcementService {
         return endpointMatcher.matches(saTokenProperties.getPublicEndpoints(), method, path);
     }
 
-    private int matchedRuleLimit() {
-        int configured = properties.getMaxMatchedRulesPerRequest();
-        if (configured < 1) {
-            return 1;
+    public boolean isEnabled() {
+        return ruleRegistry.getSnapshot().enabled();
+    }
+
+    public GatewayRateLimitProperties.FailureMode failureMode(ServerWebExchange exchange) {
+        Object configuration = exchange.getAttributes().get(CONFIGURATION_ATTRIBUTE);
+        if (configuration instanceof RateLimitConfigurationSnapshot snapshot) {
+            return snapshot.failureMode();
         }
-        return Math.min(configured, 64);
+        return ruleRegistry.getSnapshot().failureMode();
     }
 
     private boolean scriptsReady() {

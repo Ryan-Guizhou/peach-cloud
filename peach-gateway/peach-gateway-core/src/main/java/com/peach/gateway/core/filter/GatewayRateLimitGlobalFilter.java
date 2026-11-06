@@ -39,13 +39,12 @@ public class GatewayRateLimitGlobalFilter implements GlobalFilter, Ordered {
 
     private static final int FILTER_ORDER = -175;
 
-    private final GatewayRateLimitProperties properties;
     private final RateLimitEnforcementService enforcementService;
     private final RateLimitMetrics metrics;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        if (!properties.isEnabled()) {
+        if (!enforcementService.isEnabled()) {
             return chain.filter(exchange);
         }
 
@@ -105,7 +104,7 @@ public class GatewayRateLimitGlobalFilter implements GlobalFilter, Ordered {
                                          GatewayFilterChain chain,
                                          Throwable error) {
         String requestId = requestId(exchange);
-        if (properties.getFailureMode() == GatewayRateLimitProperties.FailureMode.FAIL_OPEN) {
+        if (enforcementService.failureMode(exchange) == GatewayRateLimitProperties.FailureMode.FAIL_OPEN) {
             metrics.recordPolicy("fail-open");
             log.warn("Gateway rate limit unavailable; request allowed, requestId={}, reason={}",
                     requestId, error.getClass().getSimpleName());
