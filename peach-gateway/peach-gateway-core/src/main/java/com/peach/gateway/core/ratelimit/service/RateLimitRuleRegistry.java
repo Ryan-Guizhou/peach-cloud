@@ -88,6 +88,9 @@ public class RateLimitRuleRegistry {
         List<GatewayRateLimitProperties.RuleProperties> enabledRules = configured.stream()
                 .filter(GatewayRateLimitProperties.RuleProperties::isEnabled)
                 .toList();
+        if (properties.getFailureMode() == null) {
+            throw new IllegalArgumentException("Rate limit failure-mode must be configured");
+        }
         int maxMatchedRules = properties.getMaxMatchedRulesPerRequest();
         if (maxMatchedRules < 1 || maxMatchedRules > MAX_MATCHED_RULES_PER_REQUEST) {
             throw new IllegalArgumentException("max-matched-rules-per-request must be between 1 and "
