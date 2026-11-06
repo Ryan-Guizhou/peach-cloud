@@ -76,7 +76,6 @@ public class RateLimitEnforcementService {
             boolean tenantPolicyConfigured = !publicEndpoint && (!configuration.allowlistTenants().isEmpty()
                     || !configuration.denylistTenants().isEmpty());
             Map<RateLimitAlgorithm, String> requestScripts = scriptRepository.getScripts(configuration.scripts());
-            boolean scriptsReady = requestScripts.size() == RateLimitAlgorithm.values().length;
 
             if (candidates.isEmpty() && !tenantPolicyConfigured) {
                 if (ipAllowlisted) {
@@ -89,9 +88,7 @@ public class RateLimitEnforcementService {
                     metrics.recordPolicy("allowlisted");
                     return Mono.just(RateLimitCheckResult.allowed());
                 }
-                return scriptsReady
-                        ? evaluate(candidates, exchange, null, clientIp, configuration, requestScripts)
-                        : unavailableWhileScriptsNotReady();
+                return evaluate(candidates, exchange, null, clientIp, configuration, requestScripts);
             }
 
             return tenantContextResolver.resolve(exchange)
@@ -113,9 +110,7 @@ public class RateLimitEnforcementService {
                         if (candidates.isEmpty()) {
                             return Mono.just(RateLimitCheckResult.allowed());
                         }
-                        return scriptsReady
-                                ? evaluate(candidates, exchange, tenantId, clientIp, configuration, requestScripts)
-                                : unavailableWhileScriptsNotReady();
+                        return evaluate(candidates, exchange, tenantId, clientIp, configuration, requestScripts);
                     });
         });
     }
@@ -136,6 +131,9 @@ public class RateLimitEnforcementService {
         }
         if (matchedRules.isEmpty()) {
             return Mono.just(RateLimitCheckResult.allowed());
+        }
+        if (requestScripts.size() != RateLimitAlgorithm.values().length) {
+            return unavailableWhileScriptsNotReady();
         }
         if (matchedRules.size() > configuration.maxMatchedRulesPerRequest()) {
             metrics.recordPolicy("matched-rules-exceeded");
