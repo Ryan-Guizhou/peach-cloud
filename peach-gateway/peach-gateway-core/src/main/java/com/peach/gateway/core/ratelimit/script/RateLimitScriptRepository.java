@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -39,6 +40,8 @@ public class RateLimitScriptRepository {
     private final AtomicReference<Map<RateLimitAlgorithm, String>> scripts =
             new AtomicReference<>(Map.of());
 
+    private final AtomicLong reloadGeneration = new AtomicLong();
+
     public RateLimitScriptRepository(GatewayRateLimitProperties properties, ResourceLoader resourceLoader) {
         this.properties = properties;
         this.resourceLoader = resourceLoader;
@@ -47,11 +50,16 @@ public class RateLimitScriptRepository {
 
     public Mono<Void> reload() {
         return Mono.defer(() -> {
+            long generation = reloadGeneration.incrementAndGet();
             validateScriptConfiguration(properties.getScripts());
             EnumMap<RateLimitAlgorithm, String> loaded = new EnumMap<>(RateLimitAlgorithm.class);
             return Flux.fromArray(RateLimitAlgorithm.values())
                     .concatMap(algorithm -> load(algorithm).doOnNext(value -> loaded.put(algorithm, value)))
-                    .then(Mono.fromRunnable(() -> scripts.set(Map.copyOf(loaded))));
+                    .then(Mono.fromRunnable(() -> {
+                        if (generation == reloadGeneration.get()) {
+                            scripts.set(Map.copyOf(loaded));
+                        }
+                    }));
         });
     }
 

@@ -29,10 +29,13 @@ public class GatewayRateLimitRedisConfiguration {
     @Bean(name = "gatewayRateLimitReactiveRedisConnectionFactory", destroyMethod = "destroy")
     @ConditionalOnMissingBean(name = "gatewayRateLimitReactiveRedisConnectionFactory")
     public LettuceConnectionFactory gatewayRateLimitReactiveRedisConnectionFactory(RedisConfig redisConfig) {
-        LettuceClientConfiguration clientConfiguration = LettuceClientConfiguration.builder()
-                .commandTimeout(Duration.ofSeconds(2))
-                .shutdownTimeout(Duration.ZERO)
-                .build();
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder clientBuilder =
+                LettuceClientConfiguration.builder()
+                        .commandTimeout(Duration.ofSeconds(2))
+                        .shutdownTimeout(Duration.ZERO);
+        LettuceClientConfiguration clientConfiguration = redisConfig.isSslEnable()
+                ? clientBuilder.useSsl().build()
+                : clientBuilder.build();
 
         return switch (redisConfig.getMode()) {
             case RedisConstant.STANDALONE -> new LettuceConnectionFactory(
