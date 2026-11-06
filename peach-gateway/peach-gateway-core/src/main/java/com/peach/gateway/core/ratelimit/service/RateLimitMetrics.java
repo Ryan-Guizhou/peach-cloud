@@ -26,6 +26,12 @@ public class RateLimitMetrics {
 
     private final ObjectProvider<MeterRegistry> registryProvider;
 
+    private static final String SCRIPT_RELOAD_METRIC = "peach.gateway.rate.limit.scripts.reloads";
+
+    private static final String SCRIPT_RELOAD_SUCCESS = "success";
+
+    private static final String SCRIPT_RELOAD_FAILURE = "failure";
+
     private final AtomicInteger scriptsReady = new AtomicInteger();
 
     public void updateScriptReady(boolean ready) {
@@ -37,6 +43,18 @@ public class RateLimitMetrics {
         Gauge.builder("peach.gateway.rate.limit.scripts.ready", scriptsReady, AtomicInteger::get)
                 .description("1 when every gateway rate limit Lua script is loaded")
                 .register(registry);
+    }
+
+    public void recordScriptReload(boolean success) {
+        MeterRegistry registry = registryProvider.getIfAvailable();
+        if (registry == null) {
+            return;
+        }
+        Counter.builder(SCRIPT_RELOAD_METRIC)
+                .description("Gateway rate limit Lua script reload outcomes")
+                .tag("outcome", success ? SCRIPT_RELOAD_SUCCESS : SCRIPT_RELOAD_FAILURE)
+                .register(registry)
+                .increment();
     }
 
     public void record(RateLimitRule rule, String outcome, long durationNanos) {
@@ -57,6 +75,7 @@ public class RateLimitMetrics {
                 .description("Gateway rate limit Redis execution latency")
                 .tag("scope", scope)
                 .tag("algorithm", algorithm)
+                .publishPercentileHistogram()
                 .register(registry)
                 .record(Math.max(0L, durationNanos), TimeUnit.NANOSECONDS);
     }
