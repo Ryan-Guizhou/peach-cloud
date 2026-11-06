@@ -46,10 +46,6 @@ public class RateLimitEnforcementService {
             if (!properties.isEnabled()) {
                 return Mono.just(RateLimitCheckResult.allowed());
             }
-            if (!scriptRepository.isReady()) {
-                metrics.recordPolicy("scripts-not-ready");
-                return Mono.just(RateLimitCheckResult.allowed());
-            }
 
             RateLimitConfigurationSnapshot configuration = ruleRegistry.getSnapshot();
             String clientIp = clientIpResolver.resolve(exchange);
@@ -74,7 +70,9 @@ public class RateLimitEnforcementService {
                 return Mono.just(RateLimitCheckResult.allowed());
             }
             if (!tenantScopeMatched && !tenantPolicyConfigured) {
-                return evaluate(candidates, exchange, null, clientIp);
+                return scriptsReady()
+                        ? evaluate(candidates, exchange, null, clientIp)
+                        : allowWhileScriptsLoading();
             }
 
             return tenantContextResolver.resolve()
@@ -95,7 +93,9 @@ public class RateLimitEnforcementService {
                         if (candidates.isEmpty()) {
                             return Mono.just(RateLimitCheckResult.allowed());
                         }
-                        return evaluate(candidates, exchange, tenantId, clientIp);
+                        return scriptsReady()
+                                ? evaluate(candidates, exchange, tenantId, clientIp)
+                                : allowWhileScriptsLoading();
                     });
         });
     }
@@ -158,6 +158,15 @@ public class RateLimitEnforcementService {
             return 1D;
         }
         return (double) Math.max(0L, decision.remaining()) / decision.limit();
+    }
+
+    private boolean scriptsReady() {
+        return scriptRepository.isReady();
+    }
+
+    private Mono<RateLimitCheckResult> allowWhileScriptsLoading() {
+        metrics.recordPolicy("scripts-not-ready");
+        return Mono.just(RateLimitCheckResult.allowed());
     }
 
     private boolean isBlank(String value) {

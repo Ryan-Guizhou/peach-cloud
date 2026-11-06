@@ -220,7 +220,7 @@ class RateLimitEnforcementServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.ALLOWED);
-        verify(ipResolver, never()).resolve(any());
+        verify(ipResolver).resolve(any());
         verify(executor, never()).execute(any(), anyString());
         verify(metrics).recordPolicy("scripts-not-ready");
     }
