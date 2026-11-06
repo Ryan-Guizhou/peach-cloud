@@ -256,5 +256,27 @@
   "title": "Peach Gateway — Rate Limiting",
   "uid": "peach-gateway-rate-limit",
   "version": 1,
-  "weekStart": ""
+  "weekStart": "",
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "label": "Prometheus",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {
+          "text": "Prometheus",
+          "value": "Prometheus"
+        },
+        "options": [],
+        "refresh": 1,
+        "regex": "",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "pluginId": "prometheus",
+        "pluginName": "Prometheus"
+      }
+    ]
+  }
 }
