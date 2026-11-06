@@ -30,10 +30,13 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,6 +52,8 @@ import static org.mockito.Mockito.mock;
  */
 @Testcontainers
 class RateLimitRedisIntegrationTest {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitRedisIntegrationTest.class);
 
     @Container
     private static final GenericContainer<?> REDIS =
@@ -151,15 +156,36 @@ class RateLimitRedisIntegrationTest {
                 Set.of(), List.of(), Set.of(), 1000, Duration.ofSeconds(60).toMillis(),
                 0.000001D, 1000, 0.001D, 1);
 
-        List<RateLimitDecision> decisions = Flux.range(0, 10_000)
-                .flatMap(index -> (index % 2 == 0 ? firstExecutor : secondExecutor)
-                        .execute(rule, key), 256)
+        long startedAt = System.nanoTime();
+        List<TimedDecision> timedDecisions = Flux.range(0, 10_000)
+                .flatMap(index -> Mono.defer(() -> {
+                    long requestStartedAt = System.nanoTime();
+                    RedisRateLimitExecutor executor = index % 2 == 0 ? firstExecutor : secondExecutor;
+                    return executor.execute(rule, key)
+                            .map(decision -> new TimedDecision(decision, System.nanoTime() - requestStartedAt));
+                }), 10_000)
                 .collectList()
-                .block(Duration.ofSeconds(60));
+                .block(Duration.ofSeconds(120));
+        long elapsedNanos = System.nanoTime() - startedAt;
 
-        assertThat(decisions).isNotNull().hasSize(10_000);
-        assertThat(decisions.stream().filter(RateLimitDecision::allowed).count()).isEqualTo(1000);
-        assertThat(decisions.stream().filter(decision -> !decision.allowed()).count()).isEqualTo(9000);
+        assertThat(timedDecisions).isNotNull().hasSize(10_000);
+        long allowed = timedDecisions.stream().filter(item -> item.decision().allowed()).count();
+        long rejected = timedDecisions.stream().filter(item -> !item.decision().allowed()).count();
+        assertThat(allowed).isEqualTo(1000);
+        assertThat(rejected).isEqualTo(9000);
+
+        List<Long> sortedLatencies = timedDecisions.stream()
+                .map(TimedDecision::durationNanos)
+                .sorted()
+                .toList();
+        long p95Nanos = sortedLatencies.get((int) Math.ceil(sortedLatencies.size() * 0.95D) - 1);
+        long p99Nanos = sortedLatencies.get((int) Math.ceil(sortedLatencies.size() * 0.99D) - 1);
+        double throughputRps = timedDecisions.size() / (elapsedNanos / 1_000_000_000D);
+        LOGGER.info("Gateway rate-limit load test completed, concurrency={}, totalRequests={}, allowed={}, "
+                        + "rejected={}, elapsedMs={}, throughputRps={}, p95Ms={}, p99Ms={}",
+                10_000, timedDecisions.size(), allowed, rejected,
+                elapsedNanos / 1_000_000D, throughputRps,
+                p95Nanos / 1_000_000D, p99Nanos / 1_000_000D);
     }
 
     @Test
@@ -202,6 +228,9 @@ class RateLimitRedisIntegrationTest {
         } finally {
             unavailableFactory.destroy();
         }
+    }
+
+    private record TimedDecision(RateLimitDecision decision, long durationNanos) {
     }
 
     private GatewayRateLimitProperties enabledGlobalTokenBucketProperties() {
