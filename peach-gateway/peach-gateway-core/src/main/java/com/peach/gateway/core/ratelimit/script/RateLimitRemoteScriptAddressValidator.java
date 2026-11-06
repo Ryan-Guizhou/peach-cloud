@@ -30,6 +30,20 @@ final class RateLimitRemoteScriptAddressValidator {
     private RateLimitRemoteScriptAddressValidator() {
     }
 
+    public static void validateConfiguration(RateLimitScriptConfiguration config) {
+        if (config == null || config.allowedRemotePorts().isEmpty()
+                || config.allowedRemotePorts().stream().anyMatch(port -> port == null || port < 1 || port > 65535)) {
+            throw invalid("remote script port allowlist is invalid");
+        }
+        config.allowedRemoteHosts().forEach(RateLimitRemoteScriptAddressValidator::normalizeHost);
+        config.allowedRemoteCidrs().forEach(RateLimitRemoteScriptAddressValidator::parseCidr);
+        boolean remoteConfigured = (config.remoteBaseUrl() != null && !config.remoteBaseUrl().isBlank())
+                || config.remoteUrls().values().stream().anyMatch(value -> value != null && !value.isBlank());
+        if (remoteConfigured && config.allowedRemoteHosts().isEmpty()) {
+            throw invalid("remote scripts require an exact allowed-remote-hosts entry");
+        }
+    }
+
     static ValidatedTarget validate(String value, RateLimitScriptConfiguration config) {
         if (value == null || value.isBlank()) {
             throw invalid("remote URL is blank");
