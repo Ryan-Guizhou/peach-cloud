@@ -43,15 +43,26 @@ public class RedisRateLimitExecutor {
     }
 
     public Mono<RateLimitDecision> execute(RateLimitRule rule, String key) {
-        DefaultRedisScript<List> script = resolveScript(rule.algorithm());
+        return execute(rule, key, scriptRepository.get(rule.algorithm()));
+    }
+
+    /**
+     * 使用请求开始时捕获的脚本源码执行，避免配置刷新期间混用新旧脚本版本。
+     *
+     * @param rule 限流规则
+     * @param key Redis 限流 Key
+     * @param scriptSource 请求捕获的脚本源码
+     * @return 限流判定结果
+     */
+    public Mono<RateLimitDecision> execute(RateLimitRule rule, String key, String scriptSource) {
+        DefaultRedisScript<List> script = resolveScript(rule.algorithm(), scriptSource);
         return redisTemplate.execute(script, List.of(key), arguments(rule))
                 .next()
                 .map(this::toDecision)
                 .switchIfEmpty(Mono.error(new IllegalStateException("Rate limit Lua script returned no result")));
     }
 
-    private DefaultRedisScript<List> resolveScript(RateLimitAlgorithm algorithm) {
-        String source = scriptRepository.get(algorithm);
+    private DefaultRedisScript<List> resolveScript(RateLimitAlgorithm algorithm, String source) {
         CachedScript cached = scriptCache.compute(algorithm, (key, current) -> {
             if (current != null && current.source().equals(source)) {
                 return current;
