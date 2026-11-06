@@ -210,8 +210,8 @@ class RateLimitScriptRepositoryTest {
     void shouldRejectHttpWhenHttpsIsRequired() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
-        scripts.setAllowedRemoteHosts(List.of("127.0.0.1"));
-        scripts.setAllowedRemoteCidrs(List.of("127.0.0.1/32"));
+        scripts.setAllowedRemoteHosts(List.of(serverHost));
+        scripts.setAllowedRemoteCidrs(List.of(serverHost + "/32"));
         scripts.setAllowedRemotePorts(List.of(server.getAddress().getPort()));
         scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
 
