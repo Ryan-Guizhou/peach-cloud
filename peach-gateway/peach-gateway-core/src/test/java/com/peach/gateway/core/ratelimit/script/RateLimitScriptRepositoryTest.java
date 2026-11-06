@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -31,11 +32,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class RateLimitScriptRepositoryTest {
 
     private HttpServer server;
+    private String serverHost;
     private final AtomicBoolean redirectTargetRequested = new AtomicBoolean();
 
     @BeforeEach
     void startServer() throws Exception {
-        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        serverHost = InetAddress.getLocalHost().getHostAddress();
+        server = HttpServer.create(new InetSocketAddress("0.0.0.0", 0), 0);
         server.createContext("/token-bucket.lua", exchange -> {
             byte[] body = "return {1, 2, 3, 0, 10}".getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "text/plain");
@@ -238,13 +241,13 @@ class RateLimitScriptRepositoryTest {
 
     private void allowLocalTestServer(GatewayRateLimitProperties.ScriptProperties scripts) {
         scripts.setRequireHttps(false);
-        scripts.setAllowedRemoteHosts(List.of("127.0.0.1"));
-        scripts.setAllowedRemoteCidrs(List.of("127.0.0.1/32"));
+        scripts.setAllowedRemoteHosts(List.of(serverHost));
+        scripts.setAllowedRemoteCidrs(List.of(serverHost + "/32"));
         scripts.setAllowedRemotePorts(List.of(server.getAddress().getPort()));
     }
 
     private String localUrl(String path) {
-        return "http://127.0.0.1:" + server.getAddress().getPort() + path;
+        return "http://" + serverHost + ":" + server.getAddress().getPort() + path;
     }
 
     private String sha256(String value) throws Exception {
