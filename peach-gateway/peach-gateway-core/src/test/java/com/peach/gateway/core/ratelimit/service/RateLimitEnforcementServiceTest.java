@@ -46,7 +46,7 @@ class RateLimitEnforcementServiceTest {
         TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
-        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
         when(executor.execute(any(), anyString()))
                 .thenReturn(Mono.just(new RateLimitDecision(true, 5, 1000, 0, 10)))
                 .thenReturn(Mono.just(new RateLimitDecision(false, 0, 1000, 1500, 10)));
@@ -239,7 +239,7 @@ class RateLimitEnforcementServiceTest {
         when(scriptRepository.isReady()).thenReturn(false);
         when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
 
-        RateLimitEnforcementService service = new RateLimitEnforcementService(properties,
+        RateLimitEnforcementService service = new RateLimitEnforcementService(
                 new RateLimitRuleRegistry(properties), new RateLimitRuleMatcher(), new RateLimitKeyFactory(),
                 executor, ipResolver, tenantResolver, metrics, scriptRepository, new GatewaySaTokenProperties());
         RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
@@ -247,7 +247,7 @@ class RateLimitEnforcementServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.UNAVAILABLE);
         assertThat(result.reason()).isEqualTo("rate-limit-scripts-not-ready");
-        verify(ipResolver).resolve(any());
+        verify(ipResolver).resolve(any(), any());
         verify(executor, never()).execute(any(), anyString());
         verify(metrics).recordPolicy("scripts-not-ready");
     }
@@ -277,7 +277,7 @@ class RateLimitEnforcementServiceTest {
         when(executor.execute(any(), anyString()))
                 .thenReturn(Mono.just(new RateLimitDecision(true, 8, 1000, 0, 10)));
 
-        RateLimitEnforcementService service = new RateLimitEnforcementService(properties, registry,
+        RateLimitEnforcementService service = new RateLimitEnforcementService(registry,
                 new RateLimitRuleMatcher(), new RateLimitKeyFactory(), executor,
                 ipResolver, tenantResolver, metrics, scriptRepository, new GatewaySaTokenProperties());
         RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
