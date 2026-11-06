@@ -8,6 +8,7 @@ This directory contains repeatable load-test tooling, Prometheus alert rules, an
 | --- | --- |
 | Six Lua algorithms | Testcontainers Redis 7.4 Standalone integration tests |
 | Independent Redis clients | Two Lettuce clients share one Redis quota |
+| 10,000 in-flight Redis commands | Two Lettuce clients issue 10,000 concurrent Lua checks; CI logs achieved RPS and p95/p99 client latency |
 | Gateway enforcement instances | Two separately constructed enforcement services share one Redis quota |
 | Nacos delivery | Testcontainers Nacos Server receives and pushes a configuration update |
 | Redis Cluster / Sentinel / TLS | Opt-in topology smoke test; not run in default CI |
