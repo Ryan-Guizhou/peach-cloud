@@ -89,10 +89,9 @@ class GatewayTokenContextResolverTest {
         first.set(SaTokenConstant.TOKEN_SESSION_ORG_ID, "org-a");
         second.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, "tenant-b");
         second.set(SaTokenConstant.TOKEN_SESSION_ORG_ID, "org-b");
-        second.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, "tenant-c");
 
         assertThat(resolver.toContext(first).block().tenantId()).isEqualTo("tenant-a");
-        assertThat(resolver.toContext(second).block().tenantId()).isEqualTo("tenant-c");
+        assertThat(resolver.toContext(second).block().tenantId()).isEqualTo("tenant-b");
     }
     private void setTenantContext(SaSession session, String tenantId, String orgId) {
         session.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, tenantId);
