@@ -134,14 +134,12 @@ class NacosRateLimitRefreshIntegrationTest {
                       rules: []
                 """;
         publishWithRetry(publisher, initialConfig);
-        String initialReceivedConfig = listenerClient.getConfig(DATA_ID, GROUP, 5000);
-        assertThat(initialReceivedConfig).contains("enabled: false");
 
         BlockingQueue<String> pushedConfigs = new LinkedBlockingQueue<>();
         Listener listener = new Listener() {
             @Override
             public java.util.concurrent.Executor getExecutor() {
-                return Runnable::run;
+                return null;
             }
 
             @Override
@@ -153,7 +151,9 @@ class NacosRateLimitRefreshIntegrationTest {
         };
 
         try {
-            listenerClient.addListener(DATA_ID, GROUP, listener);
+            String initialReceivedConfig = listenerClient.getConfigAndSignListener(
+                    DATA_ID, GROUP, 5000, listener);
+            assertThat(initialReceivedConfig).contains("enabled: false");
             publishWithRetry(publisher, updatedConfig);
             String receivedConfig = awaitConfig(pushedConfigs, "192.0.2.55");
             assertThat(receivedConfig)
