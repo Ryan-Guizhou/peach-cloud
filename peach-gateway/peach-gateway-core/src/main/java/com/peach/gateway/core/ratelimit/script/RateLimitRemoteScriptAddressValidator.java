@@ -175,8 +175,9 @@ public final class RateLimitRemoteScriptAddressValidator {
 
     private static boolean isMetadataAddress(InetAddress address) {
         byte[] bytes = address.getAddress();
-        if (bytes.length != 4) {
-            return false;
+        if (bytes.length == 16) {
+            return matchesIpv6(bytes, "fd00:ec2::254")
+                    || matchesIpv6(bytes, "fd20:ce::254");
         }
         int first = Byte.toUnsignedInt(bytes[0]);
         int second = Byte.toUnsignedInt(bytes[1]);
@@ -185,6 +186,14 @@ public final class RateLimitRemoteScriptAddressValidator {
         return (first == 169 && second == 254 && third == 169 && fourth == 254)
                 || (first == 100 && second == 100 && third == 100 && fourth == 200)
                 || (first == 168 && second == 63 && third == 129 && fourth == 16);
+    }
+
+    private static boolean matchesIpv6(byte[] candidate, String literal) {
+        try {
+            return java.util.Arrays.equals(candidate, InetAddress.getByName(literal).getAddress());
+        } catch (UnknownHostException exception) {
+            throw new IllegalStateException("Unable to parse a built-in cloud metadata address", exception);
+        }
     }
 
     private static InetAddress normalizeMappedAddress(InetAddress address) {
