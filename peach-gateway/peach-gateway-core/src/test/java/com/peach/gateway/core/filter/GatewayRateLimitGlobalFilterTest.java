@@ -36,15 +36,14 @@ class GatewayRateLimitGlobalFilterTest {
 
     @Test
     void shouldReturn429WithStandardRateLimitHeaders() {
-        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
-        properties.setEnabled(true);
         RateLimitEnforcementService service = mock(RateLimitEnforcementService.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         RateLimitRule rule = rule();
         RateLimitDecision decision = new RateLimitDecision(false, 0, 1500, 1200, 10);
+        when(service.isEnabled()).thenReturn(true);
         when(service.check(any())).thenReturn(Mono.just(RateLimitCheckResult.rejected(rule, decision)));
 
-        GatewayRateLimitGlobalFilter filter = new GatewayRateLimitGlobalFilter(properties, service, metrics);
+        GatewayRateLimitGlobalFilter filter = new GatewayRateLimitGlobalFilter(service, metrics);
         MockServerWebExchange exchange = exchange();
         AtomicBoolean forwarded = new AtomicBoolean();
         GatewayFilterChain chain = current -> {
@@ -64,14 +63,13 @@ class GatewayRateLimitGlobalFilterTest {
 
     @Test
     void shouldFailClosedWith503WhenRedisExecutionFails() {
-        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
-        properties.setEnabled(true);
-        properties.setFailureMode(GatewayRateLimitProperties.FailureMode.FAIL_CLOSED);
         RateLimitEnforcementService service = mock(RateLimitEnforcementService.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+        when(service.isEnabled()).thenReturn(true);
+        when(service.failureMode(any())).thenReturn(GatewayRateLimitProperties.FailureMode.FAIL_CLOSED);
         when(service.check(any())).thenReturn(Mono.error(new IllegalStateException("redis unavailable")));
 
-        GatewayRateLimitGlobalFilter filter = new GatewayRateLimitGlobalFilter(properties, service, metrics);
+        GatewayRateLimitGlobalFilter filter = new GatewayRateLimitGlobalFilter(service, metrics);
         MockServerWebExchange exchange = exchange();
         AtomicBoolean forwarded = new AtomicBoolean();
 
@@ -86,14 +84,13 @@ class GatewayRateLimitGlobalFilterTest {
 
     @Test
     void shouldFailOpenWhenConfiguredAndRedisExecutionFails() {
-        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
-        properties.setEnabled(true);
-        properties.setFailureMode(GatewayRateLimitProperties.FailureMode.FAIL_OPEN);
         RateLimitEnforcementService service = mock(RateLimitEnforcementService.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+        when(service.isEnabled()).thenReturn(true);
+        when(service.failureMode(any())).thenReturn(GatewayRateLimitProperties.FailureMode.FAIL_OPEN);
         when(service.check(any())).thenReturn(Mono.error(new IllegalStateException("redis unavailable")));
 
-        GatewayRateLimitGlobalFilter filter = new GatewayRateLimitGlobalFilter(properties, service, metrics);
+        GatewayRateLimitGlobalFilter filter = new GatewayRateLimitGlobalFilter(service, metrics);
         MockServerWebExchange exchange = exchange();
         AtomicBoolean forwarded = new AtomicBoolean();
 
