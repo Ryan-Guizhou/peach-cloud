@@ -1,0 +1,199 @@
+services:
+  redis-cluster-1:
+    image: redis:7.4-alpine
+    profiles: ["cluster"]
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--cluster-announce-ip", "redis-cluster-1"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-cluster]
+
+  redis-cluster-2:
+    image: redis:7.4-alpine
+    profiles: ["cluster"]
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--cluster-announce-ip", "redis-cluster-2"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-cluster]
+
+  redis-cluster-3:
+    image: redis:7.4-alpine
+    profiles: ["cluster"]
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--cluster-announce-ip", "redis-cluster-3"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-cluster]
+
+  redis-cluster-4:
+    image: redis:7.4-alpine
+    profiles: ["cluster"]
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--cluster-announce-ip", "redis-cluster-4"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-cluster]
+
+  redis-cluster-5:
+    image: redis:7.4-alpine
+    profiles: ["cluster"]
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--cluster-announce-ip", "redis-cluster-5"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-cluster]
+
+  redis-cluster-6:
+    image: redis:7.4-alpine
+    profiles: ["cluster"]
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--cluster-announce-ip", "redis-cluster-6"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-cluster]
+
+  redis-cluster-init:
+    image: redis:7.4-alpine
+    profiles: ["cluster"]
+    depends_on:
+      redis-cluster-1: {condition: service_healthy}
+      redis-cluster-2: {condition: service_healthy}
+      redis-cluster-3: {condition: service_healthy}
+      redis-cluster-4: {condition: service_healthy}
+      redis-cluster-5: {condition: service_healthy}
+      redis-cluster-6: {condition: service_healthy}
+    entrypoint: ["/bin/sh", "-c"]
+    command: "redis-cli --cluster create redis-cluster-1:6379 redis-cluster-2:6379 redis-cluster-3:6379 redis-cluster-4:6379 redis-cluster-5:6379 redis-cluster-6:6379 --cluster-replicas 1 --cluster-yes"
+    networks: [rate-limit-cluster]
+    restart: "no"
+
+  redis-master:
+    image: redis:7.4-alpine
+    profiles: ["sentinel"]
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-sentinel]
+
+  redis-replica-1:
+    image: redis:7.4-alpine
+    profiles: ["sentinel"]
+    command: ["redis-server", "--replicaof", "redis-master", "6379", "--appendonly", "yes"]
+    depends_on:
+      redis-master: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-sentinel]
+
+  redis-replica-2:
+    image: redis:7.4-alpine
+    profiles: ["sentinel"]
+    command: ["redis-server", "--replicaof", "redis-master", "6379", "--appendonly", "yes"]
+    depends_on:
+      redis-master: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-sentinel]
+
+  redis-sentinel-1:
+    image: redis:7.4-alpine
+    profiles: ["sentinel"]
+    entrypoint: ["/bin/sh", "-c"]
+    command: "cp /etc/redis/sentinel.conf /tmp/sentinel.conf && redis-server /tmp/sentinel.conf --sentinel"
+    volumes: ["./sentinel.conf:/etc/redis/sentinel.conf:ro"]
+    depends_on:
+      redis-master: {condition: service_healthy}
+      redis-replica-1: {condition: service_healthy}
+      redis-replica-2: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "26379", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-sentinel]
+
+  redis-sentinel-2:
+    image: redis:7.4-alpine
+    profiles: ["sentinel"]
+    entrypoint: ["/bin/sh", "-c"]
+    command: "cp /etc/redis/sentinel.conf /tmp/sentinel.conf && redis-server /tmp/sentinel.conf --sentinel"
+    volumes: ["./sentinel.conf:/etc/redis/sentinel.conf:ro"]
+    depends_on:
+      redis-master: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "26379", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-sentinel]
+
+  redis-sentinel-3:
+    image: redis:7.4-alpine
+    profiles: ["sentinel"]
+    entrypoint: ["/bin/sh", "-c"]
+    command: "cp /etc/redis/sentinel.conf /tmp/sentinel.conf && redis-server /tmp/sentinel.conf --sentinel"
+    volumes: ["./sentinel.conf:/etc/redis/sentinel.conf:ro"]
+    depends_on:
+      redis-master: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "26379", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-sentinel]
+
+  redis-tls-cert-init:
+    image: alpine:3.20
+    profiles: ["tls"]
+    entrypoint: ["/bin/sh", "-c"]
+    command: "apk add --no-cache openssl && mkdir -p /tls && openssl req -x509 -nodes -days 30 -newkey rsa:2048 -keyout /tls/redis.key -out /tls/redis.crt -subj '/CN=redis-tls' && chmod 600 /tls/redis.key"
+    volumes: ["redis-tls-certs:/tls"]
+    networks: [rate-limit-tls]
+    restart: "no"
+
+  redis-tls:
+    image: redis:7.4-alpine
+    profiles: ["tls"]
+    depends_on:
+      redis-tls-cert-init: {condition: service_completed_successfully}
+    command: ["redis-server", "--port", "0", "--tls-port", "6379", "--tls-cert-file", "/tls/redis.crt", "--tls-key-file", "/tls/redis.key", "--tls-ca-cert-file", "/tls/redis.crt", "--tls-auth-clients", "no"]
+    volumes: ["redis-tls-certs:/tls:ro"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "--tls", "--cacert", "/tls/redis.crt", "-p", "6379", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    networks: [rate-limit-tls]
+
+networks:
+  rate-limit-cluster:
+    name: peach-gateway-rate-limit-cluster
+  rate-limit-sentinel:
+    name: peach-gateway-rate-limit-sentinel
+  rate-limit-tls:
+    name: peach-gateway-rate-limit-tls
+
+volumes:
+  redis-tls-certs:
