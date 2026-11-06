@@ -33,6 +33,9 @@ jobs:
     name: Java 21 Maven verification
     needs: governance
     runs-on: ubuntu-latest
+    env:
+      # Keep Testcontainers' docker-java API compatible with the hosted Docker daemon minimum.
+      DOCKER_API_VERSION: '1.40'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -55,6 +58,7 @@ jobs:
         run: |
           java -version
           mvn -version
+          docker version
 
       - name: Resolve Maven build scope
         id: scope

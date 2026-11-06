@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @Version 1.0.0
  * @CreateTime 2026/11/05
  */
-@Testcontainers(disabledWithoutDocker = true)
+@Testcontainers
 class RateLimitRedisIntegrationTest {
 
     @Container
