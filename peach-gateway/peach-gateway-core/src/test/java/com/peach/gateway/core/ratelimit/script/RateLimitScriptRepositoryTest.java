@@ -2,6 +2,7 @@ package com.peach.gateway.core.ratelimit.script;
 
 import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
+import com.peach.gateway.core.ratelimit.service.RateLimitRuleRegistry;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,8 +84,7 @@ class RateLimitScriptRepositoryTest {
                 localUrl("/token-bucket.lua")));
         scripts.setExpectedSha256(Map.of("token-bucket", sha256(remoteScript)));
 
-        RateLimitScriptRepository repository = new RateLimitScriptRepository(
-                properties, new DefaultResourceLoader());
+        RateLimitScriptRepository repository = repository(properties);
         assertThat(repository.isReady()).isFalse();
         repository.reload().block(Duration.ofSeconds(10));
 
@@ -103,8 +103,7 @@ class RateLimitScriptRepositoryTest {
         scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/broken.lua")));
         scripts.setExpectedSha256(Map.of("token-bucket", "0".repeat(64)));
 
-        RateLimitScriptRepository repository = new RateLimitScriptRepository(
-                properties, new DefaultResourceLoader());
+        RateLimitScriptRepository repository = repository(properties);
 
         assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(10)))
                 .isInstanceOf(RuntimeException.class)
@@ -119,11 +118,12 @@ class RateLimitScriptRepositoryTest {
         allowLocalTestServer(scripts);
         scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
         scripts.setExpectedSha256(Map.of("token-bucket", sha256(remoteScript)));
-        RateLimitScriptRepository repository = new RateLimitScriptRepository(
-                properties, new DefaultResourceLoader());
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitScriptRepository repository = new RateLimitScriptRepository(registry, new DefaultResourceLoader());
         repository.reload().block(Duration.ofSeconds(10));
 
         scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/broken.lua")));
+        registry.refresh();
 
         assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(10)))
                 .isInstanceOf(RuntimeException.class);
@@ -138,7 +138,7 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(443));
         scripts.setRemoteUrls(Map.of("token-bucket", "https://169.254.169.254/latest/meta-data"));
 
-        RateLimitScriptRepository repository = new RateLimitScriptRepository(properties, new DefaultResourceLoader());
+        RateLimitScriptRepository repository = repository(properties);
 
         assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
                 .isInstanceOf(RuntimeException.class);
@@ -153,7 +153,7 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(server.getAddress().getPort()));
         scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
 
-        RateLimitScriptRepository repository = new RateLimitScriptRepository(properties, new DefaultResourceLoader());
+        RateLimitScriptRepository repository = repository(properties);
 
         assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
                 .isInstanceOf(RuntimeException.class);
@@ -169,7 +169,7 @@ class RateLimitScriptRepositoryTest {
         scripts.setRemoteUrls(Map.of("token-bucket",
                 "http://localhost:" + server.getAddress().getPort() + "/token-bucket.lua"));
 
-        RateLimitScriptRepository repository = new RateLimitScriptRepository(properties, new DefaultResourceLoader());
+        RateLimitScriptRepository repository = repository(properties);
 
         assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
                 .isInstanceOf(RuntimeException.class);
@@ -183,7 +183,7 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(443));
         scripts.setRemoteUrls(Map.of("token-bucket", "https://[::1]/token-bucket.lua"));
 
-        RateLimitScriptRepository repository = new RateLimitScriptRepository(properties, new DefaultResourceLoader());
+        RateLimitScriptRepository repository = repository(properties);
 
         assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
                 .isInstanceOf(RuntimeException.class);
@@ -197,7 +197,7 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(443));
         scripts.setRemoteUrls(Map.of("token-bucket", "https://attacker.example/token-bucket.lua"));
 
-        RateLimitScriptRepository repository = new RateLimitScriptRepository(properties, new DefaultResourceLoader());
+        RateLimitScriptRepository repository = repository(properties);
 
         assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
                 .isInstanceOf(RuntimeException.class);
@@ -212,7 +212,7 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(server.getAddress().getPort()));
         scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
 
-        RateLimitScriptRepository repository = new RateLimitScriptRepository(properties, new DefaultResourceLoader());
+        RateLimitScriptRepository repository = repository(properties);
 
         assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
                 .isInstanceOf(RuntimeException.class);
@@ -225,11 +225,15 @@ class RateLimitScriptRepositoryTest {
         allowLocalTestServer(scripts);
         scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/redirect.lua")));
 
-        RateLimitScriptRepository repository = new RateLimitScriptRepository(properties, new DefaultResourceLoader());
+        RateLimitScriptRepository repository = repository(properties);
 
         assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
                 .isInstanceOf(RuntimeException.class);
         assertThat(redirectTargetRequested).isFalse();
+    }
+
+    private RateLimitScriptRepository repository(GatewayRateLimitProperties properties) {
+        return new RateLimitScriptRepository(new RateLimitRuleRegistry(properties), new DefaultResourceLoader());
     }
 
     private void allowLocalTestServer(GatewayRateLimitProperties.ScriptProperties scripts) {
