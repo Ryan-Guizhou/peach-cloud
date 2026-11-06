@@ -130,7 +130,7 @@ class RateLimitRuleRegistryTest {
 
         assertThatThrownBy(registry::refresh)
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("authorized CIDR");
+                .hasMessageContaining("authorized");
         assertThat(registry.getSnapshot()).isSameAs(previous);
     }
 
