@@ -2,7 +2,7 @@ services:
   redis-cluster-1:
     image: redis:7.4-alpine
     profiles: ["cluster"]
-    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--cluster-announce-ip", "redis-cluster-1"]
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6379", "ping"]
       interval: 3s
@@ -13,7 +13,7 @@ services:
   redis-cluster-2:
     image: redis:7.4-alpine
     profiles: ["cluster"]
-    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--cluster-announce-ip", "redis-cluster-2"]
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6379", "ping"]
       interval: 3s
@@ -24,7 +24,7 @@ services:
   redis-cluster-3:
     image: redis:7.4-alpine
     profiles: ["cluster"]
-    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--cluster-announce-ip", "redis-cluster-3"]
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6379", "ping"]
       interval: 3s
@@ -35,7 +35,7 @@ services:
   redis-cluster-4:
     image: redis:7.4-alpine
     profiles: ["cluster"]
-    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--cluster-announce-ip", "redis-cluster-4"]
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6379", "ping"]
       interval: 3s
@@ -46,7 +46,7 @@ services:
   redis-cluster-5:
     image: redis:7.4-alpine
     profiles: ["cluster"]
-    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--cluster-announce-ip", "redis-cluster-5"]
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6379", "ping"]
       interval: 3s
@@ -57,7 +57,7 @@ services:
   redis-cluster-6:
     image: redis:7.4-alpine
     profiles: ["cluster"]
-    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes", "--cluster-announce-ip", "redis-cluster-6"]
+    command: ["redis-server", "--port", "6379", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6379", "ping"]
       interval: 3s
