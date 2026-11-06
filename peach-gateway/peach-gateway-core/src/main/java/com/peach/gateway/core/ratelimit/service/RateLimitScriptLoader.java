@@ -33,8 +33,6 @@ public class RateLimitScriptLoader implements ApplicationRunner {
 
     private final AtomicBoolean reloadRequested = new AtomicBoolean();
 
-    private final AtomicBoolean transportChanged = new AtomicBoolean();
-
     @Override
     public void run(ApplicationArguments args) {
         if (!properties.isEnabled()) {
@@ -60,24 +58,14 @@ public class RateLimitScriptLoader implements ApplicationRunner {
         boolean reload = event.getKeys().stream().anyMatch(key ->
                 key.startsWith("peach.gateway.rate-limit.scripts.")
                         || "peach.gateway.rate-limit.enabled".equals(key));
-        boolean transport = event.getKeys().stream().anyMatch(key ->
-                "peach.gateway.rate-limit.scripts.connect-timeout".equals(key)
-                        || "peach.gateway.rate-limit.scripts.read-timeout".equals(key)
-                        || "peach.gateway.rate-limit.scripts.max-script-bytes".equals(key));
         if (reload) {
             reloadRequested.set(true);
-        }
-        if (transport) {
-            transportChanged.set(true);
         }
     }
 
     @Order(Ordered.LOWEST_PRECEDENCE)
     @EventListener(RefreshScopeRefreshedEvent.class)
     public void onRefreshScopeRefreshed(RefreshScopeRefreshedEvent event) {
-        if (transportChanged.getAndSet(false)) {
-            repository.invalidateWebClient();
-        }
         if (!properties.isEnabled() || !reloadRequested.getAndSet(false)) {
             return;
         }
@@ -91,7 +79,11 @@ public class RateLimitScriptLoader implements ApplicationRunner {
                     log.error("Gateway rate limit Lua script reload failed, errorType={}",
                             rootCause(error).getClass().getSimpleName());
                 })
-                .subscribe();
+                .subscribe(ignored -> {
+                    // Mono<Void> completes without an onNext value; doOnSuccess already updates readiness.
+                }, error -> {
+                    // The failure has been recorded above; consume it to avoid an unhandled reactive error.
+                });
     }
 
     private Throwable rootCause(Throwable error) {
