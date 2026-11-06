@@ -30,6 +30,10 @@ import java.util.Set;
 
 /**
  * 登录权限缓存刷新：授权变更后同步网关共享读模型。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/06
  */
 @Slf4j
 @Indexed
