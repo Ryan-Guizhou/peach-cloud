@@ -9,6 +9,7 @@ import cn.dev33.satoken.exception.NotSafeException;
 import cn.dev33.satoken.reactor.context.SaReactorSyncHolder;
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.common.constant.SaTokenConstant;
+import com.peach.gateway.core.GatewayRateLimitRedisConfiguration;
 import com.peach.gateway.core.config.GatewaySaTokenProperties;
 import com.peach.gateway.core.constant.GatewayConstant;
 import com.peach.gateway.core.security.GatewaySecurityEndpointMatcher;
@@ -17,6 +18,7 @@ import com.peach.gateway.core.security.GatewayTokenContextResolver;
 import com.peach.gateway.core.support.GatewayFilterSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -56,6 +58,7 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
     private final GatewaySecurityEndpointMatcher endpointMatcher = new GatewaySecurityEndpointMatcher();
 
     public GatewayAuthorizationGlobalFilter(GatewaySaTokenProperties properties,
+                                            @Qualifier(GatewayRateLimitRedisConfiguration.REACTIVE_STRING_REDIS_TEMPLATE_BEAN_NAME)
                                             ObjectProvider<ReactiveStringRedisTemplate> redisTemplateProvider,
                                             GatewayTokenContextResolver tokenContextResolver) {
         this.properties = properties;

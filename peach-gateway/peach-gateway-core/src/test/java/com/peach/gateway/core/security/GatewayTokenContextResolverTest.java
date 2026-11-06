@@ -24,7 +24,7 @@ class GatewayTokenContextResolverTest {
 
     @Test
     void shouldReturnEmptyWhenOrganizationContextIsMissing() {
-        SaSession session = new SaSession();
+        SaSession session = new SaSession("token-session-missing-org");
         session.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, "tenant-a");
 
         assertThat(resolver.toContext(session).blockOptional()).isEmpty();
@@ -32,7 +32,7 @@ class GatewayTokenContextResolverTest {
 
     @Test
     void shouldResolveTenantOrganizationAndFiscalFromTokenSession() {
-        SaSession session = new SaSession();
+        SaSession session = new SaSession("token-session-complete");
         session.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, "tenant-a");
         session.set(SaTokenConstant.TOKEN_SESSION_ORG_ID, "org-a");
         session.set(SaTokenConstant.TOKEN_SESSION_FISCAL, "2026");

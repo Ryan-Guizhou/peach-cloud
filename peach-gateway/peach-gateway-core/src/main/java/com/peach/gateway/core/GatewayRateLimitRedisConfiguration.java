@@ -19,6 +19,9 @@ import java.time.Duration;
  * <p>现有业务 Redis 继续使用 Jedis；网关限流和响应式过滤器使用独立 Lettuce 连接，
  * 共享同一套 peach.redis 连接参数，避免在 Netty EventLoop 中执行阻塞 Redis 操作。</p>
  *
+ * <p>响应式字符串模板使用 Spring Boot 标准 Bean 名称 {@code reactiveStringRedisTemplate}。
+ * 这样自动配置不会再注册第二个同类型模板，按类型注入和限定注入解析到同一个 Bean。</p>
+ *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/05
@@ -26,8 +29,14 @@ import java.time.Duration;
 @Configuration(proxyBeanMethods = false)
 public class GatewayRateLimitRedisConfiguration {
 
-    @Bean(name = "gatewayRateLimitReactiveRedisConnectionFactory", destroyMethod = "destroy")
-    @ConditionalOnMissingBean(name = "gatewayRateLimitReactiveRedisConnectionFactory")
+    /** Spring Boot 标准响应式字符串模板 Bean 名称，过滤器与限流执行器统一限定到该 Bean。 */
+    public static final String REACTIVE_STRING_REDIS_TEMPLATE_BEAN_NAME = "reactiveStringRedisTemplate";
+
+    /** 网关限流专用 Lettuce 连接工厂 Bean 名称。 */
+    public static final String REACTIVE_CONNECTION_FACTORY_BEAN_NAME = "gatewayRateLimitReactiveRedisConnectionFactory";
+
+    @Bean(name = REACTIVE_CONNECTION_FACTORY_BEAN_NAME, destroyMethod = "destroy")
+    @ConditionalOnMissingBean(name = REACTIVE_CONNECTION_FACTORY_BEAN_NAME)
     public LettuceConnectionFactory gatewayRateLimitReactiveRedisConnectionFactory(RedisConfig redisConfig) {
         LettuceClientConfiguration.LettuceClientConfigurationBuilder clientBuilder =
                 LettuceClientConfiguration.builder()
@@ -48,10 +57,10 @@ public class GatewayRateLimitRedisConfiguration {
         };
     }
 
-    @Bean(name = "gatewayRateLimitReactiveStringRedisTemplate")
-    @ConditionalOnMissingBean(name = "gatewayRateLimitReactiveStringRedisTemplate")
-    public ReactiveStringRedisTemplate gatewayRateLimitReactiveStringRedisTemplate(
-            @Qualifier("gatewayRateLimitReactiveRedisConnectionFactory")
+    @Bean(name = REACTIVE_STRING_REDIS_TEMPLATE_BEAN_NAME)
+    @ConditionalOnMissingBean(name = REACTIVE_STRING_REDIS_TEMPLATE_BEAN_NAME)
+    public ReactiveStringRedisTemplate reactiveStringRedisTemplate(
+            @Qualifier(REACTIVE_CONNECTION_FACTORY_BEAN_NAME)
             ReactiveRedisConnectionFactory connectionFactory) {
         return new ReactiveStringRedisTemplate(connectionFactory);
     }

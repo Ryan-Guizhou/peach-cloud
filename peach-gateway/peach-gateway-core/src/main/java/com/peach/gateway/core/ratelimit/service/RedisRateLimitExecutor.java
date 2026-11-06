@@ -1,5 +1,6 @@
 package com.peach.gateway.core.ratelimit.service;
 
+import com.peach.gateway.core.GatewayRateLimitRedisConfiguration;
 import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitDecision;
 import com.peach.gateway.core.ratelimit.model.RateLimitRule;
@@ -34,7 +35,8 @@ public class RedisRateLimitExecutor {
     private final ConcurrentHashMap<RateLimitAlgorithm, CachedScript> scriptCache = new ConcurrentHashMap<>();
 
     public RedisRateLimitExecutor(
-            @Qualifier("gatewayRateLimitReactiveStringRedisTemplate") ReactiveStringRedisTemplate redisTemplate,
+            @Qualifier(GatewayRateLimitRedisConfiguration.REACTIVE_STRING_REDIS_TEMPLATE_BEAN_NAME)
+            ReactiveStringRedisTemplate redisTemplate,
             RateLimitScriptRepository scriptRepository) {
         this.redisTemplate = redisTemplate;
         this.scriptRepository = scriptRepository;

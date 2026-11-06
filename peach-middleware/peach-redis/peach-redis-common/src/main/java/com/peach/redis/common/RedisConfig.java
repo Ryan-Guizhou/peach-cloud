@@ -156,7 +156,12 @@ public class RedisConfig {
         return pool;
     }
 
+    /**
+     * 业务和 Sa-Token 继续使用 Jedis。网关另有 Lettuce 响应式连接时，未限定的
+     * {@code RedisConnectionFactory} 注入必须落到这个 Jedis 工厂。
+     */
     @Bean(name = "jedisConnectionFactory")
+    @Primary
     @ConditionalOnMissingBean(JedisConnectionFactory.class)
     JedisConnectionFactory jedisConnectionFactory(
             @Qualifier("redisPoolConfigs") JedisPoolConfig jedisPoolConfig) {
