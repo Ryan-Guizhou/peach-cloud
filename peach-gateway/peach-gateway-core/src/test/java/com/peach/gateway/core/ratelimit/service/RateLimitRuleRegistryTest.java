@@ -93,6 +93,35 @@ class RateLimitRuleRegistryTest {
     }
 
     @Test
+    void shouldCaptureRemoteScriptSecuritySettingsInTheRuntimeSnapshot() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.getScripts().setAllowedRemoteHosts(List.of("cdn.example.com"));
+        properties.getScripts().setAllowedRemoteCidrs(List.of("10.20.0.0/16"));
+        properties.getScripts().setAllowedRemotePorts(List.of(443, 8443));
+
+        RateLimitConfigurationSnapshot snapshot = new RateLimitRuleRegistry(properties).getSnapshot();
+
+        assertThat(snapshot.scripts().requireHttps()).isTrue();
+        assertThat(snapshot.scripts().allowedRemoteHosts()).containsExactly("cdn.example.com");
+        assertThat(snapshot.scripts().allowedRemoteCidrs()).containsExactly("10.20.0.0/16");
+        assertThat(snapshot.scripts().allowedRemotePorts()).containsExactlyInAnyOrder(443, 8443);
+    }
+
+    @Test
+    void shouldRetainPreviousSnapshotWhenRemoteScriptPortConfigurationIsInvalid() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitConfigurationSnapshot previous = registry.getSnapshot();
+
+        properties.getScripts().setAllowedRemotePorts(List.of(0));
+
+        assertThatThrownBy(registry::refresh)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Remote rate limit script ports");
+        assertThat(registry.getSnapshot()).isSameAs(previous);
+    }
+
+    @Test
     void shouldCountOnlyEnabledRulesAgainstMaximum() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setMaxRules(1);
