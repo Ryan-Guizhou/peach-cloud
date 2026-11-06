@@ -1,10 +1,14 @@
 import http from 'k6/http';
 import { Counter } from 'k6/metrics';
+import { SharedArray } from 'k6/data';
 
 const allowedResponses = new Counter('rate_limit_allowed_responses');
 const rejectedResponses = new Counter('rate_limit_rejected_responses');
 const unavailableResponses = new Counter('rate_limit_unavailable_responses');
 const unexpectedResponses = new Counter('rate_limit_unexpected_responses');
+const authTokens = __ENV.AUTH_TOKENS_FILE
+  ? new SharedArray('gateway-auth-tokens', () => JSON.parse(open(__ENV.AUTH_TOKENS_FILE)))
+  : [];
 
 export const options = {
   scenarios: {
@@ -33,8 +37,11 @@ export default function () {
     Accept: 'application/json',
   };
 
-  if (__ENV.AUTH_TOKEN) {
-    headers[__ENV.AUTH_HEADER || 'Authorization'] = __ENV.AUTH_TOKEN;
+  const authHeader = __ENV.AUTH_HEADER || 'Authorization';
+  if (authTokens.length > 0) {
+    headers[authHeader] = authTokens[(__VU - 1) % authTokens.length];
+  } else if (__ENV.AUTH_TOKEN) {
+    headers[authHeader] = __ENV.AUTH_TOKEN;
   }
   if (__ENV.EXTRA_HEADERS) {
     Object.assign(headers, JSON.parse(__ENV.EXTRA_HEADERS));
