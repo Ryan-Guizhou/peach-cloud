@@ -16,6 +16,7 @@ It provides:
 - Multi-dimensional distributed rate limiting across Global, IP, URI, IP_URI, Tenant, and Tenant_URI scopes, with fixed window, sliding-window log, sliding-window counter, token bucket, leaky bucket, and GCRA algorithms.
 - Nacos rule refresh, trusted-proxy IP resolution, per-token tenant isolation, rate-limit allow/deny lists, and Redis failure policies.
 - Standard 429 rate-limit headers, low-cardinality Micrometer metrics, and real-Redis concurrency integration tests.
+- Exact OSS Lua host/port allowlists, DNS address validation and connection pinning, SHA-256, a constrained single-key Lua contract, and readiness metrics.
 - Nacos service discovery and Nacos configuration import.
 - Gateway-side Sa-Token login-state verification.
 - Gateway-local Sa-Token Redis DAO, Session serialization, and token strategy for Reactor runtime.
@@ -110,7 +111,7 @@ Gateway runtime configuration is centralized in Nacos:
 - `deploy/nacos/config/peach-gateway.yml`
 - `deploy-pipline/init/nacos/config/peach-gateway.yml`
 
-See the [multi-algorithm rate limiting guide](docs/rate-limit.en-US.md) for configuration, algorithm selection, response headers, metrics, and failure handling.
+See the [multi-algorithm rate limiting guide](docs/rate-limit.en-US.md) for configuration, algorithm selection, response headers, metrics, and failure handling. The guide also covers production OSS host allowlists, the Lua security contract, and recovery behavior. Load tests, manual Redis Cluster/Sentinel/TLS verification, Grafana dashboards, and Prometheus alerts are documented in [Rate-limit performance and operations verification](docs/performance/README.md).
 
 The profile files import Nacos config through:
 
