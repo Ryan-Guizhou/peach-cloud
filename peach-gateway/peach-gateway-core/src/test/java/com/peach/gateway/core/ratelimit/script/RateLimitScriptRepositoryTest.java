@@ -19,6 +19,9 @@ import java.time.Duration;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +40,7 @@ class RateLimitScriptRepositoryTest {
     private HttpServer server;
     private String serverHost;
     private final AtomicBoolean redirectTargetRequested = new AtomicBoolean();
+    private final CountDownLatch slowScriptRequestStarted = new CountDownLatch(1);
 
     @BeforeEach
     void startServer() throws Exception {
@@ -62,6 +66,21 @@ class RateLimitScriptRepositoryTest {
         server.createContext("/broken.lua", exchange -> {
             byte[] body = "not found".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(404, body.length);
+            try (var output = exchange.getResponseBody()) {
+                output.write(body);
+            }
+        });
+        server.createContext("/slow.lua", exchange -> {
+            slowScriptRequestStarted.countDown();
+            try {
+                Thread.sleep(1000L);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                exchange.close();
+                return;
+            }
+            byte[] body = "return {1, 2, 3, 0, 10}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
             try (var output = exchange.getResponseBody()) {
                 output.write(body);
             }
@@ -146,6 +165,51 @@ class RateLimitScriptRepositoryTest {
     }
 
     @Test
+    @Test
+    void shouldPublishOnlyTheNewestScriptReload() throws Exception {
+        String script = "return {1, 2, 3, 0, 10}";
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
+        allowLocalTestServer(scripts);
+        scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/slow.lua")));
+        scripts.setExpectedSha256(Map.of("token-bucket", sha256(script)));
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitScriptRepository repository = new RateLimitScriptRepository(registry, new DefaultResourceLoader());
+
+        CompletableFuture<Boolean> oldReload = CompletableFuture.supplyAsync(
+                () -> repository.reload().block(Duration.ofSeconds(20)));
+        assertThat(slowScriptRequestStarted.await(10, TimeUnit.SECONDS)).isTrue();
+
+        scripts.setRemoteUrls(Map.of());
+        scripts.setExpectedSha256(Map.of());
+        registry.refresh();
+
+        Boolean newReloadPublished = repository.reload().block(Duration.ofSeconds(10));
+        assertThat(newReloadPublished).isTrue();
+        assertThat(oldReload.get(15, TimeUnit.SECONDS)).isFalse();
+        assertThat(repository.isReady()).isTrue();
+        assertThat(repository.get(RateLimitAlgorithm.TOKEN_BUCKET))
+                .contains("redis.call")
+                .doesNotContain(script);
+    }
+
+    @Test
+    void shouldKeepReadinessForAnAlreadyCapturedConfigurationSnapshot() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitScriptRepository repository = new RateLimitScriptRepository(registry, new DefaultResourceLoader());
+        repository.reload().block(Duration.ofSeconds(10));
+        var previousConfiguration = registry.getSnapshot().scripts();
+
+        assertThat(repository.isReady(previousConfiguration)).isTrue();
+
+        properties.getScripts().setLocalLocation("classpath:/ratelimit/lua-next/");
+        registry.refresh();
+
+        assertThat(repository.isReady(previousConfiguration)).isTrue();
+        assertThat(repository.isReady()).isFalse();
+    }
+
     void shouldRejectMetadataAddressEvenWhenHostIsExplicitlyAllowlisted() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
