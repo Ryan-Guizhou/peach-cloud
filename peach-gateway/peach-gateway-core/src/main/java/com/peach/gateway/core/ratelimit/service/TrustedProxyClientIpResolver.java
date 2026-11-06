@@ -4,6 +4,8 @@ import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 
@@ -91,6 +93,7 @@ public class TrustedProxyClientIpResolver {
         return remoteAddress.getHostAddress();
     }
 
+    @Order(Ordered.LOWEST_PRECEDENCE)
     @EventListener(EnvironmentChangeEvent.class)
     public void onEnvironmentChanged(EnvironmentChangeEvent event) {
         try {

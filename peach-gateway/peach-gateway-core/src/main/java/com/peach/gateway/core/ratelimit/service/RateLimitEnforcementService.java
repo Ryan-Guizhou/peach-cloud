@@ -1,5 +1,6 @@
 package com.peach.gateway.core.ratelimit.service;
 
+import com.peach.gateway.core.config.GatewaySaTokenProperties;
 import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.model.MatchedRateLimitRule;
 import com.peach.gateway.core.ratelimit.model.RateLimitCheckResult;
@@ -7,6 +8,7 @@ import com.peach.gateway.core.ratelimit.model.RateLimitConfigurationSnapshot;
 import com.peach.gateway.core.ratelimit.model.RateLimitDecision;
 import com.peach.gateway.core.ratelimit.model.RateLimitRule;
 import com.peach.gateway.core.ratelimit.script.RateLimitScriptRepository;
+import com.peach.gateway.core.security.GatewaySecurityEndpointMatcher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -40,6 +42,8 @@ public class RateLimitEnforcementService {
     private final RateLimitTenantContextResolver tenantContextResolver;
     private final RateLimitMetrics metrics;
     private final RateLimitScriptRepository scriptRepository;
+    private final GatewaySaTokenProperties saTokenProperties;
+    private final GatewaySecurityEndpointMatcher endpointMatcher = new GatewaySecurityEndpointMatcher();
 
     public Mono<RateLimitCheckResult> check(ServerWebExchange exchange) {
         return Mono.defer(() -> {
@@ -55,12 +59,17 @@ public class RateLimitEnforcementService {
                 return Mono.just(RateLimitCheckResult.blocked("ip-denylist"));
             }
             boolean ipAllowlisted = clientIp != null && configuration.allowlistIps().contains(clientIp);
-            List<RateLimitRule> candidates = configuration.rules().stream()
+            List<RateLimitRule> matchedCandidates = configuration.rules().stream()
                     .filter(rule -> ruleMatcher.matchesRequest(rule, exchange))
                     .toList();
-            boolean tenantScopeMatched = candidates.stream().anyMatch(rule -> rule.scope().isTenantScope());
-            boolean tenantPolicyConfigured = !configuration.allowlistTenants().isEmpty()
-                    || !configuration.denylistTenants().isEmpty();
+            boolean publicEndpoint = isPublicEndpoint(exchange);
+            List<RateLimitRule> candidates = publicEndpoint
+                    ? matchedCandidates.stream().filter(rule -> !rule.scope().isTenantScope()).toList()
+                    : matchedCandidates;
+            boolean tenantScopeMatched = !publicEndpoint
+                    && candidates.stream().anyMatch(rule -> rule.scope().isTenantScope());
+            boolean tenantPolicyConfigured = !publicEndpoint && (!configuration.allowlistTenants().isEmpty()
+                    || !configuration.denylistTenants().isEmpty());
 
             if (candidates.isEmpty() && !tenantPolicyConfigured) {
                 if (ipAllowlisted) {
@@ -119,6 +128,10 @@ public class RateLimitEnforcementService {
         if (matchedRules.isEmpty()) {
             return Mono.just(RateLimitCheckResult.allowed());
         }
+        if (matchedRules.size() > matchedRuleLimit()) {
+            metrics.recordPolicy("matched-rules-exceeded");
+            return Mono.just(RateLimitCheckResult.unavailable("matched-rules-exceeded"));
+        }
 
         return Flux.fromIterable(matchedRules)
                 .concatMap(matched -> executeRule(matched, tenantId, clientIp, exchange))
@@ -162,6 +175,20 @@ public class RateLimitEnforcementService {
             return 1D;
         }
         return (double) Math.max(0L, decision.remaining()) / decision.limit();
+    }
+
+    private boolean isPublicEndpoint(ServerWebExchange exchange) {
+        String path = exchange.getRequest().getURI().getRawPath();
+        String method = exchange.getRequest().getMethod().name();
+        return endpointMatcher.matches(saTokenProperties.getPublicEndpoints(), method, path);
+    }
+
+    private int matchedRuleLimit() {
+        int configured = properties.getMaxMatchedRulesPerRequest();
+        if (configured < 1) {
+            return 1;
+        }
+        return Math.min(configured, 64);
     }
 
     private boolean scriptsReady() {

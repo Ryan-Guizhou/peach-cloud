@@ -184,7 +184,7 @@ peach:gateway:risk-control:blocked-ip:
 - Redis 动态黑名单查询失败时降级放行，并记录英文 WARN 日志。
 - 限流默认关闭；启用后 Redis 不可用默认 FAIL_CLOSED 返回 503，可通过 Nacos 切换 FAIL_OPEN。
 - 租户限流只读取当前 Sa-Token Token Session 中的 tenantId，不信任请求头或按 userId 共享的上下文缓存；认证登录会为每次登录签发独立 token，避免设备间上下文覆盖。
-- 限流白名单绕过配额、黑名单直接拒绝；动态启用限流时，在全部 Lua 脚本加载成功前暂时放行配额算法，但 IP/租户白名单和黑名单仍然执行。
+- 限流白名单绕过配额、黑名单直接拒绝。动态启用后，在六种 Lua 脚本全部加载成功前，配额检查返回不可用，并按 failure-mode 处理：FAIL_CLOSED 返回 503，FAIL_OPEN 放行。IP/租户白名单和黑名单仍然执行。公开登录接口不应用租户规则，避免无 Token 请求被返回 401。
 - Same-Token 只对非公开端点注入；未登录公开请求不会依赖服务间凭证。
 
 ## 构建与验证

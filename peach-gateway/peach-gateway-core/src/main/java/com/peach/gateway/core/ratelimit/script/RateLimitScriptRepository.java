@@ -13,11 +13,14 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.client.HttpClient;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -39,6 +42,8 @@ public class RateLimitScriptRepository {
     private volatile WebClient webClient;
     private final AtomicReference<Map<RateLimitAlgorithm, String>> scripts =
             new AtomicReference<>(Map.of());
+
+    private static final Pattern REDIS_KEY_INDEX = Pattern.compile("KEYS\\s*\\[\\s*(\\d+)\\s*]");
 
     private final AtomicLong reloadGeneration = new AtomicLong();
 
@@ -114,6 +119,7 @@ public class RateLimitScriptRepository {
             if (current == null) {
                 GatewayRateLimitProperties.ScriptProperties config = properties.getScripts();
                 HttpClient httpClient = HttpClient.create()
+                        .followRedirect(false)
                         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                                 Math.toIntExact(config.getConnectTimeout().toMillis()))
                         .responseTimeout(config.getReadTimeout());
@@ -146,7 +152,8 @@ public class RateLimitScriptRepository {
 
     private Mono<Void> validate(RateLimitAlgorithm algorithm, String value, String expectedChecksum) {
         if (value == null || value.isBlank()
-                || value.getBytes(StandardCharsets.UTF_8).length > properties.getScripts().getMaxScriptBytes()) {
+                || value.getBytes(StandardCharsets.UTF_8).length > properties.getScripts().getMaxScriptBytes()
+                || !isClusterSafeScript(value)) {
             return Mono.error(new IllegalArgumentException("Invalid rate limit Lua script: " + algorithm));
         }
         if (expectedChecksum == null || expectedChecksum.isBlank()) {
@@ -195,12 +202,46 @@ public class RateLimitScriptRepository {
             String scheme = uri.getScheme();
             if (uri.getHost() == null || uri.getHost().isBlank()
                     || uri.getUserInfo() != null
-                    || !("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme))) {
+                    || !("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme))
+                    || isBlockedRemoteHost(uri.getHost())) {
                 throw new IllegalArgumentException("Remote rate limit script URL must be an HTTP(S) URL");
             }
             return uri;
         } catch (IllegalArgumentException exception) {
             throw new IllegalArgumentException("Invalid remote rate limit script URL: " + algorithm, exception);
+        }
+    }
+
+    private boolean isClusterSafeScript(String value) {
+        String lowered = value.toLowerCase(java.util.Locale.ROOT);
+        if (lowered.contains("loadstring") || lowered.contains("os.execute") || lowered.contains("io.open")) {
+            return false;
+        }
+        Matcher matcher = REDIS_KEY_INDEX.matcher(value);
+        while (matcher.find()) {
+            if (!"1".equals(matcher.group(1))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isBlockedRemoteHost(String host) {
+        String normalized = host.trim().toLowerCase(java.util.Locale.ROOT);
+        if ("169.254.169.254".equals(normalized)
+                || "metadata.google.internal".equals(normalized)
+                || normalized.endsWith(".metadata.internal")) {
+            return true;
+        }
+        boolean literal = normalized.chars().allMatch(ch -> Character.isDigit(ch) || ch == '.' || ch == ':');
+        if (!literal) {
+            return false;
+        }
+        try {
+            InetAddress address = InetAddress.getByName(normalized);
+            return address.isLinkLocalAddress() || address.isAnyLocalAddress();
+        } catch (java.net.UnknownHostException exception) {
+            return false;
         }
     }
 

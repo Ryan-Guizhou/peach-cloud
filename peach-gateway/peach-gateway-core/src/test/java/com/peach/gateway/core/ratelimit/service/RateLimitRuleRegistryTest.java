@@ -4,9 +4,12 @@ import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitScope;
 import org.junit.jupiter.api.Test;
+import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -83,6 +86,42 @@ class RateLimitRuleRegistryTest {
 
         assertThat(registry.getSnapshot().rules()).hasSize(1);
         assertThat(registry.getSnapshot().rules().get(0).id()).isEqualTo("active");
+    }
+
+    @Test
+    void shouldRefreshFromEnvironmentChangeAndKeepPreviousSnapshotWhenInvalid() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setRules(List.of(rule("global", RateLimitScope.GLOBAL)));
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+
+        properties.setAllowlistIps(List.of("192.0.2.8"));
+        registry.onEnvironmentChanged(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.allowlist-ips")));
+        var refreshed = registry.getSnapshot();
+        assertThat(refreshed.allowlistIps()).containsExactly("192.0.2.8");
+
+        properties.setRules(List.of(
+                rule("duplicate", RateLimitScope.GLOBAL),
+                rule("duplicate", RateLimitScope.IP)));
+        registry.onEnvironmentChanged(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.rules")));
+
+        assertThat(registry.getSnapshot()).isSameAs(refreshed);
+        assertThat(registry.getSnapshot().rules()).extracting(com.peach.gateway.core.ratelimit.model.RateLimitRule::id)
+                .containsExactly("global");
+    }
+
+    @Test
+    void shouldRejectSlidingWindowLogCostAboveSafetyCap() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        GatewayRateLimitProperties.RuleProperties rule = rule("login", RateLimitScope.IP);
+        rule.setAlgorithm(RateLimitAlgorithm.SLIDING_WINDOW_LOG);
+        rule.setLimit(10_000);
+        rule.setCost(101);
+        rule.setWindow(Duration.ofSeconds(60));
+        properties.setRules(List.of(rule));
+
+        assertThatThrownBy(() -> new RateLimitRuleRegistry(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Sliding window log");
     }
 
     @Test

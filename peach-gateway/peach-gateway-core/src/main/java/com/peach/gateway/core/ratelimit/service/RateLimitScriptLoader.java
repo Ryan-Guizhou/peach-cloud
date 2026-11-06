@@ -8,6 +8,8 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,6 +26,7 @@ public class RateLimitScriptLoader implements ApplicationRunner {
 
     private final GatewayRateLimitProperties properties;
     private final RateLimitScriptRepository repository;
+    private final RateLimitMetrics metrics;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -33,8 +36,10 @@ public class RateLimitScriptLoader implements ApplicationRunner {
         }
         try {
             repository.reload().block();
+            metrics.updateScriptReady(repository.isReady());
             log.info("Gateway rate limit Lua scripts loaded");
         } catch (RuntimeException exception) {
+            metrics.updateScriptReady(repository.isReady());
             log.error("Gateway rate limit Lua script loading failed, errorType={}",
                     rootCause(exception).getClass().getSimpleName());
             throw new IllegalStateException(
@@ -42,6 +47,7 @@ public class RateLimitScriptLoader implements ApplicationRunner {
         }
     }
 
+    @Order(Ordered.LOWEST_PRECEDENCE)
     @EventListener(EnvironmentChangeEvent.class)
     public void onEnvironmentChanged(EnvironmentChangeEvent event) {
         boolean reloadRequired = event.getKeys().stream().anyMatch(key ->
@@ -58,9 +64,15 @@ public class RateLimitScriptLoader implements ApplicationRunner {
             return;
         }
         repository.reload().subscribe(
-                ignored -> log.info("Gateway rate limit Lua scripts reloaded"),
-                error -> log.error("Gateway rate limit Lua script reload failed, errorType={}",
-                        rootCause(error).getClass().getSimpleName()));
+                ignored -> {
+                    metrics.updateScriptReady(repository.isReady());
+                    log.info("Gateway rate limit Lua scripts reloaded");
+                },
+                error -> {
+                    metrics.updateScriptReady(repository.isReady());
+                    log.error("Gateway rate limit Lua script reload failed, errorType={}",
+                            rootCause(error).getClass().getSimpleName());
+                });
     }
 
     private Throwable rootCause(Throwable error) {

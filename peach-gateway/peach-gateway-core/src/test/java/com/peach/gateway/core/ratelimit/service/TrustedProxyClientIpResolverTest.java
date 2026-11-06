@@ -2,11 +2,13 @@ package com.peach.gateway.core.ratelimit.service;
 
 import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import org.junit.jupiter.api.Test;
+import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -75,5 +77,22 @@ class TrustedProxyClientIpResolverTest {
                         .build());
 
         assertThat(resolver.resolve(exchange)).isEqualTo("10.0.0.3");
+    }
+
+    @Test
+    void shouldRefreshTrustedProxiesAndKeepPreviousNetworksWhenCidrIsInvalid() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setTrustedProxies(List.of("10.0.0.0/8"));
+        TrustedProxyClientIpResolver resolver = new TrustedProxyClientIpResolver(properties);
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/orders")
+                        .remoteAddress(new InetSocketAddress("10.0.0.3", 8080))
+                        .header("X-Forwarded-For", "198.51.100.20")
+                        .build());
+
+        properties.setTrustedProxies(List.of("not-a-cidr"));
+        resolver.onEnvironmentChanged(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.trusted-proxies")));
+
+        assertThat(resolver.resolve(exchange)).isEqualTo("198.51.100.20");
     }
 }

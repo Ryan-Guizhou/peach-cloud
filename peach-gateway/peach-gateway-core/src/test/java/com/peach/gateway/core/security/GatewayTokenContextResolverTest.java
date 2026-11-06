@@ -40,4 +40,18 @@ class GatewayTokenContextResolverTest {
         assertThat(resolver.toContext(session).block())
                 .isEqualTo(new GatewayTokenContext("tenant-a", "org-a", "2026"));
     }
+
+    @Test
+    void shouldKeepTenantContextIsolatedBetweenTokenSessions() {
+        SaSession first = new SaSession("token-session-device-a");
+        SaSession second = new SaSession("token-session-device-b");
+        first.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, "tenant-a");
+        first.set(SaTokenConstant.TOKEN_SESSION_ORG_ID, "org-a");
+        second.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, "tenant-b");
+        second.set(SaTokenConstant.TOKEN_SESSION_ORG_ID, "org-b");
+        second.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, "tenant-c");
+
+        assertThat(resolver.toContext(first).block().tenantId()).isEqualTo("tenant-a");
+        assertThat(resolver.toContext(second).block().tenantId()).isEqualTo("tenant-c");
+    }
 }
