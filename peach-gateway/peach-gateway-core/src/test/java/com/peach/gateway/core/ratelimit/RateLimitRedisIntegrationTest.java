@@ -7,6 +7,7 @@ import com.peach.gateway.core.ratelimit.model.RateLimitRule;
 import com.peach.gateway.core.ratelimit.model.RateLimitScope;
 import com.peach.gateway.core.ratelimit.script.RateLimitScriptRepository;
 import com.peach.gateway.core.ratelimit.service.RedisRateLimitExecutor;
+import com.peach.gateway.core.ratelimit.service.RateLimitRuleRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -54,7 +55,8 @@ class RateLimitRedisIntegrationTest {
     @BeforeAll
     static void setUp() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
-        scriptRepository = new RateLimitScriptRepository(properties, new DefaultResourceLoader());
+        scriptRepository = new RateLimitScriptRepository(
+                new RateLimitRuleRegistry(properties), new DefaultResourceLoader());
         scriptRepository.reload().block(Duration.ofSeconds(10));
 
         firstFactory = connectionFactory();
@@ -132,7 +134,7 @@ class RateLimitRedisIntegrationTest {
     @Test
     void shouldSurfaceLuaExecutionErrorsFromRedis() {
         RateLimitScriptRepository brokenRepository = new RateLimitScriptRepository(
-                new GatewayRateLimitProperties(), new DefaultResourceLoader()) {
+                new RateLimitRuleRegistry(new GatewayRateLimitProperties()), new DefaultResourceLoader()) {
             @Override
             public String get(RateLimitAlgorithm algorithm) {
                 return "return redis.call('PEACH_UNKNOWN_RATE_LIMIT_COMMAND')";
