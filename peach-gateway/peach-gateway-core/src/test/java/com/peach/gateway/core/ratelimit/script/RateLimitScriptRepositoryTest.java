@@ -229,7 +229,8 @@ class RateLimitScriptRepositoryTest {
         scripts.setRequireHttps(false);
         scripts.setAllowedRemoteHosts(List.of("127.0.0.1"));
         scripts.setAllowedRemotePorts(List.of(server.getAddress().getPort()));
-        scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
+        scripts.setRemoteUrls(Map.of("token-bucket",
+                "http://127.0.0.1:" + server.getAddress().getPort() + "/token-bucket.lua"));
 
         RateLimitScriptRepository repository = repository(properties);
 
