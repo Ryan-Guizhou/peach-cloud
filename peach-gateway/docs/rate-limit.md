@@ -186,6 +186,11 @@ trusted-proxies 支持 IPv4、IPv6 和 CIDR，例如 10.20.0.0/16、2001:db8:123
     scripts:
       remote-base-url: https://cdn.example.com/peach/rate-limit/lua/
       require-remote-checksum: true
+      require-https: true
+      allowed-remote-hosts:
+        - cdn.example.com
+      allowed-remote-cidrs: []
+      allowed-remote-ports: [443]
       expected-sha256:
         fixed-window: <sha256>
         sliding-window-log: <sha256>
@@ -194,7 +199,9 @@ trusted-proxies 支持 IPv4、IPv6 和 CIDR，例如 10.20.0.0/16、2001:db8:123
         leaky-bucket: <sha256>
         gcra: <sha256>
 
-也可以在 remote-urls 中为单个算法指定预签名 URL。生产环境使用 HTTPS，并避免把脚本地址指向链路本地地址或云元数据地址。加载阶段会拒绝访问第二个 Redis Key 的脚本，关闭 HTTP 重定向，并校验脚本大小、连接超时、读取超时和 SHA-256。
+也可以在 remote-urls 中为单个算法指定预签名 URL。远程地址必须命中 `allowed-remote-hosts` 中的精确主机名（不支持通配符），并且端口必须出现在 `allowed-remote-ports`。生产环境默认强制 HTTPS；仅在受控开发环境中才应显式关闭 `require-https` 并授权所需端口。加载器会解析主机的全部 IPv4/IPv6 地址并逐一检查，拒绝回环、链路本地、私有、未指定、组播、保留地址及云元数据地址。若 OSS 确实部署在内网，必须通过 `allowed-remote-cidrs` 显式授权对应网段；云元数据地址始终拒绝。连接会固定到校验过的解析地址，关闭 HTTP 重定向，避免 DNS 重新解析造成的目标漂移。
+
+Lua 脚本使用受限执行契约校验，而不是通用 Lua 语法分析器：只允许直接使用 `KEYS[1]` 作为 Redis Key；禁止 `KEYS` 别名、动态索引、把 ARGV 或其他值当作 Key、动态 Redis 命令、Redis 客户端别名，以及 `os`、`io`、`debug`、`package` 等运行时访问。Redis 命令必须来自当前限流脚本的允许列表。无法证明满足契约的脚本会被拒绝。仍需在目标 Redis Cluster 环境验证实际执行行为，静态契约校验不替代集群集成测试。
 
 `local-location` 可以使用 `classpath:` 或 `file:`。`file:` 资源不会被文件监听自动重载；覆盖磁盘文件后，需要发布一次 Nacos 脚本配置或重启网关才会重新读取。部署时该目录应对网关运行用户只读。
 
@@ -219,9 +226,9 @@ Redis 或限流执行器不可用时：
 
 ## 7. Nacos 动态刷新与指标
 
-- RateLimitRuleRegistry 监听 EnvironmentChangeEvent，校验后原子替换规则、白名单和黑名单快照。
-- RateLimitScriptLoader 仅在脚本配置或限流启用状态变化时重新加载脚本。
-- 脚本快照整体替换；加载失败保留上一份脚本。
+- ConfigurationProperties 完成 EnvironmentChangeEvent 重绑定后，RateLimitRuleRegistry 在 RefreshScopeRefreshedEvent 到达时校验并原子发布运行时快照；刷新失败保留上一份有效快照。
+- RateLimitScriptLoader 在 EnvironmentChangeEvent 中记录需要重载的配置变化，并在 RefreshScopeRefreshedEvent 后异步加载脚本。
+- 脚本快照整体替换；加载失败保留上一份完整脚本。Mono<Void> 完成回调会更新 readiness Gauge。
 - 指标名称：
   - peach.gateway.rate.limit.requests
   - peach.gateway.rate.limit.execution
