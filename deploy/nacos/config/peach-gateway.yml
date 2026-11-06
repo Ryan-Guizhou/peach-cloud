@@ -147,6 +147,12 @@ peach:
         remote-urls: {}
         local-location: classpath:/ratelimit/lua/
         require-remote-checksum: true
+        # Remote scripts are disabled until an exact trusted OSS hostname is configured.
+        require-https: true
+        allowed-remote-hosts: []
+        # Only add private CIDRs when an internal OSS endpoint is explicitly approved.
+        allowed-remote-cidrs: []
+        allowed-remote-ports: [443]
         connect-timeout: 2s
         read-timeout: 5s
         max-script-bytes: 65536

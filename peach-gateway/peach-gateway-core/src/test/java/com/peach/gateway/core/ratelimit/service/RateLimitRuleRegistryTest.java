@@ -3,8 +3,11 @@ package com.peach.gateway.core.ratelimit.service;
 import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitScope;
+import com.peach.gateway.core.ratelimit.model.RateLimitConfigurationSnapshot;
 import org.junit.jupiter.api.Test;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
+import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.net.InetAddress;
 import java.time.Duration;
@@ -72,6 +75,117 @@ class RateLimitRuleRegistryTest {
     }
 
     @Test
+    void shouldCaptureAllRequestExecutionSettingsInTheRuntimeSnapshot() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(true);
+        properties.setFailureMode(GatewayRateLimitProperties.FailureMode.FAIL_OPEN);
+        properties.setRequireTenantContext(false);
+        properties.setMaxMatchedRulesPerRequest(16);
+        properties.setTrustedProxies(List.of("10.0.0.0/8"));
+
+        RateLimitConfigurationSnapshot snapshot = new RateLimitRuleRegistry(properties).getSnapshot();
+
+        assertThat(snapshot.enabled()).isTrue();
+        assertThat(snapshot.failureMode()).isEqualTo(GatewayRateLimitProperties.FailureMode.FAIL_OPEN);
+        assertThat(snapshot.requireTenantContext()).isFalse();
+        assertThat(snapshot.maxMatchedRulesPerRequest()).isEqualTo(16);
+        assertThat(snapshot.trustedProxies()).containsExactly("10.0.0.0/8");
+    }
+
+    @Test
+    void shouldCaptureRemoteScriptSecuritySettingsInTheRuntimeSnapshot() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.getScripts().setAllowedRemoteHosts(List.of("cdn.example.com"));
+        properties.getScripts().setAllowedRemoteCidrs(List.of("10.20.0.0/16"));
+        properties.getScripts().setAllowedRemotePorts(List.of(443, 8443));
+
+        RateLimitConfigurationSnapshot snapshot = new RateLimitRuleRegistry(properties).getSnapshot();
+
+        assertThat(snapshot.scripts().requireHttps()).isTrue();
+        assertThat(snapshot.scripts().allowedRemoteHosts()).containsExactly("cdn.example.com");
+        assertThat(snapshot.scripts().allowedRemoteCidrs()).containsExactly("10.20.0.0/16");
+        assertThat(snapshot.scripts().allowedRemotePorts()).containsExactlyInAnyOrder(443, 8443);
+    }
+
+    @Test
+    void shouldRetainPreviousSnapshotWhenRemoteScriptPortConfigurationIsInvalid() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitConfigurationSnapshot previous = registry.getSnapshot();
+
+        properties.getScripts().setAllowedRemotePorts(List.of(0));
+
+        assertThatThrownBy(registry::refresh)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Remote rate limit script ports");
+        assertThat(registry.getSnapshot()).isSameAs(previous);
+    }
+
+    @Test
+    void shouldRejectBroadRemoteScriptCidrsWithoutReplacingTheRuntimeSnapshot() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitConfigurationSnapshot previous = registry.getSnapshot();
+        properties.getScripts().setAllowedRemoteCidrs(List.of("0.0.0.0/0"));
+
+        assertThatThrownBy(registry::refresh)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("authorized");
+        assertThat(registry.getSnapshot()).isSameAs(previous);
+    }
+
+    @Test
+    void shouldRequireAnExactHostAllowlistWhenRemoteScriptsAreConfigured() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitConfigurationSnapshot previous = registry.getSnapshot();
+        properties.getScripts().setRemoteBaseUrl("https://cdn.example.com/lua/");
+
+        assertThatThrownBy(registry::refresh)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("allowed-remote-hosts");
+        assertThat(registry.getSnapshot()).isSameAs(previous);
+    }
+
+    @Test
+    void shouldRetainPreviousSnapshotWhenFailureModeIsMissing() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitConfigurationSnapshot previous = registry.getSnapshot();
+        properties.setFailureMode(null);
+
+        assertThatThrownBy(registry::refresh)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("failure-mode");
+        assertThat(registry.getSnapshot()).isSameAs(previous);
+    }
+
+    @Test
+    void shouldRequireSha256ForEachConfiguredRemoteScript() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.getScripts().setAllowedRemoteHosts(List.of("1.1.1.1"));
+        properties.getScripts().setRemoteUrls(java.util.Map.of(
+                "token-bucket", "https://1.1.1.1/rate-limit/token-bucket.lua"));
+
+        assertThatThrownBy(() -> new RateLimitRuleRegistry(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("requires a SHA-256 checksum");
+    }
+
+    @Test
+    void shouldRejectCidrsThatExtendBeyondRfc1918Blocks() {
+        for (String cidr : List.of("172.16.0.0/8", "192.168.0.0/8", "10.0.0.0/7")) {
+            GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+            properties.getScripts().setAllowedRemoteCidrs(List.of(cidr));
+
+            assertThatThrownBy(() -> new RateLimitRuleRegistry(properties))
+                    .as("CIDR %s must not authorize public address space", cidr)
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("authorized");
+        }
+    }
+
+    @Test
     void shouldCountOnlyEnabledRulesAgainstMaximum() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setMaxRules(1);
@@ -89,24 +203,35 @@ class RateLimitRuleRegistryTest {
     }
 
     @Test
-    void shouldRefreshFromEnvironmentChangeAndKeepPreviousSnapshotWhenInvalid() {
+    void shouldRefreshAfterRefreshScopeEventAndKeepPreviousSnapshotWhenInvalid() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setRules(List.of(rule("global", RateLimitScope.GLOBAL)));
-        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
 
-        properties.setAllowlistIps(List.of("192.0.2.8"));
-        registry.onEnvironmentChanged(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.allowlist-ips")));
-        var refreshed = registry.getSnapshot();
-        assertThat(refreshed.allowlistIps()).containsExactly("192.0.2.8");
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.registerBean(RateLimitRuleRegistry.class, () -> new RateLimitRuleRegistry(properties));
+            context.refresh();
 
-        properties.setRules(List.of(
-                rule("duplicate", RateLimitScope.GLOBAL),
-                rule("duplicate", RateLimitScope.IP)));
-        registry.onEnvironmentChanged(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.rules")));
+            RateLimitRuleRegistry registry = context.getBean(RateLimitRuleRegistry.class);
+            properties.setAllowlistIps(List.of("192.0.2.8"));
+            context.publishEvent(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.allowlist-ips")));
+            var previous = registry.getSnapshot();
+            assertThat(previous.allowlistIps()).isEmpty();
 
-        assertThat(registry.getSnapshot()).isSameAs(refreshed);
-        assertThat(registry.getSnapshot().rules()).extracting(com.peach.gateway.core.ratelimit.model.RateLimitRule::id)
-                .containsExactly("global");
+            context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-registry-test"));
+            var refreshed = registry.getSnapshot();
+            assertThat(refreshed.allowlistIps()).containsExactly("192.0.2.8");
+
+            properties.setRules(List.of(
+                    rule("duplicate", RateLimitScope.GLOBAL),
+                    rule("duplicate", RateLimitScope.IP)));
+            context.publishEvent(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.rules")));
+            context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-registry-invalid-test"));
+
+            assertThat(registry.getSnapshot()).isSameAs(refreshed);
+            assertThat(registry.getSnapshot().rules())
+                    .extracting(com.peach.gateway.core.ratelimit.model.RateLimitRule::id)
+                    .containsExactly("global");
+        }
     }
 
     @Test

@@ -186,6 +186,11 @@ Remote OSS example:
     scripts:
       remote-base-url: https://cdn.example.com/peach/rate-limit/lua/
       require-remote-checksum: true
+      require-https: true
+      allowed-remote-hosts:
+        - cdn.example.com
+      allowed-remote-cidrs: []
+      allowed-remote-ports: [443]
       expected-sha256:
         fixed-window: <sha256>
         sliding-window-log: <sha256>
@@ -194,7 +199,9 @@ Remote OSS example:
         leaky-bucket: <sha256>
         gcra: <sha256>
 
-A pre-signed URL can be configured for an individual algorithm in remote-urls. Production URLs should use HTTPS and must not target link-local or cloud metadata addresses. Loading rejects scripts that touch a second Redis key, disables HTTP redirects, and checks size, connect timeout, read timeout, and SHA-256.
+A pre-signed URL can be configured for an individual algorithm in remote-urls. The remote host must exactly match an entry in `allowed-remote-hosts` (wildcards are not supported), and the port must be listed in `allowed-remote-ports`. HTTPS is required by default. Disable `require-https` only in controlled development environments and explicitly allow the required port. The loader resolves all IPv4/IPv6 addresses and checks each one, rejecting loopback, link-local, private, unspecified, multicast, reserved, and cloud metadata destinations. If an OSS endpoint is intentionally hosted on a private network, explicitly authorize a specific RFC1918/IPv6 ULA network with `allowed-remote-cidrs` (IPv4 prefixes must be /8 or narrower; IPv6 prefixes must be /7 or narrower). Broad grants such as 0.0.0.0/0 are rejected. Loopback, link-local, unspecified, multicast, reserved, and cloud metadata destinations are always rejected and cannot be allowlisted by CIDR. Connections are pinned to a validated resolved address, and HTTP redirects are disabled to prevent destination changes and DNS re-resolution gaps.
+
+Lua scripts are checked against a constrained execution contract, not a general-purpose Lua parser. Only direct `KEYS[1]` use as the Redis key is allowed. KEYS aliases, dynamic indexes, ARGV or other values used as keys, dynamic Redis command names, Redis client aliases, and access to runtime libraries such as `os`, `io`, `debug`, and `package` are rejected. Redis commands must come from the allowlist required by the bundled rate-limit scripts. Scripts that cannot be proven to satisfy the contract are rejected. This static contract check does not replace execution tests against the target Redis Cluster topology.
 
 `local-location` accepts `classpath:` or `file:`. A `file:` resource is not watched. After replacing the file on disk, publish a Nacos script-config change or restart the gateway to reload it. The directory should be read-only for the gateway user.
 
@@ -219,9 +226,9 @@ When Redis or the rate-limit executor is unavailable:
 
 ## 7. Nacos Refresh and Metrics
 
-- RateLimitRuleRegistry listens for EnvironmentChangeEvent, validates the new configuration, and atomically replaces rules, allowlists, and denylists.
-- RateLimitScriptLoader reloads scripts only when script properties or the enabled state changes.
-- Script snapshots are replaced as a whole; failed reloads keep the previous snapshot.
+- After ConfigurationProperties rebinding completes for EnvironmentChangeEvent, RateLimitRuleRegistry validates and atomically publishes a runtime snapshot on RefreshScopeRefreshedEvent. A failed refresh retains the last valid snapshot.
+- RateLimitScriptLoader records relevant changes during EnvironmentChangeEvent and starts asynchronous script loading after RefreshScopeRefreshedEvent.
+- Script snapshots are replaced as a whole; failed reloads keep the previous complete snapshot. The reload result indicates whether the script snapshot was actually published; only a published snapshot is recorded as a successful reload, while a superseded load is not misreported as success.
 - Metric names:
   - peach.gateway.rate.limit.requests
   - peach.gateway.rate.limit.execution

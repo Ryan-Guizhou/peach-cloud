@@ -16,6 +16,7 @@
 - 多维度、多算法分布式限流：Global、IP、URI、IP_URI、Tenant、Tenant_URI；支持固定窗口、滑动窗口日志、滑动窗口计数器、令牌桶、漏桶和 GCRA。
 - Nacos 限流规则热刷新、可信代理 IP 解析、Token Session 租户隔离、限流白名单/黑名单和 Redis 故障策略。
 - 429 标准限流响应头、低基数 Micrometer 指标和真实 Redis 并发集成测试。
+- OSS Lua 脚本精确主机/端口白名单、DNS 解析地址校验与连接固定、SHA-256、受限单 Key 脚本契约和 readiness 指标。
 - Nacos 服务发现和 Nacos 配置导入。
 - 网关侧 Sa-Token 登录态校验。
 - 网关独立维护 Reactor 场景下的 Sa-Token Redis DAO、Session 序列化和 token 策略。
@@ -110,7 +111,7 @@ requestId={}, method={}, path={}, status={}, durationMs={}, client={}
 - `deploy/nacos/config/peach-gateway.yml`
 - `deploy-pipline/init/nacos/config/peach-gateway.yml`
 
-限流配置、算法选型、响应头、指标和故障策略详见 [多算法限流使用与运维指南](docs/rate-limit.md)。
+限流配置、算法选型、响应头、指标和故障策略详见 [多算法限流使用与运维指南](docs/rate-limit.md)。生产 OSS 地址白名单、Lua 安全契约和故障恢复详见该指南；压测、Redis Cluster/Sentinel/TLS 手动验证、Grafana 面板和 Prometheus 告警详见 [限流性能与运维验证](docs/performance/README.md)。
 
 profile 文件通过以下方式导入 Nacos 配置：
 

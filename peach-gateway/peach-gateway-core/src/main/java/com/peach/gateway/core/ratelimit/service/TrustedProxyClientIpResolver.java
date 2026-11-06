@@ -1,11 +1,7 @@
 package com.peach.gateway.core.ratelimit.service;
 
-import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
+import com.peach.gateway.core.ratelimit.model.RateLimitConfigurationSnapshot;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 
@@ -14,11 +10,10 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 /**
- * 按可信代理 CIDR 解析真实客户端 IP。
+ * 按不可变运行时快照中的可信代理 CIDR 解析真实客户端 IP。
  *
  * <p>只有 TCP 对端属于可信代理时才解析 X-Forwarded-For，并从右向左剥离可信代理跳点。
  * 非可信对端提供的转发头一律忽略，防止客户端伪造限流身份。</p>
@@ -37,13 +32,14 @@ public class TrustedProxyClientIpResolver {
 
     private static final Pattern IP_LITERAL_PATTERN = Pattern.compile("[0-9a-fA-F:.]+");
 
-    private final GatewayRateLimitProperties properties;
+    private final RateLimitRuleRegistry registry;
 
-    private final AtomicReference<List<IpNetwork>> trustedNetworks = new AtomicReference<>(List.of());
+    private volatile RateLimitConfigurationSnapshot cachedSnapshot;
 
-    public TrustedProxyClientIpResolver(GatewayRateLimitProperties properties) {
-        this.properties = properties;
-        trustedNetworks.set(parseNetworks(properties.getTrustedProxies()));
+    private volatile List<IpNetwork> cachedNetworks = List.of();
+
+    public TrustedProxyClientIpResolver(RateLimitRuleRegistry registry) {
+        this.registry = registry;
     }
 
     /**
@@ -53,11 +49,23 @@ public class TrustedProxyClientIpResolver {
      * @return 客户端 IP 字面量
      */
     public String resolve(ServerWebExchange exchange) {
+        return resolve(exchange, registry.getSnapshot());
+    }
+
+    /**
+     * 使用当前请求所持有的配置快照解析客户端地址，避免配置刷新期间混用不同版本。
+     *
+     * @param exchange 当前请求上下文
+     * @param configuration 当前请求使用的限流配置快照
+     * @return 客户端 IP 字面量
+     */
+    public String resolve(ServerWebExchange exchange, RateLimitConfigurationSnapshot configuration) {
+        List<IpNetwork> trustedNetworks = networks(configuration);
         InetAddress remoteAddress = remoteAddress(exchange);
         if (remoteAddress == null) {
             return "unknown";
         }
-        if (!isTrusted(remoteAddress)) {
+        if (!isTrusted(remoteAddress, trustedNetworks)) {
             return remoteAddress.getHostAddress();
         }
 
@@ -86,22 +94,35 @@ public class TrustedProxyClientIpResolver {
 
         for (int index = chain.size() - 1; index >= 0; index--) {
             InetAddress hop = chain.get(index);
-            if (!isTrusted(hop)) {
+            if (!isTrusted(hop, trustedNetworks)) {
                 return hop.getHostAddress();
             }
         }
         return remoteAddress.getHostAddress();
     }
 
-    @Order(Ordered.LOWEST_PRECEDENCE)
-    @EventListener(EnvironmentChangeEvent.class)
-    public void onEnvironmentChanged(EnvironmentChangeEvent event) {
-        try {
-            trustedNetworks.set(parseNetworks(properties.getTrustedProxies()));
-            log.info("Gateway trusted proxy configuration refreshed, cidrCount={}", trustedNetworks.get().size());
-        } catch (IllegalArgumentException exception) {
-            log.error("Gateway trusted proxy configuration refresh rejected, reason={}",
-                    exception.getClass().getSimpleName());
+    /**
+     * 规范化并验证可信代理 CIDR，供运行时快照构建阶段调用。
+     *
+     * @param configured 配置的 CIDR 列表
+     * @return 规范化 CIDR 列表
+     */
+    static List<String> normalizeNetworks(List<String> configured) {
+        return parseNetworks(configured).stream()
+                .map(IpNetwork::toCidr)
+                .toList();
+    }
+
+    private List<IpNetwork> networks(RateLimitConfigurationSnapshot configuration) {
+        if (cachedSnapshot == configuration) {
+            return cachedNetworks;
+        }
+        synchronized (this) {
+            if (cachedSnapshot != configuration) {
+                cachedNetworks = parseNetworks(configuration.trustedProxies());
+                cachedSnapshot = configuration;
+            }
+            return cachedNetworks;
         }
     }
 
@@ -116,11 +137,11 @@ public class TrustedProxyClientIpResolver {
         return parseAddress(remote.getHostString());
     }
 
-    private boolean isTrusted(InetAddress address) {
-        return trustedNetworks.get().stream().anyMatch(network -> network.contains(address));
+    private boolean isTrusted(InetAddress address, List<IpNetwork> networks) {
+        return networks.stream().anyMatch(network -> network.contains(address));
     }
 
-    private List<IpNetwork> parseNetworks(List<String> configured) {
+    private static List<IpNetwork> parseNetworks(List<String> configured) {
         if (configured == null || configured.isEmpty()) {
             return List.of();
         }
@@ -180,6 +201,14 @@ public class TrustedProxyClientIpResolver {
                 throw new IllegalArgumentException("Trusted proxy CIDR prefix is outside supported range");
             }
             return new IpNetwork(address.getAddress(), prefix);
+        }
+
+        private String toCidr() {
+            try {
+                return InetAddress.getByAddress(address).getHostAddress() + "/" + prefixLength;
+            } catch (UnknownHostException exception) {
+                throw new IllegalStateException("Unable to normalize trusted proxy network", exception);
+            }
         }
 
         private boolean contains(InetAddress candidate) {

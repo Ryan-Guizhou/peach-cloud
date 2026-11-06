@@ -1,0 +1,32 @@
+groups:
+  - name: peach-gateway-rate-limit
+    rules:
+      - alert: GatewayRateLimitLuaScriptsNotReady
+        expr: peach_gateway_rate_limit_scripts_ready == 0
+        for: 2m
+        labels:
+          severity: warning
+          component: peach-gateway
+        annotations:
+          summary: Gateway rate-limit Lua scripts are not ready
+          description: One or more rate-limit Lua scripts are unavailable. Check Nacos script configuration, OSS allowlist, checksum, and reload logs.
+
+      - alert: GatewayRateLimitLuaScriptReloadFailed
+        expr: increase(peach_gateway_rate_limit_scripts_reloads_total{outcome="failure"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          component: peach-gateway
+        annotations:
+          summary: Gateway rate-limit Lua script reload failed
+          description: A Lua script reload failed during the last five minutes. The previous complete script snapshot is retained; inspect the Gateway logs before changing failure mode.
+
+      - alert: GatewayRateLimitRedisExecutionErrors
+        expr: sum by (scope, algorithm) (rate(peach_gateway_rate_limit_requests_total{outcome="error"}[5m])) > 0
+        for: 2m
+        labels:
+          severity: warning
+          component: peach-gateway
+        annotations:
+          summary: Gateway rate-limit Redis execution errors detected
+          description: Redis-backed rate-limit executions are failing. Check Redis connectivity, topology, latency, and Lua execution errors.

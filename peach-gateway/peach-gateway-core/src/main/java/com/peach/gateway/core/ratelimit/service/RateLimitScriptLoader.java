@@ -1,16 +1,20 @@
 package com.peach.gateway.core.ratelimit.service;
 
-import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.script.RateLimitScriptRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
+import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+
+import jakarta.annotation.PreDestroy;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 网关启动及 Nacos 配置刷新时加载限流脚本。
@@ -24,55 +28,83 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RateLimitScriptLoader implements ApplicationRunner {
 
-    private final GatewayRateLimitProperties properties;
+    private final RateLimitRuleRegistry ruleRegistry;
     private final RateLimitScriptRepository repository;
     private final RateLimitMetrics metrics;
 
+    private final AtomicBoolean reloadRequested = new AtomicBoolean();
+
     @Override
     public void run(ApplicationArguments args) {
-        if (!properties.isEnabled()) {
+        if (!ruleRegistry.getSnapshot().enabled()) {
+            metrics.updateScriptReady(repository.isReady());
             log.info("Gateway rate limit is disabled; Lua script loading is skipped");
             return;
         }
         try {
-            repository.reload().block();
+            Boolean published = repository.reload().block();
             metrics.updateScriptReady(repository.isReady());
-            log.info("Gateway rate limit Lua scripts loaded");
+            if (Boolean.TRUE.equals(published)) {
+                metrics.recordScriptReload(true);
+                log.info("Gateway rate limit Lua scripts loaded");
+            } else {
+                log.warn("Gateway rate limit Lua script loading was superseded by a newer configuration");
+            }
         } catch (RuntimeException exception) {
             metrics.updateScriptReady(repository.isReady());
-            log.error("Gateway rate limit Lua script loading failed, errorType={}",
+            metrics.recordScriptReload(false);
+            log.error("Gateway rate limit Lua script loading failed; requests will follow the configured failure mode, errorType={}",
                     rootCause(exception).getClass().getSimpleName());
-            throw new IllegalStateException(
-                    "Unable to load gateway rate limit scripts; verify OSS URL and SHA-256 configuration");
+        }
+    }
+
+    @EventListener(EnvironmentChangeEvent.class)
+    public void onEnvironmentChanged(EnvironmentChangeEvent event) {
+        boolean reload = event.getKeys().stream().anyMatch(key ->
+                key.startsWith("peach.gateway.rate-limit.scripts.")
+                        || "peach.gateway.rate-limit.enabled".equals(key));
+        if (reload) {
+            reloadRequested.set(true);
         }
     }
 
     @Order(Ordered.LOWEST_PRECEDENCE)
-    @EventListener(EnvironmentChangeEvent.class)
-    public void onEnvironmentChanged(EnvironmentChangeEvent event) {
-        boolean reloadRequired = event.getKeys().stream().anyMatch(key ->
-                key.startsWith("peach.gateway.rate-limit.scripts.")
-                        || "peach.gateway.rate-limit.enabled".equals(key));
-        boolean transportChanged = event.getKeys().stream().anyMatch(key ->
-                "peach.gateway.rate-limit.scripts.connect-timeout".equals(key)
-                        || "peach.gateway.rate-limit.scripts.read-timeout".equals(key)
-                        || "peach.gateway.rate-limit.scripts.max-script-bytes".equals(key));
-        if (transportChanged) {
-            repository.invalidateWebClient();
-        }
-        if (!properties.isEnabled() || !reloadRequired) {
+    @EventListener(RefreshScopeRefreshedEvent.class)
+    public void onRefreshScopeRefreshed(RefreshScopeRefreshedEvent event) {
+        metrics.updateScriptReady(repository.isReady());
+        if (!ruleRegistry.getSnapshot().enabled() || !reloadRequested.getAndSet(false)) {
             return;
         }
-        repository.reload().subscribe(
-                ignored -> {
+        repository.reload()
+                .doOnSuccess(published -> {
                     metrics.updateScriptReady(repository.isReady());
-                    log.info("Gateway rate limit Lua scripts reloaded");
-                },
-                error -> {
+                    if (Boolean.TRUE.equals(published)) {
+                        metrics.recordScriptReload(true);
+                        log.info("Gateway rate limit Lua scripts reloaded");
+                    } else {
+                        log.warn("Gateway rate limit Lua script reload was superseded by a newer configuration");
+                    }
+                })
+                .doOnError(error -> {
                     metrics.updateScriptReady(repository.isReady());
+                    metrics.recordScriptReload(false);
                     log.error("Gateway rate limit Lua script reload failed, errorType={}",
                             rootCause(error).getClass().getSimpleName());
+                })
+                .subscribe(published -> {
+                    // The publish outcome is handled by doOnSuccess above.
+                }, error -> {
+                    // The failure has been recorded above; consume it to avoid an unhandled reactive error.
                 });
+    }
+
+    /**
+     * 在应用关闭时清除脚本就绪状态，避免关闭阶段继续暴露可用指标。
+     */
+    @PreDestroy
+    public void onShutdown() {
+        metrics.updateScriptReady(false);
+        log.info("Gateway rate limit Lua script loader stopped");
     }
 
     private Throwable rootCause(Throwable error) {

@@ -33,8 +33,9 @@ class RateLimitFoundationTest {
     @Test
     void shouldLoadEveryLocalLuaScript() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
         RateLimitScriptRepository repository = new RateLimitScriptRepository(
-                properties, new DefaultResourceLoader());
+                registry, new DefaultResourceLoader());
 
         repository.reload().block(Duration.ofSeconds(10));
 

@@ -4,8 +4,10 @@ import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitConfigurationSnapshot;
 import com.peach.gateway.core.ratelimit.model.RateLimitRule;
+import com.peach.gateway.core.ratelimit.model.RateLimitScriptConfiguration;
+import com.peach.gateway.core.ratelimit.script.RateLimitRemoteScriptAddressValidator;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
+import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -61,9 +63,9 @@ public class RateLimitRuleRegistry {
         return snapshot.get();
     }
 
-    @Order(Ordered.LOWEST_PRECEDENCE)
-    @EventListener(EnvironmentChangeEvent.class)
-    public void onEnvironmentChanged(EnvironmentChangeEvent event) {
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    @EventListener(RefreshScopeRefreshedEvent.class)
+    public void onRefreshScopeRefreshed(RefreshScopeRefreshedEvent event) {
         try {
             refresh();
             log.info("Gateway rate limit configuration refreshed, ruleCount={}", snapshot.get().rules().size());
@@ -76,7 +78,7 @@ public class RateLimitRuleRegistry {
     /**
      * 校验全部规则和策略列表后一次性替换当前快照。
      */
-    public void refresh() {
+    public synchronized void refresh() {
         List<GatewayRateLimitProperties.RuleProperties> configured = properties.getRules();
         if (configured == null) {
             configured = List.of();
@@ -87,14 +89,25 @@ public class RateLimitRuleRegistry {
         List<GatewayRateLimitProperties.RuleProperties> enabledRules = configured.stream()
                 .filter(GatewayRateLimitProperties.RuleProperties::isEnabled)
                 .toList();
+        if (properties.getFailureMode() == null) {
+            throw new IllegalArgumentException("Rate limit failure-mode must be configured");
+        }
         int maxMatchedRules = properties.getMaxMatchedRulesPerRequest();
         if (maxMatchedRules < 1 || maxMatchedRules > MAX_MATCHED_RULES_PER_REQUEST) {
             throw new IllegalArgumentException("max-matched-rules-per-request must be between 1 and "
                     + MAX_MATCHED_RULES_PER_REQUEST);
         }
-        if (enabledRules.size() > Math.min(MAX_RULE_COUNT, properties.getMaxRules())) {
+        if (properties.getMaxRules() < 1 || properties.getMaxRules() > MAX_RULE_COUNT) {
+            throw new IllegalArgumentException("max-rules must be between 1 and " + MAX_RULE_COUNT);
+        }
+        if (enabledRules.size() > properties.getMaxRules()) {
             throw new IllegalArgumentException("Enabled rate limit rule count exceeds configured maximum");
         }
+        if (properties.getFailureMode() == null) {
+            throw new IllegalArgumentException("Rate limit failure-mode is required");
+        }
+        List<String> trustedProxies = TrustedProxyClientIpResolver.normalizeNetworks(
+                properties.getTrustedProxies());
 
         Set<String> ruleIds = new LinkedHashSet<>();
         List<RateLimitRule> rules = enabledRules.stream()
@@ -108,7 +121,18 @@ public class RateLimitRuleRegistry {
                 .sorted(Comparator.comparingInt(RateLimitRule::priority))
                 .toList();
 
+        RateLimitConfigurationSnapshot previous = snapshot.get();
+        RateLimitScriptConfiguration scriptConfiguration =
+                RateLimitScriptConfiguration.from(properties.getScripts());
+        RateLimitRemoteScriptAddressValidator.validateConfiguration(scriptConfiguration);
         RateLimitConfigurationSnapshot replacement = new RateLimitConfigurationSnapshot(
+                previous.generation() + 1,
+                properties.isEnabled(),
+                properties.getFailureMode(),
+                properties.isRequireTenantContext(),
+                maxMatchedRules,
+                trustedProxies,
+                scriptConfiguration,
                 rules,
                 normalizeIpValues(properties.getAllowlistIps()),
                 normalizeValues(properties.getAllowlistTenants()),
