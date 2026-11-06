@@ -177,6 +177,29 @@ class RateLimitEnforcementServiceTest {
     }
 
     @Test
+    void shouldEnforceTenantDenylistBeforeIpAllowlist() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(true);
+        properties.setAllowlistIps(List.of("192.0.2.10"));
+        properties.setDenylistTenants(List.of("tenant-blocked"));
+        properties.setRules(List.of());
+
+        RedisRateLimitExecutor executor = mock(RedisRateLimitExecutor.class);
+        TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
+        RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
+        RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(tenantResolver.resolve()).thenReturn(Mono.just("tenant-blocked"));
+
+        RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
+        RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
+
+        assertThat(result).isNotNull();
+        assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.BLOCKED);
+        verify(executor, never()).execute(any(), anyString());
+    }
+
+    @Test
     void shouldBypassGlobalRulesForTenantAllowlistedWithoutTenantRules() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setEnabled(true);

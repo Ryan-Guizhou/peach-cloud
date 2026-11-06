@@ -54,11 +54,7 @@ public class RateLimitEnforcementService {
                 metrics.recordPolicy("blocked");
                 return Mono.just(RateLimitCheckResult.blocked("ip-denylist"));
             }
-            if (configuration.allowlistIps().contains(clientIp)) {
-                metrics.recordPolicy("allowlisted");
-                return Mono.just(RateLimitCheckResult.allowed());
-            }
-
+            boolean ipAllowlisted = configuration.allowlistIps().contains(clientIp);
             List<RateLimitRule> candidates = configuration.rules().stream()
                     .filter(rule -> ruleMatcher.matchesRequest(rule, exchange))
                     .toList();
@@ -67,9 +63,16 @@ public class RateLimitEnforcementService {
                     || !configuration.denylistTenants().isEmpty();
 
             if (candidates.isEmpty() && !tenantPolicyConfigured) {
+                if (ipAllowlisted) {
+                    metrics.recordPolicy("allowlisted");
+                }
                 return Mono.just(RateLimitCheckResult.allowed());
             }
             if (!tenantScopeMatched && !tenantPolicyConfigured) {
+                if (ipAllowlisted) {
+                    metrics.recordPolicy("allowlisted");
+                    return Mono.just(RateLimitCheckResult.allowed());
+                }
                 return scriptsReady()
                         ? evaluate(candidates, exchange, null, clientIp)
                         : allowWhileScriptsLoading();
@@ -78,17 +81,18 @@ public class RateLimitEnforcementService {
             return tenantContextResolver.resolve()
                     .defaultIfEmpty("")
                     .flatMap(tenantId -> {
-                        if (tenantScopeMatched && isBlank(tenantId) && properties.isRequireTenantContext()) {
-                            metrics.recordPolicy("tenant-context-missing");
-                            return Mono.just(RateLimitCheckResult.tenantContextMissing());
-                        }
                         if (!isBlank(tenantId) && configuration.denylistTenants().contains(tenantId)) {
                             metrics.recordPolicy("blocked");
                             return Mono.just(RateLimitCheckResult.blocked("tenant-denylist"));
                         }
-                        if (!isBlank(tenantId) && configuration.allowlistTenants().contains(tenantId)) {
+                        if (ipAllowlisted
+                                || (!isBlank(tenantId) && configuration.allowlistTenants().contains(tenantId))) {
                             metrics.recordPolicy("allowlisted");
                             return Mono.just(RateLimitCheckResult.allowed());
+                        }
+                        if (tenantScopeMatched && isBlank(tenantId) && properties.isRequireTenantContext()) {
+                            metrics.recordPolicy("tenant-context-missing");
+                            return Mono.just(RateLimitCheckResult.tenantContextMissing());
                         }
                         if (candidates.isEmpty()) {
                             return Mono.just(RateLimitCheckResult.allowed());
