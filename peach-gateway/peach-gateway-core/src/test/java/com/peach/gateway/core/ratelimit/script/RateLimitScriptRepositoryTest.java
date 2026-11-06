@@ -223,6 +223,21 @@ class RateLimitScriptRepositoryTest {
     }
 
     @Test
+    @Test
+    void shouldRejectIpv6CloudMetadataAddressEvenWhenUlaNetworkIsAuthorized() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
+        scripts.setAllowedRemoteHosts(List.of("fd00:ec2::254"));
+        scripts.setAllowedRemoteCidrs(List.of("fd00:ec2::254/128"));
+        scripts.setAllowedRemotePorts(List.of(443));
+        scripts.setRemoteUrls(Map.of("token-bucket", "https://[fd00:ec2::254]/latest/meta-data"));
+
+        RateLimitScriptRepository repository = repository(properties);
+
+        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
+                .isInstanceOf(RuntimeException.class);
+    }
+
     void shouldRejectLoopbackEvenWhenHostIsAllowlisted() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
