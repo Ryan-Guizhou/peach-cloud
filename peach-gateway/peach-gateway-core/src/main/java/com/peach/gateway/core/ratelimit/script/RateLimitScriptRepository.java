@@ -63,7 +63,7 @@ public class RateLimitScriptRepository {
                             .doOnNext(value -> loaded.put(algorithm, value)))
                     .then(Mono.fromRunnable(() -> {
                         if (generation == reloadGeneration.get()
-                                && ruleRegistry.getSnapshot().generation() == runtimeSnapshot.generation()) {
+                                && ruleRegistry.getSnapshot().scripts().equals(config)) {
                             scripts.set(Map.copyOf(loaded));
                         }
                     }));
