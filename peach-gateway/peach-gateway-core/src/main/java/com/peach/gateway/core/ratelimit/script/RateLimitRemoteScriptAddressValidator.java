@@ -207,10 +207,10 @@ public final class RateLimitRemoteScriptAddressValidator {
     }
 
     private static boolean isPrivateAddress(InetAddress address) {
-        if (address.isSiteLocalAddress()) {
-            return true;
-        }
         byte[] bytes = address.getAddress();
+        if (bytes.length == 4) {
+            return address.isSiteLocalAddress();
+        }
         return bytes.length == 16 && (Byte.toUnsignedInt(bytes[0]) & 0xFE) == 0xFC;
     }
 
@@ -219,9 +219,12 @@ public final class RateLimitRemoteScriptAddressValidator {
         if (bytes.length == 16) {
             int first = Byte.toUnsignedInt(bytes[0]);
             int second = Byte.toUnsignedInt(bytes[1]);
-            return first == 0x20 && second == 0x01
+            boolean documentation = first == 0x20 && second == 0x01
                     && Byte.toUnsignedInt(bytes[2]) == 0x0D
                     && Byte.toUnsignedInt(bytes[3]) == 0xB8;
+            boolean deprecatedSiteLocal = addressSiteLocalIpv6(address)
+                    && !isPrivateAddress(address);
+            return documentation || deprecatedSiteLocal;
         }
 
         int first = Byte.toUnsignedInt(bytes[0]);
@@ -235,6 +238,10 @@ public final class RateLimitRemoteScriptAddressValidator {
                 || (first == 198 && (second == 18 || second == 19))
                 || (first == 198 && second == 51 && third == 100)
                 || (first == 203 && second == 0 && third == 113);
+    }
+
+    private static boolean addressSiteLocalIpv6(InetAddress address) {
+        return address.getAddress().length == 16 && address.isSiteLocalAddress();
     }
 
     private static boolean isIpv4Mapped(byte[] bytes) {
