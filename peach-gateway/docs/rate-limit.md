@@ -68,7 +68,7 @@ Gateway 限流由 peach-gateway-core 实现，使用 Spring Cloud Gateway Global
 
 租户限流只读取当前 Sa-Token Token Session：
 
-- 登录成功后，认证服务写入当前 token 对应的 tenantId、orgId、fiscal 和上下文版本。
+- 登录成功后，认证服务写入当前 token 对应的 tenantId、orgId、fiscal 和上下文版本。认证服务在登录时显式设置 Sa-Token `isShare=false`、`isConcurrent=true`，覆盖全局 `sa-token.is-share: true`，确保每次登录发放独立 token，避免不同设备共享 Token Session 后相互覆盖租户上下文。
 - 调用租户切换接口后，更新当前 token 的 Token Session。
 - Gateway 使用请求中的 token 查询对应 Token Session；查询在 boundedElastic 执行，避免阻塞 Netty EventLoop。
 - 读取时不创建缺失的 Token Session。
@@ -130,7 +130,7 @@ trusted-proxies 支持 IPv4、IPv6 和 CIDR，例如 10.20.0.0/16、2001:db8:123
               algorithm: GCRA
               priority: 30
               methods: [GET, POST, PUT, PATCH, DELETE]
-              paths: [/api/**]
+              paths: [/api/orders/**]
               replenish-rate: 100
               burst-capacity: 200
               cost: 1
@@ -171,7 +171,7 @@ trusted-proxies 支持 IPv4、IPv6 和 CIDR，例如 10.20.0.0/16、2001:db8:123
 2. scripts.remote-base-url + 算法脚本文件名。
 3. 未配置该算法远程 URL 时，读取 scripts.local-location 的 classpath 文件。
 
-配置远程 URL 后，远程下载或 SHA-256 校验失败会报错，不会静默回退本地脚本。首次启动时脚本加载失败会阻止限流功能以未知脚本运行；运行时刷新失败保留上一份完整脚本快照。
+配置远程 URL 后，远程下载或 SHA-256 校验失败会报错，不会静默回退本地脚本。配置 `remote-base-url` 时会加载全部六种算法脚本，因此必须提供六种算法各自的 SHA-256；如果只托管部分算法，请使用 `remote-urls` 为这些算法单独配置地址，其余算法读取本地脚本。首次启动时脚本加载失败会阻止限流功能以未知脚本运行；运行时刷新失败保留上一份完整脚本快照。若网关启动时限流关闭，后续通过 Nacos 开启时，限流过滤器会在六种脚本全部加载成功前暂时放行请求，避免空脚本状态造成持续 503；脚本加载失败会记录错误，后续配置刷新可再次触发加载。
 
 远程 OSS 示例：
 
@@ -205,6 +205,7 @@ Redis 或限流执行器不可用时：
 - FAIL_OPEN：记录指标和 WARN 日志，继续转发请求。
 - FAIL_CLOSED：记录指标和 ERROR 日志，返回 HTTP 503。
 - 缺少必需的租户上下文始终返回 401，不受 Redis 故障策略影响。
+- 动态开启限流时，如果脚本尚未全部加载，执行链暂时不启用限流并记录 `scripts-not-ready` 指标；脚本加载成功后自动开始执行。
 
 ## 7. Nacos 动态刷新与指标
 

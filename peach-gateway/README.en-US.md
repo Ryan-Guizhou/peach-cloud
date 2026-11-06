@@ -183,8 +183,9 @@ Gateway Redis connectivity uses `peach.redis.*` from `peach-redis.yml` and must 
 - Public endpoint rules are maintained by gateway config and are not automatically synchronized from business services.
 - Redis dynamic blocklist lookup fails open and logs an English WARN message.
 - Rate limiting is disabled by default. When enabled, Redis failures default to FAIL_CLOSED (503); Nacos can switch to FAIL_OPEN.
-- Tenant limits read the tenant ID only from the current Sa-Token Token Session, never from request headers or a user-wide shared cache.
+- Tenant limits read the tenant ID only from the current Sa-Token Token Session, never from request headers or a user-wide shared cache. Authentication issues a distinct token per login to prevent cross-device context overwrites.
 - Rate-limit allowlists bypass quotas and denylists reject requests. Existing gateway access allowlists and risk-control denylists keep their earlier filter order.
+- When rate limiting is dynamically enabled, enforcement remains inactive until all Lua scripts are loaded successfully.
 - Same-Token is injected only for non-public endpoints. Unauthenticated public requests do not depend on service credentials.
 
 ## Verification

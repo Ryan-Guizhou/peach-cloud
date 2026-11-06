@@ -142,7 +142,7 @@ peach:
       denylist-tenants: []
       scripts:
         # 配置 OSS 目录后远程脚本优先；未配置远程 URL 时读取本地 classpath。
-        # 远程脚本必须为每种使用到的算法提供 SHA-256。
+        # remote-base-url 会加载全部六种算法，必须提供六种算法各自的 SHA-256；仅托管部分算法时请使用 remote-urls。
         remote-base-url:
         remote-urls: {}
         local-location: classpath:/ratelimit/lua/
@@ -178,7 +178,7 @@ peach:
           algorithm: GCRA
           priority: 30
           methods: [GET, POST, PUT, PATCH, DELETE]
-          paths: [/api/**]
+          paths: [/api/orders/**]
           replenish-rate: 100
           burst-capacity: 200
           cost: 1

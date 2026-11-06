@@ -182,6 +182,9 @@ peach:gateway:risk-control:blocked-ip:
 - 网关必须与业务服务保持 Sa-Token Redis key、`sa-token.token-name` 和 Session 序列化契约一致。
 - 公开端点列表由网关独立维护，不会自动同步业务服务配置。
 - Redis 动态黑名单查询失败时降级放行，并记录英文 WARN 日志。
+- 限流默认关闭；启用后 Redis 不可用默认 FAIL_CLOSED 返回 503，可通过 Nacos 切换 FAIL_OPEN。
+- 租户限流只读取当前 Sa-Token Token Session 中的 tenantId，不信任请求头或按 userId 共享的上下文缓存；认证登录会为每次登录签发独立 token，避免设备间上下文覆盖。
+- 限流白名单绕过配额、黑名单直接拒绝；动态启用限流时，在全部 Lua 脚本加载成功前暂时不执行限流。
 - Same-Token 只对非公开端点注入；未登录公开请求不会依赖服务间凭证。
 
 ## 构建与验证
