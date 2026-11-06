@@ -52,8 +52,9 @@ public final class RateLimitRemoteScriptAddressValidator {
             } catch (IllegalArgumentException exception) {
                 throw invalid("remote script base URL is malformed", exception);
             }
-            if (baseUri.getRawQuery() != null || baseUri.getRawFragment() != null) {
-                throw invalid("remote script base URL must not contain query or fragment components");
+            if (baseUri.getRawQuery() != null || baseUri.getRawFragment() != null
+                    || baseUri.getUserInfo() != null) {
+                throw invalid("remote script base URL must not contain query, fragment, or user-info components");
             }
             String probeUrl = (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/")
                     + "__rate_limit_script_validation__.lua";
