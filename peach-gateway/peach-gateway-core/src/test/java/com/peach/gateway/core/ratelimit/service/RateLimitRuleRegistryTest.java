@@ -3,6 +3,7 @@ package com.peach.gateway.core.ratelimit.service;
 import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitScope;
+import com.peach.gateway.core.ratelimit.model.RateLimitConfigurationSnapshot;
 import org.junit.jupiter.api.Test;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
@@ -71,6 +72,24 @@ class RateLimitRuleRegistryTest {
                 .containsExactly(InetAddress.getByName("2001:db8::1").getHostAddress());
         assertThat(registry.getSnapshot().denylistIps())
                 .containsExactly(InetAddress.getByName("2001:db8::2").getHostAddress());
+    }
+
+    @Test
+    void shouldCaptureAllRequestExecutionSettingsInTheRuntimeSnapshot() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(true);
+        properties.setFailureMode(GatewayRateLimitProperties.FailureMode.FAIL_OPEN);
+        properties.setRequireTenantContext(false);
+        properties.setMaxMatchedRulesPerRequest(16);
+        properties.setTrustedProxies(List.of("10.0.0.0/8"));
+
+        RateLimitConfigurationSnapshot snapshot = new RateLimitRuleRegistry(properties).getSnapshot();
+
+        assertThat(snapshot.enabled()).isTrue();
+        assertThat(snapshot.failureMode()).isEqualTo(GatewayRateLimitProperties.FailureMode.FAIL_OPEN);
+        assertThat(snapshot.requireTenantContext()).isFalse();
+        assertThat(snapshot.maxMatchedRulesPerRequest()).isEqualTo(16);
+        assertThat(snapshot.trustedProxies()).containsExactly("10.0.0.0/8");
     }
 
     @Test
