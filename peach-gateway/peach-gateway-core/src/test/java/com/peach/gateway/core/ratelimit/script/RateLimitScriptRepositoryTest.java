@@ -70,6 +70,20 @@ class RateLimitScriptRepositoryTest {
                 output.write(body);
             }
         });
+        server.createContext("/invalid.lua", exchange -> {
+            byte[] body = "return redis.call('GET', KEYS[2])".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            try (var output = exchange.getResponseBody()) {
+                output.write(body);
+            }
+        });
+        server.createContext("/oversized.lua", exchange -> {
+            byte[] body = "x".repeat(5000).getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            try (var output = exchange.getResponseBody()) {
+                output.write(body);
+            }
+        });
         server.createContext("/slow.lua", exchange -> {
             slowScriptRequestStarted.countDown();
             try {
@@ -162,6 +176,13 @@ class RateLimitScriptRepositoryTest {
         assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(10)))
                 .isInstanceOf(RuntimeException.class);
         assertThat(repository.get(RateLimitAlgorithm.TOKEN_BUCKET)).isEqualTo(remoteScript);
+        assertThat(repository.isReady()).isFalse();
+
+        scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
+        registry.refresh();
+        assertThat(repository.reload().block(Duration.ofSeconds(10))).isTrue();
+        assertThat(repository.isReady()).isTrue();
+        assertThat(repository.get(RateLimitAlgorithm.TOKEN_BUCKET)).isEqualTo(remoteScript);
     }
 
     @Test
@@ -207,6 +228,63 @@ class RateLimitScriptRepositoryTest {
 
         assertThat(repository.isReady(previousConfiguration)).isTrue();
         assertThat(repository.isReady()).isFalse();
+    }
+
+    @Test
+    void shouldRejectRemoteScriptWhenChecksumDoesNotMatch() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
+        allowLocalTestServer(scripts);
+        scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
+        scripts.setExpectedSha256(Map.of("token-bucket", "0".repeat(64)));
+        RateLimitScriptRepository repository = repository(properties);
+
+        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(10)))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void shouldRejectRemoteScriptWithInvalidLuaContract() throws Exception {
+        String invalidScript = "return redis.call('GET', KEYS[2])";
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
+        allowLocalTestServer(scripts);
+        scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/invalid.lua")));
+        scripts.setExpectedSha256(Map.of("token-bucket", sha256(invalidScript)));
+        RateLimitScriptRepository repository = repository(properties);
+
+        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(10)))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void shouldRejectRemoteScriptWhenResponseExceedsConfiguredSizeLimit() throws Exception {
+        String oversizedScript = "x".repeat(5000);
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
+        allowLocalTestServer(scripts);
+        scripts.setMaxScriptBytes(4096);
+        scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/oversized.lua")));
+        scripts.setExpectedSha256(Map.of("token-bucket", sha256(oversizedScript)));
+        RateLimitScriptRepository repository = repository(properties);
+
+        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(10)))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void shouldFailRemoteScriptLoadWhenReadTimeoutIsExceeded() throws Exception {
+        String slowScript = "return {1, 2, 3, 0, 10}";
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
+        allowLocalTestServer(scripts);
+        scripts.setReadTimeout(Duration.ofMillis(100));
+        scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/slow.lua")));
+        scripts.setExpectedSha256(Map.of("token-bucket", sha256(slowScript)));
+        RateLimitScriptRepository repository = repository(properties);
+
+        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
+                .isInstanceOf(RuntimeException.class);
     }
 
     @Test
