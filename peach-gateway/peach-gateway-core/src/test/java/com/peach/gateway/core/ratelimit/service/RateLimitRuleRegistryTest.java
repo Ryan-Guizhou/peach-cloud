@@ -173,6 +173,19 @@ class RateLimitRuleRegistryTest {
     }
 
     @Test
+    void shouldRejectCidrsThatExtendBeyondRfc1918Blocks() {
+        for (String cidr : List.of("172.16.0.0/8", "192.168.0.0/8", "10.0.0.0/7")) {
+            GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+            properties.getScripts().setAllowedRemoteCidrs(List.of(cidr));
+
+            assertThatThrownBy(() -> new RateLimitRuleRegistry(properties))
+                    .as("CIDR %s must not authorize public address space", cidr)
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("authorized");
+        }
+    }
+
+    @Test
     void shouldCountOnlyEnabledRulesAgainstMaximum() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setMaxRules(1);
