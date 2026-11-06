@@ -291,6 +291,16 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(server.getAddress().getPort()));
     }
 
+    private String sha256(String value) {
+        try {
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(digest);
+        } catch (java.security.NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 is unavailable", exception);
+        }
+    }
+
     private String localUrl(String path) {
         String uriHost = serverHost.contains(":") ? "[" + serverHost + "]" : serverHost;
         return "http://" + uriHost + ":" + server.getAddress().getPort() + path;
