@@ -61,8 +61,6 @@ class RateLimitRedisIntegrationTest {
         secondFactory = connectionFactory();
         firstTemplate = new ReactiveStringRedisTemplate(firstFactory);
         secondTemplate = new ReactiveStringRedisTemplate(secondFactory);
-        firstTemplate.afterPropertiesSet();
-        secondTemplate.afterPropertiesSet();
         firstExecutor = new RedisRateLimitExecutor(firstTemplate, scriptRepository);
         secondExecutor = new RedisRateLimitExecutor(secondTemplate, scriptRepository);
     }
@@ -161,7 +159,6 @@ class RateLimitRedisIntegrationTest {
         try {
             ReactiveStringRedisTemplate unavailableTemplate =
                     new ReactiveStringRedisTemplate(unavailableFactory);
-            unavailableTemplate.afterPropertiesSet();
             RedisRateLimitExecutor unavailableExecutor =
                     new RedisRateLimitExecutor(unavailableTemplate, scriptRepository);
 
