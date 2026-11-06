@@ -3,6 +3,7 @@ package com.peach.gateway.core.ratelimit.script;
 import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import io.netty.channel.ChannelOption;
+import org.springframework.http.HttpHeaders;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -13,14 +14,11 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.client.HttpClient;
 
-import java.net.InetAddress;
-import java.net.URI;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -28,7 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * 限流 Lua 脚本仓库。
  *
  * <p>为每种算法独立加载脚本。配置远程 OSS URL 时必须使用远程脚本；只有未配置远程 URL 时才读取本地
- * classpath。远程下载或校验失败时保留上一份完整脚本快照并报告失败，不静默切换到本地版本。</p>
+ * classpath。远程下载或校验失败时保留上一份完整脚本快照并报告失败，不静默回退到本地版本。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -39,11 +37,8 @@ public class RateLimitScriptRepository {
 
     private final GatewayRateLimitProperties properties;
     private final ResourceLoader resourceLoader;
-    private volatile WebClient webClient;
     private final AtomicReference<Map<RateLimitAlgorithm, String>> scripts =
             new AtomicReference<>(Map.of());
-
-    private static final Pattern REDIS_KEY_INDEX = Pattern.compile("KEYS\\s*\\[\\s*(\\d+)\\s*]");
 
     private final AtomicLong reloadGeneration = new AtomicLong();
 
@@ -72,13 +67,6 @@ public class RateLimitScriptRepository {
         return scripts.get().size() == RateLimitAlgorithm.values().length;
     }
 
-    /**
-     * 连接超时、读取超时或最大脚本大小变化时，丢弃旧客户端配置。
-     */
-    public synchronized void invalidateWebClient() {
-        webClient = null;
-    }
-
     public String get(RateLimitAlgorithm algorithm) {
         String script = scripts.get().get(algorithm);
         if (script == null) {
@@ -93,7 +81,8 @@ public class RateLimitScriptRepository {
             return loadLocal(algorithm);
         }
 
-        URI remoteUri = validateRemoteUrl(remoteUrl, algorithm);
+        RateLimitRemoteScriptAddressValidator.ValidatedTarget target =
+                validateRemoteUrl(remoteUrl, algorithm);
         String expectedChecksum = expectedChecksum(algorithm);
         if (properties.getScripts().isRequireRemoteChecksum()
                 && (expectedChecksum == null || expectedChecksum.isBlank())) {
@@ -101,7 +90,18 @@ public class RateLimitScriptRepository {
                     "Remote rate limit script requires SHA-256 checksum: " + algorithm));
         }
 
-        return webClient().get().uri(remoteUri).retrieve().bodyToMono(byte[].class)
+        return remoteWebClient(target).get()
+                .uri(target.uri())
+                .header(HttpHeaders.HOST, target.uri().getRawAuthority())
+                .exchangeToMono(response -> {
+                    if (!response.statusCode().is2xxSuccessful()) {
+                        return response.releaseBody().then(Mono.error(new IllegalStateException(
+                                "Remote rate limit script returned HTTP " + response.statusCode().value())));
+                    }
+                    return response.bodyToMono(byte[].class)
+                            .switchIfEmpty(Mono.error(new IllegalStateException(
+                                    "Remote rate limit script response body is empty")));
+                })
                 .timeout(properties.getScripts().getReadTimeout())
                 .map(bytes -> new String(bytes, StandardCharsets.UTF_8))
                 .flatMap(value -> validate(algorithm, value, expectedChecksum).thenReturn(value))
@@ -109,28 +109,22 @@ public class RateLimitScriptRepository {
                         "Failed to load remote rate limit script: " + algorithm, error));
     }
 
-    private WebClient webClient() {
-        WebClient current = webClient;
-        if (current != null) {
-            return current;
-        }
-        synchronized (this) {
-            current = webClient;
-            if (current == null) {
-                GatewayRateLimitProperties.ScriptProperties config = properties.getScripts();
-                HttpClient httpClient = HttpClient.create()
-                        .followRedirect(false)
-                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
-                                Math.toIntExact(config.getConnectTimeout().toMillis()))
-                        .responseTimeout(config.getReadTimeout());
-                current = WebClient.builder()
-                        .clientConnector(new ReactorClientHttpConnector(httpClient))
-                        .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(config.getMaxScriptBytes()))
-                        .build();
-                webClient = current;
-            }
-        }
-        return current;
+    /**
+     * 为已校验的目标地址创建独立 HTTP 客户端，并将 TCP 连接固定到已校验的 DNS 解析结果，
+     * 避免连接阶段再次解析域名而产生 DNS rebinding 窗口。
+     */
+    private WebClient remoteWebClient(RateLimitRemoteScriptAddressValidator.ValidatedTarget target) {
+        GatewayRateLimitProperties.ScriptProperties config = properties.getScripts();
+        HttpClient httpClient = HttpClient.create()
+                .remoteAddress(() -> new InetSocketAddress(target.address(), target.port()))
+                .followRedirect(false)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
+                        Math.toIntExact(config.getConnectTimeout().toMillis()))
+                .responseTimeout(config.getReadTimeout());
+        return WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(config.getMaxScriptBytes()))
+                .build();
     }
 
     private Mono<String> loadLocal(RateLimitAlgorithm algorithm) {
@@ -151,15 +145,15 @@ public class RateLimitScriptRepository {
     }
 
     private Mono<Void> validate(RateLimitAlgorithm algorithm, String value, String expectedChecksum) {
-        if (value == null || value.isBlank()
-                || value.getBytes(StandardCharsets.UTF_8).length > properties.getScripts().getMaxScriptBytes()
-                || !isClusterSafeScript(value)) {
-            return Mono.error(new IllegalArgumentException("Invalid rate limit Lua script: " + algorithm));
-        }
-        if (expectedChecksum == null || expectedChecksum.isBlank()) {
-            return Mono.empty();
-        }
         return Mono.fromRunnable(() -> {
+            if (value == null || value.isBlank()
+                    || value.getBytes(StandardCharsets.UTF_8).length > properties.getScripts().getMaxScriptBytes()) {
+                throw new IllegalArgumentException("Invalid rate limit Lua script: " + algorithm);
+            }
+            RateLimitLuaScriptValidator.validate(value);
+            if (expectedChecksum == null || expectedChecksum.isBlank()) {
+                return;
+            }
             try {
                 byte[] digest = MessageDigest.getInstance("SHA-256")
                         .digest(value.getBytes(StandardCharsets.UTF_8));
@@ -196,52 +190,13 @@ public class RateLimitScriptRepository {
         return (base.endsWith("/") ? base : base + "/") + algorithm.getScriptFileName();
     }
 
-    private URI validateRemoteUrl(String value, RateLimitAlgorithm algorithm) {
+    private RateLimitRemoteScriptAddressValidator.ValidatedTarget validateRemoteUrl(
+            String value, RateLimitAlgorithm algorithm) {
         try {
-            URI uri = URI.create(value);
-            String scheme = uri.getScheme();
-            if (uri.getHost() == null || uri.getHost().isBlank()
-                    || uri.getUserInfo() != null
-                    || !("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme))
-                    || isBlockedRemoteHost(uri.getHost())) {
-                throw new IllegalArgumentException("Remote rate limit script URL must be an HTTP(S) URL");
-            }
-            return uri;
+            return RateLimitRemoteScriptAddressValidator.validate(value, properties.getScripts());
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException("Invalid remote rate limit script URL: " + algorithm, exception);
-        }
-    }
-
-    private boolean isClusterSafeScript(String value) {
-        String lowered = value.toLowerCase(java.util.Locale.ROOT);
-        if (lowered.contains("loadstring") || lowered.contains("os.execute") || lowered.contains("io.open")) {
-            return false;
-        }
-        Matcher matcher = REDIS_KEY_INDEX.matcher(value);
-        while (matcher.find()) {
-            if (!"1".equals(matcher.group(1))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean isBlockedRemoteHost(String host) {
-        String normalized = host.trim().toLowerCase(java.util.Locale.ROOT);
-        if ("169.254.169.254".equals(normalized)
-                || "metadata.google.internal".equals(normalized)
-                || normalized.endsWith(".metadata.internal")) {
-            return true;
-        }
-        boolean literal = normalized.chars().allMatch(ch -> Character.isDigit(ch) || ch == '.' || ch == ':');
-        if (!literal) {
-            return false;
-        }
-        try {
-            InetAddress address = InetAddress.getByName(normalized);
-            return address.isLinkLocalAddress() || address.isAnyLocalAddress();
-        } catch (java.net.UnknownHostException exception) {
-            return false;
+            throw new IllegalArgumentException(
+                    "Invalid remote rate limit script URL: " + algorithm, exception);
         }
     }
 
@@ -250,7 +205,10 @@ public class RateLimitScriptRepository {
                 || config.getConnectTimeout().isNegative()
                 || config.getReadTimeout() == null || config.getReadTimeout().isZero()
                 || config.getReadTimeout().isNegative()
-                || config.getMaxScriptBytes() <= 0 || config.getMaxScriptBytes() > 1_048_576) {
+                || config.getMaxScriptBytes() <= 0 || config.getMaxScriptBytes() > 1_048_576
+                || config.getAllowedRemotePorts() == null
+                || config.getAllowedRemotePorts().isEmpty()
+                || config.getAllowedRemotePorts().stream().anyMatch(port -> port == null || port < 1 || port > 65535)) {
             throw new IllegalArgumentException("Invalid gateway rate limit script loading configuration");
         }
         long connectTimeoutMs = config.getConnectTimeout().toMillis();
