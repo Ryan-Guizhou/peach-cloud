@@ -236,7 +236,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
-        when(scriptRepository.isReady()).thenReturn(false);
+        when(scriptRepository.isReady(any())).thenReturn(false);
         when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
 
         RateLimitEnforcementService service = new RateLimitEnforcementService(
@@ -272,7 +272,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
-        when(scriptRepository.isReady()).thenReturn(true);
+        when(scriptRepository.isReady(any())).thenReturn(true);
         when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
         when(executor.execute(any(), anyString()))
                 .thenReturn(Mono.just(new RateLimitDecision(true, 8, 1000, 0, 10)));
@@ -293,7 +293,7 @@ class RateLimitEnforcementServiceTest {
                                                 RateLimitTenantContextResolver tenantResolver,
                                                 RateLimitMetrics metrics) {
         RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
-        when(scriptRepository.isReady()).thenReturn(true);
+        when(scriptRepository.isReady(any())).thenReturn(true);
         return new RateLimitEnforcementService(new RateLimitRuleRegistry(properties),
                 new RateLimitRuleMatcher(), new RateLimitKeyFactory(), executor,
                 ipResolver, tenantResolver, metrics, scriptRepository, new GatewaySaTokenProperties());
