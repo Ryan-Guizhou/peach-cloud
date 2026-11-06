@@ -41,9 +41,8 @@ class RateLimitLuaScriptValidatorTest {
     void shouldAcceptDirectSingleKeyCommandsAndIgnoreCommentsAndStringLiterals() {
         String script = """
                 -- KEYS[2] in a comment is not executable code
-                local key = KEYS[1]
                 local note = "KEYS[2] is only documentation"
-                local value = redis.call('GET', key)
+                local value = redis.call('GET', KEYS[1])
                 redis.call('SET', KEYS[1], value or note)
                 return redis.call('TIME')
                 """;
