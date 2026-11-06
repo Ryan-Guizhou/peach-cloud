@@ -25,7 +25,7 @@ Prerequisites:
 - k6 installed.
 - For authenticated tenant scenarios, a JSON file containing valid Sa-Token values for distinct tenants. Keep that file outside Git.
 
-The script is `rate-limit-k6.js`. It records 2xx responses, 429 rejections, 503 unavailable responses, and unexpected responses as separate custom counters. Built-in k6 HTTP metrics provide throughput and latency percentiles.
+The script is `rate-limit-k6.js`. It records 2xx responses, 429 rejections, 503 unavailable responses, and unexpected responses as separate custom counters. Built-in k6 HTTP metrics provide throughput and latency percentiles. Create the result directory before running the examples with `mkdir -p results`. The command examples use a Bash-compatible shell; adapt volume/path syntax when using Windows PowerShell.
 
 ### Single hot key
 
