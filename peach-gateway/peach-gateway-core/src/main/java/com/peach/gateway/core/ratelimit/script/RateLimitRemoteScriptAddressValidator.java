@@ -1,12 +1,11 @@
 package com.peach.gateway.core.ratelimit.script;
 
-import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
+import com.peach.gateway.core.ratelimit.model.RateLimitScriptConfiguration;
 
 import java.net.IDN;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -31,7 +30,7 @@ final class RateLimitRemoteScriptAddressValidator {
     private RateLimitRemoteScriptAddressValidator() {
     }
 
-    static ValidatedTarget validate(String value, GatewayRateLimitProperties.ScriptProperties config) {
+    static ValidatedTarget validate(String value, RateLimitScriptConfiguration config) {
         if (value == null || value.isBlank()) {
             throw invalid("remote URL is blank");
         }
@@ -45,7 +44,7 @@ final class RateLimitRemoteScriptAddressValidator {
         String scheme = uri.getScheme();
         boolean https = "https".equalsIgnoreCase(scheme);
         boolean http = "http".equalsIgnoreCase(scheme);
-        if ((!https && !http) || (config.isRequireHttps() && !https)
+        if ((!https && !http) || (config.requireHttps() && !https)
                 || uri.getHost() == null || uri.getHost().isBlank()
                 || uri.getUserInfo() != null || uri.getFragment() != null) {
             throw invalid("remote URL must be an approved absolute HTTP(S) URL without user-info or fragment");
@@ -55,12 +54,12 @@ final class RateLimitRemoteScriptAddressValidator {
         if (isMetadataHost(host)) {
             throw invalid("cloud metadata hosts are never allowed");
         }
-        if (!isHostAllowed(host, config.getAllowedRemoteHosts())) {
+        if (!isHostAllowed(host, List.copyOf(config.allowedRemoteHosts()))) {
             throw invalid("remote host is not present in allowed-remote-hosts");
         }
 
         int port = uri.getPort() < 0 ? (https ? 443 : 80) : uri.getPort();
-        if (config.getAllowedRemotePorts() == null || !config.getAllowedRemotePorts().contains(port)) {
+        if (!config.allowedRemotePorts().contains(port)) {
             throw invalid("remote port is not present in allowed-remote-ports");
         }
 
@@ -68,8 +67,7 @@ final class RateLimitRemoteScriptAddressValidator {
         if (addresses.length == 0) {
             throw invalid("remote host did not resolve to an address");
         }
-        List<String> authorizedCidrs = config.getAllowedRemoteCidrs() == null
-                ? List.of() : List.copyOf(config.getAllowedRemoteCidrs());
+        List<String> authorizedCidrs = config.allowedRemoteCidrs();
         for (String cidr : authorizedCidrs) {
             validateCidr(cidr);
         }
