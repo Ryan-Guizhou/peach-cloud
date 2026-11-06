@@ -40,10 +40,14 @@ public class RateLimitScriptLoader implements ApplicationRunner {
             return;
         }
         try {
-            repository.reload().block();
+            Boolean published = repository.reload().block();
             metrics.updateScriptReady(repository.isReady());
-            metrics.recordScriptReload(true);
-            log.info("Gateway rate limit Lua scripts loaded");
+            if (Boolean.TRUE.equals(published)) {
+                metrics.recordScriptReload(true);
+                log.info("Gateway rate limit Lua scripts loaded");
+            } else {
+                log.warn("Gateway rate limit Lua script loading was superseded by a newer configuration");
+            }
         } catch (RuntimeException exception) {
             metrics.updateScriptReady(repository.isReady());
             metrics.recordScriptReload(false);
@@ -67,14 +71,19 @@ public class RateLimitScriptLoader implements ApplicationRunner {
     @Order(Ordered.LOWEST_PRECEDENCE)
     @EventListener(RefreshScopeRefreshedEvent.class)
     public void onRefreshScopeRefreshed(RefreshScopeRefreshedEvent event) {
+        metrics.updateScriptReady(repository.isReady());
         if (!ruleRegistry.getSnapshot().enabled() || !reloadRequested.getAndSet(false)) {
             return;
         }
         repository.reload()
-                .doOnSuccess(ignored -> {
+                .doOnSuccess(published -> {
                     metrics.updateScriptReady(repository.isReady());
-                    metrics.recordScriptReload(true);
-                    log.info("Gateway rate limit Lua scripts reloaded");
+                    if (Boolean.TRUE.equals(published)) {
+                        metrics.recordScriptReload(true);
+                        log.info("Gateway rate limit Lua scripts reloaded");
+                    } else {
+                        log.warn("Gateway rate limit Lua script reload was superseded by a newer configuration");
+                    }
                 })
                 .doOnError(error -> {
                     metrics.updateScriptReady(repository.isReady());
