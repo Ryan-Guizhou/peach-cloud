@@ -45,21 +45,25 @@ class NacosRateLimitRefreshIntegrationTest {
     private static final String GROUP = "PEACH-CLOUD";
 
     @Container
-    private static final GenericContainer<?> NACOS =
-            new GenericContainer<>("nacos/nacos-server:v2.5.2") {
-                {
-                    addFixedExposedPort(18848, 8848);
-                    addFixedExposedPort(19848, 9848);
-                    addFixedExposedPort(19849, 9849);
-                }
-            }.withEnv("MODE", "standalone")
-                    .withEnv("NACOS_AUTH_ENABLE", "false")
-                    .withEnv("JVM_XMS", "256m")
-                    .withEnv("JVM_XMX", "512m")
-                    .waitingFor(Wait.forHttp("/nacos/v1/console/health/readiness")
-                            .forPort(8848)
-                            .forStatusCode(200)
-                            .withStartupTimeout(Duration.ofMinutes(3)));
+    private static final NacosContainer NACOS = new NacosContainer();
+
+    private static final class NacosContainer extends GenericContainer<NacosContainer> {
+
+        private NacosContainer() {
+            super("nacos/nacos-server:v2.5.2");
+            addFixedExposedPort(18848, 8848);
+            addFixedExposedPort(19848, 9848);
+            addFixedExposedPort(19849, 9849);
+            withEnv("MODE", "standalone");
+            withEnv("NACOS_AUTH_ENABLE", "false");
+            withEnv("JVM_XMS", "256m");
+            withEnv("JVM_XMX", "512m");
+            waitingFor(Wait.forHttp("/nacos/v1/console/health/readiness")
+                    .forPort(8848)
+                    .forStatusCode(200)
+                    .withStartupTimeout(Duration.ofMinutes(3)));
+        }
+    }
 
     private String awaitConfig(BlockingQueue<String> pushedConfigs, String marker) throws InterruptedException {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
