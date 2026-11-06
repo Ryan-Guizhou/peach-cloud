@@ -44,10 +44,6 @@ public class GatewayRateLimitGlobalFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        if (!enforcementService.isEnabled()) {
-            return chain.filter(exchange);
-        }
-
         SaReactorSyncHolder.setContext(exchange);
         return enforcementService.check(exchange)
                 .onErrorResume(error -> {
