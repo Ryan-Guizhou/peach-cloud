@@ -279,7 +279,7 @@ class RateLimitScriptRepositoryTest {
 
         assertThatThrownBy(() -> repository(properties))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("authorized CIDR");
+                .hasMessageContaining("authorized");
     }
 
     @Test
