@@ -24,7 +24,7 @@ class TrustedProxyClientIpResolverTest {
     void shouldIgnoreForwardedHeaderFromUntrustedPeer() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setTrustedProxies(List.of("10.0.0.0/8"));
-        TrustedProxyClientIpResolver resolver = new TrustedProxyClientIpResolver(new RateLimitRuleRegistry(properties));
+        TrustedProxyClientIpResolver resolver = resolver(properties);
         MockServerWebExchange exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/api/orders")
                         .remoteAddress(new InetSocketAddress("203.0.113.10", 8080))
@@ -38,7 +38,7 @@ class TrustedProxyClientIpResolverTest {
     void shouldResolveFirstUntrustedHopFromRightOfTrustedProxyChain() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setTrustedProxies(List.of("10.0.0.0/8"));
-        TrustedProxyClientIpResolver resolver = new TrustedProxyClientIpResolver(properties);
+        TrustedProxyClientIpResolver resolver = resolver(properties);
         MockServerWebExchange exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/api/orders")
                         .remoteAddress(new InetSocketAddress("10.0.0.3", 8080))
@@ -48,12 +48,11 @@ class TrustedProxyClientIpResolverTest {
         assertThat(resolver.resolve(exchange)).isEqualTo("198.51.100.20");
     }
 
-
     @Test
     void shouldCombineDuplicateForwardedForHeaderFieldsInWireOrder() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setTrustedProxies(List.of("10.0.0.0/8"));
-        TrustedProxyClientIpResolver resolver = new TrustedProxyClientIpResolver(properties);
+        TrustedProxyClientIpResolver resolver = resolver(properties);
         MockServerWebExchange exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/api/orders")
                         .remoteAddress(new InetSocketAddress("10.0.0.3", 8080))
@@ -68,7 +67,7 @@ class TrustedProxyClientIpResolverTest {
     void shouldFallbackToTcpPeerWhenForwardedChainIsMalformed() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setTrustedProxies(List.of("10.0.0.0/8"));
-        TrustedProxyClientIpResolver resolver = new TrustedProxyClientIpResolver(properties);
+        TrustedProxyClientIpResolver resolver = resolver(properties);
         MockServerWebExchange exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/api/orders")
                         .remoteAddress(new InetSocketAddress("10.0.0.3", 8080))
@@ -79,7 +78,7 @@ class TrustedProxyClientIpResolverTest {
     }
 
     @Test
-    void shouldKeepPreviousTrustedProxyNetworksWhenInvalidRefreshIsRejected() {
+    void shouldRetainPreviousTrustedNetworksWhenRefreshConfigurationIsInvalid() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setTrustedProxies(List.of("10.0.0.0/8"));
         RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
@@ -91,8 +90,34 @@ class TrustedProxyClientIpResolverTest {
                         .build());
 
         properties.setTrustedProxies(List.of("not-a-cidr"));
-        assertThatThrownBy(registry::refresh).isInstanceOf(IllegalArgumentException.class);
 
+        assertThatThrownBy(registry::refresh)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid trusted proxy");
         assertThat(resolver.resolve(exchange)).isEqualTo("198.51.100.20");
     }
-}}
+
+    @Test
+    void shouldApplyNewTrustedNetworksOnlyAfterSnapshotRefresh() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setTrustedProxies(List.of("10.0.0.0/8"));
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        TrustedProxyClientIpResolver resolver = new TrustedProxyClientIpResolver(registry);
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/orders")
+                        .remoteAddress(new InetSocketAddress("10.0.0.3", 8080))
+                        .header("X-Forwarded-For", "198.51.100.20")
+                        .build());
+
+        properties.setTrustedProxies(List.of("192.0.2.0/24"));
+        assertThat(resolver.resolve(exchange)).isEqualTo("198.51.100.20");
+
+        registry.refresh();
+
+        assertThat(resolver.resolve(exchange)).isEqualTo("10.0.0.3");
+    }
+
+    private TrustedProxyClientIpResolver resolver(GatewayRateLimitProperties properties) {
+        return new TrustedProxyClientIpResolver(new RateLimitRuleRegistry(properties));
+    }
+}
