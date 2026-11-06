@@ -416,6 +416,65 @@ class RateLimitScriptRepositoryTest {
     }
 
     @Test
+    void shouldRejectRemoteUrlContainingUserInfo() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
+        allowLocalTestServer(scripts);
+        String url = localUrl("/token-bucket.lua").replace(
+                "http://", "http://untrusted-user:untrusted-password@");
+        scripts.setRemoteUrls(Map.of("token-bucket", url));
+
+        assertThatThrownBy(() -> repository(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("user-info");
+    }
+
+    @Test
+    void shouldRejectRemoteUrlUsingNonAllowlistedPort() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
+        allowLocalTestServer(scripts);
+        scripts.setAllowedRemotePorts(List.of(443));
+        scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
+
+        assertThatThrownBy(() -> repository(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("remote port");
+    }
+
+    @Test
+    void shouldRejectIpv4MappedIpv6LoopbackAddress() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
+        scripts.setAllowedRemoteHosts(List.of("::ffff:127.0.0.1"));
+        scripts.setAllowedRemotePorts(List.of(443));
+        scripts.setRemoteUrls(Map.of("token-bucket",
+                "https://[::ffff:127.0.0.1]/token-bucket.lua"));
+
+        assertThatThrownBy(() -> repository(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("loopback");
+    }
+
+    @Test
+    void shouldRejectUnspecifiedMulticastAndLinkLocalAddresses() {
+        for (String host : List.of("0.0.0.0", "224.0.0.1", "169.254.1.1", "fe80::1")) {
+            GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+            GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
+            scripts.setAllowedRemoteHosts(List.of(host));
+            scripts.setAllowedRemotePorts(List.of(443));
+            String uriHost = host.contains(":") ? "[" + host + "]" : host;
+            scripts.setRemoteUrls(Map.of("token-bucket",
+                    "https://" + uriHost + "/token-bucket.lua"));
+
+            assertThatThrownBy(() -> repository(properties))
+                    .as("Remote host %s must be rejected", host)
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Invalid remote rate limit script destination");
+        }
+    }
+
+    @Test
     void shouldRejectRedirectResponseWithoutFollowingItsLocation() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();

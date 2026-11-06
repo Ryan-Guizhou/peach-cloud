@@ -12,6 +12,8 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PreDestroy;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -94,6 +96,15 @@ public class RateLimitScriptLoader implements ApplicationRunner {
                 }, error -> {
                     // The failure has been recorded above; consume it to avoid an unhandled reactive error.
                 });
+    }
+
+    /**
+     * 在应用关闭时清除脚本就绪状态，避免关闭阶段继续暴露可用指标。
+     */
+    @PreDestroy
+    public void onShutdown() {
+        metrics.updateScriptReady(false);
+        log.info("Gateway rate limit Lua script loader stopped");
     }
 
     private Throwable rootCause(Throwable error) {

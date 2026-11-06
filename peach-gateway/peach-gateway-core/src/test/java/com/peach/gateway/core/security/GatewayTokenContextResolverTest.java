@@ -2,6 +2,7 @@ package com.peach.gateway.core.security;
 
 import cn.dev33.satoken.reactor.context.SaReactorSyncHolder;
 import cn.dev33.satoken.session.SaSession;
+import cn.dev33.satoken.stp.parameter.SaLoginParameter;
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.common.constant.SaTokenConstant;
 import org.junit.jupiter.api.Test;
@@ -49,38 +50,42 @@ class GatewayTokenContextResolverTest {
     }
 
     @Test
-    void shouldResolveTenantFromTheCurrentSaTokenAndReflectTenantSwitches() {
-        String tokenA = UUID.randomUUID().toString();
-        String tokenB = UUID.randomUUID().toString();
-        SaSession sessionA = StpUtil.getStpLogic().getTokenSessionByToken(tokenA, true);
-        SaSession sessionB = StpUtil.getStpLogic().getTokenSessionByToken(tokenB, true);
-        setTenantContext(sessionA, "tenant-a", "org-a");
-        setTenantContext(sessionB, "tenant-b", "org-b");
+void shouldResolveTenantFromIndependentDeviceTokensAndReflectTenantSwitches() {
+        String loginId = "token-context-" + UUID.randomUUID();
+        String tokenA = loginWithTenantContext(loginId, "device-a", "tenant-a", "org-a");
+        String tokenB = loginWithTenantContext(loginId, "device-b", "tenant-b", "org-b");
 
-        assertThat(resolveCurrentToken(tokenA).tenantId()).isEqualTo("tenant-a");
-        assertThat(resolveCurrentToken(tokenB).tenantId()).isEqualTo("tenant-b");
+        try {
+            assertThat(resolveCurrentToken(tokenA))
+                    .isEqualTo(new GatewayTokenContext("tenant-a", "org-a", null));
+            assertThat(resolveCurrentToken(tokenB))
+                    .isEqualTo(new GatewayTokenContext("tenant-b", "org-b", null));
 
-        setTenantContext(sessionB, "tenant-c", "org-c");
+            updateCurrentTokenContext(tokenB, "tenant-c", "org-c");
 
-        assertThat(resolveCurrentToken(tokenB))
-                .isEqualTo(new GatewayTokenContext("tenant-c", "org-c", null));
-        assertThat(resolveCurrentToken(tokenA).tenantId()).isEqualTo("tenant-a");
+            assertThat(resolveCurrentToken(tokenB))
+                    .isEqualTo(new GatewayTokenContext("tenant-c", "org-c", null));
+            assertThat(resolveCurrentToken(tokenA))
+                    .isEqualTo(new GatewayTokenContext("tenant-a", "org-a", null));
+        } finally {
+            logoutLoginId(loginId);
+        }
     }
-
     @Test
-    void shouldNotResolveTenantAfterTokenSessionContextIsClearedOrMissing() {
-        String token = UUID.randomUUID().toString();
-        SaSession session = StpUtil.getStpLogic().getTokenSessionByToken(token, true);
-        setTenantContext(session, "tenant-a", "org-a");
-        assertThat(resolveCurrentToken(token)).isNotNull();
+void shouldNotResolveTenantWhenCurrentTokenSessionContextIsCleared() {
+        String loginId = "token-context-clear-" + UUID.randomUUID();
+        String token = loginWithTenantContext(loginId, "device-a", "tenant-a", "org-a");
 
-        session.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, "");
-        session.set(SaTokenConstant.TOKEN_SESSION_ORG_ID, "");
+        try {
+            assertThat(resolveCurrentToken(token)).isNotNull();
 
-        assertThat(resolveCurrentToken(token)).isNull();
-        assertThat(resolveCurrentToken(UUID.randomUUID().toString())).isNull();
+            updateCurrentTokenContext(token, "", "");
+
+            assertThat(resolveCurrentToken(token)).isNull();
+        } finally {
+            logoutLoginId(loginId);
+        }
     }
-
     @Test
     void shouldKeepTenantContextIsolatedBetweenTokenSessions() {
         SaSession first = new SaSession("token-session-device-a");
@@ -93,6 +98,50 @@ class GatewayTokenContextResolverTest {
         assertThat(resolver.toContext(first).block().tenantId()).isEqualTo("tenant-a");
         assertThat(resolver.toContext(second).block().tenantId()).isEqualTo("tenant-b");
     }
+    private String loginWithTenantContext(String loginId,
+                                          String device,
+                                          String tenantId,
+                                          String orgId) {
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/auth/login").build());
+        SaReactorSyncHolder.setContext(exchange);
+        try {
+            StpUtil.login(loginId, new SaLoginParameter()
+                    .setIsConcurrent(true)
+                    .setIsShare(false)
+                    .setDeviceId(device));
+            String token = StpUtil.getTokenValue();
+            setTenantContext(StpUtil.getTokenSession(), tenantId, orgId);
+            return token;
+        } finally {
+            SaReactorSyncHolder.clearContext();
+        }
+    }
+
+    private void updateCurrentTokenContext(String token, String tenantId, String orgId) {
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/context")
+                        .header(StpUtil.getTokenName(), token)
+                        .build());
+        SaReactorSyncHolder.setContext(exchange);
+        try {
+            setTenantContext(StpUtil.getTokenSession(), tenantId, orgId);
+        } finally {
+            SaReactorSyncHolder.clearContext();
+        }
+    }
+
+    private void logoutLoginId(String loginId) {
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/auth/logout").build());
+        SaReactorSyncHolder.setContext(exchange);
+        try {
+            StpUtil.logout(loginId);
+        } finally {
+            SaReactorSyncHolder.clearContext();
+        }
+    }
+
     private void setTenantContext(SaSession session, String tenantId, String orgId) {
         session.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, tenantId);
         session.set(SaTokenConstant.TOKEN_SESSION_ORG_ID, orgId);

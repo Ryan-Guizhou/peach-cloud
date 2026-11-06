@@ -163,4 +163,18 @@ class RateLimitScriptLoaderTest {
         }
     }
 
+    @Test
+    void shouldClearScriptReadinessWhenApplicationShutsDown() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitScriptRepository repository = mock(RateLimitScriptRepository.class);
+        RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+        RateLimitScriptLoader loader = new RateLimitScriptLoader(registry, repository, metrics);
+
+        loader.onShutdown();
+
+        verify(metrics).updateScriptReady(false);
+    }
+
+
 }

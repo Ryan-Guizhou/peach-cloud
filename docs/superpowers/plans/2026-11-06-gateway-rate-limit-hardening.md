@@ -34,110 +34,86 @@
 
 ### Task 1: Deterministic post-rebind runtime refresh
 
-**Files:**
-- Modify: `RateLimitRuleRegistry.java`
-- Modify: `TrustedProxyClientIpResolver.java`
-- Modify: `RateLimitScriptLoader.java`
-- Tests: corresponding registry, resolver, and loader tests
+**Status:** Implemented; covered by integration tests.
 
-- [ ] Add tests proving refresh handlers are invoked from the refresh-complete event and ignore the pre-rebind EnvironmentChangeEvent.
-- [ ] Run tests and confirm the new tests fail on current listener wiring.
-- [ ] Switch runtime refresh handlers to Spring Cloud's refresh-complete event.
-- [ ] Verify invalid config retains the last valid runtime state.
-- [ ] Run focused tests.
+- [x] Refresh-complete event is the only event that publishes the runtime snapshot; EnvironmentChangeEvent only records that script reload is required.
+- [x] Rules, trusted proxy networks, script transport settings, and execution limits are validated together before atomic publication.
+- [x] Invalid configuration retains the last-known-good snapshot.
+- [x] Tests cover pre-rebind event ordering, rapid consecutive changes, and enable/disable transitions.
 
 ### Task 2: Immutable runtime snapshot
 
-**Files:**
-- Modify: `RateLimitConfigurationSnapshot.java`
-- Modify: `RateLimitRuleRegistry.java`
-- Modify: `RateLimitEnforcementService.java`
-- Tests: `RateLimitRuleRegistryTest.java`, `RateLimitEnforcementServiceTest.java`
+**Status:** Implemented; covered by unit and integration tests.
 
-- [ ] Add regression test: valid cap 32, then invalid cap 0; old rules and cap remain effective.
-- [ ] Run test and verify it fails before implementation.
-- [ ] Store validated maxMatchedRulesPerRequest in snapshot and make request execution read only snapshot state.
-- [ ] Add snapshot generation/version if needed to correlate refresh diagnostics.
-- [ ] Run focused tests.
+- [x] Store validated maxMatchedRulesPerRequest, rules, trusted proxies, script configuration, allowlists, denylists, and failure mode in the immutable snapshot.
+- [x] Request execution reads the captured snapshot rather than the mutable bound Properties object.
+- [x] Request-pinned Lua source prevents an in-flight request from mixing script versions during a refresh.
+- [x] Tests cover invalid matched-rule caps, last-known-good state, and in-flight script snapshot consistency.
 
 ### Task 3: Script readiness lifecycle
 
-**Files:**
-- Modify: `RateLimitScriptLoader.java`
-- Modify: `RateLimitMetrics.java`
-- Tests: script loader and metrics tests
+**Status:** Implemented; lifecycle tests included.
 
-- [ ] Test successful `Mono<Void>` reload updates Gauge to 1 and logs completion.
-- [ ] Test failure preserves previous readiness and reports the correct state.
-- [ ] Replace onNext-only success callback with completion-aware handling.
-- [ ] Verify disabled startup and later dynamic enablement.
-- [ ] Run focused tests.
+- [x] Readiness is updated for disabled startup, startup load, dynamic enablement, successful/failed reload, and superseded reload.
+- [x] Successful publication is distinguished from a stale reload that was discarded.
+- [x] Startup script download failure does not prevent Gateway startup; requests follow the configured failure mode.
+- [x] Shutdown clears the readiness gauge and emits a lifecycle log.
+- [x] Tests cover success, failure, superseded reload, dynamic enablement, and shutdown.
 
 ### Task 4: Remote script URL and network safety
 
-**Files:**
-- Modify: `GatewayRateLimitProperties.java`
-- Modify: `RateLimitScriptRepository.java`
-- Tests: `RateLimitScriptRepositoryTest.java`
+**Status:** Implemented; adversarial validation tests included.
 
-- [ ] Add tests for bracketed IPv6 link-local, loopback, RFC1918, unspecified, multicast, IPv4-mapped IPv6, metadata hosts, DNS-resolved private IP, untrusted host, user-info, non-approved port, and redirect response.
-- [ ] Verify each adversarial test fails against the current implementation.
-- [ ] Add explicit allowed-host and optional explicitly authorized internal CIDR settings with secure defaults.
-- [ ] Validate all resolved addresses before connecting; disable redirects and avoid DNS re-resolution gaps where feasible.
-- [ ] Keep test-only localhost server access through explicit test allowlisting.
-- [ ] Run focused tests.
+- [x] Require exact host allowlisting, HTTPS by default, explicit port allowlisting, and valid SHA-256 checksums for configured remote scripts.
+- [x] Validate all DNS results and pin the HTTP connection to a validated address to reduce DNS-rebinding exposure.
+- [x] Reject user-info, fragments, redirects, loopback, link-local, unspecified, multicast, reserved, unauthorized private, and cloud metadata destinations.
+- [x] Private network access requires an explicit CIDR contained within RFC1918 or IPv6 ULA space.
+- [x] Tests cover IPv4/IPv6 loopback, IPv4-mapped IPv6, link-local, unspecified, multicast, private CIDR, metadata, untrusted hosts, user-info, non-approved ports, redirects, size limits, timeouts, checksums, and invalid Lua.
+- [x] Remote URL failure never silently falls back to local classpath scripts; the last-known-good script snapshot is retained.
 
 ### Task 5: Lua single-key contract
 
-**Files:**
-- Modify: `RateLimitScriptRepository.java`
-- Tests: `RateLimitScriptRepositoryTest.java`
-- Resources: six bundled Lua scripts only if contract annotations or validation require it
+**Status:** Implemented; Redis integration verified.
 
-- [ ] Add tests for direct KEYS[2], alias KEYS, dynamic index, helper function access, non-whitelisted Redis commands, and forbidden Lua libraries.
-- [ ] Verify bypass examples fail current validation.
-- [ ] Implement constrained validation/parser contract; do not claim general Lua static analysis if only a restricted grammar is supported.
-- [ ] Verify all six bundled scripts satisfy the contract.
-- [ ] Run focused tests and Testcontainers Redis integration tests.
+- [x] Replace regex-only checks with a deliberately constrained Lua tokenizer and Redis command contract.
+- [x] Reject KEYS[2], aliases, dynamic indexes, indirect Redis client access, non-whitelisted commands, and forbidden Lua runtime globals.
+- [x] Verify all six bundled Lua scripts against the contract.
+- [x] Test the six algorithms against Testcontainers Redis Standalone.
 
-### Task 6: Infrastructure integration tests
+### Task 6: Infrastructure integration and recovery
 
-**Files:**
-- Tests: Gateway/Nacos/Token Session/Redis integration test packages
-- Test resources and CI workflow only where needed
+**Status:** Partially verified; manual topology and full application E2E remain outstanding.
 
-- [ ] Add Nacos refresh lifecycle tests covering valid, invalid, rapid, enable/disable, and in-flight requests.
-- [ ] Add two-token tenant isolation and tenant-switch tests.
-- [ ] Add two Gateway application instances sharing a Redis quota.
-- [ ] Add Redis Cluster/Sentinel/TLS verification profiles or reproducible compose scripts; report exactly which profiles ran in CI.
-- [ ] Add OSS script failure/recovery tests.
-- [ ] Run all relevant integration profiles.
+- [x] Nacos Testcontainers integration covers configuration delivery, valid refresh, invalid refresh, and last-known-good state.
+- [x] Runtime refresh tests cover rapid updates and enable/disable transitions; enforcement tests cover in-flight request snapshot pinning.
+- [x] Sa-Token tests use real login tokens to verify per-device Token Session isolation and tenant switching.
+- [x] Two independent Gateway enforcement instances using separate Lettuce clients share one Redis quota.
+- [x] Redis Cluster, Sentinel, and TLS smoke-test profiles and reproducible local Compose fixtures are provided.
+- [x] OSS failure tests cover checksum mismatch, invalid Lua, oversized response, timeout, and preservation of the previous snapshot.
+- [ ] Run Redis Cluster, Sentinel, and TLS profiles against the intended deployment topology.
+- [ ] Run a full HTTP end-to-end test with two separately started Gateway application instances; the current CI test covers independent enforcement instances, not two deployed Gateway processes.
 
 ### Task 7: Load testing and observability
 
-**Files:**
-- Create: reproducible load-test scripts/configuration and report template under `peach-gateway/docs/performance/`
-- Modify: `RateLimitMetrics.java` and observability docs only where justified
+**Status:** CI concurrency test and operational tooling are present; target-environment soak remains manual.
 
-- [ ] Add 1k/5k/10k concurrency profiles and sustained soak profile.
-- [ ] Capture RPS, p50/p95/p99, status distribution, Redis resource metrics, Lua latency, and EventLoop latency.
-- [ ] Cover global hot key, distributed keys, multiple rules, refresh, Redis degradation/recovery.
-- [ ] Do not set pass thresholds without a measured baseline; document environment and raw results.
-- [ ] Verify metric tags remain low-cardinality.
+- [x] The Redis integration test issues 10,000 concurrent Lua operations across two independent Redis clients and verifies exact quota accounting.
+- [x] CI records achieved throughput and p95/p99 client latency; the test does not claim 10,000 RPS.
+- [x] k6 examples cover 1,000, 5,000, and 10,000 VUs, hot and distributed keys, token pools, and a 30-minute soak.
+- [x] Micrometer metrics use bounded scope/algorithm/outcome tags; Prometheus alerts and a Grafana dashboard are supplied.
+- [ ] Run the k6 profiles and 30-minute soak against the target Gateway/Redis deployment and archive raw results.
+- [ ] Collect target-environment Redis resource metrics and Netty EventLoop latency alongside HTTP latency percentiles.
 
-### Task 8: Operations docs and final verification
+### Task 8: Operations documentation and final verification
 
-**Files:**
-- Modify: Chinese/English Gateway README and rate-limit docs.
-- Verify: `deploy/nacos/config/peach-gateway.yml` and `deploy-pipline/init/nacos/config/peach-gateway.yml`
+**Status:** Documentation and seed configuration are in place; final batch CI is pending.
 
-- [ ] Document refresh ordering, script precedence, SHA-256, SSRF policy, Cluster contract, readiness, failure mode, rollout, rollback, and failure drills.
-- [ ] Verify both Nacos seed files are byte-identical and rate limiting remains disabled.
-- [ ] Run repository governance.
-- [ ] Run affected Maven reactor verify including Testcontainers.
-- [ ] Run load/infrastructure profiles and archive reports.
-- [ ] Perform whole-branch code review; fix all Critical/Important findings.
-- [ ] Create one PR linked to Issue #14; merge only after required checks and review pass.
+- [x] Update Chinese and English README and rate-limit operations documentation.
+- [x] Document script precedence, checksum requirements, SSRF policy, single-key contract, readiness, failure modes, rollout, rollback, and failure drills.
+- [x] Both Nacos seed files are byte-identical and keep rate limiting disabled by default.
+- [ ] Run the complete required CI after the current batched changes.
+- [ ] Perform the final whole-branch review and close all Critical/Important findings.
+- [ ] Obtain the required review and merge the single PR only after all required checks pass.
 
 ## Delivery
 
