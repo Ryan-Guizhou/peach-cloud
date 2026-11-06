@@ -120,6 +120,18 @@ public class GatewayRateLimitProperties {
         /** 远程脚本必须提供 SHA-256 校验值。 */
         private boolean requireRemoteChecksum = true;
 
+        /** 生产环境默认只允许 HTTPS 远程脚本地址。 */
+        private boolean requireHttps = true;
+
+        /** 允许访问的远程脚本主机名，必须精确匹配，不支持通配符。 */
+        private List<String> allowedRemoteHosts = new ArrayList<>();
+
+        /** 显式授权访问的内部/特殊地址 CIDR；仅对匹配的解析地址放宽私网限制。 */
+        private List<String> allowedRemoteCidrs = new ArrayList<>();
+
+        /** 允许连接的远程端口，默认仅 HTTPS 443。 */
+        private List<Integer> allowedRemotePorts = new ArrayList<>(List.of(443));
+
         private Duration connectTimeout = Duration.ofSeconds(2);
 
         private Duration readTimeout = Duration.ofSeconds(5);
