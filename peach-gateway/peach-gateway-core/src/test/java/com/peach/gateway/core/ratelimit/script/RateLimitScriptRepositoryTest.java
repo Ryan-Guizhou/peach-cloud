@@ -175,7 +175,9 @@ class RateLimitScriptRepositoryTest {
     }
 
     @Test
-    void shouldRejectPrivateAddressWithoutExplicitCidrAuthorization() {
+    void shouldRejectPrivateAddressWithoutExplicitCidrAuthorization() throws Exception {
+        assumeTrue(InetAddress.getByName(serverHost).isSiteLocalAddress(),
+                "A private test interface is required for this CIDR policy test");
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
         scripts.setRequireHttps(false);
