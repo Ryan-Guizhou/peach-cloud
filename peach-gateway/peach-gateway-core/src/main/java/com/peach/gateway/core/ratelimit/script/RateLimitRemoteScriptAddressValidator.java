@@ -37,11 +37,30 @@ public final class RateLimitRemoteScriptAddressValidator {
         }
         config.allowedRemoteHosts().forEach(RateLimitRemoteScriptAddressValidator::normalizeHost);
         config.allowedRemoteCidrs().forEach(RateLimitRemoteScriptAddressValidator::parseCidr);
-        boolean remoteConfigured = (config.remoteBaseUrl() != null && !config.remoteBaseUrl().isBlank())
+        boolean baseUrlConfigured = config.remoteBaseUrl() != null && !config.remoteBaseUrl().isBlank();
+        boolean remoteConfigured = baseUrlConfigured
                 || config.remoteUrls().values().stream().anyMatch(value -> value != null && !value.isBlank());
         if (remoteConfigured && config.allowedRemoteHosts().isEmpty()) {
             throw invalid("remote scripts require an exact allowed-remote-hosts entry");
         }
+        if (baseUrlConfigured) {
+            String baseUrl = config.remoteBaseUrl().trim();
+            URI baseUri;
+            try {
+                baseUri = URI.create(baseUrl);
+            } catch (IllegalArgumentException exception) {
+                throw invalid("remote script base URL is malformed", exception);
+            }
+            if (baseUri.getRawQuery() != null || baseUri.getRawFragment() != null) {
+                throw invalid("remote script base URL must not contain query or fragment components");
+            }
+            String probeUrl = (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/")
+                    + "__rate_limit_script_validation__.lua";
+            validate(probeUrl, config);
+        }
+        config.remoteUrls().values().stream()
+                .filter(value -> value != null && !value.isBlank())
+                .forEach(value -> validate(value.trim(), config));
     }
 
     static ValidatedTarget validate(String value, RateLimitScriptConfiguration config) {
