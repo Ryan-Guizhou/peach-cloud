@@ -228,7 +228,7 @@ When Redis or the rate-limit executor is unavailable:
 
 - After ConfigurationProperties rebinding completes for EnvironmentChangeEvent, RateLimitRuleRegistry validates and atomically publishes a runtime snapshot on RefreshScopeRefreshedEvent. A failed refresh retains the last valid snapshot.
 - RateLimitScriptLoader records relevant changes during EnvironmentChangeEvent and starts asynchronous script loading after RefreshScopeRefreshedEvent.
-- Script snapshots are replaced as a whole; failed reloads keep the previous complete snapshot. The Mono<Void> completion callback updates the readiness Gauge.
+- Script snapshots are replaced as a whole; failed reloads keep the previous complete snapshot. The reload result indicates whether the script snapshot was actually published; only a published snapshot is recorded as a successful reload, while a superseded load is not misreported as success.
 - Metric names:
   - peach.gateway.rate.limit.requests
   - peach.gateway.rate.limit.execution
