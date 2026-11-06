@@ -4,6 +4,7 @@ import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitConfigurationSnapshot;
 import com.peach.gateway.core.ratelimit.model.RateLimitRule;
+import com.peach.gateway.core.ratelimit.model.RateLimitScriptConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -124,6 +125,7 @@ public class RateLimitRuleRegistry {
                 properties.isRequireTenantContext(),
                 maxMatchedRules,
                 trustedProxies,
+                RateLimitScriptConfiguration.from(properties.getScripts()),
                 rules,
                 normalizeIpValues(properties.getAllowlistIps()),
                 normalizeValues(properties.getAllowlistTenants()),
