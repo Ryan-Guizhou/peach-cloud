@@ -1,6 +1,5 @@
 package com.peach.gateway.core.ratelimit.service;
 
-import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.script.RateLimitScriptRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RequiredArgsConstructor
 public class RateLimitScriptLoader implements ApplicationRunner {
 
-    private final GatewayRateLimitProperties properties;
+    private final RateLimitRuleRegistry ruleRegistry;
     private final RateLimitScriptRepository repository;
     private final RateLimitMetrics metrics;
 
@@ -35,7 +34,7 @@ public class RateLimitScriptLoader implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (!properties.isEnabled()) {
+        if (!ruleRegistry.getSnapshot().enabled()) {
             metrics.updateScriptReady(repository.isReady());
             log.info("Gateway rate limit is disabled; Lua script loading is skipped");
             return;
@@ -66,7 +65,7 @@ public class RateLimitScriptLoader implements ApplicationRunner {
     @Order(Ordered.LOWEST_PRECEDENCE)
     @EventListener(RefreshScopeRefreshedEvent.class)
     public void onRefreshScopeRefreshed(RefreshScopeRefreshedEvent event) {
-        if (!properties.isEnabled() || !reloadRequested.getAndSet(false)) {
+        if (!ruleRegistry.getSnapshot().enabled() || !reloadRequested.getAndSet(false)) {
             return;
         }
         repository.reload()
