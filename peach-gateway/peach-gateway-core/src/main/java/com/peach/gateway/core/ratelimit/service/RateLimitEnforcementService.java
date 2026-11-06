@@ -85,7 +85,7 @@ public class RateLimitEnforcementService {
                     metrics.recordPolicy("allowlisted");
                     return Mono.just(RateLimitCheckResult.allowed());
                 }
-                return scriptsReady()
+                return scriptsReady(configuration)
                         ? evaluate(candidates, exchange, null, clientIp, configuration)
                         : unavailableWhileScriptsNotReady();
             }
@@ -109,7 +109,7 @@ public class RateLimitEnforcementService {
                         if (candidates.isEmpty()) {
                             return Mono.just(RateLimitCheckResult.allowed());
                         }
-                        return scriptsReady()
+                        return scriptsReady(configuration)
                                 ? evaluate(candidates, exchange, tenantId, clientIp, configuration)
                                 : unavailableWhileScriptsNotReady();
                     });
@@ -199,8 +199,8 @@ public class RateLimitEnforcementService {
         return ruleRegistry.getSnapshot().failureMode();
     }
 
-    private boolean scriptsReady() {
-        return scriptRepository.isReady();
+    private boolean scriptsReady(RateLimitConfigurationSnapshot configuration) {
+        return scriptRepository.isReady(configuration.scripts());
     }
 
     private Mono<RateLimitCheckResult> unavailableWhileScriptsNotReady() {
