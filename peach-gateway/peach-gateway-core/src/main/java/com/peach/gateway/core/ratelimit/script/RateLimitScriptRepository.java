@@ -54,6 +54,17 @@ public class RateLimitScriptRepository {
         });
     }
 
+    public boolean isReady() {
+        return scripts.get().size() == RateLimitAlgorithm.values().length;
+    }
+
+    /**
+     * 连接超时、读取超时或最大脚本大小变化时，丢弃旧客户端配置。
+     */
+    public synchronized void invalidateWebClient() {
+        webClient = null;
+    }
+
     public String get(RateLimitAlgorithm algorithm) {
         String script = scripts.get().get(algorithm);
         if (script == null) {

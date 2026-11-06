@@ -72,13 +72,18 @@ public class RateLimitRuleRegistry {
         if (configured == null) {
             configured = List.of();
         }
-        if (configured.size() > Math.min(MAX_RULE_COUNT, properties.getMaxRules())) {
-            throw new IllegalArgumentException("Rate limit rule count exceeds configured maximum");
+        if (configured.stream().anyMatch(java.util.Objects::isNull)) {
+            throw new IllegalArgumentException("Rate limit rules must not contain null entries");
+        }
+        List<GatewayRateLimitProperties.RuleProperties> enabledRules = configured.stream()
+                .filter(GatewayRateLimitProperties.RuleProperties::isEnabled)
+                .toList();
+        if (enabledRules.size() > Math.min(MAX_RULE_COUNT, properties.getMaxRules())) {
+            throw new IllegalArgumentException("Enabled rate limit rule count exceeds configured maximum");
         }
 
         Set<String> ruleIds = new LinkedHashSet<>();
-        List<RateLimitRule> rules = configured.stream()
-                .filter(GatewayRateLimitProperties.RuleProperties::isEnabled)
+        List<RateLimitRule> rules = enabledRules.stream()
                 .map(source -> {
                     RateLimitRule rule = toRule(source);
                     if (!ruleIds.add(rule.id())) {
@@ -91,9 +96,9 @@ public class RateLimitRuleRegistry {
 
         RateLimitConfigurationSnapshot replacement = new RateLimitConfigurationSnapshot(
                 rules,
-                normalizeValues(properties.getAllowlistIps()),
+                normalizeIpValues(properties.getAllowlistIps()),
                 normalizeValues(properties.getAllowlistTenants()),
-                normalizeValues(properties.getDenylistIps()),
+                normalizeIpValues(properties.getDenylistIps()),
                 normalizeValues(properties.getDenylistTenants()));
         snapshot.set(replacement);
     }
@@ -181,6 +186,22 @@ public class RateLimitRuleRegistry {
         return configured.stream()
                 .filter(value -> value != null && !value.isBlank())
                 .map(value -> value.trim().toUpperCase(Locale.ROOT))
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+    }
+
+    private Set<String> normalizeIpValues(List<String> configured) {
+        if (configured == null) {
+            return Set.of();
+        }
+        return configured.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(value -> {
+                    String normalized = TrustedProxyClientIpResolver.canonicalizeAddress(value);
+                    if (normalized == null) {
+                        throw new IllegalArgumentException("Invalid IP address in rate limit policy");
+                    }
+                    return normalized;
+                })
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 

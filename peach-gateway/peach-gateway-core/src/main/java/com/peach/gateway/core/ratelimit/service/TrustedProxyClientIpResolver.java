@@ -4,7 +4,6 @@ import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 
@@ -32,6 +31,8 @@ public class TrustedProxyClientIpResolver {
 
     private static final int MAX_FORWARDED_HOPS = 32;
 
+    private static final String X_FORWARDED_FOR_HEADER = "X-Forwarded-For";
+
     private static final Pattern IP_LITERAL_PATTERN = Pattern.compile("[0-9a-fA-F:.]+");
 
     private final GatewayRateLimitProperties properties;
@@ -58,8 +59,12 @@ public class TrustedProxyClientIpResolver {
             return remoteAddress.getHostAddress();
         }
 
-        String forwardedFor = exchange.getRequest().getHeaders().getFirst(HttpHeaders.X_FORWARDED_FOR);
-        if (forwardedFor == null || forwardedFor.isBlank()) {
+        List<String> forwardedHeaders = exchange.getRequest().getHeaders().get(X_FORWARDED_FOR_HEADER);
+        if (forwardedHeaders == null || forwardedHeaders.isEmpty()) {
+            return remoteAddress.getHostAddress();
+        }
+        String forwardedFor = String.join(",", forwardedHeaders);
+        if (forwardedFor.isBlank()) {
             return remoteAddress.getHostAddress();
         }
 
@@ -120,6 +125,17 @@ public class TrustedProxyClientIpResolver {
                 .filter(value -> value != null && !value.isBlank())
                 .map(IpNetwork::parse)
                 .toList();
+    }
+
+    /**
+     * 将 IP 字面量规范化为与 InetAddress.getHostAddress 一致的表示。
+     *
+     * @param value IP 字面量
+     * @return 规范化地址；非法地址返回 null
+     */
+    static String canonicalizeAddress(String value) {
+        InetAddress address = parseAddress(value);
+        return address == null ? null : address.getHostAddress();
     }
 
     private static InetAddress parseAddress(String value) {

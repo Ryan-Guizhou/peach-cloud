@@ -6,6 +6,7 @@ import com.peach.gateway.core.ratelimit.model.RateLimitCheckResult;
 import com.peach.gateway.core.ratelimit.model.RateLimitConfigurationSnapshot;
 import com.peach.gateway.core.ratelimit.model.RateLimitDecision;
 import com.peach.gateway.core.ratelimit.model.RateLimitRule;
+import com.peach.gateway.core.ratelimit.script.RateLimitScriptRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -38,10 +39,15 @@ public class RateLimitEnforcementService {
     private final TrustedProxyClientIpResolver clientIpResolver;
     private final RateLimitTenantContextResolver tenantContextResolver;
     private final RateLimitMetrics metrics;
+    private final RateLimitScriptRepository scriptRepository;
 
     public Mono<RateLimitCheckResult> check(ServerWebExchange exchange) {
         return Mono.defer(() -> {
             if (!properties.isEnabled()) {
+                return Mono.just(RateLimitCheckResult.allowed());
+            }
+            if (!scriptRepository.isReady()) {
+                metrics.recordPolicy("scripts-not-ready");
                 return Mono.just(RateLimitCheckResult.allowed());
             }
 
@@ -60,19 +66,21 @@ public class RateLimitEnforcementService {
             List<RateLimitRule> candidates = configuration.rules().stream()
                     .filter(rule -> ruleMatcher.matchesRequest(rule, exchange))
                     .toList();
-            if (candidates.isEmpty()) {
+            boolean tenantScopeMatched = candidates.stream().anyMatch(rule -> rule.scope().isTenantScope());
+            boolean tenantPolicyConfigured = !configuration.allowlistTenants().isEmpty()
+                    || !configuration.denylistTenants().isEmpty();
+
+            if (candidates.isEmpty() && !tenantPolicyConfigured) {
                 return Mono.just(RateLimitCheckResult.allowed());
             }
-
-            boolean tenantScopeMatched = candidates.stream().anyMatch(rule -> rule.scope().isTenantScope());
-            if (!tenantScopeMatched) {
+            if (!tenantScopeMatched && !tenantPolicyConfigured) {
                 return evaluate(candidates, exchange, null, clientIp);
             }
 
             return tenantContextResolver.resolve()
                     .defaultIfEmpty("")
                     .flatMap(tenantId -> {
-                        if (isBlank(tenantId) && properties.isRequireTenantContext()) {
+                        if (tenantScopeMatched && isBlank(tenantId) && properties.isRequireTenantContext()) {
                             metrics.recordPolicy("tenant-context-missing");
                             return Mono.just(RateLimitCheckResult.tenantContextMissing());
                         }
@@ -82,6 +90,9 @@ public class RateLimitEnforcementService {
                         }
                         if (!isBlank(tenantId) && configuration.allowlistTenants().contains(tenantId)) {
                             metrics.recordPolicy("allowlisted");
+                            return Mono.just(RateLimitCheckResult.allowed());
+                        }
+                        if (candidates.isEmpty()) {
                             return Mono.just(RateLimitCheckResult.allowed());
                         }
                         return evaluate(candidates, exchange, tenantId, clientIp);

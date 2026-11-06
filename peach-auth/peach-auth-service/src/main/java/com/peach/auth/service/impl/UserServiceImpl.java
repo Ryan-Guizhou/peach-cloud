@@ -6,6 +6,7 @@ import com.github.pagehelper.page.PageMethod;
 import lombok.RequiredArgsConstructor;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.stp.parameter.SaLoginParameter;
 import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.LoginInfo;
@@ -153,7 +154,7 @@ public class UserServiceImpl implements IUserService {
             return Response.fail("未找到匹配的租户或机构");
         }
 
-        StpUtil.login(userId);
+        StpUtil.login(userId, new SaLoginParameter().setIsConcurrent(true).setIsShare(false));
         refreshTokenSessionContext(currentUserOrg, loginDTO.getFiscal());
         String token = StpUtil.getTokenValue();
         log.info("User login succeeded, userId={}, tenantId={}, orgId={}", userId,
