@@ -9,7 +9,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -21,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * 限流脚本远程来源优先级和校验测试。
@@ -37,7 +40,16 @@ class RateLimitScriptRepositoryTest {
 
     @BeforeEach
     void startServer() throws Exception {
-        serverHost = InetAddress.getLocalHost().getHostAddress();
+        serverHost = NetworkInterface.networkInterfaces()
+                .flatMap(NetworkInterface::inetAddresses)
+                .filter(address -> address instanceof Inet4Address
+                        && !address.isLoopbackAddress()
+                        && !address.isLinkLocalAddress()
+                        && !address.isMulticastAddress())
+                .map(InetAddress::getHostAddress)
+                .findFirst()
+                .orElse(null);
+        assumeTrue(serverHost != null, "A non-loopback IPv4 interface is required for remote script tests");
         server = HttpServer.create(new InetSocketAddress("0.0.0.0", 0), 0);
         server.createContext("/token-bucket.lua", exchange -> {
             byte[] body = "return {1, 2, 3, 0, 10}".getBytes(StandardCharsets.UTF_8);
