@@ -209,6 +209,7 @@ class RateLimitScriptRepositoryTest {
         assertThat(repository.isReady()).isFalse();
     }
 
+    @Test
     void shouldRejectMetadataAddressEvenWhenHostIsExplicitlyAllowlisted() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
@@ -216,13 +217,11 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(443));
         scripts.setRemoteUrls(Map.of("token-bucket", "https://169.254.169.254/latest/meta-data"));
 
-        RateLimitScriptRepository repository = repository(properties);
-
-        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> repository(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("metadata");
     }
 
-    @Test
     @Test
     void shouldRejectIpv6CloudMetadataAddressEvenWhenUlaNetworkIsAuthorized() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
@@ -232,12 +231,12 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(443));
         scripts.setRemoteUrls(Map.of("token-bucket", "https://[fd00:ec2::254]/latest/meta-data"));
 
-        RateLimitScriptRepository repository = repository(properties);
-
-        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> repository(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("metadata");
     }
 
+    @Test
     void shouldRejectLoopbackEvenWhenHostIsAllowlisted() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
@@ -247,10 +246,9 @@ class RateLimitScriptRepositoryTest {
         scripts.setRemoteUrls(Map.of("token-bucket",
                 "http://127.0.0.1:" + server.getAddress().getPort() + "/token-bucket.lua"));
 
-        RateLimitScriptRepository repository = repository(properties);
-
-        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> repository(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("loopback");
     }
 
     @Test
@@ -264,10 +262,9 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(server.getAddress().getPort()));
         scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
 
-        RateLimitScriptRepository repository = repository(properties);
-
-        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> repository(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("private address");
     }
 
     @Test
@@ -280,10 +277,9 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(server.getAddress().getPort()));
         scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
 
-        RateLimitScriptRepository repository = repository(properties);
-
-        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> repository(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("authorized CIDR");
     }
 
     @Test
@@ -296,10 +292,9 @@ class RateLimitScriptRepositoryTest {
         scripts.setRemoteUrls(Map.of("token-bucket",
                 "http://localhost:" + server.getAddress().getPort() + "/token-bucket.lua"));
 
-        RateLimitScriptRepository repository = repository(properties);
-
-        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> repository(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("loopback");
     }
 
     @Test
@@ -310,10 +305,9 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(443));
         scripts.setRemoteUrls(Map.of("token-bucket", "https://[::1]/token-bucket.lua"));
 
-        RateLimitScriptRepository repository = repository(properties);
-
-        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> repository(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("loopback");
     }
 
     @Test
@@ -324,10 +318,9 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(443));
         scripts.setRemoteUrls(Map.of("token-bucket", "https://attacker.example/token-bucket.lua"));
 
-        RateLimitScriptRepository repository = repository(properties);
-
-        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> repository(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("not present in allowed-remote-hosts");
     }
 
     @Test
@@ -339,10 +332,9 @@ class RateLimitScriptRepositoryTest {
         scripts.setAllowedRemotePorts(List.of(server.getAddress().getPort()));
         scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
 
-        RateLimitScriptRepository repository = repository(properties);
-
-        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> repository(properties))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("approved absolute HTTP(S) URL");
     }
 
     @Test
