@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
-import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -101,8 +100,7 @@ class RedisTopologySmokeTest {
                     if (address.length != 2) {
                         throw new IllegalArgumentException("Invalid PEACH_REDIS_SENTINELS entry: " + node);
                     }
-                    configuration.addSentinel(new RedisNode(
-                            address[0].trim(), Integer.parseInt(address[1]), RedisNode.NodeType.SENTINEL));
+                    configuration.sentinel(address[0].trim(), Integer.parseInt(address[1]));
                 }
                 if (password != null && !password.isBlank()) {
                     configuration.setPassword(RedisPassword.of(password));
