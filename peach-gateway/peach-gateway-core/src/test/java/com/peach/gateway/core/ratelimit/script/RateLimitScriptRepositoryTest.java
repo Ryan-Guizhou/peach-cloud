@@ -165,7 +165,6 @@ class RateLimitScriptRepositoryTest {
     }
 
     @Test
-    @Test
     void shouldPublishOnlyTheNewestScriptReload() throws Exception {
         String script = "return {1, 2, 3, 0, 10}";
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
