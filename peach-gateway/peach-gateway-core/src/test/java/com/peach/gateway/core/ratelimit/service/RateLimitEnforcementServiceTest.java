@@ -72,7 +72,7 @@ class RateLimitEnforcementServiceTest {
         TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
-        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
         when(tenantResolver.resolve(any())).thenReturn(Mono.empty());
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
@@ -95,7 +95,7 @@ class RateLimitEnforcementServiceTest {
         TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
-        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
         RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
@@ -118,7 +118,7 @@ class RateLimitEnforcementServiceTest {
         TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
-        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
         when(tenantResolver.resolve(any())).thenReturn(Mono.empty());
         when(executor.execute(any(), anyString()))
                 .thenReturn(Mono.just(new RateLimitDecision(true, 8, 1000, 0, 10)));
@@ -145,7 +145,7 @@ class RateLimitEnforcementServiceTest {
         TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
-        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
         when(tenantResolver.resolve(any())).thenReturn(Mono.just("tenant-blocked"));
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
@@ -167,7 +167,7 @@ class RateLimitEnforcementServiceTest {
         TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
-        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
         when(tenantResolver.resolve(any())).thenReturn(Mono.just("tenant-blocked"));
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
@@ -190,7 +190,7 @@ class RateLimitEnforcementServiceTest {
         TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
-        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
         when(tenantResolver.resolve(any())).thenReturn(Mono.just("tenant-blocked"));
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
@@ -213,7 +213,7 @@ class RateLimitEnforcementServiceTest {
         TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
-        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
         when(tenantResolver.resolve(any())).thenReturn(Mono.just("tenant-allowed"));
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
@@ -237,7 +237,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
         when(scriptRepository.isReady()).thenReturn(false);
-        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
 
         RateLimitEnforcementService service = new RateLimitEnforcementService(
                 new RateLimitRuleRegistry(properties), new RateLimitRuleMatcher(), new RateLimitKeyFactory(),
@@ -273,7 +273,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
         when(scriptRepository.isReady()).thenReturn(true);
-        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
         when(executor.execute(any(), anyString()))
                 .thenReturn(Mono.just(new RateLimitDecision(true, 8, 1000, 0, 10)));
 
@@ -294,7 +294,7 @@ class RateLimitEnforcementServiceTest {
                                                 RateLimitMetrics metrics) {
         RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
         when(scriptRepository.isReady()).thenReturn(true);
-        return new RateLimitEnforcementService(properties, new RateLimitRuleRegistry(properties),
+        return new RateLimitEnforcementService(new RateLimitRuleRegistry(properties),
                 new RateLimitRuleMatcher(), new RateLimitKeyFactory(), executor,
                 ipResolver, tenantResolver, metrics, scriptRepository, new GatewaySaTokenProperties());
     }
@@ -326,7 +326,7 @@ class RateLimitEnforcementServiceTest {
         TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
-        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
         MockServerWebExchange login = MockServerWebExchange.from(
@@ -354,7 +354,7 @@ class RateLimitEnforcementServiceTest {
         TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
-        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
         RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
