@@ -42,9 +42,11 @@ public class RateLimitScriptLoader implements ApplicationRunner {
         try {
             repository.reload().block();
             metrics.updateScriptReady(repository.isReady());
+            metrics.recordScriptReload(true);
             log.info("Gateway rate limit Lua scripts loaded");
         } catch (RuntimeException exception) {
             metrics.updateScriptReady(repository.isReady());
+            metrics.recordScriptReload(false);
             log.error("Gateway rate limit Lua script loading failed, errorType={}",
                     rootCause(exception).getClass().getSimpleName());
             throw new IllegalStateException(
@@ -71,10 +73,12 @@ public class RateLimitScriptLoader implements ApplicationRunner {
         repository.reload()
                 .doOnSuccess(ignored -> {
                     metrics.updateScriptReady(repository.isReady());
+                    metrics.recordScriptReload(true);
                     log.info("Gateway rate limit Lua scripts reloaded");
                 })
                 .doOnError(error -> {
                     metrics.updateScriptReady(repository.isReady());
+                    metrics.recordScriptReload(false);
                     log.error("Gateway rate limit Lua script reload failed, errorType={}",
                             rootCause(error).getClass().getSimpleName());
                 })
