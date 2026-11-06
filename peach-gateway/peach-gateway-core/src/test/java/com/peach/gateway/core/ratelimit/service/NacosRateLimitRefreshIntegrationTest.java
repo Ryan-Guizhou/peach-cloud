@@ -104,7 +104,8 @@ class NacosRateLimitRefreshIntegrationTest {
         clientProperties.setProperty("configLongPollTimeout", "3000");
         clientProperties.setProperty("configRetryTime", "1000");
 
-        ConfigService configService = NacosFactory.createConfigService(clientProperties);
+        ConfigService publisher = NacosFactory.createConfigService(clientProperties);
+        ConfigService listenerClient = NacosFactory.createConfigService(clientProperties);
         String initialConfig = """
                 peach:
                   gateway:
@@ -131,7 +132,7 @@ class NacosRateLimitRefreshIntegrationTest {
                           - 443
                       rules: []
                 """;
-        publishWithRetry(configService, initialConfig);
+        publishWithRetry(publisher, initialConfig);
 
         BlockingQueue<String> pushedConfigs = new LinkedBlockingQueue<>();
         Listener listener = new Listener() {
@@ -149,8 +150,8 @@ class NacosRateLimitRefreshIntegrationTest {
         };
 
         try {
-            configService.addListener(DATA_ID, GROUP, listener);
-            publishWithRetry(configService, updatedConfig);
+            listenerClient.addListener(DATA_ID, GROUP, listener);
+            publishWithRetry(publisher, updatedConfig);
             String receivedConfig = awaitConfig(pushedConfigs, "192.0.2.55");
             assertThat(receivedConfig)
                     .as("Nacos listener should receive the updated configuration")
@@ -199,7 +200,7 @@ class NacosRateLimitRefreshIntegrationTest {
                 String invalidConfig = updatedConfig
                         .replace("max-matched-rules-per-request: 7", "max-matched-rules-per-request: 0")
                         .replace("192.0.2.55", "192.0.2.56");
-                publishWithRetry(configService, invalidConfig);
+                publishWithRetry(publisher, invalidConfig);
                 String receivedInvalidConfig = awaitConfig(pushedConfigs, "192.0.2.56");
                 assertThat(receivedInvalidConfig).isNotNull();
 
@@ -220,8 +221,9 @@ class NacosRateLimitRefreshIntegrationTest {
                 assertThat(registry.getSnapshot().allowlistIps()).containsExactly("192.0.2.55");
             }
         } finally {
-            configService.removeListener(DATA_ID, GROUP, listener);
-            configService.shutDown();
+            listenerClient.removeListener(DATA_ID, GROUP, listener);
+            listenerClient.shutDown();
+            publisher.shutDown();
         }
     }
 }
