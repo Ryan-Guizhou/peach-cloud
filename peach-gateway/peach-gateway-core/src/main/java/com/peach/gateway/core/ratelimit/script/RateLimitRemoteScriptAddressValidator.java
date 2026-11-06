@@ -1,5 +1,6 @@
 package com.peach.gateway.core.ratelimit.script;
 
+import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitScriptConfiguration;
 
 import java.net.IDN;
@@ -61,6 +62,32 @@ public final class RateLimitRemoteScriptAddressValidator {
         config.remoteUrls().values().stream()
                 .filter(value -> value != null && !value.isBlank())
                 .forEach(value -> validate(value.trim(), config));
+        validateRemoteChecksums(config);
+    }
+
+    private static void validateRemoteChecksums(RateLimitScriptConfiguration config) {
+        config.expectedSha256().forEach((algorithm, checksum) -> {
+            if (checksum == null || !checksum.matches("[0-9a-fA-F]{64}")) {
+                throw invalid("SHA-256 checksum must contain exactly 64 hexadecimal characters: " + algorithm);
+            }
+        });
+        if (!config.requireRemoteChecksum()) {
+            return;
+        }
+        for (RateLimitAlgorithm algorithm : RateLimitAlgorithm.values()) {
+            String configuredUrl = config.remoteUrls().getOrDefault(
+                    algorithm.name(), config.remoteUrls().get(algorithm.getConfigKey()));
+            boolean remoteScript = configuredUrl != null && !configuredUrl.isBlank()
+                    || config.remoteBaseUrl() != null && !config.remoteBaseUrl().isBlank();
+            if (!remoteScript) {
+                continue;
+            }
+            String checksum = config.expectedSha256().getOrDefault(
+                    algorithm.name(), config.expectedSha256().get(algorithm.getConfigKey()));
+            if (checksum == null || checksum.isBlank()) {
+                throw invalid("remote Lua script requires a SHA-256 checksum: " + algorithm.getConfigKey());
+            }
+        }
     }
 
     static ValidatedTarget validate(String value, RateLimitScriptConfiguration config) {
