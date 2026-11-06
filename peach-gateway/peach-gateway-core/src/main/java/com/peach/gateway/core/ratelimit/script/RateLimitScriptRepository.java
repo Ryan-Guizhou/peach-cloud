@@ -73,10 +73,20 @@ public class RateLimitScriptRepository {
     }
 
     public boolean isReady() {
+        return isReady(ruleRegistry.getSnapshot().scripts());
+    }
+
+    /**
+     * 判断已发布脚本快照是否与请求捕获的配置版本一致。
+     *
+     * @param expectedConfiguration 请求捕获的脚本配置
+     * @return 全部算法脚本均已加载且配置版本一致时返回 true
+     */
+    public boolean isReady(RateLimitScriptConfiguration expectedConfiguration) {
         ScriptSnapshot active = snapshot.get();
         return active.scripts().size() == RateLimitAlgorithm.values().length
                 && active.configuration() != null
-                && active.configuration().equals(ruleRegistry.getSnapshot().scripts());
+                && active.configuration().equals(expectedConfiguration);
     }
 
     public String get(RateLimitAlgorithm algorithm) {
