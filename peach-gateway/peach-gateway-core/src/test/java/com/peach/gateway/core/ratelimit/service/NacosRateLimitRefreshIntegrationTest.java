@@ -54,6 +54,7 @@ class NacosRateLimitRefreshIntegrationTest {
             addFixedExposedPort(18848, 8848);
             addFixedExposedPort(19848, 9848);
             addFixedExposedPort(19849, 9849);
+            withExposedPorts(8848, 9848, 9849);
             withEnv("MODE", "standalone");
             withEnv("NACOS_AUTH_ENABLE", "false");
             withEnv("JVM_XMS", "256m");
