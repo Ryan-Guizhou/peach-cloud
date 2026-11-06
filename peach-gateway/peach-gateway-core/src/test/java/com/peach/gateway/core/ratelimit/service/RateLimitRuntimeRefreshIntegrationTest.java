@@ -21,6 +21,59 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RateLimitRuntimeRefreshIntegrationTest {
 
     @Test
+    void shouldPublishTheLatestValuesAfterRapidConsecutiveEnvironmentChanges() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setAllowlistIps(List.of("192.0.2.10"));
+
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.registerBean(RateLimitRuleRegistry.class, () -> new RateLimitRuleRegistry(properties));
+            context.refresh();
+            RateLimitRuleRegistry registry = context.getBean(RateLimitRuleRegistry.class);
+            var previous = registry.getSnapshot();
+
+            properties.setAllowlistIps(List.of("192.0.2.20"));
+            context.publishEvent(new EnvironmentChangeEvent(
+                    Set.of("peach.gateway.rate-limit.allowlist-ips")));
+            properties.setAllowlistIps(List.of("192.0.2.30"));
+            context.publishEvent(new EnvironmentChangeEvent(
+                    Set.of("peach.gateway.rate-limit.allowlist-ips")));
+            properties.setAllowlistIps(List.of("192.0.2.40"));
+            context.publishEvent(new EnvironmentChangeEvent(
+                    Set.of("peach.gateway.rate-limit.allowlist-ips")));
+
+            assertThat(registry.getSnapshot()).isSameAs(previous);
+
+            context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-rapid-refresh-test"));
+
+            assertThat(registry.getSnapshot()).isNotSameAs(previous);
+            assertThat(registry.getSnapshot().allowlistIps()).containsExactly("192.0.2.40");
+            assertThat(registry.getSnapshot().generation()).isEqualTo(previous.generation() + 1);
+        }
+    }
+
+    @Test
+    void shouldApplyRateLimitEnableAndDisableChangesAfterRebinding() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(false);
+
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.registerBean(RateLimitRuleRegistry.class, () -> new RateLimitRuleRegistry(properties));
+            context.refresh();
+            RateLimitRuleRegistry registry = context.getBean(RateLimitRuleRegistry.class);
+
+            properties.setEnabled(true);
+            context.publishEvent(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.enabled")));
+            context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-enable-test"));
+            assertThat(registry.getSnapshot().enabled()).isTrue();
+
+            properties.setEnabled(false);
+            context.publishEvent(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.enabled")));
+            context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-disable-test"));
+            assertThat(registry.getSnapshot().enabled()).isFalse();
+        }
+    }
+
+    @Test
     void shouldPublishNewRuntimeSnapshotOnlyAfterConfigurationRebindingCompletes() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setAllowlistIps(List.of("192.0.2.10"));
