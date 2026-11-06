@@ -27,14 +27,16 @@ class RateLimitScriptLoaderTest {
     void shouldUpdateReadinessWhenMonoVoidReloadCompletesAfterRefresh() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setEnabled(false);
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
         RateLimitScriptRepository repository = mock(RateLimitScriptRepository.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         when(repository.reload()).thenReturn(Mono.empty());
         when(repository.isReady()).thenReturn(true);
 
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.registerBean(RateLimitRuleRegistry.class, () -> registry);
             context.registerBean(RateLimitScriptLoader.class,
-                    () -> new RateLimitScriptLoader(properties, repository, metrics));
+                    () -> new RateLimitScriptLoader(registry, repository, metrics));
             context.refresh();
 
             properties.setEnabled(true);
