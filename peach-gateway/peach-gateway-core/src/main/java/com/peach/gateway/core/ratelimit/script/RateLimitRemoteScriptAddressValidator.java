@@ -19,7 +19,7 @@ import java.util.Locale;
  * @Version 1.0.0
  * @CreateTime 2026/11/06
  */
-final class RateLimitRemoteScriptAddressValidator {
+public final class RateLimitRemoteScriptAddressValidator {
 
     private static final List<String> BLOCKED_METADATA_HOSTS = List.of(
             "metadata",
