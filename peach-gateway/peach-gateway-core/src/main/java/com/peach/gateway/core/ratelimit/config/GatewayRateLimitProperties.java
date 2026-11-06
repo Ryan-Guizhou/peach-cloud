@@ -128,5 +128,11 @@ public class GatewayRateLimitProperties {
 
         /** SHA-256 校验值，Key 支持算法枚举名或 kebab-case 名称。 */
         private Map<String, String> expectedSha256 = new LinkedHashMap<>();
+
+        /** 允许下载远程脚本的精确主机名；生产环境建议仅配置可信 OSS 域名。 */
+        private List<String> allowedRemoteHosts = new ArrayList<>();
+
+        /** 显式授权的内部脚本服务 CIDR；仅用于内网 OSS 等受控场景。 */
+        private List<String> allowedRemoteCidrs = new ArrayList<>();
     }
 }
