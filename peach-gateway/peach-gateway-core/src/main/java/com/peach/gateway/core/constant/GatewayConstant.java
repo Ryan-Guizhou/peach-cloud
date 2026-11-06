@@ -49,6 +49,6 @@ public final class GatewayConstant {
     /**
      * 用户 API 资源授权 Redis Set key 前缀。
      */
-    public static final String USER_API_RESOURCE_CACHE_PREFIX = "peach:security:user:api-resources:";
+    public static final String USER_API_RESOURCE_CACHE_PREFIX = SaTokenConstant.USER_API_RESOURCE_CACHE_PREFIX;
 
 }

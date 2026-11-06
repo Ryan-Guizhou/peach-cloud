@@ -71,7 +71,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
-        when(tenantResolver.resolve()).thenReturn(Mono.empty());
+        when(tenantResolver.resolve(any())).thenReturn(Mono.empty());
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
         RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
@@ -117,7 +117,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
-        when(tenantResolver.resolve()).thenReturn(Mono.empty());
+        when(tenantResolver.resolve(any())).thenReturn(Mono.empty());
         when(executor.execute(any(), anyString()))
                 .thenReturn(Mono.just(new RateLimitDecision(true, 8, 1000, 0, 10)));
 
@@ -144,7 +144,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
-        when(tenantResolver.resolve()).thenReturn(Mono.just("tenant-blocked"));
+        when(tenantResolver.resolve(any())).thenReturn(Mono.just("tenant-blocked"));
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
         RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
@@ -166,7 +166,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
-        when(tenantResolver.resolve()).thenReturn(Mono.just("tenant-blocked"));
+        when(tenantResolver.resolve(any())).thenReturn(Mono.just("tenant-blocked"));
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
         RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
@@ -189,7 +189,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
-        when(tenantResolver.resolve()).thenReturn(Mono.just("tenant-blocked"));
+        when(tenantResolver.resolve(any())).thenReturn(Mono.just("tenant-blocked"));
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
         RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
@@ -212,7 +212,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
-        when(tenantResolver.resolve()).thenReturn(Mono.just("tenant-allowed"));
+        when(tenantResolver.resolve(any())).thenReturn(Mono.just("tenant-allowed"));
 
         RateLimitEnforcementService service = service(properties, executor, ipResolver, tenantResolver, metrics);
         RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));

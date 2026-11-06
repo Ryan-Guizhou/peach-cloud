@@ -1,6 +1,7 @@
 package com.peach.auth.service.support;
 
 import com.peach.auth.dao.AuthPartyDao;
+import com.peach.common.constant.SaTokenConstant;
 import com.peach.auth.dao.UserDao;
 import com.peach.auth.dao.UserOrgDao;
 import com.peach.auth.entity.AuthPartyDO;
@@ -97,10 +98,14 @@ public class LoginPermissionCacheRefresher {
                            LoginPermissionSnapshotVO snapshot) {
         String userId = userVO.getUserId();
         String profileKey = SatokenConstant.USER_PROFILE_CACHE_PREFIX + userId;
-        String apiKey = "peach:security:user:api-resources:" + userId;
+        String apiKey = SaTokenConstant.userApiResourceCacheKey(
+                userId, currentUserOrg.getTenantId(), currentUserOrg.getOrgId(),
+                fiscal == null ? "" : String.valueOf(fiscal));
+        String legacyApiKey = SaTokenConstant.USER_API_RESOURCE_CACHE_PREFIX + userId;
         String buttonKey = "peach:security:user:button-resources:" + userId;
         stringRedisTemplate.delete(profileKey);
         stringRedisTemplate.delete(apiKey);
+        stringRedisTemplate.delete(legacyApiKey);
         stringRedisTemplate.delete(buttonKey);
 
         Map<String, String> profile = new LinkedHashMap<>();
@@ -123,7 +128,10 @@ public class LoginPermissionCacheRefresher {
                 ? new LinkedHashSet<>()
                 : new LinkedHashSet<>(snapshot.getButtonResourceCodes());
         if (!apiResources.isEmpty()) {
-            stringRedisTemplate.opsForSet().add(apiKey, apiResources.toArray(new String[0]));
+            String[] resourceValues = apiResources.toArray(new String[0]);
+            stringRedisTemplate.opsForSet().add(apiKey, resourceValues);
+            // 双写旧版 Key，保证 Gateway 滚动升级期间的旧实例仍可读取权限缓存。
+            stringRedisTemplate.opsForSet().add(legacyApiKey, resourceValues);
         }
         if (!buttonResources.isEmpty()) {
             stringRedisTemplate.opsForSet().add(buttonKey, buttonResources.toArray(new String[0]));

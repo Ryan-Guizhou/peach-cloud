@@ -78,7 +78,7 @@ public class RateLimitEnforcementService {
                         : unavailableWhileScriptsNotReady();
             }
 
-            return tenantContextResolver.resolve()
+            return tenantContextResolver.resolve(exchange)
                     .defaultIfEmpty("")
                     .flatMap(tenantId -> {
                         if (!isBlank(tenantId) && configuration.denylistTenants().contains(tenantId)) {
