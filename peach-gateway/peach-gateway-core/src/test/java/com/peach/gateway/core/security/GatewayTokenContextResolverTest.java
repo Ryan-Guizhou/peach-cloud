@@ -8,6 +8,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 网关 Token Session 租户上下文解析测试。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/06
  */
 class GatewayTokenContextResolverTest {
 

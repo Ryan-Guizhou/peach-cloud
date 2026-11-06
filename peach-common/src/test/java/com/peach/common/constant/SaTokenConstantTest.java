@@ -6,6 +6,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Sa-Token 多租户授权缓存 Key 测试。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/06
  */
 class SaTokenConstantTest {
 
