@@ -287,7 +287,13 @@ class RateLimitScriptRepositoryTest {
     private void allowLocalTestServer(GatewayRateLimitProperties.ScriptProperties scripts) {
         scripts.setRequireHttps(false);
         scripts.setAllowedRemoteHosts(List.of(serverHost));
-        scripts.setAllowedRemoteCidrs(List.of(serverHost + "/32"));
+        try {
+            InetAddress address = InetAddress.getByName(serverHost);
+            scripts.setAllowedRemoteCidrs(address.isSiteLocalAddress()
+                    ? List.of(serverHost + "/32") : List.of());
+        } catch (java.net.UnknownHostException exception) {
+            throw new IllegalStateException("Unable to resolve the test HTTP server address", exception);
+        }
         scripts.setAllowedRemotePorts(List.of(server.getAddress().getPort()));
     }
 
