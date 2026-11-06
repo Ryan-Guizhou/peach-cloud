@@ -1,5 +1,6 @@
 package com.peach.gateway.core.filter;
 
+import com.peach.gateway.core.GatewayRateLimitRedisConfiguration;
 import com.peach.gateway.core.config.GatewayRiskControlProperties;
 import com.peach.gateway.core.config.GatewaySaTokenProperties;
 import com.peach.gateway.core.constant.GatewayConstant;
@@ -7,6 +8,7 @@ import com.peach.gateway.core.security.GatewaySecurityEndpointMatcher;
 import com.peach.gateway.core.support.GatewayFilterSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -43,6 +45,7 @@ public class GatewayRiskControlGlobalFilter implements GlobalFilter, Ordered {
 
     public GatewayRiskControlGlobalFilter(GatewaySaTokenProperties saTokenProperties,
                                           GatewayRiskControlProperties riskControlProperties,
+                                          @Qualifier(GatewayRateLimitRedisConfiguration.REACTIVE_STRING_REDIS_TEMPLATE_BEAN_NAME)
                                           ObjectProvider<ReactiveStringRedisTemplate> redisTemplateProvider) {
         this.saTokenProperties = saTokenProperties;
         this.riskControlProperties = riskControlProperties;

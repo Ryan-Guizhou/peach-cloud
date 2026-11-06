@@ -8,12 +8,17 @@ import cn.dev33.satoken.exception.NotRoleException;
 import cn.dev33.satoken.exception.NotSafeException;
 import cn.dev33.satoken.reactor.context.SaReactorSyncHolder;
 import cn.dev33.satoken.stp.StpUtil;
+import com.peach.common.constant.SaTokenConstant;
+import com.peach.gateway.core.GatewayRateLimitRedisConfiguration;
 import com.peach.gateway.core.config.GatewaySaTokenProperties;
 import com.peach.gateway.core.constant.GatewayConstant;
 import com.peach.gateway.core.security.GatewaySecurityEndpointMatcher;
+import com.peach.gateway.core.security.GatewayTokenContext;
+import com.peach.gateway.core.security.GatewayTokenContextResolver;
 import com.peach.gateway.core.support.GatewayFilterSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -46,14 +51,19 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
 
     private final ReactiveStringRedisTemplate redisTemplate;
 
+    private final GatewayTokenContextResolver tokenContextResolver;
+
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     private final GatewaySecurityEndpointMatcher endpointMatcher = new GatewaySecurityEndpointMatcher();
 
     public GatewayAuthorizationGlobalFilter(GatewaySaTokenProperties properties,
-                                            ObjectProvider<ReactiveStringRedisTemplate> redisTemplateProvider) {
+                                            @Qualifier(GatewayRateLimitRedisConfiguration.REACTIVE_STRING_REDIS_TEMPLATE_BEAN_NAME)
+                                            ObjectProvider<ReactiveStringRedisTemplate> redisTemplateProvider,
+                                            GatewayTokenContextResolver tokenContextResolver) {
         this.properties = properties;
         this.redisTemplate = redisTemplateProvider.getIfAvailable();
+        this.tokenContextResolver = tokenContextResolver;
     }
 
 
@@ -74,7 +84,7 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
             SaReactorSyncHolder.setContext(exchange);
             StpUtil.checkLogin();
             String loginId = StpUtil.getLoginIdAsString();
-            return checkApiPermission(loginId, method, path)
+            return checkApiPermission(loginId, method, path, exchange)
                     .flatMap(allowed -> Boolean.TRUE.equals(allowed)
                             ? chain.filter(exchange)
                             : handlePermissionError(exchange, method, path))
@@ -93,7 +103,8 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
      * @param path 请求路径
      * @return 允许访问时返回 {@code true}
      */
-    private Mono<Boolean> checkApiPermission(String loginId, String method, String path) {
+    private Mono<Boolean> checkApiPermission(String loginId, String method, String path,
+                                             ServerWebExchange exchange) {
         if (!properties.isApiPermissionEnabled() || redisTemplate == null) {
             return Mono.just(true);
         }
@@ -101,7 +112,30 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
         if (isBlank(loginId) || isBlank(resourceCode)) {
             return Mono.just(false);
         }
-        String key = GatewayConstant.USER_API_RESOURCE_CACHE_PREFIX + loginId;
+        return tokenContextResolver.resolve(exchange)
+                .flatMap(context -> checkApiPermissionForContext(loginId, context, resourceCode, method, path))
+                .defaultIfEmpty(false)
+                .onErrorResume(exception -> {
+                    log.warn("Gateway API permission check failed, method={}, path={}, reason={}",
+                            method, path, exception.getClass().getSimpleName());
+                    return Mono.just(false);
+                });
+    }
+
+    /**
+     * 使用当前 Token Session 对应的业务上下文校验 API 资源权限。
+     *
+     * @param loginId 当前登录 ID
+     * @param context 当前 Token Session 上下文
+     * @param resourceCode 当前请求资源编码
+     * @param method 请求方法
+     * @param path 请求路径
+     * @return 允许访问时返回 {@code true}
+     */
+    private Mono<Boolean> checkApiPermissionForContext(String loginId, GatewayTokenContext context,
+                                                        String resourceCode, String method, String path) {
+        String key = SaTokenConstant.userApiResourceCacheKey(
+                loginId, context.tenantId(), context.orgId(), context.fiscal());
         return redisTemplate.opsForSet()
                 .isMember(key, resourceCode)
                 .defaultIfEmpty(false)
@@ -110,12 +144,7 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
                         : redisTemplate.opsForSet()
                         .members(key)
                         .any(candidate -> apiResourceMatches(candidate, method, path))
-                        .defaultIfEmpty(false))
-                .onErrorResume(e -> {
-                    log.warn("Gateway API permission check failed, method={}, path={}, reason={}",
-                            method, path, e.getClass().getSimpleName());
-                    return Mono.just(false);
-                });
+                        .defaultIfEmpty(false));
     }
 
     /**

@@ -2,7 +2,7 @@
 
 [English](README.en-US.md) | 中文
 
-最后更新：2026-08-12
+最后更新：2026-11-05
 
 `peach-gateway` 是 Peach Cloud 的统一流量入口，基于 Spring Cloud Gateway 提供路由转发、服务发现、网关侧 Sa-Token 登录校验、Same-Token 注入、基础风控、请求 ID、访问日志、CORS、Knife4j 聚合和统一安全异常响应。
 
@@ -13,6 +13,9 @@
 提供能力：
 
 - Spring Cloud Gateway HTTP 与 WebSocket 路由。
+- 多维度、多算法分布式限流：Global、IP、URI、IP_URI、Tenant、Tenant_URI；支持固定窗口、滑动窗口日志、滑动窗口计数器、令牌桶、漏桶和 GCRA。
+- Nacos 限流规则热刷新、可信代理 IP 解析、Token Session 租户隔离、限流白名单/黑名单和 Redis 故障策略。
+- 429 标准限流响应头、低基数 Micrometer 指标和真实 Redis 并发集成测试。
 - Nacos 服务发现和 Nacos 配置导入。
 - 网关侧 Sa-Token 登录态校验。
 - 网关独立维护 Reactor 场景下的 Sa-Token Redis DAO、Session 序列化和 token 策略。
@@ -57,6 +60,9 @@
 | --- | --- | --- |
 | 请求 ID | `GatewayRequestGlobalFilter` | 写入 `X-Request-Id` 到下游请求和响应 |
 | 基础风控 | `GatewayRiskControlGlobalFilter`、`GatewayRiskControlProperties` | 拦截异常请求形态和显式黑名单 |
+| `GatewayRateLimitGlobalFilter`、`RateLimitEnforcementService` | 鉴权后执行多规则限流，按优先级短路 |
+| `RateLimitRuleRegistry`、`RateLimitRuleMatcher` | 校验 Nacos 规则并原子刷新规则快照 |
+| `RedisRateLimitExecutor`、`RateLimitScriptRepository` | 响应式 Redis Lua 执行、远程 OSS / 本地脚本加载 |
 | 登录校验 | `GatewayAuthorizationGlobalFilter`、`GatewaySaTokenProperties` | 非公开端点执行 `StpUtil.checkLogin()` |
 | Same-Token | `GatewaySameTokenGlobalFilter` | 非公开端点向下游请求注入 Sa-Token Same-Token |
 | 统一异常 | `GatewayExceptionGlobalFilter` | 将认证、权限、路由、4xx、5xx 异常映射为安全 JSON |
@@ -73,6 +79,7 @@
 | `-300` | `GatewayRequestGlobalFilter` | 生成并传递请求 ID |
 | `-250` | `GatewayRiskControlGlobalFilter` | 执行基础风控 |
 | `-200` | `GatewayAuthorizationGlobalFilter` | 执行 Sa-Token 登录校验 |
+| `-175` | `GatewayRateLimitGlobalFilter` | 使用可信 IP 和 Token Session 租户上下文执行限流 |
 | `-150` | `GatewaySameTokenGlobalFilter` | 注入 Same-Token |
 | `Ordered.LOWEST_PRECEDENCE` | `GatewayAccessLogGlobalFilter` | 请求结束后记录访问日志 |
 
@@ -101,6 +108,9 @@ requestId={}, method={}, path={}, status={}, durationMs={}, client={}
 网关运行态配置集中在 Nacos：
 
 - `deploy/nacos/config/peach-gateway.yml`
+- `deploy-pipline/init/nacos/config/peach-gateway.yml`
+
+限流配置、算法选型、响应头、指标和故障策略详见 [多算法限流使用与运维指南](docs/rate-limit.md)。
 
 profile 文件通过以下方式导入 Nacos 配置：
 
@@ -172,15 +182,20 @@ peach:gateway:risk-control:blocked-ip:
 - 网关必须与业务服务保持 Sa-Token Redis key、`sa-token.token-name` 和 Session 序列化契约一致。
 - 公开端点列表由网关独立维护，不会自动同步业务服务配置。
 - Redis 动态黑名单查询失败时降级放行，并记录英文 WARN 日志。
+- 限流默认关闭；启用后 Redis 不可用默认 FAIL_CLOSED 返回 503，可通过 Nacos 切换 FAIL_OPEN。
+- 租户限流只读取当前 Sa-Token Token Session 中的 tenantId，不信任请求头或按 userId 共享的上下文缓存；认证登录会为每次登录签发独立 token，避免设备间上下文覆盖。
+- 限流白名单绕过配额、黑名单直接拒绝；动态启用限流时，在全部 Lua 脚本加载成功前暂时放行配额算法，但 IP/租户白名单和黑名单仍然执行。
 - Same-Token 只对非公开端点注入；未登录公开请求不会依赖服务间凭证。
 
 ## 构建与验证
 
-编译网关：
+编译并验证网关与认证服务：
 
 ```bash
-mvn -pl peach-gateway/peach-gateway-core,peach-gateway/peach-gateway-launch -am -DskipTests compile -Pdevelopment
+mvn -pl peach-gateway/peach-gateway-core,peach-auth/peach-auth-service -am verify -Pdevelopment
 ```
+
+限流 Redis 集成测试使用 Testcontainers 启动真实 Redis；本地执行需要 Docker。
 
 检查编码和 diff：
 
@@ -199,6 +214,9 @@ git diff --check -- peach-gateway
 | Swagger 打不开 | 网关文档路由和下游 `/v3/api-docs` | 先直连下游文档端点，再检查网关 `SetPath` |
 | WebSocket 失败 | `lb:ws://peach-message`、`/webSocket/**`、服务注册 | 检查浏览器地址、Nacos 服务名和 message 端点 |
 | 风控未生效 | `peach.gateway.risk-control.enabled` 和公开端点匹配 | 确认 Nacos 已开启风控，且路径未命中公开端点 |
+| 返回 `429` | 命中的规则、算法、限额和 `Retry-After` | 检查 Nacos `peach.gateway.rate-limit.rules` 的 scope、paths、methods、priority 和算法参数 |
+| 返回 `503` | Redis 连接、Lua 脚本加载、`failure-mode` | 检查 `peach.redis.*`、Lettuce 响应式连接、OSS SHA-256；确认是否预期使用 FAIL_CLOSED |
+| 租户限流返回 `401` | 当前 token 的 Token Session 是否包含 `tenantId` | 重新登录或调用租户切换接口刷新 Token Session；不要通过请求头传租户 ID |
 
 
 ## 项目约定

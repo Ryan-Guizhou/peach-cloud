@@ -2,7 +2,7 @@
 
 English | [中文](README.md)
 
-Last updated: 2026-08-12
+Last updated: 2026-11-05
 
 `peach-gateway` is the unified traffic entry point for Peach Cloud. It is based on Spring Cloud Gateway and provides routing, service discovery, gateway-side Sa-Token login checks, Same-Token injection, basic risk control, request ID propagation, access logs, CORS, Knife4j aggregation, and safe unified error responses.
 
@@ -13,6 +13,9 @@ This module handles external HTTP/WebSocket traffic before it reaches backend bu
 It provides:
 
 - HTTP and WebSocket routing through Spring Cloud Gateway.
+- Multi-dimensional distributed rate limiting across Global, IP, URI, IP_URI, Tenant, and Tenant_URI scopes, with fixed window, sliding-window log, sliding-window counter, token bucket, leaky bucket, and GCRA algorithms.
+- Nacos rule refresh, trusted-proxy IP resolution, per-token tenant isolation, rate-limit allow/deny lists, and Redis failure policies.
+- Standard 429 rate-limit headers, low-cardinality Micrometer metrics, and real-Redis concurrency integration tests.
 - Nacos service discovery and Nacos configuration import.
 - Gateway-side Sa-Token login-state verification.
 - Gateway-local Sa-Token Redis DAO, Session serialization, and token strategy for Reactor runtime.
@@ -57,6 +60,9 @@ The class names intentionally avoid the `AutoConfiguration` suffix to prevent co
 | --- | --- | --- |
 | Request ID | `GatewayRequestGlobalFilter` | Writes `X-Request-Id` to downstream requests and responses |
 | Risk control | `GatewayRiskControlGlobalFilter`, `GatewayRiskControlProperties` | Rejects abnormal request shapes and explicit blocklist hits |
+| `GatewayRateLimitGlobalFilter`, `RateLimitEnforcementService` | Executes prioritized rate-limit rules after authentication |
+| `RateLimitRuleRegistry`, `RateLimitRuleMatcher` | Validates Nacos rules and atomically refreshes rule snapshots |
+| `RedisRateLimitExecutor`, `RateLimitScriptRepository` | Executes Lua through reactive Redis and loads OSS/local scripts |
 | Authentication | `GatewayAuthorizationGlobalFilter`, `GatewaySaTokenProperties` | Runs `StpUtil.checkLogin()` for non-public endpoints |
 | Same-Token | `GatewaySameTokenGlobalFilter` | Injects Sa-Token Same-Token for non-public downstream calls |
 | Unified errors | `GatewayExceptionGlobalFilter` | Maps auth, permission, routing, 4xx, and 5xx errors to safe JSON |
@@ -73,6 +79,7 @@ The class names intentionally avoid the `AutoConfiguration` suffix to prevent co
 | `-300` | `GatewayRequestGlobalFilter` | Creates and propagates request ID |
 | `-250` | `GatewayRiskControlGlobalFilter` | Applies basic gateway risk-control checks |
 | `-200` | `GatewayAuthorizationGlobalFilter` | Checks Sa-Token login state |
+| `-175` | `GatewayRateLimitGlobalFilter` | Applies limits using trusted IP and Token Session tenant context |
 | `-150` | `GatewaySameTokenGlobalFilter` | Adds Same-Token |
 | `Ordered.LOWEST_PRECEDENCE` | `GatewayAccessLogGlobalFilter` | Writes final access logs |
 
@@ -101,6 +108,9 @@ Local profile files only bootstrap the runtime environment:
 Gateway runtime configuration is centralized in Nacos:
 
 - `deploy/nacos/config/peach-gateway.yml`
+- `deploy-pipline/init/nacos/config/peach-gateway.yml`
+
+See the [multi-algorithm rate limiting guide](docs/rate-limit.en-US.md) for configuration, algorithm selection, response headers, metrics, and failure handling.
 
 The profile files import Nacos config through:
 
@@ -172,15 +182,21 @@ Gateway Redis connectivity uses `peach.redis.*` from `peach-redis.yml` and must 
 - Gateway must keep Sa-Token Redis keys, `sa-token.token-name`, and Session serialization compatible with business services.
 - Public endpoint rules are maintained by gateway config and are not automatically synchronized from business services.
 - Redis dynamic blocklist lookup fails open and logs an English WARN message.
+- Rate limiting is disabled by default. When enabled, Redis failures default to FAIL_CLOSED (503); Nacos can switch to FAIL_OPEN.
+- Tenant limits read the tenant ID only from the current Sa-Token Token Session, never from request headers or a user-wide shared cache. Authentication issues a distinct token per login to prevent cross-device context overwrites.
+- Rate-limit allowlists bypass quotas and denylists reject requests. Existing gateway access allowlists and risk-control denylists keep their earlier filter order.
+- When rate limiting is dynamically enabled, quota algorithms remain inactive until all Lua scripts are loaded successfully; IP/tenant allowlists and denylists remain active.
 - Same-Token is injected only for non-public endpoints. Unauthenticated public requests do not depend on service credentials.
 
 ## Verification
 
-Compile gateway:
+Verify gateway and authentication service:
 
 ```bash
-mvn -pl peach-gateway/peach-gateway-core,peach-gateway/peach-gateway-launch -am -DskipTests compile -Pdevelopment
+mvn -pl peach-gateway/peach-gateway-core,peach-auth/peach-auth-service -am verify -Pdevelopment
 ```
+
+Redis integration tests use Testcontainers to start a real Redis instance; Docker is required locally.
 
 Check encoding and diff:
 
@@ -199,6 +215,9 @@ git diff --check -- peach-gateway
 | Swagger cannot open | Gateway document route and downstream `/v3/api-docs` | Test downstream docs first, then check gateway `SetPath` |
 | WebSocket fails | `lb:ws://peach-message`, `/webSocket/**`, service registration | Check browser URL, Nacos service name, and message endpoint |
 | Risk control does not work | `peach.gateway.risk-control.enabled` and public endpoint match | Ensure Nacos enables risk control and the path is not public |
+| `429` response | Matched rule, algorithm, quota, and `Retry-After` | Check `peach.gateway.rate-limit.rules` scope, paths, methods, priority, and algorithm parameters |
+| `503` response | Redis connectivity, Lua loading, and `failure-mode` | Check `peach.redis.*`, the Lettuce reactive connection, OSS SHA-256 values, and whether FAIL_CLOSED is expected |
+| Tenant limit returns `401` | Whether the current token's Token Session contains `tenantId` | Sign in again or call the tenant-switch endpoint to refresh Token Session; do not send tenant ID in a request header |
 
 
 ## Project conventions

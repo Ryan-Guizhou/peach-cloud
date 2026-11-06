@@ -1,9 +1,11 @@
 package com.peach.gateway.core.filter;
 
+import com.peach.gateway.core.GatewayRateLimitRedisConfiguration;
 import com.peach.gateway.core.constant.GatewayConstant;
 import com.peach.gateway.core.support.GatewayFilterSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -30,7 +32,9 @@ public class GatewayIpWhitelistGlobalFilter implements GlobalFilter, Ordered {
 
     private final ReactiveStringRedisTemplate redisTemplate;
 
-    public GatewayIpWhitelistGlobalFilter(ObjectProvider<ReactiveStringRedisTemplate> redisTemplateProvider) {
+    public GatewayIpWhitelistGlobalFilter(
+            @Qualifier(GatewayRateLimitRedisConfiguration.REACTIVE_STRING_REDIS_TEMPLATE_BEAN_NAME)
+            ObjectProvider<ReactiveStringRedisTemplate> redisTemplateProvider) {
         this.redisTemplate = redisTemplateProvider.getIfAvailable();
     }
 

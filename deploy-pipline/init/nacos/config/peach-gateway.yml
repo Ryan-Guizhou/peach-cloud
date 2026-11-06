@@ -127,6 +127,71 @@ peach:
       max-header-count: 100
       blocked-ips:
       blocked-user-agents:
+    rate-limit:
+      # 默认关闭，完成阈值评估后启用所需规则。
+      enabled: false
+      failure-mode: fail-closed
+      require-tenant-context: true
+      max-rules: 500
+      # 仅填写直接连接网关的可信代理 CIDR；为空时不信任任何转发头。
+      trusted-proxies: []
+      # 限流白名单绕过全部配额；黑名单直接返回 403。
+      allowlist-ips: []
+      allowlist-tenants: []
+      denylist-ips: []
+      denylist-tenants: []
+      scripts:
+        # 配置 OSS 目录后远程脚本优先；未配置远程 URL 时读取本地 classpath。
+        # remote-base-url 会加载全部六种算法，必须提供六种算法各自的 SHA-256；仅托管部分算法时请使用 remote-urls。
+        remote-base-url:
+        remote-urls: {}
+        local-location: classpath:/ratelimit/lua/
+        require-remote-checksum: true
+        connect-timeout: 2s
+        read-timeout: 5s
+        max-script-bytes: 65536
+        expected-sha256: {}
+      rules:
+        - id: global-api
+          enabled: false
+          scope: GLOBAL
+          algorithm: TOKEN_BUCKET
+          priority: 10
+          methods: [GET, POST, PUT, PATCH, DELETE]
+          paths: [/api/**]
+          replenish-rate: 1000
+          burst-capacity: 2000
+          cost: 1
+        - id: login-ip
+          enabled: false
+          scope: IP
+          algorithm: SLIDING_WINDOW_LOG
+          priority: 20
+          methods: [POST]
+          paths: [/api/auth/login]
+          limit: 10
+          window: 60s
+          cost: 1
+        - id: tenant-api
+          enabled: false
+          scope: TENANT
+          algorithm: GCRA
+          priority: 30
+          methods: [GET, POST, PUT, PATCH, DELETE]
+          paths: [/api/orders/**]
+          replenish-rate: 100
+          burst-capacity: 200
+          cost: 1
+        - id: tenant-uri
+          enabled: false
+          scope: TENANT_URI
+          algorithm: SLIDING_WINDOW_COUNTER
+          priority: 40
+          methods: [POST]
+          paths: [/api/orders/**]
+          limit: 60
+          window: 60s
+          cost: 1
 
 # 响应式配置
 spring.main:

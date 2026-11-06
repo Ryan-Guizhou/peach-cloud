@@ -2,7 +2,9 @@ package com.peach.gateway.core.ratelimit.service;
 
 import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
+import com.peach.gateway.core.ratelimit.model.RateLimitConfigurationSnapshot;
 import com.peach.gateway.core.ratelimit.model.RateLimitRule;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -23,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @Version 1.0.0
  * @CreateTime 2026/11/05
  */
+@Slf4j
 @Component
 public class RateLimitRuleRegistry {
 
@@ -30,8 +33,12 @@ public class RateLimitRuleRegistry {
 
     private static final long MAX_WINDOW_MILLIS = Duration.ofDays(365).toMillis();
 
+    private static final int MAX_RULE_COUNT = 500;
+
     private final GatewayRateLimitProperties properties;
-    private final AtomicReference<List<RateLimitRule>> rules = new AtomicReference<>(List.of());
+
+    private final AtomicReference<RateLimitConfigurationSnapshot> snapshot =
+            new AtomicReference<>(RateLimitConfigurationSnapshot.empty());
 
     public RateLimitRuleRegistry(GatewayRateLimitProperties properties) {
         this.properties = properties;
@@ -39,26 +46,44 @@ public class RateLimitRuleRegistry {
     }
 
     public List<RateLimitRule> getRules() {
-        return rules.get();
+        return snapshot.get().rules();
+    }
+
+    public RateLimitConfigurationSnapshot getSnapshot() {
+        return snapshot.get();
     }
 
     @EventListener(EnvironmentChangeEvent.class)
     public void onEnvironmentChanged(EnvironmentChangeEvent event) {
-        refresh();
+        try {
+            refresh();
+            log.info("Gateway rate limit configuration refreshed, ruleCount={}", snapshot.get().rules().size());
+        } catch (RuntimeException exception) {
+            log.error("Gateway rate limit configuration refresh rejected, reason={}",
+                    exception.getClass().getSimpleName());
+        }
     }
 
     /**
-     * 校验全部启用规则后一次性替换当前快照。
+     * 校验全部规则和策略列表后一次性替换当前快照。
      */
     public void refresh() {
         List<GatewayRateLimitProperties.RuleProperties> configured = properties.getRules();
-        if (configured == null || configured.isEmpty()) {
-            rules.set(List.of());
-            return;
+        if (configured == null) {
+            configured = List.of();
         }
-        Set<String> ruleIds = new LinkedHashSet<>();
-        List<RateLimitRule> snapshot = configured.stream()
+        if (configured.stream().anyMatch(java.util.Objects::isNull)) {
+            throw new IllegalArgumentException("Rate limit rules must not contain null entries");
+        }
+        List<GatewayRateLimitProperties.RuleProperties> enabledRules = configured.stream()
                 .filter(GatewayRateLimitProperties.RuleProperties::isEnabled)
+                .toList();
+        if (enabledRules.size() > Math.min(MAX_RULE_COUNT, properties.getMaxRules())) {
+            throw new IllegalArgumentException("Enabled rate limit rule count exceeds configured maximum");
+        }
+
+        Set<String> ruleIds = new LinkedHashSet<>();
+        List<RateLimitRule> rules = enabledRules.stream()
                 .map(source -> {
                     RateLimitRule rule = toRule(source);
                     if (!ruleIds.add(rule.id())) {
@@ -68,7 +93,14 @@ public class RateLimitRuleRegistry {
                 })
                 .sorted(Comparator.comparingInt(RateLimitRule::priority))
                 .toList();
-        rules.set(snapshot);
+
+        RateLimitConfigurationSnapshot replacement = new RateLimitConfigurationSnapshot(
+                rules,
+                normalizeIpValues(properties.getAllowlistIps()),
+                normalizeValues(properties.getAllowlistTenants()),
+                normalizeIpValues(properties.getDenylistIps()),
+                normalizeValues(properties.getDenylistTenants()));
+        snapshot.set(replacement);
     }
 
     private RateLimitRule toRule(GatewayRateLimitProperties.RuleProperties source) {
@@ -154,6 +186,22 @@ public class RateLimitRuleRegistry {
         return configured.stream()
                 .filter(value -> value != null && !value.isBlank())
                 .map(value -> value.trim().toUpperCase(Locale.ROOT))
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+    }
+
+    private Set<String> normalizeIpValues(List<String> configured) {
+        if (configured == null) {
+            return Set.of();
+        }
+        return configured.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(value -> {
+                    String normalized = TrustedProxyClientIpResolver.canonicalizeAddress(value);
+                    if (normalized == null) {
+                        throw new IllegalArgumentException("Invalid IP address in rate limit policy");
+                    }
+                    return normalized;
+                })
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
     }
 

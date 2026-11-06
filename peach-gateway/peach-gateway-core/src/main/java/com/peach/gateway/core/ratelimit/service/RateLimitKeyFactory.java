@@ -32,7 +32,8 @@ public class RateLimitKeyFactory {
             case TENANT -> "tenant:" + hash(tenantId);
             case TENANT_URI -> "tenant-uri:" + hash(tenantId + ':' + method + ':' + uriIdentity);
         };
-        return GatewayRateLimitConstants.REDIS_KEY_PREFIX + rule.id() + ':' + identity;
+        return GatewayRateLimitConstants.REDIS_KEY_PREFIX + rule.id() + ':'
+                + rule.algorithm().getConfigKey() + ':' + identity;
     }
 
     private String normalizePath(String path) {

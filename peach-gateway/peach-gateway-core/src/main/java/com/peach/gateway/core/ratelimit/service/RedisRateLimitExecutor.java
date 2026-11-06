@@ -1,16 +1,17 @@
 package com.peach.gateway.core.ratelimit.service;
 
+import com.peach.gateway.core.GatewayRateLimitRedisConfiguration;
 import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitDecision;
 import com.peach.gateway.core.ratelimit.model.RateLimitRule;
 import com.peach.gateway.core.ratelimit.script.RateLimitScriptRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,27 +19,30 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Redis Lua 限流算法执行器。
  *
- * <p>每条规则在单次 Lua 调用中原子执行。多条规则按优先级顺序执行；
- * 若后续规则拒绝，之前已扣减的额度不回滚，避免跨 Key 分布式事务。</p>
+ * <p>每条规则在单次 Lua 调用中原子执行。脚本对象按算法和脚本内容缓存，Nacos 更新脚本后自动替换缓存。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/05
  */
 @Component
-@RequiredArgsConstructor
 public class RedisRateLimitExecutor {
 
-    private final ObjectProvider<ReactiveStringRedisTemplate> redisTemplateProvider;
+    private final ReactiveStringRedisTemplate redisTemplate;
+
     private final RateLimitScriptRepository scriptRepository;
 
     private final ConcurrentHashMap<RateLimitAlgorithm, CachedScript> scriptCache = new ConcurrentHashMap<>();
 
+    public RedisRateLimitExecutor(
+            @Qualifier(GatewayRateLimitRedisConfiguration.REACTIVE_STRING_REDIS_TEMPLATE_BEAN_NAME)
+            ReactiveStringRedisTemplate redisTemplate,
+            RateLimitScriptRepository scriptRepository) {
+        this.redisTemplate = redisTemplate;
+        this.scriptRepository = scriptRepository;
+    }
+
     public Mono<RateLimitDecision> execute(RateLimitRule rule, String key) {
-        ReactiveStringRedisTemplate redisTemplate = redisTemplateProvider.getIfAvailable();
-        if (redisTemplate == null) {
-            return Mono.error(new IllegalStateException("Reactive Redis template is not configured"));
-        }
         DefaultRedisScript<List> script = resolveScript(rule.algorithm());
         return redisTemplate.execute(script, List.of(key), arguments(rule))
                 .next()
@@ -78,7 +82,7 @@ public class RedisRateLimitExecutor {
         };
     }
 
-    private RateLimitDecision toDecision(List values) {
+    private RateLimitDecision toDecision(List<?> values) {
         if (values.size() < 5) {
             throw new IllegalStateException("Invalid rate limit Lua result");
         }
@@ -87,7 +91,11 @@ public class RedisRateLimitExecutor {
     }
 
     private long number(Object value) {
-        return Long.parseLong(String.valueOf(value));
+        try {
+            return new BigDecimal(String.valueOf(value)).longValueExact();
+        } catch (ArithmeticException | NumberFormatException exception) {
+            throw new IllegalStateException("Rate limit Lua result contains a non-integer numeric value", exception);
+        }
     }
 
     private record CachedScript(String source, DefaultRedisScript<List> script) {
