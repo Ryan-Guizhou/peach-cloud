@@ -343,6 +343,7 @@ class RateLimitScriptRepositoryTest {
         GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
         allowLocalTestServer(scripts);
         scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/redirect.lua")));
+        scripts.setExpectedSha256(Map.of("token-bucket", "0".repeat(64)));
 
         RateLimitScriptRepository repository = repository(properties);
 
