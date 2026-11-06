@@ -40,8 +40,8 @@ public class RateLimitScriptRepository {
 
     private final RateLimitRuleRegistry ruleRegistry;
     private final ResourceLoader resourceLoader;
-    private final AtomicReference<Map<RateLimitAlgorithm, String>> scripts =
-            new AtomicReference<>(Map.of());
+    private final AtomicReference<ScriptSnapshot> snapshot =
+            new AtomicReference<>(ScriptSnapshot.empty());
 
     private final AtomicLong reloadGeneration = new AtomicLong();
 
@@ -64,18 +64,21 @@ public class RateLimitScriptRepository {
                     .then(Mono.fromRunnable(() -> {
                         if (generation == reloadGeneration.get()
                                 && ruleRegistry.getSnapshot().scripts().equals(config)) {
-                            scripts.set(Map.copyOf(loaded));
+                            snapshot.set(new ScriptSnapshot(Map.copyOf(loaded), config));
                         }
                     }));
         });
     }
 
     public boolean isReady() {
-        return scripts.get().size() == RateLimitAlgorithm.values().length;
+        ScriptSnapshot active = snapshot.get();
+        return active.scripts().size() == RateLimitAlgorithm.values().length
+                && active.configuration() != null
+                && active.configuration().equals(ruleRegistry.getSnapshot().scripts());
     }
 
     public String get(RateLimitAlgorithm algorithm) {
-        String script = scripts.get().get(algorithm);
+        String script = snapshot.get().scripts().get(algorithm);
         if (script == null) {
             throw new IllegalStateException("Rate limit script is not loaded: " + algorithm);
         }
@@ -202,6 +205,19 @@ public class RateLimitScriptRepository {
         } catch (IllegalArgumentException exception) {
             throw new IllegalArgumentException(
                     "Invalid remote rate limit script URL: " + algorithm, exception);
+        }
+    }
+
+    private record ScriptSnapshot(
+            Map<RateLimitAlgorithm, String> scripts,
+            RateLimitScriptConfiguration configuration) {
+
+        private ScriptSnapshot {
+            scripts = Map.copyOf(scripts);
+        }
+
+        private static ScriptSnapshot empty() {
+            return new ScriptSnapshot(Map.of(), null);
         }
     }
 
