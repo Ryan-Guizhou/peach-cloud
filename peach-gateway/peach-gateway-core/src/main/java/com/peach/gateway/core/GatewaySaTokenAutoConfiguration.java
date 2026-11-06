@@ -13,9 +13,10 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Indexed;
 
@@ -23,8 +24,8 @@ import org.springframework.stereotype.Indexed;
  * 网关侧 Sa-Token Redis 自动配置。
  *
  * <p>必须通过 {@code META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports}
- * 注册，并在 {@code RedisConfig} 之后、{@code SaBeanInject} 之前加载。不要在组件扫描中重复注册，
- * 否则 {@code @ConditionalOnBean(JedisConnectionFactory)} 可能过早评估导致整类配置被跳过。</p>
+ * 注册，并在网关 Lettuce 连接工厂之后、{@code SaBeanInject} 之前加载。不要在组件扫描中重复注册。
+ * Sa-Token DAO 复用这条 Lettuce 连接。网关不加载 Jedis 或 Redisson。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -33,22 +34,24 @@ import org.springframework.stereotype.Indexed;
 @Slf4j
 @Indexed
 @AutoConfiguration
-@AutoConfigureAfter(name = "com.peach.redis.common.RedisConfig")
+@AutoConfigureAfter(name = "com.peach.gateway.core.GatewayRateLimitRedisConfiguration")
 @AutoConfigureBefore(name = "cn.dev33.satoken.spring.SaBeanInject")
-@ConditionalOnClass({SaTokenDao.class, JedisConnectionFactory.class})
+@ConditionalOnClass({SaTokenDao.class, LettuceConnectionFactory.class})
 @ConditionalOnProperty(prefix = "peach.satoken.dao", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class GatewaySaTokenAutoConfiguration {
 
     /**
      * 创建网关侧 Sa-Token DAO。
      *
-     * @param jedisConnectionFactory Redis 连接工厂
+     * @param connectionFactory 网关唯一的 Lettuce 连接工厂
      * @return Sa-Token DAO 实现
      */
     @Bean
     @ConditionalOnMissingBean(SaTokenDao.class)
-    public SaTokenDao saTokenDao(@NonNull JedisConnectionFactory jedisConnectionFactory) {
-        return new PeachSaTokenDao(jedisConnectionFactory);
+    public SaTokenDao saTokenDao(
+            @Qualifier(GatewayRateLimitRedisConfiguration.REACTIVE_CONNECTION_FACTORY_BEAN_NAME)
+            @NonNull LettuceConnectionFactory connectionFactory) {
+        return new PeachSaTokenDao(connectionFactory);
     }
 
     /**

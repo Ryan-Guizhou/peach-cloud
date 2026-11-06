@@ -1,5 +1,6 @@
 package com.peach.gateway.core;
 
+import com.peach.gateway.core.config.GatewayRedisProperties;
 import com.peach.gateway.core.config.GatewayRiskControlProperties;
 import com.peach.gateway.core.config.GatewaySaTokenProperties;
 import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
@@ -23,7 +24,8 @@ import org.springframework.stereotype.Indexed;
 @EnableConfigurationProperties({
         GatewaySaTokenProperties.class,
         GatewayRiskControlProperties.class,
-        GatewayRateLimitProperties.class
+        GatewayRateLimitProperties.class,
+        GatewayRedisProperties.class
 })
 public class GatewayCorePropertiesConfiguration {
 }

@@ -1,5 +1,6 @@
 package com.peach.gateway.core.security;
 
+import cn.dev33.satoken.reactor.context.SaReactorSyncHolder;
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.common.constant.SaTokenConstant;
@@ -11,8 +12,8 @@ import reactor.core.scheduler.Schedulers;
 /**
  * 从当前请求 Token Session 解析可信租户上下文，并在同一请求内复用解析结果。
  *
- * <p>Sa-Token DAO 使用阻塞式 Redis 客户端，查询统一调度到 boundedElastic，避免阻塞 Gateway EventLoop。
- * 解析结果存放在当前 ServerWebExchange 属性中，供认证权限校验和限流过滤器共享。</p>
+ * <p>Sa-Token DAO 通过 Lettuce 阻塞 API 读取 Token Session。读取和上下文绑定都在 boundedElastic 上完成，
+ * 避免在 Netty EventLoop 中等待 Redis。解析结果存放在当前 ServerWebExchange 属性中，供认证和限流复用。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -36,19 +37,20 @@ public class GatewayTokenContextResolver {
                 return Mono.just(cached);
             }
 
-            String token;
-            try {
-                token = StpUtil.getTokenValue();
-            } catch (RuntimeException exception) {
-                return Mono.empty();
-            }
-            if (token == null || token.isBlank()) {
-                return Mono.empty();
-            }
-
-            return Mono.fromCallable(() -> StpUtil.getStpLogic().getTokenSessionByToken(token, false))
+            return Mono.fromCallable(() -> {
+                        SaReactorSyncHolder.setContext(exchange);
+                        try {
+                            String token = StpUtil.getTokenValue();
+                            if (token == null || token.isBlank()) {
+                                return null;
+                            }
+                            return StpUtil.getStpLogic().getTokenSessionByToken(token, false);
+                        } finally {
+                            SaReactorSyncHolder.clearContext();
+                        }
+                    })
                     .subscribeOn(Schedulers.boundedElastic())
-                    .flatMap(this::toContext)
+                    .flatMap(session -> session == null ? Mono.empty() : toContext(session))
                     .doOnNext(context -> exchange.getAttributes().put(EXCHANGE_ATTRIBUTE, context));
         });
     }

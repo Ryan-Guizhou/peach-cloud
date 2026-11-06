@@ -29,6 +29,7 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.Locale;
 
@@ -80,19 +81,22 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
             }
             return chain.filter(exchange);
         }
-        try {
-            SaReactorSyncHolder.setContext(exchange);
-            StpUtil.checkLogin();
-            String loginId = StpUtil.getLoginIdAsString();
-            return checkApiPermission(loginId, method, path, exchange)
-                    .flatMap(allowed -> Boolean.TRUE.equals(allowed)
-                            ? chain.filter(exchange)
-                            : handlePermissionError(exchange, method, path))
-                    .doFinally(signal -> SaReactorSyncHolder.clearContext());
-        } catch (Exception e) {
-            SaReactorSyncHolder.clearContext();
-            return handleAuthenticationError(exchange, method, path, e);
-        }
+        return Mono.fromCallable(() -> {
+                    SaReactorSyncHolder.setContext(exchange);
+                    try {
+                        StpUtil.checkLogin();
+                        return StpUtil.getLoginIdAsString();
+                    } finally {
+                        SaReactorSyncHolder.clearContext();
+                    }
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .onErrorResume(exception -> handleAuthenticationError(exchange, method, path, exception)
+                        .then(Mono.empty()))
+                .flatMap(loginId -> checkApiPermission(loginId, method, path, exchange)
+                        .flatMap(allowed -> Boolean.TRUE.equals(allowed)
+                                ? chain.filter(exchange)
+                                : handlePermissionError(exchange, method, path)));
     }
 
     /**

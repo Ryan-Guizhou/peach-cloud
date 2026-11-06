@@ -175,7 +175,7 @@ Redis dynamic IP blocklist uses this Redis Set:
 peach:gateway:risk-control:blocked-ip:
 ```
 
-Gateway Redis connectivity uses `peach.redis.*` from `peach-redis.yml` and must point to the same Sa-Token Redis data as business services.
+Gateway Redis connectivity uses `peach.redis.*` from `peach-redis.yml` and must point to the same Sa-Token Redis data as business services. The gateway process opens one Lettuce connection: rate limiting uses the reactive API, and Sa-Token reuses that connection through the blocking API on `boundedElastic`. The gateway does not load Jedis or Redisson; business services keep Jedis.
 
 ## Boundaries
 
