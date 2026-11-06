@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -76,6 +77,24 @@ class RateLimitScriptLoaderTest {
             verify(metrics, never()).recordScriptReload(true);
             verify(metrics, never()).recordScriptReload(false);
         }
+    }
+
+    @Test
+    void shouldKeepApplicationStartupWhenInitialScriptLoadFails() throws Exception {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(true);
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitScriptRepository repository = mock(RateLimitScriptRepository.class);
+        when(repository.reload()).thenReturn(Mono.error(new IllegalStateException("OSS unavailable")));
+        when(repository.isReady()).thenReturn(false);
+        RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+        RateLimitScriptLoader loader = new RateLimitScriptLoader(registry, repository, metrics);
+
+        assertThatCode(() -> loader.run(new DefaultApplicationArguments(new String[0])))
+                .doesNotThrowAnyException();
+
+        verify(metrics).updateScriptReady(false);
+        verify(metrics).recordScriptReload(false);
     }
 
     @Test
