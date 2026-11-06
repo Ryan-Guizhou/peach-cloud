@@ -223,7 +223,7 @@ class RateLimitEnforcementServiceTest {
     }
 
     @Test
-    void shouldKeepEnforcementInactiveUntilAllScriptsAreReady() {
+    void shouldReturnUnavailableUntilAllScriptsAreReadySoFailureModeCanBeApplied() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setEnabled(true);
         properties.setRules(List.of(
@@ -243,7 +243,8 @@ class RateLimitEnforcementServiceTest {
         RateLimitCheckResult result = service.check(exchange()).block(Duration.ofSeconds(3));
 
         assertThat(result).isNotNull();
-        assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.ALLOWED);
+        assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.UNAVAILABLE);
+        assertThat(result.reason()).isEqualTo("rate-limit-scripts-not-ready");
         verify(ipResolver).resolve(any());
         verify(executor, never()).execute(any(), anyString());
         verify(metrics).recordPolicy("scripts-not-ready");
