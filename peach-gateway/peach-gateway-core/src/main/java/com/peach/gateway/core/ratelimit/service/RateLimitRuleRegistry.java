@@ -92,9 +92,17 @@ public class RateLimitRuleRegistry {
             throw new IllegalArgumentException("max-matched-rules-per-request must be between 1 and "
                     + MAX_MATCHED_RULES_PER_REQUEST);
         }
-        if (enabledRules.size() > Math.min(MAX_RULE_COUNT, properties.getMaxRules())) {
+        if (properties.getMaxRules() < 1 || properties.getMaxRules() > MAX_RULE_COUNT) {
+            throw new IllegalArgumentException("max-rules must be between 1 and " + MAX_RULE_COUNT);
+        }
+        if (enabledRules.size() > properties.getMaxRules()) {
             throw new IllegalArgumentException("Enabled rate limit rule count exceeds configured maximum");
         }
+        if (properties.getFailureMode() == null) {
+            throw new IllegalArgumentException("Rate limit failure-mode is required");
+        }
+        List<String> trustedProxies = TrustedProxyClientIpResolver.normalizeNetworks(
+                properties.getTrustedProxies());
 
         Set<String> ruleIds = new LinkedHashSet<>();
         List<RateLimitRule> rules = enabledRules.stream()
@@ -108,7 +116,14 @@ public class RateLimitRuleRegistry {
                 .sorted(Comparator.comparingInt(RateLimitRule::priority))
                 .toList();
 
+        RateLimitConfigurationSnapshot previous = snapshot.get();
         RateLimitConfigurationSnapshot replacement = new RateLimitConfigurationSnapshot(
+                previous.generation() + 1,
+                properties.isEnabled(),
+                properties.getFailureMode(),
+                properties.isRequireTenantContext(),
+                maxMatchedRules,
+                trustedProxies,
                 rules,
                 normalizeIpValues(properties.getAllowlistIps()),
                 normalizeValues(properties.getAllowlistTenants()),
