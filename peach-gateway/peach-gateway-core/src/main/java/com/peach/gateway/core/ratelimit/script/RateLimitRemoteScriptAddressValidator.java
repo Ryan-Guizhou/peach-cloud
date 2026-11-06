@@ -312,16 +312,34 @@ public final class RateLimitRemoteScriptAddressValidator {
         }
         try {
             InetAddress address = normalizeMappedAddress(InetAddress.getByName(literal));
-            int maxPrefix = address.getAddress().length * Byte.SIZE;
-            int minimumPrefix = address.getAddress().length == 4 ? 8 : 7;
+            byte[] addressBytes = address.getAddress();
+            int maxPrefix = addressBytes.length * Byte.SIZE;
+            int minimumPrefix;
+            if (addressBytes.length == 4) {
+                int first = Byte.toUnsignedInt(addressBytes[0]);
+                int second = Byte.toUnsignedInt(addressBytes[1]);
+                if (first == 10) {
+                    minimumPrefix = 8;
+                } else if (first == 172 && second >= 16 && second <= 31) {
+                    minimumPrefix = 12;
+                } else if (first == 192 && second == 168) {
+                    minimumPrefix = 16;
+                } else {
+                    throw invalid("authorized IPv4 CIDR must be within RFC1918 address space");
+                }
+            } else if (addressBytes.length == 16 && isPrivateAddress(address)) {
+                minimumPrefix = 7;
+            } else {
+                throw invalid("authorized IPv6 CIDR must be within the ULA address space");
+            }
             int prefix = maxPrefix;
             if (parts.length == 2) {
                 prefix = Integer.parseInt(parts[1]);
             }
-            if (prefix < minimumPrefix || prefix > maxPrefix || !isPrivateAddress(address)) {
-                throw invalid("authorized CIDR must be a specific RFC1918 or IPv6 ULA network");
+            if (prefix < minimumPrefix || prefix > maxPrefix) {
+                throw invalid("authorized CIDR prefix is broader than its private address range");
             }
-            return new Cidr(address.getAddress(), prefix);
+            return new Cidr(addressBytes, prefix);
         } catch (UnknownHostException | NumberFormatException exception) {
             throw invalid("authorized CIDR is malformed", exception);
         }
