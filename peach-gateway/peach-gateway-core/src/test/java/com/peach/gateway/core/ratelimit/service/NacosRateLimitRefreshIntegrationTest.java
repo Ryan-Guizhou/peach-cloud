@@ -66,6 +66,18 @@ class NacosRateLimitRefreshIntegrationTest {
         }
     }
 
+    private String awaitPublishedConfig(ConfigService client, String marker) throws Exception {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+        while (System.nanoTime() < deadline) {
+            String content = client.getConfig(DATA_ID, GROUP, 1000);
+            if (content != null && content.contains(marker)) {
+                return content;
+            }
+            Thread.sleep(250L);
+        }
+        return null;
+    }
+
     private String awaitConfig(BlockingQueue<String> pushedConfigs, String marker) throws InterruptedException {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
         while (true) {
@@ -134,6 +146,8 @@ class NacosRateLimitRefreshIntegrationTest {
                       rules: []
                 """;
         publishWithRetry(publisher, initialConfig);
+        String storedInitialConfig = awaitPublishedConfig(publisher, "enabled: false");
+        assertThat(storedInitialConfig).contains("enabled: false");
 
         BlockingQueue<String> pushedConfigs = new LinkedBlockingQueue<>();
         Listener listener = new Listener() {
