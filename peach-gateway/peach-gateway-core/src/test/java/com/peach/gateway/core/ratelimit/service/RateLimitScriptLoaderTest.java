@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 class RateLimitScriptLoaderTest {
 
     @Test
-    void shouldUpdateReadinessWhenMonoVoidReloadCompletesAfterRefresh() {
+    void shouldRecordSuccessfulReloadWhenSnapshotIsPublished() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setEnabled(false);
         RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
@@ -51,6 +51,33 @@ class RateLimitScriptLoaderTest {
         verify(metrics).recordScriptReload(true);
         }
     }
+    @Test
+    void shouldNotRecordSupersededReloadAsSuccessful() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(false);
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitScriptRepository repository = mock(RateLimitScriptRepository.class);
+        when(repository.reload()).thenReturn(Mono.just(false));
+        when(repository.isReady()).thenReturn(false);
+        RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.registerBean(RateLimitRuleRegistry.class, () -> registry);
+            context.registerBean(RateLimitScriptLoader.class,
+                    () -> new RateLimitScriptLoader(registry, repository, metrics));
+            context.refresh();
+
+            properties.setEnabled(true);
+            context.publishEvent(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.enabled")));
+            context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-superseded-test"));
+
+            verify(repository).reload();
+            verify(metrics).updateScriptReady(false);
+            verify(metrics, never()).recordScriptReload(true);
+            verify(metrics, never()).recordScriptReload(false);
+        }
+    }
+
     @Test
     void shouldRegisterNotReadyGaugeWhenRateLimitingIsDisabledAtStartup() throws Exception {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
