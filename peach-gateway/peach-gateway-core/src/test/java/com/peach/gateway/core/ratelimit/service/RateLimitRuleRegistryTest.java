@@ -5,6 +5,8 @@ import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitScope;
 import org.junit.jupiter.api.Test;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
+import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.net.InetAddress;
 import java.time.Duration;
@@ -89,24 +91,35 @@ class RateLimitRuleRegistryTest {
     }
 
     @Test
-    void shouldRefreshFromEnvironmentChangeAndKeepPreviousSnapshotWhenInvalid() {
+    void shouldRefreshAfterRefreshScopeEventAndKeepPreviousSnapshotWhenInvalid() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         properties.setRules(List.of(rule("global", RateLimitScope.GLOBAL)));
-        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
 
-        properties.setAllowlistIps(List.of("192.0.2.8"));
-        registry.onEnvironmentChanged(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.allowlist-ips")));
-        var refreshed = registry.getSnapshot();
-        assertThat(refreshed.allowlistIps()).containsExactly("192.0.2.8");
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.registerBean(RateLimitRuleRegistry.class, () -> new RateLimitRuleRegistry(properties));
+            context.refresh();
 
-        properties.setRules(List.of(
-                rule("duplicate", RateLimitScope.GLOBAL),
-                rule("duplicate", RateLimitScope.IP)));
-        registry.onEnvironmentChanged(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.rules")));
+            RateLimitRuleRegistry registry = context.getBean(RateLimitRuleRegistry.class);
+            properties.setAllowlistIps(List.of("192.0.2.8"));
+            context.publishEvent(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.allowlist-ips")));
+            var previous = registry.getSnapshot();
+            assertThat(previous.allowlistIps()).isEmpty();
 
-        assertThat(registry.getSnapshot()).isSameAs(refreshed);
-        assertThat(registry.getSnapshot().rules()).extracting(com.peach.gateway.core.ratelimit.model.RateLimitRule::id)
-                .containsExactly("global");
+            context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-registry-test"));
+            var refreshed = registry.getSnapshot();
+            assertThat(refreshed.allowlistIps()).containsExactly("192.0.2.8");
+
+            properties.setRules(List.of(
+                    rule("duplicate", RateLimitScope.GLOBAL),
+                    rule("duplicate", RateLimitScope.IP)));
+            context.publishEvent(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.rules")));
+            context.publishEvent(new RefreshScopeRefreshedEvent("rate-limit-registry-invalid-test"));
+
+            assertThat(registry.getSnapshot()).isSameAs(refreshed);
+            assertThat(registry.getSnapshot().rules())
+                    .extracting(com.peach.gateway.core.ratelimit.model.RateLimitRule::id)
+                    .containsExactly("global");
+        }
     }
 
     @Test

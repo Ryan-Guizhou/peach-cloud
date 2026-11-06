@@ -5,7 +5,7 @@ import com.peach.gateway.core.ratelimit.model.RateLimitAlgorithm;
 import com.peach.gateway.core.ratelimit.model.RateLimitConfigurationSnapshot;
 import com.peach.gateway.core.ratelimit.model.RateLimitRule;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
+import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -61,9 +61,9 @@ public class RateLimitRuleRegistry {
         return snapshot.get();
     }
 
-    @Order(Ordered.LOWEST_PRECEDENCE)
-    @EventListener(EnvironmentChangeEvent.class)
-    public void onEnvironmentChanged(EnvironmentChangeEvent event) {
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    @EventListener(RefreshScopeRefreshedEvent.class)
+    public void onRefreshScopeRefreshed(RefreshScopeRefreshedEvent event) {
         try {
             refresh();
             log.info("Gateway rate limit configuration refreshed, ruleCount={}", snapshot.get().rules().size());

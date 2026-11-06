@@ -2,7 +2,7 @@ package com.peach.gateway.core.ratelimit.service;
 
 import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
+import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -93,9 +93,9 @@ public class TrustedProxyClientIpResolver {
         return remoteAddress.getHostAddress();
     }
 
-    @Order(Ordered.LOWEST_PRECEDENCE)
-    @EventListener(EnvironmentChangeEvent.class)
-    public void onEnvironmentChanged(EnvironmentChangeEvent event) {
+    @Order(Ordered.HIGHEST_PRECEDENCE + 10)
+    @EventListener(RefreshScopeRefreshedEvent.class)
+    public void onRefreshScopeRefreshed(RefreshScopeRefreshedEvent event) {
         try {
             trustedNetworks.set(parseNetworks(properties.getTrustedProxies()));
             log.info("Gateway trusted proxy configuration refreshed, cidrCount={}", trustedNetworks.get().size());

@@ -7,10 +7,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
+import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 网关启动及 Nacos 配置刷新时加载限流脚本。
@@ -28,9 +31,14 @@ public class RateLimitScriptLoader implements ApplicationRunner {
     private final RateLimitScriptRepository repository;
     private final RateLimitMetrics metrics;
 
+    private final AtomicBoolean reloadRequested = new AtomicBoolean();
+
+    private final AtomicBoolean transportChanged = new AtomicBoolean();
+
     @Override
     public void run(ApplicationArguments args) {
         if (!properties.isEnabled()) {
+            metrics.updateScriptReady(repository.isReady());
             log.info("Gateway rate limit is disabled; Lua script loading is skipped");
             return;
         }
@@ -47,32 +55,43 @@ public class RateLimitScriptLoader implements ApplicationRunner {
         }
     }
 
-    @Order(Ordered.LOWEST_PRECEDENCE)
     @EventListener(EnvironmentChangeEvent.class)
     public void onEnvironmentChanged(EnvironmentChangeEvent event) {
-        boolean reloadRequired = event.getKeys().stream().anyMatch(key ->
+        boolean reload = event.getKeys().stream().anyMatch(key ->
                 key.startsWith("peach.gateway.rate-limit.scripts.")
                         || "peach.gateway.rate-limit.enabled".equals(key));
-        boolean transportChanged = event.getKeys().stream().anyMatch(key ->
+        boolean transport = event.getKeys().stream().anyMatch(key ->
                 "peach.gateway.rate-limit.scripts.connect-timeout".equals(key)
                         || "peach.gateway.rate-limit.scripts.read-timeout".equals(key)
                         || "peach.gateway.rate-limit.scripts.max-script-bytes".equals(key));
-        if (transportChanged) {
+        if (reload) {
+            reloadRequested.set(true);
+        }
+        if (transport) {
+            transportChanged.set(true);
+        }
+    }
+
+    @Order(Ordered.LOWEST_PRECEDENCE)
+    @EventListener(RefreshScopeRefreshedEvent.class)
+    public void onRefreshScopeRefreshed(RefreshScopeRefreshedEvent event) {
+        if (transportChanged.getAndSet(false)) {
             repository.invalidateWebClient();
         }
-        if (!properties.isEnabled() || !reloadRequired) {
+        if (!properties.isEnabled() || !reloadRequested.getAndSet(false)) {
             return;
         }
-        repository.reload().subscribe(
-                ignored -> {
+        repository.reload()
+                .doOnSuccess(ignored -> {
                     metrics.updateScriptReady(repository.isReady());
                     log.info("Gateway rate limit Lua scripts reloaded");
-                },
-                error -> {
+                })
+                .doOnError(error -> {
                     metrics.updateScriptReady(repository.isReady());
                     log.error("Gateway rate limit Lua script reload failed, errorType={}",
                             rootCause(error).getClass().getSimpleName());
-                });
+                })
+                .subscribe();
     }
 
     private Throwable rootCause(Throwable error) {

@@ -2,13 +2,12 @@ package com.peach.gateway.core.ratelimit.service;
 
 import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import org.junit.jupiter.api.Test;
-import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
+import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -91,7 +90,7 @@ class TrustedProxyClientIpResolverTest {
                         .build());
 
         properties.setTrustedProxies(List.of("not-a-cidr"));
-        resolver.onEnvironmentChanged(new EnvironmentChangeEvent(Set.of("peach.gateway.rate-limit.trusted-proxies")));
+        resolver.onRefreshScopeRefreshed(new RefreshScopeRefreshedEvent("trusted-proxy-refresh-test"));
 
         assertThat(resolver.resolve(exchange)).isEqualTo("198.51.100.20");
     }
