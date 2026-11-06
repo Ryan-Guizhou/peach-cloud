@@ -77,7 +77,7 @@ public class RateLimitRuleRegistry {
     /**
      * 校验全部规则和策略列表后一次性替换当前快照。
      */
-    public void refresh() {
+    public synchronized void refresh() {
         List<GatewayRateLimitProperties.RuleProperties> configured = properties.getRules();
         if (configured == null) {
             configured = List.of();
