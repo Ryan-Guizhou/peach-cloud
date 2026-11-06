@@ -75,7 +75,7 @@ public class RateLimitEnforcementService {
                 }
                 return scriptsReady()
                         ? evaluate(candidates, exchange, null, clientIp)
-                        : allowWhileScriptsLoading();
+                        : unavailableWhileScriptsNotReady();
             }
 
             return tenantContextResolver.resolve()
@@ -99,7 +99,7 @@ public class RateLimitEnforcementService {
                         }
                         return scriptsReady()
                                 ? evaluate(candidates, exchange, tenantId, clientIp)
-                                : allowWhileScriptsLoading();
+                                : unavailableWhileScriptsNotReady();
                     });
         });
     }
@@ -168,9 +168,9 @@ public class RateLimitEnforcementService {
         return scriptRepository.isReady();
     }
 
-    private Mono<RateLimitCheckResult> allowWhileScriptsLoading() {
+    private Mono<RateLimitCheckResult> unavailableWhileScriptsNotReady() {
         metrics.recordPolicy("scripts-not-ready");
-        return Mono.just(RateLimitCheckResult.allowed());
+        return Mono.just(RateLimitCheckResult.unavailable("rate-limit-scripts-not-ready"));
     }
 
     private boolean isBlank(String value) {

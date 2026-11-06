@@ -171,7 +171,7 @@ Source precedence:
 2. scripts.remote-base-url plus the algorithm script filename.
 3. The classpath file under scripts.local-location, only when no remote URL is configured for that algorithm.
 
-When a remote URL is configured, download or SHA-256 validation failure is reported; the loader does not silently fall back to a local script. A `remote-base-url` loads all six algorithms, so SHA-256 values for all six scripts are required. To host only a subset remotely, configure per-algorithm URLs in `remote-urls` and leave the remaining algorithms on the classpath. If initial loading fails while rate limiting is enabled, startup fails rather than running with an unknown script. If a runtime Nacos refresh fails, the previous complete script snapshot remains active. If rate limiting starts disabled and is later enabled through Nacos, quota algorithms temporarily allow traffic until all six scripts have loaded; IP/tenant allowlists and denylists remain active. This prevents an empty script snapshot from causing persistent 503 responses. Loading failures are logged and a later configuration refresh can retry.
+When a remote URL is configured, download or SHA-256 validation failure is reported; the loader does not silently fall back to a local script. A `remote-base-url` loads all six algorithms, so SHA-256 values for all six scripts are required. To host only a subset remotely, configure per-algorithm URLs in `remote-urls` and leave the remaining algorithms on the classpath. If initial loading fails while rate limiting is enabled, startup fails rather than running with an unknown script. If a runtime Nacos refresh fails, the previous complete script snapshot remains active. If rate limiting starts disabled and is later enabled through Nacos, quota checks return an unavailable result until all six scripts have loaded. The configured `failure-mode` then applies: FAIL_CLOSED returns 503, while FAIL_OPEN allows traffic. IP/tenant allowlists and denylists remain active. Loading failures are logged; after correcting the remote URL or checksum, a subsequent Nacos refresh can retry.
 
 Remote OSS example:
 
@@ -205,7 +205,7 @@ When Redis or the rate-limit executor is unavailable:
 - FAIL_OPEN: record metrics and a WARN log, then continue forwarding.
 - FAIL_CLOSED: record metrics and an ERROR log, then return HTTP 503.
 - Missing required tenant context always returns 401, independent of Redis failure mode.
-- During dynamic enablement, quota algorithms remain inactive and record `scripts-not-ready` until all scripts are loaded successfully; IP/tenant allowlists and denylists remain active.
+- During dynamic enablement, quota algorithms return an unavailable result and record `scripts-not-ready` until all scripts are loaded successfully. `failure-mode` applies (503 for FAIL_CLOSED, pass-through for FAIL_OPEN); IP/tenant allowlists and denylists remain active.
 
 ## 7. Nacos Refresh and Metrics
 
