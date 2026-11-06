@@ -148,11 +148,26 @@ class RateLimitScriptRepositoryTest {
     }
 
     @Test
-    void shouldRejectLoopbackWhenHostIsAllowedButAddressRangeIsNotAuthorized() {
+    void shouldRejectLoopbackEvenWhenHostIsAllowlisted() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
         GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
         scripts.setRequireHttps(false);
         scripts.setAllowedRemoteHosts(List.of("127.0.0.1"));
+        scripts.setAllowedRemotePorts(List.of(server.getAddress().getPort()));
+        scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
+
+        RateLimitScriptRepository repository = repository(properties);
+
+        assertThatThrownBy(() -> repository.reload().block(Duration.ofSeconds(5)))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void shouldRejectPrivateAddressWithoutExplicitCidrAuthorization() {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        GatewayRateLimitProperties.ScriptProperties scripts = properties.getScripts();
+        scripts.setRequireHttps(false);
+        scripts.setAllowedRemoteHosts(List.of(serverHost));
         scripts.setAllowedRemotePorts(List.of(server.getAddress().getPort()));
         scripts.setRemoteUrls(Map.of("token-bucket", localUrl("/token-bucket.lua")));
 
