@@ -30,7 +30,7 @@ class RateLimitScriptLoaderTest {
         RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
         RateLimitScriptRepository repository = mock(RateLimitScriptRepository.class);
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
-        when(repository.reload()).thenReturn(Mono.empty());
+        when(repository.reload()).thenReturn(Mono.just(true));
         when(repository.isReady()).thenReturn(true);
 
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
