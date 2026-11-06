@@ -19,18 +19,25 @@ public record RateLimitScriptConfiguration(
         Map<String, String> remoteUrls,
         String localLocation,
         boolean requireRemoteChecksum,
+        boolean requireHttps,
         Duration connectTimeout,
         Duration readTimeout,
         int maxScriptBytes,
         Map<String, String> expectedSha256,
         Set<String> allowedRemoteHosts,
-        List<String> allowedRemoteCidrs) {
+        List<String> allowedRemoteCidrs,
+        Set<Integer> allowedRemotePorts) {
 
     public RateLimitScriptConfiguration {
         remoteUrls = remoteUrls == null ? Map.of() : Map.copyOf(remoteUrls);
         expectedSha256 = expectedSha256 == null ? Map.of() : Map.copyOf(expectedSha256);
         allowedRemoteHosts = allowedRemoteHosts == null ? Set.of() : Set.copyOf(allowedRemoteHosts);
         allowedRemoteCidrs = allowedRemoteCidrs == null ? List.of() : List.copyOf(allowedRemoteCidrs);
+        allowedRemotePorts = allowedRemotePorts == null ? Set.of(443) : Set.copyOf(allowedRemotePorts);
+        if (allowedRemotePorts.isEmpty()
+                || allowedRemotePorts.stream().anyMatch(port -> port == null || port < 1 || port > 65535)) {
+            throw new IllegalArgumentException("Remote rate limit script ports must be within 1..65535");
+        }
         if (localLocation == null || localLocation.isBlank()
                 || connectTimeout == null || connectTimeout.isZero() || connectTimeout.isNegative()
                 || readTimeout == null || readTimeout.isZero() || readTimeout.isNegative()
@@ -52,13 +59,16 @@ public record RateLimitScriptConfiguration(
                 properties.getRemoteUrls(),
                 properties.getLocalLocation(),
                 properties.isRequireRemoteChecksum(),
+                properties.isRequireHttps(),
                 properties.getConnectTimeout(),
                 properties.getReadTimeout(),
                 properties.getMaxScriptBytes(),
                 properties.getExpectedSha256(),
                 properties.getAllowedRemoteHosts() == null
                         ? Set.of() : Set.copyOf(properties.getAllowedRemoteHosts()),
-                properties.getAllowedRemoteCidrs());
+                properties.getAllowedRemoteCidrs(),
+                properties.getAllowedRemotePorts() == null
+                        ? Set.of(443) : Set.copyOf(properties.getAllowedRemotePorts()));
     }
 
     public static RateLimitScriptConfiguration empty() {
@@ -67,11 +77,13 @@ public record RateLimitScriptConfiguration(
                 Map.of(),
                 "classpath:/ratelimit/lua/",
                 true,
+                true,
                 Duration.ofSeconds(2),
                 Duration.ofSeconds(5),
                 65536,
                 Map.of(),
                 Set.of(),
-                List.of());
+                List.of(),
+                Set.of(443));
     }
 }
