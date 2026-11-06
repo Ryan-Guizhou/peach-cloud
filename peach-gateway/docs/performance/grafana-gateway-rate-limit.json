@@ -187,7 +187,7 @@
           "refId": "B"
         },
         {
-          "expr": "sum(rate(peach_gateway_rate_limit_requests_total{outcome=\"scripts-not-ready\"}[5m]))",
+          "expr": "sum(rate(peach_gateway_rate_limit_policy_total{outcome=\"scripts-not-ready\"}[5m]))",
           "legendFormat": "Scripts not ready/s",
           "refId": "C"
         }
@@ -226,17 +226,17 @@
       },
       "targets": [
         {
-          "expr": "sum by (outcome) (rate(peach_gateway_rate_limit_requests_total{scope!=\"policy\"}[5m]))",
-          "legendFormat": "{{outcome}}",
+          "expr": "sum by (outcome) (rate(peach_gateway_rate_limit_requests_total[5m]))",
+          "legendFormat": "request / {{outcome}}",
           "refId": "A"
         },
         {
-          "expr": "sum by (outcome) (rate(peach_gateway_rate_limit_requests_total{scope=\"policy\"}[5m]))",
+          "expr": "sum by (outcome) (rate(peach_gateway_rate_limit_policy_total[5m]))",
           "legendFormat": "policy / {{outcome}}",
           "refId": "B"
         }
       ],
-      "title": "Decision outcomes",
+      "title": "Request decisions and policy outcomes",
       "type": "timeseries"
     }
   ],
