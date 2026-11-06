@@ -50,11 +50,11 @@ public class RateLimitEnforcementService {
             RateLimitConfigurationSnapshot configuration = ruleRegistry.getSnapshot();
             String clientIp = clientIpResolver.resolve(exchange);
 
-            if (configuration.denylistIps().contains(clientIp)) {
+            if (clientIp != null && configuration.denylistIps().contains(clientIp)) {
                 metrics.recordPolicy("blocked");
                 return Mono.just(RateLimitCheckResult.blocked("ip-denylist"));
             }
-            boolean ipAllowlisted = configuration.allowlistIps().contains(clientIp);
+            boolean ipAllowlisted = clientIp != null && configuration.allowlistIps().contains(clientIp);
             List<RateLimitRule> candidates = configuration.rules().stream()
                     .filter(rule -> ruleMatcher.matchesRequest(rule, exchange))
                     .toList();

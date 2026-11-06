@@ -235,6 +235,7 @@ class RateLimitEnforcementServiceTest {
         RateLimitMetrics metrics = mock(RateLimitMetrics.class);
         RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
         when(scriptRepository.isReady()).thenReturn(false);
+        when(ipResolver.resolve(any())).thenReturn("192.0.2.10");
 
         RateLimitEnforcementService service = new RateLimitEnforcementService(properties,
                 new RateLimitRuleRegistry(properties), new RateLimitRuleMatcher(), new RateLimitKeyFactory(),
