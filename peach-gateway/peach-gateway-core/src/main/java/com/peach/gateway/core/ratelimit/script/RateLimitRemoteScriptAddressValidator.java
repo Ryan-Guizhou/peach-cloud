@@ -234,14 +234,15 @@ final class RateLimitRemoteScriptAddressValidator {
             throw invalid("authorized CIDR must contain an IP literal");
         }
         try {
-            InetAddress address = InetAddress.getByName(literal);
+            InetAddress address = normalizeMappedAddress(InetAddress.getByName(literal));
             int maxPrefix = address.getAddress().length * Byte.SIZE;
+            int minimumPrefix = address.getAddress().length == 4 ? 8 : 7;
             int prefix = maxPrefix;
             if (parts.length == 2) {
                 prefix = Integer.parseInt(parts[1]);
             }
-            if (prefix < 0 || prefix > maxPrefix) {
-                throw invalid("authorized CIDR prefix is outside the address range");
+            if (prefix < minimumPrefix || prefix > maxPrefix || !isPrivateAddress(address)) {
+                throw invalid("authorized CIDR must be a specific RFC1918 or IPv6 ULA network");
             }
             return new Cidr(address.getAddress(), prefix);
         } catch (UnknownHostException | NumberFormatException exception) {
