@@ -24,9 +24,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -58,6 +58,23 @@ class NacosRateLimitRefreshIntegrationTest {
                             .forPort(8848)
                             .forStatusCode(200)
                             .withStartupTimeout(Duration.ofMinutes(3)));
+
+    private String awaitConfig(BlockingQueue<String> pushedConfigs, String marker) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        while (true) {
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0) {
+                return null;
+            }
+            String config = pushedConfigs.poll(remaining, TimeUnit.NANOSECONDS);
+            if (config == null) {
+                return null;
+            }
+            if (config.contains(marker)) {
+                return config;
+            }
+        }
+    }
 
     private void publishWithRetry(ConfigService configService, String content) throws Exception {
         boolean published = false;
@@ -110,8 +127,7 @@ class NacosRateLimitRefreshIntegrationTest {
                 """;
         publishWithRetry(configService, initialConfig);
 
-        CountDownLatch updateReceived = new CountDownLatch(1);
-        AtomicReference<String> pushedConfig = new AtomicReference<>();
+        BlockingQueue<String> pushedConfigs = new LinkedBlockingQueue<>();
         Listener listener = new Listener() {
             @Override
             public java.util.concurrent.Executor getExecutor() {
@@ -120,9 +136,8 @@ class NacosRateLimitRefreshIntegrationTest {
 
             @Override
             public void receiveConfigInfo(String configInfo) {
-                if (configInfo != null && configInfo.contains("192.0.2.55")) {
-                    pushedConfig.set(configInfo);
-                    updateReceived.countDown();
+                if (configInfo != null) {
+                    pushedConfigs.offer(configInfo);
                 }
             }
         };
@@ -130,9 +145,10 @@ class NacosRateLimitRefreshIntegrationTest {
         try {
             configService.addListener(DATA_ID, GROUP, listener);
             publishWithRetry(configService, updatedConfig);
-            assertThat(updateReceived.await(30, TimeUnit.SECONDS))
+            String receivedConfig = awaitConfig(pushedConfigs, "192.0.2.55");
+            assertThat(receivedConfig)
                     .as("Nacos listener should receive the updated configuration")
-                    .isTrue();
+                    .isNotNull();
 
             GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
             try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
@@ -146,7 +162,7 @@ class NacosRateLimitRefreshIntegrationTest {
                 StandardEnvironment environment = new StandardEnvironment();
                 List<PropertySource<?>> propertySources = new YamlPropertySourceLoader().load(
                         "nacos-integration",
-                        new ByteArrayResource(pushedConfig.get().getBytes(StandardCharsets.UTF_8)));
+                        new ByteArrayResource(receivedConfig.getBytes(StandardCharsets.UTF_8)));
                 propertySources.forEach(source -> environment.getPropertySources().addFirst(source));
                 Binder.get(environment).bind(
                         "peach.gateway.rate-limit", Bindable.ofInstance(properties));
@@ -172,6 +188,30 @@ class NacosRateLimitRefreshIntegrationTest {
                 assertThat(registry.getSnapshot().scripts().allowedRemoteHosts())
                         .containsExactly("cdn.example.com");
                 assertThat(registry.getSnapshot().scripts().allowedRemotePorts()).containsExactly(443);
+
+                var lastKnownGood = registry.getSnapshot();
+                String invalidConfig = updatedConfig
+                        .replace("max-matched-rules-per-request: 7", "max-matched-rules-per-request: 0")
+                        .replace("192.0.2.55", "192.0.2.56");
+                publishWithRetry(configService, invalidConfig);
+                String receivedInvalidConfig = awaitConfig(pushedConfigs, "192.0.2.56");
+                assertThat(receivedInvalidConfig).isNotNull();
+
+                List<PropertySource<?>> invalidSources = new YamlPropertySourceLoader().load(
+                        "nacos-invalid-integration",
+                        new ByteArrayResource(receivedInvalidConfig.getBytes(StandardCharsets.UTF_8)));
+                invalidSources.forEach(source -> environment.getPropertySources().addFirst(source));
+                Binder.get(environment).bind("peach.gateway.rate-limit", Bindable.ofInstance(properties));
+
+                context.publishEvent(new EnvironmentChangeEvent(Set.of(
+                        "peach.gateway.rate-limit.max-matched-rules-per-request",
+                        "peach.gateway.rate-limit.allowlist-ips")));
+                assertThat(registry.getSnapshot()).isSameAs(lastKnownGood);
+
+                context.publishEvent(new RefreshScopeRefreshedEvent("nacos-invalid-rate-limit-integration"));
+                assertThat(registry.getSnapshot()).isSameAs(lastKnownGood);
+                assertThat(registry.getSnapshot().maxMatchedRulesPerRequest()).isEqualTo(7);
+                assertThat(registry.getSnapshot().allowlistIps()).containsExactly("192.0.2.55");
             }
         } finally {
             configService.removeListener(DATA_ID, GROUP, listener);
