@@ -51,7 +51,7 @@ public class RateLimitScriptRepository {
         validateScriptConfiguration(ruleRegistry.getSnapshot().scripts());
     }
 
-    public Mono<Void> reload() {
+    public Mono<Boolean> reload() {
         return Mono.defer(() -> {
             RateLimitConfigurationSnapshot runtimeSnapshot = ruleRegistry.getSnapshot();
             RateLimitScriptConfiguration config = runtimeSnapshot.scripts();
@@ -61,11 +61,13 @@ public class RateLimitScriptRepository {
             return Flux.fromArray(RateLimitAlgorithm.values())
                     .concatMap(algorithm -> load(algorithm, config)
                             .doOnNext(value -> loaded.put(algorithm, value)))
-                    .then(Mono.fromRunnable(() -> {
-                        if (generation == reloadGeneration.get()
-                                && ruleRegistry.getSnapshot().scripts().equals(config)) {
-                            snapshot.set(new ScriptSnapshot(Map.copyOf(loaded), config));
+                    .then(Mono.fromSupplier(() -> {
+                        if (generation != reloadGeneration.get()
+                                || !ruleRegistry.getSnapshot().scripts().equals(config)) {
+                            return false;
                         }
+                        snapshot.set(new ScriptSnapshot(Map.copyOf(loaded), config));
+                        return true;
                     }));
         });
     }
