@@ -49,6 +49,12 @@ public class GatewayRateLimitProperties {
     /** 同时生效的最大规则数。 */
     private int maxRules = 500;
 
+    /**
+     * 单个请求最多执行的配额规则数。
+     * 超出后不再继续访问 Redis，并按 failure-mode 处理，避免宽泛规则把一次请求放大成数百次 Lua 调用。
+     */
+    private int maxMatchedRulesPerRequest = 32;
+
     /** 限流规则。 */
     private List<RuleProperties> rules = new ArrayList<>();
 

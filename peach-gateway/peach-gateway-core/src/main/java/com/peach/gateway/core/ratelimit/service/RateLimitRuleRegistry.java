@@ -7,6 +7,8 @@ import com.peach.gateway.core.ratelimit.model.RateLimitRule;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -31,6 +33,12 @@ public class RateLimitRuleRegistry {
 
     private static final int MAX_BURST_CAPACITY = 1_000_000;
 
+    private static final int MAX_SLIDING_LOG_LIMIT = 1_000;
+
+    private static final int MAX_SLIDING_LOG_COST = 100;
+
+    private static final int MAX_MATCHED_RULES_PER_REQUEST = 64;
+
     private static final long MAX_WINDOW_MILLIS = Duration.ofDays(365).toMillis();
 
     private static final int MAX_RULE_COUNT = 500;
@@ -53,6 +61,7 @@ public class RateLimitRuleRegistry {
         return snapshot.get();
     }
 
+    @Order(Ordered.LOWEST_PRECEDENCE)
     @EventListener(EnvironmentChangeEvent.class)
     public void onEnvironmentChanged(EnvironmentChangeEvent event) {
         try {
@@ -78,6 +87,11 @@ public class RateLimitRuleRegistry {
         List<GatewayRateLimitProperties.RuleProperties> enabledRules = configured.stream()
                 .filter(GatewayRateLimitProperties.RuleProperties::isEnabled)
                 .toList();
+        int maxMatchedRules = properties.getMaxMatchedRulesPerRequest();
+        if (maxMatchedRules < 1 || maxMatchedRules > MAX_MATCHED_RULES_PER_REQUEST) {
+            throw new IllegalArgumentException("max-matched-rules-per-request must be between 1 and "
+                    + MAX_MATCHED_RULES_PER_REQUEST);
+        }
         if (enabledRules.size() > Math.min(MAX_RULE_COUNT, properties.getMaxRules())) {
             throw new IllegalArgumentException("Enabled rate limit rule count exceeds configured maximum");
         }
@@ -101,6 +115,7 @@ public class RateLimitRuleRegistry {
                 normalizeIpValues(properties.getDenylistIps()),
                 normalizeValues(properties.getDenylistTenants()));
         snapshot.set(replacement);
+        warnBroadOverlap(rules);
     }
 
     private RateLimitRule toRule(GatewayRateLimitProperties.RuleProperties source) {
@@ -123,7 +138,15 @@ public class RateLimitRuleRegistry {
         double leakRate = source.getLeakRate();
 
         switch (source.getAlgorithm()) {
-            case FIXED_WINDOW, SLIDING_WINDOW_LOG, SLIDING_WINDOW_COUNTER -> {
+            case SLIDING_WINDOW_LOG -> {
+                if (limit <= 0 || limit > MAX_SLIDING_LOG_LIMIT
+                        || cost > MAX_SLIDING_LOG_COST || cost > limit) {
+                    throw new IllegalArgumentException(
+                            "Sliding window log limit must be 1.." + MAX_SLIDING_LOG_LIMIT
+                                    + " and cost must be 1.." + MAX_SLIDING_LOG_COST + ": " + id);
+                }
+            }
+            case FIXED_WINDOW, SLIDING_WINDOW_COUNTER -> {
                 if (limit <= 0 || limit > MAX_BURST_CAPACITY || cost > limit) {
                     throw new IllegalArgumentException("Window limit must be within supported range and >= cost: " + id);
                 }
@@ -139,6 +162,19 @@ public class RateLimitRuleRegistry {
         return new RateLimitRule(id, source.isEnabled(), source.getScope(), source.getAlgorithm(),
                 source.getPriority(), methods, paths, routeIds, limit, windowMs,
                 replenishRate, burstCapacity, leakRate, cost);
+    }
+
+    private void warnBroadOverlap(List<RateLimitRule> rules) {
+        long broadRules = rules.stream().filter(this::isBroadRule).count();
+        if (broadRules > 1) {
+            log.warn("Gateway rate limit has {} broad rules; a single request may match several of them",
+                    broadRules);
+        }
+    }
+
+    private boolean isBroadRule(RateLimitRule rule) {
+        return rule.paths().isEmpty()
+                || rule.paths().stream().anyMatch(path -> "/**".equals(path) || path.endsWith("/**"));
     }
 
     private boolean requiresWindow(RateLimitAlgorithm algorithm) {

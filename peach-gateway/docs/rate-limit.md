@@ -34,25 +34,32 @@ Gateway 限流由 peach-gateway-core 实现，使用 Spring Cloud Gateway Global
 
 ## 2. 请求执行链
 
-限流过滤器顺序为 -175，位于 Sa-Token 鉴权 -200 之后、Same-Token -150 之前。
+限流过滤器顺序为 -175，位于 Sa-Token 鉴权 -200 之后、Same-Token -150 之前。没有配额规则时仍会先执行 IP/租户黑白名单；公开登录接口会跳过租户规则和租户名单，避免无 Token 的登录请求被误返回 401。
 
-    flowchart TD
-        A[HTTP Request] --> B[Request ID -300]
-        B --> C[Risk Control -250]
-        C --> D[Sa-Token Authentication -200]
-        D --> E[Rate Limit -175]
-        E --> F{Matched Rules}
-        F -->|None| G[Forward Request]
-        F -->|Rules| H[Resolve Trusted IP]
-        H --> I{Tenant Rule Matched?}
-        I -->|Yes| J[Read Current Token Session]
-        I -->|No| K[Build Redis Keys]
-        J --> K
-        K --> L[Execute Lua Sequentially]
-        L --> M{Allowed?}
-        M -->|Yes| N[Same-Token -150]
-        N --> O[Downstream Route]
-        M -->|No| P[HTTP 429]
+```mermaid
+flowchart TD
+    A[HTTP Request] --> B[Request ID -300]
+    B --> C[Risk Control -250]
+    C --> D[Sa-Token Authentication -200]
+    D --> E[Rate Limit -175]
+    E --> F[Resolve trusted client IP]
+    F --> G{IP denylist}
+    G -->|Hit| H[HTTP 403]
+    G -->|Miss| I{Public endpoint}
+    I -->|Yes| J[Skip tenant rules and tenant lists]
+    I -->|No| K{Tenant denylist or allowlist}
+    J --> L{Quota rules}
+    K -->|Denylist| H
+    K -->|Allowlist| M[Forward]
+    K -->|Neither| L
+    L -->|None| M
+    L -->|Over per-request cap| N[Unavailable then failure-mode]
+    L -->|Within cap| O[Execute Lua by priority]
+    O --> P{Allowed}
+    P -->|Yes| Q[Same-Token -150]
+    Q --> R[Downstream Route]
+    P -->|No| S[HTTP 429]
+```
 
 执行约束：
 
@@ -97,6 +104,7 @@ trusted-proxies 支持 IPv4、IPv6 和 CIDR，例如 10.20.0.0/16、2001:db8:123
           enabled: true
           failure-mode: fail-closed
           require-tenant-context: true
+          max-matched-rules-per-request: 32
           trusted-proxies:
             - 10.20.0.0/16
           allowlist-ips: []
@@ -186,7 +194,9 @@ trusted-proxies 支持 IPv4、IPv6 和 CIDR，例如 10.20.0.0/16、2001:db8:123
         leaky-bucket: <sha256>
         gcra: <sha256>
 
-也可以在 remote-urls 中为单个算法指定预签名 URL。生产环境建议使用 HTTPS。脚本大小、连接超时、读取超时和 SHA-256 均在加载阶段校验。
+也可以在 remote-urls 中为单个算法指定预签名 URL。生产环境使用 HTTPS，并避免把脚本地址指向链路本地地址或云元数据地址。加载阶段会拒绝访问第二个 Redis Key 的脚本，关闭 HTTP 重定向，并校验脚本大小、连接超时、读取超时和 SHA-256。
+
+`local-location` 可以使用 `classpath:` 或 `file:`。`file:` 资源不会被文件监听自动重载；覆盖磁盘文件后，需要发布一次 Nacos 脚本配置或重启网关才会重新读取。部署时该目录应对网关运行用户只读。
 
 ## 6. 响应与故障策略
 

@@ -185,7 +185,7 @@ Gateway Redis connectivity uses `peach.redis.*` from `peach-redis.yml` and must 
 - Rate limiting is disabled by default. When enabled, Redis failures default to FAIL_CLOSED (503); Nacos can switch to FAIL_OPEN.
 - Tenant limits read the tenant ID only from the current Sa-Token Token Session, never from request headers or a user-wide shared cache. Authentication issues a distinct token per login to prevent cross-device context overwrites.
 - Rate-limit allowlists bypass quotas and denylists reject requests. Existing gateway access allowlists and risk-control denylists keep their earlier filter order.
-- When rate limiting is dynamically enabled, quota algorithms remain inactive until all Lua scripts are loaded successfully; IP/tenant allowlists and denylists remain active.
+- When rate limiting is dynamically enabled, quota checks stay unavailable until all six Lua scripts load. failure-mode then applies: FAIL_CLOSED returns 503 and FAIL_OPEN forwards the request. IP and tenant allowlists and denylists still run. Public login endpoints skip tenant rules, so a missing token is not turned into 401.
 - Same-Token is injected only for non-public endpoints. Unauthenticated public requests do not depend on service credentials.
 
 ## Verification

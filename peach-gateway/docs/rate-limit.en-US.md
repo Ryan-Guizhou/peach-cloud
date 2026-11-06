@@ -34,25 +34,32 @@ Rules can also select methods, paths, and route-ids. Values within one selector 
 
 ## 2. Request Flow
 
-The rate-limit filter runs at order -175, after Sa-Token authentication (-200) and before Same-Token injection (-150).
+The rate-limit filter runs at order -175, after Sa-Token authentication (-200) and before Same-Token injection (-150). Requests with no quota rule still pass IP and tenant allow/deny policy first. Public login endpoints skip tenant rules and tenant lists, so a missing token does not become HTTP 401.
 
-    flowchart TD
-        A[HTTP Request] --> B[Request ID -300]
-        B --> C[Risk Control -250]
-        C --> D[Sa-Token Authentication -200]
-        D --> E[Rate Limit -175]
-        E --> F{Matched Rules}
-        F -->|None| G[Forward Request]
-        F -->|Rules| H[Resolve Trusted IP]
-        H --> I{Tenant Rule Matched?}
-        I -->|Yes| J[Read Current Token Session]
-        I -->|No| K[Build Redis Keys]
-        J --> K
-        K --> L[Execute Lua Sequentially]
-        L --> M{Allowed?}
-        M -->|Yes| N[Same-Token -150]
-        N --> O[Downstream Route]
-        M -->|No| P[HTTP 429]
+```mermaid
+flowchart TD
+    A[HTTP Request] --> B[Request ID -300]
+    B --> C[Risk Control -250]
+    C --> D[Sa-Token Authentication -200]
+    D --> E[Rate Limit -175]
+    E --> F[Resolve trusted client IP]
+    F --> G{IP denylist}
+    G -->|Hit| H[HTTP 403]
+    G -->|Miss| I{Public endpoint}
+    I -->|Yes| J[Skip tenant rules and tenant lists]
+    I -->|No| K{Tenant denylist or allowlist}
+    J --> L{Quota rules}
+    K -->|Denylist| H
+    K -->|Allowlist| M[Forward]
+    K -->|Neither| L
+    L -->|None| M
+    L -->|Over per-request cap| N[Unavailable then failure-mode]
+    L -->|Within cap| O[Execute Lua by priority]
+    O --> P{Allowed}
+    P -->|Yes| Q[Same-Token -150]
+    Q --> R[Downstream Route]
+    P -->|No| S[HTTP 429]
+```
 
 Execution semantics:
 
@@ -96,6 +103,7 @@ The prefix is peach.gateway.rate-limit. Runtime configuration belongs in the Nac
         rate-limit:
           enabled: true
           failure-mode: fail-closed
+          max-matched-rules-per-request: 32
           require-tenant-context: true
           trusted-proxies:
             - 10.20.0.0/16
@@ -186,7 +194,9 @@ Remote OSS example:
         leaky-bucket: <sha256>
         gcra: <sha256>
 
-A pre-signed URL can be configured for an individual algorithm in remote-urls. HTTPS is recommended in production. Script size, connection timeout, read timeout, and SHA-256 are validated during loading.
+A pre-signed URL can be configured for an individual algorithm in remote-urls. Production URLs should use HTTPS and must not target link-local or cloud metadata addresses. Loading rejects scripts that touch a second Redis key, disables HTTP redirects, and checks size, connect timeout, read timeout, and SHA-256.
+
+`local-location` accepts `classpath:` or `file:`. A `file:` resource is not watched. After replacing the file on disk, publish a Nacos script-config change or restart the gateway to reload it. The directory should be read-only for the gateway user.
 
 ## 6. Responses and Failure Policy
 

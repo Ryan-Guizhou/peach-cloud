@@ -114,6 +114,33 @@ class RateLimitScriptRepositoryTest {
         assertThat(repository.get(RateLimitAlgorithm.TOKEN_BUCKET)).isEqualTo(remoteScript);
     }
 
+    @Test
+    void shouldRejectRemoteScriptThatTouchesAnotherRedisKeyOrMetadataAddress() throws Exception {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.getScripts().setRemoteUrls(Map.of("token-bucket", "http://169.254.169.254/latest/meta-data"));
+
+        RateLimitScriptRepository blockedHost = new RateLimitScriptRepository(properties, new DefaultResourceLoader());
+        assertThatThrownBy(() -> blockedHost.reload().block(Duration.ofSeconds(5)))
+                .isInstanceOf(RuntimeException.class);
+
+        String crossSlotScript = "redis.call('GET', KEYS[2])";
+        properties.getScripts().setRemoteUrls(Map.of("token-bucket",
+                "http://127.0.0.1:" + server.getAddress().getPort() + "/token-bucket.lua"));
+        properties.getScripts().setExpectedSha256(Map.of("token-bucket", sha256(crossSlotScript)));
+        server.removeContext("/token-bucket.lua");
+        server.createContext("/token-bucket.lua", exchange -> {
+            byte[] body = crossSlotScript.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            try (var output = exchange.getResponseBody()) {
+                output.write(body);
+            }
+        });
+        RateLimitScriptRepository blockedScript = new RateLimitScriptRepository(properties, new DefaultResourceLoader());
+        assertThatThrownBy(() -> blockedScript.reload().block(Duration.ofSeconds(5)))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Failed to load remote rate limit script");
+    }
+
     private String sha256(String value) throws Exception {
         byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
         return HexFormat.of().formatHex(digest);
