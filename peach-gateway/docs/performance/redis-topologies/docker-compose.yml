@@ -168,7 +168,7 @@ services:
     image: alpine:3.20
     profiles: ["tls"]
     entrypoint: ["/bin/sh", "-c"]
-    command: "apk add --no-cache openssl && mkdir -p /tls && openssl req -x509 -nodes -days 30 -newkey rsa:2048 -keyout /tls/redis.key -out /tls/redis.crt -subj '/CN=redis-tls' && chmod 600 /tls/redis.key"
+    command: "apk add --no-cache openssl && mkdir -p /tls && openssl req -x509 -nodes -days 30 -newkey rsa:2048 -keyout /tls/redis.key -out /tls/redis.crt -subj '/CN=redis-tls' -addext 'subjectAltName=DNS:redis-tls' && chmod 644 /tls/redis.key"
     volumes: ["redis-tls-certs:/tls"]
     networks: [rate-limit-tls]
     restart: "no"
