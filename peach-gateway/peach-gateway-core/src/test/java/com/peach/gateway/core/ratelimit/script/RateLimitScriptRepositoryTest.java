@@ -262,7 +262,8 @@ class RateLimitScriptRepositoryTest {
     }
 
     private String localUrl(String path) {
-        return "http://" + serverHost + ":" + server.getAddress().getPort() + path;
+        String uriHost = serverHost.contains(":") ? "[" + serverHost + "]" : serverHost;
+        return "http://" + uriHost + ":" + server.getAddress().getPort() + path;
     }
 
     private String sha256(String value) throws Exception {
