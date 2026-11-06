@@ -52,10 +52,21 @@ class NacosRateLimitRefreshIntegrationTest {
                     .withEnv("JVM_XMS", "256m")
                     .withEnv("JVM_XMX", "512m")
                     .withExposedPorts(8848, 9848, 9849)
-                    .waitingFor(Wait.forHttp("/nacos/v1/console/health/liveness")
+                    .waitingFor(Wait.forHttp("/nacos/v1/console/health/readiness")
                             .forPort(8848)
                             .forStatusCode(200)
                             .withStartupTimeout(Duration.ofMinutes(3)));
+
+    private void publishWithRetry(ConfigService configService, String content) throws Exception {
+        boolean published = false;
+        for (int attempt = 0; attempt < 10 && !published; attempt++) {
+            published = configService.publishConfig(DATA_ID, GROUP, content);
+            if (!published) {
+                Thread.sleep(1000L);
+            }
+        }
+        assertThat(published).as("Nacos should accept the rate-limit configuration").isTrue();
+    }
 
     @Test
     void shouldReceiveNacosConfigAndPublishValidatedRuntimeSnapshotAfterRebinding() throws Exception {
@@ -63,6 +74,8 @@ class NacosRateLimitRefreshIntegrationTest {
         clientProperties.setProperty("serverAddr",
                 NACOS.getHost() + ":" + NACOS.getMappedPort(8848));
         clientProperties.setProperty("namespace", "");
+        clientProperties.setProperty("username", "nacos");
+        clientProperties.setProperty("password", "nacos");
         clientProperties.setProperty("configLongPollTimeout", "3000");
         clientProperties.setProperty("configRetryTime", "1000");
 
@@ -93,7 +106,7 @@ class NacosRateLimitRefreshIntegrationTest {
                           - 443
                       rules: []
                 """;
-        assertThat(configService.publishConfig(DATA_ID, GROUP, initialConfig)).isTrue();
+        publishWithRetry(configService, initialConfig);
 
         CountDownLatch updateReceived = new CountDownLatch(1);
         AtomicReference<String> pushedConfig = new AtomicReference<>();
@@ -114,7 +127,7 @@ class NacosRateLimitRefreshIntegrationTest {
 
         try {
             configService.addListener(DATA_ID, GROUP, listener);
-            assertThat(configService.publishConfig(DATA_ID, GROUP, updatedConfig)).isTrue();
+            publishWithRetry(configService, updatedConfig);
             assertThat(updateReceived.await(30, TimeUnit.SECONDS))
                     .as("Nacos listener should receive the updated configuration")
                     .isTrue();
