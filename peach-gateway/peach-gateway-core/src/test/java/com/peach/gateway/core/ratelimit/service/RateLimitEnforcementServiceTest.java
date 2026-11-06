@@ -16,11 +16,15 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -251,6 +255,48 @@ class RateLimitEnforcementServiceTest {
         verify(ipResolver).resolve(any(), any());
         verify(executor, never()).execute(any(), anyString(), anyString());
         verify(metrics).recordPolicy("scripts-not-ready");
+    }
+
+    @Test
+    void shouldExecuteWithTheScriptSnapshotCapturedBeforeTenantResolution() throws Exception {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(true);
+        properties.setRequireTenantContext(true);
+        properties.setRules(List.of(
+                rule("tenant-api", RateLimitScope.TENANT, RateLimitAlgorithm.TOKEN_BUCKET, 1)));
+
+        RedisRateLimitExecutor executor = mock(RedisRateLimitExecutor.class);
+        TrustedProxyClientIpResolver ipResolver = mock(TrustedProxyClientIpResolver.class);
+        RateLimitTenantContextResolver tenantResolver = mock(RateLimitTenantContextResolver.class);
+        RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+        RateLimitScriptRepository scriptRepository = mock(RateLimitScriptRepository.class);
+        Map<RateLimitAlgorithm, String> oldScripts = scriptSources();
+        Map<RateLimitAlgorithm, String> newScripts = Map.of(
+                RateLimitAlgorithm.FIXED_WINDOW, "new-fixed",
+                RateLimitAlgorithm.SLIDING_WINDOW_LOG, "new-log",
+                RateLimitAlgorithm.SLIDING_WINDOW_COUNTER, "new-counter",
+                RateLimitAlgorithm.TOKEN_BUCKET, "new-token-bucket",
+                RateLimitAlgorithm.LEAKY_BUCKET, "new-leaky",
+                RateLimitAlgorithm.GCRA, "new-gcra");
+        AtomicReference<Map<RateLimitAlgorithm, String>> activeScripts = new AtomicReference<>(oldScripts);
+        when(scriptRepository.getScripts(any())).thenAnswer(invocation -> activeScripts.get());
+        when(ipResolver.resolve(any(), any())).thenReturn("192.0.2.10");
+        when(tenantResolver.resolve(any())).thenReturn(
+                Mono.delay(Duration.ofMillis(150)).thenReturn("tenant-a"));
+        when(executor.execute(any(), anyString(), anyString()))
+                .thenReturn(Mono.just(new RateLimitDecision(true, 9, 1000, 0, 10)));
+
+        RateLimitEnforcementService service = new RateLimitEnforcementService(
+                new RateLimitRuleRegistry(properties), new RateLimitRuleMatcher(), new RateLimitKeyFactory(),
+                executor, ipResolver, tenantResolver, metrics, scriptRepository, new GatewaySaTokenProperties());
+
+        CompletableFuture<RateLimitCheckResult> resultFuture = service.check(exchange()).toFuture();
+        activeScripts.set(newScripts);
+        RateLimitCheckResult result = resultFuture.get(3, TimeUnit.SECONDS);
+
+        assertThat(result).isNotNull();
+        assertThat(result.status()).isEqualTo(RateLimitCheckResult.Status.ALLOWED);
+        verify(executor).execute(any(), anyString(), eq(oldScripts.get(RateLimitAlgorithm.TOKEN_BUCKET)));
     }
 
     @Test
