@@ -3,6 +3,7 @@ package com.peach.gateway.core.ratelimit.service;
 import com.peach.gateway.core.ratelimit.config.GatewayRateLimitProperties;
 import com.peach.gateway.core.ratelimit.script.RateLimitScriptRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent;
 import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -11,6 +12,7 @@ import reactor.core.publisher.Mono;
 import java.util.Set;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -49,6 +51,22 @@ class RateLimitScriptLoaderTest {
         verify(metrics).recordScriptReload(true);
         }
     }
+    @Test
+    void shouldRegisterNotReadyGaugeWhenRateLimitingIsDisabledAtStartup() throws Exception {
+        GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
+        properties.setEnabled(false);
+        RateLimitRuleRegistry registry = new RateLimitRuleRegistry(properties);
+        RateLimitScriptRepository repository = mock(RateLimitScriptRepository.class);
+        when(repository.isReady()).thenReturn(false);
+        RateLimitMetrics metrics = mock(RateLimitMetrics.class);
+        RateLimitScriptLoader loader = new RateLimitScriptLoader(registry, repository, metrics);
+
+        loader.run(new DefaultApplicationArguments(new String[0]));
+
+        verify(metrics).updateScriptReady(false);
+        verify(repository, never()).reload();
+    }
+
     @Test
     void shouldRecordFailedReloadAndPreservePreviousReadiness() {
         GatewayRateLimitProperties properties = new GatewayRateLimitProperties();
