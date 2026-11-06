@@ -71,12 +71,16 @@ final class RateLimitRemoteScriptAddressValidator {
         for (String cidr : authorizedCidrs) {
             validateCidr(cidr);
         }
-        for (InetAddress address : addresses) {
+        for (InetAddress resolvedAddress : addresses) {
+            InetAddress address = normalizeMappedAddress(resolvedAddress);
             if (isMetadataAddress(address)) {
                 throw invalid("cloud metadata addresses are never allowed");
             }
-            if (isBlockedAddress(address) && !matchesAnyCidr(address, authorizedCidrs)) {
-                throw invalid("remote host resolves to a private, local, or reserved address");
+            if (isNeverAllowedAddress(address) || isReservedAddress(address)) {
+                throw invalid("remote host resolves to a loopback, link-local, unspecified, multicast, or reserved address");
+            }
+            if (isPrivateAddress(address) && !matchesAnyCidr(address, authorizedCidrs)) {
+                throw invalid("remote host resolves to a private address outside allowed-remote-cidrs");
             }
         }
 
@@ -150,36 +154,48 @@ final class RateLimitRemoteScriptAddressValidator {
                 || (first == 168 && second == 63 && third == 129 && fourth == 16);
     }
 
-    private static boolean isBlockedAddress(InetAddress address) {
-        if (address.isAnyLocalAddress() || address.isLoopbackAddress()
-                || address.isLinkLocalAddress() || address.isSiteLocalAddress()
-                || address.isMulticastAddress()) {
+    private static InetAddress normalizeMappedAddress(InetAddress address) {
+        byte[] bytes = address.getAddress();
+        if (bytes.length != 16 || !isIpv4Mapped(bytes)) {
+            return address;
+        }
+        try {
+            return InetAddress.getByAddress(new byte[]{bytes[12], bytes[13], bytes[14], bytes[15]});
+        } catch (UnknownHostException exception) {
+            throw new IllegalStateException("Unable to inspect IPv4-mapped IPv6 address", exception);
+        }
+    }
+
+    private static boolean isNeverAllowedAddress(InetAddress address) {
+        return address.isAnyLocalAddress()
+                || address.isLoopbackAddress()
+                || address.isLinkLocalAddress()
+                || address.isMulticastAddress();
+    }
+
+    private static boolean isPrivateAddress(InetAddress address) {
+        if (address.isSiteLocalAddress()) {
             return true;
         }
         byte[] bytes = address.getAddress();
+        return bytes.length == 16 && (Byte.toUnsignedInt(bytes[0]) & 0xFE) == 0xFC;
+    }
+
+    private static boolean isReservedAddress(InetAddress address) {
+        byte[] bytes = address.getAddress();
         if (bytes.length == 16) {
-            if (isIpv4Mapped(bytes)) {
-                try {
-                    return isBlockedAddress(InetAddress.getByAddress(
-                            new byte[]{bytes[12], bytes[13], bytes[14], bytes[15]}));
-                } catch (UnknownHostException exception) {
-                    throw new IllegalStateException("Unable to inspect IPv4-mapped IPv6 address", exception);
-                }
-            }
             int first = Byte.toUnsignedInt(bytes[0]);
             int second = Byte.toUnsignedInt(bytes[1]);
-            boolean uniqueLocal = (first & 0xFE) == 0xFC;
-            boolean documentation = first == 0x20 && second == 0x01
+            return first == 0x20 && second == 0x01
                     && Byte.toUnsignedInt(bytes[2]) == 0x0D
                     && Byte.toUnsignedInt(bytes[3]) == 0xB8;
-            return uniqueLocal || documentation;
         }
 
         int first = Byte.toUnsignedInt(bytes[0]);
         int second = Byte.toUnsignedInt(bytes[1]);
         int third = Byte.toUnsignedInt(bytes[2]);
         return first == 0
-                || first >= 224
+                || first >= 240
                 || (first == 100 && second >= 64 && second <= 127)
                 || (first == 192 && second == 0 && third == 0)
                 || (first == 192 && second == 0 && third == 2)
