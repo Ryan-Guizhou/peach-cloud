@@ -11,7 +11,7 @@ import com.peach.common.constant.SaTokenConstant;
  */
 public final class GatewayRateLimitConstants {
 
-    public static final String REDIS_KEY_PREFIX = "peach:gateway:rate-limit:v1:";
+    public static final String REDIS_KEY_PREFIX = "peach:gateway:rate-limit:v2:";
 
     public static final String TOKEN_SESSION_TENANT_ID = SaTokenConstant.TOKEN_SESSION_TENANT_ID;
 

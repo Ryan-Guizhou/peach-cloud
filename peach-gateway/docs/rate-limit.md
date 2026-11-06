@@ -221,7 +221,7 @@ Redis 或限流执行器不可用时：
 
 所有 Lua 脚本只访问一个 KEYS[1]，避免 Redis Cluster 跨 Slot。固定窗口使用单 Hash Key 保存窗口 ID 和计数，不在 Lua 中拼接第二个 Redis Key。
 
-Redis Key 前缀为 peach:gateway:rate-limit:v1:；IP、租户、URI 身份使用 SHA-256，避免将原始身份值写入 Redis Key，并限制 Key 长度。
+Redis Key 前缀为 peach:gateway:rate-limit:v2:；IP、租户、URI 身份使用 SHA-256，避免将原始身份值写入 Redis Key，并限制 Key 长度。
 
 严格 Global 限流天然共享单个热点 Key。若需要水平扩展且能接受配额语义变化，应优先考虑按租户、IP 或 URI 分区，而不是擅自把 Global Key 分片后仍宣称全局精确限流。
 

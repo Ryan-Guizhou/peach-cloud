@@ -221,7 +221,7 @@ When Redis or the rate-limit executor is unavailable:
 
 Every Lua script accesses only KEYS[1], avoiding Redis Cluster cross-slot access. Fixed-window state is stored in one hash key; the Lua script does not construct a second Redis key.
 
-The key prefix is peach:gateway:rate-limit:v1:. IP, tenant, and URI identities are SHA-256 hashed so raw identities are not stored in Redis keys and key length remains bounded.
+The key prefix is peach:gateway:rate-limit:v2:. IP, tenant, and URI identities are SHA-256 hashed so raw identities are not stored in Redis keys and key length remains bounded.
 
 Strict Global limits inherently share a hot key. If horizontal partitioning is required and quota semantics may change, prefer tenant, IP, or URI scopes rather than sharding a Global key and still claiming exact global enforcement.
 
