@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: peach-mybatis-quickstart
+  main:
+    web-application-type: none
+
+peach:
+  mybatis:
+    enabled: true
+    log:
+      executable: false

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.peach</groupId>
+        <artifactId>peach-component</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>peach-mybatis</artifactId>
+    <name>peach-mybatis</name>
+    <description>Peach MyBatis SQL 日志与多库识别</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>peach-mybatis-autoconfigure</module>
+        <module>peach-mybatis-starter</module>
+        <module>peach-mybatis-quickstart</module>
+    </modules>
+</project>
