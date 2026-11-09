@@ -4,6 +4,9 @@ import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.peach.mongo.log.MongoCommandMetrics;
+import com.peach.mongo.log.PeachMongoCommandListener;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -51,9 +54,9 @@ public class MongoAutoConfigure {
 
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean(MongoClient.class)
-    public MongoClient mongoClient(PeachMongoProperties properties) {
+    public MongoClient mongoClient(PeachMongoProperties properties, ObjectProvider<MongoCommandMetrics> metrics) {
         ConnectionString cs = new ConnectionString(properties.getUri());
-        MongoClientSettings settings = MongoClientSettings.builder()
+        MongoClientSettings.Builder settings = MongoClientSettings.builder()
                 .applyConnectionString(cs)
                 .applyToConnectionPoolSettings(builder -> {
                     builder.maxSize(properties.getPool().getMaxSize());
@@ -70,10 +73,11 @@ public class MongoAutoConfigure {
                 .applyToClusterSettings(builder ->
                         builder.serverSelectionTimeout(properties.getCluster().getServerSelectionTimeoutMs(),TimeUnit.MILLISECONDS))
                 .retryReads(properties.isRetryReads())
-                .retryWrites(properties.isRetryWrites())
-                .build();
-
-        return MongoClients.create(settings);
+                .retryWrites(properties.isRetryWrites());
+        if (properties.getLog().isEnabled()) {
+            settings.addCommandListener(new PeachMongoCommandListener(properties.getLog(), metrics.getIfAvailable()));
+        }
+        return MongoClients.create(settings.build());
     }
 
 

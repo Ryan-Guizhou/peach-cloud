@@ -62,7 +62,6 @@ public class MongoService<T> implements IMongoService<T>{
 
     @Override
     public List<Document> findList(String collectionName, Document query, Document sort, Document projection, Integer skip, Integer limit) {
-        log.info("MongoService.findList collectionName: {}, query: {}, sort: {}, projection: {}, skip: {}, limit: {}", collectionName, query, sort, projection, skip, limit);
         List<Document> documentList = new ArrayList<>();
         try {
             Document finalQuery = query == null ? new Document() : query;
@@ -114,14 +113,12 @@ public class MongoService<T> implements IMongoService<T>{
 
     @Override
     public long count(String collectionName, Document query) {
-        log.info("MongoService.count() collectionName: {}, query: {}", collectionName, query);
         Document finalQuery = query == null ? new Document() : query;
         return getCollection(collectionName).countDocuments(finalQuery);
     }
 
     @Override
     public PageInfo<Document> findPage(String collectionName, Document query, Document sort, Document projection, Integer pageNum, Integer pageSize) {
-        log.info("MongoService.findPage() collectionName: {}, query: {}, sort: {}, projection: {}, pageNum: {}, pageSize: {}", collectionName, query, sort, projection, pageNum, pageSize);
         PageInfo<Document> pageInfo = new PageInfo<>();
         try {
             MongoCollection<Document> mongoCollection = getCollection(collectionName);

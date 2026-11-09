@@ -1,0 +1,3 @@
+com.peach.mybatis.autoconfigure.PeachMybatisAutoConfiguration
+com.peach.mybatis.autoconfigure.PeachMybatisPageHelperAutoConfiguration
+com.peach.mybatis.autoconfigure.PeachMybatisMetricsAutoConfiguration

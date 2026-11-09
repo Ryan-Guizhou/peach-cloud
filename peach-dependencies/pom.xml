@@ -571,6 +571,18 @@
                 <version>${revision}</version>
             </dependency>
 
+            <!-- ==================== peach-component / peach-mybatis ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-mybatis-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-mybatis-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
             <!-- ==================== peach-component / peach-code ==================== -->
             <dependency>
                 <groupId>com.peach</groupId>

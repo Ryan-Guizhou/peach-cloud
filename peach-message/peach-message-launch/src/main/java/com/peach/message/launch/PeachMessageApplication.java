@@ -4,8 +4,6 @@ import com.peach.common.annoation.MybatisDao;
 import com.peach.message.launch.datasource.DataSourceProperties;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.ibatis.mapping.DatabaseIdProvider;
-import org.apache.ibatis.mapping.VendorDatabaseIdProvider;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -25,7 +23,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
-import java.util.Properties;
 
 
 /**
@@ -59,11 +56,9 @@ public class PeachMessageApplication {
 
     @Primary
     @Bean("mybatisSession")
-    public SqlSessionFactoryBean sqlSessionFactoryBean(@Qualifier("dataSource") DataSource dataSource,
-                                                       DatabaseIdProvider databaseIdProvider) throws IOException {
+    public SqlSessionFactoryBean sqlSessionFactoryBean(@Qualifier("dataSource") DataSource dataSource) throws IOException {
         SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
         sqlSessionFactoryBean.setDataSource(dataSource);
-        sqlSessionFactoryBean.setDatabaseIdProvider(databaseIdProvider);
         sqlSessionFactoryBean.setConfigLocation(new ClassPathResource("mybatis-config.xml"));
         sqlSessionFactoryBean.setMapperLocations(
                 new PathMatchingResourcePatternResolver().getResources("classpath*:com/peach/**/*.xml")
@@ -75,17 +70,5 @@ public class PeachMessageApplication {
     @Bean("transactionManager")
     public PlatformTransactionManager transactionManager(@Qualifier("dataSource") DataSource dataSource) {
         return new DataSourceTransactionManager(dataSource);
-    }
-
-    @Bean
-    public DatabaseIdProvider databaseIdProvider() {
-        DatabaseIdProvider databaseIdProvider = new VendorDatabaseIdProvider();
-        Properties properties = new Properties();
-        properties.setProperty("MySQL", "mysql");
-        properties.setProperty("Oracle", "oracle");
-        properties.setProperty("DM", "mysql");
-        properties.setProperty("PostgreSQL", "postgresql");
-        databaseIdProvider.setProperties(properties);
-        return databaseIdProvider;
     }
 }
