@@ -1,0 +1,6 @@
+<included>
+    <logger name="MONGO_LOG" level="DEBUG" additivity="false">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="ALL_FILE"/>
+    </logger>
+</included>

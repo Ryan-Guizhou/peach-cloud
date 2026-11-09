@@ -1,1 +1,2 @@
 com.peach.mongo.MongoAutoConfigure
+com.peach.mongo.MongoMetricsAutoConfiguration
