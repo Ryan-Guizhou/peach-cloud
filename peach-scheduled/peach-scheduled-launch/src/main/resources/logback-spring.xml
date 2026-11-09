@@ -57,10 +57,7 @@
         <encoder><pattern>${LOG_PATTERN}</pattern></encoder>
     </appender>
 
-    <logger name="SQL_LOG" level="DEBUG" additivity="false">
-        <appender-ref ref="STDOUT"/>
-        <appender-ref ref="ALL_FILE"/>
-    </logger>
+    <include resource="logback/peach-mybatis.xml"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>

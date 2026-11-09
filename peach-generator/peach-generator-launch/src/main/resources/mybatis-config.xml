@@ -6,21 +6,4 @@
         <setting name="logImpl" value="SLF4J" />
         <setting name="callSettersOnNulls" value="true"/>
     </settings>
-    <typeAliases>
-    </typeAliases>
-    <plugins>
-        <plugin interceptor="com.github.pagehelper.PageInterceptor">
-            <property name="helperDialect" value="mysql" />
-            <property name="autoRuntimeDialect" value="false" />
-            <property name="reasonable" value="true" />
-            <property name="supportMethodsArguments" value="false" />
-            <property name="closeConn" value="false" />
-        </plugin>
-    </plugins>
-    <databaseIdProvider type="DB_VENDOR">
-        <property name="MySQL" value="mysql"/>
-        <property name="DM" value="mysql"/>
-        <property name="Oracle" value="oracle" />
-        <property name="PostgreSQL" value="postgresql" />
-    </databaseIdProvider>
 </configuration>
