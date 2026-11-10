@@ -21,10 +21,7 @@
             <groupId>com.peach</groupId>
             <artifactId>peach-redis-multicache-starter</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.peach</groupId>
-            <artifactId>peach-redis-common</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>

@@ -48,11 +48,6 @@
             <optional>true</optional>
         </dependency>
 
-        <dependency>
-            <groupId>com.peach</groupId>
-            <artifactId>peach-redis-common</artifactId>
-            <optional>true</optional>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
