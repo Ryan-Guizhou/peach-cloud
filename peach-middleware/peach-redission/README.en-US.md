@@ -239,6 +239,10 @@ For migration steps, Nacos/key/codec/session compatibility checks, CI evidence, 
 
 Dedicated CI exercises the **same JedisConnectionFactory and RedissonClient instances** before and after actually stopping the isolated Redis Sentinel master container. Without recreating those clients it retries bounded SET/GET/TTL, then checks all three Sentinels agree on the promoted master and reruns the new-client suites. This only uses Redis 7.2 CI containers, not production systems. Passing it validates basic client recovery, **not** in-flight business transaction outcomes, Stream/DelayQueue idempotency, historic Sessions or Redis Cluster failure.
 
+## Real independent-JVM crash recovery (Issue #77)
+
+A Redis 7.2 integration test injects a real worker-process failure: a separate JVM Redisson worker claims a message and writes a ready marker, then the parent calls `Process.destroyForcibly()` so that **the process cannot gracefully ACK or close the queue**. After the lease expires, another RedissonClient reclaims the same message ID/payload with a greater fencing token, rejects the stale token and acknowledges the recovered message without processing residue. Delivery remains **at least once**; durable business-side idempotency and external-store fencing are still mandatory. This is not a Redis master failure or cross-store atomicity test.
+
 ## Boundaries
 
 - Distributed locks protect the smallest critical section and do not replace database uniqueness, transactions or state validation.

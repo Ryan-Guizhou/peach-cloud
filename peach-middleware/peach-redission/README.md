@@ -239,6 +239,10 @@ public class OrderExpiryService {
 
 专项 CI 使用原有 `JedisConnectionFactory` / `RedissonClient` 实例完成真实读写，**实际停止隔离 Sentinel 主节点**，选主后不重建客户端，在有界期限内重试并验证 SET/GET/TTL；随后执行原有的三 Sentinel 共识及新客户端回归测试。仅执行本仓库 Redis 7.2 容器，不操作生产。通过这项测试可以确认对应客户端实例的基础写读恢复，但无法证明执行中业务事务、Stream / DelayQueue 消息幂等、真实历史 Session、Redis Cluster 故障等场景。
 
+## 独立 JVM 强制终止后恢复（Issue #77）
+
+专用 Redis 7.2 集成测试增加真正的进程级故障注入：一个独立 JVM 中的 Redisson Worker 认领消息并写入就绪标记，父测试进程执行 `Process.destroyForcibly()` 使其**无法优雅 ACK/关闭**；租约到期后另一 RedissonClient 回收相同消息 ID/载荷、获取更大的 fencing token，旧 token 不能确认，新 token ACK 后验证完成且无处理残留。此能力仍为 **at-least-once**，业务执行外部数据库事务时必须保持持久幂等与 fencing 校验；不等于 Redis 主节点故障或跨存储原子性验收。
+
 ## 边界
 
 - 分布式锁只保护最小临界区，不替代数据库唯一约束、事务和状态校验。

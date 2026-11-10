@@ -64,7 +64,7 @@ jobs:
               raise SystemExit(f"Missing V2 Redis integration test result: {report}")
           suite = ET.parse(report).getroot()
           counts = {k: int(suite.get(k, "0")) for k in ("tests", "failures", "errors", "skipped")}
-          if counts["tests"] != 6 or any(counts[k] for k in ("failures", "errors", "skipped")):
-              raise SystemExit(f"Expected six executed DelayQueue V2 tests: {counts}")
+          if counts["tests"] != 7 or any(counts[k] for k in ("failures", "errors", "skipped")):
+              raise SystemExit(f"Expected seven executed DelayQueue V2 tests: {counts}")
           print(f"DelayQueue V2 recovery and concurrency suite passed: {counts}")
           PY

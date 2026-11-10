@@ -100,6 +100,8 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 - **缓存剩余 TTL（Issue #71）：** 已增加按真实 Redis PTTL 限制本地 L1 有效期的回归，避免 Redis 键过期后本地缓存继续命中；CI 以 [Issue #71](https://github.com/Ryan-Guizhou/peach-cloud/issues/71) 的 PR 实际结果为准。此机制并非外部 L2 写入强一致。
 
+- **DelayQueue V2 真正独立 JVM 故障（[#77](https://github.com/Ryan-Guizhou/peach-cloud/issues/77)）：** 新增子进程强制终止后另一客户端的租约回收和 fencing 回归。该测试由独立 Redis 7.2 CI 门禁验收，仍不覆盖 Redis 本身故障与跨存储事务。
+
 ## 6. Epic 未完成项（不得提前勾选）
 
 - 真实 Redis 主从/Cluster 故障切换与客户端重连，TLS/ACL 密钥更新及证书轮换。
