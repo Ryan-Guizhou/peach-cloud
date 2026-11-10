@@ -4,6 +4,7 @@ import com.peach.redis.stream.MessageConsumer;
 import com.peach.redis.stream.RedisStreamHandler;
 import com.peach.redis.stream.RedisStreamLinstener;
 import com.peach.redis.stream.RedisStreamPushHandler;
+import com.peach.redis.stream.RedisStreamPendingRecovery;
 import com.peach.redis.stream.constant.RedisStreamContant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.stream.Consumer;
@@ -42,7 +44,7 @@ import java.util.UUID;
         "com.peach.redis.common.RedisConfig",
         "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration"
 })
-@EnableConfigurationProperties(RedisStreamProperties.class)
+@EnableConfigurationProperties({RedisStreamProperties.class, RedisStreamRecoveryProperties.class})
 @ConditionalOnProperty(prefix = RedisStreamContant.REDIS_STREAM_PREFIX, value = "enable", havingValue = "true")
 public class RedisStreamAutoConfig {
 
@@ -96,6 +98,25 @@ public class RedisStreamAutoConfig {
         }
         container.start();
         return container;
+    }
+
+    /**
+     * 超时 Pending 认领属于可选可靠消费能力，依赖 group 已创建和业务消费端存在。
+     * 不影响原有 Redis Stream / broadcast 使用方的启动。
+     */
+    @Bean(initMethod = "start", destroyMethod = "stop")
+    @DependsOn("streamMessageListenerContainer")
+    @ConditionalOnBean(MessageConsumer.class)
+    @ConditionalOnMissingBean(RedisStreamPendingRecovery.class)
+    @ConditionalOnProperty(prefix = "peach.redis.stream.recovery", name = "enabled", havingValue = "true")
+    public RedisStreamPendingRecovery redisStreamPendingRecovery(StringRedisTemplate stringRedisTemplate,
+                                                                RedisStreamProperties streamProperties,
+                                                                RedisStreamRecoveryProperties recoveryProperties,
+                                                                MessageConsumer messageConsumer) {
+        if (!RedisStreamContant.GROUP.equals(streamProperties.getConsumerType())) {
+            throw new IllegalArgumentException("Redis Stream Pending recovery requires consumer-type=group");
+        }
+        return new RedisStreamPendingRecovery(stringRedisTemplate, streamProperties, recoveryProperties, messageConsumer);
     }
 
     @Bean(name = "redisStreamExecutor", destroyMethod = "shutdown")
