@@ -126,3 +126,7 @@ bash scripts/ci/redis-topology-integration.sh tls
 ### 直接调用方的旧队列切换预检查（Issue #91）
 
 延迟队列 Starter 只提供**当前唯一实现**，依赖安装后 `peach.delay.queue.enabled` 默认为 `true`。若目标环境还有历史消息，正式切换前应显式设为 `false`。停旧生产后，对每个物理分区调用 `RedisDelayQueue.legacyBacklog(partitionTopic)` 并确认 `drained()==true`（delayed/ready/processing/死信全为零，死信须先完成业务对账）。直接 `offer`、`claim`、`start` 在首次访问物理主题时失败保护，`start` 额外重新检查；业务 `DelayQueueContext` 仍检查全部分区。检查是只读、进程内按主题缓存以保证吞吐，**不是**阻止旧生产者重新写入的分布式写栅栏，不得双协议混合发布。同槽 Lua 历史 `peach:dq2:{topic}:*` key 保留，避免已写入可靠队列的数据失联。
+
+### Stream DLQ/XACK 跨键故障窗口只读对账（Issue #93）
+
+对指定 DLQ RecordId，`RedisStreamPendingRecovery.deadLetterTransferState(id)` 会读取一条死信、该源 ID 的消费组 PEL（最多一条）以及源 Stream 的精确记录，区分**死信已保存但源仍 Pending**与**源已确认**，并独立报告源记录是否因裁剪而不存在。调用全程**不写 Redis**，不能自动 ACK，也不能据此判断业务事务已完成。运维必须先暂停该消费组全部实例的消费/恢复，再结合持久化幂等记录、死信审计进行对账。DLQ XADD 与源 XACK 仍非跨键原子操作；并发执行期间的读数只是瞬时快照，不代表生产灾备验收通过。
