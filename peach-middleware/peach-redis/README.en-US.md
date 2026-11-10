@@ -212,6 +212,20 @@ The repository now includes `peach-redis-autoconfigure`, `peach-redis-starter`, 
 
 **Shortest path:** from the repository root run `mvn -pl peach-middleware/peach-redis/peach-redis-quickstart -am spring-boot:run`. Run `-am test` on the same module for real Redis integration tests (requires Docker for Testcontainers). The example does not require Redisson. The Sa-Token Starter and Auth/Setting/Message modules now use the independent Redis Starter. Legacy `RedisConfig` remains available for phased rollout; production login and session compatibility have not been fully accepted.
 
+## Real Redis topology integration (Issue #47)
+
+The repository provides an isolated Redis 7.2 CI matrix for **Sentinel (three sentinels, one master, two replicas)**, **Cluster (three masters, three replicas)** and **single-node TLS**. Redis-only, Redisson-only and Redis Tool starters use the actual `peach.redis.*` auto-configuration. Tests verify real KV/TTL, bean isolation, SCAN across Cluster masters, and per-key cross-slot deletion. Surefire XML gates reject skipped, missing or failing suites. TLS uses an ephemeral certificate and explicit Java truststore without disabling certificate verification.
+
+From the repository root on Linux with Docker host networking (Java 21, Maven, openssl and keytool required):
+
+```bash
+bash scripts/ci/redis-topology-integration.sh sentinel
+bash scripts/ci/redis-topology-integration.sh cluster
+bash scripts/ci/redis-topology-integration.sh tls
+```
+
+**Acceptance boundary:** These are client connectivity and KV/TTL/SCAN smoke tests, not proof of Sentinel failover, production TLS PKI, rolling compatibility for existing sessions, cross-instance Bloom, missed multi-cache invalidation, or crash recovery for Stream/delay queues. Continue tracking those items in [Epic #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18).
+
 ## Boundaries
 
 - Keys need stable namespaces and required isolation dimensions; sensitive values must not be placed directly in keys/logs.

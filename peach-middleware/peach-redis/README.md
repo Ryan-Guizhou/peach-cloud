@@ -212,6 +212,20 @@ peach:
 
 **最短路径**：在根目录运行 `mvn -pl peach-middleware/peach-redis/peach-redis-quickstart -am spring-boot:run`；真实 Redis 集成测试可运行相同模块的 `-am test`，其中 Testcontainers 需要 Docker。样例无需 Redisson。Sa-Token Starter、Auth/Setting/Message 业务模块已调整为独立 Redis Starter 依赖；历史 `RedisConfig` 仍在部分模块保留以便滚动迁移，且尚未完成生产环境登录/会话兼容性验收。
 
+## 真实 Redis 多拓扑集成验收（Issue #47）
+
+当前仓库提供独立的 Redis 7.2 CI 矩阵，在 **Sentinel（三 Sentinel/一主两副本）**、**Cluster（三主三副本）** 和 **TLS 单节点** 三种环境执行 Redis-only、Redisson-only、Redis Tool 的真实集成测试。使用独立的 `peach.redis.*` 自动装配：检查真实 KV/TTL、Bean 隔离、跨主节点 SCAN 和 Cluster 跨槽逐键删除；Surefire XML 强制每个测试套件恰好运行一项且无跳过或失败。TLS 使用临时证书及 Java 显式信任库，不关闭证书校验。
+
+仓库根目录在带 Docker host network 的 Linux 环境可复现（需要 Java 21、Maven、openssl、keytool）：
+
+```bash
+bash scripts/ci/redis-topology-integration.sh sentinel
+bash scripts/ci/redis-topology-integration.sh cluster
+bash scripts/ci/redis-topology-integration.sh tls
+```
+
+**验收边界：** 以上属于客户端连通性与 KV/TTL/SCAN 冒烟测试，不能替代 Sentinel 故障切换、TLS 生产证书链、业务会话滚动升级、Bloom 跨实例、多级缓存订阅断线或 Stream/延迟队列崩溃恢复的验收。相关未完成事项继续跟踪 [Epic #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
+
 ## 边界
 
 - key 必须有稳定命名空间和必要隔离维度，敏感值不直接进入 key/log。

@@ -1,0 +1,35 @@
+name: Redis Sentinel Cluster TLS Integration
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/redis-topology-integration.yml'
+      - 'scripts/ci/redis-topology-integration.sh'
+      - 'peach-middleware/peach-redis/**'
+      - 'peach-middleware/peach-redission/peach-redisson-*/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  redis-topology-integration:
+    name: Redis 7.2 ${{ matrix.topology }} (Jedis, Redisson, Tool)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        topology: [sentinel, cluster, tls]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Execute real topology integration tests
+        shell: bash
+        run: bash scripts/ci/redis-topology-integration.sh "${{ matrix.topology }}"

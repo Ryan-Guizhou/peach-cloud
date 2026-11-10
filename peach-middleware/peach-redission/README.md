@@ -213,6 +213,10 @@ public class OrderExpiryService {
 - `LocalCacheLock` 保留公共 `getLock(key, fair)` 入口，但实现改为固定 256 个公平锁条带，避免过期淘汰已锁定对象；不同 key 可能共享同一条带。
 - `@RepeatLimit` 只以 Redisson 分布式锁作为跨实例互斥保障，不再依赖进程内锁预检查。业务执行成功后，如成功标记无法持久化，将明确抛出“业务已执行但防重状态未知”的异常，不再假装成功。**接到该异常不能盲目重试**，必须查询业务幂等记录/订单状态并对账。
 
+## 真实 Redis 多拓扑集成验收（Issue #47）
+
+`peach-redisson-starter` 的独立客户端与 Redis Tool/Jedis 底座现有专用 CI 矩阵，对 Redis 7.2 Sentinel、Cluster（三主三副本）与 TLS 执行真实读写测试，验证 RedissonClient 的 Bean 隔离、Bucket TTL 与删除。具体命令、Surefire 强制不跳过的检查及限制见 [Redis 多拓扑验证说明](../peach-redis/README.md#真实-redis-多拓扑集成验收issue-47)。该测试**不证明** Redisson 分布式锁主节点故障期间的互斥、不保证延迟队列 V2 在 Redis 故障切换时 exactly-once，也不覆盖 Bloom 跨实例行为。
+
 ## 边界
 
 - 分布式锁只保护最小临界区，不替代数据库唯一约束、事务和状态校验。
