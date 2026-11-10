@@ -80,7 +80,7 @@ public class ProfileCacheService {
 | --- | --- |
 | Redis 不可达 | 缓存可按业务回源；凭证、鉴权、验证码等关键路径不应放行 |
 | 多级缓存失效订阅掉线 | 本地值可能陈旧，限制 L1 TTL，重连清理和跨实例一致性仍待完善 |
-| Stream 处理异常 | group 模式失败消息留在 PEL，但不会自动重试；需补充 XCLAIM/XPENDING 恢复、退避和业务幂等 |
+| Stream 处理异常 | group 模式失败消息留在 PEL；可选的 XPENDING/XCLAIM 定时恢复、退避及 DLQ 默认关闭，启用前必须完成业务持久幂等和故障注入验收 |
 | 更换 Jackson/客户端 | 先验证旧 Redis JSON 与存量 key 可读，不可直接变更会话协议 |
 
 
@@ -173,7 +173,7 @@ peach:
 ```
 
 
-**确认与恢复边界**：Consumer Group 使用手动 XACK：业务回调成功才确认，失败保留 PEL。每个服务实例的消费者名称带随机后缀；线程池由 Spring 管理。`XPENDING`/`XCLAIM` 自动认领、退避、DLQ 尚未实现，处理关键事件必须独立持久化幂等。
+**确认与恢复边界**：Consumer Group 使用手动 XACK：业务回调成功才确认，失败保留 PEL。每个服务实例的消费者名称带随机后缀；线程池由 Spring 管理。可选 `XPENDING`/`XCLAIM` 自动认领、退避与 DLQ 已实现但默认关闭；跨键 DLQ 写入与源流 XACK 非原子操作，处理关键事件必须独立持久化幂等。
 
 
 - 模块：[`peach-redis-stream-quickstart`](./peach-redis-stream-quickstart/)
@@ -196,7 +196,7 @@ peach:
 | Redis-only / `peach-redis-starter` | `RedisConnectionFactory` / `RedisTemplate` / `StringRedisTemplate` | 默认 Jedis；已有用户工厂优先；JSON value 使用旧 Jackson2JsonRedisSerializer 协议 |
 | Tool / `peach-redis-tool-starter` | `RedisDao` | 独立依赖新底座，SCAN 大键空间需低频执行 |
 | MultiCache / `peach-redis-multicache-starter` | `MultiCacheManagerService` | 额外依赖 Tool、Caffeine 与 Hutool，缓存同步为尽力而为 |
-| Stream / `peach-redis-stream-starter` | `RedisStreamHandler` | 使用通用 `RedisConnectionFactory`；业务成功后 ACK、失败保留 PEL；自动恢复仍待实施 |
+| Stream / `peach-redis-stream-starter` | `RedisStreamHandler` | 使用通用 `RedisConnectionFactory`；业务成功后 ACK、失败保留 PEL；可选 Pending 认领、退避与 DLQ 默认关闭 |
 
 **最小依赖**（项目父 POM 管理版本）：
 
@@ -218,3 +218,9 @@ peach:
 - 缓存必须明确 TTL、失效、回源和一致性策略。
 - Stream 消费必须业务幂等，并明确 ACK、重试、积压和失败治理。
 - Pub/Sub、Stream 和缓存都不能被文档包装成强一致或 Exactly-Once。
+
+## 六个业务启动模块迁移（Issue #45）
+
+Fileservice、Generator、Message、Setting、Monitor 和 Scheduled 的启动模块改为显式引用 `peach-redis-starter` 与 `peach-redisson-starter`，并删除直接声明的旧 `peach-redis-common`、Jedis、Redisson 和 Spring Data Redis 依赖。该批迁移保留两个客户端的可用性与 `peach.redis.*` 配置协议，不变更 key、codec 和已有会话数据。Scheduled 现有 `peach-redission-distributedlock-starter` 仍保留。网关继续使用独立响应式 Lettuce，不经这些 Starter。
+
+**验收边界：** 本次 POM 依赖迁移不代表 Sentinel / Cluster / TLS、老会话滚动兼容或双节点故障注入已通过。旧 Common 模块暂留在 reactor 内供未迁移调用方使用；完成全仓引用与生产迁移验证后再考虑删除。
