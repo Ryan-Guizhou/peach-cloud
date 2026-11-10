@@ -22,6 +22,9 @@ import java.util.Arrays;
  *
  * <p>先于此类加载的旧 RedisConfig 若已注册 RedissonClient，则复用旧 Bean；
  * 后续移除旧混合装配时本配置直接提供客户端。自定义 RedissonClient 优先。</p>
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/10
  */
 @AutoConfiguration
 @AutoConfigureAfter(name = "com.peach.redis.common.RedisConfig")

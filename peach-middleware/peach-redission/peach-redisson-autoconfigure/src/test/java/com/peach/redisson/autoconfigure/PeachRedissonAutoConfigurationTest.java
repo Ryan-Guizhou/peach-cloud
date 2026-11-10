@@ -10,6 +10,9 @@ import static org.mockito.Mockito.mock;
 
 /**
  * 验证 Redisson-only 自动装配在外部客户端或关闭开关存在时不会创建额外连接。
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/10
  */
 class PeachRedissonAutoConfigurationTest {
 

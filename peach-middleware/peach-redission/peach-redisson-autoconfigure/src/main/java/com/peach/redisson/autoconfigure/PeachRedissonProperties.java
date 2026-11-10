@@ -6,6 +6,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * Redisson 客户端配置。保持现有 peach.redis.* 与旧 RedisConfig 属性兼容。
  * 只负责 Redisson，不要求 Spring Data Redis / Jedis。
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/10
  */
 @Data
 @ConfigurationProperties(prefix = "peach.redis")
