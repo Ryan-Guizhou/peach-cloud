@@ -164,3 +164,81 @@ for file in sorted(suites):
         raise SystemExit(f"Invalid integration result {file}: {values}")
     print(f"PASS {file}: {values}")
 PY
+
+# A topology smoke test alone does not prove Sentinel master outage recovery.
+# Stop the actual Redis master, require all three sentinels to agree on a promoted
+# replica, and run the same real-client suites again with newly created clients.
+if [[ "$topology" == "sentinel" ]]; then
+  echo "Injecting actual Redis Sentinel master outage (test containers only)"
+  docker stop peach-it-master >/dev/null
+  new_master_port=""
+  for attempt in $(seq 1 90); do
+    agree=true
+    agreed_port=""
+    for sentinel_port in 26379 26380 26381; do
+      port="$(redis_cli -h 127.0.0.1 -p "$sentinel_port" --raw \
+        SENTINEL get-master-addr-by-name peach-master 2>/dev/null | tail -n 1 | tr -d '\r' || true)"
+      if [[ "$port" != "6381" && "$port" != "6382" ]]; then
+        agree=false
+        break
+      fi
+      if [[ -n "$agreed_port" && "$agreed_port" != "$port" ]]; then
+        agree=false
+        break
+      fi
+      agreed_port="$port"
+    done
+    if [[ "$agree" == true && -n "$agreed_port" ]]; then
+      role="$(redis_cli -h 127.0.0.1 -p "$agreed_port" INFO replication 2>/dev/null \
+        | tr -d '\r' | grep '^role:' | cut -d: -f2 || true)"
+      if [[ "$role" == "master" ]]; then
+        new_master_port="$agreed_port"
+        break
+      fi
+    fi
+    sleep 1
+  done
+  if [[ -z "$new_master_port" ]]; then
+    echo "Sentinel did not promote a replica with unanimous monitor agreement" >&2
+    exit 1
+  fi
+  echo "Promoted Redis master port: $new_master_port (original 6380 still down)"
+  test_key="peach:sentinel:ci:failover:$RANDOM"
+  if [[ "$(redis_cli -h 127.0.0.1 -p "$new_master_port" SET "$test_key" verified EX 40)" != "OK" ]]; then
+    echo "Promoted master rejected a TTL write" >&2
+    exit 1
+  fi
+  if [[ "$(redis_cli -h 127.0.0.1 -p "$new_master_port" GET "$test_key")" != "verified" ]]; then
+    echo "Promoted master returned an invalid value" >&2
+    exit 1
+  fi
+  redis_cli -h 127.0.0.1 -p "$new_master_port" DEL "$test_key" >/dev/null
+
+  echo "Re-run actual independent clients and Sa-Token against promoted master"
+  mvn -B -ntp -s scripts/ci/github-actions-maven-settings.xml \
+    -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart \
+    -am \
+    -Dtest=RedisTopologyServerIntegrationTest,RedisToolTopologyServerIntegrationTest,RedissonTopologyServerIntegrationTest,SaTokenSearchTopologyServerIntegrationTest \
+    -Dsurefire.failIfNoSpecifiedTests=false test
+
+  python3 - <<'PY'
+from pathlib import Path
+import xml.etree.ElementTree as ET
+
+suites = [
+    "peach-middleware/peach-redis/peach-redis-quickstart/target/surefire-reports/TEST-com.peach.redis.quickstart.RedisTopologyServerIntegrationTest.xml",
+    "peach-middleware/peach-redis/peach-redis-tool-quickstart/target/surefire-reports/TEST-com.peach.redis.tool.quickstart.RedisToolTopologyServerIntegrationTest.xml",
+    "peach-middleware/peach-redission/peach-redisson-quickstart/target/surefire-reports/TEST-com.peach.redisson.quickstart.RedissonTopologyServerIntegrationTest.xml",
+    "peach-middleware/peach-satoken/peach-satoken-quickstart/target/surefire-reports/TEST-com.peach.satoken.quickstart.SaTokenSearchTopologyServerIntegrationTest.xml",
+]
+for file in suites:
+    p = Path(file)
+    if not p.exists():
+        raise SystemExit(f"Missing post-promotion integration report: {p}")
+    result = ET.parse(p).getroot()
+    stats = {k: int(result.get(k, "0")) for k in ("tests", "failures", "errors", "skipped")}
+    if stats["tests"] != 1 or any(stats[k] for k in ("failures", "errors", "skipped")):
+        raise SystemExit(f"Post-failover suite failed/skipped: {p} {stats}")
+    print(f"PASS after Sentinel promotion: {p}")
+PY
+fi
