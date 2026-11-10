@@ -118,3 +118,7 @@ bash scripts/ci/redis-topology-integration.sh tls
 ### 当前队列切换保护
 
 消费者注册启动前将检查历史 Redisson 延迟、就绪、processing、死信数据是否仍有积压；生产者首次向某业务主题投递时也会检查全部分区。只读检查发现存量任务即失败，避免任务被静默遗留。这不是旧生产者的分布式写入栅栏：**必须先停止旧生产、核对旧死信、排空队列，再停旧消费者并切换当前实现**，不能新旧消费者同时执行相同业务主题。已写入的 Lua 可靠队列键保持兼容。CI 通过不等于生产环境排空验收。
+
+### Stream 死信字段留存与人工重放（Issue #89）
+
+当前 DLQ 仍保留 `sourceStream`、`sourceGroup`、`sourceId`、`attempts` 和仅用于展示的 `payload` 五个字段。新写入的 DLQ 额外为每个原始 Stream 字段保存 `originalField:<Base64Url 编码字段名>`，并标记 `originalFieldsStored=true`，保持原始 String 字段值；即使源 Stream entry 被裁剪，仍可显式调用 `RedisStreamPendingRecovery.replayDeadLetter(dlqRecordId)` 恢复。历史 DLQ 没有附加字段时仍要求源 entry 存在，否则拒绝伪造业务消息。依赖固定五字段格式的外部工具须做兼容检查。DLQ XADD 与源 XACK 仍不是跨键原子操作，故障重试可能产生重复死信；人工重放前必须对账 sourceId 并确保业务持久幂等。本改造不会自动迁移线上旧消息。

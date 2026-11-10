@@ -164,8 +164,20 @@ class RedisStreamRecoveryServerIntegrationTest {
             assertThat(replayed.get(0).getValue()).isEqualTo(original.get(0).getValue());
             assertThat(recovery.backlog().deadLetters()).isEqualTo(1);
 
+            // 新死信自带精确原始字段；即使旧源 entry 已被裁剪也能重放。
             operations.delete(stream, sourceId);
-            assertThatThrownBy(() -> recovery.replayDeadLetter(deadLetterId))
+            RecordId afterTrim = recovery.replayDeadLetter(deadLetterId);
+            List<MapRecord<String, Object, Object>> recovered =
+                    operations.range(stream, Range.closed(afterTrim.getValue(), afterTrim.getValue()));
+            assertThat(recovered).hasSize(1);
+            assertThat(recovered.get(0).getValue()).isEqualTo(original.get(0).getValue());
+
+            // 历史 DLQ 没有结构化字段时，仍只允许精确查询旧源；找不到必须报错。
+            RecordId oldDeadLetterId = operations.add(StreamRecords.newRecord().in(dlq).ofMap(
+                    java.util.Map.of("sourceStream", stream, "sourceGroup", group,
+                            "sourceId", sourceId.getValue(), "payload", "{_raw=old}")));
+            assertThat(oldDeadLetterId).isNotNull();
+            assertThatThrownBy(() -> recovery.replayDeadLetter(oldDeadLetterId.getValue()))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("trimmed");
         } finally {
