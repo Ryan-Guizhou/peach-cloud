@@ -260,6 +260,10 @@ For migration steps, Nacos/key/codec/session compatibility checks, CI evidence, 
 
 A real Redis 7.2 service-container suite compares the value/hash-value bytes produced by the retained legacy `RedisConfig` and the independent `PeachRedisAutoConfiguration` serializers, exercising old-write/new-read, new-write/old-read and TTL on session-like Maps. This only tests both implementations in the current repository; **it does not validate old released SaSession binary fixtures or production rolling upgrades**.
 
+## Pub/Sub reconnection compensation (Issue #67)
+
+On first subscription and every confirmed re-subscription, MultiCache invalidates **only the initialized Caffeine L1 caches in the current JVM**, allowing the next read to reload Redis L2. Redis Pub/Sub cannot replay messages missed while disconnected. A real Redis 7.2 two-Jedis-client integration test stops the subscription, updates L2, confirms stale L1 is possible while offline, and verifies resubscribing clears it. This does **not** provide strong consistency during outages. Bound L1 TTL and use authoritative storage for security or financial decisions.
+
 ## Boundaries
 
 - Keys need stable namespaces and required isolation dimensions; sensitive values must not be placed directly in keys/logs.

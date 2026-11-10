@@ -260,6 +260,10 @@ Sa-Token 的 `PeachSaTokenDao#searchData` 已由阻塞式 Redis `KEYS` 迁移至
 
 仓库保留的旧 `RedisConfig` 与独立 `PeachRedisAutoConfiguration` 的 `Jackson2JsonRedisSerializer`，在 Redis 7.2 服务容器中验证相同业务 Map 的 value/hash-value 字节相等，以及旧写新读、新写旧读与 TTL。测试仅对当前仓库版本有效，**不包含真实历史发行版 SaSession 二进制快照，也不能替代线上滚动升级测试**。
 
+## 订阅断线补偿（Issue #67）
+
+MultiCache 在 Redis Pub/Sub 的首次订阅及重新订阅确认时，**仅清除当前 JVM 已创建缓存的 Caffeine L1**，下次读取从 Redis L2 重新获取，弥补离线期间没有收到的广播（Redis Pub/Sub 不支持重放）。真实 Redis 7.2 测试使用两套独立 Jedis 连接，主动停止订阅、更新 L2，确认断线时旧值仍可能存在，再恢复订阅验证本地 L1 被清空并读取新值。此机制**不提供掉线期间的强一致性**；业务仍需合理设置 L1 TTL，鉴权与支付等关键决策必须以权威状态为准。
+
 ## 边界
 
 - key 必须有稳定命名空间和必要隔离维度，敏感值不直接进入 key/log。
