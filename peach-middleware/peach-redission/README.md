@@ -225,6 +225,12 @@ public class OrderExpiryService {
 
 `BloomTwoClientServerIntegrationTest` 通过真实 Redis 7.2 与两个独立 `RedissonClient` 检查分段扩容：节点 B 在节点 A 扩容前读取旧目录，A 扩容后 B 必须识别新增段、包含新增元素且统计各段独立计数。布隆过滤器仍有假阳性，结果仅作快速预筛；该测试不等于 Redis 故障切换或高并发强一致证明。
 
+## 独立 Worker 恢复与批量并发验收（Issue #59）
+
+`DelayQueueV2ServerIntegrationTest` 增加真实 Redis 7.2 的双 RedissonClient / 双 `RedisDelayQueueV2` 测试：Worker A 认领后停止且不 ACK，租约过期由 Worker B 回收、重新认领并产生更大的 fencing token；旧 token 无权 ACK，新持有者成功确认。另以两个独立 Worker 并行消费 64 条消息，检查稳定 ID 去重、完成计数和无残留 processing。专用 CI 通过 Surefire 校验全部 6 项测试实际运行。
+
+**范围限制：** Worker A 在测试中主动停止，用于模拟丢失租约，并非真实 `kill -9`；这批并不验证 Redis 主从切换、跨存储事务的 fencing、10k 并发 soak、旧协议排空或混合版本升级。默认关闭与 Lua/Redis key 协议保持不变，业务持久化幂等仍不可省略。
+
 ## 边界
 
 - 分布式锁只保护最小临界区，不替代数据库唯一约束、事务和状态校验。
