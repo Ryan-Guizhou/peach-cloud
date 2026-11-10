@@ -6,6 +6,8 @@ import com.peach.redission.delayqueue.core.RedisDelayQueue;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -22,6 +24,9 @@ public class DelayQueueContext {
 
     private final RedisDelayQueue queue;
     private final DelayQueueProperties properties;
+
+    /** 对每个业务 topic 在首次入队时检查所有旧分区，不做 Redis 全局扫描。 */
+    private final Map<String, Boolean> migrationChecked = new ConcurrentHashMap<>();
 
     public DelayQueueContext(RedisDelayQueue queue, DelayQueueProperties properties) {
         this.queue = Objects.requireNonNull(queue, "queue");
@@ -49,6 +54,13 @@ public class DelayQueueContext {
         if (delayTime < 0) {
             throw new IllegalArgumentException("delayTime must be nonnegative");
         }
+        Objects.requireNonNull(topic, "topic");
+        migrationChecked.computeIfAbsent(topic, name -> {
+            for (int i = 0; i < properties.getIsolationRegionCount(); i++) {
+                queue.assertLegacyDrained(name + "-" + i);
+            }
+            return Boolean.TRUE;
+        });
         int shard = Math.floorMod(Objects.requireNonNull(messageId, "messageId").hashCode(),
                 properties.getIsolationRegionCount());
         String partition = topic + "-" + shard;

@@ -19,7 +19,7 @@
       "name": "peach.delay.queue.worker-count",
       "type": "java.lang.Integer",
       "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
-      "description": "并发轮询线程上限",
+      "description": "独立业务执行线程数上限；轮询认领只在有空闲执行槽位时进行",
       "defaultValue": 4
     },
     {

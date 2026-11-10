@@ -83,7 +83,7 @@ Lock names follow current business naming rules; do not change keys during rolli
 | --- | --- |
 | Redis disconnect / lock acquisition failure | Stop critical unprotected actions; do not silently downgrade to JVM-local locking |
 | Failure to persist duplicate guard | Business work may have succeeded without the guard; investigate and enforce business idempotency |
-| Delayed-queue worker crash | Old “reliable” queue has a dequeue-to-processing window; a new protocol needs migration and fault-injection validation |
+| Delayed-queue worker crash | The current Lua queue supports lease-based recovery and fenced ACK; historic Redisson queue data must be drained before cutover |
 | Bloom segment metadata unavailable | Do not use a negative response for irreversible business decisions; query the source of truth |
 | Changing lock keys, codec or message payloads | Validate stored data, queue state, mixed-version rollout and rollback before deployment |
 
@@ -132,13 +132,11 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
 - Run: `mvn -pl peach-middleware/peach-redission/peach-redission-distributedlock-quickstart -am spring-boot:run`
 - Test: `mvn -pl peach-middleware/peach-redission/peach-redission-distributedlock-quickstart -am test`
 
-### Delay Queue
-
 ### Reliable delay queue (current implementation)
 
 The current `RedisDelayQueue` runtime preserves the historical `peach:dq2:{topic}:*` key namespace so every key for a topic shares one Redis Cluster hash slot. Nine Lua scripts live in `src/main/resources/lua/delayqueue/`, not embedded in Java.
 
-**State machine:** `scheduled → processing (lease + fencing token) → completed`; failures return to `scheduled` for retry or enter `DLQ`. Expired leases are atomically reclaimed. Enqueue requires a stable `messageId`; claims allocate monotonically increasing fencing tokens and only the current token can ACK or renew a lease. **At-least-once, not exactly-once**: business systems must enforce durable idempotency and fencing independently. Active callbacks get heartbeat lease extensions, but failures can still cause duplicate execution.
+**State machine:** `scheduled → processing (lease + fencing token) → completed`; failures return to `scheduled` for retry or enter `DLQ`. Expired leases are atomically reclaimed. Enqueue requires a stable `messageId`; claims allocate monotonically increasing fencing tokens and only the current token can ACK or renew a lease. **At-least-once, not exactly-once**: business systems must enforce durable idempotency and fencing independently. Active callbacks get heartbeat lease extensions. Scheduled polls and business callbacks run on separate bounded executors; no message is claimed without an available execution slot. Failures may still cause duplicate execution.
 
 ```yaml
 peach:
@@ -158,22 +156,20 @@ peach:
 ```
 
 ```java
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class OrderExpiryService {
-    private final RedisDelayQueue queue;
+    private final DelayQueueContext delayQueue;
 
-    public void schedule(String orderId) {
-        queue.offer("order-expiry", orderId, orderId, Duration.ofMinutes(30));
-    }
-
-    public void start(ConsumerTask handler) {
-        queue.start("order-expiry", handler); // handler.topic() == "order-expiry"
+    public boolean schedule(String orderId) {
+        return delayQueue.sendMessage("order-expiry", orderId, orderId, 30, TimeUnit.MINUTES);
     }
 }
 ```
 
-**Migration and acceptance:** Before switching deployments, stop historical queue producers, drain delayed/ready/processing items, then stop historical consumers and start the unified runtime. The old Redisson delayed-queue protocol is not automatically converted and must not run alongside this runtime. Existing Lua state keys stay unchanged to preserve already queued reliable messages. Validate ACK, retry, DLQ, delayed messages and rollback in isolation. Business idempotency remains mandatory.
+Declare a Spring `ConsumerTask` bean with `topic() == "order-expiry"` to auto-subscribe all configured partitions. The stable ID is used for duplicate suppression; the original four-argument `sendMessage` remains available, but assigns a random ID for each call. Direct `RedisDelayQueue` calls operate on a physical partition/topic and require explicit `start` or `pollOnce`.
+
+**Migration and acceptance:** Startup checks the old delayed/ready/processing/dead-letter data for registered consumer partitions and refuses to switch when pending records exist. Producers also check all partitions of a business topic on first send. This is a read-only fail-closed guard, **not** an atomic fence against old producers; stop all old producers before deploying. Before switching deployments, stop historical queue producers, drain delayed/ready/processing items, then stop historical consumers and start the unified runtime. The old Redisson delayed-queue protocol is not automatically converted and must not run alongside this runtime. Existing Lua state keys stay unchanged to preserve already queued reliable messages. Validate ACK, retry, DLQ, delayed messages and rollback in isolation. Business idempotency remains mandatory.
 
 
 - Module: [`peach-redission-delayqueue-quickstart`](./peach-redission-delayqueue-quickstart/)

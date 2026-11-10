@@ -42,11 +42,20 @@ public class DelayQueueInitHandler extends AbstractAppStartedEventHandler {
             return;
         }
         Set<String> topics = new HashSet<>();
+        // 先校验所有 topic 与所有历史分区，失败时不能启动任何一个新消费者。
         for (ConsumerTask task : tasks.values()) {
             String topic = task.topic();
-            if (!topics.add(topic)) {
-                throw new IllegalStateException("Duplicate delay queue consumer topic: " + topic);
+            if (topic == null || topic.isBlank() || !topics.add(topic)) {
+                throw new IllegalStateException("Duplicate or invalid delay queue consumer topic: " + topic);
             }
+        }
+        for (String topic : topics) {
+            for (int partition = 0; partition < properties.getIsolationRegionCount(); partition++) {
+                queue.assertLegacyDrained(topic + "-" + partition);
+            }
+        }
+        for (ConsumerTask task : tasks.values()) {
+            String topic = task.topic();
             for (int partition = 0; partition < properties.getIsolationRegionCount(); partition++) {
                 String partitionTopic = topic + "-" + partition;
                 ConsumerTask consumer = new ConsumerTask() {

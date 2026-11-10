@@ -52,7 +52,7 @@ jobs:
           mvn -B -ntp -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am \
             -Dtest=DelayQueueServerIntegrationTest \
             -Dsurefire.failIfNoSpecifiedTests=false test
-      - name: Confirm all Delay Queue reliable Redis integration tests executed
+      - name: Confirm existing delay queue integration tests executed
         shell: bash
         run: |
           python3 - <<'PY'
@@ -64,7 +64,7 @@ jobs:
               raise SystemExit(f"Missing reliable Redis integration test result: {report}")
           suite = ET.parse(report).getroot()
           counts = {k: int(suite.get(k, "0")) for k in ("tests", "failures", "errors", "skipped")}
-          if counts["tests"] != 7 or any(counts[k] for k in ("failures", "errors", "skipped")):
-              raise SystemExit(f"Expected seven executed DelayQueue reliable tests: {counts}")
+          if counts["tests"] != 8 or any(counts[k] for k in ("failures", "errors", "skipped")):
+              raise SystemExit(f"Expected eight executed DelayQueue reliable tests: {counts}")
           print(f"DelayQueue reliable recovery and concurrency suite passed: {counts}")
           PY

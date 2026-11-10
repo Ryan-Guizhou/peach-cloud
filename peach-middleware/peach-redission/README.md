@@ -83,7 +83,7 @@ public class InventoryService {
 | --- | --- |
 | Redis 断连/获取锁失败 | 必须阻止未受保护的关键操作继续执行，不自动降为 JVM 内本地锁 |
 | 防重执行标记写入失败 | 抛出结果不确定异常；业务可能已成功，必须先查询数据库幂等记录并对账，不能盲目重试 |
-| 延迟队列进程崩溃 | 旧版可靠队列仍存在取出→登记窗口；新可靠协议必须先完成迁移与故障测试 |
+| 延迟队列进程崩溃 | 当前 Lua 可靠队列具备租约回收及 fencing ACK；历史 Redisson 队列任务必须在切换前排空 |
 | Bloom Filter 分段信息异常 | 不能依赖 negative 结果做不可逆业务决策，先通过权威数据源确认 |
 | 更改锁名、codec 或消息格式 | 必须先验证存量数据/队列及跨版本滚动发布与回滚，不能仅以代码编译成功为准 |
 
@@ -132,13 +132,11 @@ flowchart LR
 - 运行：`mvn -pl peach-middleware/peach-redission/peach-redission-distributedlock-quickstart -am spring-boot:run`
 - 测试：`mvn -pl peach-middleware/peach-redission/peach-redission-distributedlock-quickstart -am test`
 
-### Delay Queue
-
 ### 可靠延迟队列（当前唯一实现）
 
 当前 `RedisDelayQueue` 运行时沿用历史 `peach:dq2:{topic}:*` 键空间，确保同主题所有 Redis Cluster key 位于同一哈希槽。9 份 Lua 脚本保存在 `src/main/resources/lua/delayqueue/`，不会把脚本正文硬编码在 Java 中。
 
-**状态机：** `scheduled → processing (lease + fencing token) → completed`；执行失败时进入 `scheduled` 重试或 `DLQ`；租约过期由回收脚本重排入队。入队要求稳定 `messageId`，认领产生单调递增 fencing token；只有持有有效 token 的任务能 ACK 或更新租约。可靠队列 回调仍是 **at-least-once**，必须在数据库或外部资源侧校验幂等与 fencing。消费者任务长时间执行时后台心跳续约，客户端或 Redis 故障时仍可能重复执行。
+**状态机：** `scheduled → processing (lease + fencing token) → completed`；执行失败时进入 `scheduled` 重试或 `DLQ`；租约过期由回收脚本重排入队。入队要求稳定 `messageId`，认领产生单调递增 fencing token；只有持有有效 token 的任务能 ACK 或更新租约。可靠队列 回调仍是 **at-least-once**，必须在数据库或外部资源侧校验幂等与 fencing。消费者任务长时间执行时后台心跳续约，轮询器与业务执行使用独立有界线程池，仅在有空闲工作线程时认领消息；客户端或 Redis 故障时仍可能重复执行。
 
 ```yaml
 peach:
@@ -158,22 +156,20 @@ peach:
 ```
 
 ```java
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class OrderExpiryService {
-    private final RedisDelayQueue queue;
+    private final DelayQueueContext delayQueue;
 
-    public void schedule(String orderId) {
-        queue.offer("order-expiry", orderId, orderId, Duration.ofMinutes(30));
-    }
-
-    public void start(ConsumerTask handler) {
-        queue.start("order-expiry", handler); // handler.topic() 返回 "order-expiry"
+    public boolean schedule(String orderId) {
+        return delayQueue.sendMessage("order-expiry", orderId, orderId, 30, TimeUnit.MINUTES);
     }
 }
 ```
 
-**迁移与验收：** 停止历史队列生产、盘点并排空延迟/ready/processing 消息，再关闭历史消费者，启动统一可靠队列。历史 Redisson delayed-queue 数据不会自动转换，禁止新旧协议混合消费。同槽 Lua 队列现存 key 保持不变，避免破坏已写入的可靠消息。独立环境验证 ACK、重试、死信、回滚及业务幂等，不能仅以编译通过代替验收。
+业务消费者继续实现 `ConsumerTask` 并注册为 Spring Bean，其 `topic()` 返回 `"order-expiry"`，组件自动订阅配置的所有分区。稳定消息 ID 重载可去重，原四参数 `sendMessage` 保留但每次使用随机 ID。直接操作 `RedisDelayQueue` 时传入的是物理主题/分区，需显式调用 `start` 或 `pollOnce`。
+
+**迁移与验收：** 消费者启动前读取旧队列 delayed/ready/processing/死信数量，如有存量则启动失败；生产者首次投递业务主题时也核对其全部分区。这是只读的故障保护，**无法原子阻止旧生产者继续写入**，必须在发布前停止旧生产。停止历史队列生产、盘点并排空延迟/ready/processing 消息，再关闭历史消费者，启动统一可靠队列。历史 Redisson delayed-queue 数据不会自动转换，禁止新旧协议混合消费。同槽 Lua 队列现存 key 保持不变，避免破坏已写入的可靠消息。独立环境验证 ACK、重试、死信、回滚及业务幂等，不能仅以编译通过代替验收。
 
 
 - 模块：[`peach-redission-delayqueue-quickstart`](./peach-redission-delayqueue-quickstart/)

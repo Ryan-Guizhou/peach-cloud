@@ -21,11 +21,13 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 用 GitHub Actions Redis 7.2 服务容器执行不可跳过的延迟队列 reliable Lua 集成验收。
@@ -232,8 +234,8 @@ class DelayQueueServerIntegrationTest {
         String topic = newTopic();
         String id = "process-crash-1";
         String payload = "worker-must-recover";
-        Path marker = Files.createTempFile("peach-dq2-kill-marker-", ".txt");
-        Path childOutput = Files.createTempFile("peach-dq2-kill-output-", ".txt");
+        Path marker = Files.createTempFile("peach-dq-kill-marker-", ".txt");
+        Path childOutput = Files.createTempFile("peach-dq-kill-output-", ".txt");
         Process child = null;
         RedissonClient newOwnerClient = null;
 
@@ -309,6 +311,72 @@ class DelayQueueServerIntegrationTest {
         }
     }
 
+    @Test
+    void scheduledDispatcherRunsCallbacksConcurrentlyWithoutOverclaiming() throws Exception {
+        String topic = newTopic();
+        DelayQueueProperties settings = integrationProperties();
+        settings.setWorkerCount(2);
+        settings.setBatchSize(8);
+        settings.setPollInterval(Duration.ofMillis(25));
+        settings.setLease(Duration.ofSeconds(10));
+        CountDownLatch started = new CountDownLatch(2);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicInteger inFlight = new AtomicInteger();
+        AtomicInteger peak = new AtomicInteger();
+
+        try (RedisDelayQueue concurrent = new RedisDelayQueue(redisson, settings)) {
+            ConsumerTask task = new ConsumerTask() {
+                @Override
+                public void execute(String payload) {
+                    int running = inFlight.incrementAndGet();
+                    peak.accumulateAndGet(running, Math::max);
+                    started.countDown();
+                    try {
+                        if (!release.await(10, TimeUnit.SECONDS)) {
+                            throw new IllegalStateException("Concurrent execution gate timed out");
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Concurrent worker interrupted", e);
+                    } finally {
+                        inFlight.decrementAndGet();
+                    }
+                }
+                @Override
+                public String topic() {
+                    return topic;
+                }
+            };
+            assertThat(concurrent.offer(topic, "parallel-1", "a", Duration.ZERO)).isTrue();
+            assertThat(concurrent.offer(topic, "parallel-2", "b", Duration.ZERO)).isTrue();
+            concurrent.start(topic, task);
+            try {
+                assertThat(started.await(8, TimeUnit.SECONDS)).isTrue();
+                assertThat(peak.get()).isEqualTo(2);
+                assertThat(concurrent.status(topic).processing()).isEqualTo(2);
+            } finally {
+                release.countDown();
+            }
+            for (int i = 0; i < 50 && concurrent.status(topic).completed() < 2; i++) {
+                Thread.sleep(100);
+            }
+            assertThat(concurrent.status(topic).completed()).isEqualTo(2);
+            assertThat(concurrent.status(topic).processing()).isZero();
+        }
+
+        String legacyTopic = newTopic();
+        org.redisson.api.RBlockingQueue<String> legacy = redisson.getBlockingQueue(legacyTopic);
+        legacy.add("unmigrated-message");
+        try {
+            assertThatThrownBy(() -> queue.assertLegacyDrained(legacyTopic))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("not drained");
+        } finally {
+            legacy.poll();
+        }
+        queue.assertLegacyDrained(legacyTopic);
+    }
+
     private static DelayQueueProperties integrationProperties() {
         DelayQueueProperties properties = new DelayQueueProperties();
         properties.setEnabled(true);
@@ -321,6 +389,6 @@ class DelayQueueServerIntegrationTest {
     }
 
     private static String newTopic() {
-        return "dq2-it-" + UUID.randomUUID().toString().replace("-", "");
+        return "dq-it-" + UUID.randomUUID().toString().replace("-", "");
     }
 }

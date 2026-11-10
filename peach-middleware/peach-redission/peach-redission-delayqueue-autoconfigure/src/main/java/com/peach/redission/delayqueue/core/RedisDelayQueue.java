@@ -1,9 +1,9 @@
 package com.peach.redission.delayqueue.core;
 
 import com.peach.redission.delayqueue.config.DelayQueueProperties;
-
-import com.peach.redission.delayqueue.core.ConsumerTask;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RBlockingQueue;
+import org.redisson.api.RDelayedQueue;
 import org.redisson.api.RMap;
 import org.redisson.api.RScript;
 import org.redisson.api.RedissonClient;
@@ -20,7 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -28,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 独立延迟队列 reliable：在同一 Redis Cluster hash slot 内使用 Lua 原子状态转换。
+ * 可靠延迟队列：在同一 Redis Cluster hash slot 内使用 Lua 原子状态转换。
  *
  * <p>仅有当前可靠实现。旧 RDelayedQueue 数据结构不兼容，必须在切换前排空。
  * 消费为 at-least-once；租约与 fencing token 只保护 Redis ACK，不替代
@@ -50,6 +53,8 @@ public final class RedisDelayQueue implements AutoCloseable {
     private final RScript redisScripts;
     private final Map<String, String> scripts;
     private final ScheduledThreadPoolExecutor poller;
+    private final ExecutorService workers;
+    private final Semaphore availableWorkers;
     private final ScheduledExecutorService heartbeat;
     private final Map<String, ScheduledFuture<?>> pollingTopics = new ConcurrentHashMap<>();
     private final Map<String, LeasedMessage> active = new ConcurrentHashMap<>();
@@ -97,6 +102,13 @@ public final class RedisDelayQueue implements AutoCloseable {
             return thread;
         });
         poller.setRemoveOnCancelPolicy(true);
+        AtomicInteger workerCounter = new AtomicInteger(1);
+        this.workers = Executors.newFixedThreadPool(properties.getWorkerCount(), task -> {
+            Thread thread = new Thread(task, "peach-delayqueue-worker-" + workerCounter.getAndIncrement());
+            thread.setDaemon(true);
+            return thread;
+        });
+        this.availableWorkers = new Semaphore(properties.getWorkerCount());
         this.heartbeat = Executors.newSingleThreadScheduledExecutor(task -> {
             Thread thread = new Thread(task, "peach-delayqueue-heartbeat");
             thread.setDaemon(true);
@@ -130,11 +142,21 @@ public final class RedisDelayQueue implements AutoCloseable {
      * 同时生成递增的 fencing token。
      */
     public List<ClaimedMessage> claim(String topic) {
+        return claim(topic, properties.getBatchSize());
+    }
+
+    /**
+     * 根据空闲执行槽位限制原子认领数量，避免消息被认领后在本地等待工作线程。
+     */
+    private List<ClaimedMessage> claim(String topic, int limit) {
         ensureOpen();
         validateTopic(topic);
+        if (limit < 1 || limit > properties.getBatchSize()) {
+            throw new IllegalArgumentException("Invalid delay queue claim limit");
+        }
         List<Object> flat = evaluateList("claim",
                 keys(topic, "scheduled", "processing", "tokens", "attempts", "payload", "fencing"),
-                properties.getLease().toMillis(), properties.getBatchSize());
+                properties.getLease().toMillis(), limit);
         if (flat.size() % 4 != 0) {
             throw new IllegalStateException("Invalid Redis delay queue claim response");
         }
@@ -233,8 +255,30 @@ public final class RedisDelayQueue implements AutoCloseable {
     }
 
     /**
-     * 启动一个主题的有界串行消费者。多实例可以分别调用 start(topic, task)。
-     * 每个实例最多并行 workerCount 个主题，同一主题不创建重复轮询器。
+     * 启动消费前检查旧 Redisson 队列是否还有待处理数据。
+     * 只读取旧公开数据结构的数量，不删除、迁移、ACK 或重放任何消息。
+     * 旧生产者必须在切换前停止，否则无法保证跨协议并行发布的安全性。
+     */
+    public void assertLegacyDrained(String partitionTopic) {
+        ensureOpen();
+        validateTopic(partitionTopic);
+        RBlockingQueue<String> ready = redisson.getBlockingQueue(partitionTopic);
+        RDelayedQueue<String> delayed = redisson.getDelayedQueue(ready);
+        // 先看 delayed 再看 ready，避免 Redisson 到期转移落在两次计数间而漏检。
+        long delayedCount = delayed.size();
+        long readyCount = ready.size();
+        long processingCount = redisson.getMap(partitionTopic + ":processing").size();
+        long deadLetters = redisson.getMap(partitionTopic + "-dead-letter").size();
+        if (readyCount != 0L || delayedCount != 0L || processingCount != 0L || deadLetters != 0L) {
+            throw new IllegalStateException("Historical delay queue not drained for topic="
+                    + partitionTopic + ", ready=" + readyCount + ", delayed=" + delayedCount
+                    + ", processing=" + processingCount + ", deadLetters=" + deadLetters);
+        }
+    }
+
+    /**
+     * 注册主题的有界轮询任务。认领和业务执行使用独立线程池；
+     * 多主题共享 workerCount 个实际执行业务的线程，同一主题只注册一次。
      */
     public synchronized void start(String topic, ConsumerTask task) {
         ensureOpen();
@@ -262,41 +306,116 @@ public final class RedisDelayQueue implements AutoCloseable {
         }
     }
 
-    /** 手工执行一次恢复与认领，便于运维验证和测试。 */
+    /**
+     * 手工执行一个同步批次（供运维验证及现有调用方使用）。
+     * 批次全部任务立即加入心跳集合，避免串行回调导致后续任务租约过期。
+     */
     public int pollOnce(String topic, ConsumerTask task) {
         ensureOpen();
-        validateTopic(topic);
-        Objects.requireNonNull(task, "task");
-        if (!topic.equals(task.topic())) {
-            throw new IllegalArgumentException("Delay queue task topic mismatch");
-        }
+        validateTask(topic, task);
         reclaimExpired(topic);
         List<ClaimedMessage> claimed = claim(topic);
+        List<LeasedMessage> leases = new ArrayList<>(claimed.size());
         for (ClaimedMessage message : claimed) {
-            String key = topic + "/" + message.id();
-            active.put(key, new LeasedMessage(topic, message));
-            try {
-                task.execute(message.payload());
-                if (!acknowledge(topic, message.id(), message.fencingToken())) {
-                    log.error("Delay queue ACK lost fencing token, topic={}, id={}", topic, message.id());
-                }
-            } catch (Exception exception) {
-                log.warn("Delay queue task failed, topic={}, id={}, attempts={}",
-                        topic, message.id(), message.attempts(), exception);
-                FailureOutcome outcome = fail(topic, message);
-                log.info("Delay queue failure outcome={}, topic={}, id={}", outcome, topic, message.id());
-            } finally {
-                active.remove(key);
+            LeasedMessage lease = new LeasedMessage(topic, message);
+            active.put(activeKey(lease), lease);
+            leases.add(lease);
+        }
+        int executed = 0;
+        try {
+            for (LeasedMessage lease : leases) {
+                executed++;
+                processClaimed(task, lease);
+            }
+        } finally {
+            // 业务回调或 Redis 异常中断同步批次时，未执行的租约应交由 Redis 回收。
+            for (int i = executed; i < leases.size(); i++) {
+                LeasedMessage unprocessed = leases.get(i);
+                active.remove(activeKey(unprocessed), unprocessed);
             }
         }
         return claimed.size();
     }
 
+    /**
+     * 定时轮询仅在有实际执行槽位时认领，不允许已获取租约的消息排在无界本地队列中。
+     * 失败时租约仍留在 Redis，由原有 reclaim 脚本恢复。
+     */
+    private void dispatchOnce(String topic, ConsumerTask task) {
+        ensureOpen();
+        validateTask(topic, task);
+        reclaimExpired(topic);
+        int limit = Math.min(properties.getBatchSize(), availableWorkers.availablePermits());
+        if (limit == 0 || !availableWorkers.tryAcquire(limit)) {
+            return;
+        }
+        int unused = limit;
+        try {
+            List<ClaimedMessage> claimed = claim(topic, limit);
+            for (ClaimedMessage message : claimed) {
+                LeasedMessage lease = new LeasedMessage(topic, message);
+                String key = activeKey(lease);
+                active.put(key, lease);
+                try {
+                    workers.execute(() -> {
+                        try {
+                            processClaimed(task, lease);
+                        } finally {
+                            availableWorkers.release();
+                        }
+                    });
+                    unused--;
+                } catch (RejectedExecutionException exception) {
+                    active.remove(key, lease);
+                    log.warn("Delay queue worker rejected an already claimed message; lease recovery required, topic={}, id={}",
+                            topic, message.id(), exception);
+                }
+            }
+        } finally {
+            availableWorkers.release(unused);
+        }
+    }
+
+    /**
+     * 只清理本次租约的本地记录，避免过期持有者覆盖新认领者的心跳状态。
+     */
+    private void processClaimed(ConsumerTask task, LeasedMessage lease) {
+        ClaimedMessage message = lease.message();
+        String topic = lease.topic();
+        try {
+            task.execute(message.payload());
+            if (!acknowledge(topic, message.id(), message.fencingToken())) {
+                log.error("Delay queue ACK rejected; check business idempotency, topic={}, id={}",
+                        topic, message.id());
+            }
+        } catch (Exception exception) {
+            log.warn("Delay queue task failed, topic={}, id={}, attempts={}",
+                    topic, message.id(), message.attempts(), exception);
+            FailureOutcome outcome = fail(topic, message);
+            log.info("Delay queue failure outcome={}, topic={}, id={}", outcome, topic, message.id());
+        } finally {
+            active.remove(activeKey(lease), lease);
+        }
+    }
+
+    private static void validateTask(String topic, ConsumerTask task) {
+        Objects.requireNonNull(task, "task");
+        if (!topic.equals(task.topic())) {
+            throw new IllegalArgumentException("Delay queue task topic mismatch");
+        }
+    }
+
+    private static String activeKey(LeasedMessage lease) {
+        return lease.topic() + "/" + lease.message().id();
+    }
+
     private void pollSafely(String topic, ConsumerTask task) {
         try {
-            pollOnce(topic, task);
+            dispatchOnce(topic, task);
         } catch (Exception exception) {
-            log.error("Delay queue poll failed, topic={}", topic, exception);
+            if (!closed) {
+                log.error("Delay queue poll failed, topic={}", topic, exception);
+            }
         }
     }
 
@@ -402,16 +521,19 @@ public final class RedisDelayQueue implements AutoCloseable {
             future.cancel(false);
         }
         pollingTopics.clear();
-        poller.shutdown();
+        poller.shutdownNow();
+        workers.shutdown();
         try {
-            if (!poller.awaitTermination(5, TimeUnit.SECONDS)) {
-                poller.shutdownNow();
+            if (!workers.awaitTermination(5, TimeUnit.SECONDS)) {
+                log.warn("Delay queue worker shutdown timed out; unfinished leases remain reclaimable");
+                workers.shutdownNow();
             }
         } catch (InterruptedException exception) {
-            poller.shutdownNow();
+            workers.shutdownNow();
             Thread.currentThread().interrupt();
+        } finally {
+            heartbeat.shutdownNow();
+            active.clear();
         }
-        heartbeat.shutdownNow();
-        active.clear();
     }
 }

@@ -42,7 +42,7 @@ flowchart LR
 | ACL + Nacos | Separate Sentinel auth for Jedis/Redisson, nonzero Cluster DB rejection, synchronized templates ([#50](https://github.com/Ryan-Guizhou/peach-cloud/pull/50)) | Live ACL credential rotation |
 | Stream | Success XACK, failure PEL, opt-in XPENDING/XCLAIM/backoff/DLQ and 3 real Redis tests ([#52](https://github.com/Ryan-Guizhou/peach-cloud/pull/52)) | Non-atomic DLQ write versus source ACK |
 | Multi-instance cache / Bloom | Two independent Jedis clients invalidate L1/refill L2; two RedissonClients see Bloom scaling ([#56](https://github.com/Ryan-Guizhou/peach-cloud/pull/56)) | Missed Pub/Sub events during disconnect |
-| DelayQueue reliable queue | Lua atomic claim, lease/fencing/DLQ, two-worker lease-loss recovery, 64 parallel tasks, 7 real tests ([#40](https://github.com/Ryan-Guizhou/peach-cloud/pull/40), [#60](https://github.com/Ryan-Guizhou/peach-cloud/pull/60)) | Real process kill -9, Redis failover, 10k soak |
+| DelayQueue reliable queue | Lua atomic claim, lease/fencing/DLQ, two-worker lease-loss recovery, 64 parallel tasks, 8 real tests ([#40](https://github.com/Ryan-Guizhou/peach-cloud/pull/40), [#60](https://github.com/Ryan-Guizhou/peach-cloud/pull/60)) | Real process kill -9, Redis failover, 10k soak |
 | Sa-Token administrative search | Bounded SCAN, pagination, all Cluster masters and 50,000 match limit ([PR #58](https://github.com/Ryan-Guizhou/peach-cloud/pull/58)) | Merged and real Redis 7.2 standalone/Sentinel/Cluster/TLS tests passed; legacy-session rolling acceptance still pending |
 | Legacy/new Redis JSON | Equal value/hash-value bytes, bidirectional reads and TTL for Map values using both current-repository serializer configurations | [PR #66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66) under CI; not real released SaSession fixtures |
 
@@ -109,8 +109,12 @@ bash scripts/ci/redis-topology-integration.sh tls
 ## 6. Epic blockers—not yet complete
 
 - Real Redis Sentinel/Cluster master failover and client reconnection, live TLS/ACL rotation.
-- Actual legacy Redis key/codec/Sa-Token Session two-way rolling upgrade and rollback, legacy Bloom/queue migration.
+- Actual legacy Redis key/codec/Sa-Token Session two-way rolling upgrade and rollback, legacy Bloom/queue migration. The current reliable queue preflight blocks startup if old delayed/ready/processing/dead-letter records remain.
 - Cache Pub/Sub disconnect invalidation compensation, Stream PEL operator-safe replay, crash between DLQ append and XACK.
 - DelayQueue reliable queue real process `kill -9`, external database fencing, Redis failover and sustained high-load soak; durable application idempotency remains essential.
 
 **Acceptance rule:** Record exact release, topology, traceable CI run URL, data scale, canary and rollback evidence for each production rollout. Keep Stream recovery disabled by default; do not switch the queue runtime until legacy messages are drained and deployment gates are approved. Keep Epic #18 open.
+
+### Current queue cutover guard
+
+The runtime now checks the previous Redisson delayed, ready, processing and dead-letter structures before starting a subscribed consumer; a producer also checks every partition once before its first send. A non-empty historical queue raises an explicit exception rather than silently dropping jobs. These read-only checks are not a distributed write fence: **stop all old producers, reconcile old dead letters, drain old queues, then stop old consumers before starting the replacement**. Do not deploy old and new consumers concurrently. Keep the persisted Lua-state namespace unchanged for existing reliable messages. CI success alone does not authorize production cutover.
