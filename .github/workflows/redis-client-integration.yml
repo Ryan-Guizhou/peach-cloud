@@ -11,6 +11,10 @@ on:
       - 'peach-auth/**'
       - 'peach-setting/**'
       - 'peach-message/**'
+      - 'peach-fileservice/**'
+      - 'peach-generator/**'
+      - 'peach-monitor/**'
+      - 'peach-scheduled/**'
       - 'peach-dependencies/pom.xml'
   push:
     branches:
