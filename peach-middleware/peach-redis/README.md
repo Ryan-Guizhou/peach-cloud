@@ -149,6 +149,31 @@ flowchart LR
 
 `peach.redis.host` 格式为 `host:port`。Quickstart 统一默认：`password` 默认为空（通过 `PEACH_REDIS_PASSWORD` 覆盖）、`database=1`。
 
+## Redis-only 底座（新增）
+
+本仓库现提供 `peach-redis-autoconfigure`、`peach-redis-starter` 以及 `peach-redis-quickstart`。独立底座基于 Spring Data Redis + Jedis，不创建 `RedissonClient`；能力模块 Tool / MultiCache / Stream 已将新底座纳入 Starter 依赖。历史 `peach-redis-common` 仍在旧项目中保留兼容路径，最终移除需结合迁移验证。
+
+| 能力 | 接入入口 | 重要约束 |
+| --- | --- | --- |
+| Redis-only / `peach-redis-starter` | `RedisConnectionFactory` / `RedisTemplate` / `StringRedisTemplate` | 默认 Jedis；已有用户工厂优先；JSON value 使用旧 Jackson2JsonRedisSerializer 协议 |
+| Tool / `peach-redis-tool-starter` | `RedisDao` | 独立依赖新底座，SCAN 大键空间需低频执行 |
+| MultiCache / `peach-redis-multicache-starter` | `MultiCacheManagerService` | 额外依赖 Tool、Caffeine 与 Hutool，缓存同步为尽力而为 |
+| Stream / `peach-redis-stream-starter` | `RedisStreamHandler` | 消费工厂使用 `RedisConnectionFactory` 接口；可靠 ACK / PEL 恢复仍待实施 |
+
+**最小依赖**（项目父 POM 管理版本）：
+
+```xml
+<dependency>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-redis-starter</artifactId>
+    <version>${revision}</version>
+</dependency>
+```
+
+**最小配置**：沿用 `peach.redis.mode / host / password / database`；可通过 `peach.redis.enabled=false` 关闭新自动装配、`peach.redis.ssl-enabled=true` 开启 TLS、`peach.redis.jedis.max-total` 调整连接预算。已有 `RedisConnectionFactory` 优先，默认池 `max-total=128`。
+
+**最短路径**：在根目录运行 `mvn -pl peach-middleware/peach-redis/peach-redis-quickstart -am spring-boot:run`；真实 Redis 集成测试可运行相同模块的 `-am test`，其中 Testcontainers 需要 Docker。样例无需 Redisson。旧 Sa-Token Starter 当前仍包含 `peach-redis-common` 的兼容依赖，不能据此判断整个业务进程已经完全去除旧底座。
+
 ## 边界
 
 - key 必须有稳定命名空间和必要隔离维度，敏感值不直接进入 key/log。
