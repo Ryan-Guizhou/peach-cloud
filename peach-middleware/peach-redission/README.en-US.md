@@ -10,6 +10,10 @@ English | [中文](README.md)
 
 **Current baseline:** Java 21 / Spring Boot 3.5.4 / Redisson 3.50.0. New `peach-redisson-autoconfigure` and `peach-redisson-starter` allow Redisson-only services without `peach-redis-common` or Jedis. When legacy `RedisConfig` is present, the new configuration backs off from its existing `RedissonClient`; migrating the old mixed configuration is a follow-up stage. See [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18).
 
+## Sentinel ACL and Cluster safeguards (Issue #49)
+
+The independent `peach-redisson-starter` retains `peach.redis.mode / host / username / password` and adds optional `peach.redis.sentinel-username` and `peach.redis.sentinel-password` for Sentinel-specific credentials. Leaving these blank preserves existing behavior. Redisson TLS continues to use `peach.redis.redisson.ssl-enable`, independently of Jedis `peach.redis.ssl-enabled`. A nonzero database in Cluster mode fails at startup rather than silently accessing database zero. Production ACL, certificates and failover still require separate acceptance. The two Nacos templates share the same names and must never embed real credentials.
+
 ## Complete capability matrix
 
 | Capability / starter | Public API | Current functionality | Example use | Current limitation |

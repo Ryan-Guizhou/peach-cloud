@@ -19,6 +19,8 @@ public class PeachRedisProperties {
     private String password = "";
     private String username;
     private String sentinelMaster = "master";
+    private String sentinelUsername;
+    private String sentinelPassword;
     private int database = 0;
     private boolean sslEnabled = false;
     private JedisPool jedis = new JedisPool();

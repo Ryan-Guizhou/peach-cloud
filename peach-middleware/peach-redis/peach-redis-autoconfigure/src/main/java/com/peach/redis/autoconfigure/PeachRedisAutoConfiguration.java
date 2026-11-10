@@ -152,24 +152,36 @@ public class PeachRedisAutoConfiguration {
         return cfg;
     }
 
-    private static RedisSentinelConfiguration sentinel(PeachRedisProperties props, Set<RedisNode> nodes) {
+    static RedisSentinelConfiguration sentinel(PeachRedisProperties props, Set<RedisNode> nodes) {
         RedisSentinelConfiguration cfg = new RedisSentinelConfiguration();
         cfg.master(props.getSentinelMaster());
         cfg.setSentinels(nodes);
         cfg.setDatabase(props.getDatabase());
+        if (props.getUsername() != null && !props.getUsername().isBlank()) {
+            cfg.setUsername(props.getUsername());
+        }
         if (props.getPassword() != null && !props.getPassword().isBlank()) {
             cfg.setPassword(RedisPassword.of(props.getPassword()));
+        }
+        if (props.getSentinelUsername() != null && !props.getSentinelUsername().isBlank()) {
+            cfg.setSentinelUsername(props.getSentinelUsername());
+        }
+        if (props.getSentinelPassword() != null && !props.getSentinelPassword().isBlank()) {
+            cfg.setSentinelPassword(RedisPassword.of(props.getSentinelPassword()));
         }
         return cfg;
     }
 
-    private static RedisClusterConfiguration cluster(PeachRedisProperties props, Set<RedisNode> nodes) {
+    static RedisClusterConfiguration cluster(PeachRedisProperties props, Set<RedisNode> nodes) {
         if (props.getDatabase() != 0) {
             throw new IllegalArgumentException("Redis Cluster only supports database 0");
         }
         RedisClusterConfiguration cfg = new RedisClusterConfiguration();
         cfg.setClusterNodes(nodes);
         cfg.setMaxRedirects(5);
+        if (props.getUsername() != null && !props.getUsername().isBlank()) {
+            cfg.setUsername(props.getUsername());
+        }
         if (props.getPassword() != null && !props.getPassword().isBlank()) {
             cfg.setPassword(RedisPassword.of(props.getPassword()));
         }

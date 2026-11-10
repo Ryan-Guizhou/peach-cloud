@@ -10,6 +10,21 @@ English | [中文](README.md)
 
 **Current baseline:** Java 21 / Spring Boot 3.5.4. The legacy `peach-redis-common` still creates Jedis/templates **and** RedissonClient for compatibility. New Redisson-only services can now use `peach-redisson-starter` without this legacy common module. Migrating the Redis-side foundation remains a separate stage. This matrix describes what exists on main and the known limitations. See [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18) for the redesign.
 
+## ACL, Sentinel and Cluster configuration (Issue #49)
+
+The independent `peach-redis-starter` supports separate credentials for data nodes and Sentinel itself. Do not conflate them. Unset values preserve legacy defaults:
+
+| Property | Default | Meaning |
+| --- | --- | --- |
+| `peach.redis.username` | blank | Data-node ACL username in standalone, Sentinel and Cluster modes |
+| `peach.redis.password` | blank | Data-node password |
+| `peach.redis.sentinel-username` | blank | Optional separate Sentinel ACL username |
+| `peach.redis.sentinel-password` | blank | Optional separate Sentinel password |
+| `peach.redis.ssl-enabled` | `false` | Jedis SSL/TLS flag, independent of Redisson's `ssl-enable` |
+| `peach.redis.jedis.max-total` | `128` | Maximum Jedis pool connections |
+
+Redis Cluster requires database `0`; invalid values fail during startup. Both Nacos templates use the same property keys. Put real passwords in a secure configuration source, never the repository. User-provided `RedisConnectionFactory` still wins over the default Jedis factory. See the Issue #47 section below for real topology verification.
+
 ## Complete capability matrix
 
 | Module / starter | Main API | Capabilities | Use cases | Current limitation |
