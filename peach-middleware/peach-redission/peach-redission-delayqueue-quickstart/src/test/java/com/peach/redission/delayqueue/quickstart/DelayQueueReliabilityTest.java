@@ -1,7 +1,7 @@
 package com.peach.redission.delayqueue.quickstart;
 
-import com.peach.redission.delayqueue.v2.DelayQueueV2Properties;
-import com.peach.redission.delayqueue.v2.RedisDelayQueueV2;
+import com.peach.redission.delayqueue.config.DelayQueueProperties;
+import com.peach.redission.delayqueue.core.RedisDelayQueue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,14 +22,14 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 独立 V2 队列在真实 Redis 上验证幂等入队、fencing、租约回收、DLQ 与重放。
+ * 独立 reliable 队列在真实 Redis 上验证幂等入队、fencing、租约回收、DLQ 与重放。
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/10
  */
 @Testcontainers(disabledWithoutDocker = true)
-class DelayQueueV2CapabilityTest {
+class DelayQueueReliabilityTest {
 
     @Container
     @SuppressWarnings("resource")
@@ -37,21 +37,21 @@ class DelayQueueV2CapabilityTest {
             DockerImageName.parse("redis:7.2-alpine")).withExposedPorts(6379);
 
     private RedissonClient redisson;
-    private RedisDelayQueueV2 queue;
+    private RedisDelayQueue queue;
 
     @BeforeEach
     void setUp() {
         Config config = new Config();
         config.useSingleServer().setAddress("redis://" + REDIS.getHost() + ":" + REDIS.getMappedPort(6379));
         redisson = Redisson.create(config);
-        DelayQueueV2Properties options = new DelayQueueV2Properties();
+        DelayQueueProperties options = new DelayQueueProperties();
         options.setEnabled(true);
         options.setLease(Duration.ofSeconds(3));
         options.setMaxAttempts(2);
         options.setRetryInitial(Duration.ofMillis(1));
         options.setRetryMax(Duration.ofMillis(10));
         options.setPollInterval(Duration.ofMillis(10));
-        queue = new RedisDelayQueueV2(redisson, options);
+        queue = new RedisDelayQueue(redisson, options);
     }
 
     @AfterEach
@@ -85,20 +85,20 @@ class DelayQueueV2CapabilityTest {
     void shouldMoveToDlqAndReplayStableId() throws Exception {
         String topic = uniqueTopic();
         assertThat(queue.offer(topic, "job-2", "timeout", Duration.ZERO)).isTrue();
-        RedisDelayQueueV2.ClaimedMessage first = queue.claim(topic).get(0);
-        assertThat(queue.fail(topic, first)).isEqualTo(RedisDelayQueueV2.FailureOutcome.RETRY_SCHEDULED);
+        RedisDelayQueue.ClaimedMessage first = queue.claim(topic).get(0);
+        assertThat(queue.fail(topic, first)).isEqualTo(RedisDelayQueue.FailureOutcome.RETRY_SCHEDULED);
 
         Thread.sleep(30);
-        RedisDelayQueueV2.ClaimedMessage second = queue.claim(topic).get(0);
+        RedisDelayQueue.ClaimedMessage second = queue.claim(topic).get(0);
         assertThat(second.fencingToken()).isGreaterThan(first.fencingToken());
-        assertThat(queue.fail(topic, second)).isEqualTo(RedisDelayQueueV2.FailureOutcome.DEAD_LETTER);
+        assertThat(queue.fail(topic, second)).isEqualTo(RedisDelayQueue.FailureOutcome.DEAD_LETTER);
 
         assertThat(queue.deadLetterPayload(topic, "job-2")).isEqualTo("timeout");
         assertThat(queue.status(topic).deadLetters()).isEqualTo(1);
         assertThat(queue.offer(topic, "job-2", "conflict", Duration.ZERO)).isFalse();
         assertThat(queue.replayDeadLetter(topic, "job-2", Duration.ZERO)).isTrue();
         assertThat(queue.deadLetterPayload(topic, "job-2")).isNull();
-        RedisDelayQueueV2.ClaimedMessage replay = queue.claim(topic).get(0);
+        RedisDelayQueue.ClaimedMessage replay = queue.claim(topic).get(0);
         assertThat(replay.payload()).isEqualTo("timeout");
         assertThat(queue.acknowledge(topic, replay.id(), replay.fencingToken())).isTrue();
     }
@@ -107,7 +107,7 @@ class DelayQueueV2CapabilityTest {
     void reclaimShouldInvalidatePreviousFencingToken() {
         String topic = uniqueTopic();
         assertThat(queue.offer(topic, "job-3", "recover", Duration.ZERO)).isTrue();
-        RedisDelayQueueV2.ClaimedMessage first = queue.claim(topic).get(0);
+        RedisDelayQueue.ClaimedMessage first = queue.claim(topic).get(0);
 
         // Explicitly expire lease score in the test Redis without waiting 3 seconds.
         Long modified = redisson.getScript(StringCodec.INSTANCE).eval(RScript.Mode.READ_WRITE,
@@ -116,13 +116,13 @@ class DelayQueueV2CapabilityTest {
         assertThat(modified).isNotNull();
 
         assertThat(queue.reclaimExpired(topic)).isEqualTo(1L);
-        RedisDelayQueueV2.ClaimedMessage second = queue.claim(topic).get(0);
+        RedisDelayQueue.ClaimedMessage second = queue.claim(topic).get(0);
         assertThat(second.fencingToken()).isGreaterThan(first.fencingToken());
         assertThat(queue.acknowledge(topic, first.id(), first.fencingToken())).isFalse();
         assertThat(queue.acknowledge(topic, second.id(), second.fencingToken())).isTrue();
     }
 
     private static String uniqueTopic() {
-        return "v2-" + UUID.randomUUID().toString().replace("-", "");
+        return "queue-" + UUID.randomUUID().toString().replace("-", "");
     }
 }

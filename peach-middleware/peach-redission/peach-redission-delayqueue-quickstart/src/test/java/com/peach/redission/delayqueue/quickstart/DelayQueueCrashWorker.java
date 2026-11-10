@@ -1,7 +1,7 @@
 package com.peach.redission.delayqueue.quickstart;
 
-import com.peach.redission.delayqueue.v2.DelayQueueV2Properties;
-import com.peach.redission.delayqueue.v2.RedisDelayQueueV2;
+import com.peach.redission.delayqueue.config.DelayQueueProperties;
+import com.peach.redission.delayqueue.core.RedisDelayQueue;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
@@ -21,13 +21,13 @@ import java.time.Duration;
  * @Version 1.0.0
  * @CreateTime 2026/11/10
  */
-public final class DelayQueueV2CrashWorker {
+public final class DelayQueueCrashWorker {
 
-    private DelayQueueV2CrashWorker() {
+    private DelayQueueCrashWorker() {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 2 || !"true".equals(System.getenv("RUN_REDIS_V2_IT"))) {
+        if (args.length != 2 || !"true".equals(System.getenv("RUN_REDIS_DELAYQUEUE_IT"))) {
             throw new IllegalArgumentException("Crash worker is restricted to opt-in Redis CI");
         }
         String topic = args[0];
@@ -36,19 +36,19 @@ public final class DelayQueueV2CrashWorker {
         Config config = new Config();
         config.useSingleServer().setAddress("redis://127.0.0.1:6379");
         RedissonClient client = Redisson.create(config);
-        DelayQueueV2Properties properties = new DelayQueueV2Properties();
+        DelayQueueProperties properties = new DelayQueueProperties();
         properties.setEnabled(true);
         properties.setLease(Duration.ofSeconds(3));
         properties.setMaxAttempts(2);
         properties.setRetryInitial(Duration.ofMillis(1));
         properties.setRetryMax(Duration.ofMillis(10));
 
-        try (RedisDelayQueueV2 queue = new RedisDelayQueueV2(client, properties)) {
+        try (RedisDelayQueue queue = new RedisDelayQueue(client, properties)) {
             var messages = queue.claim(topic);
             if (messages.size() != 1) {
                 throw new IllegalStateException("Expected one claim in independent crash worker");
             }
-            RedisDelayQueueV2.ClaimedMessage item = messages.get(0);
+            RedisDelayQueue.ClaimedMessage item = messages.get(0);
             Files.writeString(marker, item.id() + "|" + item.fencingToken() + "|" + item.payload(),
                     StandardCharsets.UTF_8);
             Thread.sleep(Duration.ofMinutes(2));

@@ -2,81 +2,56 @@ package com.peach.redission.delayqueue.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import java.util.concurrent.TimeUnit;
-import static com.peach.redission.delayqueue.config.DelayQueueProperties.PREFIX;
+
+import java.time.Duration;
 
 /**
- * 延迟队列属性配置类。
+ * 当前唯一可靠延迟队列的运行参数。
+ *
+ * <p>沿用 peach.delay.queue 配置域，使用同槽 Lua 原子认领、租约与 fencing。
+ * 已有 Redisson delayed-queue 消息必须在发布切换前排空，不会自动消费旧协议。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2025/12/17 17:30
- * @Description 延迟队列属性配置类
+ * @CreateTime 2026/11/10
  */
 @Data
-@ConfigurationProperties(prefix = PREFIX)
+@ConfigurationProperties(prefix = DelayQueueProperties.PREFIX)
 public class DelayQueueProperties {
 
     public static final String PREFIX = "peach.delay.queue";
 
-    /**
-     * 从队列拉取数据的线程池中的核心线程数量，如果业务过慢可调大
-     */
-    private Integer corePoolSize = 4;
+    private boolean enabled = true;
+    private int workerCount = 4;
+    private int isolationRegionCount = 5;
+    private int maxTopicSubscriptions = 512;
+    private int batchSize = 16;
+    private int maxAttempts = 5;
+    private Duration pollInterval = Duration.ofMillis(500);
+    private Duration lease = Duration.ofMinutes(2);
+    private Duration retryInitial = Duration.ofSeconds(5);
+    private Duration retryMax = Duration.ofMinutes(5);
+    private Duration completedRetention = Duration.ofDays(7);
+    private int maxPayloadBytes = 65536;
 
     /**
-     * 从队列拉取数据的线程池中的最大线程数量，如果业务过慢可调大
+     * 在初始化客户端及任务订阅之前校验资源和时间边界。
      */
-    private Integer maximumPoolSize = 4;
-
-    /**
-     * 从队列拉取数据的线程池中的最大线程回收时间
-     */
-    private long keepAliveTime = 30;
-
-    /**
-     * 从队列拉取数据的线程池中的最大线程回收时间的时间单位
-     */
-    private TimeUnit unit = TimeUnit.SECONDS;
-
-    /**
-     * 从队列拉取数据的线程池中的队列数量，如果业务过慢可调大
-     */
-    private Integer workQueueSize = 256;
-
-    /**
-     * 延时队列的隔离分区数，延时有瓶颈时可调大次数，但会增大redis的cpu消耗
-     * (同一个topic发送者和消费者的隔离分区数必须相同)
-     */
-    private Integer isolationRegionCount = 5;
-
-    /**
-     * 消息处理失败后的最大重试次数
-     */
-    private Integer maxRetryAttempts = 3;
-
-    /**
-     * 重试间隔时间（毫秒）
-     */
-    private Long retryIntervalMillis = 5000L;
-
-    /**
-     * 死信队列最大大小，防止无限增长
-     */
-    private Integer maxDeadLetterQueueSize = 10000;
-
-    /**
-     * 死信队列清理间隔（小时）
-     */
-    private Integer deadLetterCleanIntervalHours = 24;
-
-    /**
-     * 死信队列消息保留时间（小时）
-     */
-    private Integer deadLetterMessageRetentionHours = 168; // 7天
-
-    /**
-     * 是否使用可靠队列（防止消息丢失）
-     */
-    private Boolean useReliableQueue = true;
+    public void validate() {
+        if (workerCount < 1 || workerCount > 64
+                || isolationRegionCount < 1 || isolationRegionCount > 100
+                || maxTopicSubscriptions < isolationRegionCount || maxTopicSubscriptions > 10000
+                || batchSize < 1 || batchSize > 512
+                || maxAttempts < 1 || maxAttempts > 1000
+                || maxPayloadBytes < 1 || maxPayloadBytes > 10 * 1024 * 1024) {
+            throw new IllegalArgumentException("Invalid delay queue capacity settings");
+        }
+        if (pollInterval == null || pollInterval.toMillis() < 1
+                || lease == null || lease.toMillis() < 3000
+                || retryInitial == null || retryInitial.toMillis() < 1
+                || retryMax == null || retryMax.compareTo(retryInitial) < 0
+                || completedRetention == null || completedRetention.toMillis() < 1) {
+            throw new IllegalArgumentException("Invalid delay queue duration settings");
+        }
+    }
 }

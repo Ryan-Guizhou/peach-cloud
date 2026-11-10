@@ -16,7 +16,7 @@ English | [中文](acceptance-and-rollout.md)
 | Distributed lock | `peach-redission-distributedlock-starter` | Redisson | Not a substitute for transactions, unique constraints or external fencing |
 | Repeat guard | `peach-redission-repeat-starter` | Redisson | Failed marker persistence yields uncertain outcome, not safe blind retry |
 | Segmented Bloom | `peach-redission-bloomfilter-starter` | Redisson | False positives; validate against authoritative data |
-| Delay queue | `peach-redission-delayqueue-starter` | Redisson | V2 opt-in and isolated from legacy queue protocol |
+| Delay queue | `peach-redission-delayqueue-starter` | Redisson | reliable queue opt-in and isolated from legacy queue protocol |
 
 The historical mixed `peach-redis-common` artifact stays in the reactor/BOM for external legacy deployments and rollback, but internal direct Maven consumers were removed in [PR #54](https://github.com/Ryan-Guizhou/peach-cloud/pull/54). Do not add it to new services. Historical `redission` is preserved only for existing paths/artifactIds. Gateway uses separate reactive Lettuce; do not block WebFlux EventLoops with Jedis.
 
@@ -42,7 +42,7 @@ flowchart LR
 | ACL + Nacos | Separate Sentinel auth for Jedis/Redisson, nonzero Cluster DB rejection, synchronized templates ([#50](https://github.com/Ryan-Guizhou/peach-cloud/pull/50)) | Live ACL credential rotation |
 | Stream | Success XACK, failure PEL, opt-in XPENDING/XCLAIM/backoff/DLQ and 3 real Redis tests ([#52](https://github.com/Ryan-Guizhou/peach-cloud/pull/52)) | Non-atomic DLQ write versus source ACK |
 | Multi-instance cache / Bloom | Two independent Jedis clients invalidate L1/refill L2; two RedissonClients see Bloom scaling ([#56](https://github.com/Ryan-Guizhou/peach-cloud/pull/56)) | Missed Pub/Sub events during disconnect |
-| DelayQueue V2 | Lua atomic claim, lease/fencing/DLQ, two-worker lease-loss recovery, 64 parallel tasks, 6 real tests ([#40](https://github.com/Ryan-Guizhou/peach-cloud/pull/40), [#60](https://github.com/Ryan-Guizhou/peach-cloud/pull/60)) | Real process kill -9, Redis failover, 10k soak |
+| DelayQueue reliable queue | Lua atomic claim, lease/fencing/DLQ, two-worker lease-loss recovery, 64 parallel tasks, 7 real tests ([#40](https://github.com/Ryan-Guizhou/peach-cloud/pull/40), [#60](https://github.com/Ryan-Guizhou/peach-cloud/pull/60)) | Real process kill -9, Redis failover, 10k soak |
 | Sa-Token administrative search | Bounded SCAN, pagination, all Cluster masters and 50,000 match limit ([PR #58](https://github.com/Ryan-Guizhou/peach-cloud/pull/58)) | Merged and real Redis 7.2 standalone/Sentinel/Cluster/TLS tests passed; legacy-session rolling acceptance still pending |
 | Legacy/new Redis JSON | Equal value/hash-value bytes, bidirectional reads and TTL for Map values using both current-repository serializer configurations | [PR #66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66) under CI; not real released SaSession fixtures |
 
@@ -76,8 +76,8 @@ Before migration, record Redis topology/DB, bean names and resource ownership, k
 1. **Preflight:** Independently validate Jedis, Redisson and dual-client usage outside production. Export target Nacos profiles, sample scrubbed Redis keys/TTL, Stream PEL and delay queue scheduled/processing/DLQ. Have operations back up Redis; never run production `KEYS *` or mass deletion.
 2. **Bidirectional session compatibility:** Write scrubbed real-format sessions with an actual old release and verify the new release can read/extend/logout. Verify the old release can read sessions written by the new release with equivalent TTL and types. **This full rolling acceptance is not yet evidenced and must not be skipped.**
 3. **Canary:** Deploy one stateless instance, verify auth/CAPTCHA, Gateway reactive Lettuce, scheduler locks, cache and Stream behavior before scaling. Observe Redis pool utilization and error rates.
-4. **Streams and queues:** Enable Stream Pending recovery only with durable business idempotency. V2 does not import legacy `RDelayedQueue`/`RBlockingQueue`; stop old producers and drain or explicitly migrate legacy jobs under approval before switching; never execute one business job through both protocols concurrently.
-5. **Rollback:** Stop canary promotion, restore the old binary and the matching Nacos snapshot, retain legacy Common, and never clear Redis. Disable opt-in Stream recovery and V2 new production/consumption, reconcile durable business state with completed/processing/DLQ before any manual replay.
+4. **Streams and queues:** Enable Stream Pending recovery only with durable business idempotency. reliable queue does not import legacy `RDelayedQueue`/`RBlockingQueue`; stop old producers and drain or explicitly migrate legacy jobs under approval before switching; never execute one business job through both protocols concurrently.
+5. **Rollback:** Stop canary promotion, restore the old binary and the matching Nacos snapshot, retain legacy Common, and never clear Redis. Disable opt-in Stream recovery and reliable queue new production/consumption, reconcile durable business state with completed/processing/DLQ before any manual replay.
 
 Authentication failures must fail closed. Ordinary caches may fall back to authoritative storage, but Pub/Sub is neither reliable delivery nor strong consistency. Positive Bloom checks need source-of-truth verification.
 
@@ -92,7 +92,7 @@ bash scripts/ci/redis-topology-integration.sh cluster
 bash scripts/ci/redis-topology-integration.sh tls
 ```
 
-`.github/workflows/redis-client-integration.yml` covers standalone clients/Sa-Token/Stream/multi-instance tests with Redis 7.2; `.github/workflows/delayqueue-v2-integration.yml` tests V2 Lua. Surefire XML gates ensure executed tests have zero failures/errors/skips. Generic `mvn -B -ntp verify` validates only what executes; `@Testcontainers(disabledWithoutDocker=true)` or opt-in test environment switches can cause integration tests to skip, which is **not** acceptance evidence.
+`.github/workflows/redis-client-integration.yml` covers standalone clients/Sa-Token/Stream/multi-instance tests with Redis 7.2; `.github/workflows/delayqueue-integration.yml` tests reliable queue Lua. Surefire XML gates ensure executed tests have zero failures/errors/skips. Generic `mvn -B -ntp verify` validates only what executes; `@Testcontainers(disabledWithoutDocker=true)` or opt-in test environment switches can cause integration tests to skip, which is **not** acceptance evidence.
 
 - **MultiCache subscription recovery (#67):** confirmed re-subscription clears this JVM's L1, forcing Redis L2 refresh. Stale reads remain possible while offline. The real integration test is tracked in [PR #68](https://github.com/Ryan-Guizhou/peach-cloud/pull/68); this does not establish strong consistency.
 
@@ -104,13 +104,13 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 - **Real Redis ACL (Issue #75):** a CI topology disables the default user and tests named-user credentials across clients, plus rejection of invalid/anonymous access. Production credential rotation is not covered; check the actual CI results for acceptance.
 
-- **Real JVM crash recovery for DelayQueue V2 ([#77](https://github.com/Ryan-Guizhou/peach-cloud/issues/77)):** force-kill the claimant subprocess, then verify lease recovery and fencing with a second client in Redis 7.2 CI. This does not cover Redis infrastructure failover or cross-store transactions.
+- **Real JVM crash recovery for DelayQueue reliable queue ([#77](https://github.com/Ryan-Guizhou/peach-cloud/issues/77)):** force-kill the claimant subprocess, then verify lease recovery and fencing with a second client in Redis 7.2 CI. This does not cover Redis infrastructure failover or cross-store transactions.
 
 ## 6. Epic blockers—not yet complete
 
 - Real Redis Sentinel/Cluster master failover and client reconnection, live TLS/ACL rotation.
 - Actual legacy Redis key/codec/Sa-Token Session two-way rolling upgrade and rollback, legacy Bloom/queue migration.
 - Cache Pub/Sub disconnect invalidation compensation, Stream PEL operator-safe replay, crash between DLQ append and XACK.
-- DelayQueue V2 real process `kill -9`, external database fencing, Redis failover and sustained high-load soak; durable application idempotency remains essential.
+- DelayQueue reliable queue real process `kill -9`, external database fencing, Redis failover and sustained high-load soak; durable application idempotency remains essential.
 
-**Acceptance rule:** Record exact release, topology, traceable CI run URL, data scale, canary and rollback evidence for each production rollout. Keep Stream recovery and V2 disabled by default until high-risk scenarios are approved. Keep Epic #18 open.
+**Acceptance rule:** Record exact release, topology, traceable CI run URL, data scale, canary and rollback evidence for each production rollout. Keep Stream recovery disabled by default; do not switch the queue runtime until legacy messages are drained and deployment gates are approved. Keep Epic #18 open.

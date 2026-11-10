@@ -22,14 +22,14 @@ The independent `peach-redisson-starter` retains `peach.redis.mode / host / user
 | Shared support / `peach-redission-common` | `RedissionDataHandle`, `LockInfoHandleFactory`, `LocalCacheLock` | Redisson KV wrapper, lock-key resolution, local mutex support | Internal shared lock/repeat support | Does not create clients; TimeUnit precision and held-lock lifetime fixed; 256 local lock stripes may contend across keys |
 | `peach-redission-distributedlock-starter` | `@DistrbutedLock`, `DistributedLockTemplate`, `DistributedLocker` | Reentrant, fair, read/write lock strategies; annotation or programmatic locking; wait timeout | Inventory, account state, scheduler coordination | Historic annotation spelling; distinguish watchdog and explicit lease; retain database guards for critical operations |
 | `peach-redission-repeat-starter` | `@RepeatLimit` | Restrict concurrent submissions per business key, or reject repeats for a post-success window | Checkout, form submit, duplicate execution | Failure to persist a success marker raises an uncertain-result error; verify durable business state before retry |
-| `peach-redission-delayqueue-starter` | `DelayQueueContext` (legacy), `RedisDelayQueueV2` (isolated new protocol) | Delayed delivery; optional V2 atomic claims, leases/heartbeats/fencing, ACK, bounded retries, DLQ/replay | Order expiry, delayed notifications | V2 is opt-in and does not migrate legacy queues; the legacy take→processing crash window persists; neither is exactly-once |
+| `peach-redission-delayqueue-starter` | `DelayQueueContext`, `ConsumerTask`, `RedisDelayQueue` | One reliable Lua-backed queue: atomic claims, heartbeats, fenced ACK, bounded retries, DLQ and replay; isolated topic partitions | Order expiry and delayed business jobs | Legacy Redisson queue messages must be drained before switching; at-least-once, not exactly-once |
 | `peach-redission-bloomfilter-starter` | `BloomFilterService`, `BloomStatus`, `KeyNamingStrategy` / `BloomScalePolicy` / `CodecProvider` SPIs | Membership pre-check, batch add/query, segmented scaling, status/clear, extension SPI | SKU and content prefilters | Counters are per segment; old counters are lazily approximated from filter bits; segment lists are loaded from Redis to avoid stale cross-node negatives; authoritative lookup remains required |
 
 ### Which module should I use?
 
 - **Lock:** use `DistributedLockTemplate` or annotation for resources shared across service instances; business side effects still need idempotency or version checks.
 - **Duplicate submit:** `@RepeatLimit` rejects repeated requests in a window; payment/order creation also requires uniqueness and durable idempotency.
-- **Delayed tasks:** the legacy protocol still has a take→processing crash window; new applications can opt into the isolated V2 atomic state machine, subject to the migration and failure tests below.
+- **Delayed tasks:** `DelayQueueContext` uses the single reliable queue. Use the stable message-ID overload to reject duplicates; drain the historical Redisson queue before a deployment cutover.
 - **Segment metadata migration:** New counters include a segment identifier; the old shared counter remains for rollback. On first access an old segment's count is estimated with `count()` (approximate), and segment names are no longer cached as an uninvalidated local snapshot. Validate mixed-version rollout and rollback.
 - **Membership prefilter:** Bloom filters reduce unnecessary lookups, but positive results require authoritative lookup; errors reading Redis metadata must not mean “definitely absent”.
 - **RedisTemplate / Stream / Caffeine + Redis caching:** use [peach-redis](../peach-redis/README.en-US.md).
@@ -134,9 +134,9 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
 
 ### Delay Queue
 
-### Delay queue V2 (experimental, opt-in)
+### Reliable delay queue (current implementation)
 
-V2 leaves legacy `RDelayedQueue` / `RBlockingQueue` data untouched. The new `RedisDelayQueueV2` API uses the independent `peach:dq2:{topic}:*` key namespace so every key for a topic shares one Redis Cluster hash slot. Nine Lua scripts live in `src/main/resources/lua/delayqueue-v2/`, not embedded in Java.
+The current `RedisDelayQueue` runtime preserves the historical `peach:dq2:{topic}:*` key namespace so every key for a topic shares one Redis Cluster hash slot. Nine Lua scripts live in `src/main/resources/lua/delayqueue/`, not embedded in Java.
 
 **State machine:** `scheduled → processing (lease + fencing token) → completed`; failures return to `scheduled` for retry or enter `DLQ`. Expired leases are atomically reclaimed. Enqueue requires a stable `messageId`; claims allocate monotonically increasing fencing tokens and only the current token can ACK or renew a lease. **At-least-once, not exactly-once**: business systems must enforce durable idempotency and fencing independently. Active callbacks get heartbeat lease extensions, but failures can still cause duplicate execution.
 
@@ -144,25 +144,24 @@ V2 leaves legacy `RDelayedQueue` / `RBlockingQueue` data untouched. The new `Red
 peach:
   delay:
     queue:
-      legacy-enabled: false # Disable only in new deployments; keep true for legacy upgrades
-      v2:
-        enabled: true
-        worker-count: 4
-        batch-size: 16
-        max-attempts: 5
-        poll-interval: 500ms
-        lease: 2m
-        retry-initial: 5s
-        retry-max: 5m
-        completed-retention: 7d
-        max-payload-bytes: 65536
+      enabled: true
+      isolation-region-count: 5
+      worker-count: 4
+      batch-size: 16
+      max-attempts: 5
+      poll-interval: 500ms
+      lease: 2m
+      retry-initial: 5s
+      retry-max: 5m
+      completed-retention: 7d
+      max-payload-bytes: 65536
 ```
 
 ```java
 @RequiredArgsConstructor
 @Service
 public class OrderExpiryService {
-    private final RedisDelayQueueV2 queue;
+    private final RedisDelayQueue queue;
 
     public void schedule(String orderId) {
         queue.offer("order-expiry", orderId, orderId, Duration.ofMinutes(30));
@@ -174,7 +173,7 @@ public class OrderExpiryService {
 }
 ```
 
-**Migration and acceptance:** V2 does not automatically copy old tasks. Stop legacy production first and drain the old queue or perform an approved explicit migration after reconciling legacy processing and DLQ state. Test retries, lease expiry, stale ACK, duplicates, Redis Cluster/failover and rollback in a separate environment. Do not have both protocols process the same business task. Inspect `deadLetterPayload` before `replayDeadLetter` and audit the operator. Completed deduplication entries expire by retention; permanent business idempotency remains separate. Passing a standalone Maven build is not production reliability acceptance.
+**Migration and acceptance:** Before switching deployments, stop historical queue producers, drain delayed/ready/processing items, then stop historical consumers and start the unified runtime. The old Redisson delayed-queue protocol is not automatically converted and must not run alongside this runtime. Existing Lua state keys stay unchanged to preserve already queued reliable messages. Validate ACK, retry, DLQ, delayed messages and rollback in isolation. Business idempotency remains mandatory.
 
 
 - Module: [`peach-redission-delayqueue-quickstart`](./peach-redission-delayqueue-quickstart/)
@@ -219,7 +218,7 @@ public class OrderExpiryService {
 
 ## Real Redis topology integration (Issue #47)
 
-The dedicated Redis 7.2 CI matrix exercises the independent `peach-redisson-starter` against Sentinel, Cluster (three masters, three replicas) and TLS. It verifies RedissonClient bean isolation, real Bucket writes/reads, TTL and deletion alongside Jedis and Redis Tool. See the [Redis topology integration instructions](../peach-redis/README.en-US.md#real-redis-topology-integration-issue-47) for commands, enforced non-skipped Surefire checks and limitations. This smoke test does **not** prove distributed-lock mutual exclusion during failover, exactly-once for delay queue V2, or cross-instance Bloom behavior.
+The dedicated Redis 7.2 CI matrix exercises the independent `peach-redisson-starter` against Sentinel, Cluster (three masters, three replicas) and TLS. It verifies RedissonClient bean isolation, real Bucket writes/reads, TTL and deletion alongside Jedis and Redis Tool. See the [Redis topology integration instructions](../peach-redis/README.en-US.md#real-redis-topology-integration-issue-47) for commands, enforced non-skipped Surefire checks and limitations. This smoke test does **not** prove distributed-lock mutual exclusion during failover, exactly-once for delay queue reliable queue, or cross-instance Bloom behavior.
 
 ## Bloom segment test with two independent clients (Issue #55)
 
@@ -227,7 +226,7 @@ The dedicated Redis 7.2 CI matrix exercises the independent `peach-redisson-star
 
 ## Independent worker recovery and bounded concurrency (Issue #59)
 
-`DelayQueueV2ServerIntegrationTest` adds real Redis 7.2 tests with two distinct RedissonClient / `RedisDelayQueueV2` instances. Worker A claims but stops without ACK; after the lease expires, Worker B reclaims it, obtains a greater fencing token, rejects the old token and acknowledges as the current owner. Two independent workers also consume 64 messages in parallel, checking stable-ID deduplication, completion counts and no remaining processing records. Dedicated CI verifies that all six test cases actually execute via Surefire XML.
+`DelayQueueServerIntegrationTest` adds real Redis 7.2 tests with two distinct RedissonClient / `RedisDelayQueue` instances. Worker A claims but stops without ACK; after the lease expires, Worker B reclaims it, obtains a greater fencing token, rejects the old token and acknowledges as the current owner. Two independent workers also consume 64 messages in parallel, checking stable-ID deduplication, completion counts and no remaining processing records. Dedicated CI verifies that all seven test cases actually execute via Surefire XML.
 
 **Scope:** The first worker stops deliberately to simulate lease loss; this is not a real `kill -9` test. Redis master failover, cross-store transaction fencing, 10k-concurrency soak, legacy queue drain and mixed-version upgrades remain separate acceptance work. The opt-in default, Lua/Redis key protocol and business-side durable idempotency requirements are unchanged.
 
