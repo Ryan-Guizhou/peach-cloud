@@ -19,9 +19,9 @@
 | 能力 / Starter | 对外入口 | 当前功能 | 典型用途 | 当前限制 |
 | --- | --- | --- | --- | --- |
 | Redisson 客户端底座 / `peach-redisson-starter` | `RedissonClient` / `PeachRedissonAutoConfiguration` | 独立 Redisson 客户端装配、支持 single/Sentinel/Cluster、SSL、连接池和自定义 Bean 退让 | Redisson-only 服务 | 保留 `peach.redis.*` 配置与 JsonJacksonCodec，生产 TLS/多拓扑需单独集成验证 |
-| 基础支撑 / `peach-redission-common` | `RedissionDataHandle`、`LockInfoHandleFactory`、`LocalCacheLock` | Redisson KV 封装、锁名解析、局部互斥支撑 | 锁/防重内部共享组件 | 不是独立 Redisson 客户端底座；本地锁过期淘汰和 TimeUnit 转换存在风险 |
+| 基础支撑 / `peach-redission-common` | `RedissionDataHandle`、`LockInfoHandleFactory`、`LocalCacheLock` | Redisson KV 封装、锁名解析、局部互斥支撑 | 锁/防重内部共享组件 | 不创建客户端；TimeUnit 精度与持锁对象生命周期已修复；固定 256 个本地锁条带可能造成不同 key 竞争 |
 | `peach-redission-distributedlock-starter` | `@DistrbutedLock`、`DistributedLockTemplate`、`DistributedLocker` | 可重入、公平、读写锁策略；注解和编程式保护；锁等待超时 | 库存、账户状态、调度协调 | `@DistrbutedLock` 保留历史拼写；看门狗/显式 lease 的语义必须区分；关键操作还需数据库约束 |
-| `peach-redission-repeat-starter` | `@RepeatLimit` | 同业务 key 限制并发或成功后窗口防重 | 下单、提交表单、避免重复执行 | 成功后设置防重标记失败时当前只告警；不等于事务幂等 |
+| `peach-redission-repeat-starter` | `@RepeatLimit` | 同业务 key 限制并发或成功后窗口防重 | 下单、提交表单、避免重复执行 | 成功标记持久化失败会抛出结果不确定异常；必须先核对持久业务状态，不能盲目重试 |
 | `peach-redission-delayqueue-starter` | `DelayQueueContext`（旧协议）、`RedisDelayQueueV2`（独立新协议） | 延迟投递；可选 V2 原子认领、租约/心跳/fencing、ACK、有限重试、DLQ/重放 | 订单超时、定时通知 | V2 默认关闭且不自动迁移旧队列；旧协议仍有崩溃窗口；两者均不承诺 exactly-once |
 | `peach-redission-bloomfilter-starter` | `BloomFilterService`、`BloomStatus`、`KeyNamingStrategy` / `BloomScalePolicy` / `CodecProvider` SPI | 成员预判、批量添加/查询、分段扩容、状态/清理、SPI 扩展 | SKU、内容去重预过滤 | 分段计数已按段隔离，旧计数通过位图近似回填，段目录每次从 Redis 获取；Bloom 仍不能替代权威数据源 |
 
@@ -82,7 +82,7 @@ public class InventoryService {
 | 情况 | 当前应如何理解 |
 | --- | --- |
 | Redis 断连/获取锁失败 | 必须阻止未受保护的关键操作继续执行，不自动降为 JVM 内本地锁 |
-| 防重执行标记写入失败 | 业务可能已成功但防重保护失效；必须调查和业务幂等兜底 |
+| 防重执行标记写入失败 | 抛出结果不确定异常；业务可能已成功，必须先查询数据库幂等记录并对账，不能盲目重试 |
 | 延迟队列进程崩溃 | 旧版可靠队列仍存在取出→登记窗口；新可靠协议必须先完成迁移与故障测试 |
 | Bloom Filter 分段信息异常 | 不能依赖 negative 结果做不可逆业务决策，先通过权威数据源确认 |
 | 更改锁名、codec 或消息格式 | 必须先验证存量数据/队列及跨版本滚动发布与回滚，不能仅以代码编译成功为准 |
@@ -230,6 +230,10 @@ public class OrderExpiryService {
 `DelayQueueV2ServerIntegrationTest` 增加真实 Redis 7.2 的双 RedissonClient / 双 `RedisDelayQueueV2` 测试：Worker A 认领后停止且不 ACK，租约过期由 Worker B 回收、重新认领并产生更大的 fencing token；旧 token 无权 ACK，新持有者成功确认。另以两个独立 Worker 并行消费 64 条消息，检查稳定 ID 去重、完成计数和无残留 processing。专用 CI 通过 Surefire 校验全部 6 项测试实际运行。
 
 **范围限制：** Worker A 在测试中主动停止，用于模拟丢失租约，并非真实 `kill -9`；这批并不验证 Redis 主从切换、跨存储事务的 fencing、10k 并发 soak、旧协议排空或混合版本升级。默认关闭与 Lua/Redis key 协议保持不变，业务持久化幂等仍不可省略。
+
+## 部署、验收与回滚
+
+分步迁移、Nacos/Redis key/codec/Sa-Token session 兼容检查、实际 CI 测试证据、故障边界与回滚门禁见 [Redis / Redisson 迁移验收手册](../../docs/redis-redisson/acceptance-and-rollout.md)。真实连通性冒烟测试不代表生产 Redis 故障切换验收。
 
 ## 边界
 

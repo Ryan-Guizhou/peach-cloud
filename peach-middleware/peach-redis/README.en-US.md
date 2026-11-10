@@ -2,13 +2,13 @@
 
 English | [中文](README.md)
 
-`peach-redis` separates Redis capabilities into three independent starters: tools, multi-level cache and Stream. The independent connection foundation is `peach-redis-starter`; the legacy `peach-redis-common` remains for phased compatibility.
+`peach-redis` provides an independent Jedis / Spring Data Redis foundation via `peach-redis-starter`, plus three opt-in feature starters: Tool, MultiCache and Stream. The legacy `peach-redis-common` remains only for external legacy consumers and rollback; internal Maven modules no longer directly depend on it.
 
 ## Purpose and compatibility
 
 **Audience:** Spring Boot services needing Redis data structures, Caffeine L1 + Redis L2 caching, or Redis Stream messages. `peach-redis` is a Maven aggregator, **not** one dependency that enables every feature. Select only the needed starter.
 
-**Current baseline:** Java 21 / Spring Boot 3.5.4. The legacy `peach-redis-common` still creates Jedis/templates **and** RedissonClient for compatibility. New Redisson-only services can now use `peach-redisson-starter` without this legacy common module. Migrating the Redis-side foundation remains a separate stage. This matrix describes what exists on main and the known limitations. See [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18) for the redesign.
+**Current baseline:** Java 21 / Spring Boot 3.5.4. The legacy `peach-redis-common` still creates Jedis/templates **and** RedissonClient for compatibility. New Redisson-only services can now use `peach-redisson-starter` without this legacy common module. Internal direct dependencies have migrated; retiring the legacy artifact and verifying mixed-version production rollout remain separate work. This matrix describes what exists on main and the known limitations. See [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18) for the redesign.
 
 ## ACL, Sentinel and Cluster configuration (Issue #49)
 
@@ -29,7 +29,8 @@ Redis Cluster requires database `0`; invalid values fail during startup. Both Na
 
 | Module / starter | Main API | Capabilities | Use cases | Current limitation |
 | --- | --- | --- | --- | --- |
-| Connection foundation / `peach-redis-common` (current, scheduled for migration) | `RedisTemplate`, `StringRedisTemplate`, `RedisConnectionFactory` | Standalone, Sentinel, Cluster, Jedis pool, Jackson JSON serialization | Shared Redis access | Also configures Redisson today; nonzero Cluster database is unsupported; preserve stored formats |
+| Foundation / `peach-redis-starter` (recommended) | `RedisConnectionFactory`, `RedisTemplate`, `StringRedisTemplate` | Independent Jedis, standalone/Sentinel/Cluster, TLS, ACL, pooling, custom-factory backoff | Sa-Token / Tool / cache / Stream | No `RedissonClient`; Cluster DB must be 0; stored format retained, rolling session compatibility still pending |
+| Legacy mixed module / `peach-redis-common` (compatibility only) | `RedisConfig` | Historic combined Jedis + Redisson auto-configuration | Older application rollback | No internal direct consumers; do not add to new services; retire only after external migration |
 | `peach-redis-tool-starter` | `RedisDao` | String, TTL, Hash, List, Set, ZSet, Pub/Sub and batch deletion | KV, counters, tags, session support | `scan()` supports standalone/Sentinel and scans all Cluster masters; `count` is a batch hint, not a result limit; result is memory-backed and not a consistent snapshot; cross-slot deletion is per-key |
 | `peach-redis-multicache-starter` | `MultiCacheManager`, `MultiCacheManagerService`, Spring Cache | Caffeine L1 and Redis L2; TTL jitter; manual and annotation APIs; Pub/Sub invalidation | Product detail, configuration and dictionary caching | Best-effort invalidation, not strong consistency; `clear()` uses the restored Redis SCAN but remains memory-intensive and not an atomic snapshot; Caffeine STRONG reference semantics fixed; not strongly consistent across nodes |
 | `peach-redis-stream-starter` | `RedisStreamPushHandler`, `RedisStreamHandler`, `MessageConsumer` | Produce Stream records, group/broadcast consumption, consumer callbacks | Lightweight event messages | Group consumers ACK only on success and retain failures in PEL; opt-in scheduled reclaim, backoff and DLQ are implemented but disabled by default and require fault-injection acceptance |
@@ -246,6 +247,10 @@ bash scripts/ci/redis-topology-integration.sh tls
 ## Real two-instance invalidation test (Issue #55)
 
 `MultiCacheTwoClientServerIntegrationTest` runs against Redis 7.2 with two independent Jedis connection factories, two `MultiCacheManager` instances and a real Pub/Sub subscriber. After node A updates Redis L2, node B invalidates its Caffeine L1 and reads the new value. Broadcast JSON now follows the legacy Java serialization contract: only cache name and sender are transmitted, never business keys; therefore **remote invalidation clears the whole cacheName L1**. Local and Redis L2 key/value formats remain unchanged. Pub/Sub is best effort, not a strong-consistency guarantee through disconnections. Keep an L1 TTL and do not rely solely on caches for real-time authorization.
+
+## Rollout, acceptance and rollback
+
+For migration steps, Nacos/key/codec/session compatibility checks, CI evidence, failure boundaries and rollback gates, see the [Redis / Redisson migration acceptance runbook](../../docs/redis-redisson/acceptance-and-rollout.en-US.md). Real connectivity smoke tests do not establish production failover safety.
 
 ## Sa-Token administrative search safety (Issue #57)
 
