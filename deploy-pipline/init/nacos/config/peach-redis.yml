@@ -5,6 +5,17 @@ peach:
     password: "@REDIS_PASSWORD@"
     database: 0
     sentinelMaster: master
+    # Optional Redis ACL credentials. Keep blank when the server has no ACL user.
+    username: ""
+    sentinel-username: ""
+    sentinel-password: ""
+    # Jedis TLS is configured separately from Redisson's ssl-enable.
+    ssl-enabled: false
+    jedis:
+      max-total: 128
+      min-idle: 1
+      max-idle: 10
+      max-wait-millis: 60000
     redisson:
       enabled: true
       threads: 16

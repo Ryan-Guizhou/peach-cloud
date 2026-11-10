@@ -114,7 +114,7 @@ public class PeachRedissonAutoConfiguration {
         if (props.getUsername() != null && !props.getUsername().isBlank()) server.setUsername(props.getUsername());
     }
 
-    private static void configureSentinel(Config config, PeachRedissonProperties props,
+    static void configureSentinel(Config config, PeachRedissonProperties props,
                                           PeachRedissonProperties.RedissonOptions p, String[] addresses) {
         SentinelServersConfig server = config.useSentinelServers()
                 .setMasterName(props.getSentinelMaster())
@@ -133,10 +133,19 @@ public class PeachRedissonAutoConfiguration {
                 .setSubscriptionsPerConnection(p.getSubscriptionsPerConnection());
         if (props.getPassword() != null && !props.getPassword().isBlank()) server.setPassword(props.getPassword());
         if (props.getUsername() != null && !props.getUsername().isBlank()) server.setUsername(props.getUsername());
+        if (props.getSentinelUsername() != null && !props.getSentinelUsername().isBlank()) {
+            server.setSentinelUsername(props.getSentinelUsername());
+        }
+        if (props.getSentinelPassword() != null && !props.getSentinelPassword().isBlank()) {
+            server.setSentinelPassword(props.getSentinelPassword());
+        }
     }
 
-    private static void configureCluster(Config config, PeachRedissonProperties props,
+    static void configureCluster(Config config, PeachRedissonProperties props,
                                          PeachRedissonProperties.RedissonOptions p, String[] addresses) {
+        if (props.getDatabase() != 0) {
+            throw new IllegalArgumentException("Redis Cluster only supports database 0");
+        }
         ClusterServersConfig server = config.useClusterServers()
                 .addNodeAddress(addresses)
                 .setScanInterval(p.getScanInterval())

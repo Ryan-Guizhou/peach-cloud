@@ -10,6 +10,21 @@
 
 **当前基线：** Java 21 / Spring Boot 3.5.4；旧 `peach-redis-common` 仍兼容提供 Jedis、模板和 RedissonClient；需要单独 Redisson 的新服务现可通过 `peach-redisson-starter` 接入，不依赖旧 Redis Common。Redis 侧底座迁移留待后续阶段。以下表格描述 **main 当前已存在的功能**，并标明关键运行约束；后续解耦计划见 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
 
+## ACL、Sentinel 与 Cluster 配置契约（Issue #49）
+
+独立 `peach-redis-starter` 同时支持数据节点 ACL 和独立 Sentinel ACL；两类认证信息不应混用。下列键在未配置时保持兼容默认值：
+
+| 配置项 | 默认值 | 说明 |
+| --- | --- | --- |
+| `peach.redis.username` | 空 | Redis 数据节点用户名，Standalone / Sentinel / Cluster 均适用 |
+| `peach.redis.password` | 空 | Redis 数据节点密码 |
+| `peach.redis.sentinel-username` | 空 | Sentinel 自身的 ACL 用户名，可与数据节点不同 |
+| `peach.redis.sentinel-password` | 空 | Sentinel 自身的密码 |
+| `peach.redis.ssl-enabled` | `false` | Jedis SSL/TLS 开关；与 Redisson 的 `ssl-enable` 独立 |
+| `peach.redis.jedis.max-total` | `128` | Jedis 连接池最大连接数 |
+
+Redis Cluster 只支持数据库 `0`，非法值启动时直接失败。两份 Nacos 模板使用相同配置键；密码应在安全配置源维护，不能提交真实凭据。应用自定义 `RedisConnectionFactory` 仍优先于默认 Jedis 工厂。具体多拓扑执行方式见下方 Issue #47 验收章节。
+
 ## 完整能力矩阵
 
 | 模块 / Starter | 核心入口 | 能做什么 | 典型场景 | 当前限制 / 注意事项 |

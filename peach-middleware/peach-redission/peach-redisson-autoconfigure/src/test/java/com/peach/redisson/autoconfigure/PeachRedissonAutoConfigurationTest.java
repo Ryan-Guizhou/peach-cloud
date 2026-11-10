@@ -2,6 +2,8 @@ package com.peach.redisson.autoconfigure;
 
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
+import org.redisson.config.SentinelServersConfig;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
@@ -39,4 +41,35 @@ class PeachRedissonAutoConfigurationTest {
                     assertThat(context.getBeansOfType(RedissonClient.class)).isEmpty();
                 });
     }
+
+    @Test
+    void sentinelAuthIsSeparateFromDataNodeAuth() {
+        PeachRedissonProperties properties = new PeachRedissonProperties();
+        properties.setUsername("data-user");
+        properties.setPassword("data-secret");
+        properties.setSentinelUsername("monitor-user");
+        properties.setSentinelPassword("monitor-secret");
+
+        Config config = new Config();
+        PeachRedissonAutoConfiguration.configureSentinel(config, properties, properties.getRedisson(),
+                new String[]{"redis://127.0.0.1:26379"});
+        SentinelServersConfig sentinel = config.useSentinelServers();
+        assertThat(sentinel.getUsername()).isEqualTo("data-user");
+        assertThat(sentinel.getPassword()).isEqualTo("data-secret");
+        assertThat(sentinel.getSentinelUsername()).isEqualTo("monitor-user");
+        assertThat(sentinel.getSentinelPassword()).isEqualTo("monitor-secret");
+    }
+
+    @Test
+    void redissonClusterRejectsNonzeroDatabaseBeforeClientConnect() {
+        PeachRedissonProperties properties = new PeachRedissonProperties();
+        properties.setDatabase(1);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                PeachRedissonAutoConfiguration.configureCluster(
+                        new Config(), properties, properties.getRedisson(),
+                        new String[]{"redis://127.0.0.1:7001"}))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("database 0");
+    }
+
 }

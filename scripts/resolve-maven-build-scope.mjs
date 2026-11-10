@@ -14,7 +14,12 @@ const globalImpact = [
   'peach-dependencies/',
   '.mvn/',
 ];
-const nonMavenPrefixes = ['docs/', '.codex/', '.github/'];
+// Nacos configuration templates are tested by deployment validation, not Maven reactor.
+// When changed together with Java sources, keep the Java modules in the affected scope.
+const nonMavenPrefixes = [
+  'docs/', '.codex/', '.github/',
+  'deploy/nacos/config/', 'deploy-pipline/init/nacos/config/',
+];
 
 function toRepoPath(path) {
   return path.split(sep).join('/');
