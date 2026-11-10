@@ -84,6 +84,10 @@ public class InventoryService {
 | 更改锁名、codec 或消息格式 | 必须先验证存量数据/队列及跨版本滚动发布与回滚，不能仅以代码编译成功为准 |
 
 
+## Redisson 依赖闭包收敛（Issue #43）
+
+`peach-redission-common`、Bloom、DistributedLock 和 DelayQueue autoconfigure 已移除对 `peach-redis-common` 的可选依赖，能力 Starter 使用独立 `peach-redisson-starter`。旧 `RedisConfig` 保留供存量应用回滚，不代表新 Starter 仍依赖旧客户端。
+
 ## 结构
 
 **两层依赖模型：** 每个能力 Starter → `peach-redisson-starter` → `peach-redisson-autoconfigure` → RedissonClient。`peach-redission-common` 保留历史公共锁名 / 工具类，但不再承担独立客户端工厂的职责。

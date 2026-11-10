@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   redis-client-integration:
-    name: Redis-only, Redisson-only and Sa-Token Redis tests
+    name: Redis-only, Redisson-only, Redis Tool and Sa-Token Redis tests
     runs-on: ubuntu-latest
     services:
       redis:
@@ -52,7 +52,7 @@ jobs:
         run: |
           set -o pipefail
           mvn -B -ntp \
-            -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart \
+            -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart \
             -am \
-            -Dtest=RedisOnlyServerIntegrationTest,RedissonOnlyServerIntegrationTest,SaTokenRedisServerIntegrationTest \
+            -Dtest=RedisOnlyServerIntegrationTest,RedisToolServerIntegrationTest,RedissonOnlyServerIntegrationTest,SaTokenRedisServerIntegrationTest \
             -Dsurefire.failIfNoSpecifiedTests=false test
