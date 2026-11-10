@@ -17,7 +17,7 @@
 | 连接基础 / `peach-redis-common`（现状，拟迁移） | `RedisTemplate`、`StringRedisTemplate`、`RedisConnectionFactory` | 单机、Sentinel、Cluster；Jedis 连接池与 Jackson JSON 序列化 | 全部 Redis 业务服务 | 当前会额外配置 Redisson；Cluster 不支持非零数据库；序列化协议迁移需兼容旧数据 |
 | `peach-redis-tool-starter` | `RedisDao` | String、TTL、Hash、List、Set、ZSet、Pub/Sub 和批量删除 | 会话辅助数据、计数、业务 KV、标签 | `scan()` 支持单机/Sentinel 与按 master 扫描 Cluster；`count` 仅为扫描批次提示，结果累计占内存且非一致快照；跨槽删除逐键执行 |
 | `peach-redis-multicache-starter` | `MultiCacheManager`、`MultiCacheManagerService`、Spring Cache | Caffeine L1 + Redis L2、TTL 抖动、CacheManager/注解接入、Pub/Sub 失效广播 | 商品详情、相对稳定的配置/字典缓存 | Pub/Sub 是尽力失效而非强一致；`clear()` 使用已恢复的 Redis SCAN，但大范围扫描仍存在内存与一致性限制；Caffeine STRONG 引用已修复，跨实例无强一致保证 |
-| `peach-redis-stream-starter` | `RedisStreamPushHandler`、`RedisStreamHandler`、`MessageConsumer` | Stream 生产、group/broadcast 消费、消费者回调 | 轻量业务消息、事件处理 | 消费组仅在业务成功后显式 ACK；失败保留 PEL，尚无自动认领、退避重试与 DLQ |
+| `peach-redis-stream-starter` | `RedisStreamPushHandler`、`RedisStreamHandler`、`MessageConsumer` | Stream 生产、group/broadcast 消费、消费者回调 | 轻量业务消息、事件处理 | 消费组仅在业务成功后显式 ACK；失败保留 PEL；可选定时认领、指数退避及 DLQ（默认关闭，仍需故障注入） |
 
 ### 如何选择
 
@@ -137,6 +137,30 @@ flowchart LR
 - 关闭启动演示：`quickstart.multicache.demo.enabled=false`
 
 ### Stream
+
+### Pending 恢复与 DLQ（Issue #37）
+
+- **默认关闭**：设置 `peach.redis.stream.recovery.enabled=true` 开启；仅适用于 Consumer Group。启用之前必须让业务消费者按消息 ID 或业务主键实现持久幂等。广播模式不支持恢复。
+- **恢复算法**：单线程定时以 `XPENDING` 分页读取，每次不超过 `batch-size`，然后以 `XCLAIM` 认领超过动态空闲阈值的记录；重试间隔按投递次数指数递增（`min-idle` 到 `max-retry-delay`）。业务处理成功后 XACK。
+- **死信路径**：当投递次数达到 `max-attempts`，把原 RecordId、来源、投递次数与载荷写入独立 DLQ Stream；写入确认后才 XACK 源记录。默认 DLQ 名为 `源流名:dlq`。DLQ 与源流非跨键原子提交，崩溃时可能重复写死信，必须按 `sourceId` 去重。
+- **验收边界**：当前是至少一次语义，仍需故障注入、Redis 主从切换、Cluster 验证、人工重放接口与观测告警完善；不要宣称 exactly-once 或强一致恢复。客户端重启不会清空 PEL。
+
+```yaml
+peach:
+  redis:
+    stream:
+      enable: true
+      consumer-type: group
+      recovery:
+        enabled: true
+        batch-size: 32
+        max-attempts: 5
+        min-idle: 60s
+        max-retry-delay: 15m
+        interval: 30s
+        # dead-letter-stream: order-status:dlq
+```
+
 
 **确认与恢复边界**：Consumer Group 使用手动 XACK：业务回调成功才确认，失败保留 PEL。每个服务实例的消费者名称带随机后缀；线程池由 Spring 管理。`XPENDING`/`XCLAIM` 自动认领、退避、DLQ 尚未实现，处理关键事件必须独立持久化幂等。
 

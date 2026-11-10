@@ -138,6 +138,30 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
 
 ### Stream
 
+### Pending recovery and DLQ (Issue #37)
+
+- **Opt-in**: set `peach.redis.stream.recovery.enabled=true`. Only consumer groups support recovery. The business consumer must implement durable idempotency keyed by the event ID or business key before enabling this feature; broadcast mode is unsupported.
+- **Algorithm**: a single scheduled worker pages through `XPENDING` in bounded batches, uses `XCLAIM` to take idle records, increases retry idle time exponentially from `min-idle` to `max-retry-delay`, and XACKs only after a successful business callback.
+- **Dead letters**: upon `max-attempts`, append the original ID, source, delivery count and payload to an independent DLQ stream, then XACK the source only after successful persistence. The default is `<source-stream>:dlq`. DLQ XADD and source XACK are **not cross-key atomic**; crashes can duplicate DLQ records. De-duplicate by `sourceId`.
+- **Acceptance boundary**: at-least-once only. Crash injection, Redis failover/Cluster topologies, manual replay and observability remain required before asserting production-grade guarantees. Application restarts retain PEL state.
+
+```yaml
+peach:
+  redis:
+    stream:
+      enable: true
+      consumer-type: group
+      recovery:
+        enabled: true
+        batch-size: 32
+        max-attempts: 5
+        min-idle: 60s
+        max-retry-delay: 15m
+        interval: 30s
+        # dead-letter-stream: order-status:dlq
+```
+
+
 **Acknowledgment and recovery boundary:** consumer groups XACK only after the business callback succeeds; failures remain pending in the PEL. Each service instance uses a unique consumer name and Spring manages the executor. Automatic `XPENDING`/`XCLAIM` recovery, backoff and DLQ are not yet implemented; durable idempotency is still required.
 
 
