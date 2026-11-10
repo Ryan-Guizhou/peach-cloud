@@ -1,0 +1,54 @@
+name: Delay Queue V2 Redis Integration
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/delayqueue-v2-integration.yml'
+      - 'peach-middleware/peach-redission/peach-redission-delayqueue-*/**'
+      - 'peach-middleware/peach-redission/peach-redisson-*/**'
+      - 'peach-dependencies/pom.xml'
+      - 'pom.xml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/delayqueue-v2-integration.yml'
+      - 'peach-middleware/peach-redission/peach-redission-delayqueue-*/**'
+
+permissions:
+  contents: read
+
+jobs:
+  redis-v2-integration:
+    name: Redis 7.2 V2 Lua integration (required)
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      RUN_REDIS_V2_IT: 'true'
+      REDIS_IT_HOST: '127.0.0.1'
+      REDIS_IT_PORT: '6379'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Test Lua protocol against real Redis
+        shell: bash
+        run: |
+          set -o pipefail
+          mvn -B -ntp -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am \
+            -Dtest=DelayQueueV2ServerIntegrationTest \
+            -Dsurefire.failIfNoSpecifiedTests=false test
