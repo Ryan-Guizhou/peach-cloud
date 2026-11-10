@@ -180,12 +180,12 @@ flowchart LR
 
 ### Pending 恢复与 DLQ（Issue #37）
 
-**真实 Redis 7.2 恢复验收（Issue #51）：** 已在 Redis 服务容器新增 `RedisStreamRecoveryServerIntegrationTest`：验证 abandoned consumer 的 PEL 经 `XPENDING/XCLAIM` 被认领、回调成功后 `XACK`；业务异常仍保留 PEL；重试次数耗尽时先把 `sourceId/sourceStream/sourceGroup` 写入 DLQ，再确认源消息。CI 会检查 4 项轻量真实 Redis 测试执行、无跳过/失败；包含显式重放时保留原始字段、源记录不存在时拒绝重放。恢复默认关闭，此测试不证明 Redis 主从切换时的幂等与跨键原子性。
+**真实 Redis 7.2 恢复验收（Issue #51）：** 已在 Redis 服务容器新增 `RedisStreamRecoveryServerIntegrationTest`：验证 abandoned consumer 的 PEL 经 `XPENDING/XCLAIM` 被认领、回调成功后 `XACK`；业务异常仍保留 PEL；重试次数耗尽时先把 `sourceId/sourceStream/sourceGroup` 写入 DLQ，再确认源消息。CI 会检查 4 项轻量真实 Redis 测试执行、无跳过/失败；包含新死信源消息被裁剪后仍能原样重放、历史死信无源记录时拒绝重放。恢复默认关闭，此测试不证明 Redis 主从切换时的幂等与跨键原子性。
 
 - **默认关闭**：设置 `peach.redis.stream.recovery.enabled=true` 开启；仅适用于 Consumer Group。启用之前必须让业务消费者按消息 ID 或业务主键实现持久幂等。广播模式不支持恢复。
 - **恢复算法**：单线程定时以 `XPENDING` 分页读取，每次不超过 `batch-size`，然后以 `XCLAIM` 认领超过动态空闲阈值的记录；重试间隔按投递次数指数递增（`min-idle` 到 `max-retry-delay`）。业务处理成功后 XACK。
 - **死信路径**：当投递次数达到 `max-attempts`，把原 RecordId、来源、投递次数与载荷写入独立 DLQ Stream；写入确认后才 XACK 源记录。默认 DLQ 名为 `源流名:dlq`。DLQ 与源流非跨键原子提交，崩溃时可能重复写死信，必须按 `sourceId` 去重。
-- **运维重放与统计（Issue #87）**：可注入 `RedisStreamPendingRecovery` 使用 `backlog()` 获取 PEL/DLQ 数量，调用 `replayDeadLetter(dlqRecordId)` 将原 Stream 仍存在的消息字段重发为新 RecordId。先核对 DLQ 的 `sourceStream/sourceGroup/sourceId`，若源记录已被裁剪则拒绝；原死信保留供审计。重复手动执行可能重复发布，必须有业务持久幂等。
+- **运维重放与统计（Issue #87）**：可注入 `RedisStreamPendingRecovery` 使用 `backlog()` 获取 PEL/DLQ 数量，调用 `replayDeadLetter(dlqRecordId)` 将原 Stream 仍存在的消息字段重发为新 RecordId。先核对 DLQ 的 `sourceStream/sourceGroup/sourceId`。新死信在现有字段之外额外保存 `originalField:` 编码的原始业务字段，源记录被裁剪后仍可恢复；历史死信仍需从源 Stream 精确读取，已裁剪则拒绝。原死信保留供审计。重复手动执行可能重复发布，必须有业务持久幂等。
 - **验收边界**：仍为至少一次，故障注入、Redis 主从切换/Cluster、告警接入尚需目标环境验收；不可宣称 exactly-once 或强一致恢复。客户端重启不会清空 PEL。
 
 ```yaml

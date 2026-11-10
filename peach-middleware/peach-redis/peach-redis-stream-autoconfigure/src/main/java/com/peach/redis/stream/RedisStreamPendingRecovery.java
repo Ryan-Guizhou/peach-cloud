@@ -13,7 +13,9 @@ import org.springframework.data.redis.connection.stream.StreamRecords;
 import org.springframework.data.redis.core.StreamOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +41,9 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public final class RedisStreamPendingRecovery {
+
+    private static final String ORIGINAL_FIELD_PREFIX = "originalField:";
+    private static final String ORIGINAL_FIELDS_MARKER = "originalFieldsStored";
 
     private final StringRedisTemplate redis;
     private final RedisStreamProperties streamProperties;
@@ -228,19 +233,66 @@ public final class RedisStreamPendingRecovery {
         if (!(sourceId instanceof String id) || !id.matches("[0-9]+-[0-9]+")) {
             throw new IllegalStateException("Redis Stream dead-letter source ID is invalid");
         }
-        List<MapRecord<String, Object, Object>> originals =
-                ops.range(stream, Range.closed(id, id));
-        if (originals == null || originals.size() != 1) {
-            throw new IllegalStateException("Redis Stream original record has been trimmed; cannot safely replay");
+        Map<Object, Object> originalFields = readOriginalFields(metadata);
+        if (originalFields == null) {
+            // 兼容历史 DLQ：旧记录只存展示用 payload，必须从原 Stream 精确读取。
+            List<MapRecord<String, Object, Object>> originals =
+                    ops.range(stream, Range.closed(id, id));
+            if (originals == null || originals.size() != 1) {
+                throw new IllegalStateException("Redis Stream original record has been trimmed; cannot safely replay");
+            }
+            originalFields = new LinkedHashMap<>(originals.get(0).getValue());
         }
 
-        RecordId replayed = ops.add(StreamRecords.newRecord().in(stream)
-                .ofMap(new LinkedHashMap<>(originals.get(0).getValue())));
+        RecordId replayed = ops.add(StreamRecords.newRecord().in(stream).ofMap(originalFields));
         if (replayed == null) {
             throw new IllegalStateException("Redis Stream replay XADD returned null");
         }
         log.info("Redis Stream dead letter replayed, originalId={}, replayedId={}", id, replayed);
         return replayed;
+    }
+
+    /**
+     * 新写入的 DLQ 将业务字段单独保存，源 Stream 被裁剪后仍可原样重放。
+     * 历史格式没有格式标记时返回 null，调用方仅从原始 Stream 读取。
+     */
+    private static Map<Object, Object> readOriginalFields(Map<String, Object> deadLetter) {
+        Object marker = deadLetter.get(ORIGINAL_FIELDS_MARKER);
+        if (marker == null) {
+            return null;
+        }
+        if (!"true".equals(marker)) {
+            throw new IllegalStateException("Redis Stream dead-letter original field marker is invalid");
+        }
+        Map<Object, Object> result = new LinkedHashMap<>();
+        deadLetter.forEach((key, value) -> {
+            if (!key.startsWith(ORIGINAL_FIELD_PREFIX)) {
+                return;
+            }
+            String encodedKey = key.substring(ORIGINAL_FIELD_PREFIX.length());
+            String originalKey;
+            try {
+                originalKey = new String(Base64.getUrlDecoder().decode(encodedKey), StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException exception) {
+                throw new IllegalStateException("Redis Stream dead-letter field name is invalid", exception);
+            }
+            if (originalKey.isBlank() || !encodeOriginalField(originalKey).equals(encodedKey)
+                    || !(value instanceof String)) {
+                throw new IllegalStateException("Redis Stream dead-letter original field is invalid");
+            }
+            if (result.put(originalKey, value) != null) {
+                throw new IllegalStateException("Redis Stream dead-letter contains duplicate original field");
+            }
+        });
+        if (result.isEmpty()) {
+            throw new IllegalStateException("Redis Stream dead-letter original fields are missing");
+        }
+        return result;
+    }
+
+    private static String encodeOriginalField(String name) {
+        return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(name.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -276,6 +328,19 @@ public final class RedisStreamPendingRecovery {
         fields.put("sourceId", record.getId().getValue());
         fields.put("attempts", Long.toString(pending.getTotalDeliveryCount()));
         fields.put("payload", String.valueOf(record.getValue()));
+        // 增量写入结构化原始业务字段；原五个字段保持不变，供旧运维工具读取。
+        Map<Object, Object> original = record.getValue();
+        if (original == null || original.isEmpty()) {
+            throw new IllegalStateException("Redis Stream DLQ original fields are missing");
+        }
+        for (Map.Entry<Object, Object> item : original.entrySet()) {
+            if (!(item.getKey() instanceof String name) || name.isBlank()
+                    || !(item.getValue() instanceof String value)) {
+                throw new IllegalStateException("Redis Stream DLQ requires String field names and values");
+            }
+            fields.put(ORIGINAL_FIELD_PREFIX + encodeOriginalField(name), value);
+        }
+        fields.put(ORIGINAL_FIELDS_MARKER, "true");
         RecordId dlqId = ops.add(StreamRecords.newRecord().in(dlq).ofMap(fields));
         if (dlqId == null) {
             throw new IllegalStateException("Redis DLQ XADD returned null");
