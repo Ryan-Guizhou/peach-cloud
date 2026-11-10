@@ -180,12 +180,13 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
 
 ### Pending recovery and DLQ (Issue #37)
 
-**Real Redis 7.2 recovery acceptance (Issue #51):** `RedisStreamRecoveryServerIntegrationTest` runs against a service container to verify abandoned PEL records are reclaimed through `XPENDING/XCLAIM`, then `XACK` only after a successful callback; failed callbacks remain pending; exhausted attempts persist `sourceId/sourceStream/sourceGroup` in a DLQ before source ACK. CI checks all three tests actually execute without skips or failures. Recovery remains disabled by default. This is not proof of idempotency under failover, cross-key atomicity or operator replay support.
+**Real Redis 7.2 recovery acceptance (Issue #51):** `RedisStreamRecoveryServerIntegrationTest` runs against a service container to verify abandoned PEL records are reclaimed through `XPENDING/XCLAIM`, then `XACK` only after a successful callback; failed callbacks remain pending; exhausted attempts persist `sourceId/sourceStream/sourceGroup` in a DLQ before source ACK. CI checks four focused real-Redis tests, including operator replay that preserves source fields and rejects a trimmed source record. Recovery remains disabled by default; this does not prove idempotency during Redis failover or cross-key atomicity.
 
 - **Opt-in**: set `peach.redis.stream.recovery.enabled=true`. Only consumer groups support recovery. The business consumer must implement durable idempotency keyed by the event ID or business key before enabling this feature; broadcast mode is unsupported.
 - **Algorithm**: a single scheduled worker pages through `XPENDING` in bounded batches, uses `XCLAIM` to take idle records, increases retry idle time exponentially from `min-idle` to `max-retry-delay`, and XACKs only after a successful business callback.
 - **Dead letters**: upon `max-attempts`, append the original ID, source, delivery count and payload to an independent DLQ stream, then XACK the source only after successful persistence. The default is `<source-stream>:dlq`. DLQ XADD and source XACK are **not cross-key atomic**; crashes can duplicate DLQ records. De-duplicate by `sourceId`.
-- **Acceptance boundary**: at-least-once only. Crash injection, Redis failover/Cluster topologies, manual replay and observability remain required before asserting production-grade guarantees. Application restarts retain PEL state.
+- **Operator replay and counters (Issue #87)**: inject `RedisStreamPendingRecovery`, call `backlog()` for PEL and DLQ counts, or explicitly call `replayDeadLetter(dlqRecordId)` to republish the *original* source fields using a new RecordId. The source/group/ID metadata must match and the source record must still exist (otherwise replay fails). The DLQ audit record remains. Repeated manual calls can duplicate delivery: durable business idempotency is mandatory.
+- **Acceptance boundary**: at-least-once only. Redis failover/Cluster and alerting still need target-environment acceptance; this is not exactly-once. Application restarts retain PEL state.
 
 ```yaml
 peach:

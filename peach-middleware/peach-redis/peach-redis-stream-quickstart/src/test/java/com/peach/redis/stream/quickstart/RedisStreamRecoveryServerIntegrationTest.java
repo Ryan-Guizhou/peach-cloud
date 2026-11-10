@@ -27,6 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 通过真实 Redis 7.2 验证消费组 PEL 恢复、异常保留与死信转移。
@@ -123,6 +124,50 @@ class RedisStreamRecoveryServerIntegrationTest {
             assertThat(records.get(0).getValue().get("sourceId")).isEqualTo(original.getValue());
             assertThat(records.get(0).getValue().get("sourceStream")).isEqualTo(stream);
             assertThat(records.get(0).getValue().get("sourceGroup")).isEqualTo(group);
+        } finally {
+            redis.delete(stream);
+            redis.delete(dlq);
+        }
+    }
+
+    @Test
+    void operatorCanInspectAndReplayDeadLetterWithoutLosingOriginalFields() throws InterruptedException {
+        String stream = streamName();
+        String group = "workers";
+        String dlq = stream + ":dlq";
+        StreamOperations<String, Object, Object> operations = redis.opsForStream();
+        try {
+            RecordId sourceId = preparePending(stream, group);
+            RedisStreamPendingRecovery recovery = recovery(stream, group, 1, record -> {
+                throw new AssertionError("Exhausted message must not execute");
+            });
+            assertThat(recovery.backlog().pending()).isEqualTo(1);
+            assertThat(recovery.backlog().deadLetters()).isZero();
+
+            Thread.sleep(100);
+            assertThat(recovery.recoverOnce()).isEqualTo(1);
+            assertThat(recovery.backlog().pending()).isZero();
+            assertThat(recovery.backlog().deadLetters()).isEqualTo(1);
+
+            List<MapRecord<String, Object, Object>> deadLetters =
+                    operations.range(dlq, Range.unbounded());
+            assertThat(deadLetters).hasSize(1);
+            String deadLetterId = deadLetters.get(0).getId().getValue();
+            RecordId publishedId = recovery.replayDeadLetter(deadLetterId);
+            assertThat(publishedId).isNotEqualTo(sourceId);
+
+            List<MapRecord<String, Object, Object>> original =
+                    operations.range(stream, Range.closed(sourceId.getValue(), sourceId.getValue()));
+            List<MapRecord<String, Object, Object>> replayed =
+                    operations.range(stream, Range.closed(publishedId.getValue(), publishedId.getValue()));
+            assertThat(replayed).hasSize(1);
+            assertThat(replayed.get(0).getValue()).isEqualTo(original.get(0).getValue());
+            assertThat(recovery.backlog().deadLetters()).isEqualTo(1);
+
+            operations.delete(stream, sourceId);
+            assertThatThrownBy(() -> recovery.replayDeadLetter(deadLetterId))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("trimmed");
         } finally {
             redis.delete(stream);
             redis.delete(dlq);
