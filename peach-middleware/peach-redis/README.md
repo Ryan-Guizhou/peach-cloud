@@ -8,7 +8,7 @@
 
 **面向谁：** 需要 Redis 数据结构操作、应用级 L1 + Redis L2 缓存或 Redis Stream 消息能力的 Spring Boot 业务服务。这里的 `peach-redis` 是 Maven 聚合模块，不是将全部能力打包的单个依赖。按需要选用对应 Starter，避免将 Stream、缓存和通用 DAO 一并接入。
 
-**当前基线：** Java 21 / Spring Boot 3.5.4；当前 `peach-redis-common` 同时管理 Jedis、模板和 RedissonClient，独立底座尚未完成。以下表格描述 **main 当前已存在的功能**，并标明关键运行约束；后续解耦计划见 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
+**当前基线：** Java 21 / Spring Boot 3.5.4；旧 `peach-redis-common` 仍兼容提供 Jedis、模板和 RedissonClient；需要单独 Redisson 的新服务现可通过 `peach-redisson-starter` 接入，不依赖旧 Redis Common。Redis 侧底座迁移留待后续阶段。以下表格描述 **main 当前已存在的功能**，并标明关键运行约束；后续解耦计划见 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
 
 ## 完整能力矩阵
 
@@ -16,7 +16,7 @@
 | --- | --- | --- | --- | --- |
 | 连接基础 / `peach-redis-common`（现状，拟迁移） | `RedisTemplate`、`StringRedisTemplate`、`RedisConnectionFactory` | 单机、Sentinel、Cluster；Jedis 连接池与 Jackson JSON 序列化 | 全部 Redis 业务服务 | 当前会额外配置 Redisson；Cluster 不支持非零数据库；序列化协议迁移需兼容旧数据 |
 | `peach-redis-tool-starter` | `RedisDao` | String、TTL、Hash、List、Set、ZSet、Pub/Sub 和批量删除 | 会话辅助数据、计数、业务 KV、标签 | `scan()` 支持单机/Sentinel 与按 master 扫描 Cluster；`count` 仅为扫描批次提示，结果累计占内存且非一致快照；跨槽删除逐键执行 |
-| `peach-redis-multicache-starter` | `MultiCacheManager`、`MultiCacheManagerService`、Spring Cache | Caffeine L1 + Redis L2、TTL 抖动、CacheManager/注解接入、Pub/Sub 失效广播 | 商品详情、相对稳定的配置/字典缓存 | Pub/Sub 是尽力失效而非强一致；`clear()` 受当前扫描缺陷影响；Caffeine STRONG 引用已修复，跨实例无强一致保证 |
+| `peach-redis-multicache-starter` | `MultiCacheManager`、`MultiCacheManagerService`、Spring Cache | Caffeine L1 + Redis L2、TTL 抖动、CacheManager/注解接入、Pub/Sub 失效广播 | 商品详情、相对稳定的配置/字典缓存 | Pub/Sub 是尽力失效而非强一致；`clear()` 使用已恢复的 Redis SCAN，但大范围扫描仍存在内存与一致性限制；Caffeine STRONG 引用已修复，跨实例无强一致保证 |
 | `peach-redis-stream-starter` | `RedisStreamPushHandler`、`RedisStreamHandler`、`MessageConsumer` | Stream 生产、group/broadcast 消费、消费者回调 | 轻量业务消息、事件处理 | 当前 group 使用 `receiveAutoAck`，异常由监听器捕获；**未实现可靠 pending 自动恢复和失败重试保障** |
 
 ### 如何选择

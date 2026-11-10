@@ -8,12 +8,13 @@ English | [中文](README.md)
 
 **Redisson is a Redis client with higher-level distributed data structures and coordination primitives.** The project's `peach-redission` is a Maven aggregator for locks, duplicate submission protection, delayed queues and segmented bloom filters. Choose the feature Starter you need. The historical directory/artifact and some Java package spellings use `redission`; **this is not a separate client product**.
 
-**Current baseline:** Java 21 / Spring Boot 3.5.4 / Redisson 3.50.0. At present `peach-redis-common/RedisConfig` creates the client, so a Redisson-only application is not yet proven free of Spring Data/Jedis; the independent `peach-redisson-starter` is a planned target. See [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18).
+**Current baseline:** Java 21 / Spring Boot 3.5.4 / Redisson 3.50.0. New `peach-redisson-autoconfigure` and `peach-redisson-starter` allow Redisson-only services without `peach-redis-common` or Jedis. When legacy `RedisConfig` is present, the new configuration backs off from its existing `RedissonClient`; migrating the old mixed configuration is a follow-up stage. See [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18).
 
 ## Complete capability matrix
 
 | Capability / starter | Public API | Current functionality | Example use | Current limitation |
 | --- | --- | --- | --- | --- |
+| Redisson client foundation / `peach-redisson-starter` | `RedissonClient` / `PeachRedissonAutoConfiguration` | Independent single/Sentinel/Cluster, SSL, pools, custom-bean backoff | Redisson-only services | Preserves `peach.redis.*` and JsonJacksonCodec; production TLS/topology integration validation is still required |
 | Shared support / `peach-redission-common` | `RedissionDataHandle`, `LockInfoHandleFactory`, `LocalCacheLock` | Redisson KV wrapper, lock-key resolution, local mutex support | Internal shared lock/repeat support | Not an independent Redisson client foundation; local lock expiry and TimeUnit conversion are problematic |
 | `peach-redission-distributedlock-starter` | `@DistrbutedLock`, `DistributedLockTemplate`, `DistributedLocker` | Reentrant, fair, read/write lock strategies; annotation or programmatic locking; wait timeout | Inventory, account state, scheduler coordination | Historic annotation spelling; distinguish watchdog and explicit lease; retain database guards for critical operations |
 | `peach-redission-repeat-starter` | `@RepeatLimit` | Restrict concurrent submissions per business key, or reject repeats for a post-success window | Checkout, form submit, duplicate execution | Current code logs but suppresses failure to persist the success flag; not transactional idempotency |
@@ -39,7 +40,7 @@ English | [中文](README.md)
 </dependency>
 ```
 
-This is an example of the feature Starter coordinates, **not a guarantee** that the current Starter closes all its runtime dependencies. The existing distributed-lock Quickstart explicitly adds `peach-redis-common`, `peach-redission-common`, AOP and Caffeine. The redesign will make the Starter self-sufficient. Use an actual published version outside the Maven reactor.
+Lock, repeat guard, bloom, and delay queue Starters now transitively include `peach-redisson-starter`, without requiring explicit `peach-redis-common` or Jedis. The new auto-configuration backs off when the user supplies `RedissonClient`. Existing applications may retain the legacy `RedisConfig` compatibility path. Use an actual published version outside the Maven reactor.
 
 ### Minimal development configuration
 
@@ -54,7 +55,7 @@ peach:
       enabled: true
 ```
 
-Current Redisson and business Jedis share `peach.redis.*` topology fields. Keep passwords out of logs and independently validate TLS/Sentinel/Cluster in the intended Redis deployment.
+The new Redisson-only configuration and legacy RedisConfig retain the same `peach.redis.*` topology fields and the default JsonJacksonCodec. Keep passwords out of logs and independently validate TLS/Sentinel/Cluster in the intended Redis deployment.
 
 ### Minimal programmatic lock example
 
@@ -85,6 +86,9 @@ Lock names follow current business naming rules; do not change keys during rolli
 
 ## Structure
 
+**Dependency model:** each feature Starter → `peach-redisson-starter` → `peach-redisson-autoconfigure` → RedissonClient. `peach-redission-common` remains the historical shared lock naming / utility module, not an independent client factory.
+
+
 | Capability | Autoconfigure | Starter | Quickstart |
 | --- | --- | --- | --- |
 | Distributed Lock | `peach-redission-distributedlock-autoconfigure` | `peach-redission-distributedlock-starter` | `peach-redission-distributedlock-quickstart` |
@@ -106,12 +110,12 @@ flowchart LR
 
 ## Quick Start
 
-Each capability ships a non-web quickstart (`spring.main.web-application-type=none`). Because many autoconfigure dependencies such as `peach-redis-common` are optional, quickstarts declare them explicitly. Provide a development Redis for local demos, or run the Testcontainers IT suite (`redis:7.2-alpine`).
+Each capability ships a non-web quickstart (`spring.main.web-application-type=none`). The four capability Quickstarts no longer explicitly depend on `peach-redis-common`; their feature Starters now pull in the Redisson client foundation. Provide a development Redis for local demos, or run the Testcontainers IT suite (`redis:7.2-alpine`).
 
 ### Distributed Lock
 
 - Module: [`peach-redission-distributedlock-quickstart`](./peach-redission-distributedlock-quickstart/)
-- Dependencies: `peach-redission-distributedlock-starter` + `peach-redis-common` (also `peach-redission-common`, `spring-boot-starter-aop`, `caffeine`)
+- Dependency: `peach-redission-distributedlock-starter` (transitively brings `peach-redisson-starter`, `peach-redission-common`, AOP and Caffeine; older Quickstart duplicates may be cleaned separately)
 - Capability samples (inventory deduct):
   - **Annotation**: `@DistrbutedLock` protects stock deduct
   - **Template**: inject `DistributedLockTemplate` for programmatic deduct
@@ -146,7 +150,7 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
 ### Repeat Guard
 
 - Module: [`peach-redission-repeat-quickstart`](./peach-redission-repeat-quickstart/)
-- Dependencies: `peach-redission-repeat-starter` + `peach-redission-distributedlock-starter` + `peach-redis-common` (also `peach-redission-common`, `spring-boot-starter-aop`, `caffeine`)
+- Dependency: `peach-redission-repeat-starter` (transitively brings distributed locks and Redisson foundation; `peach-redis-common` is not required)
 - Capability samples (order submit, public API is `@RepeatLimit`):
   - **Same-key reject**: second submit with the same requestId throws `IllegalStateException`
   - **Different-key isolation**: different requestIds do not interfere

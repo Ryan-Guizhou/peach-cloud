@@ -8,12 +8,13 @@
 
 **Redisson 是 Redis 之上的高级数据结构和协调客户端**；本项目的 `peach-redission` 是 Maven 聚合模块，提供分布式锁、提交防重、延迟队列和分段布隆过滤器。各能力以独立 Starter 形式提供，按需选用。历史目录、artifactId 与部分 Java 包名拼写为 `redission`，**不代表另一个客户端产品**。
 
-**当前基线：** Java 21 / Spring Boot 3.5.4 / Redisson 3.50.0。当前客户端仍由 `peach-redis-common/RedisConfig` 创建，尚不能证明 Redisson-only Starter 完全脱离 Spring Data/Jedis；独立 `peach-redisson-starter` 为待实现目标。参见 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
+**当前基线：** Java 21 / Spring Boot 3.5.4 / Redisson 3.50.0。新增 `peach-redisson-autoconfigure` 和 `peach-redisson-starter`，只需要 Redisson 的服务可不引入 `peach-redis-common` / Jedis。若旧 `RedisConfig` 同时存在，新自动装配会退让给现有 `RedissonClient`；旧混合装配将在后续阶段迁移。参见 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
 
 ## 完整能力矩阵
 
 | 能力 / Starter | 对外入口 | 当前功能 | 典型用途 | 当前限制 |
 | --- | --- | --- | --- | --- |
+| Redisson 客户端底座 / `peach-redisson-starter` | `RedissonClient` / `PeachRedissonAutoConfiguration` | 独立 Redisson 客户端装配、支持 single/Sentinel/Cluster、SSL、连接池和自定义 Bean 退让 | Redisson-only 服务 | 保留 `peach.redis.*` 配置与 JsonJacksonCodec，生产 TLS/多拓扑需单独集成验证 |
 | 基础支撑 / `peach-redission-common` | `RedissionDataHandle`、`LockInfoHandleFactory`、`LocalCacheLock` | Redisson KV 封装、锁名解析、局部互斥支撑 | 锁/防重内部共享组件 | 不是独立 Redisson 客户端底座；本地锁过期淘汰和 TimeUnit 转换存在风险 |
 | `peach-redission-distributedlock-starter` | `@DistrbutedLock`、`DistributedLockTemplate`、`DistributedLocker` | 可重入、公平、读写锁策略；注解和编程式保护；锁等待超时 | 库存、账户状态、调度协调 | `@DistrbutedLock` 保留历史拼写；看门狗/显式 lease 的语义必须区分；关键操作还需数据库约束 |
 | `peach-redission-repeat-starter` | `@RepeatLimit` | 同业务 key 限制并发或成功后窗口防重 | 下单、提交表单、避免重复执行 | 成功后设置防重标记失败时当前只告警；不等于事务幂等 |
@@ -39,7 +40,7 @@
 </dependency>
 ```
 
-这是能力 Starter 的坐标示例，不代表 **当前** 单独引入就满足所有运行时依赖。现有分布式锁 Quickstart 还明确补充 `peach-redis-common`、`peach-redission-common`、AOP、Caffeine 等依赖；这些在组件解耦后才会由 Starter 自身闭合。外部 Maven 工程需要使用仓库实际发布版本替换 `revision`。
+锁、防重、布隆和延迟队列 Starter 已传递 `peach-redisson-starter`，无需额外手工引入 `peach-redis-common` 或 Jedis；`peach-redisson-autoconfigure` 会在用户已提供 `RedissonClient` 时退让。历史工程仍可继续使用旧 `RedisConfig` 作为兼容路径。外部 Maven 工程需要使用仓库实际发布版本替换 `revision`。
 
 ### 最简开发配置
 
@@ -54,7 +55,7 @@ peach:
       enabled: true
 ```
 
-当前 Redisson 与业务 Jedis 共享 `peach.redis.*` 拓扑字段。不要在日志写入密码；配置的 TLS、Sentinel、Cluster 行为应在目标 Redis 拓扑完成独立验证。
+新 Redisson-only 装配和旧 RedisConfig 共享 `peach.redis.*` 拓扑字段，具备相同默认 JsonJacksonCodec。不要在日志写入密码；配置的 TLS、Sentinel、Cluster 行为应在目标 Redis 拓扑完成独立验证。
 
 ### 最小编程式锁示例
 
@@ -85,6 +86,9 @@ public class InventoryService {
 
 ## 结构
 
+**两层依赖模型：** 每个能力 Starter → `peach-redisson-starter` → `peach-redisson-autoconfigure` → RedissonClient。`peach-redission-common` 保留历史公共锁名 / 工具类，但不再承担独立客户端工厂的职责。
+
+
 | 能力 | Autoconfigure | Starter | Quickstart |
 | --- | --- | --- | --- |
 | Distributed Lock | `peach-redission-distributedlock-autoconfigure` | `peach-redission-distributedlock-starter` | `peach-redission-distributedlock-quickstart` |
@@ -106,12 +110,12 @@ flowchart LR
 
 ## Quick Start
 
-各能力均提供无 Web 端口的 quickstart（`spring.main.web-application-type=none`）。autoconfigure 中 `peach-redis-common` 等依赖多为 optional，quickstart 需显式引入。本地演示前提供开发 Redis，或直接跑 Testcontainers IT（`redis:7.2-alpine`）。
+各能力均提供无 Web 端口的 quickstart（`spring.main.web-application-type=none`）。四个能力 Quickstart 已不再显式依赖 `peach-redis-common`，其底座由各能力 Starter 间接引入。本地演示前提供开发 Redis，或直接跑 Testcontainers IT（`redis:7.2-alpine`）。
 
 ### Distributed Lock
 
 - 模块：[`peach-redission-distributedlock-quickstart`](./peach-redission-distributedlock-quickstart/)
-- 依赖：`peach-redission-distributedlock-starter` + `peach-redis-common`（另需 `peach-redission-common`、`spring-boot-starter-aop`、`caffeine`）
+- 依赖：`peach-redission-distributedlock-starter`（内部传递 `peach-redisson-starter`、`peach-redission-common`、AOP、Caffeine；旧 Quickstart 的显式冗余依赖可逐步清理）
 - 能力样例（库存扣减）：
   - **注解**：`@DistrbutedLock` 保护扣库存
   - **Template**：注入 `DistributedLockTemplate` 编程式扣库存
@@ -146,7 +150,7 @@ flowchart LR
 ### Repeat Guard
 
 - 模块：[`peach-redission-repeat-quickstart`](./peach-redission-repeat-quickstart/)
-- 依赖：`peach-redission-repeat-starter` + `peach-redission-distributedlock-starter` + `peach-redis-common`（另需 `peach-redission-common`、`spring-boot-starter-aop`、`caffeine`）
+- 依赖：`peach-redission-repeat-starter`（会传递分布式锁和 Redisson 基础依赖；不必手工添加 `peach-redis-common`）
 - 能力样例（下单防重复，公开能力为 `@RepeatLimit`）：
   - **同 key 拒绝**：同一 requestId 第二次提交抛出 `IllegalStateException`
   - **不同 key 隔离**：不同 requestId 互不影响
