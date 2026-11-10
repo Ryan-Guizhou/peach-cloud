@@ -18,14 +18,14 @@
 | 基础支撑 / `peach-redission-common` | `RedissionDataHandle`、`LockInfoHandleFactory`、`LocalCacheLock` | Redisson KV 封装、锁名解析、局部互斥支撑 | 锁/防重内部共享组件 | 不是独立 Redisson 客户端底座；本地锁过期淘汰和 TimeUnit 转换存在风险 |
 | `peach-redission-distributedlock-starter` | `@DistrbutedLock`、`DistributedLockTemplate`、`DistributedLocker` | 可重入、公平、读写锁策略；注解和编程式保护；锁等待超时 | 库存、账户状态、调度协调 | `@DistrbutedLock` 保留历史拼写；看门狗/显式 lease 的语义必须区分；关键操作还需数据库约束 |
 | `peach-redission-repeat-starter` | `@RepeatLimit` | 同业务 key 限制并发或成功后窗口防重 | 下单、提交表单、避免重复执行 | 成功后设置防重标记失败时当前只告警；不等于事务幂等 |
-| `peach-redission-delayqueue-starter` | `DelayQueueContext`、`ConsumerTask` | 延迟投递、分区消费、重试与死信管理组件 | 订单超时、定时业务通知 | 当前 `RBlockingQueue.take()` 和 processing 记录不是原子操作，存在崩溃丢消息窗口；不能承诺 exactly-once |
+| `peach-redission-delayqueue-starter` | `DelayQueueContext`（旧协议）、`RedisDelayQueueV2`（独立新协议） | 延迟投递；可选 V2 原子认领、租约/心跳/fencing、ACK、有限重试、DLQ/重放 | 订单超时、定时通知 | V2 默认关闭且不自动迁移旧队列；旧协议仍有崩溃窗口；两者均不承诺 exactly-once |
 | `peach-redission-bloomfilter-starter` | `BloomFilterService`、`BloomStatus`、`KeyNamingStrategy` / `BloomScalePolicy` / `CodecProvider` SPI | 成员预判、批量添加/查询、分段扩容、状态/清理、SPI 扩展 | SKU、内容去重预过滤 | 分段计数已按段隔离，旧计数通过位图近似回填，段目录每次从 Redis 获取；Bloom 仍不能替代权威数据源 |
 
 ### 如何选择
 
 - **锁：** 对多个服务实例的同一资源使用 `DistributedLockTemplate` 或注解；临界区外部副作用需要幂等/状态版本控制。
 - **提交防重：** `@RepeatLimit` 针对短时间重复请求；支付/订单创建必须保留数据库唯一约束与幂等记录。
-- **延迟任务：** 适用于可以容忍重复且业务自行恢复的延迟处理；有强可靠性要求时先完成队列 V2 协议改造。
+- **延迟任务：** 旧协议保持兼容但有取出→登记崩溃窗口；新项目可显式启用独立 V2 原子状态机，并按下面迁移和故障测试要求验收。
 - **分段元数据兼容：** 新分段计数键包含分段名；旧共享计数键保留用于回滚。旧段首次访问会用 Bloom 位图 `count()` 估计真实数量（这是近似值）；段目录不再使用无法跨节点失效的本地快照。升级时应验证新旧实例并存及回滚。
 - **大规模成员预判：** Bloom Filter 可减少无效查询，但“可能存在”必须回源验证；Redis 元数据异常不能按“必然不存在”处理。
 - **普通 Redis Template / Stream / Caffeine 多级缓存：** 请使用 [peach-redis](../peach-redis/README.md)。
@@ -125,6 +125,49 @@ flowchart LR
 - 测试：`mvn -pl peach-middleware/peach-redission/peach-redission-distributedlock-quickstart -am test`
 
 ### Delay Queue
+
+### 延迟队列 V2（实验性、默认关闭）
+
+V2 不修改旧 `RDelayedQueue` / `RBlockingQueue` 数据协议；新增 `RedisDelayQueueV2` API 使用独立 `peach:dq2:{topic}:*` 键空间，确保同主题所有 Redis Cluster key 位于同一哈希槽。9 份 Lua 脚本保存在 `src/main/resources/lua/delayqueue-v2/`，不会把脚本正文硬编码在 Java 中。
+
+**状态机：** `scheduled → processing (lease + fencing token) → completed`；执行失败时进入 `scheduled` 重试或 `DLQ`；租约过期由回收脚本重排入队。入队要求稳定 `messageId`，认领产生单调递增 fencing token；只有持有有效 token 的任务能 ACK 或更新租约。V2 回调仍是 **at-least-once**，必须在数据库或外部资源侧校验幂等与 fencing。消费者任务长时间执行时后台心跳续约，客户端或 Redis 故障时仍可能重复执行。
+
+```yaml
+peach:
+  delay:
+    queue:
+      legacy-enabled: false # 仅全新应用才关闭旧协议 Bean；已有服务迁移前保持 true
+      v2:
+        enabled: true
+        worker-count: 4
+        batch-size: 16
+        max-attempts: 5
+        poll-interval: 500ms
+        lease: 2m
+        retry-initial: 5s
+        retry-max: 5m
+        completed-retention: 7d
+        max-payload-bytes: 65536
+```
+
+```java
+@RequiredArgsConstructor
+@Service
+public class OrderExpiryService {
+    private final RedisDelayQueueV2 queue;
+
+    public void schedule(String orderId) {
+        queue.offer("order-expiry", orderId, orderId, Duration.ofMinutes(30));
+    }
+
+    public void start(ConsumerTask handler) {
+        queue.start("order-expiry", handler); // handler.topic() 返回 "order-expiry"
+    }
+}
+```
+
+**迁移与验收：** 旧队列任务不会自动复制到 V2。先停止旧队列的新增生产，等待历史任务排空或经审批执行显式迁移，核对旧 processing / 死信；再在独立环境验证重试、租约失效、陈旧 ACK、重复任务、Redis Cluster/主从故障及回滚。旧/新协议不要同时消费同一业务任务。重放前通过 `deadLetterPayload` 检查内容，调用 `replayDeadLetter` 并记录操作者；`completed` 去重记录按保留周期清理，业务侧的永久幂等记录必须独立维护。不能将单机编译通过视为生产级可靠性验收。
+
 
 - 模块：[`peach-redission-delayqueue-quickstart`](./peach-redission-delayqueue-quickstart/)
 - 能力样例（订单超时）：

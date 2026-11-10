@@ -18,14 +18,14 @@ English | [中文](README.md)
 | Shared support / `peach-redission-common` | `RedissionDataHandle`, `LockInfoHandleFactory`, `LocalCacheLock` | Redisson KV wrapper, lock-key resolution, local mutex support | Internal shared lock/repeat support | Not an independent Redisson client foundation; local lock expiry and TimeUnit conversion are problematic |
 | `peach-redission-distributedlock-starter` | `@DistrbutedLock`, `DistributedLockTemplate`, `DistributedLocker` | Reentrant, fair, read/write lock strategies; annotation or programmatic locking; wait timeout | Inventory, account state, scheduler coordination | Historic annotation spelling; distinguish watchdog and explicit lease; retain database guards for critical operations |
 | `peach-redission-repeat-starter` | `@RepeatLimit` | Restrict concurrent submissions per business key, or reject repeats for a post-success window | Checkout, form submit, duplicate execution | Current code logs but suppresses failure to persist the success flag; not transactional idempotency |
-| `peach-redission-delayqueue-starter` | `DelayQueueContext`, `ConsumerTask` | Delayed delivery, partitioned consumption, retry and dead-letter support | Order expiry, delayed notifications | `RBlockingQueue.take()` to processing registration is not atomic; crash window can lose messages; no exactly-once guarantee |
+| `peach-redission-delayqueue-starter` | `DelayQueueContext` (legacy), `RedisDelayQueueV2` (isolated new protocol) | Delayed delivery; optional V2 atomic claims, leases/heartbeats/fencing, ACK, bounded retries, DLQ/replay | Order expiry, delayed notifications | V2 is opt-in and does not migrate legacy queues; the legacy take→processing crash window persists; neither is exactly-once |
 | `peach-redission-bloomfilter-starter` | `BloomFilterService`, `BloomStatus`, `KeyNamingStrategy` / `BloomScalePolicy` / `CodecProvider` SPIs | Membership pre-check, batch add/query, segmented scaling, status/clear, extension SPI | SKU and content prefilters | Counters are per segment; old counters are lazily approximated from filter bits; segment lists are loaded from Redis to avoid stale cross-node negatives; authoritative lookup remains required |
 
 ### Which module should I use?
 
 - **Lock:** use `DistributedLockTemplate` or annotation for resources shared across service instances; business side effects still need idempotency or version checks.
 - **Duplicate submit:** `@RepeatLimit` rejects repeated requests in a window; payment/order creation also requires uniqueness and durable idempotency.
-- **Delayed tasks:** appropriate only when the application tolerates duplicates and has its own recovery; finish Queue V2 protocol before relying on stronger recovery.
+- **Delayed tasks:** the legacy protocol still has a take→processing crash window; new applications can opt into the isolated V2 atomic state machine, subject to the migration and failure tests below.
 - **Segment metadata migration:** New counters include a segment identifier; the old shared counter remains for rollback. On first access an old segment's count is estimated with `count()` (approximate), and segment names are no longer cached as an uninvalidated local snapshot. Validate mixed-version rollout and rollback.
 - **Membership prefilter:** Bloom filters reduce unnecessary lookups, but positive results require authoritative lookup; errors reading Redis metadata must not mean “definitely absent”.
 - **RedisTemplate / Stream / Caffeine + Redis caching:** use [peach-redis](../peach-redis/README.en-US.md).
@@ -125,6 +125,49 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
 - Test: `mvn -pl peach-middleware/peach-redission/peach-redission-distributedlock-quickstart -am test`
 
 ### Delay Queue
+
+### Delay queue V2 (experimental, opt-in)
+
+V2 leaves legacy `RDelayedQueue` / `RBlockingQueue` data untouched. The new `RedisDelayQueueV2` API uses the independent `peach:dq2:{topic}:*` key namespace so every key for a topic shares one Redis Cluster hash slot. Nine Lua scripts live in `src/main/resources/lua/delayqueue-v2/`, not embedded in Java.
+
+**State machine:** `scheduled → processing (lease + fencing token) → completed`; failures return to `scheduled` for retry or enter `DLQ`. Expired leases are atomically reclaimed. Enqueue requires a stable `messageId`; claims allocate monotonically increasing fencing tokens and only the current token can ACK or renew a lease. **At-least-once, not exactly-once**: business systems must enforce durable idempotency and fencing independently. Active callbacks get heartbeat lease extensions, but failures can still cause duplicate execution.
+
+```yaml
+peach:
+  delay:
+    queue:
+      legacy-enabled: false # Disable only in new deployments; keep true for legacy upgrades
+      v2:
+        enabled: true
+        worker-count: 4
+        batch-size: 16
+        max-attempts: 5
+        poll-interval: 500ms
+        lease: 2m
+        retry-initial: 5s
+        retry-max: 5m
+        completed-retention: 7d
+        max-payload-bytes: 65536
+```
+
+```java
+@RequiredArgsConstructor
+@Service
+public class OrderExpiryService {
+    private final RedisDelayQueueV2 queue;
+
+    public void schedule(String orderId) {
+        queue.offer("order-expiry", orderId, orderId, Duration.ofMinutes(30));
+    }
+
+    public void start(ConsumerTask handler) {
+        queue.start("order-expiry", handler); // handler.topic() == "order-expiry"
+    }
+}
+```
+
+**Migration and acceptance:** V2 does not automatically copy old tasks. Stop legacy production first and drain the old queue or perform an approved explicit migration after reconciling legacy processing and DLQ state. Test retries, lease expiry, stale ACK, duplicates, Redis Cluster/failover and rollback in a separate environment. Do not have both protocols process the same business task. Inspect `deadLetterPayload` before `replayDeadLetter` and audit the operator. Completed deduplication entries expire by retention; permanent business idempotency remains separate. Passing a standalone Maven build is not production reliability acceptance.
+
 
 - Module: [`peach-redission-delayqueue-quickstart`](./peach-redission-delayqueue-quickstart/)
 - Capability samples (order timeout):
