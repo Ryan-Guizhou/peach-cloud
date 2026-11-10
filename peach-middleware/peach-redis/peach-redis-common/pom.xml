@@ -40,6 +40,17 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
+            <!-- Test only: verify legacy RedisConfig bytes against the independent autoconfiguration. -->
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redis-autoconfigure</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 

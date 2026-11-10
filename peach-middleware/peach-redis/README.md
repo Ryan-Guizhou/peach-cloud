@@ -256,6 +256,10 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 Sa-Token 的 `PeachSaTokenDao#searchData` 已由阻塞式 Redis `KEYS` 迁移至 `SCAN`，Cluster 遍历各主节点。默认最多累计 50000 个唯一匹配键，可通过 `peach.satoken.dao.search-max-matches` 调整；超过上限抛错，不静默截断。该操作不适合在线高频业务。详见 [Sa-Token 组件说明](../peach-satoken/README.md#redis-session-检索与有界-scanissue-57)。
 
+## 旧/新客户端 JSON 兼容验收（Issue #65）
+
+仓库保留的旧 `RedisConfig` 与独立 `PeachRedisAutoConfiguration` 的 `Jackson2JsonRedisSerializer`，在 Redis 7.2 服务容器中验证相同业务 Map 的 value/hash-value 字节相等，以及旧写新读、新写旧读与 TTL。测试仅对当前仓库版本有效，**不包含真实历史发行版 SaSession 二进制快照，也不能替代线上滚动升级测试**。
+
 ## 边界
 
 - key 必须有稳定命名空间和必要隔离维度，敏感值不直接进入 key/log。
