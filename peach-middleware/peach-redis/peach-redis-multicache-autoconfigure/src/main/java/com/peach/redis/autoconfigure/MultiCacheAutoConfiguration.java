@@ -1,7 +1,6 @@
 package com.peach.redis.autoconfigure;
 
 
-import com.peach.redis.common.RedisConfig;
 import com.peach.redis.listener.CacheMessageListener;
 import com.peach.redis.config.MultiCacheConfig;
 import com.peach.redis.manager.MultiCacheManager;
@@ -31,7 +30,10 @@ import java.util.Objects;
  */
 @Slf4j
 @AutoConfiguration
-@AutoConfigureAfter(RedisConfig.class)
+@AutoConfigureAfter(name = {
+        "com.peach.redis.common.RedisConfig",
+        "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration"
+})
 @EnableConfigurationProperties(MultiCacheConfig.class)
 @ConditionalOnProperty(prefix = "peach.multicache", name = "enabled", matchIfMissing = true)
 public class MultiCacheAutoConfiguration<K, V>{

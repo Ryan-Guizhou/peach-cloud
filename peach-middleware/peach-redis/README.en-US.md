@@ -149,6 +149,31 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
 
 `peach.redis.host` uses `host:port`. Quickstarts share defaults: `password` is empty by default (override via `PEACH_REDIS_PASSWORD`), `database=1`.
 
+## Redis-only foundation (new)
+
+The repository now includes `peach-redis-autoconfigure`, `peach-redis-starter`, and `peach-redis-quickstart`. This foundation uses Spring Data Redis + Jedis and does **not** create `RedissonClient`. Tool, MultiCache and Stream feature Starters now include it. The historical `peach-redis-common` is kept for legacy services until migration acceptance is complete.
+
+| Capability | Entry point | Important contract |
+| --- | --- | --- |
+| Redis-only / `peach-redis-starter` | `RedisConnectionFactory` / `RedisTemplate` / `StringRedisTemplate` | Jedis default; custom connection factories win; JSON values retain legacy Jackson2JsonRedisSerializer format |
+| Tool / `peach-redis-tool-starter` | `RedisDao` | Depends on the new foundation; avoid SCAN on hot or huge keyspaces |
+| MultiCache / `peach-redis-multicache-starter` | `MultiCacheManagerService` | Includes Tool, Caffeine and Hutool; invalidation remains best-effort |
+| Stream / `peach-redis-stream-starter` | `RedisStreamHandler` | Consumer uses `RedisConnectionFactory` interface; reliable ACK / PEL reclaim remains future work |
+
+**Minimal dependency** (version is managed by the project parent POM):
+
+```xml
+<dependency>
+    <groupId>com.peach</groupId>
+    <artifactId>peach-redis-starter</artifactId>
+    <version>${revision}</version>
+</dependency>
+```
+
+**Minimal configuration:** retain `peach.redis.mode / host / password / database`. Set `peach.redis.enabled=false` to disable the new auto-configuration, `peach.redis.ssl-enabled=true` for TLS and `peach.redis.jedis.max-total` for the connection budget. Existing `RedisConnectionFactory` wins; default pool `max-total=128`.
+
+**Shortest path:** from the repository root run `mvn -pl peach-middleware/peach-redis/peach-redis-quickstart -am spring-boot:run`. Run `-am test` on the same module for real Redis integration tests (requires Docker for Testcontainers). The example does not require Redisson. The legacy Sa-Token Starter still includes `peach-redis-common` for compatibility; it must not be claimed that the entire application has removed the old foundation.
+
 ## Boundaries
 
 - Keys need stable namespaces and required isolation dimensions; sensitive values must not be placed directly in keys/logs.

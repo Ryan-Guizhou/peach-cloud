@@ -2,7 +2,6 @@ package com.peach.satoken.autoconfigure;
 
 import cn.dev33.satoken.SaManager;
 import cn.dev33.satoken.dao.SaTokenDao;
-import com.peach.redis.common.RedisConfig;
 import com.peach.satoken.dao.PeachSaTokenDao;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
@@ -10,10 +9,11 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.env.Environment;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Indexed;
 
@@ -30,22 +30,24 @@ import org.springframework.stereotype.Indexed;
 @Indexed
 @AutoConfiguration
 @AutoConfigureAfter(name = {
-        "com.peach.redis.common.RedisConfig"
+        "com.peach.redis.common.RedisConfig",
+        "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration"
 })
-@ConditionalOnClass({SaTokenDao.class, JedisConnectionFactory.class})
+@ConditionalOnClass({SaTokenDao.class, RedisConnectionFactory.class})
 @ConditionalOnProperty(prefix = "peach.satoken.dao", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class PeachSaTokenDaoAutoConfiguration {
 
     /**
      * 创建 Sa-Token DAO。
      *
-     * @param jedisConnectionFactory Redis 连接工厂
+     * @param redisConnectionFactory Redis 连接工厂
      * @return Sa-Token DAO 实现
      */
     @Bean
+    @ConditionalOnBean(RedisConnectionFactory.class)
     @ConditionalOnMissingBean(SaTokenDao.class)
-    public SaTokenDao saTokenDao(@NonNull JedisConnectionFactory jedisConnectionFactory) {
-        return new PeachSaTokenDao(jedisConnectionFactory);
+    public SaTokenDao saTokenDao(@NonNull RedisConnectionFactory redisConnectionFactory) {
+        return new PeachSaTokenDao(redisConnectionFactory);
     }
 
     /**

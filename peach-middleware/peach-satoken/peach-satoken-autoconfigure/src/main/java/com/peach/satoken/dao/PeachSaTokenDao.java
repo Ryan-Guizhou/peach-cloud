@@ -13,6 +13,7 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.peach.common.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -58,7 +59,7 @@ public class PeachSaTokenDao implements SaTokenDao {
      */
     public static final DateTimeFormatter DATE_TIME_FORMATTER = DateUtil.LOCAL_DATE_TIME_FORMATTER;
 
-    private final JedisConnectionFactory jedisConnectionFactory;
+    private final RedisConnectionFactory redisConnectionFactory;
 
     /**
      * JSON 反序列化对象。
@@ -80,10 +81,19 @@ public class PeachSaTokenDao implements SaTokenDao {
     /**
      * 创建 Sa-Token DAO。
      *
-     * @param jedisConnectionFactory Redis 连接工厂
+     * @param redisConnectionFactory Redis 连接工厂
+     */
+    public PeachSaTokenDao(RedisConnectionFactory redisConnectionFactory) {
+        this.redisConnectionFactory = redisConnectionFactory;
+    }
+
+    /**
+     * 保留直接以 JedisConnectionFactory 构造的历史调用方式。
+     *
+     * @param jedisConnectionFactory Jedis 连接工厂
      */
     public PeachSaTokenDao(JedisConnectionFactory jedisConnectionFactory) {
-        this.jedisConnectionFactory = jedisConnectionFactory;
+        this((RedisConnectionFactory) jedisConnectionFactory);
     }
 
     /**
@@ -100,11 +110,11 @@ public class PeachSaTokenDao implements SaTokenDao {
         GenericJackson2JsonRedisSerializer valueSerializer = createValueSerializer();
 
         StringRedisTemplate stringTemplate = new StringRedisTemplate();
-        stringTemplate.setConnectionFactory(jedisConnectionFactory);
+        stringTemplate.setConnectionFactory(redisConnectionFactory);
         stringTemplate.afterPropertiesSet();
 
         RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(jedisConnectionFactory);
+        template.setConnectionFactory(redisConnectionFactory);
         template.setKeySerializer(keySerializer);
         template.setHashKeySerializer(keySerializer);
         template.setValueSerializer(valueSerializer);

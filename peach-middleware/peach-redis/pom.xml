@@ -10,6 +10,9 @@
     <parent><groupId>com.peach</groupId><artifactId>peach-middleware</artifactId><version>${revision}</version></parent>
     <modules>
         <module>peach-redis-common</module>
+        <module>peach-redis-autoconfigure</module>
+        <module>peach-redis-starter</module>
+        <module>peach-redis-quickstart</module>
         <module>peach-redis-multicache-autoconfigure</module>
         <module>peach-redis-multicache-starter</module>
         <module>peach-redis-multicache-quickstart</module>

@@ -348,6 +348,18 @@
                 <version>${revision}</version>
             </dependency>
 
+            <!-- Redis-only client foundation -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redis-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
             <!-- ==================== peach-middleware / peach-redis ==================== -->
             <dependency>
                 <groupId>com.peach</groupId>
