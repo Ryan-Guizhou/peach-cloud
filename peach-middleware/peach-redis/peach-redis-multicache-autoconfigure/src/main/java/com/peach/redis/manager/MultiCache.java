@@ -2,6 +2,7 @@ package com.peach.redis.manager;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.peach.redis.constant.MultiCacheConstant;
 import com.peach.redis.common.tool.RedisDao;
 import com.peach.redis.listener.CacheMessage;
@@ -21,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 多级缓存。
@@ -46,6 +48,12 @@ public class MultiCache extends AbstractValueAdaptingCache {
      * 一级缓存
      */
     private Cache<Object, Object> caffeineCache;
+
+    /**
+     * 本地缓存的实际 Redis L2 截止时间（纳秒单调时钟）。
+     * 独立有界缓存，元数据丢失时仅回源，不会继续使用未知 TTL 的 L1。
+     */
+    private final Cache<Object, Long> l2Deadlines;
     /**
      * 二级缓存
      */
@@ -74,6 +82,8 @@ public class MultiCache extends AbstractValueAdaptingCache {
         this.cacheName = cacheName;
         this.redisTemplate = redisTemplate;
         this.caffeineCache = caffeineCache;
+        long maxTrackedKeys = Math.max(1L, config.getCaffeine().getMaximumSize());
+        this.l2Deadlines = Caffeine.newBuilder().maximumSize(maxTrackedKeys).build();
         this.cachePrefix = config.getCachePrefix();
         this.defaultExpiration = config.getRedis().getDefaultExpiration();
         this.expires = config.getRedis().getExpires();
@@ -87,13 +97,19 @@ public class MultiCache extends AbstractValueAdaptingCache {
         Object value = null;
         value = caffeineCache.getIfPresent(key);
         if (value != null) {
-            log.debug("get cache from caffeine, the key is : {}", cacheKey);
-            return value;
+            Long deadline = l2Deadlines.getIfPresent(key);
+            if (deadline != null
+                    && (deadline == Long.MAX_VALUE || System.nanoTime() - deadline < 0)) {
+                log.debug("get cache from caffeine, the key is : {}", cacheKey);
+                return value;
+            }
+            // Missing TTL metadata is treated as expired. Never serve an unverified L1.
+            clearLocal(key);
         }
         value = this.redisTemplate.opsForValue().get(cacheKey);
         if (value != null) {
             log.debug("get cache from redis and put in caffeine, the key is : {}", cacheKey);
-            caffeineCache.put(key, value);
+            cacheLocalWithRemainingRedisTtl(key, cacheKey, value);
         }
         return value;
     }
@@ -158,8 +174,11 @@ public class MultiCache extends AbstractValueAdaptingCache {
                 ? redisTemplate.opsForValue().setIfAbsent(cacheKey, storeValue)
                 : redisTemplate.opsForValue().setIfAbsent(cacheKey, storeValue, ttl);
         if (Boolean.TRUE.equals(inserted)) {
-            push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
-            caffeineCache.put(key, storeValue);
+            try {
+                push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
+            } finally {
+                cacheLocalWithRemainingRedisTtl(key, cacheKey, storeValue);
+            }
             return null;
         }
         if (inserted == null) {
@@ -175,8 +194,11 @@ public class MultiCache extends AbstractValueAdaptingCache {
         // 避免短时间内如果先清除caffeine缓存后其他请求会再从redis里加载到caffeine中
         redisTemplate.delete(buildCacheKey(key));
         log.info("clear cache in redis, the key is : {}", buildCacheKey(key));
-        push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
-        caffeineCache.invalidate(key);
+        try {
+            push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
+        } finally {
+            clearLocal(key);
+        }
         log.info("clear cache in caffeine, the key is : {}", key);
     }
 
@@ -201,8 +223,11 @@ public class MultiCache extends AbstractValueAdaptingCache {
         if (!CollectionUtils.isEmpty(keys)) {
             redisDao.delete(keys);
         }
-        push(new CacheMessage(this.cacheName, null, this.caffeineCache.hashCode()));
-        caffeineCache.invalidateAll();
+        try {
+            push(new CacheMessage(this.cacheName, null, this.caffeineCache.hashCode()));
+        } finally {
+            clearLocal(null);
+        }
     }
 
     /**
@@ -277,21 +302,60 @@ public class MultiCache extends AbstractValueAdaptingCache {
         } else {
             redisTemplate.opsForValue().set(cacheKey, value, expire);
         }
-        push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
+        try {
+            push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
+        } finally {
+            cacheLocalWithRemainingRedisTtl(key, cacheKey, value);
+        }
+    }
+
+    /**
+     * 仅在确知 Redis L2 仍然存在时把值放入 L1。
+     *
+     * <p>Redis GET 后的 PTTL 用于绑定实际剩余寿命，包括按 CacheName
+     * 自定义 TTL 与随机抖动；纯 L1 命中不访问 Redis。
+     * 如果 PTTL 查询失败/元数据缺失，禁止缓存不确定寿命的值。</p>
+     */
+    private void cacheLocalWithRemainingRedisTtl(Object key, Object redisKey, Object value) {
+        Long remainingMillis;
+        try {
+            remainingMillis = redisTemplate.getExpire(redisKey, TimeUnit.MILLISECONDS);
+        } catch (RuntimeException exception) {
+            log.warn("Unable to determine Redis L2 remaining TTL; skip L1 population", exception);
+            clearLocal(key);
+            return;
+        }
+        // PTTL -1 means no expiration; -2 means the key no longer exists.
+        if (remainingMillis == null || remainingMillis == 0 || remainingMillis < -1) {
+            clearLocal(key);
+            return;
+        }
+        long deadline;
+        if (remainingMillis == -1) {
+            deadline = Long.MAX_VALUE;
+        } else {
+            long span = TimeUnit.MILLISECONDS.toNanos(remainingMillis);
+            long now = System.nanoTime();
+            deadline = span > Long.MAX_VALUE - Math.max(0L, now)
+                    ? Long.MAX_VALUE : now + span;
+        }
+        // Publish metadata first; losing metadata only causes a conservative cache miss.
+        l2Deadlines.put(key, deadline);
         caffeineCache.put(key, value);
     }
 
-
     /**
-     * @param key
+     * @param key 本地缓存键；null 表示清空全部缓存及其 TTL 元数据
      * @description 清理本地缓存
      */
     public void clearLocal(Object key) {
         log.debug("clear local cache, the key is : {}", key);
         if (key == null) {
             caffeineCache.invalidateAll();
+            l2Deadlines.invalidateAll();
         } else {
             caffeineCache.invalidate(key);
+            l2Deadlines.invalidate(key);
         }
     }
 

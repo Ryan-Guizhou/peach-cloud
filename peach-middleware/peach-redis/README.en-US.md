@@ -268,6 +268,10 @@ On first subscription and every confirmed re-subscription, MultiCache invalidate
 
 Dedicated CI exercises the **same JedisConnectionFactory and RedissonClient instances** before and after actually stopping the isolated Redis Sentinel master container. Without recreating those clients it retries bounded SET/GET/TTL, then checks all three Sentinels agree on the promoted master and reruns the new-client suites. This only uses Redis 7.2 CI containers, not production systems. Passing it validates basic client recovery, **not** in-flight business transaction outcomes, Stream/DelayQueue idempotency, historic Sessions or Redis Cluster failure.
 
+## Respecting the actual remaining Redis L2 TTL (Issue #71)
+
+On local writes or refill from Redis L2, MultiCache reads the key's real Redis PTTL and keeps a bounded local deadline for each Caffeine L1 entry. **An L1 hit makes no Redis call**. If its server TTL deadline has passed or the bounded deadline metadata was evicted, the L1 entry is dropped and Redis is queried again. A PTTL of -1 keeps the configured Caffeine expiration behavior; an unknown PTTL is not cached locally. This also covers late refill shortly before a Redis key expires. Redis keys/codecs and public cache values do not change. External L2 writes or Pub/Sub disconnects still cannot provide strong consistency.
+
 ## Boundaries
 
 - Keys need stable namespaces and required isolation dimensions; sensitive values must not be placed directly in keys/logs.
