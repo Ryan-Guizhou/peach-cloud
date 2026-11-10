@@ -58,7 +58,7 @@ jobs:
           mvn -B -ntp \
             -pl peach-middleware/peach-redis/peach-redis-multicache-quickstart,peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart,peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart,peach-middleware/peach-redis/peach-redis-stream-quickstart \
             -am \
-            -Dtest=MultiCacheTwoClientServerIntegrationTest,BloomTwoClientServerIntegrationTest,RedisOnlyServerIntegrationTest,RedisToolServerIntegrationTest,RedissonOnlyServerIntegrationTest,SaTokenRedisServerIntegrationTest,RedisStreamRecoveryServerIntegrationTest \,SaTokenSearchServerIntegrationTest
+            -Dtest=MultiCacheTwoClientServerIntegrationTest,BloomTwoClientServerIntegrationTest,RedisOnlyServerIntegrationTest,RedisToolServerIntegrationTest,RedissonOnlyServerIntegrationTest,SaTokenRedisServerIntegrationTest,RedisStreamRecoveryServerIntegrationTest,SaTokenSearchServerIntegrationTest \
             -Dsurefire.failIfNoSpecifiedTests=false test
 
       - name: Verify Redis Stream Pending tests actually executed
