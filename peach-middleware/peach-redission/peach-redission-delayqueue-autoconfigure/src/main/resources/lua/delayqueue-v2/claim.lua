@@ -11,10 +11,11 @@ for _, id in ipairs(due) do
       local fence = tostring(redis.call('INCR', KEYS[6]))
       redis.call('ZADD', KEYS[2], now + tonumber(ARGV[1]), id)
       redis.call('HSET', KEYS[3], id, fence)
-      redis.call('HINCRBY', KEYS[4], id, 1)
+      local attempts = redis.call('HINCRBY', KEYS[4], id, 1)
       table.insert(out, id)
       table.insert(out, body)
       table.insert(out, fence)
+      table.insert(out, attempts)
     else
       redis.call('HDEL', KEYS[4], id)
     end
