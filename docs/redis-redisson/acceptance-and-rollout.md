@@ -94,6 +94,8 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 `.github/workflows/redis-client-integration.yml` 用 Redis 7.2 服务容器执行客户端、Sa-Token、Stream、双实例测试；`.github/workflows/delayqueue-v2-integration.yml` 执行 V2 Lua 集成。测试报告通过 Surefire XML 验证**测试数非零、失败/跳过为零**。普通 `mvn -B -ntp verify` 只能说明对应构建/普通单测；若运行时 opt-in 变量未打开、Testcontainers 无 Docker，则实际集成测试可能跳过，不计入生产验收。
 
+- **多级缓存订阅恢复（#67）：** 重订阅确认后清空当前 JVM 的 L1，再从 Redis L2 读取；订阅离线期间仍可能读取旧缓存。真实测试在 [PR #68](https://github.com/Ryan-Guizhou/peach-cloud/pull/68) 验收，不能当作强一致性承诺。
+
 ## 6. Epic 未完成项（不得提前勾选）
 
 - 真实 Redis 主从/Cluster 故障切换与客户端重连，TLS/ACL 密钥更新及证书轮换。

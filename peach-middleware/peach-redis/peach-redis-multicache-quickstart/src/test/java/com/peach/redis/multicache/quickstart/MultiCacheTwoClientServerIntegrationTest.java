@@ -87,6 +87,69 @@ class MultiCacheTwoClientServerIntegrationTest {
         }
     }
 
+    @Test
+    void resubscriptionClearsL1ValuesThatMissedPubSubMessages() throws Exception {
+        JedisConnectionFactory publisherFactory = factory();
+        JedisConnectionFactory receiverFactory = factory();
+        String prefix = "twoclient:resubscribe:" + UUID.randomUUID();
+        String cacheName = "products";
+        String key = "SKU-909";
+        String redisKey = prefix + ":" + cacheName + ":" + key;
+        StringRedisTemplate publisher = new StringRedisTemplate(publisherFactory);
+        publisher.afterPropertiesSet();
+        StringRedisTemplate receiver = new StringRedisTemplate(receiverFactory);
+        receiver.afterPropertiesSet();
+        RedisMessageListenerContainer listener = null;
+
+        try {
+            MultiCacheConfig config = new MultiCacheConfig();
+            config.setCacheNames(Set.of(cacheName));
+            config.setCachePrefix(prefix);
+            config.getRedis().setTopic(prefix + ":invalidations");
+            MultiCacheManager writerManager = new MultiCacheManager(publisher, config);
+            MultiCacheManager readerManager = new MultiCacheManager(receiver, config);
+            Cache writer = writerManager.getCache(cacheName);
+            Cache reader = readerManager.getCache(cacheName);
+
+            listener = new RedisMessageListenerContainer();
+            listener.setConnectionFactory(receiverFactory);
+            listener.addMessageListener(new CacheMessageListener(readerManager),
+                    new ChannelTopic(config.getRedis().getTopic()));
+            listener.afterPropertiesSet();
+            listener.start();
+
+            writer.put(key, "initial");
+            assertThat(reader.get(key).get()).isEqualTo("initial");
+            assertThat(((MultiCache) reader).getLocalCache().getIfPresent(key)).isEqualTo("initial");
+
+            // Stop the subscription, not the Redis data connection: published changes are lost.
+            listener.stop();
+            writer.put(key, "fresh");
+            assertThat(reader.get(key).get()).as("Disconnected receiver still has stale L1").isEqualTo("initial");
+
+            // Spring Data Redis SubscriptionListener clears all local L1 on subscription ACK.
+            listener.start();
+            boolean cleared = false;
+            for (int attempt = 0; attempt < 60; attempt++) {
+                if (((MultiCache) reader).getLocalCache().getIfPresent(key) == null) {
+                    cleared = true;
+                    break;
+                }
+                Thread.sleep(50);
+            }
+            assertThat(cleared).as("Re-established subscription must drop missed L1 values").isTrue();
+            assertThat(reader.get(key).get()).isEqualTo("fresh");
+        } finally {
+            publisher.delete(redisKey);
+            if (listener != null) {
+                listener.stop();
+                listener.destroy();
+            }
+            receiverFactory.destroy();
+            publisherFactory.destroy();
+        }
+    }
+
     private static JedisConnectionFactory factory() {
         RedisStandaloneConfiguration configuration =
                 new RedisStandaloneConfiguration("127.0.0.1", 6379);

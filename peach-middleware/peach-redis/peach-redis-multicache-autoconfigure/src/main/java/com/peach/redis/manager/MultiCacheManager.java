@@ -123,6 +123,20 @@ public class MultiCacheManager implements CacheManager {
      * @param key 缓存键
      * @param sender 发送者
      */
+    /**
+     * 重新订阅后清空本 JVM 内已创建的全部 L1。
+     *
+     * <p>Redis Pub/Sub 不重放断线期间的消息，因此只有收到新的订阅确认，
+     * 才能认为已恢复通知链路。此方法不访问 Redis L2，也不发送广播。</p>
+     */
+    public void clearAllLocal() {
+        for (Cache cache : cacheMap.values()) {
+            if (cache instanceof MultiCache multiCache) {
+                multiCache.clearLocal(null);
+            }
+        }
+    }
+
     public void clearLocal(String cacheName, Object key, Integer sender) {
         Cache cache = cacheMap.get(cacheName);
         if (cache == null) {
