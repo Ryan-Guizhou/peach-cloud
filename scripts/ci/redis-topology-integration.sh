@@ -264,3 +264,105 @@ for file in suites:
     print(f"PASS after Sentinel promotion: {p}")
 PY
 fi
+
+# Redis Cluster failure injection is deliberately after the healthy topology checks.
+# The failed master stays down; we require its former replica to be promoted before
+# testing new Jedis, Redisson, Tool and Sa-Token connections.
+if [[ "$topology" == "cluster" ]]; then
+  echo "Injecting isolated Redis Cluster master outage and validating replica promotion"
+  before_nodes="$(redis_cli -p 7002 CLUSTER NODES)"
+  old_master_id="$(printf '%s\n' "$before_nodes" | awk '$2 ~ /:7001@/ && $3 ~ /master/ {print $1}')"
+  if [[ -z "$old_master_id" ]]; then
+    echo "Redis Cluster master 7001 identity unavailable before fault" >&2
+    exit 1
+  fi
+  old_replica_port="$(printf '%s\n' "$before_nodes" | awk -v id="$old_master_id" '
+    $4 == id && $3 ~ /slave/ {
+      split($2, address, ":")
+      split(address[2], port, "@")
+      print port[1]
+    }')"
+  if [[ ! "$old_replica_port" =~ ^700[4-6]$ ]]; then
+    echo "No identified replica for original Redis Cluster master: $old_replica_port" >&2
+    exit 1
+  fi
+
+  docker stop --time 1 peach-it-cluster-7001 >/dev/null
+  if [[ "$(docker inspect --format '{{.State.Running}}' peach-it-cluster-7001)" != "false" ]]; then
+    echo "Redis Cluster master container did not stop" >&2
+    exit 1
+  fi
+
+  recovered=false
+  for attempt in $(seq 1 90); do
+    cluster_state="$(redis_cli -p 7002 CLUSTER INFO 2>/dev/null | tr -d '\r' | grep '^cluster_state:' || true)"
+    nodes="$(redis_cli -p 7002 CLUSTER NODES 2>/dev/null || true)"
+    live_masters="$(printf '%s\n' "$nodes" | awk '
+      $3 ~ /master/ && $8 == "connected" { count++ }
+      END { print count+0 }')"
+    new_role="$(redis_cli -p "$old_replica_port" INFO replication 2>/dev/null \
+      | tr -d '\r' | grep '^role:' | cut -d: -f2 || true)"
+    if [[ "$cluster_state" == "cluster_state:ok" && "$live_masters" == "3" && "$new_role" == "master" ]]; then
+      recovered=true
+      break
+    fi
+    sleep 1
+  done
+  if [[ "$recovered" != true ]]; then
+    echo "Cluster did not recover three masters or promote expected replica $old_replica_port" >&2
+    exit 1
+  fi
+  echo "Redis Cluster recovered; former replica $old_replica_port was promoted"
+
+  test_key="peach:cluster:ci:failover:$RANDOM"
+  if [[ "$(redis_cli -c -p 7002 SET "$test_key" verified EX 40)" != "OK" ]]; then
+    echo "Recovered Redis Cluster rejected a redirected TTL write" >&2
+    exit 1
+  fi
+  if [[ "$(redis_cli -c -p 7002 GET "$test_key")" != "verified" ]]; then
+    echo "Recovered Redis Cluster returned invalid redirected value" >&2
+    exit 1
+  fi
+  ttl="$(redis_cli -c -p 7002 TTL "$test_key" | tr -d '\r')"
+  if ((ttl <= 0)); then
+    echo "Recovered Redis Cluster did not persist key TTL" >&2
+    exit 1
+  fi
+  redis_cli -c -p 7002 DEL "$test_key" >/dev/null
+
+  # Only living nodes are used as new-client seeds after the failed master.
+  export REDIS_TOPOLOGY_HOSTS="127.0.0.1:7002,127.0.0.1:7003,127.0.0.1:$old_replica_port"
+  for file in \
+    peach-middleware/peach-redis/peach-redis-quickstart/target/surefire-reports/TEST-com.peach.redis.quickstart.RedisTopologyServerIntegrationTest.xml \
+    peach-middleware/peach-redis/peach-redis-tool-quickstart/target/surefire-reports/TEST-com.peach.redis.tool.quickstart.RedisToolTopologyServerIntegrationTest.xml \
+    peach-middleware/peach-redission/peach-redisson-quickstart/target/surefire-reports/TEST-com.peach.redisson.quickstart.RedissonTopologyServerIntegrationTest.xml \
+    peach-middleware/peach-satoken/peach-satoken-quickstart/target/surefire-reports/TEST-com.peach.satoken.quickstart.SaTokenSearchTopologyServerIntegrationTest.xml; do
+    rm -f "$file"
+  done
+  echo "Rerunning all independent client and Sa-Token suites after Redis Cluster promotion"
+  mvn -B -ntp -s scripts/ci/github-actions-maven-settings.xml \
+    -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart \
+    -am \
+    -Dtest=RedisTopologyServerIntegrationTest,RedisToolTopologyServerIntegrationTest,RedissonTopologyServerIntegrationTest,SaTokenSearchTopologyServerIntegrationTest \
+    -Dsurefire.failIfNoSpecifiedTests=false test
+
+  python3 - <<'PY'
+from pathlib import Path
+import xml.etree.ElementTree as ET
+
+reports = [
+    Path("peach-middleware/peach-redis/peach-redis-quickstart/target/surefire-reports/TEST-com.peach.redis.quickstart.RedisTopologyServerIntegrationTest.xml"),
+    Path("peach-middleware/peach-redis/peach-redis-tool-quickstart/target/surefire-reports/TEST-com.peach.redis.tool.quickstart.RedisToolTopologyServerIntegrationTest.xml"),
+    Path("peach-middleware/peach-redission/peach-redisson-quickstart/target/surefire-reports/TEST-com.peach.redisson.quickstart.RedissonTopologyServerIntegrationTest.xml"),
+    Path("peach-middleware/peach-satoken/peach-satoken-quickstart/target/surefire-reports/TEST-com.peach.satoken.quickstart.SaTokenSearchTopologyServerIntegrationTest.xml"),
+]
+for report in reports:
+    if not report.exists():
+        raise SystemExit(f"Missing post-promotion Redis Cluster suite: {report}")
+    suite = ET.parse(report).getroot()
+    result = {key: int(suite.get(key, "0")) for key in ("tests", "failures", "errors", "skipped")}
+    if result["tests"] != 1 or any(result[key] for key in ("failures", "errors", "skipped")):
+        raise SystemExit(f"Post-promotion suite did not execute successfully: {report} {result}")
+    print(f"PASS after Redis Cluster replica promotion: {report}")
+PY
+fi

@@ -98,6 +98,8 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 - **Long-lived Sentinel recovery ([#69](https://github.com/Ryan-Guizhou/peach-cloud/issues/69)):** CI stops the test master while retaining existing Jedis/Redisson objects and attempts post-promotion round trips. This is client reconnect evidence only, not business transaction or message crash-window safety. Verify the PR CI before marking accepted.
 
+- **Redis Cluster master recovery (Issue #73):** CI injects a real primary outage, validates replica promotion/full slot recovery and reruns new-client suites. It does not establish safety of long-lived clients or in-flight business messages; acceptance requires a fully green CI run.
+
 ## 6. Epic blockers—not yet complete
 
 - Real Redis Sentinel/Cluster master failover and client reconnection, live TLS/ACL rotation.

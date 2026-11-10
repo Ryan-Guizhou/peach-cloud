@@ -98,6 +98,8 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 - **Sentinel 原位恢复（[#69](https://github.com/Ryan-Guizhou/peach-cloud/issues/69)）：** CI 真正关闭测试主节点，在不重建 Jedis/Redisson 实例的情况下尝试读写恢复；仅验收基础客户端重连，不代表业务事务和消息故障窗口安全。以 PR CI 运行结果为准。
 
+- **Redis Cluster 主节点恢复（Issue #73）：** 提交真实停止一台 master、验证原副本晋升/全槽恢复与新客户端重新测试的 CI；故障范围尚不覆盖历史长连接或业务消息事务。验收以 CI 全部成功为准。
+
 ## 6. Epic 未完成项（不得提前勾选）
 
 - 真实 Redis 主从/Cluster 故障切换与客户端重连，TLS/ACL 密钥更新及证书轮换。
