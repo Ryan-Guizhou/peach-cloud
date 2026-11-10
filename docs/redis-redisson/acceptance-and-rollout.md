@@ -129,4 +129,4 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 ### Stream DLQ/XACK 跨键故障窗口只读对账（Issue #93）
 
-对指定 DLQ RecordId，`RedisStreamPendingRecovery.deadLetterTransferState(id)` 会读取一条死信、该源 ID 的消费组 PEL（最多一条）以及源 Stream 的精确记录，区分**死信已保存但源仍 Pending**与**源已确认**，并独立报告源记录是否因裁剪而不存在。调用全程**不写 Redis**，不能自动 ACK，也不能据此判断业务事务已完成。运维必须先暂停该消费组全部实例的消费/恢复，再结合持久化幂等记录、死信审计进行对账。DLQ XADD 与源 XACK 仍非跨键原子操作；并发执行期间的读数只是瞬时快照，不代表生产灾备验收通过。
+对指定 DLQ RecordId，`RedisStreamPendingRecovery.deadLetterTransferState(id)` 会读取一条死信、该源 ID 的消费组 PEL（最多一条）以及源 Stream 的精确记录，报告**死信已保存且源仍 Pending**或**源当前已不在 PEL**；PEL 缺失本身不能证明曾执行 XACK，并独立报告源记录是否因裁剪而不存在。调用全程**不写 Redis**，不能自动 ACK，也不能据此判断业务事务已完成。运维必须先暂停该消费组全部实例的消费/恢复，再结合持久化幂等记录、死信审计进行对账。DLQ XADD 与源 XACK 仍非跨键原子操作；并发执行期间的读数只是瞬时快照，不代表生产灾备验收通过。
