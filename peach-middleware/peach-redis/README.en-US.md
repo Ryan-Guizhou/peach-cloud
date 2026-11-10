@@ -10,6 +10,8 @@ English | [中文](README.md)
 
 **Current baseline:** Java 21 / Spring Boot 3.5.4. The legacy `peach-redis-common` still creates Jedis/templates **and** RedissonClient for compatibility. New Redisson-only services can now use `peach-redisson-starter` without this legacy common module. Internal direct dependencies have migrated; retiring the legacy artifact and verifying mixed-version production rollout remain separate work. This matrix describes what exists on main and the known limitations. See [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18) for the redesign.
 
+**Code-level acceptance to date:** Dedicated Redis 7.2 checks cover independent clients, Sa-Token, Redis Tool, MultiCache and Stream. Merged evidence includes same-client Sentinel failover ([#70](https://github.com/Ryan-Guizhou/peach-cloud/pull/70)), Cluster primary outage and fresh-client recovery ([#74](https://github.com/Ryan-Guizhou/peach-cloud/pull/74)), legacy/current **in-repository** JSON byte compatibility ([#66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66)), and replayable Stream DLQ fields/read-only reconciliation ([#90](https://github.com/Ryan-Guizhou/peach-cloud/pull/90), [#94](https://github.com/Ryan-Guizhou/peach-cloud/pull/94)). **Still unverified in production:** a genuine released old SaSession fixture and mixed-binary rollout, actual Nacos/ACL/TLS rotation, and business fault injection. See the [migration acceptance runbook](../../docs/redis-redisson/acceptance-and-rollout.en-US.md).
+
 ## ACL, Sentinel and Cluster configuration (Issue #49)
 
 The independent `peach-redis-starter` supports separate credentials for data nodes and Sentinel itself. Do not conflate them. Unset values preserve legacy defaults:
