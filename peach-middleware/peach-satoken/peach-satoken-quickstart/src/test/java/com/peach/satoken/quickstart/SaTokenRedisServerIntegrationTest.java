@@ -33,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "quickstart.satoken.demo.enabled=false",
         "quickstart.satoken.demo.password=satoken-redis-integration",
         "peach.satoken.dao.enabled=true",
+        "peach.redis.enabled=true",
         "peach.redis.mode=standalone",
         "peach.redis.host=127.0.0.1:6379",
         "peach.redis.database=0",
