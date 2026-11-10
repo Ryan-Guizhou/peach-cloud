@@ -1,6 +1,5 @@
 package com.peach.redis.stream.config;
 
-import com.peach.redis.common.RedisConfig;
 import com.peach.redis.stream.MessageConsumer;
 import com.peach.redis.stream.RedisStreamHandler;
 import com.peach.redis.stream.RedisStreamLinstener;
@@ -14,7 +13,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.stream.Consumer;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.connection.stream.ReadOffset;
@@ -37,7 +36,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Slf4j
 @AutoConfiguration
-@AutoConfigureAfter(RedisConfig.class)
+@AutoConfigureAfter(name = {
+        "com.peach.redis.common.RedisConfig",
+        "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration"
+})
 @EnableConfigurationProperties(RedisStreamProperties.class)
 @ConditionalOnProperty(prefix = RedisStreamContant.REDIS_STREAM_PREFIX, value = "enable", havingValue = "true")
 public class RedisStreamAutoConfig {
@@ -59,7 +61,7 @@ public class RedisStreamAutoConfig {
     @ConditionalOnBean(MessageConsumer.class)
     @ConditionalOnMissingBean(StreamMessageListenerContainer.class)
     public StreamMessageListenerContainer<String, ObjectRecord<String, String>> streamMessageListenerContainer(
-            JedisConnectionFactory jedisConnectionFactory,
+            RedisConnectionFactory redisConnectionFactory,
             RedisStreamProperties redisStreamProperties,
             RedisStreamHandler redisStreamHandler,
             MessageConsumer messageConsumer) {
@@ -72,7 +74,7 @@ public class RedisStreamAutoConfig {
                 .executor(createThreadPool())
                 .build();
 
-        StreamMessageListenerContainer<String, ObjectRecord<String, String>> container = StreamMessageListenerContainer.create(jedisConnectionFactory, options);
+        StreamMessageListenerContainer<String, ObjectRecord<String, String>> container = StreamMessageListenerContainer.create(redisConnectionFactory, options);
         checkConsumerType(redisStreamProperties.getConsumerType());
         RedisStreamLinstener redisStreamListener = new RedisStreamLinstener(messageConsumer);
         if (RedisStreamContant.GROUP.equals(redisStreamProperties.getConsumerType())) {

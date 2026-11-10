@@ -1,6 +1,5 @@
 package com.peach.redis.common.tool;
 
-import com.peach.redis.common.RedisConfig;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -17,7 +16,10 @@ import org.springframework.data.redis.core.RedisTemplate;
  * @CreateTime 2025/12/19 10:23
  */
 @AutoConfiguration
-@AutoConfigureAfter(RedisConfig.class)
+@AutoConfigureAfter(name = {
+        "com.peach.redis.common.RedisConfig",
+        "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration"
+})
 public class RedisDaoAutoConfigure {
 
     @Bean

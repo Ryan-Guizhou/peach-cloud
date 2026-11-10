@@ -21,6 +21,10 @@
             <groupId>com.peach</groupId>
             <artifactId>peach-redis-stream-autoconfigure</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redis-starter</artifactId>
+        </dependency>
     </dependencies>
 
 
