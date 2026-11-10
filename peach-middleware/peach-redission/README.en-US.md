@@ -19,9 +19,9 @@ The independent `peach-redisson-starter` retains `peach.redis.mode / host / user
 | Capability / starter | Public API | Current functionality | Example use | Current limitation |
 | --- | --- | --- | --- | --- |
 | Redisson client foundation / `peach-redisson-starter` | `RedissonClient` / `PeachRedissonAutoConfiguration` | Independent single/Sentinel/Cluster, SSL, pools, custom-bean backoff | Redisson-only services | Preserves `peach.redis.*` and JsonJacksonCodec; production TLS/topology integration validation is still required |
-| Shared support / `peach-redission-common` | `RedissionDataHandle`, `LockInfoHandleFactory`, `LocalCacheLock` | Redisson KV wrapper, lock-key resolution, local mutex support | Internal shared lock/repeat support | Not an independent Redisson client foundation; local lock expiry and TimeUnit conversion are problematic |
+| Shared support / `peach-redission-common` | `RedissionDataHandle`, `LockInfoHandleFactory`, `LocalCacheLock` | Redisson KV wrapper, lock-key resolution, local mutex support | Internal shared lock/repeat support | Does not create clients; TimeUnit precision and held-lock lifetime fixed; 256 local lock stripes may contend across keys |
 | `peach-redission-distributedlock-starter` | `@DistrbutedLock`, `DistributedLockTemplate`, `DistributedLocker` | Reentrant, fair, read/write lock strategies; annotation or programmatic locking; wait timeout | Inventory, account state, scheduler coordination | Historic annotation spelling; distinguish watchdog and explicit lease; retain database guards for critical operations |
-| `peach-redission-repeat-starter` | `@RepeatLimit` | Restrict concurrent submissions per business key, or reject repeats for a post-success window | Checkout, form submit, duplicate execution | Current code logs but suppresses failure to persist the success flag; not transactional idempotency |
+| `peach-redission-repeat-starter` | `@RepeatLimit` | Restrict concurrent submissions per business key, or reject repeats for a post-success window | Checkout, form submit, duplicate execution | Failure to persist a success marker raises an uncertain-result error; verify durable business state before retry |
 | `peach-redission-delayqueue-starter` | `DelayQueueContext` (legacy), `RedisDelayQueueV2` (isolated new protocol) | Delayed delivery; optional V2 atomic claims, leases/heartbeats/fencing, ACK, bounded retries, DLQ/replay | Order expiry, delayed notifications | V2 is opt-in and does not migrate legacy queues; the legacy take→processing crash window persists; neither is exactly-once |
 | `peach-redission-bloomfilter-starter` | `BloomFilterService`, `BloomStatus`, `KeyNamingStrategy` / `BloomScalePolicy` / `CodecProvider` SPIs | Membership pre-check, batch add/query, segmented scaling, status/clear, extension SPI | SKU and content prefilters | Counters are per segment; old counters are lazily approximated from filter bits; segment lists are loaded from Redis to avoid stale cross-node negatives; authoritative lookup remains required |
 
@@ -230,6 +230,10 @@ The dedicated Redis 7.2 CI matrix exercises the independent `peach-redisson-star
 `DelayQueueV2ServerIntegrationTest` adds real Redis 7.2 tests with two distinct RedissonClient / `RedisDelayQueueV2` instances. Worker A claims but stops without ACK; after the lease expires, Worker B reclaims it, obtains a greater fencing token, rejects the old token and acknowledges as the current owner. Two independent workers also consume 64 messages in parallel, checking stable-ID deduplication, completion counts and no remaining processing records. Dedicated CI verifies that all six test cases actually execute via Surefire XML.
 
 **Scope:** The first worker stops deliberately to simulate lease loss; this is not a real `kill -9` test. Redis master failover, cross-store transaction fencing, 10k-concurrency soak, legacy queue drain and mixed-version upgrades remain separate acceptance work. The opt-in default, Lua/Redis key protocol and business-side durable idempotency requirements are unchanged.
+
+## Rollout, acceptance and rollback
+
+For migration steps, Nacos/key/codec/session compatibility checks, CI evidence, failure boundaries and rollback gates, see the [Redis / Redisson migration acceptance runbook](../../docs/redis-redisson/acceptance-and-rollout.en-US.md). Real connectivity smoke tests do not establish production failover safety.
 
 ## Boundaries
 
