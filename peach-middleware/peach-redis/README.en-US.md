@@ -256,6 +256,10 @@ For migration steps, Nacos/key/codec/session compatibility checks, CI evidence, 
 
 `PeachSaTokenDao#searchData` now uses Redis SCAN instead of blocking KEYS and enumerates all Cluster masters. The default maximum is 50,000 unique matches, configurable through `peach.satoken.dao.search-max-matches`; exceeding it fails rather than truncating results. Avoid high-frequency request-path use. See the [Sa-Token component guide](../peach-satoken/README.en-US.md#redis-session-search-with-bounded-scan-issue-57).
 
+## Legacy/new Redis JSON compatibility test (Issue #65)
+
+A real Redis 7.2 service-container suite compares the value/hash-value bytes produced by the retained legacy `RedisConfig` and the independent `PeachRedisAutoConfiguration` serializers, exercising old-write/new-read, new-write/old-read and TTL on session-like Maps. This only tests both implementations in the current repository; **it does not validate old released SaSession binary fixtures or production rolling upgrades**.
+
 ## Boundaries
 
 - Keys need stable namespaces and required isolation dimensions; sensitive values must not be placed directly in keys/logs.
