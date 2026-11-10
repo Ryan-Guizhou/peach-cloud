@@ -221,6 +221,10 @@ public class OrderExpiryService {
 
 The dedicated Redis 7.2 CI matrix exercises the independent `peach-redisson-starter` against Sentinel, Cluster (three masters, three replicas) and TLS. It verifies RedissonClient bean isolation, real Bucket writes/reads, TTL and deletion alongside Jedis and Redis Tool. See the [Redis topology integration instructions](../peach-redis/README.en-US.md#real-redis-topology-integration-issue-47) for commands, enforced non-skipped Surefire checks and limitations. This smoke test does **not** prove distributed-lock mutual exclusion during failover, exactly-once for delay queue V2, or cross-instance Bloom behavior.
 
+## Bloom segment test with two independent clients (Issue #55)
+
+`BloomTwoClientServerIntegrationTest` uses real Redis 7.2 and two independent `RedissonClient` instances. Node B reads the old segment directory before node A expands; after expansion, B must discover the new segment, find the inserted elements and report independent per-segment counts. Bloom filters still have false positives and provide only a pre-filter. This test does not establish failover safety or strong consistency under very high concurrency.
+
 ## Boundaries
 
 - Distributed locks protect the smallest critical section and do not replace database uniqueness, transactions or state validation.

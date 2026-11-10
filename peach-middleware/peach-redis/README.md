@@ -243,6 +243,10 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 **验收边界：** 以上属于客户端连通性与 KV/TTL/SCAN 冒烟测试，不能替代 Sentinel 故障切换、TLS 生产证书链、业务会话滚动升级、Bloom 跨实例、多级缓存订阅断线或 Stream/延迟队列崩溃恢复的验收。相关未完成事项继续跟踪 [Epic #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
 
+## 真实多实例失效测试（Issue #55）
+
+`MultiCacheTwoClientServerIntegrationTest` 在 Redis 7.2 服务容器中使用两个独立 Jedis 连接工厂、两个 `MultiCacheManager` 和订阅容器，验证节点 A 更新 Redis L2 后，节点 B 的 Caffeine L1 经 Pub/Sub 失效并重新读到最新值。广播 JSON 与历史 Java 序列化约定一致：只传缓存名和发送者，不传业务 key；因此**远端按整个 cacheName 失效**。本地 key 与 Redis L2 key/value 格式保持不变。该机制是尽力通知，不能保证离线节点或断线重连期间的强一致；应设置有界 L1 TTL，禁止仅凭缓存作实时授权。
+
 ## 边界
 
 - key 必须有稳定命名空间和必要隔离维度，敏感值不直接进入 key/log。
