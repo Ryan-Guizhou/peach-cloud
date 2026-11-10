@@ -272,6 +272,10 @@ MultiCache 在 Redis Pub/Sub 的首次订阅及重新订阅确认时，**仅清�
 
 MultiCache 在写入或从 Redis L2 回填 Caffeine L1 时，会读取该键的真实 Redis PTTL，并在本地维护有界的截止时间元数据。**纯 L1 命中不需要访问 Redis**；如果 Redis 剩余寿命已结束，或者本地截止时间元数据由于容量限制丢失，则清除 L1、重新查询 L2。PTTL 为 -1 的键仍按原有 Caffeine 过期策略执行，PTTL 不可确认时不缓存本地。特别处理了“靠近 Redis 过期时才回填”的情况；数据结构及 Redis key/codec 不变。Redis 外部改写或 Pub/Sub 掉线期间仍不提供强一致，使用本地 L1 作为安全决策依据是不可靠的。
 
+## 真实 Redis ACL 正反例验收（Issue #75）
+
+Redis 7.2 CI 增加实际启用 ACL 的独立单节点环境：禁用 default 用户、只开放随机临时密码的专用账户；独立 Jedis、Redisson、Redis Tool、Sa-Token 实际读写和 TTL 必须成功，匿名访问及错误密码必须被拒绝。测试密码仅在 GitHub Actions 临时作业生成，不进入源码或 Nacos。这验证的是**单节点数据 ACL 认证**，不代表 Sentinel 自身 ACL 的跨节点轮换、生产秘钥管理、TLS 双向认证或最小权限审计已经完成。
+
 ## 边界
 
 - key 必须有稳定命名空间和必要隔离维度，敏感值不直接进入 key/log。

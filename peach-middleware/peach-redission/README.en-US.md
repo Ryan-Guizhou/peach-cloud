@@ -239,6 +239,10 @@ For migration steps, Nacos/key/codec/session compatibility checks, CI evidence, 
 
 Dedicated CI exercises the **same JedisConnectionFactory and RedissonClient instances** before and after actually stopping the isolated Redis Sentinel master container. Without recreating those clients it retries bounded SET/GET/TTL, then checks all three Sentinels agree on the promoted master and reruns the new-client suites. This only uses Redis 7.2 CI containers, not production systems. Passing it validates basic client recovery, **not** in-flight business transaction outcomes, Stream/DelayQueue idempotency, historic Sessions or Redis Cluster failure.
 
+## Real Redis ACL positive/negative tests (Issue #75)
+
+A dedicated Redis 7.2 CI standalone topology disables the default user and uses an ephemeral randomly generated password for a named ACL account. Independent Jedis, Redisson, Redis Tool and Sa-Token must perform real writes/reads/TTL successfully; anonymous access and an invalid password must be rejected. The temporary password is generated only inside GitHub Actions, never stored in source or Nacos. This proves **single-node data ACL authentication**, not live Sentinel ACL credential rotation, production secret management, mTLS or minimum-privilege policy review.
+
 ## Boundaries
 
 - Distributed locks protect the smallest critical section and do not replace database uniqueness, transactions or state validation.

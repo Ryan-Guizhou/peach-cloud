@@ -100,6 +100,8 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 - **缓存剩余 TTL（Issue #71）：** 已增加按真实 Redis PTTL 限制本地 L1 有效期的回归，避免 Redis 键过期后本地缓存继续命中；CI 以 [Issue #71](https://github.com/Ryan-Guizhou/peach-cloud/issues/71) 的 PR 实际结果为准。此机制并非外部 L2 写入强一致。
 
+- **真实 Redis ACL（Issue #75）：** 增加禁用 default 用户、临时专用账户的正反例集成矩阵，验证 Jedis、Redisson、Tool、Sa-Token 真实登录与错误认证拒绝；还不涉及生产密钥轮换。是否通过以实际 CI 结果为准。
+
 ## 6. Epic 未完成项（不得提前勾选）
 
 - 真实 Redis 主从/Cluster 故障切换与客户端重连，TLS/ACL 密钥更新及证书轮换。
