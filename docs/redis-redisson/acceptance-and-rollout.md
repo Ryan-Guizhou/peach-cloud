@@ -102,6 +102,8 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 - **Redis Cluster 主节点恢复（Issue #73）：** 提交真实停止一台 master、验证原副本晋升/全槽恢复与新客户端重新测试的 CI；故障范围尚不覆盖历史长连接或业务消息事务。验收以 CI 全部成功为准。
 
+- **真实 Redis ACL（Issue #75）：** 增加禁用 default 用户、临时专用账户的正反例集成矩阵，验证 Jedis、Redisson、Tool、Sa-Token 真实登录与错误认证拒绝；还不涉及生产密钥轮换。是否通过以实际 CI 结果为准。
+
 ## 6. Epic 未完成项（不得提前勾选）
 
 - 真实 Redis 主从/Cluster 故障切换与客户端重连，TLS/ACL 密钥更新及证书轮换。

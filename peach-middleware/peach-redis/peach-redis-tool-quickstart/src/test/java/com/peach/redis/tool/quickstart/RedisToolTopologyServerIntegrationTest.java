@@ -24,6 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "peach.redis.host=${REDIS_TOPOLOGY_HOSTS}",
         "peach.redis.sentinelMaster=${REDIS_TOPOLOGY_SENTINEL_MASTER:master}",
         "peach.redis.database=0",
+        "peach.redis.username=${REDIS_TOPOLOGY_USERNAME:}",
+        "peach.redis.password=${REDIS_TOPOLOGY_PASSWORD:}",
         "peach.redis.ssl-enabled=${REDIS_TOPOLOGY_TLS:false}",
         "quickstart.redis-tool.demo.enabled=false"
 })

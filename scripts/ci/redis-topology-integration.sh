@@ -37,6 +37,8 @@ start_redis() {
 }
 export RUN_REDIS_TOPOLOGY_IT=true
 export REDIS_TOPOLOGY_TLS=false
+export REDIS_TOPOLOGY_ACL=false
+export RUN_REDIS_ACL_IT=false
 export REDIS_TOPOLOGY_SENTINEL_MASTER=peach-master
 
 case "$topology" in
@@ -128,25 +130,63 @@ EOF
       exit 1
     fi
     ;;
+  acl)
+    # Use a new, random CI-only password. No credentials are committed or printed.
+    export REDIS_TOPOLOGY_MODE=standalone
+    export REDIS_TOPOLOGY_HOSTS=127.0.0.1:6390
+    export REDIS_TOPOLOGY_ACL=true
+    export RUN_REDIS_ACL_IT=true
+    export REDIS_TOPOLOGY_USERNAME=peach_ci_acl
+    export REDIS_TOPOLOGY_PASSWORD="$(openssl rand -hex 24)"
+    chmod 755 "$tmp_dir"
+    cat >"$tmp_dir/users.acl" <<EOF
+user default off
+user $REDIS_TOPOLOGY_USERNAME on >$REDIS_TOPOLOGY_PASSWORD ~* &* +@all
+EOF
+    chmod 644 "$tmp_dir/users.acl"
+    containers+=("peach-it-acl")
+    docker run -d --name peach-it-acl --network host -v "$tmp_dir:/ci:ro" \
+      "$redis_image" redis-server --port 6390 --bind 127.0.0.1 \
+      --protected-mode no --aclfile /ci/users.acl --save "" >/dev/null
+    ready=false
+    for attempt in $(seq 1 50); do
+      if [[ "$(docker run --rm --network host \
+        -e REDISCLI_AUTH="$REDIS_TOPOLOGY_PASSWORD" "$redis_image" \
+        redis-cli --user "$REDIS_TOPOLOGY_USERNAME" -h 127.0.0.1 -p 6390 ping 2>/dev/null || true)" == "PONG" ]]; then
+        ready=true
+        break
+      fi
+      sleep 1
+    done
+    if [[ "$ready" != true ]]; then
+      echo "Isolated Redis ACL service never became ready" >&2
+      exit 1
+    fi
+    ;;
   *)
     echo "Unknown Redis topology: $topology" >&2
     exit 2
     ;;
 esac
 
-echo "Running real Redis $topology tests with TLS verification preserved"
+topology_tests="RedisTopologyServerIntegrationTest,RedisToolTopologyServerIntegrationTest,RedissonTopologyServerIntegrationTest,SaTokenSearchTopologyServerIntegrationTest"
+if [[ "$topology" == "acl" ]]; then
+  topology_tests+=",RedisAclAuthenticationServerIntegrationTest"
+fi
+echo "Running real Redis $topology tests with TLS and ACL verification preserved"
 # Use an explicit HTTPS public mirror for the repository's HTTP-only Nexus IDs.
 # The ephemeral GitHub runner must not rely on an inherited ~/.m2 cache.
 # Local developers keep their own Nexus settings; CI deliberately resolves public releases via HTTPS.
 mvn -B -ntp -s scripts/ci/github-actions-maven-settings.xml \
   -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart \
   -am \
-  -Dtest=RedisTopologyServerIntegrationTest,RedisToolTopologyServerIntegrationTest,RedissonTopologyServerIntegrationTest,SaTokenSearchTopologyServerIntegrationTest \
+  -Dtest="$topology_tests" \
   -Dsurefire.failIfNoSpecifiedTests=false test
 
 python3 - <<'PY'
 from pathlib import Path
 import xml.etree.ElementTree as ET
+import os
 
 suites = {
     "peach-middleware/peach-redis/peach-redis-quickstart/target/surefire-reports/TEST-com.peach.redis.quickstart.RedisTopologyServerIntegrationTest.xml",
@@ -154,13 +194,16 @@ suites = {
     "peach-middleware/peach-redission/peach-redisson-quickstart/target/surefire-reports/TEST-com.peach.redisson.quickstart.RedissonTopologyServerIntegrationTest.xml",
     "peach-middleware/peach-satoken/peach-satoken-quickstart/target/surefire-reports/TEST-com.peach.satoken.quickstart.SaTokenSearchTopologyServerIntegrationTest.xml",
 }
+if os.environ.get("REDIS_TOPOLOGY_ACL") == "true":
+    suites.add("peach-middleware/peach-redis/peach-redis-quickstart/target/surefire-reports/TEST-com.peach.redis.quickstart.RedisAclAuthenticationServerIntegrationTest.xml")
 for file in sorted(suites):
     path = Path(file)
     if not path.exists():
         raise SystemExit(f"Missing surefire integration report: {path}")
     result = ET.parse(path).getroot()
     values = {key: int(result.attrib.get(key, "0")) for key in ("tests", "failures", "errors", "skipped")}
-    if values["tests"] != 1 or any(values[key] for key in ("failures", "errors", "skipped")):
+    expected = 2 if "RedisAclAuthenticationServerIntegrationTest" in file else 1
+    if values["tests"] != expected or any(values[key] for key in ("failures", "errors", "skipped")):
         raise SystemExit(f"Invalid integration result {file}: {values}")
     print(f"PASS {file}: {values}")
 PY

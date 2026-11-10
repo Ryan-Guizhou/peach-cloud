@@ -243,6 +243,10 @@ public class OrderExpiryService {
 
 在独立 Redis 7.2 CI 的三主三副本 Cluster 中，健康拓扑验收后实际停止 7001 主节点，确认它的原副本晋升、存活主节点数量恢复为 3、`cluster_state:ok`，再进行真实重定向 SET/GET/TTL 和四套 Jedis、Redisson、Redis Tool、Sa-Token 新客户端集成测试。该测试验证故障后的集群恢复与**新连接**，不能替代长连接原位重连、消息处理中的故障窗口、跨 AZ 容灾或高并发压测。见 [Issue #73](https://github.com/Ryan-Guizhou/peach-cloud/issues/73)，以专项 CI 结果判定是否通过。
 
+## 真实 Redis ACL 正反例验收（Issue #75）
+
+Redis 7.2 CI 增加实际启用 ACL 的独立单节点环境：禁用 default 用户、只开放随机临时密码的专用账户；独立 Jedis、Redisson、Redis Tool、Sa-Token 实际读写和 TTL 必须成功，匿名访问及错误密码必须被拒绝。测试密码仅在 GitHub Actions 临时作业生成，不进入源码或 Nacos。这验证的是**单节点数据 ACL 认证**，不代表 Sentinel 自身 ACL 的跨节点轮换、生产秘钥管理、TLS 双向认证或最小权限审计已经完成。
+
 ## 边界
 
 - 分布式锁只保护最小临界区，不替代数据库唯一约束、事务和状态校验。

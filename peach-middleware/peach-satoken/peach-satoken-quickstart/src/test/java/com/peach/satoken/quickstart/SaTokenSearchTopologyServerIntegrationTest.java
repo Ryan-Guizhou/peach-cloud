@@ -30,6 +30,8 @@ class SaTokenSearchTopologyServerIntegrationTest {
         properties.setMode(System.getenv("REDIS_TOPOLOGY_MODE"));
         properties.setHost(System.getenv("REDIS_TOPOLOGY_HOSTS"));
         properties.setDatabase(0);
+        properties.setUsername(System.getenv().getOrDefault("REDIS_TOPOLOGY_USERNAME", ""));
+        properties.setPassword(System.getenv().getOrDefault("REDIS_TOPOLOGY_PASSWORD", ""));
         properties.setSentinelMaster(System.getenv().getOrDefault("REDIS_TOPOLOGY_SENTINEL_MASTER", "master"));
         properties.setSslEnabled(Boolean.parseBoolean(System.getenv("REDIS_TOPOLOGY_TLS")));
 

@@ -243,6 +243,10 @@ Dedicated CI exercises the **same JedisConnectionFactory and RedissonClient inst
 
 Against an isolated three-master/three-replica Redis 7.2 Cluster, CI stops master port 7001 after healthy topology tests, requires promotion of its original replica, three live masters and `cluster_state:ok`, then performs real redirected SET/GET/TTL and reruns all four independent Jedis, Redisson, Redis Tool and Sa-Token new-client suites. This validates **new connections after promotion**, not recovery of long-lived Cluster clients, in-flight messages, cross-AZ failover or load testing. See [Issue #73](https://github.com/Ryan-Guizhou/peach-cloud/issues/73) for CI evidence.
 
+## Real Redis ACL positive/negative tests (Issue #75)
+
+A dedicated Redis 7.2 CI standalone topology disables the default user and uses an ephemeral randomly generated password for a named ACL account. Independent Jedis, Redisson, Redis Tool and Sa-Token must perform real writes/reads/TTL successfully; anonymous access and an invalid password must be rejected. The temporary password is generated only inside GitHub Actions, never stored in source or Nacos. This proves **single-node data ACL authentication**, not live Sentinel ACL credential rotation, production secret management, mTLS or minimum-privilege policy review.
+
 ## Boundaries
 
 - Distributed locks protect the smallest critical section and do not replace database uniqueness, transactions or state validation.
