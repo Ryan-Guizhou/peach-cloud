@@ -40,4 +40,19 @@ class CacheMessageSerializationTest {
         assertThat(restored.sender()).isEqualTo(3);
         assertThat(restored.key()).isNull();
     }
+
+    @Test
+    void jsonPubSubMustNotExposeBusinessKeyAndInvalidatesEntireCache() {
+        String sensitive = "private:user@example.invalid";
+        CacheMessage message = new CacheMessage("products", sensitive, 100);
+        byte[] json = CacheMessageCodec.serialize(message);
+
+        assertThat(new String(json, java.nio.charset.StandardCharsets.UTF_8))
+                .doesNotContain(sensitive);
+        CacheMessage restored = CacheMessageCodec.deserialize(json);
+        assertThat(restored.cacheName()).isEqualTo("products");
+        assertThat(restored.key()).isNull();
+        assertThat(restored.sender()).isEqualTo(100);
+    }
+
 }

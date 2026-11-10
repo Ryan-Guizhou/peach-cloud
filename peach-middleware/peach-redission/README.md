@@ -221,6 +221,10 @@ public class OrderExpiryService {
 
 `peach-redisson-starter` 的独立客户端与 Redis Tool/Jedis 底座现有专用 CI 矩阵，对 Redis 7.2 Sentinel、Cluster（三主三副本）与 TLS 执行真实读写测试，验证 RedissonClient 的 Bean 隔离、Bucket TTL 与删除。具体命令、Surefire 强制不跳过的检查及限制见 [Redis 多拓扑验证说明](../peach-redis/README.md#真实-redis-多拓扑集成验收issue-47)。该测试**不证明** Redisson 分布式锁主节点故障期间的互斥、不保证延迟队列 V2 在 Redis 故障切换时 exactly-once，也不覆盖 Bloom 跨实例行为。
 
+## 两个独立客户端的布隆分段验证（Issue #55）
+
+`BloomTwoClientServerIntegrationTest` 通过真实 Redis 7.2 与两个独立 `RedissonClient` 检查分段扩容：节点 B 在节点 A 扩容前读取旧目录，A 扩容后 B 必须识别新增段、包含新增元素且统计各段独立计数。布隆过滤器仍有假阳性，结果仅作快速预筛；该测试不等于 Redis 故障切换或高并发强一致证明。
+
 ## 边界
 
 - 分布式锁只保护最小临界区，不替代数据库唯一约束、事务和状态校验。

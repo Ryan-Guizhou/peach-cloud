@@ -19,7 +19,9 @@ public final class CacheMessageCodec {
 
     public static byte[] serialize(CacheMessage message) {
         try {
-            return OBJECT_MAPPER.writeValueAsBytes(message);
+            // 同 Java 历史序列化：广播仅清除远端缓存名对应的全部 L1，不传输业务 Key。
+            // 避免复杂对象键的类型丢失、反序列化不匹配或隐私信息泄漏。
+            return OBJECT_MAPPER.writeValueAsBytes(new CacheMessage(message.cacheName(), null, message.sender()));
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to serialize cache message", exception);
         }
