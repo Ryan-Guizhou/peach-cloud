@@ -46,11 +46,6 @@ public class RedissionDataHandle {
     }
 
     public Duration getDuration(long timeToLive, TimeUnit timeUnit) {
-        return switch (timeUnit) {
-            case MINUTES -> Duration.ofMinutes(timeToLive);
-            case HOURS -> Duration.ofHours(timeToLive);
-            case DAYS -> Duration.ofDays(timeToLive);
-            default -> Duration.ofSeconds(timeToLive);
-        };
+        return Duration.of(timeToLive, java.util.Objects.requireNonNull(timeUnit).toChronoUnit());
     }
 }
