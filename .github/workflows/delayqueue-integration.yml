@@ -1,9 +1,9 @@
-name: Delay Queue V2 Redis Integration
+name: Delay Queue reliable Redis Integration
 
 on:
   pull_request:
     paths:
-      - '.github/workflows/delayqueue-v2-integration.yml'
+      - '.github/workflows/delayqueue-integration.yml'
       - 'peach-middleware/peach-redission/peach-redission-delayqueue-*/**'
       - 'peach-middleware/peach-redission/peach-redisson-*/**'
       - 'peach-dependencies/pom.xml'
@@ -12,15 +12,15 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/delayqueue-v2-integration.yml'
+      - '.github/workflows/delayqueue-integration.yml'
       - 'peach-middleware/peach-redission/peach-redission-delayqueue-*/**'
 
 permissions:
   contents: read
 
 jobs:
-  redis-v2-integration:
-    name: Redis 7.2 V2 Lua integration (required)
+  redis-reliable-integration:
+    name: Redis 7.2 reliable Lua integration (required)
     runs-on: ubuntu-latest
     services:
       redis:
@@ -33,7 +33,7 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     env:
-      RUN_REDIS_V2_IT: 'true'
+      RUN_REDIS_DELAYQUEUE_IT: 'true'
       REDIS_IT_HOST: '127.0.0.1'
       REDIS_IT_PORT: '6379'
     steps:
@@ -50,21 +50,21 @@ jobs:
         run: |
           set -o pipefail
           mvn -B -ntp -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am \
-            -Dtest=DelayQueueV2ServerIntegrationTest \
+            -Dtest=DelayQueueServerIntegrationTest \
             -Dsurefire.failIfNoSpecifiedTests=false test
-      - name: Confirm all Delay Queue V2 Redis integration tests executed
+      - name: Confirm existing delay queue integration tests executed
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import xml.etree.ElementTree as ET
 
-          report = Path("peach-middleware/peach-redission/peach-redission-delayqueue-quickstart/target/surefire-reports/TEST-com.peach.redission.delayqueue.quickstart.DelayQueueV2ServerIntegrationTest.xml")
+          report = Path("peach-middleware/peach-redission/peach-redission-delayqueue-quickstart/target/surefire-reports/TEST-com.peach.redission.delayqueue.quickstart.DelayQueueServerIntegrationTest.xml")
           if not report.is_file():
-              raise SystemExit(f"Missing V2 Redis integration test result: {report}")
+              raise SystemExit(f"Missing reliable Redis integration test result: {report}")
           suite = ET.parse(report).getroot()
           counts = {k: int(suite.get(k, "0")) for k in ("tests", "failures", "errors", "skipped")}
-          if counts["tests"] != 7 or any(counts[k] for k in ("failures", "errors", "skipped")):
-              raise SystemExit(f"Expected seven executed DelayQueue V2 tests: {counts}")
-          print(f"DelayQueue V2 recovery and concurrency suite passed: {counts}")
+          if counts["tests"] != 8 or any(counts[k] for k in ("failures", "errors", "skipped")):
+              raise SystemExit(f"Expected eight executed DelayQueue reliable tests: {counts}")
+          print(f"DelayQueue reliable recovery and concurrency suite passed: {counts}")
           PY

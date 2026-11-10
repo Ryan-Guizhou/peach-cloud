@@ -38,7 +38,7 @@ class DelayQueueCapabilityTest {
         registry.add("peach.redis.password", () -> "");
         registry.add("peach.redis.database", () -> "0");
         registry.add("peach.delay.queue.isolation-region-count", () -> "1");
-        registry.add("peach.delay.queue.use-reliable-queue", () -> "true");
+        registry.add("peach.delay.queue.enabled", () -> "true");
     }
 
     @Autowired

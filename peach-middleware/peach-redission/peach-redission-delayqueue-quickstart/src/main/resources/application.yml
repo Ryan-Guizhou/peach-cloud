@@ -13,9 +13,10 @@ peach:
   delay:
     queue:
       isolation-region-count: 1
-      use-reliable-queue: true
-      max-retry-attempts: 1
-      retry-interval-millis: 1000
+      enabled: true
+      max-attempts: 2
+      retry-initial: 1s
+      retry-max: 1m
 
 quickstart:
   delayqueue:

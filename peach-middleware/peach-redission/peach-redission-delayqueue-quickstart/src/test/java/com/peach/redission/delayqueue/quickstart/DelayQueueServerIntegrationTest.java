@@ -1,8 +1,8 @@
 package com.peach.redission.delayqueue.quickstart;
 
 import com.peach.redission.delayqueue.core.ConsumerTask;
-import com.peach.redission.delayqueue.v2.DelayQueueV2Properties;
-import com.peach.redission.delayqueue.v2.RedisDelayQueueV2;
+import com.peach.redission.delayqueue.config.DelayQueueProperties;
+import com.peach.redission.delayqueue.core.RedisDelayQueue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -21,25 +21,27 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 用 GitHub Actions Redis 7.2 服务容器执行不可跳过的延迟队列 V2 Lua 集成验收。
- * 默认 Maven 全量验证不启动服务容器；只有专用 workflow 设置 RUN_REDIS_V2_IT 才运行。
+ * 用 GitHub Actions Redis 7.2 服务容器执行不可跳过的延迟队列 reliable Lua 集成验收。
+ * 默认 Maven 全量验证不启动服务容器；只有专用 workflow 设置 RUN_REDIS_DELAYQUEUE_IT 才运行。
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/10
  */
-@EnabledIfEnvironmentVariable(named = "RUN_REDIS_V2_IT", matches = "true")
-class DelayQueueV2ServerIntegrationTest {
+@EnabledIfEnvironmentVariable(named = "RUN_REDIS_DELAYQUEUE_IT", matches = "true")
+class DelayQueueServerIntegrationTest {
 
     private static RedissonClient redisson;
-    private static RedisDelayQueueV2 queue;
+    private static RedisDelayQueue queue;
 
     @BeforeAll
     static void setUp() {
@@ -48,13 +50,13 @@ class DelayQueueV2ServerIntegrationTest {
         Config config = new Config();
         config.useSingleServer().setAddress("redis://" + host + ":" + port).setTimeout(4000);
         redisson = Redisson.create(config);
-        DelayQueueV2Properties properties = new DelayQueueV2Properties();
+        DelayQueueProperties properties = new DelayQueueProperties();
         properties.setEnabled(true);
         properties.setLease(Duration.ofSeconds(3));
         properties.setMaxAttempts(2);
         properties.setRetryInitial(Duration.ofMillis(1));
         properties.setRetryMax(Duration.ofMillis(10));
-        queue = new RedisDelayQueueV2(redisson, properties);
+        queue = new RedisDelayQueue(redisson, properties);
     }
 
     @AfterAll
@@ -87,12 +89,12 @@ class DelayQueueV2ServerIntegrationTest {
         String topic = newTopic();
         assertThat(queue.offer(topic, "job-2", "retry-value", Duration.ZERO)).isTrue();
         var first = queue.claim(topic).get(0);
-        assertThat(queue.fail(topic, first)).isEqualTo(RedisDelayQueueV2.FailureOutcome.RETRY_SCHEDULED);
+        assertThat(queue.fail(topic, first)).isEqualTo(RedisDelayQueue.FailureOutcome.RETRY_SCHEDULED);
         Thread.sleep(50);
         var second = queue.claim(topic).get(0);
         assertThat(second.attempts()).isEqualTo(2);
         assertThat(second.fencingToken()).isGreaterThan(first.fencingToken());
-        assertThat(queue.fail(topic, second)).isEqualTo(RedisDelayQueueV2.FailureOutcome.DEAD_LETTER);
+        assertThat(queue.fail(topic, second)).isEqualTo(RedisDelayQueue.FailureOutcome.DEAD_LETTER);
         assertThat(queue.deadLetterPayload(topic, "job-2")).isEqualTo("retry-value");
         assertThat(queue.status(topic).deadLetters()).isEqualTo(1);
         assertThat(queue.replayDeadLetter(topic, "job-2", Duration.ZERO)).isTrue();
@@ -151,17 +153,17 @@ class DelayQueueV2ServerIntegrationTest {
 
         RedissonClient firstClient = Redisson.create(firstConfig);
         RedissonClient secondClient = Redisson.create(secondConfig);
-        DelayQueueV2Properties firstProperties = integrationProperties();
-        DelayQueueV2Properties secondProperties = integrationProperties();
-        try (RedisDelayQueueV2 first = new RedisDelayQueueV2(firstClient, firstProperties);
-             RedisDelayQueueV2 second = new RedisDelayQueueV2(secondClient, secondProperties)) {
+        DelayQueueProperties firstProperties = integrationProperties();
+        DelayQueueProperties secondProperties = integrationProperties();
+        try (RedisDelayQueue first = new RedisDelayQueue(firstClient, firstProperties);
+             RedisDelayQueue second = new RedisDelayQueue(secondClient, secondProperties)) {
             assertThat(first.offer(topic, "recover-1", "unfinished-work", Duration.ZERO)).isTrue();
-            RedisDelayQueueV2.ClaimedMessage abandoned = first.claim(topic).get(0);
+            RedisDelayQueue.ClaimedMessage abandoned = first.claim(topic).get(0);
             first.close(); // No ACK: simulate a worker stopping while the lease remains in Redis.
 
             Thread.sleep(3600);
             assertThat(second.reclaimExpired(topic)).isEqualTo(1);
-            RedisDelayQueueV2.ClaimedMessage recovered = second.claim(topic).get(0);
+            RedisDelayQueue.ClaimedMessage recovered = second.claim(topic).get(0);
             assertThat(recovered.id()).isEqualTo(abandoned.id());
             assertThat(recovered.fencingToken()).isGreaterThan(abandoned.fencingToken());
             assertThat(second.acknowledge(topic, abandoned.id(), abandoned.fencingToken())).isFalse();
@@ -185,8 +187,8 @@ class DelayQueueV2ServerIntegrationTest {
         RedissonClient firstClient = Redisson.create(firstConfig);
         RedissonClient secondClient = Redisson.create(secondConfig);
         ExecutorService threads = Executors.newFixedThreadPool(2);
-        try (RedisDelayQueueV2 first = new RedisDelayQueueV2(firstClient, integrationProperties());
-             RedisDelayQueueV2 second = new RedisDelayQueueV2(secondClient, integrationProperties())) {
+        try (RedisDelayQueue first = new RedisDelayQueue(firstClient, integrationProperties());
+             RedisDelayQueue second = new RedisDelayQueue(secondClient, integrationProperties())) {
             for (int i = 0; i < messages; i++) {
                 assertThat(first.offer(topic, "job-" + i, "payload-" + i, Duration.ZERO)).isTrue();
                 assertThat(first.offer(topic, "job-" + i, "duplicate", Duration.ZERO)).isFalse();
@@ -232,8 +234,8 @@ class DelayQueueV2ServerIntegrationTest {
         String topic = newTopic();
         String id = "process-crash-1";
         String payload = "worker-must-recover";
-        Path marker = Files.createTempFile("peach-dq2-kill-marker-", ".txt");
-        Path childOutput = Files.createTempFile("peach-dq2-kill-output-", ".txt");
+        Path marker = Files.createTempFile("peach-dq-kill-marker-", ".txt");
+        Path childOutput = Files.createTempFile("peach-dq-kill-output-", ".txt");
         Process child = null;
         RedissonClient newOwnerClient = null;
 
@@ -244,7 +246,7 @@ class DelayQueueV2ServerIntegrationTest {
             assertThat(classPath).as("Test runner must expose a runnable child JVM classpath").isNotBlank();
             ProcessBuilder builder = new ProcessBuilder(
                     executable, "-cp", classPath,
-                    "com.peach.redission.delayqueue.quickstart.DelayQueueV2CrashWorker",
+                    "com.peach.redission.delayqueue.quickstart.DelayQueueCrashWorker",
                     topic, marker.toString());
             builder.redirectErrorStream(true);
             builder.redirectOutput(childOutput.toFile());
@@ -280,13 +282,13 @@ class DelayQueueV2ServerIntegrationTest {
             Config recoveredConfig = new Config();
             recoveredConfig.useSingleServer().setAddress("redis://127.0.0.1:6379");
             newOwnerClient = Redisson.create(recoveredConfig);
-            try (RedisDelayQueueV2 recovered = new RedisDelayQueueV2(newOwnerClient, integrationProperties())) {
+            try (RedisDelayQueue recovered = new RedisDelayQueue(newOwnerClient, integrationProperties())) {
                 // Claims have a three-second lease; a fresh owner may reclaim after expiry.
                 Thread.sleep(3600);
                 assertThat(recovered.reclaimExpired(topic)).isEqualTo(1L);
-                List<RedisDelayQueueV2.ClaimedMessage> messages = recovered.claim(topic);
+                List<RedisDelayQueue.ClaimedMessage> messages = recovered.claim(topic);
                 assertThat(messages).hasSize(1);
-                RedisDelayQueueV2.ClaimedMessage message = messages.get(0);
+                RedisDelayQueue.ClaimedMessage message = messages.get(0);
                 assertThat(message.id()).isEqualTo(id);
                 assertThat(message.payload()).isEqualTo(payload);
                 assertThat(message.fencingToken()).isGreaterThan(staleToken);
@@ -309,8 +311,74 @@ class DelayQueueV2ServerIntegrationTest {
         }
     }
 
-    private static DelayQueueV2Properties integrationProperties() {
-        DelayQueueV2Properties properties = new DelayQueueV2Properties();
+    @Test
+    void scheduledDispatcherRunsCallbacksConcurrentlyWithoutOverclaiming() throws Exception {
+        String topic = newTopic();
+        DelayQueueProperties settings = integrationProperties();
+        settings.setWorkerCount(2);
+        settings.setBatchSize(8);
+        settings.setPollInterval(Duration.ofMillis(25));
+        settings.setLease(Duration.ofSeconds(10));
+        CountDownLatch started = new CountDownLatch(2);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicInteger inFlight = new AtomicInteger();
+        AtomicInteger peak = new AtomicInteger();
+
+        try (RedisDelayQueue concurrent = new RedisDelayQueue(redisson, settings)) {
+            ConsumerTask task = new ConsumerTask() {
+                @Override
+                public void execute(String payload) {
+                    int running = inFlight.incrementAndGet();
+                    peak.accumulateAndGet(running, Math::max);
+                    started.countDown();
+                    try {
+                        if (!release.await(10, TimeUnit.SECONDS)) {
+                            throw new IllegalStateException("Concurrent execution gate timed out");
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Concurrent worker interrupted", e);
+                    } finally {
+                        inFlight.decrementAndGet();
+                    }
+                }
+                @Override
+                public String topic() {
+                    return topic;
+                }
+            };
+            assertThat(concurrent.offer(topic, "parallel-1", "a", Duration.ZERO)).isTrue();
+            assertThat(concurrent.offer(topic, "parallel-2", "b", Duration.ZERO)).isTrue();
+            concurrent.start(topic, task);
+            try {
+                assertThat(started.await(8, TimeUnit.SECONDS)).isTrue();
+                assertThat(peak.get()).isEqualTo(2);
+                assertThat(concurrent.status(topic).processing()).isEqualTo(2);
+            } finally {
+                release.countDown();
+            }
+            for (int i = 0; i < 50 && concurrent.status(topic).completed() < 2; i++) {
+                Thread.sleep(100);
+            }
+            assertThat(concurrent.status(topic).completed()).isEqualTo(2);
+            assertThat(concurrent.status(topic).processing()).isZero();
+        }
+
+        String legacyTopic = newTopic();
+        org.redisson.api.RBlockingQueue<String> legacy = redisson.getBlockingQueue(legacyTopic);
+        legacy.add("unmigrated-message");
+        try {
+            assertThatThrownBy(() -> queue.assertLegacyDrained(legacyTopic))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("not drained");
+        } finally {
+            legacy.poll();
+        }
+        queue.assertLegacyDrained(legacyTopic);
+    }
+
+    private static DelayQueueProperties integrationProperties() {
+        DelayQueueProperties properties = new DelayQueueProperties();
         properties.setEnabled(true);
         properties.setLease(Duration.ofSeconds(3));
         properties.setBatchSize(16);
@@ -321,6 +389,6 @@ class DelayQueueV2ServerIntegrationTest {
     }
 
     private static String newTopic() {
-        return "dq2-it-" + UUID.randomUUID().toString().replace("-", "");
+        return "dq-it-" + UUID.randomUUID().toString().replace("-", "");
     }
 }

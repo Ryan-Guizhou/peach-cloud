@@ -1,36 +1,33 @@
 package com.peach.redission.delayqueue.event;
 
-
 import com.peach.initialize.base.AbstractAppStartedEventHandler;
-import com.peach.redission.delayqueue.context.DelayQueueBasePart;
-import com.peach.redission.delayqueue.context.DelayQueuePart;
+import com.peach.redission.delayqueue.config.DelayQueueProperties;
 import com.peach.redission.delayqueue.core.ConsumerTask;
-import com.peach.redission.delayqueue.core.DelayConsumerQueue;
-import com.peach.redission.delayqueue.core.ReliableDelayConsumerQueue;
+import com.peach.redission.delayqueue.core.RedisDelayQueue;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.util.CollectionUtils;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * 延迟队列初始化处理。
+ * 统一可靠队列消费启动器；消费者仍实现原有 ConsumerTask 契约。
  *
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2025/12/17 16:53
- * @Description 延迟队列初始化处理
+ * @CreateTime 2026/11/10
  */
 @Slf4j
 public class DelayQueueInitHandler extends AbstractAppStartedEventHandler {
 
-    private final DelayQueueBasePart delayQueueBasePart;
+    private final RedisDelayQueue queue;
+    private final DelayQueueProperties properties;
 
-    public DelayQueueInitHandler(DelayQueueBasePart delayQueueBasePart) {
-        this.delayQueueBasePart = delayQueueBasePart;
-        log.debug("Initialized DelayQueueInitHandler");
+    public DelayQueueInitHandler(RedisDelayQueue queue, DelayQueueProperties properties) {
+        this.queue = queue;
+        this.properties = properties;
     }
-
 
     @Override
     public Integer executeOrder() {
@@ -39,42 +36,43 @@ public class DelayQueueInitHandler extends AbstractAppStartedEventHandler {
 
     @Override
     public void executeInitialize(ConfigurableApplicationContext context) {
-        Map<String, ConsumerTask> consumerTaskMap = context.getBeansOfType(ConsumerTask.class);
-        if (CollectionUtils.isEmpty(consumerTaskMap)){
-            log.info("No ConsumerTask beans found, skipping delay queue initialization");
+        Map<String, ConsumerTask> tasks = context.getBeansOfType(ConsumerTask.class);
+        if (tasks.isEmpty()) {
+            log.debug("No delay queue consumers registered");
             return;
         }
-        
-        log.info("Found {} ConsumerTask beans, initializing delay queues", consumerTaskMap.size());
-        
-        // 检查是否使用可靠队列
-        boolean useReliableQueue = delayQueueBasePart.getDelayQueueProperties().getUseReliableQueue();
-        log.info("Using reliable queue: {}", useReliableQueue);
-        
-        for (ConsumerTask consumerTask : consumerTaskMap.values()) {
-            DelayQueuePart delayQueuePart = new DelayQueuePart(delayQueueBasePart, consumerTask);
-            Integer isolationRegionCount = delayQueuePart.getDelayQueueBasePart().getDelayQueueProperties()
-                    .getIsolationRegionCount();
-                    
-            log.info("Initializing delay queue for topic: {} with {} isolation regions", 
-                    consumerTask.topic(), isolationRegionCount);
-                    
-            for (int i = 0; i < isolationRegionCount; i++) {
-                String topic = consumerTask.topic() + "-" + i;
-                if (useReliableQueue) {
-                    // 使用可靠的延迟消费者队列
-                    ReliableDelayConsumerQueue delayConsumerQueue = new ReliableDelayConsumerQueue(delayQueuePart, topic);
-                    delayConsumerQueue.startListener();
-                    log.debug("Started reliable listener for topic: {}", topic);
-                } else {
-                    // 使用原有的延迟消费者队列
-                    DelayConsumerQueue delayConsumerQueue = new DelayConsumerQueue(delayQueuePart, topic);
-                    delayConsumerQueue.startListener();
-                    log.debug("Started standard listener for topic: {}", topic);
-                }
+        Set<String> topics = new HashSet<>();
+        // 先校验所有 topic 与所有历史分区，失败时不能启动任何一个新消费者。
+        for (ConsumerTask task : tasks.values()) {
+            String topic = task.topic();
+            if (topic == null || topic.isBlank() || !topics.add(topic)) {
+                throw new IllegalStateException("Duplicate or invalid delay queue consumer topic: " + topic);
             }
         }
-        
-        log.info("Delay queue initialization completed");
+        for (String topic : topics) {
+            for (int partition = 0; partition < properties.getIsolationRegionCount(); partition++) {
+                queue.assertLegacyDrained(topic + "-" + partition);
+            }
+        }
+        for (ConsumerTask task : tasks.values()) {
+            String topic = task.topic();
+            for (int partition = 0; partition < properties.getIsolationRegionCount(); partition++) {
+                String partitionTopic = topic + "-" + partition;
+                ConsumerTask consumer = new ConsumerTask() {
+                    @Override
+                    public void execute(String content) {
+                        task.execute(content);
+                    }
+
+                    @Override
+                    public String topic() {
+                        return partitionTopic;
+                    }
+                };
+                queue.start(partitionTopic, consumer);
+            }
+            log.info("Delay queue consumer started, topic={}, partitions={}",
+                    topic, properties.getIsolationRegionCount());
+        }
     }
 }
