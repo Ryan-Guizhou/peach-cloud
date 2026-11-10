@@ -43,7 +43,7 @@ flowchart LR
 | Stream | 业务成功 XACK、失败 PEL、可选 XPENDING/XCLAIM/退避/DLQ；真实 3 测试（[#52](https://github.com/Ryan-Guizhou/peach-cloud/pull/52)） | DLQ 写入和源 XACK 非原子，故障时可能重复 |
 | 多实例缓存与 Bloom | 双 Jedis Client L1 失效/L2 回填，双 RedissonClient 扩段/计数（[#56](https://github.com/Ryan-Guizhou/peach-cloud/pull/56)） | 缓存订阅断线不能强一致 |
 | DelayQueue V2 | 原子 Lua、租约/fencing/DLQ，双 Worker 租约失效恢复、64 条并发、6 真实测试（[#40](https://github.com/Ryan-Guizhou/peach-cloud/pull/40)、[#60](https://github.com/Ryan-Guizhou/peach-cloud/pull/60)） | 真实进程强杀、Redis 故障切换、10k soak |
-| Sa-Token 管理搜索 | `KEYS` 替换有界 `SCAN` 见 [PR #58](https://github.com/Ryan-Guizhou/peach-cloud/pull/58) | **本手册创建时 CI/合并待确认**，请查最新 PR |
+| Sa-Token 管理检索 | 有界 SCAN、分页/排序、Cluster 全部主节点与默认 50,000 结果限制（[PR #58](https://github.com/Ryan-Guizhou/peach-cloud/pull/58)） | 已合并且单机/Sentinel/Cluster/TLS 真实 Redis 7.2 CI 通过；旧会话滚动升级尚未验收 |
 
 ## 3. 配置与兼容性核对
 

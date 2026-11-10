@@ -39,6 +39,12 @@ mvn -pl peach-middleware/peach-satoken/peach-satoken-quickstart -am test
 
 启动前必须设置 `PEACH_SATOKEN_DEMO_PASSWORD`（或 `quickstart.satoken.demo.password`），无默认值。测试通过测试属性注入该值。禁止写入生产密钥。
 
+## Redis Session 检索与有界 SCAN（Issue #57）
+
+`PeachSaTokenDao#searchData` 已取消阻塞性 `KEYS`，改为带游标释放的 `SCAN`；Redis Cluster 将扫描全部主节点。查询返回唯一键的有序分页（`sortType=true` 为升序，反之降序）。`peach.satoken.dao.search-max-matches` 默认 `50000`，超过上限会显式失败，绝不静默截断；`size=-1` 仍表示请求全部匹配键，但受安全上限约束。该查询会扫描键空间，不宜用于高频业务请求，建议管理端限频并优先建立索引。
+
+真实 Redis 7.2 的独立测试覆盖 Standalone 的排序、分页、TTL 和超限异常，以及 Sentinel/Cluster/TLS 下的查询；不会变更既有 Redis key、SaSession JSON 或 DAO 写入 API。SCAN 不是一致性快照，历史会话混合版本滚动验收仍需开展。
+
 ## 边界
 
 - 登录、用户角色/机构/权限数据仍由业务认证域负责，Starter 不成为权限数据事实源。
