@@ -175,17 +175,101 @@ public final class RedisStreamPendingRecovery {
         return Duration.ofMillis(baseMillis * factor);
     }
 
+    /**
+     * 只读取当前消费组的 PEL 数量和死信 Stream 条数，不扫描具体消息或读取 payload。
+     *
+     * @return 当前待确认和死信的实时计数；Redis 读取失败时向调用方抛出异常
+     */
+    public StreamBacklog backlog() {
+        String stream = streamProperties.getStreamName();
+        String group = streamProperties.getConsumerGroup();
+        StreamOperations<String, Object, Object> ops = redis.opsForStream();
+        var pending = ops.pending(stream, group);
+        if (pending == null) {
+            throw new IllegalStateException("Redis Stream Pending summary is unavailable");
+        }
+        Long dlqCount = ops.size(deadLetterStream());
+        if (dlqCount == null) {
+            throw new IllegalStateException("Redis Stream DLQ count is unavailable");
+        }
+        return new StreamBacklog(pending.getTotalPendingMessages(), dlqCount);
+    }
+
+    /**
+     * 运维手动重放死信记录。
+     *
+     * <p>只允许重放本组件配置的源 Stream + Group；从原 Stream 精确读取原始字段，
+     * 避免将历史死信里用于展示的 Map 字符串作为业务消息内容。原记录已被裁剪时拒绝重放。
+     * 成功后保留 DLQ 审计记录；重复调用可能重复投递，业务必须依赖持久幂等。</p>
+     *
+     * @param deadLetterRecordId 死信 Stream 中的 Redis RecordId，例如 123456789-0
+     * @return 原 Stream 中新写入的 RecordId；写入失败时不修改死信记录
+     */
+    public synchronized RecordId replayDeadLetter(String deadLetterRecordId) {
+        if (deadLetterRecordId == null || !deadLetterRecordId.matches("[0-9]+-[0-9]+")) {
+            throw new IllegalArgumentException("Invalid Redis Stream dead-letter record ID");
+        }
+        String stream = streamProperties.getStreamName();
+        String group = streamProperties.getConsumerGroup();
+        StreamOperations<String, Object, Object> ops = redis.opsForStream();
+        List<MapRecord<String, Object, Object>> deadLetters = ops.range(
+                deadLetterStream(), Range.closed(deadLetterRecordId, deadLetterRecordId));
+        if (deadLetters == null || deadLetters.size() != 1) {
+            throw new IllegalStateException("Redis Stream dead-letter record was not found");
+        }
+
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        deadLetters.get(0).getValue().forEach((key, value) ->
+                metadata.put(String.valueOf(key), value));
+        if (!stream.equals(metadata.get("sourceStream")) || !group.equals(metadata.get("sourceGroup"))) {
+            throw new IllegalStateException("Redis Stream dead-letter source does not match configured group");
+        }
+        Object sourceId = metadata.get("sourceId");
+        if (!(sourceId instanceof String id) || !id.matches("[0-9]+-[0-9]+")) {
+            throw new IllegalStateException("Redis Stream dead-letter source ID is invalid");
+        }
+        List<MapRecord<String, Object, Object>> originals =
+                ops.range(stream, Range.closed(id, id));
+        if (originals == null || originals.size() != 1) {
+            throw new IllegalStateException("Redis Stream original record has been trimmed; cannot safely replay");
+        }
+
+        RecordId replayed = ops.add(StreamRecords.newRecord().in(stream)
+                .ofMap(new LinkedHashMap<>(originals.get(0).getValue())));
+        if (replayed == null) {
+            throw new IllegalStateException("Redis Stream replay XADD returned null");
+        }
+        log.info("Redis Stream dead letter replayed, originalId={}, replayedId={}", id, replayed);
+        return replayed;
+    }
+
+    /**
+     * 面向运维的轻量积压统计，不包含业务 payload。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/11/10 17:54
+     */
+    public record StreamBacklog(long pending, long deadLetters) {
+    }
+
+    private String deadLetterStream() {
+        String source = streamProperties.getStreamName();
+        String dlq = recoveryProperties.getDeadLetterStream();
+        if (dlq == null || dlq.isBlank()) {
+            dlq = source + ":dlq";
+        }
+        if (source.equals(dlq)) {
+            throw new IllegalArgumentException("Dead-letter stream must differ from source stream");
+        }
+        return dlq;
+    }
+
     private void sendDeadLetter(StreamOperations<String, Object, Object> ops,
                                 MapRecord<String, Object, Object> record,
                                 PendingMessage pending) {
         String stream = streamProperties.getStreamName();
-        String dlq = recoveryProperties.getDeadLetterStream();
-        if (dlq == null || dlq.isBlank()) {
-            dlq = stream + ":dlq";
-        }
-        if (stream.equals(dlq)) {
-            throw new IllegalArgumentException("Dead-letter stream must differ from source stream");
-        }
+        String dlq = deadLetterStream();
         Map<String, String> fields = new LinkedHashMap<>();
         fields.put("sourceStream", stream);
         fields.put("sourceGroup", streamProperties.getConsumerGroup());

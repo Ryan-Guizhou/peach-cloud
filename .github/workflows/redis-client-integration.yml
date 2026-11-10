@@ -73,7 +73,7 @@ jobs:
               raise SystemExit(f"Missing real Redis Stream integration report: {report}")
           suite = ET.parse(report).getroot()
           stats = {name: int(suite.get(name, "0")) for name in ("tests", "failures", "errors", "skipped")}
-          if stats["tests"] != 3 or any(stats[name] for name in ("failures", "errors", "skipped")):
+          if stats["tests"] != 4 or any(stats[name] for name in ("failures", "errors", "skipped")):
               raise SystemExit(f"Unexpected real Redis Stream IT result: {stats}")
           print(f"Real Redis Stream recovery integration passed: {stats}")
           PY
