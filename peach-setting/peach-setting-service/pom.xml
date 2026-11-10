@@ -40,10 +40,6 @@
         </dependency>
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-redis-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.peach</groupId>
             <artifactId>peach-redis-tool-starter</artifactId>
         </dependency>
         <dependency>
@@ -57,6 +53,10 @@
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-fileservice-openfeign-external</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redis-starter</artifactId>
         </dependency>
     </dependencies>
 </project>

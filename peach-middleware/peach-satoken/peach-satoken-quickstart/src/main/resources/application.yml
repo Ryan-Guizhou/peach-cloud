@@ -24,6 +24,10 @@ sa-token:
   check-same-token: false
 
 peach:
+  # The default demo uses in-memory Sa-Token; no Redis address is configured.
+  # For persisted sessions, explicitly enable Redis and configure peach.redis.host.
+  redis:
+    enabled: false
   satoken:
     dao:
       enabled: false
