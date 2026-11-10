@@ -56,9 +56,9 @@ jobs:
         run: |
           set -o pipefail
           mvn -B -ntp \
-            -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart,peach-middleware/peach-redis/peach-redis-stream-quickstart \
+            -pl peach-middleware/peach-redis/peach-redis-multicache-quickstart,peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart,peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart,peach-middleware/peach-redis/peach-redis-stream-quickstart \
             -am \
-            -Dtest=RedisOnlyServerIntegrationTest,RedisToolServerIntegrationTest,RedissonOnlyServerIntegrationTest,SaTokenRedisServerIntegrationTest,RedisStreamRecoveryServerIntegrationTest,SaTokenSearchServerIntegrationTest \
+            -Dtest=MultiCacheTwoClientServerIntegrationTest,BloomTwoClientServerIntegrationTest,RedisOnlyServerIntegrationTest,RedisToolServerIntegrationTest,RedissonOnlyServerIntegrationTest,SaTokenRedisServerIntegrationTest,RedisStreamRecoveryServerIntegrationTest \,SaTokenSearchServerIntegrationTest
             -Dsurefire.failIfNoSpecifiedTests=false test
 
       - name: Verify Redis Stream Pending tests actually executed
@@ -76,6 +76,26 @@ jobs:
           if stats["tests"] != 3 or any(stats[name] for name in ("failures", "errors", "skipped")):
               raise SystemExit(f"Unexpected real Redis Stream IT result: {stats}")
           print(f"Real Redis Stream recovery integration passed: {stats}")
+          PY
+      - name: Verify multi-instance cache and Bloom tests really executed
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          reports = [
+              Path("peach-middleware/peach-redis/peach-redis-multicache-quickstart/target/surefire-reports/TEST-com.peach.redis.multicache.quickstart.MultiCacheTwoClientServerIntegrationTest.xml"),
+              Path("peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart/target/surefire-reports/TEST-com.peach.redission.bloomfilter.quickstart.BloomTwoClientServerIntegrationTest.xml"),
+          ]
+          for report in reports:
+              if not report.is_file():
+                  raise SystemExit(f"Missing real Redis test report: {report}")
+              suite = ET.parse(report).getroot()
+              stats = {key: int(suite.get(key, "0")) for key in ("tests", "failures", "errors", "skipped")}
+              if stats["tests"] != 1 or any(stats[key] for key in ("failures", "errors", "skipped")):
+                  raise SystemExit(f"Expected 1 executed success for {report}: {stats}")
+              print(f"Real multi-instance acceptance passed: {report} {stats}")
           PY
       - name: Enforce non-skipped Sa-Token scan search in real Redis
         shell: bash

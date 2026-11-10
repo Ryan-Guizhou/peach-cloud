@@ -8,6 +8,10 @@ import java.io.IOException;
 /**
  * 多级缓存 Pub/Sub 消息编解码。
  * <p>缓存同步消息使用固定类型 JSON，不走 RedisTemplate 的多态 {@code @class} 序列化。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/10
  */
 public final class CacheMessageCodec {
 
@@ -19,7 +23,9 @@ public final class CacheMessageCodec {
 
     public static byte[] serialize(CacheMessage message) {
         try {
-            return OBJECT_MAPPER.writeValueAsBytes(message);
+            // 同 Java 历史序列化：广播仅清除远端缓存名对应的全部 L1，不传输业务 Key。
+            // 避免复杂对象键的类型丢失、反序列化不匹配或隐私信息泄漏。
+            return OBJECT_MAPPER.writeValueAsBytes(new CacheMessage(message.cacheName(), null, message.sender()));
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to serialize cache message", exception);
         }

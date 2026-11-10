@@ -17,6 +17,10 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -131,6 +135,104 @@ class DelayQueueV2ServerIntegrationTest {
         assertThat(calls.get()).isEqualTo(1);
         assertThat(queue.status(topic).processing()).isZero();
         assertThat(queue.status(topic).completed()).isEqualTo(1);
+    }
+
+
+    @Test
+    void independentWorkerCanReclaimAfterOwnerStopsWithoutAcknowledging() throws Exception {
+        String topic = newTopic();
+        Config firstConfig = new Config();
+        firstConfig.useSingleServer().setAddress("redis://127.0.0.1:6379");
+        Config secondConfig = new Config();
+        secondConfig.useSingleServer().setAddress("redis://127.0.0.1:6379");
+
+        RedissonClient firstClient = Redisson.create(firstConfig);
+        RedissonClient secondClient = Redisson.create(secondConfig);
+        DelayQueueV2Properties firstProperties = integrationProperties();
+        DelayQueueV2Properties secondProperties = integrationProperties();
+        try (RedisDelayQueueV2 first = new RedisDelayQueueV2(firstClient, firstProperties);
+             RedisDelayQueueV2 second = new RedisDelayQueueV2(secondClient, secondProperties)) {
+            assertThat(first.offer(topic, "recover-1", "unfinished-work", Duration.ZERO)).isTrue();
+            RedisDelayQueueV2.ClaimedMessage abandoned = first.claim(topic).get(0);
+            first.close(); // No ACK: simulate a worker stopping while the lease remains in Redis.
+
+            Thread.sleep(3600);
+            assertThat(second.reclaimExpired(topic)).isEqualTo(1);
+            RedisDelayQueueV2.ClaimedMessage recovered = second.claim(topic).get(0);
+            assertThat(recovered.id()).isEqualTo(abandoned.id());
+            assertThat(recovered.fencingToken()).isGreaterThan(abandoned.fencingToken());
+            assertThat(second.acknowledge(topic, abandoned.id(), abandoned.fencingToken())).isFalse();
+            assertThat(second.acknowledge(topic, recovered.id(), recovered.fencingToken())).isTrue();
+            assertThat(second.status(topic).completed()).isEqualTo(1);
+            assertThat(second.status(topic).processing()).isZero();
+        } finally {
+            secondClient.shutdown();
+            firstClient.shutdown();
+        }
+    }
+
+    @Test
+    void twoIndependentWorkersProcessBoundedBatchWithoutLostOrDuplicateCompletions() throws Exception {
+        String topic = newTopic();
+        final int messages = 64;
+        Config firstConfig = new Config();
+        firstConfig.useSingleServer().setAddress("redis://127.0.0.1:6379");
+        Config secondConfig = new Config();
+        secondConfig.useSingleServer().setAddress("redis://127.0.0.1:6379");
+        RedissonClient firstClient = Redisson.create(firstConfig);
+        RedissonClient secondClient = Redisson.create(secondConfig);
+        ExecutorService threads = Executors.newFixedThreadPool(2);
+        try (RedisDelayQueueV2 first = new RedisDelayQueueV2(firstClient, integrationProperties());
+             RedisDelayQueueV2 second = new RedisDelayQueueV2(secondClient, integrationProperties())) {
+            for (int i = 0; i < messages; i++) {
+                assertThat(first.offer(topic, "job-" + i, "payload-" + i, Duration.ZERO)).isTrue();
+                assertThat(first.offer(topic, "job-" + i, "duplicate", Duration.ZERO)).isFalse();
+            }
+            java.util.Set<String> processed = java.util.concurrent.ConcurrentHashMap.newKeySet();
+            AtomicInteger invocations = new AtomicInteger();
+            ConsumerTask consumer = new ConsumerTask() {
+                @Override
+                public void execute(String content) {
+                    invocations.incrementAndGet();
+                    assertThat(processed.add(content)).as("Unexpected duplicate: " + content).isTrue();
+                }
+                @Override
+                public String topic() {
+                    return topic;
+                }
+            };
+            CompletableFuture<Void> firstFuture = CompletableFuture.runAsync(() -> {
+                for (int i = 0; i < 8; i++) {
+                    first.pollOnce(topic, consumer);
+                }
+            }, threads);
+            CompletableFuture<Void> secondFuture = CompletableFuture.runAsync(() -> {
+                for (int i = 0; i < 8; i++) {
+                    second.pollOnce(topic, consumer);
+                }
+            }, threads);
+            CompletableFuture.allOf(firstFuture, secondFuture).get(25, TimeUnit.SECONDS);
+            assertThat(processed).hasSize(messages);
+            assertThat(invocations.get()).isEqualTo(messages);
+            assertThat(second.status(topic).scheduled()).isZero();
+            assertThat(second.status(topic).processing()).isZero();
+            assertThat(second.status(topic).completed()).isEqualTo(messages);
+        } finally {
+            threads.shutdownNow();
+            secondClient.shutdown();
+            firstClient.shutdown();
+        }
+    }
+
+    private static DelayQueueV2Properties integrationProperties() {
+        DelayQueueV2Properties properties = new DelayQueueV2Properties();
+        properties.setEnabled(true);
+        properties.setLease(Duration.ofSeconds(3));
+        properties.setBatchSize(16);
+        properties.setMaxAttempts(2);
+        properties.setRetryInitial(Duration.ofMillis(1));
+        properties.setRetryMax(Duration.ofMillis(10));
+        return properties;
     }
 
     private static String newTopic() {
