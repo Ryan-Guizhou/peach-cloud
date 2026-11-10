@@ -98,10 +98,7 @@ public class MultiCacheManager implements CacheManager {
     private void handleKeyStrength(Caffeine<Object, Object> builder, CaffeineCacheConfig.CaffeineStrength strength) {
         switch (strength) {
             case WEAK -> builder.weakKeys();
-            case STRONG -> {
-                log.error("Caffeine does not support key soft references");
-                throw new UnsupportedOperationException("Caffeine does not support key soft references");
-            }
+            case STRONG -> { /* Caffeine uses strong keys by default. */ }
             default -> log.error("The citation method is incorrect");
         }
     }
@@ -115,7 +112,7 @@ public class MultiCacheManager implements CacheManager {
     private void handleValueStrength(Caffeine<Object, Object> builder, CaffeineCacheConfig.CaffeineStrength strength) {
         switch (strength) {
             case WEAK -> builder.weakValues();
-            case STRONG -> builder.softValues();
+            case STRONG -> { /* Caffeine uses strong values by default. */ }
             default -> log.error("The citation method is incorrect");
         }
     }

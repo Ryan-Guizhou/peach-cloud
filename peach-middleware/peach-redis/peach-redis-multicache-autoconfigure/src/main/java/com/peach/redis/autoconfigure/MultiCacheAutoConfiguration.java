@@ -47,7 +47,7 @@ public class MultiCacheAutoConfiguration<K, V>{
 
     @Bean
     @DependsOn("redisTemplate")
-    @ConditionalOnMissingBean(RedisMessageListenerContainer.class)
+    @ConditionalOnMissingBean(name = "cacheListenerContainer")
     public RedisMessageListenerContainer cacheListenerContainer(MultiCacheConfig cacheConfig, RedisTemplate<K, V> redisTemplate, MultiCacheManager cacheManager) {
         log.info("init RedisMessageListenerContainer successful");
         RedisMessageListenerContainer cacheListenerContainer = new RedisMessageListenerContainer();

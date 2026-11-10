@@ -39,9 +39,9 @@ public class CaffeineCacheConfig {
     private long maximumSize = 5000;
 
     /**
-     * key 对象引用强度  只能弱引用
+     * Key 引用强度，默认 STRONG；WEAK 使用引用身份比较语义，需谨慎开启
      */
-    private CaffeineStrength keyStrength = CaffeineStrength.WEAK;
+    private CaffeineStrength keyStrength = CaffeineStrength.STRONG;
 
     /**
      * value 对象引用强度 既可以强引用 也可以弱引用
