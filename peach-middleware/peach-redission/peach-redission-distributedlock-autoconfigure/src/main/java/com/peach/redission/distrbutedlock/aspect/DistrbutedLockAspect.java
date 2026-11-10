@@ -16,6 +16,8 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -71,7 +73,30 @@ public class DistrbutedLockAspect implements ApplicationContextAware {
         this.applicationContext = applicationContext;
     }
 
-    @Around("@annotation(distrbutedLock)")
+    /**
+     * 支持方法和目标类上的锁注解，方法级配置优先，避免同一调用被执行两次。
+     * 仅拦截经过 Spring AOP 代理的公开方法。
+     */
+    @Around("@annotation(com.peach.redission.distrbutedlock.annoation.DistrbutedLock) || "
+            + "@within(com.peach.redission.distrbutedlock.annoation.DistrbutedLock)")
+    public Object aroundAnnotated(ProceedingJoinPoint joinPoint) throws Throwable {
+        Method method = ((MethodSignature) joinPoint.getSignature()).getMethod();
+        Class<?> targetClass = joinPoint.getTarget().getClass();
+        Method targetMethod = AopUtils.getMostSpecificMethod(method, targetClass);
+        DistrbutedLock annotation = AnnotatedElementUtils.findMergedAnnotation(targetMethod, DistrbutedLock.class);
+        if (annotation == null) {
+            annotation = AnnotatedElementUtils.findMergedAnnotation(method, DistrbutedLock.class);
+        }
+        if (annotation == null) {
+            annotation = AnnotatedElementUtils.findMergedAnnotation(targetClass, DistrbutedLock.class);
+        }
+        if (annotation == null) {
+            return joinPoint.proceed();
+        }
+        return around(joinPoint, annotation);
+    }
+
+    /** 执行已解析的锁策略；保留原有调用入口供兼容测试使用。 */
     public Object around(ProceedingJoinPoint joinPoint, DistrbutedLock distrbutedLock) throws Throwable {
         LockInfoHandle lockHandle = lockInfoHandleFactory.getLockHandle(LockInfoType.DISTRIBUTE);
         String lockName = lockHandle.getLockName(joinPoint, distrbutedLock.name(), distrbutedLock.keys());
