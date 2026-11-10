@@ -69,9 +69,8 @@ public class PeachRedisAutoConfiguration {
     @Bean(name = "jedisConnectionFactory")
     @ConditionalOnMissingBean(RedisConnectionFactory.class)
     public JedisConnectionFactory jedisConnectionFactory(JedisPoolConfig jedisPoolConfigs, PeachRedisProperties props) {
-        JedisClientConfiguration.JedisPoolingClientConfigurationBuilder builder =
-                (JedisClientConfiguration.JedisPoolingClientConfigurationBuilder) JedisClientConfiguration.builder();
-        builder.poolConfig(jedisPoolConfigs);
+        JedisClientConfiguration.JedisClientConfigurationBuilder builder = JedisClientConfiguration.builder();
+        builder.usePooling().poolConfig(jedisPoolConfigs);
         if (props.isSslEnabled()) {
             builder.useSsl();
         }
