@@ -10,6 +10,8 @@ import com.peach.redission.distrbutedlock.locker.LockType;
 import com.peach.redission.distrbutedlock.manage.DistrbutedLockerFactory;
 import com.peach.redission.repeat.annoation.RepeatLimit;
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.reflect.MethodSignature;
+import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
@@ -61,4 +63,50 @@ class RepeatExecuteLimitAspectTest {
         verify(joinPoint).proceed();
         verify(locker).unlock("order:1");
     }
+
+    @RepeatLimit(name = "class-rule", keys = {"class"}, durationTime = 0)
+    static class AnnotatedExample {
+        public String inherited() { return "ok"; }
+
+        @RepeatLimit(name = "method-rule", keys = {"method"}, durationTime = 0)
+        public String overridden() { return "ok"; }
+    }
+
+    @Test
+    void resolvesClassLevelAndPrefersMethodLevelWithoutDoubleExecution() throws Throwable {
+        LockInfoHandleFactory infoFactory = mock(LockInfoHandleFactory.class);
+        LockInfoHandle info = mock(LockInfoHandle.class);
+        RedissionDataHandle data = mock(RedissionDataHandle.class);
+        DistrbutedLockerFactory lockerFactory = mock(DistrbutedLockerFactory.class);
+        DistributedLocker locker = mock(DistributedLocker.class);
+        when(infoFactory.getLockHandle(LockInfoType.REPEAT_EXECUTED)).thenReturn(info);
+        when(info.getLockName(any(), eq("class-rule"), any(String[].class))).thenReturn("class:key");
+        when(info.getLockName(any(), eq("method-rule"), any(String[].class))).thenReturn("method:key");
+        when(lockerFactory.getDistrbutedLocker(LockType.FAIR)).thenReturn(locker);
+        when(locker.tryLock(anyString(), eq(TimeUnit.SECONDS), eq(0L))).thenReturn(true);
+        RepeatExecuteLimitAspect aspect = new RepeatExecuteLimitAspect(
+                infoFactory, data, new LocalCacheLock(), lockerFactory);
+
+        ProceedingJoinPoint inherited = pointcut(AnnotatedExample.class.getMethod("inherited"));
+        ProceedingJoinPoint overridden = pointcut(AnnotatedExample.class.getMethod("overridden"));
+        org.assertj.core.api.Assertions.assertThat(aspect.aroundAnnotated(inherited)).isEqualTo("ok");
+        org.assertj.core.api.Assertions.assertThat(aspect.aroundAnnotated(overridden)).isEqualTo("ok");
+        verify(inherited, times(1)).proceed();
+        verify(overridden, times(1)).proceed();
+        verify(locker).unlock("class:key");
+        verify(locker).unlock("method:key");
+        verify(info, times(1)).getLockName(any(), eq("class-rule"), any(String[].class));
+        verify(info, times(1)).getLockName(any(), eq("method-rule"), any(String[].class));
+    }
+
+    private static ProceedingJoinPoint pointcut(Method method) throws Throwable {
+        ProceedingJoinPoint joinPoint = mock(ProceedingJoinPoint.class);
+        MethodSignature signature = mock(MethodSignature.class);
+        when(joinPoint.getSignature()).thenReturn(signature);
+        when(signature.getMethod()).thenReturn(method);
+        when(joinPoint.getTarget()).thenReturn(new AnnotatedExample());
+        when(joinPoint.proceed()).thenReturn("ok");
+        return joinPoint;
+    }
+
 }
