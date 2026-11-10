@@ -41,7 +41,6 @@ public class SegmentedBloomFilterService implements BloomFilterService {
     private final BloomScalePolicy scalePolicy;
 
     // Local caches to reduce Redis round-trips
-    private final Map<String, List<String>> segCache = new java.util.concurrent.ConcurrentHashMap<>();
     private final Map<String, RBloomFilter<Object>> bfCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     public SegmentedBloomFilterService(RedissonClient redisson,
@@ -62,7 +61,7 @@ public class SegmentedBloomFilterService implements BloomFilterService {
         RBloomFilter<Object> tail = getOrCreateTail(ns);
         boolean added = tail.add(value);
         if (added) {
-            afterAdd(ns);
+            afterAdd(ns, tail.getName());
         }
         return added;
     }
@@ -84,9 +83,13 @@ public class SegmentedBloomFilterService implements BloomFilterService {
         if (values == null || values.isEmpty()) return;
         String ns = resolveNamespace(namespace);
         RBloomFilter<Object> tail = getOrCreateTail(ns);
-        values.forEach(tail::add);
-        // approximate count increment
-        incrementCount(ns, values.size());
+        long addedCount = 0L;
+        for (Object value : values) {
+            if (tail.add(value)) {
+                addedCount++;
+            }
+        }
+        incrementCount(ns, tail.getName(), addedCount);
         ensureScaleIfNeeded(ns);
     }
 
@@ -120,14 +123,13 @@ public class SegmentedBloomFilterService implements BloomFilterService {
             for (String segName : segs) {
                 RBloomFilter<Object> bf = getBloomFilterCached(segName);
                 bf.delete();
-                getCount(ns, segName).delete();
+                counterFor(ns, segName).delete();
             }
             segs.delete();
             // delete metadata maps
             redisson.getMap(keyNaming.capacityMapKey(props.getKeyPrefix(), ns)).delete();
             redisson.getMap(keyNaming.fppMapKey(props.getKeyPrefix(), ns)).delete();
             // invalidate local caches
-            segCache.remove(ns);
             // remove filter handles for this namespace
             List<String> namesToRemove = new ArrayList<>(bfCache.keySet());
             for (String name : namesToRemove) {
@@ -165,15 +167,12 @@ public class SegmentedBloomFilterService implements BloomFilterService {
                 if (segs.isEmpty()) {
                     String segName = keyNaming.segmentName(props.getKeyPrefix(), ns, 0);
                     RBloomFilter<Object> bf = getBloomFilterCached(segName);
-                    bf.tryInit(props.getInitialCapacity(), props.getFalsePositiveProbability());
+                    boolean initialized = bf.tryInit(props.getInitialCapacity(), props.getFalsePositiveProbability());
                     segs.add(segName);
-                    getCount(ns, segName).set(0);
+                    counterFor(ns, segName).set(initialized ? 0L : bf.count());
                     // record capacity & fpp metadata
                     redisson.getMap(keyNaming.capacityMapKey(props.getKeyPrefix(), ns)).put(segName, props.getInitialCapacity());
                     redisson.getMap(keyNaming.fppMapKey(props.getKeyPrefix(), ns)).put(segName, props.getFalsePositiveProbability());
-                    if (props.isEnableLocalCache()) {
-                        segCache.put(ns, new ArrayList<>(segs.readAll()));
-                    }
                     return bf;
                 }
             } finally {
@@ -184,44 +183,51 @@ public class SegmentedBloomFilterService implements BloomFilterService {
     }
 
     /**
-     * 获取当前命名空间的所有段对应的 BloomFilter 句柄，返回顺序为新→旧。
-     * 在启用本地缓存时，优先使用缓存的段名快照。
+     * 每次从 Redis 读取段目录。历史的无失效本地列表快照会使其他实例新增段不可见，
+     * 从而让已写入的值被错误判定为不存在；句柄本身仍可按配置缓存。
      */
     private List<RBloomFilter<Object>> allSegments(String ns) {
-        List<String> names;
-        if (props.isEnableLocalCache()) {
-            names = segCache.computeIfAbsent(ns, key -> {
-                RList<String> rlist = redisson.getList(keyNaming.segmentsKey(props.getKeyPrefix(), key));
-                return new ArrayList<>(rlist.readAll());
-            });
-        } else {
-            RList<String> rlist = redisson.getList(keyNaming.segmentsKey(props.getKeyPrefix(), ns));
-            names = new ArrayList<>(rlist.readAll());
-        }
-        // Prefer tail-first (new -> old) for better hit rate
+        RList<String> segments = redisson.getList(keyNaming.segmentsKey(props.getKeyPrefix(), ns));
+        List<String> names = new ArrayList<>(segments.readAll());
         Collections.reverse(names);
         return names.stream().map(this::getBloomFilterCached).toList();
     }
 
-    private void afterAdd(String ns) {
-        String segmentsKey = keyNaming.segmentsKey(props.getKeyPrefix(), ns);
-        RList<String> segs = redisson.getList(segmentsKey);
-        if (segs.isEmpty()) return;
-        incrementCount(ns, 1);
+    private void afterAdd(String ns, String segmentName) {
+        incrementCount(ns, segmentName, 1L);
         ensureScaleIfNeeded(ns);
     }
 
-    private void incrementCount(String ns, long delta) {
-        String segmentsKey = keyNaming.segmentsKey(props.getKeyPrefix(), ns);
-        RList<String> segs = redisson.getList(segmentsKey);
-        if (segs.isEmpty()) return;
-        String tailName = segs.get(segs.size() - 1);
-        RAtomicLong cnt = getCount(ns, tailName);
-        cnt.addAndGet(delta);
+    private void incrementCount(String ns, String segmentName, long delta) {
+        if (delta <= 0L) {
+            return;
+        }
+        getCount(ns, segmentName).addAndGet(delta);
     }
 
-    private RAtomicLong getCount(String ns, String segmentName) {
+    private RAtomicLong counterFor(String ns, String segmentName) {
         return redisson.getAtomicLong(keyNaming.segmentCountKey(props.getKeyPrefix(), ns, segmentName));
+    }
+
+    /**
+     * 旧版默认策略用的是 {prefix}:{namespace}:count（全部分段共享）。
+     * 新版各段独立计数；首次发现旧段缺少新计数键时，在命名空间锁下
+     * 从 BloomFilter 位图估算当前数量并初始化，保留旧 key 以便回滚。
+     */
+    private RAtomicLong getCount(String ns, String segmentName) {
+        RAtomicLong counter = counterFor(ns, segmentName);
+        if (!counter.isExists()) {
+            RLock lock = redisson.getLock(keyNaming.lockKey(props.getKeyPrefix(), ns));
+            lock.lock();
+            try {
+                if (!counter.isExists()) {
+                    counter.set(Math.max(0L, getBloomFilterCached(segmentName).count()));
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+        return counter;
     }
 
     /**
@@ -257,15 +263,12 @@ public class SegmentedBloomFilterService implements BloomFilterService {
                 long nextCapacity = scalePolicy.nextCapacity(capacity, props.getScaleFactor());
                 String nextName = keyNaming.segmentName(props.getKeyPrefix(), ns, segs.size());
                 RBloomFilter<Object> next = getBloomFilterCached(nextName);
-                next.tryInit(nextCapacity, props.getFalsePositiveProbability());
+                boolean initialized = next.tryInit(nextCapacity, props.getFalsePositiveProbability());
                 segs.add(nextName);
-                getCount(ns, nextName).set(0);
+                counterFor(ns, nextName).set(initialized ? 0L : next.count());
                 // write capacity & fpp metadata
                 redisson.getMap(keyNaming.capacityMapKey(props.getKeyPrefix(), ns)).put(nextName, nextCapacity);
                 redisson.getMap(keyNaming.fppMapKey(props.getKeyPrefix(), ns)).put(nextName, props.getFalsePositiveProbability());
-                if (props.isEnableLocalCache()) {
-                    segCache.put(ns, new ArrayList<>(segs.readAll()));
-                }
             } finally {
                 lock.unlock();
             }
@@ -296,16 +299,13 @@ public class SegmentedBloomFilterService implements BloomFilterService {
                     RBloomFilter<Object> bf = getBloomFilterCached(segName);
                     long cap = initialCapacityOverride != null && initialCapacityOverride > 0 ? initialCapacityOverride : props.getInitialCapacity();
                     double fpp = falsePositiveProbabilityOverride != null && falsePositiveProbabilityOverride > 0 ? falsePositiveProbabilityOverride : props.getFalsePositiveProbability();
-                    bf.tryInit(cap, fpp);
+                    boolean initialized = bf.tryInit(cap, fpp);
                     segs.add(segName);
-                    getCount(ns, segName).set(0);
+                    counterFor(ns, segName).set(initialized ? 0L : bf.count());
                     // record capacity metadata
                     redisson.getMap(keyNaming.capacityMapKey(props.getKeyPrefix(), ns)).put(segName, cap);
                     // record fpp metadata
                     redisson.getMap(keyNaming.fppMapKey(props.getKeyPrefix(), ns)).put(segName, fpp);
-                    if (props.isEnableLocalCache()) {
-                        segCache.put(ns, new ArrayList<>(segs.readAll()));
-                    }
                 }
             } finally {
                 lock.unlock();

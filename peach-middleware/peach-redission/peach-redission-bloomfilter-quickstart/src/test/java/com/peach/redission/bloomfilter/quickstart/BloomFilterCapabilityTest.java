@@ -1,5 +1,11 @@
 package com.peach.redission.bloomfilter.quickstart;
 
+import com.peach.redis.bloom.config.BloomFilterProperties;
+import com.peach.redis.bloom.core.SegmentedBloomFilterService;
+import com.peach.redis.bloom.spi.BloomScalePolicy;
+import com.peach.redis.bloom.spi.CodecProvider;
+import com.peach.redis.bloom.spi.KeyNamingStrategy;
+import org.redisson.api.RedissonClient;
 import com.peach.redis.bloom.core.BloomStatus;
 import com.peach.redission.bloomfilter.quickstart.example.SkuBatchExample;
 import com.peach.redission.bloomfilter.quickstart.example.SkuMembershipExample;
@@ -43,6 +49,9 @@ class BloomFilterCapabilityTest {
         registry.add("peach.redis.database", () -> "0");
         registry.add("peach.redis.bloom.enabled", () -> "true");
     }
+
+    @Autowired
+    private RedissonClient redissonClient;
 
     @Autowired
     private SkuMembershipExample skuMembershipExample;
@@ -93,4 +102,60 @@ class BloomFilterCapabilityTest {
         assertThat(skuStatusClearExample.mightContain("sku-status-1")).isFalse();
         assertThat(skuStatusClearExample.segments()).isZero();
     }
+    @Test
+    void anotherServiceShouldSeeNewSegmentsAndIndependentCounters() {
+        String namespace = "bloom-recovery-27";
+        BloomFilterProperties props = new BloomFilterProperties();
+        props.setKeyPrefix("bloom-test");
+        props.setEnableLocalCache(true);
+        props.setInitialCapacity(2L);
+        props.setLoadFactor(0.9d);
+        props.setMaxSegments(8);
+
+        SegmentedBloomFilterService first = new SegmentedBloomFilterService(redissonClient, props,
+                CodecProvider.defaultJacksonCodec(), KeyNamingStrategy.defaultStrategy(), BloomScalePolicy.defaultPolicy());
+        SegmentedBloomFilterService second = new SegmentedBloomFilterService(redissonClient, props,
+                CodecProvider.defaultJacksonCodec(), KeyNamingStrategy.defaultStrategy(), BloomScalePolicy.defaultPolicy());
+        first.clear(namespace);
+        try {
+            first.initNamespace(namespace, 2L, 0.001d);
+            // Prime the second service's lookup before the first service scales.
+            assertThat(second.mightContain(namespace, "not-yet-added")).isFalse();
+            assertThat(first.add(namespace, "sku-1")).isTrue();
+            assertThat(first.add(namespace, "sku-2")).isTrue();
+            assertThat(first.segments(namespace)).isGreaterThanOrEqualTo(2);
+            assertThat(first.add(namespace, "sku-3")).isTrue();
+            // The second instance must not use an old segment-name snapshot.
+            assertThat(second.mightContain(namespace, "sku-3")).isTrue();
+            assertThat(second.mightContainAll(namespace, List.of("sku-1", "sku-2", "sku-3"))).isTrue();
+
+            BloomStatus status = first.status(namespace);
+            assertThat(status.segmentStatuses).hasSizeGreaterThanOrEqualTo(2);
+            assertThat(status.segmentStatuses.get(0).countApprox).isGreaterThanOrEqualTo(2);
+            assertThat(status.segmentStatuses.get(1).countApprox).isGreaterThanOrEqualTo(1);
+        } finally {
+            first.clear(namespace);
+        }
+    }
+
+    @Test
+    void legacySharedCountMustNotBeReusedForNewSegments() {
+        String namespace = "bloom-legacy-27";
+        BloomFilterProperties props = new BloomFilterProperties();
+        props.setKeyPrefix("bloom-legacy");
+        SegmentedBloomFilterService service = new SegmentedBloomFilterService(redissonClient, props,
+                CodecProvider.defaultJacksonCodec(), KeyNamingStrategy.defaultStrategy(), BloomScalePolicy.defaultPolicy());
+        service.clear(namespace);
+        String legacyCounterKey = "bloom-legacy:" + namespace + ":count";
+        try {
+            redissonClient.getAtomicLong(legacyCounterKey).set(99999L);
+            service.initNamespace(namespace, 8L, 0.001d);
+            service.add(namespace, "legacy-sku");
+            assertThat(service.status(namespace).totalCountApprox).isLessThan(99999L);
+        } finally {
+            service.clear(namespace);
+            redissonClient.getAtomicLong(legacyCounterKey).delete();
+        }
+    }
+
 }
