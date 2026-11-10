@@ -150,6 +150,65 @@ class MultiCacheTwoClientServerIntegrationTest {
         }
     }
 
+    @Test
+    void localWriteCannotOutliveShortRedisTtl() throws Exception {
+        JedisConnectionFactory connectionFactory = factory();
+        String prefix = "twoclient:pttl:write:" + UUID.randomUUID();
+        String key = "SKU-ttl";
+        String redisKey = prefix + ":products:" + key;
+        StringRedisTemplate template = new StringRedisTemplate(connectionFactory);
+        template.afterPropertiesSet();
+
+        try {
+            MultiCacheConfig config = new MultiCacheConfig();
+            config.setCachePrefix(prefix);
+            config.getRedis().setDefaultExpiration(java.time.Duration.ofMillis(350));
+            config.getCaffeine().setExpireAfterWrite(60_000L);
+            config.getCaffeine().setExpireAfterAccess(60_000L);
+            Cache cache = new MultiCacheManager(template, config).getCache("products");
+            cache.put(key, "temporary");
+            assertThat(cache.get(key).get()).isEqualTo("temporary");
+            Thread.sleep(600);
+            assertThat(Boolean.TRUE.equals(template.hasKey(redisKey))).isFalse();
+            assertThat(cache.get(key)).as("L1 must not retain a value after Redis L2 TTL").isNull();
+        } finally {
+            template.delete(redisKey);
+            connectionFactory.destroy();
+        }
+    }
+
+    @Test
+    void lateRedisRefillUsesActualRemainingTtlRatherThanBaseTtl() throws Exception {
+        JedisConnectionFactory connectionFactory = factory();
+        String prefix = "twoclient:pttl:refill:" + UUID.randomUUID();
+        String key = "SKU-late";
+        String redisKey = prefix + ":products:" + key;
+        StringRedisTemplate template = new StringRedisTemplate(connectionFactory);
+        template.afterPropertiesSet();
+
+        try {
+            MultiCacheConfig config = new MultiCacheConfig();
+            config.setCachePrefix(prefix);
+            config.getRedis().setDefaultExpiration(java.time.Duration.ofSeconds(30));
+            config.getCaffeine().setExpireAfterWrite(60_000L);
+            config.getCaffeine().setExpireAfterAccess(60_000L);
+            Cache cache = new MultiCacheManager(template, config).getCache("products");
+
+            // An external producer uses a shorter TTL than this cache's configured base.
+            template.opsForValue().set(redisKey, "short-lived", java.time.Duration.ofMillis(500));
+            Thread.sleep(220);
+            assertThat(cache.get(key).get()).isEqualTo("short-lived");
+            assertThat(((MultiCache) cache).getLocalCache().getIfPresent(key)).isEqualTo("short-lived");
+
+            Thread.sleep(420);
+            assertThat(Boolean.TRUE.equals(template.hasKey(redisKey))).isFalse();
+            assertThat(cache.get(key)).as("Late L2 refills must honor Redis PTTL").isNull();
+        } finally {
+            template.delete(redisKey);
+            connectionFactory.destroy();
+        }
+    }
+
     private static JedisConnectionFactory factory() {
         RedisStandaloneConfiguration configuration =
                 new RedisStandaloneConfiguration("127.0.0.1", 6379);
