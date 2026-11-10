@@ -1,0 +1,58 @@
+name: Redis Client and Sa-Token Integration
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/redis-client-integration.yml'
+      - 'peach-middleware/peach-redis/**'
+      - 'peach-middleware/peach-redission/peach-redisson-*/**'
+      - 'peach-middleware/peach-satoken/**'
+      - 'peach-component/peach-captcha/**'
+      - 'peach-auth/**'
+      - 'peach-setting/**'
+      - 'peach-message/**'
+      - 'peach-dependencies/pom.xml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/redis-client-integration.yml'
+      - 'peach-middleware/peach-satoken/**'
+
+permissions:
+  contents: read
+
+jobs:
+  redis-client-integration:
+    name: Redis-only, Redisson-only and Sa-Token Redis tests
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      RUN_REDIS_CLIENT_IT: 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Verify independent clients and persisted Sa-Token login/logout
+        shell: bash
+        run: |
+          set -o pipefail
+          mvn -B -ntp \
+            -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart \
+            -am \
+            -Dtest=RedisOnlyServerIntegrationTest,RedissonOnlyServerIntegrationTest,SaTokenRedisServerIntegrationTest \
+            -Dsurefire.failIfNoSpecifiedTests=false test
