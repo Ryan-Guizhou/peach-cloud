@@ -368,13 +368,39 @@ class DelayQueueServerIntegrationTest {
         org.redisson.api.RBlockingQueue<String> legacy = redisson.getBlockingQueue(legacyTopic);
         legacy.add("unmigrated-message");
         try {
+            RedisDelayQueue.LegacyQueueBacklog backlog = queue.legacyBacklog(legacyTopic);
+            assertThat(backlog.ready()).isEqualTo(1L);
+            assertThat(backlog.drained()).isFalse();
             assertThatThrownBy(() -> queue.assertLegacyDrained(legacyTopic))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("not drained");
+            assertThatThrownBy(() -> queue.offer(legacyTopic, "blocked", "new-message", Duration.ZERO))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("not drained");
+            assertThatThrownBy(() -> queue.claim(legacyTopic))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("not drained");
+            ConsumerTask blockedTask = new ConsumerTask() {
+                @Override
+                public void execute(String payload) {
+                    throw new AssertionError("Legacy queue must block subscription");
+                }
+
+                @Override
+                public String topic() {
+                    return legacyTopic;
+                }
+            };
+            assertThatThrownBy(() -> queue.start(legacyTopic, blockedTask))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("not drained");
         } finally {
             legacy.poll();
         }
         queue.assertLegacyDrained(legacyTopic);
+        assertThat(queue.legacyBacklog(legacyTopic).drained()).isTrue();
+        assertThat(queue.offer(legacyTopic, "accepted", "new-message", Duration.ZERO)).isTrue();
+        assertThat(queue.cancelScheduled(legacyTopic, "accepted")).isTrue();
     }
 
     private static DelayQueueProperties integrationProperties() {

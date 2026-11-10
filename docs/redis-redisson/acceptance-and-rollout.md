@@ -16,7 +16,7 @@
 | 分布式锁 | `peach-redission-distributedlock-starter` | Redisson | 锁不替代事务、唯一约束、外部 fencing |
 | 防重复提交 | `peach-redission-repeat-starter` | Redisson | 成功标记失败抛不确定结果；禁止直接重试 |
 | 分段 Bloom | `peach-redission-bloomfilter-starter` | Redisson | 假阳性，必须回查业务真值 |
-| 延迟队列 | `peach-redission-delayqueue-starter` | Redisson | 新 可靠队列 默认关闭，与旧消息协议不混用 |
+| 延迟队列 | `peach-redission-delayqueue-starter` | Redisson | 唯一可靠 Lua 队列；Starter 存在时 `peach.delay.queue.enabled` 默认 `true`，上线前必须排空旧消息 |
 
 `peach-redis-common` 旧混合装配保留于 reactor 与 BOM，供外部旧版与回滚使用，但内部 Maven 直接依赖已清零（[PR #54](https://github.com/Ryan-Guizhou/peach-cloud/pull/54)）；**不作为新增服务依赖**。历史 `redission` 拼写仅兼容既有 artifactId/目录。WebFlux 网关使用独立响应式 Lettuce，不能在事件循环中引入同步 Jedis。
 
@@ -77,7 +77,7 @@ peach:
 2. **Session 双向兼容**：用真实旧发行版本写入脱敏 Token/Session，新版本完成读取、续期、退出；反方向验证旧版本可读取新版本数据。记录 key/TTL/对象类型。**没有此验收证据，不得宣布存量登录零感知升级。**
 3. **灰度业务**：单台无状态服务先上线，验证认证/验证码、限流网关 Lettuce、调度锁、缓存、Stream 消费者后再扩大实例数；同时观察连接池和 Redis 端日志。
 4. **Stream / 延迟队列**：Stream 恢复启用前完成业务侧幂等，保留 PEL/DLQ 与消息 ID。可靠队列 不自动导入旧 `RDelayedQueue` / `RBlockingQueue`；先停旧生产、待旧任务排空或经审核迁移，再启用 可靠队列，绝不让两个协议处理同一业务消息。
-5. **回滚**：停止灰度放量，恢复旧二进制与 Nacos 配置快照；暂留 `peach-redis-common` 工件；禁止清空 Redis。出错时先关闭可选 Stream 恢复、可靠队列 新生产/消费，对账业务幂等记录、完成/待处理/DLQ 后再决定消息重放，不得盲目反向重放。
+5. **回滚**：停止灰度放量，恢复旧二进制与 Nacos 配置快照；暂留 `peach-redis-common` 工件；禁止清空 Redis。出错时先关闭可选 Stream 恢复，并通过 `peach.delay.queue.enabled=false` 停止现行队列的新增生产/消费，对账业务幂等记录、完成/待处理/DLQ 后再决定消息重放，不得盲目反向重放。
 
 认证故障必须 fail-closed；缓存可以按业务回源，但 Pub/Sub 不能当作可靠消息或强一致机制。Bloom 的“可能存在”要回源，不用于余额/鉴权/唯一性最终判定。
 
@@ -111,7 +111,7 @@ bash scripts/ci/redis-topology-integration.sh tls
 - 真实 Redis 主从/Cluster 故障切换与客户端重连，TLS/ACL 密钥更新及证书轮换。
 - 真实旧 Redis 数据/Sa-Token Session 双向滚动升级与回滚，以及旧 Bloom / 延迟队列历史数据迁移。
 - 缓存 Pub/Sub 订阅断线的失效补偿；Stream PEL 运维安全重放、DLQ 与 XACK 非原子窗口故障注入。
-- DelayQueue 可靠队列 真实进程 `kill -9`、外部数据库 fencing、Redis 故障切换和持续大负载 soak；业务层幂等不可省略。
+- DelayQueue 的独立 JVM 强制终止恢复已有集成验收；仍缺 Redis 基础设施故障切换、外部数据库 fencing、真实旧队列排空及持续大负载测试，业务持久幂等不可省略。
 
 **验收准则**：每个生产发布必须保存具体版本、拓扑、CI Run 链接、测试数据规模、灰度和回滚演练证据。高风险场景未验证时，Stream 恢复继续默认关闭；旧队列排空前不得切换新可靠运行时，总任务 #18 继续开放。
 
@@ -122,3 +122,7 @@ bash scripts/ci/redis-topology-integration.sh tls
 ### Stream 死信字段留存与人工重放（Issue #89）
 
 当前 DLQ 仍保留 `sourceStream`、`sourceGroup`、`sourceId`、`attempts` 和仅用于展示的 `payload` 五个字段。新写入的 DLQ 额外为每个原始 Stream 字段保存 `originalField:<Base64Url 编码字段名>`，并标记 `originalFieldsStored=true`，保持原始 String 字段值；即使源 Stream entry 被裁剪，仍可显式调用 `RedisStreamPendingRecovery.replayDeadLetter(dlqRecordId)` 恢复。历史 DLQ 没有附加字段时仍要求源 entry 存在，否则拒绝伪造业务消息。依赖固定五字段格式的外部工具须做兼容检查。DLQ XADD 与源 XACK 仍不是跨键原子操作，故障重试可能产生重复死信；人工重放前必须对账 sourceId 并确保业务持久幂等。本改造不会自动迁移线上旧消息。
+
+### 直接调用方的旧队列切换预检查（Issue #91）
+
+延迟队列 Starter 只提供**当前唯一实现**，依赖安装后 `peach.delay.queue.enabled` 默认为 `true`。若目标环境还有历史消息，正式切换前应显式设为 `false`。停旧生产后，对每个物理分区调用 `RedisDelayQueue.legacyBacklog(partitionTopic)` 并确认 `drained()==true`（delayed/ready/processing/死信全为零，死信须先完成业务对账）。直接 `offer`、`claim`、`start` 在首次访问物理主题时失败保护，`start` 额外重新检查；业务 `DelayQueueContext` 仍检查全部分区。检查是只读、进程内按主题缓存以保证吞吐，**不是**阻止旧生产者重新写入的分布式写栅栏，不得双协议混合发布。同槽 Lua 历史 `peach:dq2:{topic}:*` key 保留，避免已写入可靠队列的数据失联。

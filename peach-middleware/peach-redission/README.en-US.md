@@ -169,7 +169,7 @@ public class OrderExpiryService {
 
 Declare a Spring `ConsumerTask` bean with `topic() == "order-expiry"` to auto-subscribe all configured partitions. The stable ID is used for duplicate suppression; the original four-argument `sendMessage` remains available, but assigns a random ID for each call. Direct `RedisDelayQueue` calls operate on a physical partition/topic and require explicit `start` or `pollOnce`.
 
-**Migration and acceptance:** Startup checks the old delayed/ready/processing/dead-letter data for registered consumer partitions and refuses to switch when pending records exist. Producers also check all partitions of a business topic on first send. This is a read-only fail-closed guard, **not** an atomic fence against old producers; stop all old producers before deploying. Before switching deployments, stop historical queue producers, drain delayed/ready/processing items, then stop historical consumers and start the unified runtime. The old Redisson delayed-queue protocol is not automatically converted and must not run alongside this runtime. Existing Lua state keys stay unchanged to preserve already queued reliable messages. Validate ACK, retry, DLQ, delayed messages and rollback in isolation. Business idempotency remains mandatory.
+**Migration and acceptance:** Call `RedisDelayQueue.legacyBacklog(physicalTopic)` to inspect delayed, ready, processing and dead-letter counts without deleting records. Direct `offer`, `claim` and `start` now perform a fail-closed check on first use of each physical topic (and `start` rechecks); this is not a live write fence. Startup checks the old delayed/ready/processing/dead-letter data for registered consumer partitions and refuses to switch when pending records exist. Producers also check all partitions of a business topic on first send. This is a read-only fail-closed guard, **not** an atomic fence against old producers; stop all old producers before deploying. Before switching deployments, stop historical queue producers, drain delayed/ready/processing items, then stop historical consumers and start the unified runtime. The old Redisson delayed-queue protocol is not automatically converted and must not run alongside this runtime. Existing Lua state keys stay unchanged to preserve already queued reliable messages. Validate ACK, retry, DLQ, delayed messages and rollback in isolation. Business idempotency remains mandatory.
 
 
 - Module: [`peach-redission-delayqueue-quickstart`](./peach-redission-delayqueue-quickstart/)
@@ -177,7 +177,7 @@ Declare a Spring `ConsumerTask` bean with `topic() == "order-expiry"` to auto-su
   - **Single message**: `DelayQueueContext#sendMessage` with short delay + implement `ConsumerTask` to confirm consume
   - **Multi message**: under reliable-queue config, send several messages and confirm all are consumed
 - `DelayQueueDemoRunner` runs on startup; disable with `quickstart.delayqueue.demo.enabled=false`
-- Minimal config: `peach.delay.queue.*` (example uses `isolation-region-count=1`, `use-reliable-queue=true`) plus `peach.redis.*`; consumer bootstrap needs `peach-initialize-starter`
+- Minimal config: `peach.delay.queue.*` (example uses `isolation-region-count=1`, `enabled=true`) plus `peach.redis.*`; consumer bootstrap needs `peach-initialize-starter`
 - Run: `mvn -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am spring-boot:run`
 - Test: `mvn -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am test`
 
@@ -222,9 +222,9 @@ The dedicated Redis 7.2 CI matrix exercises the independent `peach-redisson-star
 
 ## Independent worker recovery and bounded concurrency (Issue #59)
 
-`DelayQueueServerIntegrationTest` adds real Redis 7.2 tests with two distinct RedissonClient / `RedisDelayQueue` instances. Worker A claims but stops without ACK; after the lease expires, Worker B reclaims it, obtains a greater fencing token, rejects the old token and acknowledges as the current owner. Two independent workers also consume 64 messages in parallel, checking stable-ID deduplication, completion counts and no remaining processing records. Dedicated CI verifies that all seven test cases actually execute via Surefire XML.
+`DelayQueueServerIntegrationTest` adds real Redis 7.2 tests with two distinct RedissonClient / `RedisDelayQueue` instances. Worker A claims but stops without ACK; after the lease expires, Worker B reclaims it, obtains a greater fencing token, rejects the old token and acknowledges as the current owner. Two independent workers also consume 64 messages in parallel, checking stable-ID deduplication, completion counts and no remaining processing records. Dedicated CI verifies that all eight test cases actually execute via Surefire XML.
 
-**Scope:** The first worker stops deliberately to simulate lease loss; this is not a real `kill -9` test. Redis master failover, cross-store transaction fencing, 10k-concurrency soak, legacy queue drain and mixed-version upgrades remain separate acceptance work. The opt-in default, Lua/Redis key protocol and business-side durable idempotency requirements are unchanged.
+**Scope:** One earlier scenario uses graceful stop to simulate lease loss; a separate test force-kills an independent JVM and verifies reclaim/fencing. Redis master failover, cross-store transaction fencing, 10k-concurrency soak, legacy queue drain and mixed-version upgrades remain separate acceptance work. The current queue defaults to `peach.delay.queue.enabled=true` when the queue Starter is installed; disable it explicitly until historical tasks are drained. Lua/Redis keys and business-side durable idempotency requirements remain unchanged.
 
 ## Rollout, acceptance and rollback
 
