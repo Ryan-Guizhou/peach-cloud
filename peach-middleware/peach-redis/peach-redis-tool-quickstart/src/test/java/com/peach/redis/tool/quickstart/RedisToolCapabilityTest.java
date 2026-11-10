@@ -1,5 +1,7 @@
 package com.peach.redis.tool.quickstart;
 
+import com.peach.redis.common.tool.RedisDao;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import com.peach.redis.tool.quickstart.example.SessionStringExample;
 import com.peach.redis.tool.quickstart.example.UserProfileHashExample;
 import com.peach.redis.tool.quickstart.example.UserTagSetExample;
@@ -48,6 +50,12 @@ class RedisToolCapabilityTest {
     private SessionStringExample sessionStringExample;
 
     @Autowired
+    private RedisDao redisDao;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
     private UserProfileHashExample userProfileHashExample;
 
     @Autowired
@@ -69,6 +77,32 @@ class RedisToolCapabilityTest {
         sessionStringExample.delete("s-1001");
         assertThat(sessionStringExample.exists("s-1001")).isFalse();
         assertThat(sessionStringExample.get("s-1001")).isNull();
+    }
+
+    @Test
+    void ttlWriteShouldBeAtomicAndExpire() {
+        String key = "test:redisdao:ttl";
+        try {
+            assertThat(redisDao.vSet(key, "expiring", 30L)).isTrue();
+            assertThat(stringRedisTemplate.getExpire(key)).isBetween(1L, 30L);
+        } finally {
+            redisDao.delete(key);
+        }
+    }
+
+    @Test
+    void hscanShouldReturnAllFieldsWithoutSkipping() {
+        String key = "field";
+        try {
+            redisDao.hmSet(key, "scan-a", "one");
+            redisDao.hmSet(key, "scan-b", "two");
+            assertThat(redisDao.hscan("scan-*", 20))
+                    .containsEntry("scan-a", "one")
+                    .containsEntry("scan-b", "two");
+        } finally {
+            redisDao.hmDel(key, "scan-a");
+            redisDao.hmDel(key, "scan-b");
+        }
     }
 
     @Test

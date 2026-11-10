@@ -209,8 +209,10 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
         boolean result = false;
         try {
             ValueOperations<Object, Object> operations = redisTemplate.opsForValue();
-            operations.set(key, value);
-            redisTemplate.expire(key, expireTime, TimeUnit.SECONDS);
+            if (expireTime == null || expireTime <= 0) {
+                throw new IllegalArgumentException("expireTime must be positive seconds");
+            }
+            operations.set(key, value, expireTime, TimeUnit.SECONDS);
             result = true;
         } catch (Exception e) {
             log.debug(REDIS_OPERATION_FAILED, e);
@@ -554,60 +556,47 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
 
     @Override
     public Map hscan(String matchKey, Integer count) {
-
         Map<Object, Object> map = new HashMap<>();
-        try {
-            Cursor<Map.Entry<Object, Object>> cursor = redisTemplate.opsForHash().scan("field", ScanOptions.scanOptions().match(matchKey).count(count).build());
+        ScanOptions options = ScanOptions.scanOptions().match(matchKey).count(count).build();
+        try (Cursor<Map.Entry<Object, Object>> cursor = redisTemplate.opsForHash().scan("field", options)) {
             while (cursor.hasNext()) {
-                Object key = cursor.next().getKey();
-                Object valueSet = cursor.next().getValue();
-                map.put(key, valueSet);
+                Map.Entry<Object, Object> entry = cursor.next();
+                map.put(entry.getKey(), entry.getValue());
             }
-            //关闭cursor
-            cursor.close();
         } catch (Exception e) {
-            log.warn("Redis HSCAN failed, matchKey={}", matchKey, e);
+            throw new IllegalStateException("Redis HSCAN failed, matchKey=" + matchKey, e);
         }
         return map;
     }
 
     @Override
     public Set<String> sscan(String matchKey, Integer count) {
-
         Set<String> keys = new HashSet<>();
-        try {
-            Cursor<Object> cursor = redisTemplate.opsForSet().scan("setValue", ScanOptions.scanOptions().match(matchKey).count(count).build());
+        ScanOptions options = ScanOptions.scanOptions().match(matchKey).count(count).build();
+        try (Cursor<Object> cursor = redisTemplate.opsForSet().scan("setValue", options)) {
             while (cursor.hasNext()) {
-                keys.add(cursor.next().toString());
+                keys.add(String.valueOf(cursor.next()));
             }
-            //关闭cursor
-            cursor.close();
         } catch (Exception e) {
-            log.warn("Redis HSCAN failed, matchKey={}", matchKey, e);
+            throw new IllegalStateException("Redis SSCAN failed, matchKey=" + matchKey, e);
         }
         return keys;
     }
 
     @Override
     public Map zscan(String matchKey, Integer count) {
-
         Map<Object, Object> map = new HashMap<>();
-        try {
-            Cursor<ZSetOperations.TypedTuple<Object>> cursor = redisTemplate.opsForZSet().scan("zSetValue", ScanOptions.scanOptions().match(matchKey).count(count).build());
+        ScanOptions options = ScanOptions.scanOptions().match(matchKey).count(count).build();
+        try (Cursor<ZSetOperations.TypedTuple<Object>> cursor = redisTemplate.opsForZSet().scan("zSetValue", options)) {
             while (cursor.hasNext()) {
-                ZSetOperations.TypedTuple<Object> typedTuple = cursor.next();
-                Object value = typedTuple.getValue();
-                Object valueScore = typedTuple.getScore();
-                map.put(value, valueScore);
+                ZSetOperations.TypedTuple<Object> tuple = cursor.next();
+                map.put(tuple.getValue(), tuple.getScore());
             }
-            //关闭cursor
-            cursor.close();
         } catch (Exception e) {
-            log.warn("Redis HSCAN failed, matchKey={}", matchKey, e);
+            throw new IllegalStateException("Redis ZSCAN failed, matchKey=" + matchKey, e);
         }
         return map;
     }
-
 
     @Override
     public Set<Object> keys(String matchKey) {
