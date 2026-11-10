@@ -151,6 +151,8 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
 
 ### Pending recovery and DLQ (Issue #37)
 
+**Real Redis 7.2 recovery acceptance (Issue #51):** `RedisStreamRecoveryServerIntegrationTest` runs against a service container to verify abandoned PEL records are reclaimed through `XPENDING/XCLAIM`, then `XACK` only after a successful callback; failed callbacks remain pending; exhausted attempts persist `sourceId/sourceStream/sourceGroup` in a DLQ before source ACK. CI checks all three tests actually execute without skips or failures. Recovery remains disabled by default. This is not proof of idempotency under failover, cross-key atomicity or operator replay support.
+
 - **Opt-in**: set `peach.redis.stream.recovery.enabled=true`. Only consumer groups support recovery. The business consumer must implement durable idempotency keyed by the event ID or business key before enabling this feature; broadcast mode is unsupported.
 - **Algorithm**: a single scheduled worker pages through `XPENDING` in bounded batches, uses `XCLAIM` to take idle records, increases retry idle time exponentially from `min-idle` to `max-retry-delay`, and XACKs only after a successful business callback.
 - **Dead letters**: upon `max-attempts`, append the original ID, source, delivery count and payload to an independent DLQ stream, then XACK the source only after successful persistence. The default is `<source-stream>:dlq`. DLQ XADD and source XACK are **not cross-key atomic**; crashes can duplicate DLQ records. De-duplicate by `sourceId`.
