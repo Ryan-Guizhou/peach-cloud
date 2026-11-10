@@ -98,6 +98,58 @@ class RedisStreamPendingRecoveryTest {
     }
 
     @Test
+    void exhaustedAttemptsShouldPersistToDlqBeforeAcknowledge() {
+        StringRedisTemplate redis = mock(StringRedisTemplate.class);
+        StreamOperations<String, Object, Object> operations = mock(StreamOperations.class);
+        when(redis.opsForStream()).thenReturn(operations);
+        RecordId id = RecordId.of("103-0");
+        PendingMessage p = new PendingMessage(id, Consumer.from(GROUP, "old"), Duration.ofMinutes(2), 3);
+        when(operations.pending(eq(STREAM), eq(GROUP), any(Range.class), eq(5L)))
+                .thenReturn(new PendingMessages(GROUP, List.of(p)));
+        MapRecord<String, Object, Object> raw = mock(MapRecord.class);
+        when(raw.getId()).thenReturn(id);
+        when(raw.getValue()).thenReturn(java.util.Map.of("_raw", "test-payload"));
+        when(operations.claim(eq(STREAM), eq(GROUP), anyString(), eq(Duration.ofMillis(40)), eq(id)))
+                .thenReturn(List.of(raw));
+        when(operations.add(any(org.springframework.data.redis.connection.stream.Record.class)))
+                .thenReturn(RecordId.of("203-0"));
+        when(operations.acknowledge(STREAM, GROUP, id)).thenReturn(1L);
+
+        MessageConsumer consumer = mock(MessageConsumer.class);
+        RedisStreamPendingRecovery recovery = new RedisStreamPendingRecovery(
+                redis, streamProperties(), recoveryProperties(), consumer);
+        assertThat(recovery.recoverOnce()).isEqualTo(1);
+        var ordered = inOrder(operations);
+        ordered.verify(operations).add(any(org.springframework.data.redis.connection.stream.Record.class));
+        ordered.verify(operations).acknowledge(STREAM, GROUP, id);
+        verifyNoInteractions(consumer);
+    }
+
+    @Test
+    void failedDlqWriteMustNotAcknowledgeSource() {
+        StringRedisTemplate redis = mock(StringRedisTemplate.class);
+        StreamOperations<String, Object, Object> operations = mock(StreamOperations.class);
+        when(redis.opsForStream()).thenReturn(operations);
+        RecordId id = RecordId.of("104-0");
+        PendingMessage p = new PendingMessage(id, Consumer.from(GROUP, "old"), Duration.ofMinutes(2), 3);
+        when(operations.pending(eq(STREAM), eq(GROUP), any(Range.class), eq(5L)))
+                .thenReturn(new PendingMessages(GROUP, List.of(p)));
+        MapRecord<String, Object, Object> raw = mock(MapRecord.class);
+        when(raw.getId()).thenReturn(id);
+        when(raw.getValue()).thenReturn(java.util.Map.of("_raw", "test-payload"));
+        when(operations.claim(eq(STREAM), eq(GROUP), anyString(), eq(Duration.ofMillis(40)), eq(id)))
+                .thenReturn(List.of(raw));
+        when(operations.add(any(org.springframework.data.redis.connection.stream.Record.class)))
+                .thenThrow(new IllegalStateException("redis unavailable"));
+
+        MessageConsumer consumer = mock(MessageConsumer.class);
+        RedisStreamPendingRecovery recovery = new RedisStreamPendingRecovery(
+                redis, streamProperties(), recoveryProperties(), consumer);
+        assertThat(recovery.recoverOnce()).isZero();
+        verify(operations, never()).acknowledge(STREAM, GROUP, id);
+    }
+
+    @Test
     void invalidRecoveryConfigurationShouldFailFast() {
         RedisStreamRecoveryProperties bad = recoveryProperties();
         bad.setBatchSize(0);
