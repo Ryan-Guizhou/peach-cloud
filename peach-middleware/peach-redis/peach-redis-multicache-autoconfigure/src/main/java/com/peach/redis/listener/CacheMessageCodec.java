@@ -8,6 +8,10 @@ import java.io.IOException;
 /**
  * 多级缓存 Pub/Sub 消息编解码。
  * <p>缓存同步消息使用固定类型 JSON，不走 RedisTemplate 的多态 {@code @class} 序列化。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/10
  */
 public final class CacheMessageCodec {
 
