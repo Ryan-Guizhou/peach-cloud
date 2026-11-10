@@ -88,15 +88,36 @@ class RedisStreamRecoveryServerIntegrationTest {
         String stream = streamName();
         String group = "workers";
         try {
-            preparePending(stream, group);
+            RecordId sourceId = preparePending(stream, group);
             MessageConsumer consumer = record -> {
                 throw new IllegalStateException("transient business failure");
             };
 
             Thread.sleep(100);
-            assertThat(recovery(stream, group, 3, consumer).recoverOnce()).isZero();
+            RedisStreamPendingRecovery recovery = recovery(stream, group, 3, consumer);
+            assertThat(recovery.recoverOnce()).isZero();
             assertThat(redis.opsForStream().pending(stream, group).getTotalPendingMessages()).isEqualTo(1L);
             assertThat(Boolean.TRUE.equals(redis.hasKey(stream + ":dlq"))).isFalse();
+
+            // 模拟 DLQ XADD 已持久化但进程在源 XACK 前崩溃：只读对账发现 PEL。
+            RecordId deadLetterId = redis.opsForStream().add(StreamRecords.newRecord()
+                    .in(stream + ":dlq").ofMap(java.util.Map.of(
+                            "sourceStream", stream, "sourceGroup", group,
+                            "sourceId", sourceId.getValue(), "payload", "{_raw=order:paid}")));
+            assertThat(deadLetterId).isNotNull();
+            RedisStreamPendingRecovery.DeadLetterTransferState before =
+                    recovery.deadLetterTransferState(deadLetterId.getValue());
+            assertThat(before.sourceId()).isEqualTo(sourceId.getValue());
+            assertThat(before.pending()).isTrue();
+            assertThat(before.sourceAvailable()).isTrue();
+            assertThat(redis.opsForStream().pending(stream, group).getTotalPendingMessages()).isEqualTo(1L);
+
+            // 模拟运维在额外业务对账后确认源消息，状态查询本身绝不执行 XACK。
+            redis.opsForStream().acknowledge(stream, group, sourceId);
+            RedisStreamPendingRecovery.DeadLetterTransferState after =
+                    recovery.deadLetterTransferState(deadLetterId.getValue());
+            assertThat(after.pending()).isFalse();
+            assertThat(after.sourceAvailable()).isTrue();
         } finally {
             redis.delete(stream);
             redis.delete(stream + ":dlq");

@@ -211,28 +211,11 @@ public final class RedisStreamPendingRecovery {
      * @return 原 Stream 中新写入的 RecordId；写入失败时不修改死信记录
      */
     public synchronized RecordId replayDeadLetter(String deadLetterRecordId) {
-        if (deadLetterRecordId == null || !deadLetterRecordId.matches("[0-9]+-[0-9]+")) {
-            throw new IllegalArgumentException("Invalid Redis Stream dead-letter record ID");
-        }
         String stream = streamProperties.getStreamName();
-        String group = streamProperties.getConsumerGroup();
         StreamOperations<String, Object, Object> ops = redis.opsForStream();
-        List<MapRecord<String, Object, Object>> deadLetters = ops.range(
-                deadLetterStream(), Range.closed(deadLetterRecordId, deadLetterRecordId));
-        if (deadLetters == null || deadLetters.size() != 1) {
-            throw new IllegalStateException("Redis Stream dead-letter record was not found");
-        }
-
-        Map<String, Object> metadata = new LinkedHashMap<>();
-        deadLetters.get(0).getValue().forEach((key, value) ->
-                metadata.put(String.valueOf(key), value));
-        if (!stream.equals(metadata.get("sourceStream")) || !group.equals(metadata.get("sourceGroup"))) {
-            throw new IllegalStateException("Redis Stream dead-letter source does not match configured group");
-        }
-        Object sourceId = metadata.get("sourceId");
-        if (!(sourceId instanceof String id) || !id.matches("[0-9]+-[0-9]+")) {
-            throw new IllegalStateException("Redis Stream dead-letter source ID is invalid");
-        }
+        DeadLetterReference reference = readDeadLetterReference(ops, deadLetterRecordId);
+        String id = reference.sourceId();
+        Map<String, Object> metadata = reference.metadata();
         Map<Object, Object> originalFields = readOriginalFields(metadata);
         if (originalFields == null) {
             // 兼容历史 DLQ：旧记录只存展示用 payload，必须从原 Stream 精确读取。
@@ -250,6 +233,69 @@ public final class RedisStreamPendingRecovery {
         }
         log.info("Redis Stream dead letter replayed, originalId={}, replayedId={}", id, replayed);
         return replayed;
+    }
+
+    /**
+     * 只读判定“死信已保存但源消息可能尚未 XACK”的故障窗口。
+     * 精确读取一个 DLQ、一个源 Stream ID 和至多一个 Pending 项，不进行全量扫描。
+     *
+     * <p>返回值仅是瞬时快照，不能据此自动 XACK 或推断业务事务已完成。
+     * 运维核对前必须先停止所有实例对该组的恢复和消费。</p>
+     */
+    public DeadLetterTransferState deadLetterTransferState(String deadLetterRecordId) {
+        StreamOperations<String, Object, Object> ops = redis.opsForStream();
+        DeadLetterReference reference = readDeadLetterReference(ops, deadLetterRecordId);
+        String stream = streamProperties.getStreamName();
+        String group = streamProperties.getConsumerGroup();
+        String id = reference.sourceId();
+
+        PendingMessages pending = ops.pending(stream, group, Range.closed(id, id), 1L);
+        if (pending == null) {
+            throw new IllegalStateException("Redis Stream Pending reconciliation is unavailable");
+        }
+        List<MapRecord<String, Object, Object>> originals = ops.range(stream, Range.closed(id, id));
+        if (originals == null) {
+            throw new IllegalStateException("Redis Stream source reconciliation is unavailable");
+        }
+        return new DeadLetterTransferState(id, !pending.isEmpty(), !originals.isEmpty());
+    }
+
+    /**
+     * 死信与源组关系的只读快照，不涉及原业务载荷。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/11/10
+     */
+    public record DeadLetterTransferState(String sourceId, boolean pending, boolean sourceAvailable) {
+    }
+
+    private record DeadLetterReference(String sourceId, Map<String, Object> metadata) {
+    }
+
+    /** 统一校验人工重放与只读对账的源 Stream / Group / ID。 */
+    private DeadLetterReference readDeadLetterReference(StreamOperations<String, Object, Object> ops,
+                                                        String deadLetterRecordId) {
+        if (deadLetterRecordId == null || !deadLetterRecordId.matches("[0-9]+-[0-9]+")) {
+            throw new IllegalArgumentException("Invalid Redis Stream dead-letter record ID");
+        }
+        List<MapRecord<String, Object, Object>> deadLetters = ops.range(
+                deadLetterStream(), Range.closed(deadLetterRecordId, deadLetterRecordId));
+        if (deadLetters == null || deadLetters.size() != 1) {
+            throw new IllegalStateException("Redis Stream dead-letter record was not found");
+        }
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        deadLetters.get(0).getValue().forEach((key, value) ->
+                metadata.put(String.valueOf(key), value));
+        if (!streamProperties.getStreamName().equals(metadata.get("sourceStream"))
+                || !streamProperties.getConsumerGroup().equals(metadata.get("sourceGroup"))) {
+            throw new IllegalStateException("Redis Stream dead-letter source does not match configured group");
+        }
+        Object sourceId = metadata.get("sourceId");
+        if (!(sourceId instanceof String id) || !id.matches("[0-9]+-[0-9]+")) {
+            throw new IllegalStateException("Redis Stream dead-letter source ID is invalid");
+        }
+        return new DeadLetterReference(id, metadata);
     }
 
     /**

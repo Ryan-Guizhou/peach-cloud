@@ -185,7 +185,8 @@ flowchart LR
 - **默认关闭**：设置 `peach.redis.stream.recovery.enabled=true` 开启；仅适用于 Consumer Group。启用之前必须让业务消费者按消息 ID 或业务主键实现持久幂等。广播模式不支持恢复。
 - **恢复算法**：单线程定时以 `XPENDING` 分页读取，每次不超过 `batch-size`，然后以 `XCLAIM` 认领超过动态空闲阈值的记录；重试间隔按投递次数指数递增（`min-idle` 到 `max-retry-delay`）。业务处理成功后 XACK。
 - **死信路径**：当投递次数达到 `max-attempts`，把原 RecordId、来源、投递次数与载荷写入独立 DLQ Stream；写入确认后才 XACK 源记录。默认 DLQ 名为 `源流名:dlq`。DLQ 与源流非跨键原子提交，崩溃时可能重复写死信，必须按 `sourceId` 去重。
-- **运维重放与统计（Issue #87）**：可注入 `RedisStreamPendingRecovery` 使用 `backlog()` 获取 PEL/DLQ 数量，调用 `replayDeadLetter(dlqRecordId)` 将原 Stream 仍存在的消息字段重发为新 RecordId。先核对 DLQ 的 `sourceStream/sourceGroup/sourceId`。新死信在现有字段之外额外保存 `originalField:` 编码的原始业务字段，源记录被裁剪后仍可恢复；历史死信仍需从源 Stream 精确读取，已裁剪则拒绝。原死信保留供审计。重复手动执行可能重复发布，必须有业务持久幂等。
+- **运维重放、统计与对账（Issue #87 / #93）**：可注入 `RedisStreamPendingRecovery` 使用 `backlog()` 获取 PEL/DLQ 数量，调用 `replayDeadLetter(dlqRecordId)` 将原 Stream 仍存在的消息字段重发为新 RecordId。先核对 DLQ 的 `sourceStream/sourceGroup/sourceId`。新死信在现有字段之外额外保存 `originalField:` 编码的原始业务字段，源记录被裁剪后仍可恢复；历史死信仍需从源 Stream 精确读取，已裁剪则拒绝。原死信保留供审计。重复手动执行可能重复发布，必须有业务持久幂等。
+- **跨键 DLQ/XACK 故障窗口（Issue #93）**：调用 `deadLetterTransferState(dlqRecordId)` 会校验死信来源 Stream/Group/ID，仅按精确 ID 读取并返回源 ID、是否仍在 PEL、源记录是否存在；**不会**确认、删除、重放或推断业务是否完成。人工处理前须暂停同组所有实例消费与恢复，并根据业务真值对账。
 - **验收边界**：仍为至少一次，故障注入、Redis 主从切换/Cluster、告警接入尚需目标环境验收；不可宣称 exactly-once 或强一致恢复。客户端重启不会清空 PEL。
 
 ```yaml
