@@ -16,9 +16,9 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.stream.IntStream;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -33,7 +33,15 @@ import java.util.concurrent.ThreadLocalRandom;
 @Slf4j
 public class MultiCache extends AbstractValueAdaptingCache {
 
-    private final Map<String, ReentrantLock> keyLockMap = new ConcurrentHashMap<>();
+    // 固定数量的锁条带，避免每个历史缓存 Key 都永久保留 ReentrantLock。
+    private static final int LOCK_STRIPES = 256;
+    private final ReentrantLock[] keyLocks = IntStream.range(0, LOCK_STRIPES)
+            .mapToObj(ignored -> new ReentrantLock())
+            .toArray(ReentrantLock[]::new);
+
+    private ReentrantLock localLockFor(Object key) {
+        return keyLocks[Math.floorMod(key.hashCode(), keyLocks.length)];
+    }
     /**
      * 一级缓存
      */
@@ -106,10 +114,7 @@ public class MultiCache extends AbstractValueAdaptingCache {
         if (value != null) {
             return (T) value;
         }
-        ReentrantLock lock = keyLockMap.computeIfAbsent(key.toString(), s -> {
-            log.trace("create lock for key : {}", s);
-            return new ReentrantLock();
-        });
+        ReentrantLock lock = localLockFor(key);
         lock.lock();
         try {
             value = lookup(key);
@@ -121,7 +126,7 @@ public class MultiCache extends AbstractValueAdaptingCache {
             put(key, storeValue);
             return (T) value;
         } catch (Exception e) {
-            throw new ValueRetrievalException(key, valueLoader, e.getCause());
+            throw new ValueRetrievalException(key, valueLoader, e);
         } finally {
             lock.unlock();
         }
@@ -136,23 +141,33 @@ public class MultiCache extends AbstractValueAdaptingCache {
         doPut(key, value);
     }
 
+    /**
+     * 使用 Redis SET NX 保证跨实例写入原子性；本地缓存仅缓存获胜的值。
+     * 返回值沿用 Spring Cache 语义：原值为 null 表示本次成功写入。
+     */
     @Override
     public ValueWrapper putIfAbsent(Object key, Object value) {
-        Object cacheKey = buildCacheKey(key);
-        Object prevValue;
-        ReentrantLock lock = keyLockMap.computeIfAbsent(key.toString(), ignored -> new ReentrantLock());
-        lock.lock();
-        try {
-            prevValue = redisTemplate.opsForValue().get(cacheKey);
-            if (prevValue == null) {
-                doPut(key, value);
-            }
-        } finally {
-            lock.unlock();
+        if (!super.isAllowNullValues() && value == null) {
+            throw new IllegalArgumentException("Null cache value is not allowed");
         }
-        return toValueWrapper(prevValue);
-    }
+        Object cacheKey = buildCacheKey(key);
+        Object storeValue = toStoreValue(value);
+        Duration ttl = getExpire();
 
+        Boolean inserted = ttl == null || ttl.isNegative()
+                ? redisTemplate.opsForValue().setIfAbsent(cacheKey, storeValue)
+                : redisTemplate.opsForValue().setIfAbsent(cacheKey, storeValue, ttl);
+        if (Boolean.TRUE.equals(inserted)) {
+            push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
+            caffeineCache.put(key, storeValue);
+            return null;
+        }
+        if (inserted == null) {
+            throw new IllegalStateException("Redis SET NX returned null (transaction or pipeline)");
+        }
+        Object previous = redisTemplate.opsForValue().get(cacheKey);
+        return toValueWrapper(previous);
+    }
 
     @Override
     public void evict(Object key) {

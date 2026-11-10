@@ -4,6 +4,14 @@ import com.peach.redis.multicache.quickstart.domain.Product;
 import com.peach.redis.multicache.quickstart.example.ProductAnnotationCacheExample;
 import com.peach.redis.multicache.quickstart.example.ProductManagerCacheExample;
 import com.peach.redis.multicache.quickstart.store.InMemoryProductStore;
+import com.peach.redis.manager.MultiCacheManager;
+import com.peach.redis.config.MultiCacheConfig;
+import com.peach.redis.config.CaffeineCacheConfig;
+import org.springframework.data.redis.core.RedisTemplate;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import java.io.IOException;
+import org.springframework.cache.Cache;
+import org.mockito.Mockito;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +64,27 @@ class MulticacheCapabilityTest {
         managerExample.evict("P1002");
         annotationExample.evict("P1001");
         productStore.resetLoadCount();
+    }
+
+    @Test
+    void strongReferenceConfigurationShouldCreateCacheWithoutException() {
+        MultiCacheConfig config = new MultiCacheConfig();
+        config.getCaffeine().setKeyStrength(CaffeineCacheConfig.CaffeineStrength.STRONG);
+        config.getCaffeine().setValueStrength(CaffeineCacheConfig.CaffeineStrength.STRONG);
+        MultiCacheManager cacheManager = new MultiCacheManager(Mockito.mock(RedisTemplate.class), config);
+        assertThat(cacheManager.getCache("strong-reference")).isNotNull();
+    }
+
+    @Test
+    void loaderExceptionShouldPreserveOriginalCause() {
+        MultiCacheConfig config = new MultiCacheConfig();
+        RedisTemplate redis = Mockito.mock(RedisTemplate.class);
+        Mockito.when(redis.opsForValue()).thenReturn(Mockito.mock(org.springframework.data.redis.core.ValueOperations.class));
+        MultiCacheManager cacheManager = new MultiCacheManager(redis, config);
+        Cache cache = cacheManager.getCache("loader-error");
+        assertThatThrownBy(() -> cache.get("missing", () -> {
+            throw new IOException("load failed");
+        })).isInstanceOf(Cache.ValueRetrievalException.class).hasCauseInstanceOf(IOException.class);
     }
 
     @Test

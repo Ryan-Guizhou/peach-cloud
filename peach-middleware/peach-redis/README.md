@@ -16,13 +16,14 @@
 | --- | --- | --- | --- | --- |
 | 连接基础 / `peach-redis-common`（现状，拟迁移） | `RedisTemplate`、`StringRedisTemplate`、`RedisConnectionFactory` | 单机、Sentinel、Cluster；Jedis 连接池与 Jackson JSON 序列化 | 全部 Redis 业务服务 | 当前会额外配置 Redisson；Cluster 不支持非零数据库；序列化协议迁移需兼容旧数据 |
 | `peach-redis-tool-starter` | `RedisDao` | String、TTL、Hash、List、Set、ZSet、Pub/Sub 和批量删除 | 会话辅助数据、计数、业务 KV、标签 | `scan()` 支持单机/Sentinel 与按 master 扫描 Cluster；`count` 仅为扫描批次提示，结果累计占内存且非一致快照；跨槽删除逐键执行 |
-| `peach-redis-multicache-starter` | `MultiCacheManager`、`MultiCacheManagerService`、Spring Cache | Caffeine L1 + Redis L2、TTL 抖动、CacheManager/注解接入、Pub/Sub 失效广播 | 商品详情、相对稳定的配置/字典缓存 | Pub/Sub 是尽力失效而非强一致；`clear()` 受当前扫描缺陷影响；Caffeine 引用强度实现需修正 |
+| `peach-redis-multicache-starter` | `MultiCacheManager`、`MultiCacheManagerService`、Spring Cache | Caffeine L1 + Redis L2、TTL 抖动、CacheManager/注解接入、Pub/Sub 失效广播 | 商品详情、相对稳定的配置/字典缓存 | Pub/Sub 是尽力失效而非强一致；`clear()` 受当前扫描缺陷影响；Caffeine STRONG 引用已修复，跨实例无强一致保证 |
 | `peach-redis-stream-starter` | `RedisStreamPushHandler`、`RedisStreamHandler`、`MessageConsumer` | Stream 生产、group/broadcast 消费、消费者回调 | 轻量业务消息、事件处理 | 当前 group 使用 `receiveAutoAck`，异常由监听器捕获；**未实现可靠 pending 自动恢复和失败重试保障** |
 
 ### 如何选择
 
 - **批量查找与清理：** `RedisDao#scan` / `deletePattern` 会遍历全部匹配键；`COUNT` 只是 Redis 的遍历提示，不能保证返回量或一致快照；建议离线、低频使用，并避免非常大的键空间。
 - **仅缓存键值、结构化数据：** 使用 Tool。原生 `RedisTemplate` 可直接满足的场景无需再次封装 DAO。
+- **Caffeine L1 选项：** 默认强引用，显式 `WEAK` 会改变缓存键的引用匹配行为；`putIfAbsent` 使用 Redis 原子 SET NX，而跨节点失效仍依赖尽力而为的 Pub/Sub。
 - **需要本地缓存加速：** 使用 MultiCache，并接受短暂陈旧、设置合理 TTL；安全相关实时授权不要仅依赖本地缓存。
 - **需要消息消费：** 使用 Stream；当前版本应自行保证业务幂等及失败恢复，不能视为可靠投递的完整替代方案。
 - **需要锁、布隆过滤器、延迟队列、防重复：** 转到 [peach-redission](../peach-redission/README.md)，不要把该能力误归入 Redis Tool。
