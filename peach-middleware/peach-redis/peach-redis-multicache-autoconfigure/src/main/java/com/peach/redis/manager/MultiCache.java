@@ -219,13 +219,13 @@ public class MultiCache extends AbstractValueAdaptingCache {
                     + MultiCacheConstant.REDIS_KEY_SEPARATOR
                     + "*";
         }
-        Set<Object> keys = redisDao.keys(pattern);
-        if (!CollectionUtils.isEmpty(keys)) {
-            redisDao.delete(keys);
-        }
         try {
+            // 删除只接受有业务前缀的模式，并受结果数量和时间预算限制。
+            // 大范围超限将明确报错，而不会部分删除后假装 clear 成功。
+            redisDao.deletePattern(pattern, 1000);
             push(new CacheMessage(this.cacheName, null, this.caffeineCache.hashCode()));
         } finally {
+            // Redis 扫描或通知失败后也不得保留本实例原有 L1 数据。
             clearLocal(null);
         }
     }
