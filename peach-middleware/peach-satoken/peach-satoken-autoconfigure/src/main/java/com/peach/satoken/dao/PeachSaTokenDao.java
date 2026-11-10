@@ -15,6 +15,7 @@ import com.peach.common.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisClusterConnection;
+import org.springframework.data.redis.connection.ClusterTopology;
 import org.springframework.data.redis.connection.RedisClusterNode;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -482,10 +483,29 @@ public class PeachSaTokenDao implements SaTokenDao {
             if (redisConnectionFactory instanceof JedisConnectionFactory jedisFactory
                     && jedisFactory.getClusterConfiguration() != null) {
                 try (RedisClusterConnection connection = redisConnectionFactory.getClusterConnection()) {
-                    for (RedisClusterNode node : connection.clusterGetNodes()) {
-                        if (!node.isMaster()) {
-                            continue;
+                    // Do not scan a former master after Cluster replica promotion.
+                    // A failed master can remain present in clusterGetNodes() temporarily.
+                    Set<RedisClusterNode> reportedNodes = new LinkedHashSet<>();
+                    connection.clusterGetNodes().forEach(reportedNodes::add);
+                    Set<RedisClusterNode> activeMasters =
+                            new ClusterTopology(reportedNodes).getActiveMasterNodes();
+                    if (activeMasters.isEmpty()) {
+                        throw new IllegalStateException("No active Redis Cluster masters available for Sa-Token search");
+                    }
+                    // Fail closed on incomplete slot coverage rather than return partial sessions.
+                    for (int slot = 0; slot < 16_384; slot++) {
+                        boolean owned = false;
+                        for (RedisClusterNode master : activeMasters) {
+                            if (master.servesSlot(slot)) {
+                                owned = true;
+                                break;
+                            }
                         }
+                        if (!owned) {
+                            throw new IllegalStateException("Active Redis Cluster master missing hash slot " + slot);
+                        }
+                    }
+                    for (RedisClusterNode node : activeMasters) {
                         try (Cursor<byte[]> cursor = connection.scan(node, options)) {
                             while (cursor.hasNext()) {
                                 String key = stringRedisTemplate.getStringSerializer().deserialize(cursor.next());

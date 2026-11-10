@@ -239,6 +239,14 @@ For migration steps, Nacos/key/codec/session compatibility checks, CI evidence, 
 
 Dedicated CI exercises the **same JedisConnectionFactory and RedissonClient instances** before and after actually stopping the isolated Redis Sentinel master container. Without recreating those clients it retries bounded SET/GET/TTL, then checks all three Sentinels agree on the promoted master and reruns the new-client suites. This only uses Redis 7.2 CI containers, not production systems. Passing it validates basic client recovery, **not** in-flight business transaction outcomes, Stream/DelayQueue idempotency, historic Sessions or Redis Cluster failure.
 
+## Redis Cluster master failure injection (Issue #73)
+
+Against an isolated three-master/three-replica Redis 7.2 Cluster, CI stops master port 7001 after healthy topology tests, requires promotion of its original replica, three live masters and `cluster_state:ok`, then performs real redirected SET/GET/TTL and reruns all four independent Jedis, Redisson, Redis Tool and Sa-Token new-client suites. This validates **new connections after promotion**, not recovery of long-lived Cluster clients, in-flight messages, cross-AZ failover or load testing. See [Issue #73](https://github.com/Ryan-Guizhou/peach-cloud/issues/73) for CI evidence.
+
+## Real Redis ACL positive/negative tests (Issue #75)
+
+A dedicated Redis 7.2 CI standalone topology disables the default user and uses an ephemeral randomly generated password for a named ACL account. Independent Jedis, Redisson, Redis Tool and Sa-Token must perform real writes/reads/TTL successfully; anonymous access and an invalid password must be rejected. The temporary password is generated only inside GitHub Actions, never stored in source or Nacos. This proves **single-node data ACL authentication**, not live Sentinel ACL credential rotation, production secret management, mTLS or minimum-privilege policy review.
+
 ## Real independent-JVM crash recovery (Issue #77)
 
 A Redis 7.2 integration test injects a real worker-process failure: a separate JVM Redisson worker claims a message and writes a ready marker, then the parent calls `Process.destroyForcibly()` so that **the process cannot gracefully ACK or close the queue**. After the lease expires, another RedissonClient reclaims the same message ID/payload with a greater fencing token, rejects the stale token and acknowledges the recovered message without processing residue. Delivery remains **at least once**; durable business-side idempotency and external-store fencing are still mandatory. This is not a Redis master failure or cross-store atomicity test.
@@ -250,3 +258,7 @@ A Redis 7.2 integration test injects a real worker-process failure: a separate J
 - A bloom-filter "might exist" result requires authoritative lookup and cannot decide authorization, balance or uniqueness by itself.
 - Repeat-guard keys come from stable business semantics and do not replace real idempotency design.
 - Historical `redission` spelling is compatibility-only and is not a naming template for new modules.
+
+### Lock and repeat annotation scope
+
+`@DistrbutedLock` and `@RepeatLimit` support both class-level and method-level declarations. Method-level configuration takes precedence and each proxied invocation runs one advice. Class-level annotations now affect public methods invoked through Spring AOP proxies; audit existing class annotations before rolling out to avoid unexpected serialization or rejection. Self-invocation still bypasses Spring AOP. `DistributedLocker#getLock` returns a lock handle without acquiring it; use `lock` or `tryLock` explicitly. Interrupted lock attempts return `false` while preserving the thread's interruption flag.

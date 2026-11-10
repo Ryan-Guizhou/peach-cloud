@@ -272,6 +272,14 @@ Dedicated CI exercises the **same JedisConnectionFactory and RedissonClient inst
 
 On local writes or refill from Redis L2, MultiCache reads the key's real Redis PTTL and keeps a bounded local deadline for each Caffeine L1 entry. **An L1 hit makes no Redis call**. If its server TTL deadline has passed or the bounded deadline metadata was evicted, the L1 entry is dropped and Redis is queried again. A PTTL of -1 keeps the configured Caffeine expiration behavior; an unknown PTTL is not cached locally. This also covers late refill shortly before a Redis key expires. Redis keys/codecs and public cache values do not change. External L2 writes or Pub/Sub disconnects still cannot provide strong consistency.
 
+## Redis Cluster master failure injection (Issue #73)
+
+Against an isolated three-master/three-replica Redis 7.2 Cluster, CI stops master port 7001 after healthy topology tests, requires promotion of its original replica, three live masters and `cluster_state:ok`, then performs real redirected SET/GET/TTL and reruns all four independent Jedis, Redisson, Redis Tool and Sa-Token new-client suites. This validates **new connections after promotion**, not recovery of long-lived Cluster clients, in-flight messages, cross-AZ failover or load testing. See [Issue #73](https://github.com/Ryan-Guizhou/peach-cloud/issues/73) for CI evidence.
+
+## Real Redis ACL positive/negative tests (Issue #75)
+
+A dedicated Redis 7.2 CI standalone topology disables the default user and uses an ephemeral randomly generated password for a named ACL account. Independent Jedis, Redisson, Redis Tool and Sa-Token must perform real writes/reads/TTL successfully; anonymous access and an invalid password must be rejected. The temporary password is generated only inside GitHub Actions, never stored in source or Nacos. This proves **single-node data ACL authentication**, not live Sentinel ACL credential rotation, production secret management, mTLS or minimum-privilege policy review.
+
 ## Boundaries
 
 - Keys need stable namespaces and required isolation dimensions; sensitive values must not be placed directly in keys/logs.
