@@ -14,8 +14,12 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.peach.common.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisClusterConnection;
+import org.springframework.data.redis.connection.RedisClusterNode;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
@@ -28,6 +32,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -59,7 +64,13 @@ public class PeachSaTokenDao implements SaTokenDao {
      */
     public static final DateTimeFormatter DATE_TIME_FORMATTER = DateUtil.LOCAL_DATE_TIME_FORMATTER;
 
+    /** SCAN 单轮迭代提示量，不是返回数量限制。 */
+    private static final int SEARCH_SCAN_BATCH_SIZE = 500;
+    /** 管理端查询默认保留结果上限，避免大量会话键导致堆内存耗尽。 */
+    private static final int DEFAULT_SEARCH_MAX_MATCHES = 50_000;
+
     private final RedisConnectionFactory redisConnectionFactory;
+    private final int searchMaxMatches;
 
     /**
      * JSON 反序列化对象。
@@ -84,7 +95,21 @@ public class PeachSaTokenDao implements SaTokenDao {
      * @param redisConnectionFactory Redis 连接工厂
      */
     public PeachSaTokenDao(RedisConnectionFactory redisConnectionFactory) {
-        this.redisConnectionFactory = redisConnectionFactory;
+        this(redisConnectionFactory, DEFAULT_SEARCH_MAX_MATCHES);
+    }
+
+    /**
+     * 创建带可控搜索结果上限的 Sa-Token DAO。
+     *
+     * @param redisConnectionFactory Redis 连接工厂
+     * @param searchMaxMatches 管理端搜索允许累积的最大唯一键数量，必须大于零
+     */
+    public PeachSaTokenDao(RedisConnectionFactory redisConnectionFactory, int searchMaxMatches) {
+        this.redisConnectionFactory = java.util.Objects.requireNonNull(redisConnectionFactory, "redisConnectionFactory");
+        if (searchMaxMatches < 1) {
+            throw new IllegalArgumentException("Sa-Token searchMaxMatches must be positive");
+        }
+        this.searchMaxMatches = searchMaxMatches;
     }
 
     /**
@@ -420,19 +445,78 @@ public class PeachSaTokenDao implements SaTokenDao {
      */
     @Override
     public List<String> searchData(String prefix, String keyword, int start, int size, boolean sortType) {
-        Set<String> keys = objectRedisTemplate.keys(prefix + "*" + keyword + "*");
-        if (keys == null || keys.isEmpty()) {
+        if (size < -1) {
+            throw new IllegalArgumentException("Sa-Token search size must be -1 or nonnegative");
+        }
+        if (size == 0) {
             return List.of();
         }
+        Set<String> keys = scanKeys(prefix + "*" + keyword + "*");
+        if (keys.isEmpty()) {
+            return List.of();
+        }
+        // SCAN returns no consistent snapshot; sort explicitly for deterministic pagination.
         List<String> list = new ArrayList<>(keys);
+        Collections.sort(list);
         if (!sortType) {
             Collections.reverse(list);
         }
         int fromIndex = Math.max(start, 0);
-        int toIndex = size == -1 ? list.size() : Math.min(fromIndex + size, list.size());
         if (fromIndex >= list.size()) {
             return List.of();
         }
+        int toIndex = size == -1 ? list.size() : (int) Math.min((long) fromIndex + size, list.size());
         return new ArrayList<>(list.subList(fromIndex, toIndex));
     }
+
+    /**
+     * 替换 Redis KEYS 为游标 SCAN；Cluster 模式扫描全部主节点。
+     *
+     * <p>返回数据并非在线写入下的一致快照；结果到达上限时抛出异常，
+     * 而不是静默返回不完整的会话列表。调用方应使用管理端限频。</p>
+     */
+    private Set<String> scanKeys(String pattern) {
+        ScanOptions options = ScanOptions.scanOptions().match(pattern).count(SEARCH_SCAN_BATCH_SIZE).build();
+        Set<String> keys = new LinkedHashSet<>();
+        try {
+            if (redisConnectionFactory instanceof JedisConnectionFactory jedisFactory
+                    && jedisFactory.getClusterConfiguration() != null) {
+                try (RedisClusterConnection connection = redisConnectionFactory.getClusterConnection()) {
+                    for (RedisClusterNode node : connection.clusterGetNodes()) {
+                        if (!node.isMaster()) {
+                            continue;
+                        }
+                        try (Cursor<byte[]> cursor = connection.scan(node, options)) {
+                            while (cursor.hasNext()) {
+                                String key = stringRedisTemplate.getStringSerializer().deserialize(cursor.next());
+                                addSearchResult(keys, key);
+                            }
+                        }
+                    }
+                }
+            } else {
+                try (Cursor<String> cursor = stringRedisTemplate.scan(options)) {
+                    while (cursor.hasNext()) {
+                        addSearchResult(keys, cursor.next());
+                    }
+                }
+            }
+        } catch (IllegalStateException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new IllegalStateException("Sa-Token Redis SCAN failed", exception);
+        }
+        return keys;
+    }
+
+    private void addSearchResult(Set<String> keys, String key) {
+        if (key == null || keys.contains(key)) {
+            return;
+        }
+        if (keys.size() >= searchMaxMatches) {
+            throw new IllegalStateException("Sa-Token Redis search result limit exceeded: " + searchMaxMatches);
+        }
+        keys.add(key);
+    }
+
 }

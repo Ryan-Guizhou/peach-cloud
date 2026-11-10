@@ -247,6 +247,10 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 `MultiCacheTwoClientServerIntegrationTest` 在 Redis 7.2 服务容器中使用两个独立 Jedis 连接工厂、两个 `MultiCacheManager` 和订阅容器，验证节点 A 更新 Redis L2 后，节点 B 的 Caffeine L1 经 Pub/Sub 失效并重新读到最新值。广播 JSON 与历史 Java 序列化约定一致：只传缓存名和发送者，不传业务 key；因此**远端按整个 cacheName 失效**。本地 key 与 Redis L2 key/value 格式保持不变。该机制是尽力通知，不能保证离线节点或断线重连期间的强一致；应设置有界 L1 TTL，禁止仅凭缓存作实时授权。
 
+## Sa-Token 管理端检索安全性（Issue #57）
+
+Sa-Token 的 `PeachSaTokenDao#searchData` 已由阻塞式 Redis `KEYS` 迁移至 `SCAN`，Cluster 遍历各主节点。默认最多累计 50000 个唯一匹配键，可通过 `peach.satoken.dao.search-max-matches` 调整；超过上限抛错，不静默截断。该操作不适合在线高频业务。详见 [Sa-Token 组件说明](../peach-satoken/README.md#redis-session-检索与有界-scanissue-57)。
+
 ## 边界
 
 - key 必须有稳定命名空间和必要隔离维度，敏感值不直接进入 key/log。

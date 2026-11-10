@@ -100,6 +100,12 @@ EOF
       -keyout "$tmp_dir/redis.key" -out "$tmp_dir/redis.crt" -subj "/CN=localhost" \
       -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" >/dev/null 2>&1
     chmod 644 "$tmp_dir/redis.key" "$tmp_dir/redis.crt"
+    # Preserve the JDK default CA roots for Maven HTTPS dependency resolution.
+    # Add only the ephemeral Redis CI certificate; never disable TLS verification.
+    keytool -importkeystore -noprompt \
+      -srckeystore "$JAVA_HOME/lib/security/cacerts" -srcstorepass changeit \
+      -destkeystore "$tmp_dir/truststore.p12" -deststoretype PKCS12 \
+      -deststorepass changeit >/dev/null
     keytool -importcert -noprompt -alias peach-ci-redis -file "$tmp_dir/redis.crt" \
       -keystore "$tmp_dir/truststore.p12" -storetype PKCS12 -storepass changeit >/dev/null
     export JAVA_TOOL_OPTIONS="-Djavax.net.ssl.trustStore=$tmp_dir/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12"
@@ -129,10 +135,13 @@ EOF
 esac
 
 echo "Running real Redis $topology tests with TLS verification preserved"
-mvn -B -ntp \
-  -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart \
+# Use an explicit HTTPS public mirror for the repository's HTTP-only Nexus IDs.
+# The ephemeral GitHub runner must not rely on an inherited ~/.m2 cache.
+# Local developers keep their own Nexus settings; CI deliberately resolves public releases via HTTPS.
+mvn -B -ntp -s scripts/ci/github-actions-maven-settings.xml \
+  -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart \
   -am \
-  -Dtest=RedisTopologyServerIntegrationTest,RedisToolTopologyServerIntegrationTest,RedissonTopologyServerIntegrationTest \
+  -Dtest=RedisTopologyServerIntegrationTest,RedisToolTopologyServerIntegrationTest,RedissonTopologyServerIntegrationTest,SaTokenSearchTopologyServerIntegrationTest \
   -Dsurefire.failIfNoSpecifiedTests=false test
 
 python3 - <<'PY'
@@ -143,6 +152,7 @@ suites = {
     "peach-middleware/peach-redis/peach-redis-quickstart/target/surefire-reports/TEST-com.peach.redis.quickstart.RedisTopologyServerIntegrationTest.xml",
     "peach-middleware/peach-redis/peach-redis-tool-quickstart/target/surefire-reports/TEST-com.peach.redis.tool.quickstart.RedisToolTopologyServerIntegrationTest.xml",
     "peach-middleware/peach-redission/peach-redisson-quickstart/target/surefire-reports/TEST-com.peach.redisson.quickstart.RedissonTopologyServerIntegrationTest.xml",
+    "peach-middleware/peach-satoken/peach-satoken-quickstart/target/surefire-reports/TEST-com.peach.satoken.quickstart.SaTokenSearchTopologyServerIntegrationTest.xml",
 }
 for file in sorted(suites):
     path = Path(file)
