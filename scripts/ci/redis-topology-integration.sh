@@ -131,6 +131,7 @@ esac
 echo "Running real Redis $topology tests with TLS verification preserved"
 # Use an explicit HTTPS public mirror for the repository's HTTP-only Nexus IDs.
 # The ephemeral GitHub runner must not rely on an inherited ~/.m2 cache.
+# Local developers keep their own Nexus settings; CI deliberately resolves public releases via HTTPS.
 mvn -B -ntp -s scripts/ci/github-actions-maven-settings.xml \
   -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart \
   -am \
