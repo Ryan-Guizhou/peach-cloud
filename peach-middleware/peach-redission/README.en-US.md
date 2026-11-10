@@ -213,6 +213,10 @@ public class OrderExpiryService {
 - `LocalCacheLock` retains `getLock(key, fair)` but uses 256 bounded fair lock stripes, avoiding expiration of held lock objects. Unrelated keys can contend on the same stripe.
 - `@RepeatLimit` now uses only the distributed Redisson lock for cross-instance exclusion. If the success marker cannot be persisted **after the business action succeeds**, the caller receives an explicit uncertain-result exception rather than false success. **Do not retry blindly**; query the durable order/idempotency state first.
 
+## Real Redis topology integration (Issue #47)
+
+The dedicated Redis 7.2 CI matrix exercises the independent `peach-redisson-starter` against Sentinel, Cluster (three masters, three replicas) and TLS. It verifies RedissonClient bean isolation, real Bucket writes/reads, TTL and deletion alongside Jedis and Redis Tool. See the [Redis topology integration instructions](../peach-redis/README.en-US.md#real-redis-topology-integration-issue-47) for commands, enforced non-skipped Surefire checks and limitations. This smoke test does **not** prove distributed-lock mutual exclusion during failover, exactly-once for delay queue V2, or cross-instance Bloom behavior.
+
 ## Boundaries
 
 - Distributed locks protect the smallest critical section and do not replace database uniqueness, transactions or state validation.
