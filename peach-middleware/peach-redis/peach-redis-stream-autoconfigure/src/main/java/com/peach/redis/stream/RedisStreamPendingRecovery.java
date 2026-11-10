@@ -46,6 +46,8 @@ public final class RedisStreamPendingRecovery {
     private final MessageConsumer messageConsumer;
     private final String recoveryConsumer;
     private ScheduledExecutorService scheduler;
+    // XPENDING range 轮转，避免前 N 条不可认领记录永久饿死后续消息。
+    private String pendingCursor;
 
     public RedisStreamPendingRecovery(StringRedisTemplate redis,
                                       RedisStreamProperties streamProperties,
@@ -114,11 +116,16 @@ public final class RedisStreamPendingRecovery {
         String stream = streamProperties.getStreamName();
         String group = streamProperties.getConsumerGroup();
         StreamOperations<String, Object, Object> operations = redis.opsForStream();
-        PendingMessages pending = operations.pending(stream, group,
-                Range.unbounded(), recoveryProperties.getBatchSize());
+        Range<String> range = pendingCursor == null
+                ? Range.unbounded()
+                : Range.from(Range.Bound.exclusive(pendingCursor)).to(Range.Bound.unbounded());
+        PendingMessages pending = operations.pending(stream, group, range, recoveryProperties.getBatchSize());
         if (pending == null || pending.isEmpty()) {
+            pendingCursor = null;
             return 0;
         }
+        pendingCursor = pending.size() == recoveryProperties.getBatchSize()
+                ? pending.get(pending.size() - 1).getIdAsString() : null;
 
         int completed = 0;
         for (PendingMessage entry : pending) {

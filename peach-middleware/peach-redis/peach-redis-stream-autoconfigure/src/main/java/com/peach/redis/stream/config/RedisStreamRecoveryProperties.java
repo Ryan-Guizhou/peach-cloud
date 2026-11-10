@@ -35,9 +35,9 @@ public class RedisStreamRecoveryProperties {
         if (maxAttempts < 1 || maxAttempts > 1000) {
             throw new IllegalArgumentException("Redis stream recovery maxAttempts must be 1..1000");
         }
-        if (minIdle == null || minIdle.isNegative() || minIdle.isZero()
+        if (minIdle == null || minIdle.toMillis() < 1
                 || maxRetryDelay == null || maxRetryDelay.compareTo(minIdle) < 0
-                || interval == null || interval.isZero() || interval.isNegative()) {
+                || interval == null || interval.toMillis() < 1) {
             throw new IllegalArgumentException("Invalid Redis stream recovery durations");
         }
     }
