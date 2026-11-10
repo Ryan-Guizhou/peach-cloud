@@ -1,6 +1,5 @@
 package com.peach.redission.distrbutedlock;
 
-import com.peach.redis.common.RedisConfig;
 import com.peach.redission.common.LockInfoHandle;
 import com.peach.redission.common.LockInfoHandleFactory;
 import com.peach.redission.common.LockInfoType;
@@ -26,7 +25,10 @@ import org.springframework.context.annotation.Bean;
  * @CreateTime 2025/12/26
  */
 @AutoConfiguration
-@AutoConfigureAfter(RedisConfig.class)
+@AutoConfigureAfter(name = {
+        "com.peach.redisson.autoconfigure.PeachRedissonAutoConfiguration",
+        "com.peach.redission.common.RedissionCommonAutoconfigure"
+})
 public class DistributedLockAutoConfigure {
 
 

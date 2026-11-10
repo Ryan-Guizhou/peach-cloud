@@ -1,6 +1,5 @@
 package com.peach.redission.delayqueue.config;
 
-import com.peach.redis.common.RedisConfig;
 import com.peach.redission.delayqueue.context.DelayQueueBasePart;
 import com.peach.redission.delayqueue.context.DelayQueueContext;
 import com.peach.redission.delayqueue.event.DelayQueueInitHandler;
@@ -19,7 +18,7 @@ import org.springframework.context.annotation.Bean;
  * @CreateTime 2025/12/17 17:30
  */
 @AutoConfiguration
-@AutoConfigureAfter(RedisConfig.class)
+@AutoConfigureAfter(name = "com.peach.redisson.autoconfigure.PeachRedissonAutoConfiguration")
 @EnableConfigurationProperties(DelayQueueProperties.class)
 public class DelayQueueAutoConfig {
 

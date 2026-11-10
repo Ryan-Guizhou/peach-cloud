@@ -1,6 +1,5 @@
 package com.peach.redission.common;
 
-import com.peach.redis.common.RedisConfig;
 import org.redisson.api.RedissonClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -15,7 +14,10 @@ import org.springframework.context.annotation.Bean;
  * @CreateTime 2025/12/19 18:59
  */
 @AutoConfiguration
-@AutoConfigureAfter(RedisConfig.class)
+@AutoConfigureAfter(name = {
+        "com.peach.redis.common.RedisConfig",
+        "com.peach.redisson.autoconfigure.PeachRedissonAutoConfiguration"
+})
 public class RedissionCommonAutoconfigure {
 
     @Bean

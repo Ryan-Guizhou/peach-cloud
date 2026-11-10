@@ -385,6 +385,18 @@
                 <version>${revision}</version>
             </dependency>
 
+            <!-- Redisson-only client foundation -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redisson-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-redisson-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
             <!-- ==================== peach-middleware / peach-redission ==================== -->
             <dependency>
                 <groupId>com.peach</groupId>

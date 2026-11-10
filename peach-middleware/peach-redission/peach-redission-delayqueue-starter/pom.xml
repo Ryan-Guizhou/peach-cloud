@@ -21,6 +21,14 @@
             <groupId>com.peach</groupId>
             <artifactId>peach-redission-delayqueue-autoconfigure</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-redisson-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-initialize-starter</artifactId>
+        </dependency>
     </dependencies>
 
 

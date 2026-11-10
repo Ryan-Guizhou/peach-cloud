@@ -9,6 +9,9 @@
     <packaging>pom</packaging>
     <parent><groupId>com.peach</groupId><artifactId>peach-middleware</artifactId><version>${revision}</version></parent>
     <modules>
+        <module>peach-redisson-autoconfigure</module>
+        <module>peach-redisson-starter</module>
+        <module>peach-redisson-quickstart</module>
         <module>peach-redission-common</module>
         <module>peach-redission-bloomfilter-autoconfigure</module>
         <module>peach-redission-bloomfilter-starter</module>

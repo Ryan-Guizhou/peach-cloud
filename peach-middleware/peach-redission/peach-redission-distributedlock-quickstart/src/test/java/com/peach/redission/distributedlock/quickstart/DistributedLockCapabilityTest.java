@@ -4,6 +4,7 @@ import com.peach.redission.distributedlock.quickstart.example.InventoryAnnotatio
 import com.peach.redission.distributedlock.quickstart.example.InventoryTemplateLockExample;
 import com.peach.redission.distributedlock.quickstart.store.InventoryStockStore;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -41,6 +42,9 @@ class DistributedLockCapabilityTest {
     }
 
     @Autowired
+    private ApplicationContext applicationContext;
+
+    @Autowired
     private InventoryStockStore stockStore;
 
     @Autowired
@@ -48,6 +52,13 @@ class DistributedLockCapabilityTest {
 
     @Autowired
     private InventoryTemplateLockExample templateLockExample;
+
+    @Test
+    void independentStarterShouldNotRequireJedisOrRedisTemplate() {
+        assertThat(applicationContext.containsBean("redissonClient")).isTrue();
+        assertThat(applicationContext.containsBean("jedisConnectionFactory")).isFalse();
+        assertThat(applicationContext.containsBean("redisTemplate")).isFalse();
+    }
 
     @Test
     void annotationShouldProtectDeduct() {
