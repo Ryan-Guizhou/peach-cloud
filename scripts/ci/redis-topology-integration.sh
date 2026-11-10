@@ -100,6 +100,12 @@ EOF
       -keyout "$tmp_dir/redis.key" -out "$tmp_dir/redis.crt" -subj "/CN=localhost" \
       -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" >/dev/null 2>&1
     chmod 644 "$tmp_dir/redis.key" "$tmp_dir/redis.crt"
+    # Preserve the JDK default CA roots for Maven HTTPS dependency resolution.
+    # Add only the ephemeral Redis CI certificate; never disable TLS verification.
+    keytool -importkeystore -noprompt \
+      -srckeystore "$JAVA_HOME/lib/security/cacerts" -srcstorepass changeit \
+      -destkeystore "$tmp_dir/truststore.p12" -deststoretype PKCS12 \
+      -deststorepass changeit >/dev/null
     keytool -importcert -noprompt -alias peach-ci-redis -file "$tmp_dir/redis.crt" \
       -keystore "$tmp_dir/truststore.p12" -storetype PKCS12 -storepass changeit >/dev/null
     export JAVA_TOOL_OPTIONS="-Djavax.net.ssl.trustStore=$tmp_dir/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12"
