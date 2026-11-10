@@ -93,7 +93,7 @@ jobs:
                   raise SystemExit(f"Missing real Redis test report: {report}")
               suite = ET.parse(report).getroot()
               stats = {key: int(suite.get(key, "0")) for key in ("tests", "failures", "errors", "skipped")}
-              expected = 2 if "MultiCacheTwoClientServerIntegrationTest" in report.name else 1
+              expected = 4 if "MultiCacheTwoClientServerIntegrationTest" in report.name else 1
               if stats["tests"] != expected or any(stats[key] for key in ("failures", "errors", "skipped")):
                   raise SystemExit(f"Expected 1 executed success for {report}: {stats}")
               print(f"Real multi-instance acceptance passed: {report} {stats}")
