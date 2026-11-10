@@ -5,7 +5,6 @@ import com.peach.redis.bloom.config.BloomFilterProperties;
 import com.peach.redis.bloom.spi.BloomScalePolicy;
 import com.peach.redis.bloom.spi.CodecProvider;
 import com.peach.redis.bloom.spi.KeyNamingStrategy;
-import jodd.util.StringUtil;
 import org.redisson.api.RAtomicLong;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RList;
@@ -150,7 +149,7 @@ public class SegmentedBloomFilterService implements BloomFilterService {
     }
 
     private String resolveNamespace(String ns) {
-        return (ns == null || StringUtil.isBlank(ns)) ? props.getDefaultNamespace() : ns;
+        return (ns == null || ns.isBlank()) ? props.getDefaultNamespace() : ns;
     }
 
     /**
