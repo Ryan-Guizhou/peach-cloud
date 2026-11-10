@@ -1,6 +1,7 @@
 package com.peach.redis.tool.quickstart;
 
 import com.peach.redis.common.tool.RedisDao;
+import com.peach.redis.common.tool.RedisDaoImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,10 +9,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 用真实 Redis 7.2 验证不依赖旧 RedisConfig 的 Tool Starter 字符串、TTL、SCAN 与删除。
@@ -56,6 +60,15 @@ class RedisToolServerIntegrationTest {
             assertThat(redisDao.vGet(first)).isEqualTo("one");
             assertThat(strings.getExpire(first)).isBetween(1L, 30L);
             assertThat(redisDao.scan(prefix + "*", 100)).containsExactlyInAnyOrder(first, second);
+            // 继续使用同一个真实 Redis 测试，不增加单独的慢速测试套件。
+            RedisDaoImpl limitedDao = new RedisDaoImpl(context.getBean("redisTemplate", RedisTemplate.class));
+            ReflectionTestUtils.setField(limitedDao, "scanMaxResults", 1);
+            assertThatThrownBy(() -> limitedDao.scan(prefix + "*", 100))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("result limit");
+            assertThatThrownBy(() -> redisDao.deletePattern("*", 100))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("business namespace");
             assertThat(redisDao.deletePattern(prefix + "*", 100)).isEqualTo(2L);
             assertThat(strings.opsForValue().get(unrelated)).isEqualTo("preserve");
         } finally {

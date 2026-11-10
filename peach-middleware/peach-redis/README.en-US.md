@@ -31,19 +31,32 @@ Redis Cluster requires database `0`; invalid values fail during startup. Both Na
 | --- | --- | --- | --- | --- |
 | Foundation / `peach-redis-starter` (recommended) | `RedisConnectionFactory`, `RedisTemplate`, `StringRedisTemplate` | Independent Jedis, standalone/Sentinel/Cluster, TLS, ACL, pooling, custom-factory backoff | Sa-Token / Tool / cache / Stream | No `RedissonClient`; Cluster DB must be 0; stored format retained, rolling session compatibility still pending |
 | Legacy mixed module / `peach-redis-common` (compatibility only) | `RedisConfig` | Historic combined Jedis + Redisson auto-configuration | Older application rollback | No internal direct consumers; do not add to new services; retire only after external migration |
-| `peach-redis-tool-starter` | `RedisDao` | String, TTL, Hash, List, Set, ZSet, Pub/Sub and batch deletion | KV, counters, tags, session support | `scan()` supports standalone/Sentinel and scans all Cluster masters; `count` is a batch hint, not a result limit; result is memory-backed and not a consistent snapshot; cross-slot deletion is per-key |
-| `peach-redis-multicache-starter` | `MultiCacheManager`, `MultiCacheManagerService`, Spring Cache | Caffeine L1 and Redis L2; TTL jitter; manual and annotation APIs; Pub/Sub invalidation | Product detail, configuration and dictionary caching | Best-effort invalidation, not strong consistency; `clear()` uses the restored Redis SCAN but remains memory-intensive and not an atomic snapshot; Caffeine STRONG reference semantics fixed; not strongly consistent across nodes |
+| `peach-redis-tool-starter` | `RedisDao` | String, TTL, Hash, List, Set, ZSet, Pub/Sub and batch deletion | KV, counters, tags, session support | `scan()` supports standalone and all Cluster masters; 10,000 unique keys / 10s by default, throws on overflow; `count` remains a cursor hint; cross-slot deletion stays per-key |
+| `peach-redis-multicache-starter` | `MultiCacheManager`, `MultiCacheManagerService`, Spring Cache | Caffeine L1 and Redis L2; TTL jitter; manual and annotation APIs; Pub/Sub invalidation | Product detail, configuration and dictionary caching | Best-effort invalidation, not strong consistency; `clear()` uses bounded deletion; over-limit scans throw and still evict local L1, but Redis L2 may remain; no cross-node strong consistency |
 | `peach-redis-stream-starter` | `RedisStreamPushHandler`, `RedisStreamHandler`, `MessageConsumer` | Produce Stream records, group/broadcast consumption, consumer callbacks | Lightweight event messages | Group consumers ACK only on success and retain failures in PEL; opt-in scheduled reclaim, backoff and DLQ are implemented but disabled by default and require fault-injection acceptance |
 
 ### Which module should I use?
 
-- **Key enumeration and cleanup:** `RedisDao#scan` / `deletePattern` traverse matching keys; Redis `COUNT` is a hint, not a result cap or a consistent snapshot. Use sparingly, preferably off the request path, and avoid huge keyspaces.
+- **Key enumeration and cleanup:** `RedisDao#scan` returns at most 10,000 unique keys within a 10-second traversal by default; exceeding either bound throws without returning partial results. `deletePattern` rejects unscoped wildcard patterns such as `*` and deletes only after a complete bounded scan. `COUNT` remains a cursor hint; large keyspaces need separate business namespaces.
 - **Redis structures:** Tool, or Spring `RedisTemplate` directly if no wrapper is needed.
 - **Caffeine L1 behavior:** Strong references are now the default; explicit `WEAK` changes key reference semantics. `putIfAbsent` uses Redis atomic SET NX; cross-node invalidation still uses best-effort Pub/Sub.
 - **Local cache acceleration:** MultiCache, with explicit TTL and tolerance for temporary staleness; never rely solely on L1 for real-time authorization.
 - **Stream messaging:** Stream; current implementation requires application idempotency and separate recovery arrangements.
 - **Distributed locks / bloom filters / delay queues / duplicate suppression:** use [peach-redission](../peach-redission/README.en-US.md), not the Redis Tool.
 - **Gateway:** retain the standalone reactive Lettuce setup; avoid blocking Redis calls on WebFlux event-loop threads.
+
+### Bounded Redis Tool SCAN configuration
+
+```yaml
+peach:
+  redis:
+    tool:
+      scan:
+        max-results: 10000
+        timeout-millis: 10000
+```
+
+Defaults apply without additional properties; valid ranges are 1–100000 unique keys and 1–60000 milliseconds. Existing `scan(matchKey, count)`, `keys(pattern)` and `deletePattern(pattern, count)` signatures remain unchanged. Limits fail explicitly, not via truncated results. `MultiCache.clear()` evicts its local L1 even if the L2 scan fails; this does not imply all remote Redis values were deleted.
 
 ### Minimal Maven dependency (current release)
 

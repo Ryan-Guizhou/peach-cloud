@@ -31,19 +31,32 @@ Redis Cluster 只支持数据库 `0`，非法值启动时直接失败。两份 N
 | --- | --- | --- | --- | --- |
 | 连接底座 / `peach-redis-starter`（推荐） | `RedisConnectionFactory`、`RedisTemplate`、`StringRedisTemplate` | 独立 Jedis、Standalone/Sentinel/Cluster、TLS、ACL、连接池、自定义工厂退让 | Sa-Token / Tool / 缓存 / Stream | 不创建 `RedissonClient`；Cluster 仅数据库 0；保留旧序列化格式，旧会话滚动兼容待验证 |
 | 旧混合组件 / `peach-redis-common`（仅兼容） | `RedisConfig` | 旧版 Jedis + Redisson 混合装配 | 存量应用回滚 | 仓库内部不再直接依赖；新服务不要引入，外部旧应用迁移后才能退役 |
-| `peach-redis-tool-starter` | `RedisDao` | String、TTL、Hash、List、Set、ZSet、Pub/Sub 和批量删除 | 会话辅助数据、计数、业务 KV、标签 | `scan()` 支持单机/Sentinel 与按 master 扫描 Cluster；`count` 仅为扫描批次提示，结果累计占内存且非一致快照；跨槽删除逐键执行 |
-| `peach-redis-multicache-starter` | `MultiCacheManager`、`MultiCacheManagerService`、Spring Cache | Caffeine L1 + Redis L2、TTL 抖动、CacheManager/注解接入、Pub/Sub 失效广播 | 商品详情、相对稳定的配置/字典缓存 | Pub/Sub 是尽力失效而非强一致；`clear()` 使用已恢复的 Redis SCAN，但大范围扫描仍存在内存与一致性限制；Caffeine STRONG 引用已修复，跨实例无强一致保证 |
+| `peach-redis-tool-starter` | `RedisDao` | String、TTL、Hash、List、Set、ZSet、Pub/Sub 和批量删除 | 会话辅助数据、计数、业务 KV、标签 | `scan()` 支持单机/Cluster；默认最多返回 10,000 个唯一 key、最长 10 秒，超限抛异常；`count` 仅为批次提示，跨槽删除逐键执行 |
+| `peach-redis-multicache-starter` | `MultiCacheManager`、`MultiCacheManagerService`、Spring Cache | Caffeine L1 + Redis L2、TTL 抖动、CacheManager/注解接入、Pub/Sub 失效广播 | 商品详情、相对稳定的配置/字典缓存 | Pub/Sub 是尽力失效而非强一致；`clear()` 使用有界模式删除；扫描超限直接失败并清理本地 L1，不能承诺 Redis L2 已全部删除；跨实例无强一致保证 |
 | `peach-redis-stream-starter` | `RedisStreamPushHandler`、`RedisStreamHandler`、`MessageConsumer` | Stream 生产、group/broadcast 消费、消费者回调 | 轻量业务消息、事件处理 | 消费组仅在业务成功后显式 ACK；失败保留 PEL；可选定时认领、指数退避及 DLQ（默认关闭，仍需故障注入） |
 
 ### 如何选择
 
-- **批量查找与清理：** `RedisDao#scan` / `deletePattern` 会遍历全部匹配键；`COUNT` 只是 Redis 的遍历提示，不能保证返回量或一致快照；建议离线、低频使用，并避免非常大的键空间。
+- **批量查找与清理：** `RedisDao#scan` 默认最多收集 10,000 个唯一键且最多执行 10 秒；超限明确报错、不返回截断结果。`deletePattern` 拒绝 `*` 等无业务前缀的通配模式，全部扫描成功才分批删除。`COUNT` 仍只是 Redis 遍历提示，操作不是一致快照；大键空间需按业务 namespace 拆分处理。
 - **仅缓存键值、结构化数据：** 使用 Tool。原生 `RedisTemplate` 可直接满足的场景无需再次封装 DAO。
 - **Caffeine L1 选项：** 默认强引用，显式 `WEAK` 会改变缓存键的引用匹配行为；`putIfAbsent` 使用 Redis 原子 SET NX，而跨节点失效仍依赖尽力而为的 Pub/Sub。
 - **需要本地缓存加速：** 使用 MultiCache，并接受短暂陈旧、设置合理 TTL；安全相关实时授权不要仅依赖本地缓存。
 - **需要消息消费：** 使用 Stream；当前版本应自行保证业务幂等及失败恢复，不能视为可靠投递的完整替代方案。
 - **需要锁、布隆过滤器、延迟队列、防重复：** 转到 [peach-redission](../peach-redission/README.md)，不要把该能力误归入 Redis Tool。
 - **Gateway：** 使用独立响应式 Lettuce；不要通过 Redis Tool 为 WebFlux 事件循环引入阻塞调用。
+
+### Redis Tool 有界扫描配置
+
+```yaml
+peach:
+  redis:
+    tool:
+      scan:
+        max-results: 10000
+        timeout-millis: 10000
+```
+
+这些限制默认生效，分别允许 1–100000 个唯一 key、1–60000 毫秒。历史 `scan(matchKey, count)`、`keys(pattern)`、`deletePattern(pattern, count)` 签名不变。超过上限会失败，不静默截断结果；`MultiCache.clear()` 在二级删除失败时仍清空本实例 L1，但不会声称其他节点 L2 已清空。
 
 ### 最简依赖（当前版本）
 

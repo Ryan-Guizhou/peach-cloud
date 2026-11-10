@@ -1,0 +1,18 @@
+{
+  "properties": [
+    {
+      "name": "peach.redis.tool.scan.max-results",
+      "type": "java.lang.Integer",
+      "sourceType": "com.peach.redis.common.tool.RedisDaoImpl",
+      "description": "单次 Redis SCAN 返回的唯一 key 数量上限；超过上限抛异常而不返回部分结果",
+      "defaultValue": 10000
+    },
+    {
+      "name": "peach.redis.tool.scan.timeout-millis",
+      "type": "java.lang.Long",
+      "sourceType": "com.peach.redis.common.tool.RedisDaoImpl",
+      "description": "单次 Redis SCAN 的本地遍历时间预算，单位毫秒；包含 Cluster 遍历",
+      "defaultValue": 10000
+    }
+  ]
+}

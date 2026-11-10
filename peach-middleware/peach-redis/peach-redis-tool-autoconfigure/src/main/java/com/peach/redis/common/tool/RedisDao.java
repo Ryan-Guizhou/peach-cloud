@@ -57,9 +57,14 @@ public interface RedisDao {
     public void delete(String[] keys);
 
     /**
-     * 批量删除key(key值可为模糊匹配---taskInfo:taskDetail:* <---> *代表任意字符)
+     * 按有业务命名空间的 Redis glob 模式删除，先完成有界扫描，再分批删除。
      *
-     * @param pattern
+     * <p>拒绝不带业务前缀的全局通配；超出结果/时间预算时抛异常，
+     * 不会将已扫描出的部分键交给删除操作。Redis SCAN 并非一致快照。</p>
+     *
+     * @param pattern 业务前缀明确的匹配模式
+     * @param count 每次 SCAN 的批次提示，不是待删除总数限制
+     * @return 实际删除的键数
      */
     public long deletePattern(Object pattern, Integer count);
 
@@ -389,11 +394,15 @@ public interface RedisDao {
     public void convertAndSend(String topic, Object message);
 
     /**
-     * 支持单机和集群
+     * 通过有界 SCAN 枚举单机或全部 Redis Cluster master 的匹配键。
      *
-     * @param matchKey 匹配字段
-     * @param count    获取条数
-     * @return
+     * <p>默认最多返回 10000 个唯一键并限制遍历时间为 10000 毫秒，
+     * 可通过 peach.redis.tool.scan 配置；超限抛异常，不返回部分结果。
+     * 对并发修改中的键空间不提供快照一致性。</p>
+     *
+     * @param matchKey Redis glob 匹配模式
+     * @param count Redis 游标每次扫描的提示值，不是总结果数量
+     * @return 扫描完整且未超限的去重结果
      */
     public Set<Object> scan(String matchKey, Integer count);
 

@@ -49,8 +49,21 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
 
     private static final String REDIS_CLUSTER_MODE = "cluster";
 
+    private static final int DEFAULT_SCAN_MAX_RESULTS = 10_000;
+
+    private static final long DEFAULT_SCAN_TIMEOUT_MILLIS = 10_000L;
+
+    private static final int SCAN_BATCH_MAX_HINT = 1_000;
+
     @Value("${peach.redis.mode:standalone}")
     private String redisMode;
+
+    @Value("${peach.redis.tool.scan.max-results:10000}")
+    private int scanMaxResults = DEFAULT_SCAN_MAX_RESULTS;
+
+    @Value("${peach.redis.tool.scan.timeout-millis:10000}")
+    private long scanTimeoutMillis = DEFAULT_SCAN_TIMEOUT_MILLIS;
+
     public RedisDaoImpl(RedisTemplate<?, ?> redisTemplate) {
         super(toObjectTemplate(redisTemplate));
     }
@@ -59,7 +72,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
      * 将统一 RedisTemplate 适配到历史 RedisDao 的 Object key/value 契约。
      *
      * <p>RedisTemplate 的泛型只参与编译期类型检查，实际 key 序列化仍由
-     * {@link com.peach.redis.common.RedisConfig} 统一配置为字符串序列化器。</p>
+     * 当前应用注入的 {@code RedisTemplate} 配置为字符串键序列化器。</p>
      *
      * @param redisTemplate 应用统一 RedisTemplate
      * @return RedisDao 历史契约使用的 RedisTemplate 视图
@@ -100,8 +113,37 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
 
     @Override
     public long deletePattern(final Object pattern, final Integer count) {
-        Set<Object> matchingKeys = scan(String.valueOf(pattern), count);
+        if (pattern == null) {
+            throw new IllegalArgumentException("Redis delete pattern cannot be null");
+        }
+        String glob = String.valueOf(pattern);
+        validateDeletePattern(glob);
+        // 先完成有界扫描；超限时不得开始删除已经找到的那部分键。
+        Set<Object> matchingKeys = scan(glob, count);
         return matchingKeys.isEmpty() ? 0L : delete(matchingKeys);
+    }
+
+    /**
+     * 拒绝无业务命名空间的通配删除；精确键可继续使用。
+     * 不允许把客户端任意 pattern 直接拼入全局删库操作。
+     */
+    private static void validateDeletePattern(String pattern) {
+        if (StringUtils.isBlank(pattern) || pattern.length() > 512) {
+            throw new IllegalArgumentException("Redis delete pattern length is invalid");
+        }
+        int wildcard = pattern.length();
+        for (char special : new char[]{'*', '?', '['}) {
+            int index = pattern.indexOf(special);
+            if (index >= 0 && index < wildcard) {
+                wildcard = index;
+            }
+        }
+        if (wildcard < pattern.length()) {
+            String namespace = pattern.substring(0, wildcard);
+            if (namespace.length() < 4 || !namespace.contains(":")) {
+                throw new IllegalArgumentException("Redis wildcard deletion requires a fixed business namespace");
+            }
+        }
     }
 
     @Override
@@ -431,11 +473,12 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     }
 
     /**
-     * 通过 Redis SCAN 获取匹配 key。count 只是每轮 SCAN 的提示值，
-     * 不是结果数量上限；该方法可能累积大量 key，禁止在热路径使用。
+     * 通过 Redis SCAN 有界遍历匹配键。count 只控制单次游标提示值，
+     * 最多返回 scanMaxResults 个不同的键，超出容量或时间预算明确失败，
+     * 不返回被截断的结果集，也不在本方法中执行删除。
      *
-     * <p>Cluster 模式对全部 master 分别 SCAN；连接和 Cursor 均由本方法关闭。
-     * Redis SCAN 并非并发写入下的一致快照，调用方需容忍重复与变化。</p>
+     * <p>Cluster 模式扫描全部活动 master，Cursor 与连接始终关闭。
+     * Redis SCAN 不是一致快照，并发写入可能导致遗漏或重复。</p>
      *
      * @param matchKey Redis glob pattern
      * @param count 每轮扫描提示值，空或非正值使用 1000
@@ -446,9 +489,13 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
         if (StringUtils.isBlank(matchKey)) {
             throw new IllegalArgumentException("Redis SCAN pattern cannot be blank");
         }
-        long batchSize = count == null || count <= 0 ? 1000L : count.longValue();
+        validateScanBounds();
+        long batchSize = count == null || count <= 0
+                ? SCAN_BATCH_MAX_HINT : Math.min(count.longValue(), SCAN_BATCH_MAX_HINT);
         ScanOptions options = ScanOptions.scanOptions().match(matchKey).count(batchSize).build();
         Set<Object> matchingKeys = new HashSet<>();
+        long startedNanos = System.nanoTime();
+        long maxElapsedNanos = TimeUnit.MILLISECONDS.toNanos(scanTimeoutMillis);
 
         try {
             if (REDIS_CLUSTER_MODE.equalsIgnoreCase(redisMode)) {
@@ -478,27 +525,63 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
                         }
                     }
                     for (RedisClusterNode node : activeMasters) {
+                        assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
                         try (Cursor<byte[]> cursor = connection.scan(node, options)) {
-                            while (cursor.hasNext()) {
-                                Object key = redisTemplate.getKeySerializer().deserialize(cursor.next());
-                                if (key != null) {
-                                    matchingKeys.add(key);
+                            while (true) {
+                                assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
+                                if (!cursor.hasNext()) {
+                                    break;
                                 }
+                                Object key = redisTemplate.getKeySerializer().deserialize(cursor.next());
+                                acceptScannedKey(matchingKeys, key, startedNanos, maxElapsedNanos);
                             }
                         }
                     }
                 }
             } else {
                 try (Cursor<Object> cursor = redisTemplate.scan(options)) {
-                    while (cursor.hasNext()) {
-                        matchingKeys.add(cursor.next());
+                    while (true) {
+                        assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
+                        if (!cursor.hasNext()) {
+                            break;
+                        }
+                        acceptScannedKey(matchingKeys, cursor.next(), startedNanos, maxElapsedNanos);
                     }
                 }
             }
-        } catch (Exception e) {
-            throw new IllegalStateException("Redis SCAN failed, pattern=" + matchKey, e);
+        } catch (IllegalStateException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            // 原因链仍可用于排查，错误正文不暴露 Redis 业务 key。
+            throw new IllegalStateException("Redis SCAN failed", exception);
         }
+        // 无匹配 key 时同样需要检查遍历耗时，不能只在收集结果时校验。
+        assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
         return matchingKeys;
+    }
+
+    private void validateScanBounds() {
+        if (scanMaxResults < 1 || scanMaxResults > 100_000
+                || scanTimeoutMillis < 1L || scanTimeoutMillis > 60_000L) {
+            throw new IllegalArgumentException("Redis SCAN limits are invalid");
+        }
+    }
+
+    /**
+     * 集中执行数量/耗时防护；不以 COUNT 作为结果容量限制。
+     */
+    private void acceptScannedKey(Set<Object> matchingKeys, Object key,
+                                  long startedNanos, long maxElapsedNanos) {
+        assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
+        if (key != null && matchingKeys.add(key) && matchingKeys.size() > scanMaxResults) {
+            throw new IllegalStateException("Redis SCAN exceeded configured result limit");
+        }
+    }
+
+    private static void assertScanWithinTimeBudget(long startedNanos, long maxElapsedNanos) {
+        if (System.nanoTime() - startedNanos > maxElapsedNanos) {
+            throw new IllegalStateException("Redis SCAN exceeded configured time budget");
+        }
     }
 
     @Override
