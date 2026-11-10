@@ -77,18 +77,21 @@ public final class RedisStreamPendingRecovery {
     }
 
     /** 停止扫描并终止私有线程池；不清除 Pending 消息。 */
-    public synchronized void stop() {
-        if (scheduler != null) {
-            scheduler.shutdown();
+    public void stop() {
+        ScheduledExecutorService executor;
+        synchronized (this) {
+            executor = scheduler;
+            scheduler = null;
+        }
+        if (executor != null) {
+            executor.shutdown();
             try {
-                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                    scheduler.shutdownNow();
+                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
                 }
             } catch (InterruptedException exception) {
-                scheduler.shutdownNow();
+                executor.shutdownNow();
                 Thread.currentThread().interrupt();
-            } finally {
-                scheduler = null;
             }
         }
     }
