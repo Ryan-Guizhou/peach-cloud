@@ -28,10 +28,6 @@
         </dependency>
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-redis-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.peach</groupId>
             <artifactId>peach-redission-common</artifactId>
         </dependency>
         <dependency>
