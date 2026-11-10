@@ -243,6 +243,10 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 **Acceptance boundary:** These are client connectivity and KV/TTL/SCAN smoke tests, not proof of Sentinel failover, production TLS PKI, rolling compatibility for existing sessions, cross-instance Bloom, missed multi-cache invalidation, or crash recovery for Stream/delay queues. Continue tracking those items in [Epic #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18).
 
+## Sa-Token administrative search safety (Issue #57)
+
+`PeachSaTokenDao#searchData` now uses Redis SCAN instead of blocking KEYS and enumerates all Cluster masters. The default maximum is 50,000 unique matches, configurable through `peach.satoken.dao.search-max-matches`; exceeding it fails rather than truncating results. Avoid high-frequency request-path use. See the [Sa-Token component guide](../peach-satoken/README.en-US.md#redis-session-search-with-bounded-scan-issue-57).
+
 ## Boundaries
 
 - Keys need stable namespaces and required isolation dimensions; sensitive values must not be placed directly in keys/logs.

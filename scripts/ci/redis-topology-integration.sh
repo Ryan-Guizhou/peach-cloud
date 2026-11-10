@@ -130,9 +130,9 @@ esac
 
 echo "Running real Redis $topology tests with TLS verification preserved"
 mvn -B -ntp \
-  -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart \
+  -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart \
   -am \
-  -Dtest=RedisTopologyServerIntegrationTest,RedisToolTopologyServerIntegrationTest,RedissonTopologyServerIntegrationTest \
+  -Dtest=RedisTopologyServerIntegrationTest,RedisToolTopologyServerIntegrationTest,RedissonTopologyServerIntegrationTest,SaTokenSearchTopologyServerIntegrationTest \
   -Dsurefire.failIfNoSpecifiedTests=false test
 
 python3 - <<'PY'
@@ -143,6 +143,7 @@ suites = {
     "peach-middleware/peach-redis/peach-redis-quickstart/target/surefire-reports/TEST-com.peach.redis.quickstart.RedisTopologyServerIntegrationTest.xml",
     "peach-middleware/peach-redis/peach-redis-tool-quickstart/target/surefire-reports/TEST-com.peach.redis.tool.quickstart.RedisToolTopologyServerIntegrationTest.xml",
     "peach-middleware/peach-redission/peach-redisson-quickstart/target/surefire-reports/TEST-com.peach.redisson.quickstart.RedissonTopologyServerIntegrationTest.xml",
+    "peach-middleware/peach-satoken/peach-satoken-quickstart/target/surefire-reports/TEST-com.peach.satoken.quickstart.SaTokenSearchTopologyServerIntegrationTest.xml",
 }
 for file in sorted(suites):
     path = Path(file)

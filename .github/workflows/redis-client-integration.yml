@@ -58,7 +58,7 @@ jobs:
           mvn -B -ntp \
             -pl peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart,peach-middleware/peach-redis/peach-redis-stream-quickstart \
             -am \
-            -Dtest=RedisOnlyServerIntegrationTest,RedisToolServerIntegrationTest,RedissonOnlyServerIntegrationTest,SaTokenRedisServerIntegrationTest,RedisStreamRecoveryServerIntegrationTest \
+            -Dtest=RedisOnlyServerIntegrationTest,RedisToolServerIntegrationTest,RedissonOnlyServerIntegrationTest,SaTokenRedisServerIntegrationTest,RedisStreamRecoveryServerIntegrationTest,SaTokenSearchServerIntegrationTest \
             -Dsurefire.failIfNoSpecifiedTests=false test
 
       - name: Verify Redis Stream Pending tests actually executed
@@ -76,4 +76,20 @@ jobs:
           if stats["tests"] != 3 or any(stats[name] for name in ("failures", "errors", "skipped")):
               raise SystemExit(f"Unexpected real Redis Stream IT result: {stats}")
           print(f"Real Redis Stream recovery integration passed: {stats}")
+          PY
+      - name: Enforce non-skipped Sa-Token scan search in real Redis
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          p = Path("peach-middleware/peach-satoken/peach-satoken-quickstart/target/surefire-reports/TEST-com.peach.satoken.quickstart.SaTokenSearchServerIntegrationTest.xml")
+          if not p.is_file():
+              raise SystemExit(f"Missing Sa-Token search test: {p}")
+          root = ET.parse(p).getroot()
+          vals = {a: int(root.get(a, "0")) for a in ("tests", "failures", "errors", "skipped")}
+          if vals["tests"] != 1 or any(vals[k] for k in ("failures", "errors", "skipped")):
+              raise SystemExit(f"Invalid Sa-Token search test result: {vals}")
+          print(f"Real Sa-Token SCAN test passed: {vals}")
           PY

@@ -39,6 +39,12 @@ mvn -pl peach-middleware/peach-satoken/peach-satoken-quickstart -am test
 
 `PEACH_SATOKEN_DEMO_PASSWORD` (or `quickstart.satoken.demo.password`) is required; there is no default. Tests inject the property via test configuration. Do not store production secrets.
 
+## Redis session search with bounded SCAN (Issue #57)
+
+`PeachSaTokenDao#searchData` replaces blocking Redis `KEYS` with automatically closed SCAN cursors; Redis Cluster enumerates all master nodes. Results are sorted and paginated (`sortType=true` ascending, false descending). `peach.satoken.dao.search-max-matches` defaults to `50000`, and exceeding the limit fails explicitly rather than returning a truncated session list; `size=-1` still requests all matches subject to that safety limit. This scans the keyspace and should be rate-limited to administrative workflows or replaced by a dedicated index at scale.
+
+Real Redis 7.2 tests cover standalone ordering, paging, TTL and limit failures plus Sentinel/Cluster/TLS search. Existing keys, SaSession JSON and DAO writes remain unchanged. SCAN is not a consistent snapshot; mixed-version rolling session acceptance is still outstanding.
+
 ## Boundaries
 
 - Login and user role/organization/permission data remain owned by the authentication domain; the starter is not the permission-data source of truth.

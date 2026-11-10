@@ -5,6 +5,7 @@ import cn.dev33.satoken.dao.SaTokenDao;
 import com.peach.satoken.dao.PeachSaTokenDao;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -46,8 +47,9 @@ public class PeachSaTokenDaoAutoConfiguration {
     @Bean
     @ConditionalOnBean(RedisConnectionFactory.class)
     @ConditionalOnMissingBean(SaTokenDao.class)
-    public SaTokenDao saTokenDao(@NonNull RedisConnectionFactory redisConnectionFactory) {
-        return new PeachSaTokenDao(redisConnectionFactory);
+    public SaTokenDao saTokenDao(@NonNull RedisConnectionFactory redisConnectionFactory,
+                                 @Value("${peach.satoken.dao.search-max-matches:50000}") int maxMatches) {
+        return new PeachSaTokenDao(redisConnectionFactory, maxMatches);
     }
 
     /**
