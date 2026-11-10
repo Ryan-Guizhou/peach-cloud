@@ -14,6 +14,9 @@ import org.redisson.client.codec.StringCodec;
 import org.redisson.config.Config;
 
 import java.time.Duration;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -221,6 +224,88 @@ class DelayQueueV2ServerIntegrationTest {
             threads.shutdownNow();
             secondClient.shutdown();
             firstClient.shutdown();
+        }
+    }
+
+    @Test
+    void forciblyKilledIndependentJvmLeavesMessageReclaimableByAnotherWorker() throws Exception {
+        String topic = newTopic();
+        String id = "process-crash-1";
+        String payload = "worker-must-recover";
+        Path marker = Files.createTempFile("peach-dq2-kill-marker-", ".txt");
+        Path childOutput = Files.createTempFile("peach-dq2-kill-output-", ".txt");
+        Process child = null;
+        RedissonClient newOwnerClient = null;
+
+        try {
+            assertThat(queue.offer(topic, id, payload, Duration.ZERO)).isTrue();
+            String executable = Path.of(System.getProperty("java.home"), "bin", "java").toString();
+            String classPath = System.getProperty("java.class.path");
+            assertThat(classPath).as("Test runner must expose a runnable child JVM classpath").isNotBlank();
+            ProcessBuilder builder = new ProcessBuilder(
+                    executable, "-cp", classPath,
+                    "com.peach.redission.delayqueue.quickstart.DelayQueueV2CrashWorker",
+                    topic, marker.toString());
+            builder.redirectErrorStream(true);
+            builder.redirectOutput(childOutput.toFile());
+            child = builder.start();
+
+            boolean claimed = false;
+            for (int attempt = 0; attempt < 120; attempt++) {
+                if (Files.size(marker) > 0) {
+                    claimed = true;
+                    break;
+                }
+                if (!child.isAlive()) {
+                    break;
+                }
+                Thread.sleep(100);
+            }
+            assertThat(claimed)
+                    .as("Independent worker must claim before kill; child output: "
+                            + Files.readString(childOutput, StandardCharsets.UTF_8))
+                    .isTrue();
+
+            String[] fields = Files.readString(marker, StandardCharsets.UTF_8).trim().split("\\|", -1);
+            assertThat(fields).hasSize(3);
+            assertThat(fields[0]).isEqualTo(id);
+            assertThat(fields[2]).isEqualTo(payload);
+            long staleToken = Long.parseLong(fields[1]);
+            assertThat(queue.status(topic).processing()).isEqualTo(1L);
+
+            child.destroyForcibly(); // Real subprocess kill: no ACK and no graceful queue.close().
+            assertThat(child.waitFor(10, TimeUnit.SECONDS)).isTrue();
+            assertThat(child.isAlive()).isFalse();
+
+            Config recoveredConfig = new Config();
+            recoveredConfig.useSingleServer().setAddress("redis://127.0.0.1:6379");
+            newOwnerClient = Redisson.create(recoveredConfig);
+            try (RedisDelayQueueV2 recovered = new RedisDelayQueueV2(newOwnerClient, integrationProperties())) {
+                // Claims have a three-second lease; a fresh owner may reclaim after expiry.
+                Thread.sleep(3600);
+                assertThat(recovered.reclaimExpired(topic)).isEqualTo(1L);
+                List<RedisDelayQueueV2.ClaimedMessage> messages = recovered.claim(topic);
+                assertThat(messages).hasSize(1);
+                RedisDelayQueueV2.ClaimedMessage message = messages.get(0);
+                assertThat(message.id()).isEqualTo(id);
+                assertThat(message.payload()).isEqualTo(payload);
+                assertThat(message.fencingToken()).isGreaterThan(staleToken);
+                assertThat(recovered.acknowledge(topic, id, staleToken)).isFalse();
+                assertThat(recovered.acknowledge(topic, id, message.fencingToken())).isTrue();
+                assertThat(recovered.status(topic).processing()).isZero();
+                assertThat(recovered.status(topic).scheduled()).isZero();
+                assertThat(recovered.status(topic).completed()).isEqualTo(1L);
+            }
+        } finally {
+            if (child != null && child.isAlive()) {
+                child.destroyForcibly();
+                child.waitFor(10, TimeUnit.SECONDS);
+            }
+            if (newOwnerClient != null) {
+                newOwnerClient.shutdown();
+            }
+            Files.deleteIfExists(marker);
+            Files.deleteIfExists(childOutput);
         }
     }
 

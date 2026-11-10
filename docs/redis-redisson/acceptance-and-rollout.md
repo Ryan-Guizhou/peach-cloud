@@ -104,6 +104,8 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 - **真实 Redis ACL（Issue #75）：** 增加禁用 default 用户、临时专用账户的正反例集成矩阵，验证 Jedis、Redisson、Tool、Sa-Token 真实登录与错误认证拒绝；还不涉及生产密钥轮换。是否通过以实际 CI 结果为准。
 
+- **DelayQueue V2 真正独立 JVM 故障（[#77](https://github.com/Ryan-Guizhou/peach-cloud/issues/77)）：** 新增子进程强制终止后另一客户端的租约回收和 fencing 回归。该测试由独立 Redis 7.2 CI 门禁验收，仍不覆盖 Redis 本身故障与跨存储事务。
+
 ## 6. Epic 未完成项（不得提前勾选）
 
 - 真实 Redis 主从/Cluster 故障切换与客户端重连，TLS/ACL 密钥更新及证书轮换。

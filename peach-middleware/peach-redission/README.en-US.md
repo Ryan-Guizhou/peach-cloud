@@ -247,6 +247,10 @@ Against an isolated three-master/three-replica Redis 7.2 Cluster, CI stops maste
 
 A dedicated Redis 7.2 CI standalone topology disables the default user and uses an ephemeral randomly generated password for a named ACL account. Independent Jedis, Redisson, Redis Tool and Sa-Token must perform real writes/reads/TTL successfully; anonymous access and an invalid password must be rejected. The temporary password is generated only inside GitHub Actions, never stored in source or Nacos. This proves **single-node data ACL authentication**, not live Sentinel ACL credential rotation, production secret management, mTLS or minimum-privilege policy review.
 
+## Real independent-JVM crash recovery (Issue #77)
+
+A Redis 7.2 integration test injects a real worker-process failure: a separate JVM Redisson worker claims a message and writes a ready marker, then the parent calls `Process.destroyForcibly()` so that **the process cannot gracefully ACK or close the queue**. After the lease expires, another RedissonClient reclaims the same message ID/payload with a greater fencing token, rejects the stale token and acknowledges the recovered message without processing residue. Delivery remains **at least once**; durable business-side idempotency and external-store fencing are still mandatory. This is not a Redis master failure or cross-store atomicity test.
+
 ## Boundaries
 
 - Distributed locks protect the smallest critical section and do not replace database uniqueness, transactions or state validation.

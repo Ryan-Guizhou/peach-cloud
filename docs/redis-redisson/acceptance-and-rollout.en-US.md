@@ -104,6 +104,8 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 - **Real Redis ACL (Issue #75):** a CI topology disables the default user and tests named-user credentials across clients, plus rejection of invalid/anonymous access. Production credential rotation is not covered; check the actual CI results for acceptance.
 
+- **Real JVM crash recovery for DelayQueue V2 ([#77](https://github.com/Ryan-Guizhou/peach-cloud/issues/77)):** force-kill the claimant subprocess, then verify lease recovery and fencing with a second client in Redis 7.2 CI. This does not cover Redis infrastructure failover or cross-store transactions.
+
 ## 6. Epic blockers—not yet complete
 
 - Real Redis Sentinel/Cluster master failover and client reconnection, live TLS/ACL rotation.
