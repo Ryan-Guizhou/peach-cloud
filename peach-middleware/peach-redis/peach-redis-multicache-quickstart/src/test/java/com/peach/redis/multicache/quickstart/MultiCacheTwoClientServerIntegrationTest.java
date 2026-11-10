@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MultiCacheTwoClientServerIntegrationTest {
 
     @Test
-    void peerUpdateInvalidatesLocalL1AndNextReadFindsNewValue() throws InterruptedException {
+    void peerUpdateInvalidatesLocalL1AndNextReadFindsNewValue() throws Exception {
         JedisConnectionFactory firstFactory = factory();
         JedisConnectionFactory secondFactory = factory();
         RedisMessageListenerContainer listener = null;
