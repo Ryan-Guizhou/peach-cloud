@@ -17,7 +17,7 @@ English | [中文](README.md)
 | Connection foundation / `peach-redis-common` (current, scheduled for migration) | `RedisTemplate`, `StringRedisTemplate`, `RedisConnectionFactory` | Standalone, Sentinel, Cluster, Jedis pool, Jackson JSON serialization | Shared Redis access | Also configures Redisson today; nonzero Cluster database is unsupported; preserve stored formats |
 | `peach-redis-tool-starter` | `RedisDao` | String, TTL, Hash, List, Set, ZSet, Pub/Sub and batch deletion | KV, counters, tags, session support | `scan()` supports standalone/Sentinel and scans all Cluster masters; `count` is a batch hint, not a result limit; result is memory-backed and not a consistent snapshot; cross-slot deletion is per-key |
 | `peach-redis-multicache-starter` | `MultiCacheManager`, `MultiCacheManagerService`, Spring Cache | Caffeine L1 and Redis L2; TTL jitter; manual and annotation APIs; Pub/Sub invalidation | Product detail, configuration and dictionary caching | Best-effort invalidation, not strong consistency; `clear()` uses the restored Redis SCAN but remains memory-intensive and not an atomic snapshot; Caffeine STRONG reference semantics fixed; not strongly consistent across nodes |
-| `peach-redis-stream-starter` | `RedisStreamPushHandler`, `RedisStreamHandler`, `MessageConsumer` | Produce Stream records, group/broadcast consumption, consumer callbacks | Lightweight event messages | Group consumers ACK only on success; failures remain in PEL, but automatic reclaim, retries and DLQ are not implemented |
+| `peach-redis-stream-starter` | `RedisStreamPushHandler`, `RedisStreamHandler`, `MessageConsumer` | Produce Stream records, group/broadcast consumption, consumer callbacks | Lightweight event messages | Group consumers ACK only on success and retain failures in PEL; opt-in scheduled reclaim, backoff and DLQ are implemented but disabled by default and require fault-injection acceptance |
 
 ### Which module should I use?
 
@@ -80,7 +80,7 @@ Uses the existing `RedisDao` API. Production code should standardize key naming,
 | --- | --- |
 | Redis unavailable | Ordinary caches may fall back to source; authentication, tokens and CAPTCHA must not be bypassed |
 | Multicache subscription disconnected | Local data can become stale; bound L1 TTL; reconnect invalidation and cross-node consistency still need improvement |
-| Stream handler fails | Group-mode failures stay pending; automatic PEL reclaim and bounded retry are not available yet. Application idempotency remains required |
+| Stream handler fails | Group-mode failures stay pending; optional XPENDING/XCLAIM recovery, backoff and DLQ are disabled by default. Durable business idempotency and failure-injection acceptance remain required |
 | Changing Jackson or client driver | Test persisted JSON and existing keys first; do not silently change stored session format |
 
 
@@ -173,7 +173,7 @@ peach:
 ```
 
 
-**Acknowledgment and recovery boundary:** consumer groups XACK only after the business callback succeeds; failures remain pending in the PEL. Each service instance uses a unique consumer name and Spring manages the executor. Automatic `XPENDING`/`XCLAIM` recovery, backoff and DLQ are not yet implemented; durable idempotency is still required.
+**Acknowledgment and recovery boundary:** consumer groups XACK only after the business callback succeeds; failures remain pending in the PEL. Each service instance uses a unique consumer name and Spring manages the executor. Optional `XPENDING`/`XCLAIM` recovery, backoff and DLQ exist but are disabled by default; DLQ XADD and source XACK are not atomic across keys, and durable business idempotency is still required.
 
 
 - Module: [`peach-redis-stream-quickstart`](./peach-redis-stream-quickstart/)
@@ -196,7 +196,7 @@ The repository now includes `peach-redis-autoconfigure`, `peach-redis-starter`, 
 | Redis-only / `peach-redis-starter` | `RedisConnectionFactory` / `RedisTemplate` / `StringRedisTemplate` | Jedis default; custom connection factories win; JSON values retain legacy Jackson2JsonRedisSerializer format |
 | Tool / `peach-redis-tool-starter` | `RedisDao` | Depends on the new foundation; avoid SCAN on hot or huge keyspaces |
 | MultiCache / `peach-redis-multicache-starter` | `MultiCacheManagerService` | Includes Tool, Caffeine and Hutool; invalidation remains best-effort |
-| Stream / `peach-redis-stream-starter` | `RedisStreamHandler` | Uses generic `RedisConnectionFactory`, ACKs on success and leaves failures pending; automated recovery remains future work |
+| Stream / `peach-redis-stream-starter` | `RedisStreamHandler` | Uses generic `RedisConnectionFactory`, ACKs on success and leaves failures pending; optional Pending recovery, backoff and DLQ are disabled by default |
 
 **Minimal dependency** (version is managed by the project parent POM):
 
@@ -218,3 +218,9 @@ The repository now includes `peach-redis-autoconfigure`, `peach-redis-starter`, 
 - Caches define TTL, invalidation, fallback and consistency semantics.
 - Stream consumers require business idempotency plus explicit ACK, retry, backlog and failure governance.
 - Pub/Sub, Stream and caches must not be documented as strong consistency or Exactly-Once guarantees.
+
+## Six service launch migrations (Issue #45)
+
+The Fileservice, Generator, Message, Setting, Monitor and Scheduled launch modules now explicitly depend on `peach-redis-starter` and `peach-redisson-starter`. Their direct declarations of the legacy `peach-redis-common`, Jedis, Redisson and Spring Data Redis dependencies were removed. Both client types and the `peach.redis.*` configuration contract remain available, without changing existing keys, codecs or stored sessions. Scheduled keeps `peach-redission-distributedlock-starter`. Gateway continues to use its independent reactive Lettuce connection.
+
+**Acceptance boundary:** This POM migration does not establish Sentinel / Cluster / TLS, existing-session rolling compatibility or two-node failure-injection acceptance. The legacy Common module stays in the reactor for remaining consumers until a full reference audit and rollout tests justify removal.
