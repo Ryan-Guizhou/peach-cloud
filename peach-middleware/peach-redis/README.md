@@ -2,7 +2,7 @@
 
 [English](README.en-US.md) | 中文
 
-`peach-redis` 将 Redis 能力拆成三个独立 Starter：基础工具、多级缓存和 Stream。共享稳定契约放在 `peach-redis-common`。
+`peach-redis` 将 Redis 能力拆成三个独立 Starter：基础工具、多级缓存和 Stream。独立连接底座为 `peach-redis-starter`；历史 `peach-redis-common` 仅供存量配置渐进迁移。
 
 ## 组件定位与版本
 
@@ -39,7 +39,7 @@
 </dependency>
 ```
 
-`revision` 来自 peach-cloud Maven reactor；脱离 reactor 时换为发布的具体版本。**当前 Starter 依赖闭包尚未治理完成**：仅有该声明不保证外部独立消费工程可启动；仓库 Quickstart 中仍有显式的客户端/common 依赖。后续 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18) 将消除该额外要求。
+`revision` 来自 peach-cloud Maven reactor；脱离 reactor 时换为发布的具体版本。Tool / MultiCache / Stream Starter 已透传独立 `peach-redis-starter`，三个能力 Quickstart 不再显式依赖旧 `peach-redis-common`；生产部署仍需对 Nacos 和历史数据进行兼容性回归。
 
 ### 最简配置（当前项目约定）
 
@@ -91,6 +91,10 @@ public class ProfileCacheService {
 - **Auth / Setting / Message**：业务模块改为独立 Redis Starter；Auth 启动模块移除能由 Starter 传递的旧 Jedis、Redisson 和 Spring Data Redis 直连依赖。
 - **未完成验收**：现有 Redis key 与会话数据读写、登录/退出、网关的响应式 Lettuce 隔离、Nacos 部署模板和 Sentinel/Cluster/TLS 迁移必须在目标环境单独验收。旧 `peach-redis-common` 不会在本批直接删除。
 
+## 旧客户端依赖收敛（Issue #43）
+
+Redis Tool / MultiCache / Stream 的 autoconfigure 与 Quickstart POM 已移除旧 `peach-redis-common` 可选及直接依赖；`RedisDaoImpl` 的 Cluster 判断使用模块内常量，不再从旧 RedisConfig 模块取值。Redisson Common / Bloom / DistributedLock / DelayQueue 的历史可选依赖也已清理。独立 Starter 在 Redis 7.2 真实服务容器执行基础客户端及 Tool 的测试，均须通过后合并；生产 Redis 数据、配置与会话的跨版本滚动升级仍需单独验收。
+
 ## 结构
 
 | 能力 | Autoconfigure | Starter | Quickstart |
@@ -117,7 +121,7 @@ flowchart LR
 
 ## Quick Start
 
-各能力均提供无 Web 端口的 quickstart（`spring.main.web-application-type=none`），依赖对应 starter + `peach-redis-common`，并通过 Testcontainers Redis（`redis:7.2-alpine`）做最小闭环验证。本地演示前提供开发 Redis，或直接跑 IT。
+各能力均提供无 Web 端口的 quickstart（`spring.main.web-application-type=none`），只需对应 Starter 的依赖闭包。传统 Testcontainers 测试在缺少 Docker 环境时可能跳过，另有专用 Redis 7.2 服务容器 CI 实际运行 Tool 和客户端验收。本地演示前提供开发 Redis，或直接跑 IT。
 
 ### Tool
 

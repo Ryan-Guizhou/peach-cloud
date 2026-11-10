@@ -84,6 +84,10 @@ Lock names follow current business naming rules; do not change keys during rolli
 | Changing lock keys, codec or message payloads | Validate stored data, queue state, mixed-version rollout and rollback before deployment |
 
 
+## Redisson dependency-closure cleanup (Issue #43)
+
+`peach-redission-common`, Bloom, DistributedLock and DelayQueue autoconfigure modules no longer declare optional `peach-redis-common`. Feature Starters use `peach-redisson-starter`. Legacy `RedisConfig` stays available for existing installations, but is no longer a new Starter dependency.
+
 ## Structure
 
 **Dependency model:** each feature Starter → `peach-redisson-starter` → `peach-redisson-autoconfigure` → RedissonClient. `peach-redission-common` remains the historical shared lock naming / utility module, not an independent client factory.

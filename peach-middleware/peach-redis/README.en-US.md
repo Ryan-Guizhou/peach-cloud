@@ -2,7 +2,7 @@
 
 English | [中文](README.md)
 
-`peach-redis` separates Redis capabilities into three independent starters: tools, multi-level cache and Stream. Stable shared contracts live in `peach-redis-common`.
+`peach-redis` separates Redis capabilities into three independent starters: tools, multi-level cache and Stream. The independent connection foundation is `peach-redis-starter`; the legacy `peach-redis-common` remains for phased compatibility.
 
 ## Purpose and compatibility
 
@@ -39,7 +39,7 @@ English | [中文](README.md)
 </dependency>
 ```
 
-`revision` resolves within the peach-cloud Maven reactor; use an actual published version outside it. **Starter dependency closure has not been fixed yet**: this single declaration does not guarantee a standalone consumer boots; existing Quickstarts declare explicit common/client dependencies. [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18) addresses that.
+`revision` resolves within the peach-cloud Maven reactor; use an actual published version outside it. Tool / MultiCache / Stream Starters now transitively depend on the independent `peach-redis-starter`, and their Quickstarts no longer explicitly require `peach-redis-common`. Nacos and legacy-data rollout checks remain necessary.
 
 ### Minimal configuration (current project convention)
 
@@ -91,6 +91,10 @@ Uses the existing `RedisDao` API. Production code should standardize key naming,
 - **Auth / Setting / Message:** service modules use the independent Redis Starter. The Auth launcher removes redundant direct Jedis, Redisson and Spring Data Redis dependencies provided by the Starters.
 - **Still to verify:** existing Redis data/session compatibility, login/logout, gateway reactive Lettuce isolation, Nacos deployment profiles and Sentinel/Cluster/TLS rollout in the intended runtime. This batch does not delete the legacy `peach-redis-common`.
 
+## Legacy client dependency cleanup (Issue #43)
+
+Redis Tool / MultiCache / Stream autoconfigure and Quickstart POMs no longer declare optional or direct `peach-redis-common`; `RedisDaoImpl` uses a local Cluster-mode constant rather than depending on the legacy RedisConfig module. Redisson Common / Bloom / DistributedLock / DelayQueue optional legacy dependencies are also removed. Independent client and Tool tests run against real Redis 7.2 in dedicated CI before merging; legacy data, configuration and session rolling-upgrade checks still require explicit production acceptance.
+
 ## Structure
 
 | Capability | Autoconfigure | Starter | Quickstart |
@@ -117,7 +121,7 @@ flowchart LR
 
 ## Quick Start
 
-Each capability ships a non-web quickstart (`spring.main.web-application-type=none`) that depends on the matching starter plus `peach-redis-common`, and verifies the minimal loop with Testcontainers Redis (`redis:7.2-alpine`). Provide a development Redis for local demos, or run the IT suite directly.
+Each capability ships a non-web quickstart (`spring.main.web-application-type=none`) that depends only on the matching Starter. Legacy Testcontainers tests may be skipped without Docker; a dedicated Redis 7.2 service-container CI actually exercises Tool and client integration. Provide a development Redis for local demos, or run the IT suite directly.
 
 ### Tool
 

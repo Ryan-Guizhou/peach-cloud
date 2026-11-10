@@ -3,7 +3,6 @@
 package com.peach.redis.common.tool;
 
 import jakarta.annotation.Nullable;
-import com.peach.redis.constant.RedisConstant;
 import org.springframework.data.redis.connection.RedisClusterConnection;
 import org.springframework.data.redis.connection.RedisClusterNode;
 import org.springframework.stereotype.Indexed;
@@ -46,6 +45,8 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     private static final Integer TRY_TIMES = 3;
 
     private static final String REDIS_OPERATION_FAILED = "Redis operation failed";
+
+    private static final String REDIS_CLUSTER_MODE = "cluster";
 
     @Value("${peach.redis.mode:standalone}")
     private String redisMode;
@@ -115,7 +116,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             return 0L;
         }
         // Redis Cluster forbids DEL with keys from different hash slots.
-        if (RedisConstant.CLUSTER.equalsIgnoreCase(redisMode)) {
+        if (REDIS_CLUSTER_MODE.equalsIgnoreCase(redisMode)) {
             long deleted = 0L;
             for (Object key : keys) {
                 if (Boolean.TRUE.equals(redisTemplate.delete(key))) {
@@ -449,7 +450,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
         Set<Object> matchingKeys = new HashSet<>();
 
         try {
-            if (RedisConstant.CLUSTER.equalsIgnoreCase(redisMode)) {
+            if (REDIS_CLUSTER_MODE.equalsIgnoreCase(redisMode)) {
                 var connectionFactory = Objects.requireNonNull(redisTemplate.getConnectionFactory(),
                         "RedisConnectionFactory must not be null");
                 try (RedisClusterConnection connection = connectionFactory.getClusterConnection()) {
