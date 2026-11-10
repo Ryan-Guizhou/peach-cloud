@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.peach</groupId>
-    <artifactId>peach-redission-delayqueue-starter</artifactId>
-    <name>peach-redission-delayqueue-starter</name>
-    <description>peach-redission-delayqueue-starter</description>
 
     <parent>
         <groupId>com.peach</groupId>
@@ -14,6 +10,10 @@
         <version>${revision}</version>
     </parent>
 
+    <groupId>com.peach</groupId>
+    <artifactId>peach-redission-delayqueue-starter</artifactId>
+    <name>peach-redission-delayqueue-starter</name>
+    <description>peach-redission-delayqueue-starter</description>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -30,8 +30,4 @@
             <artifactId>peach-initialize-starter</artifactId>
         </dependency>
     </dependencies>
-
-
-
-
 </project>

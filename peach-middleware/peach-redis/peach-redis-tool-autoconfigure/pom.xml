@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.peach</groupId>
-    <artifactId>peach-redis-tool-autoconfigure</artifactId>
-    <name>peach-redis-tool-autoconfigure</name>
-    <description>peach-redis-tool-autoconfigure</description>
 
     <parent>
         <groupId>com.peach</groupId>
@@ -14,6 +10,10 @@
         <version>${revision}</version>
     </parent>
 
+    <groupId>com.peach</groupId>
+    <artifactId>peach-redis-tool-autoconfigure</artifactId>
+    <name>peach-redis-tool-autoconfigure</name>
+    <description>peach-redis-tool-autoconfigure</description>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -32,14 +32,11 @@
             <artifactId>jedis</artifactId>
             <optional>true</optional>
         </dependency>
-
-
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
             <optional>true</optional>
         </dependency>
-
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
@@ -50,8 +47,4 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
     </dependencies>
-
-
-
-
 </project>
