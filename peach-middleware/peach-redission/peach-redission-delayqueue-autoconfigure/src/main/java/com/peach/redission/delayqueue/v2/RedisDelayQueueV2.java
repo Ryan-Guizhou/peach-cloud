@@ -360,7 +360,7 @@ public final class RedisDelayQueueV2 implements AutoCloseable {
 
     private long evaluateLong(String name, List<Object> keys, Object... args) {
         Long result = redisScripts.eval(RScript.Mode.READ_WRITE, scripts.get(name),
-                RScript.ReturnType.INTEGER, keys, args);
+                RScript.ReturnType.INTEGER, keys, stringifyArgs(args));
         if (result == null) {
             throw new IllegalStateException("Redis Lua returned null, script=" + name);
         }
@@ -369,8 +369,16 @@ public final class RedisDelayQueueV2 implements AutoCloseable {
 
     private List<Object> evaluateList(String name, List<Object> keys, Object... args) {
         List<Object> result = redisScripts.eval(RScript.Mode.READ_WRITE, scripts.get(name),
-                RScript.ReturnType.MULTI, keys, args);
+                RScript.ReturnType.MULTI, keys, stringifyArgs(args));
         return result == null ? List.of() : result;
+    }
+
+    private static Object[] stringifyArgs(Object[] args) {
+        Object[] strings = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            strings[i] = String.valueOf(args[i]);
+        }
+        return strings;
     }
 
     private static long toLong(Object number) {
