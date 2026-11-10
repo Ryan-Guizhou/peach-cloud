@@ -111,7 +111,7 @@ class RedisStreamPendingRecoveryTest {
         when(raw.getValue()).thenReturn(java.util.Map.of("_raw", "test-payload"));
         when(operations.claim(eq(STREAM), eq(GROUP), anyString(), eq(Duration.ofMillis(40)), eq(id)))
                 .thenReturn(List.of(raw));
-        when(operations.add(any(org.springframework.data.redis.connection.stream.Record.class)))
+        when(operations.add(any(MapRecord.class)))
                 .thenReturn(RecordId.of("203-0"));
         when(operations.acknowledge(STREAM, GROUP, id)).thenReturn(1L);
 
@@ -120,7 +120,7 @@ class RedisStreamPendingRecoveryTest {
                 redis, streamProperties(), recoveryProperties(), consumer);
         assertThat(recovery.recoverOnce()).isEqualTo(1);
         var ordered = inOrder(operations);
-        ordered.verify(operations).add(any(org.springframework.data.redis.connection.stream.Record.class));
+        ordered.verify(operations).add(any(MapRecord.class));
         ordered.verify(operations).acknowledge(STREAM, GROUP, id);
         verifyNoInteractions(consumer);
     }
@@ -139,7 +139,7 @@ class RedisStreamPendingRecoveryTest {
         when(raw.getValue()).thenReturn(java.util.Map.of("_raw", "test-payload"));
         when(operations.claim(eq(STREAM), eq(GROUP), anyString(), eq(Duration.ofMillis(40)), eq(id)))
                 .thenReturn(List.of(raw));
-        when(operations.add(any(org.springframework.data.redis.connection.stream.Record.class)))
+        when(operations.add(any(MapRecord.class)))
                 .thenThrow(new IllegalStateException("redis unavailable"));
 
         MessageConsumer consumer = mock(MessageConsumer.class);
