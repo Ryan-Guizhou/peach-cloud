@@ -17,7 +17,6 @@ import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Indexed;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 防重放切面。
@@ -36,8 +35,6 @@ public class RepeatExecuteLimitAspect {
 
     public static final String SUCCESS_FLAG = "success";
 
-    private final LocalCacheLock localCacheLock;
-
     private final RedissionDataHandle redissionDataHandle;
 
     private final LockInfoHandleFactory lockInfoHandleFactory;
@@ -47,7 +44,6 @@ public class RepeatExecuteLimitAspect {
     public RepeatExecuteLimitAspect(LockInfoHandleFactory lockInfoHandleFactory, RedissionDataHandle redissionDataHandle, LocalCacheLock localCacheLock, DistrbutedLockerFactory distrbutedLockerFactory) {
         this.lockInfoHandleFactory = lockInfoHandleFactory;
         this.redissionDataHandle = redissionDataHandle;
-        this.localCacheLock = localCacheLock;
         this.distrbutedLockerFactory = distrbutedLockerFactory;
     }
 
@@ -57,8 +53,6 @@ public class RepeatExecuteLimitAspect {
 
         long durationTime = repeatLimit.durationTime();
         String message = repeatLimit.message();
-        Object obj;
-
         LockInfoHandle lockHandle = lockInfoHandleFactory.getLockHandle(LockInfoType.REPEAT_EXECUTED);
         String lockName = lockHandle.getLockName(joinPoint, repeatLimit.name(), repeatLimit.keys());
         String repeatFlagName = PREFIX_NAME + lockName;
@@ -67,40 +61,32 @@ public class RepeatExecuteLimitAspect {
             throw new IllegalStateException(message);
         }
 
-        // 获取本地锁
-        ReentrantLock localLock = localCacheLock.getLock(lockName, true);
-        boolean lockFlag = localLock.tryLock();
-        if (!lockFlag){
+        // 只使用跨实例分布式锁；本地锁会增加锁排序与锁对象生命周期风险。
+        DistributedLocker locker = distrbutedLockerFactory.getDistrbutedLocker(LockType.FAIR);
+        boolean acquired = locker.tryLock(lockName, TimeUnit.SECONDS, 0);
+        if (!acquired) {
             throw new IllegalStateException(message);
         }
-
-        // 分布式锁
         try {
-            DistributedLocker distrbutedLocker = distrbutedLockerFactory.getDistrbutedLocker(LockType.FAIR);
-            boolean result = distrbutedLocker.tryLock(lockName, TimeUnit.SECONDS, 0);
-            if (result){
-                try {
-                    flagObject = redissionDataHandle.get(repeatFlagName);
-                    if (SUCCESS_FLAG.equals(flagObject)) {
-                        throw new IllegalStateException(message);
-                    }
-                    obj = joinPoint.proceed();
-                    if (durationTime > 0) {
-                        try {
-                            redissionDataHandle.set(repeatFlagName,SUCCESS_FLAG,durationTime,TimeUnit.SECONDS);
-                        } catch (Exception e) {
-                            log.warn("Failed to store repeat execution flag: {}", repeatFlagName, e);
-                        }
-                    }
-                    return obj;
-                }finally {
-                    distrbutedLocker.unlock(lockName);
-                }
-            }else {
+            String savedFlag = redissionDataHandle.get(repeatFlagName);
+            if (SUCCESS_FLAG.equals(savedFlag)) {
                 throw new IllegalStateException(message);
             }
-        }finally {
-            localLock.unlock();
+            Object result = joinPoint.proceed();
+            if (durationTime > 0) {
+                try {
+                    redissionDataHandle.set(repeatFlagName, SUCCESS_FLAG, durationTime, TimeUnit.SECONDS);
+                } catch (Exception exception) {
+                    // The business operation may already have succeeded. Do not silently return success.
+                    log.error("Repeat guard persistence failed after business execution, key={}", repeatFlagName, exception);
+                    throw new IllegalStateException(
+                            "Business action executed, but repeat guard state is unknown; do not retry blindly",
+                            exception);
+                }
+            }
+            return result;
+        } finally {
+            locker.unlock(lockName);
         }
     }
 }

@@ -160,6 +160,12 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
 
 `peach.redis.host` uses `host:port`. Quickstarts share defaults: `password` is empty by default (override via `PEACH_REDIS_PASSWORD`), `database=1`.
 
+## Repeat guard and lock lifecycle fixes
+
+- `RedissionDataHandle#getDuration(long, TimeUnit)` now preserves `NANOSECONDS`, `MICROSECONDS`, `MILLISECONDS` and other units instead of silently treating subsecond durations as seconds.
+- `LocalCacheLock` retains `getLock(key, fair)` but uses 256 bounded fair lock stripes, avoiding expiration of held lock objects. Unrelated keys can contend on the same stripe.
+- `@RepeatLimit` now uses only the distributed Redisson lock for cross-instance exclusion. If the success marker cannot be persisted **after the business action succeeds**, the caller receives an explicit uncertain-result exception rather than false success. **Do not retry blindly**; query the durable order/idempotency state first.
+
 ## Boundaries
 
 - Distributed locks protect the smallest critical section and do not replace database uniqueness, transactions or state validation.

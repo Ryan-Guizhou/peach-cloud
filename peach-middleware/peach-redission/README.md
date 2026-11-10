@@ -160,6 +160,12 @@ flowchart LR
 
 `peach.redis.host` 格式为 `host:port`。Quickstart 统一默认：`password` 默认为空（通过 `PEACH_REDIS_PASSWORD` 覆盖）、`database=1`。
 
+## 防重与锁生命周期修复
+
+- `RedissionDataHandle#getDuration(long, TimeUnit)` 现保留 `NANOSECONDS`、`MICROSECONDS`、`MILLISECONDS` 等精度，不再错误按秒转换。
+- `LocalCacheLock` 保留公共 `getLock(key, fair)` 入口，但实现改为固定 256 个公平锁条带，避免过期淘汰已锁定对象；不同 key 可能共享同一条带。
+- `@RepeatLimit` 只以 Redisson 分布式锁作为跨实例互斥保障，不再依赖进程内锁预检查。业务执行成功后，如成功标记无法持久化，将明确抛出“业务已执行但防重状态未知”的异常，不再假装成功。**接到该异常不能盲目重试**，必须查询业务幂等记录/订单状态并对账。
+
 ## 边界
 
 - 分布式锁只保护最小临界区，不替代数据库唯一约束、事务和状态校验。
