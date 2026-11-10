@@ -106,6 +106,30 @@ class RedisToolCapabilityTest {
     }
 
     @Test
+    void scanShouldFindKeysAndDeletePatternWithoutTouchingOtherKeys() {
+        String prefix = "test:scan:23:";
+        String first = prefix + "first";
+        String second = prefix + "second";
+        String unrelated = "test:scan:keep";
+        try {
+            stringRedisTemplate.opsForValue().set(first, "one");
+            stringRedisTemplate.opsForValue().set(second, "two");
+            stringRedisTemplate.opsForValue().set(unrelated, "keep");
+
+            assertThat(redisDao.scan(prefix + "*", null)).containsExactlyInAnyOrder(first, second);
+            assertThat(redisDao.keys(prefix + "*")).containsExactlyInAnyOrder(first, second);
+            assertThat(redisDao.deletePattern(prefix + "*", 2)).isEqualTo(2L);
+            assertThat(stringRedisTemplate.hasKey(first)).isFalse();
+            assertThat(stringRedisTemplate.hasKey(second)).isFalse();
+            assertThat(stringRedisTemplate.opsForValue().get(unrelated)).isEqualTo("keep");
+        } finally {
+            stringRedisTemplate.delete(first);
+            stringRedisTemplate.delete(second);
+            stringRedisTemplate.delete(unrelated);
+        }
+    }
+
+    @Test
     void profileHashShouldWriteReadAndFieldDelete() {
         userProfileHashExample.saveProfile("u-2001", "Peach", "Shanghai");
         assertThat(userProfileHashExample.getNickname("u-2001")).isEqualTo("Peach");

@@ -15,12 +15,13 @@ English | [中文](README.md)
 | Module / starter | Main API | Capabilities | Use cases | Current limitation |
 | --- | --- | --- | --- | --- |
 | Connection foundation / `peach-redis-common` (current, scheduled for migration) | `RedisTemplate`, `StringRedisTemplate`, `RedisConnectionFactory` | Standalone, Sentinel, Cluster, Jedis pool, Jackson JSON serialization | Shared Redis access | Also configures Redisson today; nonzero Cluster database is unsupported; preserve stored formats |
-| `peach-redis-tool-starter` | `RedisDao` | String, TTL, Hash, List, Set, ZSet, Pub/Sub and batch deletion | KV, counters, tags, session support | `scan()` currently returns `null`; `keys()` and pattern deletions are affected; `vSet(key,value,expireTime)` uses separate SET and EXPIRE |
+| `peach-redis-tool-starter` | `RedisDao` | String, TTL, Hash, List, Set, ZSet, Pub/Sub and batch deletion | KV, counters, tags, session support | `scan()` supports standalone/Sentinel and scans all Cluster masters; `count` is a batch hint, not a result limit; result is memory-backed and not a consistent snapshot; cross-slot deletion is per-key |
 | `peach-redis-multicache-starter` | `MultiCacheManager`, `MultiCacheManagerService`, Spring Cache | Caffeine L1 and Redis L2; TTL jitter; manual and annotation APIs; Pub/Sub invalidation | Product detail, configuration and dictionary caching | Best-effort invalidation, not strong consistency; `clear()` depends on broken scan; Caffeine reference-strength mapping needs correction |
 | `peach-redis-stream-starter` | `RedisStreamPushHandler`, `RedisStreamHandler`, `MessageConsumer` | Produce Stream records, group/broadcast consumption, consumer callbacks | Lightweight event messages | Group uses `receiveAutoAck` and listener catches exceptions; **no complete pending recovery / retry guarantee** |
 
 ### Which module should I use?
 
+- **Key enumeration and cleanup:** `RedisDao#scan` / `deletePattern` traverse matching keys; Redis `COUNT` is a hint, not a result cap or a consistent snapshot. Use sparingly, preferably off the request path, and avoid huge keyspaces.
 - **Redis structures:** Tool, or Spring `RedisTemplate` directly if no wrapper is needed.
 - **Local cache acceleration:** MultiCache, with explicit TTL and tolerance for temporary staleness; never rely solely on L1 for real-time authorization.
 - **Stream messaging:** Stream; current implementation requires application idempotency and separate recovery arrangements.
