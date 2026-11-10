@@ -1,6 +1,8 @@
 package com.peach.redis.stream.quickstart;
 
 import com.peach.redis.stream.quickstart.example.OrderStreamExample;
+import com.peach.redis.stream.RedisStreamHandler;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,6 +47,23 @@ class RedisStreamCapabilityTest {
 
     @Autowired
     private OrderStreamExample orderStreamExample;
+
+    @Autowired
+    private RedisStreamHandler streamHandler;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Test
+    void groupBindingMustBeIdempotentOnExistingStream() {
+        String stream = "order-status";
+        String group = "order-status-secondary-test";
+        stringRedisTemplate.opsForStream().add(
+                org.springframework.data.redis.connection.stream.StreamRecords.newRecord()
+                        .in(stream).ofObject("bootstrap"));
+        assertThatCode(() -> streamHandler.streamBindingGroup(stream, group)).doesNotThrowAnyException();
+        assertThatCode(() -> streamHandler.streamBindingGroup(stream, group)).doesNotThrowAnyException();
+    }
 
     @Test
     void shouldPushAndConsumeOrderStatus() {

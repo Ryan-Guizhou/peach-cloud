@@ -43,14 +43,37 @@ public class RedisStreamHandler {
         stringRedisTemplate.opsForStream().delete(key,recordIds);
     }
     
-    public void streamBindingGroup(String streamName, String group){
-        boolean hasKey = hasKey(streamName);
-        if(!hasKey){
-            // Bootstrap record so XGROUP CREATE has a stream key; payload is discarded immediately.
-            RecordId recordId = redisStreamPushHandler.push("{\"bootstrap\":true}");
-            addGroup(streamName,group);
-            del(streamName,recordId);
-            log.info("initStream streamName : {} group : {}",streamName,group);
+    /**
+     * 即使 stream 已存在也需要确保 group 存在。多实例并发初始化时 BUSYGROUP 可以忽略。
+     */
+    public void streamBindingGroup(String streamName, String group) {
+        RecordId bootstrap = null;
+        if (!Boolean.TRUE.equals(hasKey(streamName))) {
+            bootstrap = stringRedisTemplate.opsForStream().add(
+                    org.springframework.data.redis.connection.stream.StreamRecords.newRecord()
+                            .in(streamName).ofObject("{\"bootstrap\":true}"));
+        }
+        try {
+            addGroup(streamName, group);
+        } catch (RuntimeException exception) {
+            if (!isGroupAlreadyExists(exception)) {
+                throw exception;
+            }
+            log.debug("Redis Stream group already exists, stream={}, group={}", streamName, group);
+        } finally {
+            if (bootstrap != null) {
+                del(streamName, bootstrap);
+            }
         }
     }
+
+    private boolean isGroupAlreadyExists(Throwable failure) {
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause.getMessage() != null && cause.getMessage().contains("BUSYGROUP")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
