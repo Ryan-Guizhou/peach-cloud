@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @Version 1.0.0
  * @CreateTime 2026/11/10
  */
-@SpringBootTest
+@SpringBootTest(properties = "quickstart.redis.demo.enabled=false")
 @Testcontainers(disabledWithoutDocker = true)
 class RedisOnlyCapabilityTest {
     @Container
