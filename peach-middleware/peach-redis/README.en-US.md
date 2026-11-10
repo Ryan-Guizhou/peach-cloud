@@ -264,6 +264,10 @@ A real Redis 7.2 service-container suite compares the value/hash-value bytes pro
 
 On first subscription and every confirmed re-subscription, MultiCache invalidates **only the initialized Caffeine L1 caches in the current JVM**, allowing the next read to reload Redis L2. Redis Pub/Sub cannot replay messages missed while disconnected. A real Redis 7.2 two-Jedis-client integration test stops the subscription, updates L2, confirms stale L1 is possible while offline, and verifies resubscribing clears it. This does **not** provide strong consistency during outages. Bound L1 TTL and use authoritative storage for security or financial decisions.
 
+## Long-lived Sentinel client failover (Issue #69)
+
+Dedicated CI exercises the **same JedisConnectionFactory and RedissonClient instances** before and after actually stopping the isolated Redis Sentinel master container. Without recreating those clients it retries bounded SET/GET/TTL, then checks all three Sentinels agree on the promoted master and reruns the new-client suites. This only uses Redis 7.2 CI containers, not production systems. Passing it validates basic client recovery, **not** in-flight business transaction outcomes, Stream/DelayQueue idempotency, historic Sessions or Redis Cluster failure.
+
 ## Boundaries
 
 - Keys need stable namespaces and required isolation dimensions; sensitive values must not be placed directly in keys/logs.
