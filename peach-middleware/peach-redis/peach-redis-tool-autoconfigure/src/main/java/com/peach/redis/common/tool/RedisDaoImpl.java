@@ -3,6 +3,9 @@
 package com.peach.redis.common.tool;
 
 import jakarta.annotation.Nullable;
+import com.peach.redis.constant.RedisConstant;
+import org.springframework.data.redis.connection.RedisClusterConnection;
+import org.springframework.data.redis.connection.RedisClusterNode;
 import org.springframework.stereotype.Indexed;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -17,18 +20,15 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Repository;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.params.ScanParams;
-import redis.clients.jedis.resps.ScanResult;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -67,58 +67,6 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
         return (RedisTemplate<Object, Object>) redisTemplate;
     }
 
-    private static List<String> getScanResult(Jedis redisService, String key, Integer count) {
-        Instant startTime = Instant.now();
-        //扫描的参数对象创建与封装
-        ScanParams params = new ScanParams();
-        params.match(key);
-        //扫描返回一百行，这里可以根据业务需求进行修改
-        params.count(count);
-        String cursor = "0";
-        ScanResult<String> scanResult = redisService.scan(cursor, params);
-        //scan.getStringCursor() 存在 且不是 0 的时候，一直移动游标获取
-//        List<String> list = new ArrayList<>();
-//        while (null != scanResult.getCursor()) {
-//            //封装扫描的结果
-//            list.addAll(scanResult.getResult());
-//            cursor = scanResult.getCursor();
-//            if (!"0".equals(cursor)) {
-//                scanResult = redisService.scan(cursor, params);
-//            } else {
-//                break;
-//            }
-//        }
-        List<String> list = new ArrayList<>();
-        //获取当前游标值
-        cursor = scanResult.getCursor();
-        //取得本轮scan的结果
-        List<String> results = scanResult.getResult();
-        if (results != null && results.size() > 0) {
-            list.addAll(results);
-        }
-        // 如果游标值为0，表示已经遍历完所有键值对
-        while (!"0".equals(cursor)) {
-            // 更新游标并继续遍历下⼀轮
-            scanResult = redisService.scan(cursor, params);
-            cursor = scanResult.getCursor();
-            results = scanResult.getResult();
-            if (results != null && results.size() > 0) {
-                list.addAll(results);
-            }
-            long timeOut = Duration.between(startTime, Instant.now()).getSeconds();
-            if (StringUtils.isBlank(cursor)) {
-                log.info("cursor == null");
-                cursor = "0";
-            }
-            if (timeOut >= 10) {
-                log.info("redis scan timeOut 10s");
-                cursor = "0";
-            }
-        }
-        return list;
-    }
-
-
     @Override
     public boolean existsKey(final Object key) {
         Boolean retryFlag = redisTemplate.hasKey(key);
@@ -150,12 +98,8 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
 
     @Override
     public long deletePattern(final Object pattern, final Integer count) {
-        Set<Object> keys = scan(String.valueOf(pattern), count);
-        if ((keys != null ? keys.size() : 0) > 0) {
-            return delete(keys);
-        } else {
-            return 0;
-        }
+        Set<Object> matchingKeys = scan(String.valueOf(pattern), count);
+        return matchingKeys.isEmpty() ? 0L : delete(matchingKeys);
     }
 
     @Override
@@ -167,6 +111,19 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
 
     @Override
     public long delete(final Set keys) {
+        if (keys == null || keys.isEmpty()) {
+            return 0L;
+        }
+        // Redis Cluster forbids DEL with keys from different hash slots.
+        if (RedisConstant.CLUSTER.equalsIgnoreCase(redisMode)) {
+            long deleted = 0L;
+            for (Object key : keys) {
+                if (Boolean.TRUE.equals(redisTemplate.delete(key))) {
+                    deleted++;
+                }
+            }
+            return deleted;
+        }
         long size = 0;
         Set<Object> deleteKeys = new HashSet<>();
         for (Object key : keys) {
@@ -472,86 +429,55 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     }
 
     /**
-     * @param matchKey
-     * @param count
-     * @return Set
-     * @Description: SCAN 命令用于迭代哈希键中的键值对。
-     * @Date 2020-4-12 上午10:17:03
+     * 通过 Redis SCAN 获取匹配 key。count 只是每轮 SCAN 的提示值，
+     * 不是结果数量上限；该方法可能累积大量 key，禁止在热路径使用。
+     *
+     * <p>Cluster 模式对全部 master 分别 SCAN；连接和 Cursor 均由本方法关闭。
+     * Redis SCAN 并非并发写入下的一致快照，调用方需容忍重复与变化。</p>
+     *
+     * @param matchKey Redis glob pattern
+     * @param count 每轮扫描提示值，空或非正值使用 1000
+     * @return 匹配 key 的去重集合，空集合表示没有匹配
      */
     @Override
     public Set<Object> scan(String matchKey, Integer count) {
-        return null;
-//        NacosBaseConfig config = SpringUtil.getBean(NacosBaseConfig.class);
-//        Integer scanLine;
-//        if (count == null || count == 0) {
-//            scanLine = config.getScanLine();
-//        } else {
-//            scanLine = count;
-//        }
-//        int useScan = config.getScanCommandIsUsed();
-//        if ("standalone".equals(redisMode)) {
-//            if (useScan == USE_SCAN_COMMAND) {
-//                return redisTemplate.execute((RedisCallback<Set<Object>>) connection -> {
-//                    Set<Object> keysTmp = new HashSet<>();
-//                    Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().match(matchKey).count(scanLine).build());
-//                    while (cursor.hasNext()) {
-//                        keysTmp.add(new String(cursor.next()));
-//                    }
-//                    return keysTmp;
-//                });
-//            } else {
-//                return redisTemplate.keys(matchKey);
-//            }
-//        } else {
-//            List<String> list = new ArrayList<>();
-//            RedisClusterConnection redisClusterConnection = Objects.requireNonNull(redisTemplate.getConnectionFactory()).getClusterConnection();
-//            //这里是获取edispool的另外一种方式与上边的pipline可以对比下，两种方式都可以实现
-//            Map<String, JedisPool> clusterNodes = ((JedisCluster) redisClusterConnection.getNativeConnection()).getClusterNodes();
-//            for (Map.Entry<String, JedisPool> entry : clusterNodes.entrySet()) {
-//                //获取单个的jedis对象
-//                JedisPool jedisPool = entry.getValue();
-//                Jedis jedis = jedisPool.getResource();
-//                // 判断非从节点(因为若主从复制，从节点会跟随主节点的变化而变化)，此处要使用主节点从主节点获取数据
-//                try {
-//                    if (!jedis.info("replication").contains("role:slave")) {
-//                        Collection<String> keys;
-//                        if (useScan == USE_SCAN_COMMAND) {
-//                            keys = getScanResult(jedis, matchKey, scanLine);
-//                        } else {
-//                            keys = jedis.keys(matchKey);
-//                        }
-//                        if (!keys.isEmpty()) {
-//                            Map<Integer, List<String>> map = new HashMap<>(8);
-//                            //接下来的循环不是多余的，需要注意
-//                            for (String key : keys) {
-//                                // cluster模式执行多key操作的时候，这些key必须在同一个slot上，不然会报:JedisDataException:
-//                                int slot = JedisClusterCRC16.getSlot(key);
-//                                // 按slot将key分组，相同slot的key一起提交
-//                                if (map.containsKey(slot)) {
-//                                    map.get(slot).add(key);
-//                                } else {
-//                                    List<String> list1 = new ArrayList<>();
-//                                    list1.add(key);
-//                                    map.put(slot, list1);
-//                                }
-//                            }
-//                            for (Map.Entry<Integer, List<String>> integerListEntry : map.entrySet()) {
-//                                list.addAll(integerListEntry.getValue());
-//                            }
-//                        }
-//                    }
-//                } catch (Exception e) {
-//                    log.error("redis error:" + e);
-//                } finally {
-//                    try {
-//                        jedisPool.returnResource(jedis);
-//                    } catch (Exception e) {
-//                        log.error("jedisPool.returnResource error:" + e);
-//                    }
-//                }
-//            }
-//            return new HashSet<>(list);
-//        }
+        if (StringUtils.isBlank(matchKey)) {
+            throw new IllegalArgumentException("Redis SCAN pattern cannot be blank");
+        }
+        long batchSize = count == null || count <= 0 ? 1000L : count.longValue();
+        ScanOptions options = ScanOptions.scanOptions().match(matchKey).count(batchSize).build();
+        Set<Object> matchingKeys = new HashSet<>();
+
+        try {
+            if (RedisConstant.CLUSTER.equalsIgnoreCase(redisMode)) {
+                var connectionFactory = Objects.requireNonNull(redisTemplate.getConnectionFactory(),
+                        "RedisConnectionFactory must not be null");
+                try (RedisClusterConnection connection = connectionFactory.getClusterConnection()) {
+                    for (RedisClusterNode node : connection.clusterGetNodes()) {
+                        if (!node.isMaster()) {
+                            continue;
+                        }
+                        try (Cursor<byte[]> cursor = connection.scan(node, options)) {
+                            while (cursor.hasNext()) {
+                                Object key = redisTemplate.getKeySerializer().deserialize(cursor.next());
+                                if (key != null) {
+                                    matchingKeys.add(key);
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                try (Cursor<Object> cursor = redisTemplate.scan(options)) {
+                    while (cursor.hasNext()) {
+                        matchingKeys.add(cursor.next());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Redis SCAN failed, pattern=" + matchKey, e);
+        }
+        return matchingKeys;
     }
 
     @Override
