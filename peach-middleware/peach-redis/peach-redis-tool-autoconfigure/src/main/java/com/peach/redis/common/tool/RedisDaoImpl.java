@@ -525,8 +525,13 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
                         }
                     }
                     for (RedisClusterNode node : activeMasters) {
+                        assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
                         try (Cursor<byte[]> cursor = connection.scan(node, options)) {
-                            while (cursor.hasNext()) {
+                            while (true) {
+                                assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
+                                if (!cursor.hasNext()) {
+                                    break;
+                                }
                                 Object key = redisTemplate.getKeySerializer().deserialize(cursor.next());
                                 acceptScannedKey(matchingKeys, key, startedNanos, maxElapsedNanos);
                             }
@@ -535,7 +540,11 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
                 }
             } else {
                 try (Cursor<Object> cursor = redisTemplate.scan(options)) {
-                    while (cursor.hasNext()) {
+                    while (true) {
+                        assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
+                        if (!cursor.hasNext()) {
+                            break;
+                        }
                         acceptScannedKey(matchingKeys, cursor.next(), startedNanos, maxElapsedNanos);
                     }
                 }
@@ -546,6 +555,8 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             // 原因链仍可用于排查，错误正文不暴露 Redis 业务 key。
             throw new IllegalStateException("Redis SCAN failed", exception);
         }
+        // 无匹配 key 时同样需要检查遍历耗时，不能只在收集结果时校验。
+        assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
         return matchingKeys;
     }
 
@@ -561,11 +572,15 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
      */
     private void acceptScannedKey(Set<Object> matchingKeys, Object key,
                                   long startedNanos, long maxElapsedNanos) {
-        if (System.nanoTime() - startedNanos > maxElapsedNanos) {
-            throw new IllegalStateException("Redis SCAN exceeded configured time budget");
-        }
+        assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
         if (key != null && matchingKeys.add(key) && matchingKeys.size() > scanMaxResults) {
             throw new IllegalStateException("Redis SCAN exceeded configured result limit");
+        }
+    }
+
+    private static void assertScanWithinTimeBudget(long startedNanos, long maxElapsedNanos) {
+        if (System.nanoTime() - startedNanos > maxElapsedNanos) {
+            throw new IllegalStateException("Redis SCAN exceeded configured time budget");
         }
     }
 
