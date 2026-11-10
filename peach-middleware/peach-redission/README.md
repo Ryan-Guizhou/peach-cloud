@@ -10,6 +10,8 @@
 
 **当前基线：** Java 21 / Spring Boot 3.5.4 / Redisson 3.50.0。新增 `peach-redisson-autoconfigure` 和 `peach-redisson-starter`，只需要 Redisson 的服务可不引入 `peach-redis-common` / Jedis。若旧 `RedisConfig` 同时存在，新自动装配会退让给现有 `RedissonClient`；旧混合装配将在后续阶段迁移。参见 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
 
+**截至本轮的代码验收：** 现有 Redis 7.2 集成已验证 Redisson 多拓扑客户端、双实例 Bloom、类级锁/防重、唯一可靠延迟队列、独立 JVM 强制终止后的租约恢复（[#78](https://github.com/Ryan-Guizhou/peach-cloud/pull/78)）、直接队列 API 的旧协议积压保护（[#92](https://github.com/Ryan-Guizhou/peach-cloud/pull/92)）。当前队列 Starter 存在时 `peach.delay.queue.enabled=true`，旧协议尚未排空的环境必须在发布前显式关闭。**尚待目标环境验收：** 历史真实消息排空/回滚、外部业务 fencing 与 Redis 基础设施故障切换，不应以源码合并或 CI 通过替代。见[迁移验收手册](../../docs/redis-redisson/acceptance-and-rollout.md)。
+
 ## Sentinel ACL 与 Cluster 保护（Issue #49）
 
 独立 `peach-redisson-starter` 沿用 `peach.redis.mode / host / username / password`，新增可选 `peach.redis.sentinel-username`、`peach.redis.sentinel-password`，仅在 Sentinel 认证信息与数据节点不同时配置；默认空值保持旧行为。Redisson TLS 的开关仍为 `peach.redis.redisson.ssl-enable`（与 Jedis 的 `peach.redis.ssl-enabled` 不同）。Cluster 不支持数据库非零值，本配置会启动失败而非悄悄落在数据库 0。实际生产 ACL、证书与故障切换仍需环境验收。两份 Nacos 模板保持相同键名，禁止写入真实凭据。

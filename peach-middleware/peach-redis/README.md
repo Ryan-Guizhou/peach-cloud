@@ -10,6 +10,8 @@
 
 **当前基线：** Java 21 / Spring Boot 3.5.4；旧 `peach-redis-common` 仍兼容提供 Jedis、模板和 RedissonClient；需要单独 Redisson 的新服务现可通过 `peach-redisson-starter` 接入，不依赖旧 Redis Common。仓库内部客户端依赖迁移已完成，旧兼容工件退役与线上滚动验收仍待完成。以下表格描述 **main 当前已存在的功能**，并标明关键运行约束；后续解耦计划见 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
 
+**截至本轮的代码验收：** 独立客户端、Sa-Token 认证、Redis Tool、MultiCache、Stream 已通过对应的 Redis 7.2 专项验证；原位 Sentinel 故障恢复（[#70](https://github.com/Ryan-Guizhou/peach-cloud/pull/70)）、Cluster 主节点切换与新客户端恢复（[#74](https://github.com/Ryan-Guizhou/peach-cloud/pull/74)）、旧/新源码序列化字节兼容（[#66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66)）、Stream 死信字段/只读对账（[#90](https://github.com/Ryan-Guizhou/peach-cloud/pull/90)、[#94](https://github.com/Ryan-Guizhou/peach-cloud/pull/94)）均已有合并记录。**尚未完成的生产验收**是实际旧发行版 SaSession fixture 与混合发布、目标环境 Nacos/ACL/TLS 轮换及真实业务故障注入。完整证据与回滚门槛见[迁移验收手册](../../docs/redis-redisson/acceptance-and-rollout.md)。
+
 ## ACL、Sentinel 与 Cluster 配置契约（Issue #49）
 
 独立 `peach-redis-starter` 同时支持数据节点 ACL 和独立 Sentinel ACL；两类认证信息不应混用。下列键在未配置时保持兼容默认值：

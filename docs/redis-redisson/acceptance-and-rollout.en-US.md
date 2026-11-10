@@ -38,13 +38,13 @@ flowchart LR
 | --- | --- | --- |
 | Independent clients / authentication | Real Redis 7.2 Jedis-only, Redisson-only, Redis Tool, Sa-Token login → authorization → logout ([#42](https://github.com/Ryan-Guizhou/peach-cloud/pull/42), [#44](https://github.com/Ryan-Guizhou/peach-cloud/pull/44)) | Mixed-version persisted old sessions |
 | Business dependency migration | Six launch modules and final three direct legacy dependencies removed; governance guard ([#46](https://github.com/Ryan-Guizhou/peach-cloud/pull/46), [#54](https://github.com/Ryan-Guizhou/peach-cloud/pull/54)) | Safe retirement of the old artifact |
-| Sentinel / Cluster / TLS | Redis 7.2 three-topology real KV/TTL, cross-slot Cluster SCAN/delete ([#48](https://github.com/Ryan-Guizhou/peach-cloud/pull/48)) | Failover, production CA/certificate rotation |
+| Sentinel / Cluster / TLS | Redis 7.2 KV/TTL and cross-slot Cluster SCAN ([#48](https://github.com/Ryan-Guizhou/peach-cloud/pull/48)); real Sentinel primary outage with **same** Jedis/Redisson clients ([#70](https://github.com/Ryan-Guizhou/peach-cloud/pull/70)); actual Cluster primary outage, replica promotion and fresh-client recovery ([#74](https://github.com/Ryan-Guizhou/peach-cloud/pull/74)) | Long-lived Cluster client recovery, in-flight business transactions, production CA/certificate rotation |
 | ACL + Nacos | Separate Sentinel auth for Jedis/Redisson, nonzero Cluster DB rejection, synchronized templates ([#50](https://github.com/Ryan-Guizhou/peach-cloud/pull/50)) | Live ACL credential rotation |
-| Stream | Success XACK, failure PEL, opt-in XPENDING/XCLAIM/backoff/DLQ and 3 real Redis tests ([#52](https://github.com/Ryan-Guizhou/peach-cloud/pull/52)) | Non-atomic DLQ write versus source ACK |
+| Stream | XACK/PEL/XPENDING/XCLAIM/DLQ; **4 real Redis recovery cases** and manually invoked counters/replay ([#88](https://github.com/Ryan-Guizhou/peach-cloud/pull/88)), replayable original fields after source trim ([#90](https://github.com/Ryan-Guizhou/peach-cloud/pull/90)), bounded read-only DLQ/XACK reconciliation ([#94](https://github.com/Ryan-Guizhou/peach-cloud/pull/94)) | Cross-key XADD and XACK not atomic; business idempotency, real failover and production reconciliation still required |
 | Multi-instance cache / Bloom | Two independent Jedis clients invalidate L1/refill L2; two RedissonClients see Bloom scaling ([#56](https://github.com/Ryan-Guizhou/peach-cloud/pull/56)) | Missed Pub/Sub events during disconnect |
-| DelayQueue reliable queue | Lua atomic claim, lease/fencing/DLQ, two-worker lease-loss recovery, 64 parallel tasks, 8 real tests ([#40](https://github.com/Ryan-Guizhou/peach-cloud/pull/40), [#60](https://github.com/Ryan-Guizhou/peach-cloud/pull/60)) | Real process kill -9, Redis failover, 10k soak |
-| Sa-Token administrative search | Bounded SCAN, pagination, all Cluster masters and 50,000 match limit ([PR #58](https://github.com/Ryan-Guizhou/peach-cloud/pull/58)) | Merged and real Redis 7.2 standalone/Sentinel/Cluster/TLS tests passed; legacy-session rolling acceptance still pending |
-| Legacy/new Redis JSON | Equal value/hash-value bytes, bidirectional reads and TTL for Map values using both current-repository serializer configurations | [PR #66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66) under CI; not real released SaSession fixtures |
+| DelayQueue reliable queue | Single Lua runtime with lease/fencing/DLQ, 64-message two-worker run, **8 actual Redis tests** including forcibly killed JVM and recovery ([#78](https://github.com/Ryan-Guizhou/peach-cloud/pull/78)); legacy backlog preflight for direct APIs ([#92](https://github.com/Ryan-Guizhou/peach-cloud/pull/92)) | Redis infrastructure failover, real historical queue drain/rollback, external business fencing and sustained load soak |
+| Sa-Token administrative search | Bounded SCAN, pagination, all Cluster masters, 50,000-match cap ([#58](https://github.com/Ryan-Guizhou/peach-cloud/pull/58)); real Standalone/Sentinel/Cluster/TLS tests passed | Mixed-version persisted SaSession compatibility from a genuinely old released binary and rollout not verified |
+| Legacy/new Redis JSON | Identical value/hash-value bytes, bidirectional read/write and TTL for Map data using **both serializers in this repository** ([#66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66), merged) | Not an actual old released SaSession fixture nor a mixed-binary production rollout |
 
 ## 3. Nacos and persisted-data compatibility
 
@@ -96,21 +96,21 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 - **MultiCache subscription recovery (#67):** confirmed re-subscription clears this JVM's L1, forcing Redis L2 refresh. Stale reads remain possible while offline. The real integration test is tracked in [PR #68](https://github.com/Ryan-Guizhou/peach-cloud/pull/68); this does not establish strong consistency.
 
-- **Long-lived Sentinel recovery ([#69](https://github.com/Ryan-Guizhou/peach-cloud/issues/69)):** CI stops the test master while retaining existing Jedis/Redisson objects and attempts post-promotion round trips. This is client reconnect evidence only, not business transaction or message crash-window safety. Verify the PR CI before marking accepted.
+- **Long-lived Sentinel recovery ([#70](https://github.com/Ryan-Guizhou/peach-cloud/pull/70), passed):** actual test master shutdown with the same Jedis/Redisson clients and post-promotion SET/GET/TTL; not business transaction or message crash-window safety.
 
 - **Actual remaining L2 TTL (Issue #71):** regression verifies that the in-JVM L1 cannot outlive Redis PTTL, even after a late refill. See [Issue #71](https://github.com/Ryan-Guizhou/peach-cloud/issues/71) for PR/CI evidence. This does not guarantee strong consistency for external Redis writes.
 
-- **Redis Cluster master recovery (Issue #73):** CI injects a real primary outage, validates replica promotion/full slot recovery and reruns new-client suites. It does not establish safety of long-lived clients or in-flight business messages; acceptance requires a fully green CI run.
+- **Redis Cluster master recovery ([#74](https://github.com/Ryan-Guizhou/peach-cloud/pull/74), passed):** actual isolated primary outage, replica promotion/full-slot recovery and fresh-client test; long-lived Cluster client/in-flight message safety remains unverified.
 
-- **Real Redis ACL (Issue #75):** a CI topology disables the default user and tests named-user credentials across clients, plus rejection of invalid/anonymous access. Production credential rotation is not covered; check the actual CI results for acceptance.
+- **Real Redis ACL ([#76](https://github.com/Ryan-Guizhou/peach-cloud/pull/76), passed):** isolated named-user authentication after disabling the default user, including rejection of invalid/anonymous connections; production credential rotation remains unverified.
 
 - **Real JVM crash recovery for DelayQueue reliable queue ([#77](https://github.com/Ryan-Guizhou/peach-cloud/issues/77)):** force-kill the claimant subprocess, then verify lease recovery and fencing with a second client in Redis 7.2 CI. This does not cover Redis infrastructure failover or cross-store transactions.
 
 ## 6. Epic blockers—not yet complete
 
-- Real Redis Sentinel/Cluster master failover and client reconnection, live TLS/ACL rotation.
+- Isolated Sentinel and Cluster outage tests have passed; **production** master failover, long-lived Cluster reconnection, TLS/ACL credential and certificate rotation remain unverified.
 - Actual legacy Redis key/codec/Sa-Token Session two-way rolling upgrade and rollback, legacy Bloom/queue migration. The current reliable queue preflight blocks startup if old delayed/ready/processing/dead-letter records remain.
-- Cache Pub/Sub disconnect invalidation compensation, Stream PEL operator-safe replay, crash between DLQ append and XACK.
+- MultiCache clears L1 after confirmed re-subscription and Stream supports explicit replay plus read-only DLQ/XACK reconciliation; still **not guaranteed**: stale reads during Pub/Sub disconnect, durable idempotent business processing, and crash-window behavior during infrastructure failure.
 - DelayQueue **Redis infrastructure** failover, external database fencing, real historical queue draining and sustained high-load soak remain unverified; an independent JVM force-kill recovery test has already passed. Durable application idempotency remains essential.
 
 **Acceptance rule:** Record exact release, topology, traceable CI run URL, data scale, canary and rollback evidence for each production rollout. Keep Stream recovery disabled by default; do not switch the queue runtime until legacy messages are drained and deployment gates are approved. Keep Epic #18 open.

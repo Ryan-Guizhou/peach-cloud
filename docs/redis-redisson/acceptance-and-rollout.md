@@ -38,13 +38,13 @@ flowchart LR
 | --- | --- | --- |
 | 独立客户端、认证 | Redis-only/Redisson-only/Tool + Sa-Token Redis 7.2 登录→鉴权→退出（[#42](https://github.com/Ryan-Guizhou/peach-cloud/pull/42)、[#44](https://github.com/Ryan-Guizhou/peach-cloud/pull/44)） | 旧版真实登录会话混合版本滚动兼容 |
 | 业务解耦 | 6 个业务启动模块+剩余 3 个 POM 迁移；旧依赖回归门禁（[#46](https://github.com/Ryan-Guizhou/peach-cloud/pull/46)、[#54](https://github.com/Ryan-Guizhou/peach-cloud/pull/54)） | 不能安全删除旧 Common 工件 |
-| Sentinel/Cluster/TLS | Redis 7.2 三拓扑独立客户端 KV/TTL、Cluster 跨槽 SCAN/删除（[#48](https://github.com/Ryan-Guizhou/peach-cloud/pull/48)） | 主从故障切换、证书轮换与生产 CA |
+| Sentinel/Cluster/TLS | Redis 7.2 KV/TTL 与 Cluster 跨槽 SCAN（[#48](https://github.com/Ryan-Guizhou/peach-cloud/pull/48)）；**相同实例** Jedis/Redisson 的真实 Sentinel 主节点关闭恢复（[#70](https://github.com/Ryan-Guizhou/peach-cloud/pull/70)）；实际 Cluster 主节点停机/副本晋升及新客户端验证（[#74](https://github.com/Ryan-Guizhou/peach-cloud/pull/74)） | Cluster 长连接恢复、业务事务故障窗与生产 CA/证书轮换未验收 |
 | ACL + Nacos | Jedis/Redisson Sentinel 独立认证、Cluster DB=0、两份模板（[#50](https://github.com/Ryan-Guizhou/peach-cloud/pull/50)） | 线上 ACL 用户/密码轮换 |
-| Stream | 业务成功 XACK、失败 PEL、可选 XPENDING/XCLAIM/退避/DLQ；真实 3 测试（[#52](https://github.com/Ryan-Guizhou/peach-cloud/pull/52)） | DLQ 写入和源 XACK 非原子，故障时可能重复 |
+| Stream | XACK/PEL/XPENDING/XCLAIM/重试/DLQ；**4 项真实 Redis 恢复用例**与人工计数/重放（[#88](https://github.com/Ryan-Guizhou/peach-cloud/pull/88)）、源消息裁剪后的完整字段恢复（[#90](https://github.com/Ryan-Guizhou/peach-cloud/pull/90)）、只读 DLQ/XACK 对账（[#94](https://github.com/Ryan-Guizhou/peach-cloud/pull/94)） | 跨键 XADD/XACK 非原子；业务持久幂等、真实故障切换和生产对账仍需验收 |
 | 多实例缓存与 Bloom | 双 Jedis Client L1 失效/L2 回填，双 RedissonClient 扩段/计数（[#56](https://github.com/Ryan-Guizhou/peach-cloud/pull/56)） | 缓存订阅断线不能强一致 |
-| DelayQueue 可靠队列 | 原子 Lua、租约/fencing/DLQ，双 Worker 租约失效恢复、64 条并发、8 真实测试（[#40](https://github.com/Ryan-Guizhou/peach-cloud/pull/40)、[#60](https://github.com/Ryan-Guizhou/peach-cloud/pull/60)） | 真实进程强杀、Redis 故障切换、10k soak |
-| Sa-Token 管理检索 | 有界 SCAN、分页/排序、Cluster 全部主节点与默认 50,000 结果限制（[PR #58](https://github.com/Ryan-Guizhou/peach-cloud/pull/58)） | 已合并且单机/Sentinel/Cluster/TLS 真实 Redis 7.2 CI 通过；旧会话滚动升级尚未验收 |
-| 旧/新 Redis JSON | 当前仓库旧 `RedisConfig` / 新 `PeachRedisAutoConfiguration` Map 的 value/hash-value 字节相等、双向读写、TTL | [PR #66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66) 验证中；不是历史发行版的真实 SaSession fixture |
+| DelayQueue 可靠队列 | 唯一 Lua 实现、租约/fencing/DLQ、64 消息双 Worker、**8 项真实 Redis 用例**含独立 JVM 强制终止后的恢复（[#78](https://github.com/Ryan-Guizhou/peach-cloud/pull/78)）；低层 API 旧队列积压预检查（[#92](https://github.com/Ryan-Guizhou/peach-cloud/pull/92)） | Redis 基础设施故障切换、真实旧消息排空/回滚、外部业务 fencing、持续大负载测试 |
+| Sa-Token 管理检索 | 有界 SCAN、分页/排序、Cluster 全主节点、50,000 结果限制（[#58](https://github.com/Ryan-Guizhou/peach-cloud/pull/58)）；Standalone/Sentinel/Cluster/TLS 真实测试通过 | 真正旧发行版 SaSession 与混合二进制滚动兼容尚未验收 |
+| 旧/新 Redis JSON | **当前仓库内**旧 `RedisConfig` / 新 `PeachRedisAutoConfiguration` 的 Map value/hash-value 字节相等、双向读写与 TTL 验证（[#66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66)，已合并） | 仍不等于真实旧发行版 SaSession fixture 或生产混合二进制滚动验收 |
 
 ## 3. 配置与兼容性核对
 
@@ -96,21 +96,21 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 - **多级缓存订阅恢复（#67）：** 重订阅确认后清空当前 JVM 的 L1，再从 Redis L2 读取；订阅离线期间仍可能读取旧缓存。真实测试在 [PR #68](https://github.com/Ryan-Guizhou/peach-cloud/pull/68) 验收，不能当作强一致性承诺。
 
-- **Sentinel 原位恢复（[#69](https://github.com/Ryan-Guizhou/peach-cloud/issues/69)）：** CI 真正关闭测试主节点，在不重建 Jedis/Redisson 实例的情况下尝试读写恢复；仅验收基础客户端重连，不代表业务事务和消息故障窗口安全。以 PR CI 运行结果为准。
+- **Sentinel 原位恢复（[#70](https://github.com/Ryan-Guizhou/peach-cloud/pull/70)，已通过）：** 真正关闭隔离环境主节点，同一 Jedis/Redisson 实例选主后执行 SET/GET/TTL；不能据此证明业务事务或消息故障窗安全。
 
 - **缓存剩余 TTL（Issue #71）：** 已增加按真实 Redis PTTL 限制本地 L1 有效期的回归，避免 Redis 键过期后本地缓存继续命中；CI 以 [Issue #71](https://github.com/Ryan-Guizhou/peach-cloud/issues/71) 的 PR 实际结果为准。此机制并非外部 L2 写入强一致。
 
-- **Redis Cluster 主节点恢复（Issue #73）：** 提交真实停止一台 master、验证原副本晋升/全槽恢复与新客户端重新测试的 CI；故障范围尚不覆盖历史长连接或业务消息事务。验收以 CI 全部成功为准。
+- **Redis Cluster 主节点恢复（[#74](https://github.com/Ryan-Guizhou/peach-cloud/pull/74)，已通过）：** 隔离环境真实主节点停止、原副本晋升与全槽恢复，并用新客户端验证；不证明历史 Cluster 长连接/业务消息的持续安全。
 
-- **真实 Redis ACL（Issue #75）：** 增加禁用 default 用户、临时专用账户的正反例集成矩阵，验证 Jedis、Redisson、Tool、Sa-Token 真实登录与错误认证拒绝；还不涉及生产密钥轮换。是否通过以实际 CI 结果为准。
+- **真实 Redis ACL（[#76](https://github.com/Ryan-Guizhou/peach-cloud/pull/76)，已通过）：** 隔离环境禁用 default 用户，验证临时专用账户成功认证与匿名/错误凭据拒绝；不涉及生产凭据轮换。
 
 - **DelayQueue 可靠队列 真正独立 JVM 故障（[#77](https://github.com/Ryan-Guizhou/peach-cloud/issues/77)）：** 新增子进程强制终止后另一客户端的租约回收和 fencing 回归。该测试由独立 Redis 7.2 CI 门禁验收，仍不覆盖 Redis 本身故障与跨存储事务。
 
 ## 6. Epic 未完成项（不得提前勾选）
 
-- 真实 Redis 主从/Cluster 故障切换与客户端重连，TLS/ACL 密钥更新及证书轮换。
+- 隔离环境 Sentinel / Cluster 实际主节点故障测试已通过；**生产**主从切换、Cluster 长连接恢复、TLS/ACL 凭据与证书轮换仍未验收。
 - 真实旧 Redis 数据/Sa-Token Session 双向滚动升级与回滚，以及旧 Bloom / 延迟队列历史数据迁移。
-- 缓存 Pub/Sub 订阅断线的失效补偿；Stream PEL 运维安全重放、DLQ 与 XACK 非原子窗口故障注入。
+- MultiCache 重新订阅后清空 L1、Stream 显式重放及 DLQ/XACK 只读对账已交付；**仍无法保证** Pub/Sub 断线期间无陈旧读、业务持久幂等、基础设施故障时跨键死信与 ACK 的最终一致性。
 - DelayQueue 的独立 JVM 强制终止恢复已有集成验收；仍缺 Redis 基础设施故障切换、外部数据库 fencing、真实旧队列排空及持续大负载测试，业务持久幂等不可省略。
 
 **验收准则**：每个生产发布必须保存具体版本、拓扑、CI Run 链接、测试数据规模、灰度和回滚演练证据。高风险场景未验证时，Stream 恢复继续默认关闭；旧队列排空前不得切换新可靠运行时，总任务 #18 继续开放。
