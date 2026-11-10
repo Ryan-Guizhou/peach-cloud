@@ -169,8 +169,30 @@ PY
 # Stop the actual Redis master, require all three sentinels to agree on a promoted
 # replica, and run the same real-client suites again with newly created clients.
 if [[ "$topology" == "sentinel" ]]; then
-  echo "Injecting actual Redis Sentinel master outage (test containers only)"
-  docker stop peach-it-master >/dev/null
+  echo "Validating long-lived Jedis and Redisson clients across real Sentinel master outage"
+  RUN_REDIS_SENTINEL_LIVE_IT=true mvn -B -ntp -s scripts/ci/github-actions-maven-settings.xml \
+    -pl peach-middleware/peach-redis/peach-redis-quickstart -am \
+    -Dtest=SentinelLiveClientFailoverServerIntegrationTest \
+    -Dsurefire.failIfNoSpecifiedTests=false test
+  python3 - <<'PY'
+from pathlib import Path
+import xml.etree.ElementTree as ET
+report = Path("peach-middleware/peach-redis/peach-redis-quickstart/target/surefire-reports/TEST-com.peach.redis.quickstart.SentinelLiveClientFailoverServerIntegrationTest.xml")
+if not report.exists():
+    raise SystemExit(f"Long-lived Sentinel test did not execute: {report}")
+root = ET.parse(report).getroot()
+values = {key: int(root.get(key, "0")) for key in ("tests", "failures", "errors", "skipped")}
+if values["tests"] != 1 or any(values[k] for k in ("failures", "errors", "skipped")):
+    raise SystemExit(f"Long-lived Sentinel test did not pass: {values}")
+print(f"PASS existing Jedis/Redisson client recovery after master outage: {values}")
+PY
+  echo "Verifying Sentinel consensus and newly established client connections"
+  # The long-lived client test stops the original master itself. A still-running
+  # master would mean the test never injected the required fault.
+  if [[ "$(docker inspect --format '{{.State.Running}}' peach-it-master)" != "false" ]]; then
+    echo "Live-client integration did not stop the original Sentinel master" >&2
+    exit 1
+  fi
   new_master_port=""
   for attempt in $(seq 1 90); do
     agree=true

@@ -235,6 +235,10 @@ The dedicated Redis 7.2 CI matrix exercises the independent `peach-redisson-star
 
 For migration steps, Nacos/key/codec/session compatibility checks, CI evidence, failure boundaries and rollback gates, see the [Redis / Redisson migration acceptance runbook](../../docs/redis-redisson/acceptance-and-rollout.en-US.md). Real connectivity smoke tests do not establish production failover safety.
 
+## Long-lived Sentinel client failover (Issue #69)
+
+Dedicated CI exercises the **same JedisConnectionFactory and RedissonClient instances** before and after actually stopping the isolated Redis Sentinel master container. Without recreating those clients it retries bounded SET/GET/TTL, then checks all three Sentinels agree on the promoted master and reruns the new-client suites. This only uses Redis 7.2 CI containers, not production systems. Passing it validates basic client recovery, **not** in-flight business transaction outcomes, Stream/DelayQueue idempotency, historic Sessions or Redis Cluster failure.
+
 ## Boundaries
 
 - Distributed locks protect the smallest critical section and do not replace database uniqueness, transactions or state validation.

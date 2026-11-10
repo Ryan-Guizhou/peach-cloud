@@ -96,6 +96,8 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 - **MultiCache subscription recovery (#67):** confirmed re-subscription clears this JVM's L1, forcing Redis L2 refresh. Stale reads remain possible while offline. The real integration test is tracked in [PR #68](https://github.com/Ryan-Guizhou/peach-cloud/pull/68); this does not establish strong consistency.
 
+- **Long-lived Sentinel recovery ([#69](https://github.com/Ryan-Guizhou/peach-cloud/issues/69)):** CI stops the test master while retaining existing Jedis/Redisson objects and attempts post-promotion round trips. This is client reconnect evidence only, not business transaction or message crash-window safety. Verify the PR CI before marking accepted.
+
 ## 6. Epic blockers—not yet complete
 
 - Real Redis Sentinel/Cluster master failover and client reconnection, live TLS/ACL rotation.
