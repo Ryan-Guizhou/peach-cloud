@@ -225,6 +225,12 @@ The dedicated Redis 7.2 CI matrix exercises the independent `peach-redisson-star
 
 `BloomTwoClientServerIntegrationTest` uses real Redis 7.2 and two independent `RedissonClient` instances. Node B reads the old segment directory before node A expands; after expansion, B must discover the new segment, find the inserted elements and report independent per-segment counts. Bloom filters still have false positives and provide only a pre-filter. This test does not establish failover safety or strong consistency under very high concurrency.
 
+## Independent worker recovery and bounded concurrency (Issue #59)
+
+`DelayQueueV2ServerIntegrationTest` adds real Redis 7.2 tests with two distinct RedissonClient / `RedisDelayQueueV2` instances. Worker A claims but stops without ACK; after the lease expires, Worker B reclaims it, obtains a greater fencing token, rejects the old token and acknowledges as the current owner. Two independent workers also consume 64 messages in parallel, checking stable-ID deduplication, completion counts and no remaining processing records. Dedicated CI verifies that all six test cases actually execute via Surefire XML.
+
+**Scope:** The first worker stops deliberately to simulate lease loss; this is not a real `kill -9` test. Redis master failover, cross-store transaction fencing, 10k-concurrency soak, legacy queue drain and mixed-version upgrades remain separate acceptance work. The opt-in default, Lua/Redis key protocol and business-side durable idempotency requirements are unchanged.
+
 ## Boundaries
 
 - Distributed locks protect the smallest critical section and do not replace database uniqueness, transactions or state validation.
