@@ -2,7 +2,6 @@ package com.peach.redis.bloom.autoconfigure;
 
 
 import org.springframework.stereotype.Indexed;
-import com.peach.redis.common.RedisConfig;
 import com.peach.redis.bloom.config.BloomFilterProperties;
 import com.peach.redis.bloom.constant.SpiConstant;
 import com.peach.redis.bloom.core.BloomFilterService;
@@ -17,7 +16,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Primary;
 
@@ -37,8 +36,8 @@ import java.util.ServiceLoader;
  */
 @Slf4j
 @Indexed
-@Configuration
-@AutoConfigureAfter(RedisConfig.class)
+@AutoConfiguration
+@AutoConfigureAfter(name = "com.peach.redisson.autoconfigure.PeachRedissonAutoConfiguration")
 @EnableConfigurationProperties(BloomFilterProperties.class)
 @ConditionalOnProperty(prefix = "peach.redis.bloom", name = "enabled", matchIfMissing = true)
 public class BloomFilterAutoConfiguration {

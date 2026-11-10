@@ -9,6 +9,7 @@ import com.peach.redission.distrbutedlock.manage.DistrbutedLockerFactory;
 import com.peach.redission.repeat.aspect.RepeatExecuteLimitAspect;
 import com.peach.redission.repeat.lockinfo.impl.RepeatExecuteLimitHandle;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +22,11 @@ import org.springframework.context.annotation.Bean;
  * @CreateTime 2025/12/26 11:36
  */
 @AutoConfiguration
+@AutoConfigureAfter(name = {
+        "com.peach.redisson.autoconfigure.PeachRedissonAutoConfiguration",
+        "com.peach.redission.common.RedissionCommonAutoconfigure",
+        "com.peach.redission.distrbutedlock.DistributedLockAutoConfigure"
+})
 public class RepeatExecuteAutoConfigure {
 
     @Bean(LockInfoType.REPEAT_EXECUTED)
