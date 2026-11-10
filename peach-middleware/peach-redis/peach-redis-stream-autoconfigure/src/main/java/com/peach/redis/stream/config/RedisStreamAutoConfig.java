@@ -13,6 +13,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.stream.Consumer;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
@@ -26,6 +27,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.UUID;
 
 /**
  * Redis流Auto配置类。
@@ -57,37 +59,49 @@ public class RedisStreamAutoConfig {
         return new RedisStreamHandler(redisStreamPushHandler,stringRedisTemplate);
     }
 
-    @Bean
+    @Bean(name = "streamMessageListenerContainer", destroyMethod = "stop")
     @ConditionalOnBean(MessageConsumer.class)
-    @ConditionalOnMissingBean(StreamMessageListenerContainer.class)
+    @ConditionalOnMissingBean(name = "streamMessageListenerContainer")
     public StreamMessageListenerContainer<String, ObjectRecord<String, String>> streamMessageListenerContainer(
             RedisConnectionFactory redisConnectionFactory,
             RedisStreamProperties redisStreamProperties,
             RedisStreamHandler redisStreamHandler,
-            MessageConsumer messageConsumer) {
+            MessageConsumer messageConsumer,
+            StringRedisTemplate stringRedisTemplate,
+            @Qualifier("redisStreamExecutor") ThreadPoolExecutor executor) {
         StreamMessageListenerContainer.StreamMessageListenerContainerOptions<String, ObjectRecord<String, String>>
                 options = StreamMessageListenerContainer.StreamMessageListenerContainerOptions.builder()
                 .pollTimeout(Duration.ofSeconds(5))
                 .batchSize(10)
                 .targetType(String.class)
                 .errorHandler(t -> log.error("StreamMessageListenerContainerOptions build error", t))
-                .executor(createThreadPool())
+                .executor(executor)
                 .build();
 
         StreamMessageListenerContainer<String, ObjectRecord<String, String>> container = StreamMessageListenerContainer.create(redisConnectionFactory, options);
         checkConsumerType(redisStreamProperties.getConsumerType());
-        RedisStreamLinstener redisStreamListener = new RedisStreamLinstener(messageConsumer);
         if (RedisStreamContant.GROUP.equals(redisStreamProperties.getConsumerType())) {
             redisStreamHandler.streamBindingGroup(redisStreamProperties.getStreamName(), redisStreamProperties.getConsumerGroup());
-            container.receiveAutoAck(
-                    Consumer.from(redisStreamProperties.getConsumerGroup(), redisStreamProperties.getConsumerName()),
+            String consumerInstance = redisStreamProperties.getConsumerName() + "-"
+                    + UUID.randomUUID().toString().substring(0, 8);
+            RedisStreamLinstener listener = new RedisStreamLinstener(
+                    messageConsumer, stringRedisTemplate, redisStreamProperties.getConsumerGroup());
+            container.receive(
+                    Consumer.from(redisStreamProperties.getConsumerGroup(), consumerInstance),
                     StreamOffset.create(redisStreamProperties.getStreamName(), ReadOffset.lastConsumed()),
-                    redisStreamListener);
+                    listener);
         } else {
-            container.receive(StreamOffset.fromStart(redisStreamProperties.getStreamName()), redisStreamListener);
+            container.receive(StreamOffset.fromStart(redisStreamProperties.getStreamName()),
+                    new RedisStreamLinstener(messageConsumer));
         }
         container.start();
         return container;
+    }
+
+    @Bean(name = "redisStreamExecutor", destroyMethod = "shutdown")
+    @ConditionalOnMissingBean(name = "redisStreamExecutor")
+    public ThreadPoolExecutor redisStreamExecutor() {
+        return createThreadPool();
     }
 
     private ThreadPoolExecutor createThreadPool(){

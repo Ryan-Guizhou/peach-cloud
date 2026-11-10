@@ -17,7 +17,7 @@
 | 连接基础 / `peach-redis-common`（现状，拟迁移） | `RedisTemplate`、`StringRedisTemplate`、`RedisConnectionFactory` | 单机、Sentinel、Cluster；Jedis 连接池与 Jackson JSON 序列化 | 全部 Redis 业务服务 | 当前会额外配置 Redisson；Cluster 不支持非零数据库；序列化协议迁移需兼容旧数据 |
 | `peach-redis-tool-starter` | `RedisDao` | String、TTL、Hash、List、Set、ZSet、Pub/Sub 和批量删除 | 会话辅助数据、计数、业务 KV、标签 | `scan()` 支持单机/Sentinel 与按 master 扫描 Cluster；`count` 仅为扫描批次提示，结果累计占内存且非一致快照；跨槽删除逐键执行 |
 | `peach-redis-multicache-starter` | `MultiCacheManager`、`MultiCacheManagerService`、Spring Cache | Caffeine L1 + Redis L2、TTL 抖动、CacheManager/注解接入、Pub/Sub 失效广播 | 商品详情、相对稳定的配置/字典缓存 | Pub/Sub 是尽力失效而非强一致；`clear()` 使用已恢复的 Redis SCAN，但大范围扫描仍存在内存与一致性限制；Caffeine STRONG 引用已修复，跨实例无强一致保证 |
-| `peach-redis-stream-starter` | `RedisStreamPushHandler`、`RedisStreamHandler`、`MessageConsumer` | Stream 生产、group/broadcast 消费、消费者回调 | 轻量业务消息、事件处理 | 当前 group 使用 `receiveAutoAck`，异常由监听器捕获；**未实现可靠 pending 自动恢复和失败重试保障** |
+| `peach-redis-stream-starter` | `RedisStreamPushHandler`、`RedisStreamHandler`、`MessageConsumer` | Stream 生产、group/broadcast 消费、消费者回调 | 轻量业务消息、事件处理 | 消费组仅在业务成功后显式 ACK；失败保留 PEL，尚无自动认领、退避重试与 DLQ |
 
 ### 如何选择
 
@@ -80,7 +80,7 @@ public class ProfileCacheService {
 | --- | --- |
 | Redis 不可达 | 缓存可按业务回源；凭证、鉴权、验证码等关键路径不应放行 |
 | 多级缓存失效订阅掉线 | 本地值可能陈旧，限制 L1 TTL，重连清理和跨实例一致性仍待完善 |
-| Stream 处理异常 | 当前实现不等于“失败留 pending”，业务自行建立重试与幂等 |
+| Stream 处理异常 | group 模式失败消息留在 PEL，但不会自动重试；需补充 XCLAIM/XPENDING 恢复、退避和业务幂等 |
 | 更换 Jackson/客户端 | 先验证旧 Redis JSON 与存量 key 可读，不可直接变更会话协议 |
 
 
@@ -138,6 +138,9 @@ flowchart LR
 
 ### Stream
 
+**确认与恢复边界**：Consumer Group 使用手动 XACK：业务回调成功才确认，失败保留 PEL。每个服务实例的消费者名称带随机后缀；线程池由 Spring 管理。`XPENDING`/`XCLAIM` 自动认领、退避、DLQ 尚未实现，处理关键事件必须独立持久化幂等。
+
+
 - 模块：[`peach-redis-stream-quickstart`](./peach-redis-stream-quickstart/)
 - 能力样例（订单状态流）：
   - **Push + Consume**：`RedisStreamPushHandler#push` 拿 `RecordId`，业务实现 `MessageConsumer` 消费确认
@@ -158,7 +161,7 @@ flowchart LR
 | Redis-only / `peach-redis-starter` | `RedisConnectionFactory` / `RedisTemplate` / `StringRedisTemplate` | 默认 Jedis；已有用户工厂优先；JSON value 使用旧 Jackson2JsonRedisSerializer 协议 |
 | Tool / `peach-redis-tool-starter` | `RedisDao` | 独立依赖新底座，SCAN 大键空间需低频执行 |
 | MultiCache / `peach-redis-multicache-starter` | `MultiCacheManagerService` | 额外依赖 Tool、Caffeine 与 Hutool，缓存同步为尽力而为 |
-| Stream / `peach-redis-stream-starter` | `RedisStreamHandler` | 消费工厂使用 `RedisConnectionFactory` 接口；可靠 ACK / PEL 恢复仍待实施 |
+| Stream / `peach-redis-stream-starter` | `RedisStreamHandler` | 使用通用 `RedisConnectionFactory`；业务成功后 ACK、失败保留 PEL；自动恢复仍待实施 |
 
 **最小依赖**（项目父 POM 管理版本）：
 
