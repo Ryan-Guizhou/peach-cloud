@@ -53,7 +53,7 @@ public class BloomFilterProperties {
     private String defaultNamespace = "default";
 
     /**
-     * 是否启用本地缓存（段列表与 BloomFilter 句柄），提升性能
+     * 是否启用 BloomFilter 句柄本地缓存；段目录始终从 Redis 读取，保障跨实例扩容可见性
      */
     private boolean enableLocalCache = true;
 

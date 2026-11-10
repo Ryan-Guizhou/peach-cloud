@@ -19,7 +19,7 @@ public final class KeyConstant {
 
     public static final String SEGMENT_NAME_KEY = "{0}:{1}:segment{2}";
 
-    public static final String SEGMENT_COUNT_KEY = "{0}:{1}:count";
+    public static final String SEGMENT_COUNT_KEY = "{0}:{1}:count:{2}";
 
     public static final String CAPACITY_MAP_KEY = "{0}:{1}:capacity";
 
