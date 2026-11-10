@@ -26,7 +26,6 @@ public class RedissionWriteLocker implements DistributedLocker {
     @Override
     public RLock getLock(String lockKey) {
         RLock rLock = redissonClient.getReadWriteLock(lockKey).writeLock();
-        rLock.lock();
         return rLock;
     }
 
@@ -58,6 +57,7 @@ public class RedissionWriteLocker implements DistributedLocker {
             return lock.tryLock(waitTime, unit);
         } catch (InterruptedException e) {
             log.error("Redis WriteLocker tryLock InterruptedException", e);
+            Thread.currentThread().interrupt();
             return false;
         }
     }
@@ -69,6 +69,7 @@ public class RedissionWriteLocker implements DistributedLocker {
             return lock.tryLock(waitTime,leaseTime,unit);
         } catch (InterruptedException e) {
             log.error("Redis WriteLocker tryLock InterruptedException", e);
+            Thread.currentThread().interrupt();
             return false;
         }
     }

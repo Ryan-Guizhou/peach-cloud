@@ -239,6 +239,10 @@ public class OrderExpiryService {
 
 专项 CI 使用原有 `JedisConnectionFactory` / `RedissonClient` 实例完成真实读写，**实际停止隔离 Sentinel 主节点**，选主后不重建客户端，在有界期限内重试并验证 SET/GET/TTL；随后执行原有的三 Sentinel 共识及新客户端回归测试。仅执行本仓库 Redis 7.2 容器，不操作生产。通过这项测试可以确认对应客户端实例的基础写读恢复，但无法证明执行中业务事务、Stream / DelayQueue 消息幂等、真实历史 Session、Redis Cluster 故障等场景。
 
+## Redis Cluster 主节点故障演练（Issue #73）
+
+在独立 Redis 7.2 CI 的三主三副本 Cluster 中，健康拓扑验收后实际停止 7001 主节点，确认它的原副本晋升、存活主节点数量恢复为 3、`cluster_state:ok`，再进行真实重定向 SET/GET/TTL 和四套 Jedis、Redisson、Redis Tool、Sa-Token 新客户端集成测试。该测试验证故障后的集群恢复与**新连接**，不能替代长连接原位重连、消息处理中的故障窗口、跨 AZ 容灾或高并发压测。见 [Issue #73](https://github.com/Ryan-Guizhou/peach-cloud/issues/73)，以专项 CI 结果判定是否通过。
+
 ## 真实 Redis ACL 正反例验收（Issue #75）
 
 Redis 7.2 CI 增加实际启用 ACL 的独立单节点环境：禁用 default 用户、只开放随机临时密码的专用账户；独立 Jedis、Redisson、Redis Tool、Sa-Token 实际读写和 TTL 必须成功，匿名访问及错误密码必须被拒绝。测试密码仅在 GitHub Actions 临时作业生成，不进入源码或 Nacos。这验证的是**单节点数据 ACL 认证**，不代表 Sentinel 自身 ACL 的跨节点轮换、生产秘钥管理、TLS 双向认证或最小权限审计已经完成。
@@ -250,3 +254,7 @@ Redis 7.2 CI 增加实际启用 ACL 的独立单节点环境：禁用 default �
 - 布隆过滤器“可能存在”需要回查权威数据源，不能直接用于授权、余额或唯一性最终判断。
 - 防重复 key 必须来自稳定业务语义，不能替代真正的幂等设计。
 - 历史 `redission` 拼写只做兼容，不作为新增模块命名模板扩散。
+
+### 锁与防重注解生效范围
+
+`@DistrbutedLock` 和 `@RepeatLimit` 现在同时支持方法级与类级声明，方法级优先覆盖类级，同一次代理调用只拦截一次。类级注解会对经 Spring AOP 代理的公开业务方法生效，升级前应排查存量类级声明，避免意外增加互斥或防重范围；类内自调用仍不会经过代理。`DistributedLocker#getLock` 只返回锁对象，不会自动加锁，调用方须显式执行 `lock` / `tryLock`；锁等待遭中断时返回 `false`，并保留当前线程的中断标志。

@@ -100,6 +100,8 @@ bash scripts/ci/redis-topology-integration.sh tls
 
 - **Actual remaining L2 TTL (Issue #71):** regression verifies that the in-JVM L1 cannot outlive Redis PTTL, even after a late refill. See [Issue #71](https://github.com/Ryan-Guizhou/peach-cloud/issues/71) for PR/CI evidence. This does not guarantee strong consistency for external Redis writes.
 
+- **Redis Cluster master recovery (Issue #73):** CI injects a real primary outage, validates replica promotion/full slot recovery and reruns new-client suites. It does not establish safety of long-lived clients or in-flight business messages; acceptance requires a fully green CI run.
+
 - **Real Redis ACL (Issue #75):** a CI topology disables the default user and tests named-user credentials across clients, plus rejection of invalid/anonymous access. Production credential rotation is not covered; check the actual CI results for acceptance.
 
 ## 6. Epic blockers—not yet complete

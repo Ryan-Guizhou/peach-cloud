@@ -57,6 +57,7 @@ public class RedissionFairLocker implements DistributedLocker {
             return rLock.tryLock(waitTime, unit);
         }catch (InterruptedException e){
             log.error("Redis Fair Locker tryLock InterruptedException", e);
+            Thread.currentThread().interrupt();
             return false;
         }
 
@@ -69,6 +70,7 @@ public class RedissionFairLocker implements DistributedLocker {
             return rLock.tryLock(waitTime,leaseTime, unit);
         }catch (InterruptedException e){
             log.error("Redis Fair Locker tryLock InterruptedException", e);
+            Thread.currentThread().interrupt();
             return false;
         }
     }

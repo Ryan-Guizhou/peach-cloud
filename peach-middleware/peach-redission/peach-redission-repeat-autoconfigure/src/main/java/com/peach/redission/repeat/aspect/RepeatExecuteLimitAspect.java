@@ -12,6 +12,10 @@ import com.peach.redission.distrbutedlock.manage.DistrbutedLockerFactory;
 import com.peach.redission.repeat.annoation.RepeatLimit;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.core.annotation.AnnotatedElementUtils;
+import java.lang.reflect.Method;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Indexed;
@@ -48,7 +52,29 @@ public class RepeatExecuteLimitAspect {
     }
 
 
-    @Around("@annotation(repeatLimit)")
+    /**
+     * 方法级防重优先于类级防重，类注解作用于经 Spring AOP 代理的方法。
+     */
+    @Around("@annotation(com.peach.redission.repeat.annoation.RepeatLimit) || "
+            + "@within(com.peach.redission.repeat.annoation.RepeatLimit)")
+    public Object aroundAnnotated(ProceedingJoinPoint joinPoint) throws Throwable {
+        Method method = ((MethodSignature) joinPoint.getSignature()).getMethod();
+        Class<?> targetClass = joinPoint.getTarget().getClass();
+        Method targetMethod = AopUtils.getMostSpecificMethod(method, targetClass);
+        RepeatLimit annotation = AnnotatedElementUtils.findMergedAnnotation(targetMethod, RepeatLimit.class);
+        if (annotation == null) {
+            annotation = AnnotatedElementUtils.findMergedAnnotation(method, RepeatLimit.class);
+        }
+        if (annotation == null) {
+            annotation = AnnotatedElementUtils.findMergedAnnotation(targetClass, RepeatLimit.class);
+        }
+        if (annotation == null) {
+            return joinPoint.proceed();
+        }
+        return around(joinPoint, annotation);
+    }
+
+    /** 执行已解析的防重策略，保留原有入口供兼容测试使用。 */
     public Object around(ProceedingJoinPoint joinPoint, RepeatLimit repeatLimit) throws Throwable {
 
         long durationTime = repeatLimit.durationTime();
