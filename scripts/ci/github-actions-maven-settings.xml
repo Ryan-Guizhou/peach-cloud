@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+    <!-- GitHub Actions cannot reach the developer's private HTTP Nexus.
+         Map only the three explicitly named repository IDs to HTTPS Central.
+         This does not affect local settings or production Nexus coordinates. -->
+    <mirrors>
+        <mirror>
+            <id>peach-ci-public-maven-central</id>
+            <mirrorOf>nexus-public,peach-releases,peach-snapshots</mirrorOf>
+            <name>GitHub Actions HTTPS Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </mirror>
+    </mirrors>
+</settings>
