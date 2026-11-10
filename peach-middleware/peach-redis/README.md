@@ -84,6 +84,13 @@ public class ProfileCacheService {
 | 更换 Jackson/客户端 | 先验证旧 Redis JSON 与存量 key 可读，不可直接变更会话协议 |
 
 
+## 业务依赖迁移进展（Issue #41）
+
+- **Sa-Token**：autoconfigure 通过 `RedisConnectionFactory` 接入；Starter 传递 `peach-redis-starter`，不再直接携带旧 `peach-redis-common`；原有 Sa-Token JSON/Key 规则保持不变。
+- **Captcha**：autoconfigure 只声明可选的 Spring Data Redis、Hutool 编译依赖，内存缓存实现仍可独立使用。
+- **Auth / Setting / Message**：业务模块改为独立 Redis Starter；Auth 启动模块移除能由 Starter 传递的旧 Jedis、Redisson 和 Spring Data Redis 直连依赖。
+- **未完成验收**：现有 Redis key 与会话数据读写、登录/退出、网关的响应式 Lettuce 隔离、Nacos 部署模板和 Sentinel/Cluster/TLS 迁移必须在目标环境单独验收。旧 `peach-redis-common` 不会在本批直接删除。
+
 ## 结构
 
 | 能力 | Autoconfigure | Starter | Quickstart |
@@ -199,7 +206,7 @@ peach:
 
 **最小配置**：沿用 `peach.redis.mode / host / password / database`；可通过 `peach.redis.enabled=false` 关闭新自动装配、`peach.redis.ssl-enabled=true` 开启 TLS、`peach.redis.jedis.max-total` 调整连接预算。已有 `RedisConnectionFactory` 优先，默认池 `max-total=128`。
 
-**最短路径**：在根目录运行 `mvn -pl peach-middleware/peach-redis/peach-redis-quickstart -am spring-boot:run`；真实 Redis 集成测试可运行相同模块的 `-am test`，其中 Testcontainers 需要 Docker。样例无需 Redisson。旧 Sa-Token Starter 当前仍包含 `peach-redis-common` 的兼容依赖，不能据此判断整个业务进程已经完全去除旧底座。
+**最短路径**：在根目录运行 `mvn -pl peach-middleware/peach-redis/peach-redis-quickstart -am spring-boot:run`；真实 Redis 集成测试可运行相同模块的 `-am test`，其中 Testcontainers 需要 Docker。样例无需 Redisson。Sa-Token Starter、Auth/Setting/Message 业务模块已调整为独立 Redis Starter 依赖；历史 `RedisConfig` 仍在部分模块保留以便滚动迁移，且尚未完成生产环境登录/会话兼容性验收。
 
 ## 边界
 

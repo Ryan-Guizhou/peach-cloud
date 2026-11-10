@@ -84,6 +84,13 @@ Uses the existing `RedisDao` API. Production code should standardize key naming,
 | Changing Jackson or client driver | Test persisted JSON and existing keys first; do not silently change stored session format |
 
 
+## Application dependency migration progress (Issue #41)
+
+- **Sa-Token:** its autoconfiguration uses `RedisConnectionFactory`; the Starter transitively includes `peach-redis-starter` rather than the old `peach-redis-common`. Existing session JSON/key formats remain unchanged.
+- **Captcha:** its autoconfiguration declares optional Spring Data Redis and Hutool compile dependencies; in-memory captcha storage remains usable independently.
+- **Auth / Setting / Message:** service modules use the independent Redis Starter. The Auth launcher removes redundant direct Jedis, Redisson and Spring Data Redis dependencies provided by the Starters.
+- **Still to verify:** existing Redis data/session compatibility, login/logout, gateway reactive Lettuce isolation, Nacos deployment profiles and Sentinel/Cluster/TLS rollout in the intended runtime. This batch does not delete the legacy `peach-redis-common`.
+
 ## Structure
 
 | Capability | Autoconfigure | Starter | Quickstart |
@@ -199,7 +206,7 @@ The repository now includes `peach-redis-autoconfigure`, `peach-redis-starter`, 
 
 **Minimal configuration:** retain `peach.redis.mode / host / password / database`. Set `peach.redis.enabled=false` to disable the new auto-configuration, `peach.redis.ssl-enabled=true` for TLS and `peach.redis.jedis.max-total` for the connection budget. Existing `RedisConnectionFactory` wins; default pool `max-total=128`.
 
-**Shortest path:** from the repository root run `mvn -pl peach-middleware/peach-redis/peach-redis-quickstart -am spring-boot:run`. Run `-am test` on the same module for real Redis integration tests (requires Docker for Testcontainers). The example does not require Redisson. The legacy Sa-Token Starter still includes `peach-redis-common` for compatibility; it must not be claimed that the entire application has removed the old foundation.
+**Shortest path:** from the repository root run `mvn -pl peach-middleware/peach-redis/peach-redis-quickstart -am spring-boot:run`. Run `-am test` on the same module for real Redis integration tests (requires Docker for Testcontainers). The example does not require Redisson. The Sa-Token Starter and Auth/Setting/Message modules now use the independent Redis Starter. Legacy `RedisConfig` remains available for phased rollout; production login and session compatibility have not been fully accepted.
 
 ## Boundaries
 
