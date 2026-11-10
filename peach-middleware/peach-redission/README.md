@@ -169,7 +169,7 @@ public class OrderExpiryService {
 
 业务消费者继续实现 `ConsumerTask` 并注册为 Spring Bean，其 `topic()` 返回 `"order-expiry"`，组件自动订阅配置的所有分区。稳定消息 ID 重载可去重，原四参数 `sendMessage` 保留但每次使用随机 ID。直接操作 `RedisDelayQueue` 时传入的是物理主题/分区，需显式调用 `start` 或 `pollOnce`。
 
-**迁移与验收：** 消费者启动前读取旧队列 delayed/ready/processing/死信数量，如有存量则启动失败；生产者首次投递业务主题时也核对其全部分区。这是只读的故障保护，**无法原子阻止旧生产者继续写入**，必须在发布前停止旧生产。停止历史队列生产、盘点并排空延迟/ready/processing 消息，再关闭历史消费者，启动统一可靠队列。历史 Redisson delayed-queue 数据不会自动转换，禁止新旧协议混合消费。同槽 Lua 队列现存 key 保持不变，避免破坏已写入的可靠消息。独立环境验证 ACK、重试、死信、回滚及业务幂等，不能仅以编译通过代替验收。
+**迁移与验收：** 使用 `RedisDelayQueue.legacyBacklog(物理主题)` 只读查询旧 delayed、ready、processing、死信数量。底层 `offer`、`claim`、`start` 首次访问物理主题时也会预检查，`start` 会重新检查；这并不构成阻止旧生产继续写入的实时栅栏。消费者启动前读取旧队列 delayed/ready/processing/死信数量，如有存量则启动失败；生产者首次投递业务主题时也核对其全部分区。这是只读的故障保护，**无法原子阻止旧生产者继续写入**，必须在发布前停止旧生产。停止历史队列生产、盘点并排空延迟/ready/processing 消息，再关闭历史消费者，启动统一可靠队列。历史 Redisson delayed-queue 数据不会自动转换，禁止新旧协议混合消费。同槽 Lua 队列现存 key 保持不变，避免破坏已写入的可靠消息。独立环境验证 ACK、重试、死信、回滚及业务幂等，不能仅以编译通过代替验收。
 
 
 - 模块：[`peach-redission-delayqueue-quickstart`](./peach-redission-delayqueue-quickstart/)
@@ -177,7 +177,7 @@ public class OrderExpiryService {
   - **单消息**：`DelayQueueContext#sendMessage` 短延迟投递 + 实现 `ConsumerTask` 消费确认
   - **多消息**：可靠队列配置下连续投递多条并全部消费确认
 - 启动后 `DelayQueueDemoRunner` 执行；关闭演示：`quickstart.delayqueue.demo.enabled=false`
-- 最小配置：`peach.delay.queue.*`（示例 `isolation-region-count=1`、`use-reliable-queue=true`），以及 `peach.redis.*`；消费初始化依赖 `peach-initialize-starter`
+- 最小配置：`peach.delay.queue.*`（示例 `isolation-region-count=1`、`enabled=true`），以及 `peach.redis.*`；消费初始化依赖 `peach-initialize-starter`
 - 运行：`mvn -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am spring-boot:run`
 - 测试：`mvn -pl peach-middleware/peach-redission/peach-redission-delayqueue-quickstart -am test`
 
@@ -222,9 +222,9 @@ public class OrderExpiryService {
 
 ## 独立 Worker 恢复与批量并发验收（Issue #59）
 
-`DelayQueueServerIntegrationTest` 增加真实 Redis 7.2 的双 RedissonClient / 双 `RedisDelayQueue` 测试：Worker A 认领后停止且不 ACK，租约过期由 Worker B 回收、重新认领并产生更大的 fencing token；旧 token 无权 ACK，新持有者成功确认。另以两个独立 Worker 并行消费 64 条消息，检查稳定 ID 去重、完成计数和无残留 processing。专用 CI 通过 Surefire 校验全部 7 项测试实际运行。
+`DelayQueueServerIntegrationTest` 增加真实 Redis 7.2 的双 RedissonClient / 双 `RedisDelayQueue` 测试：Worker A 认领后停止且不 ACK，租约过期由 Worker B 回收、重新认领并产生更大的 fencing token；旧 token 无权 ACK，新持有者成功确认。另以两个独立 Worker 并行消费 64 条消息，检查稳定 ID 去重、完成计数和无残留 processing。专用 CI 通过 Surefire 校验全部 8 项测试实际运行。
 
-**范围限制：** Worker A 在测试中主动停止，用于模拟丢失租约，并非真实 `kill -9`；这批并不验证 Redis 主从切换、跨存储事务的 fencing、10k 并发 soak、旧协议排空或混合版本升级。默认关闭与 Lua/Redis key 协议保持不变，业务持久化幂等仍不可省略。
+**范围限制：** 除主动停止模拟租约失效外，现有套件还包含独立 JVM 强制终止后的恢复检查；仍不覆盖 Redis 主从切换、跨存储事务的 fencing、持续大规模压测、真实旧协议排空或混合版本升级。当前队列 Starter 已接入时 `peach.delay.queue.enabled` 缺省为 `true`，未完成历史消息排空的部署应显式设为 `false`；Lua/Redis key 协议保持兼容，业务持久化幂等仍不可省略。
 
 ## 部署、验收与回滚
 

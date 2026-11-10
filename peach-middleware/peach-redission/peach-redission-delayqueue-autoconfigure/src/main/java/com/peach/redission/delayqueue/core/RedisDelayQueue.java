@@ -58,6 +58,12 @@ public final class RedisDelayQueue implements AutoCloseable {
     private final ScheduledExecutorService heartbeat;
     private final Map<String, ScheduledFuture<?>> pollingTopics = new ConcurrentHashMap<>();
     private final Map<String, LeasedMessage> active = new ConcurrentHashMap<>();
+
+    /**
+     * 仅缓存当前进程已验证的物理主题，避免每条入队消息重复访问旧协议。
+     * 旧实例必须在发布前停止，缓存并非跨实例写入栅栏。
+     */
+    private final Map<String, Boolean> inspectedLegacyTopics = new ConcurrentHashMap<>();
     private volatile boolean closed;
 
     /**
@@ -70,6 +76,15 @@ public final class RedisDelayQueue implements AutoCloseable {
      * 每个主题的当前状态，不包括已经过保留期的完成记录。
      */
     public record QueueStatus(long scheduled, long processing, long deadLetters, long completed) {
+    }
+
+    /**
+     * 旧 Redisson 队列的只读积压统计，用于发布切换与回滚评估。
+     */
+    public record LegacyQueueBacklog(long delayed, long ready, long processing, long deadLetters) {
+        public boolean drained() {
+            return delayed == 0L && ready == 0L && processing == 0L && deadLetters == 0L;
+        }
     }
 
     public enum FailureOutcome {
@@ -128,6 +143,7 @@ public final class RedisDelayQueue implements AutoCloseable {
         ensureOpen();
         validateTopic(topic);
         validateId(id);
+        inspectLegacyOnce(topic);
         Objects.requireNonNull(payload, "payload");
         if (payload.getBytes(StandardCharsets.UTF_8).length > properties.getMaxPayloadBytes()) {
             throw new IllegalArgumentException("Delay queue payload exceeds configured maxPayloadBytes");
@@ -151,6 +167,7 @@ public final class RedisDelayQueue implements AutoCloseable {
     private List<ClaimedMessage> claim(String topic, int limit) {
         ensureOpen();
         validateTopic(topic);
+        inspectLegacyOnce(topic);
         if (limit < 1 || limit > properties.getBatchSize()) {
             throw new IllegalArgumentException("Invalid delay queue claim limit");
         }
@@ -255,25 +272,40 @@ public final class RedisDelayQueue implements AutoCloseable {
     }
 
     /**
-     * 启动消费前检查旧 Redisson 队列是否还有待处理数据。
-     * 只读取旧公开数据结构的数量，不删除、迁移、ACK 或重放任何消息。
-     * 旧生产者必须在切换前停止，否则无法保证跨协议并行发布的安全性。
+     * 只读检查旧 Redisson 的 delayed/ready/processing/dead-letter 结构。
+     * 不删除任何数据，也不修改当前 Lua 可靠队列的 key。
+     * 这是发布前快照，不是原子禁止旧生产者继续写入的分布式栅栏。
      */
-    public void assertLegacyDrained(String partitionTopic) {
+    public LegacyQueueBacklog legacyBacklog(String partitionTopic) {
         ensureOpen();
         validateTopic(partitionTopic);
         RBlockingQueue<String> ready = redisson.getBlockingQueue(partitionTopic);
         RDelayedQueue<String> delayed = redisson.getDelayedQueue(ready);
-        // 先看 delayed 再看 ready，避免 Redisson 到期转移落在两次计数间而漏检。
+        // 先检查 delayed 后检查 ready，减少过期转移落在计数间的漏检窗口。
         long delayedCount = delayed.size();
         long readyCount = ready.size();
         long processingCount = redisson.getMap(partitionTopic + ":processing").size();
         long deadLetters = redisson.getMap(partitionTopic + "-dead-letter").size();
-        if (readyCount != 0L || delayedCount != 0L || processingCount != 0L || deadLetters != 0L) {
+        return new LegacyQueueBacklog(delayedCount, readyCount, processingCount, deadLetters);
+    }
+
+    /**
+     * 旧协议仍有未完成任务时拒绝切换；供部署前主动调用。
+     */
+    public void assertLegacyDrained(String partitionTopic) {
+        LegacyQueueBacklog backlog = legacyBacklog(partitionTopic);
+        if (!backlog.drained()) {
             throw new IllegalStateException("Historical delay queue not drained for topic="
-                    + partitionTopic + ", ready=" + readyCount + ", delayed=" + delayedCount
-                    + ", processing=" + processingCount + ", deadLetters=" + deadLetters);
+                    + partitionTopic + ", ready=" + backlog.ready() + ", delayed=" + backlog.delayed()
+                    + ", processing=" + backlog.processing() + ", deadLetters=" + backlog.deadLetters());
         }
+    }
+
+    private void inspectLegacyOnce(String topic) {
+        inspectedLegacyTopics.computeIfAbsent(topic, name -> {
+            assertLegacyDrained(name);
+            return Boolean.TRUE;
+        });
     }
 
     /**
@@ -290,6 +322,9 @@ public final class RedisDelayQueue implements AutoCloseable {
         if (pollingTopics.containsKey(topic)) {
             return;
         }
+        // 对直接使用 RedisDelayQueue 的调用方也执行一次真实预检查。
+        assertLegacyDrained(topic);
+        inspectedLegacyTopics.put(topic, Boolean.TRUE);
         if (pollingTopics.size() >= properties.getMaxTopicSubscriptions()) {
             throw new IllegalStateException("Delay queue topic subscription limit reached");
         }
@@ -521,6 +556,7 @@ public final class RedisDelayQueue implements AutoCloseable {
             future.cancel(false);
         }
         pollingTopics.clear();
+        inspectedLegacyTopics.clear();
         poller.shutdownNow();
         workers.shutdown();
         try {

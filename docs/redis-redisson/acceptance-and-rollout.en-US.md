@@ -16,7 +16,7 @@ English | [中文](acceptance-and-rollout.md)
 | Distributed lock | `peach-redission-distributedlock-starter` | Redisson | Not a substitute for transactions, unique constraints or external fencing |
 | Repeat guard | `peach-redission-repeat-starter` | Redisson | Failed marker persistence yields uncertain outcome, not safe blind retry |
 | Segmented Bloom | `peach-redission-bloomfilter-starter` | Redisson | False positives; validate against authoritative data |
-| Delay queue | `peach-redission-delayqueue-starter` | Redisson | reliable queue opt-in and isolated from legacy queue protocol |
+| Delay queue | `peach-redission-delayqueue-starter` | Redisson | Current single Lua runtime; `peach.delay.queue.enabled=true` by default when the Starter is present; drain historical protocol before rollout |
 
 The historical mixed `peach-redis-common` artifact stays in the reactor/BOM for external legacy deployments and rollback, but internal direct Maven consumers were removed in [PR #54](https://github.com/Ryan-Guizhou/peach-cloud/pull/54). Do not add it to new services. Historical `redission` is preserved only for existing paths/artifactIds. Gateway uses separate reactive Lettuce; do not block WebFlux EventLoops with Jedis.
 
@@ -77,7 +77,7 @@ Before migration, record Redis topology/DB, bean names and resource ownership, k
 2. **Bidirectional session compatibility:** Write scrubbed real-format sessions with an actual old release and verify the new release can read/extend/logout. Verify the old release can read sessions written by the new release with equivalent TTL and types. **This full rolling acceptance is not yet evidenced and must not be skipped.**
 3. **Canary:** Deploy one stateless instance, verify auth/CAPTCHA, Gateway reactive Lettuce, scheduler locks, cache and Stream behavior before scaling. Observe Redis pool utilization and error rates.
 4. **Streams and queues:** Enable Stream Pending recovery only with durable business idempotency. reliable queue does not import legacy `RDelayedQueue`/`RBlockingQueue`; stop old producers and drain or explicitly migrate legacy jobs under approval before switching; never execute one business job through both protocols concurrently.
-5. **Rollback:** Stop canary promotion, restore the old binary and the matching Nacos snapshot, retain legacy Common, and never clear Redis. Disable opt-in Stream recovery and reliable queue new production/consumption, reconcile durable business state with completed/processing/DLQ before any manual replay.
+5. **Rollback:** Stop canary promotion, restore the old binary and the matching Nacos snapshot, retain legacy Common, and never clear Redis. Disable opt-in Stream recovery and set `peach.delay.queue.enabled=false` to stop the current queue's new production/consumption, reconcile durable business state with completed/processing/DLQ before any manual replay.
 
 Authentication failures must fail closed. Ordinary caches may fall back to authoritative storage, but Pub/Sub is neither reliable delivery nor strong consistency. Positive Bloom checks need source-of-truth verification.
 
@@ -111,7 +111,7 @@ bash scripts/ci/redis-topology-integration.sh tls
 - Real Redis Sentinel/Cluster master failover and client reconnection, live TLS/ACL rotation.
 - Actual legacy Redis key/codec/Sa-Token Session two-way rolling upgrade and rollback, legacy Bloom/queue migration. The current reliable queue preflight blocks startup if old delayed/ready/processing/dead-letter records remain.
 - Cache Pub/Sub disconnect invalidation compensation, Stream PEL operator-safe replay, crash between DLQ append and XACK.
-- DelayQueue reliable queue real process `kill -9`, external database fencing, Redis failover and sustained high-load soak; durable application idempotency remains essential.
+- DelayQueue **Redis infrastructure** failover, external database fencing, real historical queue draining and sustained high-load soak remain unverified; an independent JVM force-kill recovery test has already passed. Durable application idempotency remains essential.
 
 **Acceptance rule:** Record exact release, topology, traceable CI run URL, data scale, canary and rollback evidence for each production rollout. Keep Stream recovery disabled by default; do not switch the queue runtime until legacy messages are drained and deployment gates are approved. Keep Epic #18 open.
 
@@ -122,3 +122,7 @@ The runtime now checks the previous Redisson delayed, ready, processing and dead
 ### Stream DLQ payload retention for manual replay (Issue #89)
 
 Current DLQ records retain the existing `sourceStream`, `sourceGroup`, `sourceId`, `attempts` and display-only `payload` fields. Newly written DLQ records additionally store each original Stream field as `originalField:<base64url-encoded field name>` with marker `originalFieldsStored=true`. This additive format preserves original String values and allows explicit `RedisStreamPendingRecovery.replayDeadLetter(dlqRecordId)` even after the original Stream entry has been trimmed. Historical DLQ entries without these extra fields still require the original source entry; a missing entry fails without fabricated payload. Verify any external consumers that assume exactly five fields. A retry after a crash between DLQ XADD and source XACK can still create duplicate dead letters; maintain durable business idempotency and reconcile source IDs before manual replay. No production data is migrated automatically.
+
+### Legacy delay queue preflight for direct callers (Issue #91)
+
+The queue Starter exposes **one current runtime**. It defaults to enabled when installed; prior to an actual migration set `peach.delay.queue.enabled=false` in environments with historic pending work. After freezing all old producers, query each physical partition using `RedisDelayQueue.legacyBacklog(partitionTopic)` and require `drained()==true` (delayed/ready/processing/dead letters all zero, with DLQ disposition explicitly reconciled). Direct `offer`, `claim` and `start` now fail closed on the first use of a physical topic, and `start` checks again before subscribing; business `DelayQueueContext` still checks all configured partitions. Preflight is read-only and cached per instance for throughput, **not** a distributed fencing barrier against old producers restarting. Do not deploy old and current producers concurrently. Continue to retain persisted `peach:dq2:{topic}:*` Lua data for existing in-flight reliable messages.
