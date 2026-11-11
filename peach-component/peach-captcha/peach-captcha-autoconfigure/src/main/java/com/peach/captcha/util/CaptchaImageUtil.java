@@ -14,7 +14,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -115,6 +117,94 @@ public final class CaptchaImageUtil {
     }
 
     /**
+     * 加载一个应用上下文独立的图片集合，既不覆盖也不读取全局旧资源表。
+     *
+     * @param jigsaw 滑块自定义资源目录
+     * @param click 点选自定义资源目录
+     * @param rotate 旋转自定义资源目录
+     * @return 配置独立且只读的图片快照
+     */
+    public static ImageSet loadImages(String jigsaw, String click, String rotate) {
+        Map<String, String> slidingOriginal = StringUtil.isNotBlank(jigsaw)
+                ? getCustomImagesFile(jigsaw + "/original")
+                : getResourcesImagesFile("defaultImages/sliding/original");
+        Map<String, String> slidingBlock = StringUtil.isNotBlank(jigsaw)
+                ? getCustomImagesFile(jigsaw + "/slidingBlock")
+                : getResourcesImagesFile("defaultImages/sliding/slidingBlock");
+        Map<String, String> rotateOriginal = StringUtil.isNotBlank(rotate)
+                ? getCustomImagesFile(rotate + "/original")
+                : getResourcesImagesFile("defaultImages/rotate/original");
+        Map<String, String> rotateBlock = StringUtil.isNotBlank(rotate)
+                ? getCustomImagesFile(rotate + "/slidingBlock")
+                : getResourcesImagesFile("defaultImages/rotate/slidingBlock");
+        Map<String, String> picClick = StringUtil.isNotBlank(click)
+                ? getCustomImagesFile(click)
+                : getResourcesImagesFile("defaultImages/pic-click");
+        return new ImageSet(slidingOriginal, slidingBlock, rotateOriginal, rotateBlock, picClick);
+    }
+
+    /**
+     * 每个 CaptchaService 独享的不可变图片资源快照；不会受到其他上下文重新初始化影响。
+     */
+    public static final class ImageSet {
+        private final Map<String, String> slidingOriginal;
+        private final Map<String, String> slidingBlock;
+        private final Map<String, String> rotateOriginal;
+        private final Map<String, String> rotateBlock;
+        private final Map<String, String> picClick;
+
+        private ImageSet(Map<String, String> slidingOriginal, Map<String, String> slidingBlock,
+                         Map<String, String> rotateOriginal, Map<String, String> rotateBlock,
+                         Map<String, String> picClick) {
+            this.slidingOriginal = Map.copyOf(slidingOriginal);
+            this.slidingBlock = Map.copyOf(slidingBlock);
+            this.rotateOriginal = Map.copyOf(rotateOriginal);
+            this.rotateBlock = Map.copyOf(rotateBlock);
+            this.picClick = Map.copyOf(picClick);
+        }
+
+        public BufferedImage getSlidingImage() {
+            return image(slidingOriginal);
+        }
+
+        public BufferedImage getRotateImage() {
+            return image(rotateOriginal);
+        }
+
+        public BufferedImage getPicClickImage() {
+            return image(picClick);
+        }
+
+        public String getSlidingBlockString() {
+            return sample(slidingBlock);
+        }
+
+        public String getRotateBlockString() {
+            return sample(rotateBlock);
+        }
+
+        public BufferedImage getSlidingBlockImage() {
+            return image(slidingBlock);
+        }
+
+        public BufferedImage getRotateBlockImage() {
+            return image(rotateBlock);
+        }
+
+        private static BufferedImage image(Map<String, String> values) {
+            String value = sample(values);
+            return value == null ? null : CaptchaImageUtil.getBase64StrToImage(value);
+        }
+
+        private static String sample(Map<String, String> values) {
+            if (values.isEmpty()) {
+                return null;
+            }
+            return new ArrayList<>(values.values()).get(RandomUtils.getRandomInt(0, values.size()));
+        }
+    }
+
+    /**
      * 获取resource图片资源文件 / Retrieve image resource files
      * @param path 图片资源路径 / Image resource path
      * @return Map<String,String> 图片资源文件映射 / Image resource file map
@@ -172,8 +262,14 @@ public final class CaptchaImageUtil {
             return imagesMap;
         }
         try (var paths = Files.list(dir)) {
-            paths.filter(Files::isRegularFile).forEach(item -> {
+            // 单上下文最多读取 32 张外部图片，每张不超过 2 MiB；禁止通过符号链接读取。
+            paths.filter(item -> Files.isRegularFile(item, LinkOption.NOFOLLOW_LINKS))
+                    .sorted().limit(32).forEach(item -> {
                 try {
+                    if (Files.size(item) > 2L * 1024 * 1024) {
+                        log.warn("Skip oversized captcha image: {}", item.getFileName());
+                        return;
+                    }
                     byte[] bytes = Files.readAllBytes(item);
                     String encodeValue = Base64Util.encodeToString(bytes);
                     imagesMap.put(item.getFileName().toString(), encodeValue);
