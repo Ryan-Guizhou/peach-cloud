@@ -1,0 +1,23 @@
+{
+  "properties": [
+    {
+      "name": "peach.code.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.code.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.code.redis-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Configure redis enabled for peach.code.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.code.redis-key-prefix",
+      "type": "java.lang.String",
+      "description": "Configure redis key prefix for peach.code.",
+      "defaultValue": "peach:code:generate:"
+    }
+  ],
+  "hints": []
+}

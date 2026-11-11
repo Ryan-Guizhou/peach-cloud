@@ -1,0 +1,92 @@
+{
+  "properties": [
+    {
+      "name": "peach.mybatis.database-ids",
+      "type": "java.util.Map",
+      "description": "Configure database ids for peach.mybatis."
+    },
+    {
+      "name": "peach.mybatis.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.mybatis.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.mybatis.jdbc-type-for-null",
+      "type": "java.lang.Boolean",
+      "description": "Configure jdbc type for null for peach.mybatis.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.mybatis.log",
+      "type": "com.peach.mybatis.config.PeachMybatisProperties$Log",
+      "description": "Configure log for peach.mybatis."
+    },
+    {
+      "name": "peach.mybatis.log.executable",
+      "type": "java.lang.Boolean",
+      "description": "Configure executable for peach.mybatis.log.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.mybatis.log.large-result-threshold",
+      "type": "java.lang.Integer",
+      "description": "Configure large result threshold for peach.mybatis.log.",
+      "defaultValue": 5000
+    },
+    {
+      "name": "peach.mybatis.log.max-sql-length",
+      "type": "java.lang.Integer",
+      "description": "Capacity or limit setting for peach.mybatis.log.",
+      "defaultValue": 4000
+    },
+    {
+      "name": "peach.mybatis.log.warn-missing-where",
+      "type": "java.lang.Boolean",
+      "description": "Configure warn missing where for peach.mybatis.log.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.mybatis.long-query-time",
+      "type": "java.lang.Integer",
+      "description": "Configure long query time for peach.mybatis.",
+      "defaultValue": 3000
+    },
+    {
+      "name": "peach.mybatis.pagehelper",
+      "type": "com.peach.mybatis.config.PeachMybatisProperties$Pagehelper",
+      "description": "Configure pagehelper for peach.mybatis."
+    },
+    {
+      "name": "peach.mybatis.pagehelper.auto-runtime-dialect",
+      "type": "java.lang.Boolean",
+      "description": "Configure auto runtime dialect for peach.mybatis.pagehelper.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.mybatis.pagehelper.close-conn",
+      "type": "java.lang.Boolean",
+      "description": "Configure close conn for peach.mybatis.pagehelper.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.mybatis.pagehelper.helper-dialect",
+      "type": "java.lang.String",
+      "description": "Configure helper dialect for peach.mybatis.pagehelper.",
+      "defaultValue": ""
+    },
+    {
+      "name": "peach.mybatis.pagehelper.reasonable",
+      "type": "java.lang.Boolean",
+      "description": "Configure reasonable for peach.mybatis.pagehelper.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.mybatis.pagehelper.support-methods-arguments",
+      "type": "java.lang.Boolean",
+      "description": "Configure support methods arguments for peach.mybatis.pagehelper.",
+      "defaultValue": false
+    }
+  ],
+  "hints": []
+}
