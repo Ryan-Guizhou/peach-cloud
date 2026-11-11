@@ -14,6 +14,8 @@
 
 **MultiCache L1 竞争边界：** 收到 Pub/Sub 失效通知后会推进本地失效版本号；在途 Redis GET/PTTL 只在版本未变化时回填 Caffeine，避免通知到达后被旧读取重新污染 L1。Redis Pub/Sub 仍是最终一致的失效通道，网络中断期间依赖重新订阅时全量清空 L1，不能替代业务数据版本或数据库事务。
 
+**动态缓存数量上限：** `peach.multicache.max-cache-instances` 默认为 `256`，限定一个 `MultiCacheManager` 可创建的 Caffeine/L1 缓存实例总数；新缓存名超过上限会显式报错，而不是无限占用堆内存。已创建的动态缓存也计入 `getCacheNames()`，可被 `clearAll()` 遍历。请不要直接使用无限变化的用户输入作为缓存名称；缓存 Key 应放在固定缓存名之下。
+
 ## ACL、Sentinel 与 Cluster 配置契约（Issue #49）
 
 独立 `peach-redis-starter` 同时支持数据节点 ACL 和独立 Sentinel ACL；两类认证信息不应混用。下列键在未配置时保持兼容默认值：
