@@ -1,0 +1,90 @@
+{
+  "properties": [
+    {
+      "name": "peach.redis.database",
+      "type": "java.lang.Integer",
+      "description": "Configures database for peach.redis.",
+      "defaultValue": 0
+    },
+    {
+      "name": "peach.redis.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enables or disables peach.redis behavior.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.redis.host",
+      "type": "java.lang.String",
+      "description": "Configures host for peach.redis."
+    },
+    {
+      "name": "peach.redis.jedis",
+      "type": "com.peach.redis.autoconfigure.PeachRedisProperties$JedisPool",
+      "description": "Configures jedis for peach.redis."
+    },
+    {
+      "name": "peach.redis.jedis.max-idle",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.redis.jedis; check units.",
+      "defaultValue": 10
+    },
+    {
+      "name": "peach.redis.jedis.max-total",
+      "type": "java.lang.Integer",
+      "description": "Bounded capacity setting for peach.redis.jedis.",
+      "defaultValue": 128
+    },
+    {
+      "name": "peach.redis.jedis.max-wait-millis",
+      "type": "java.lang.Long",
+      "description": "Bounded capacity setting for peach.redis.jedis.",
+      "defaultValue": 60000
+    },
+    {
+      "name": "peach.redis.jedis.min-idle",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.redis.jedis; check units.",
+      "defaultValue": 1
+    },
+    {
+      "name": "peach.redis.mode",
+      "type": "java.lang.String",
+      "description": "Configures mode for peach.redis.",
+      "defaultValue": "standalone"
+    },
+    {
+      "name": "peach.redis.password",
+      "type": "java.lang.String",
+      "description": "Provide password through secure configuration, never source control.",
+      "defaultValue": ""
+    },
+    {
+      "name": "peach.redis.sentinel-master",
+      "type": "java.lang.String",
+      "description": "Configures sentinel master for peach.redis.",
+      "defaultValue": "master"
+    },
+    {
+      "name": "peach.redis.sentinel-password",
+      "type": "java.lang.String",
+      "description": "Provide sentinel password through secure configuration, never source control."
+    },
+    {
+      "name": "peach.redis.sentinel-username",
+      "type": "java.lang.String",
+      "description": "Configures sentinel username for peach.redis."
+    },
+    {
+      "name": "peach.redis.ssl-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Configures ssl enabled for peach.redis.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.redis.username",
+      "type": "java.lang.String",
+      "description": "Configures username for peach.redis."
+    }
+  ],
+  "hints": []
+}

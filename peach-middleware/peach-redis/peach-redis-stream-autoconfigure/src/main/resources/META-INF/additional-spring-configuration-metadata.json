@@ -1,0 +1,70 @@
+{
+  "properties": [
+    {
+      "name": "peach.redis.stream.consumer-group",
+      "type": "java.lang.String",
+      "description": "Configures consumer group for peach.redis.stream.",
+      "defaultValue": "user-log-group"
+    },
+    {
+      "name": "peach.redis.stream.consumer-name",
+      "type": "java.lang.String",
+      "description": "Configures consumer name for peach.redis.stream.",
+      "defaultValue": "user-log-consumer"
+    },
+    {
+      "name": "peach.redis.stream.consumer-type",
+      "type": "java.lang.String",
+      "description": "Configures consumer type for peach.redis.stream.",
+      "defaultValue": "GROUP"
+    },
+    {
+      "name": "peach.redis.stream.recovery.batch-size",
+      "type": "java.lang.Integer",
+      "description": "Bounded capacity setting for peach.redis.stream.recovery.",
+      "defaultValue": 32
+    },
+    {
+      "name": "peach.redis.stream.recovery.dead-letter-stream",
+      "type": "java.lang.String",
+      "description": "Configures dead letter stream for peach.redis.stream.recovery."
+    },
+    {
+      "name": "peach.redis.stream.recovery.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enables or disables peach.redis.stream.recovery behavior.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.redis.stream.recovery.interval",
+      "type": "java.time.Duration",
+      "description": "Time setting for peach.redis.stream.recovery; check units.",
+      "defaultValue": "30s"
+    },
+    {
+      "name": "peach.redis.stream.recovery.max-attempts",
+      "type": "java.lang.Integer",
+      "description": "Bounded capacity setting for peach.redis.stream.recovery.",
+      "defaultValue": 5
+    },
+    {
+      "name": "peach.redis.stream.recovery.max-retry-delay",
+      "type": "java.time.Duration",
+      "description": "Time setting for peach.redis.stream.recovery; check units.",
+      "defaultValue": "15m"
+    },
+    {
+      "name": "peach.redis.stream.recovery.min-idle",
+      "type": "java.time.Duration",
+      "description": "Time setting for peach.redis.stream.recovery; check units.",
+      "defaultValue": "60s"
+    },
+    {
+      "name": "peach.redis.stream.stream-name",
+      "type": "java.lang.String",
+      "description": "Configures stream name for peach.redis.stream.",
+      "defaultValue": "user-log"
+    }
+  ],
+  "hints": []
+}

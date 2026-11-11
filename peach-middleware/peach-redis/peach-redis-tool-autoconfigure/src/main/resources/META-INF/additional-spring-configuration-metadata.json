@@ -14,5 +14,6 @@
       "description": "单次 Redis SCAN 的本地遍历时间预算，单位毫秒；包含 Cluster 遍历",
       "defaultValue": 10000
     }
-  ]
+  ],
+  "hints": []
 }

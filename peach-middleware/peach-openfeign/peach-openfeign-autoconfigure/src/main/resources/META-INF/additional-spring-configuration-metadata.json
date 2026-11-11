@@ -1,0 +1,215 @@
+{
+  "properties": [
+    {
+      "name": "peach.openfeign.client",
+      "type": "com.peach.openfeign.config.PeachOpenfeignProperties$ClientOptions",
+      "description": "Configures client for peach.openfeign."
+    },
+    {
+      "name": "peach.openfeign.client.connect-timeout-millis",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.openfeign.client; check units.",
+      "defaultValue": 3000
+    },
+    {
+      "name": "peach.openfeign.client.follow-redirects",
+      "type": "java.lang.Boolean",
+      "description": "Configures follow redirects for peach.openfeign.client.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.client.named",
+      "type": "java.util.Map",
+      "description": "Configures named for peach.openfeign.client."
+    },
+    {
+      "name": "peach.openfeign.client.named.*.connect-timeout-millis",
+      "type": "com.peach.openfeign.config.Integer",
+      "description": "Time setting for peach.openfeign.client.named.*; check units."
+    },
+    {
+      "name": "peach.openfeign.client.named.*.read-timeout-millis",
+      "type": "com.peach.openfeign.config.Integer",
+      "description": "Time setting for peach.openfeign.client.named.*; check units."
+    },
+    {
+      "name": "peach.openfeign.client.okhttp-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Configures okhttp enabled for peach.openfeign.client.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.client.read-timeout-millis",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.openfeign.client; check units.",
+      "defaultValue": 10000
+    },
+    {
+      "name": "peach.openfeign.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enables or disables peach.openfeign behavior.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.exception",
+      "type": "com.peach.openfeign.config.PeachOpenfeignProperties$ExceptionOptions",
+      "description": "Configures exception for peach.openfeign."
+    },
+    {
+      "name": "peach.openfeign.exception.expose-remote-message",
+      "type": "java.lang.Boolean",
+      "description": "Configures expose remote message for peach.openfeign.exception.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.openfeign.exception.log-stacktrace-for4xx",
+      "type": "java.lang.Boolean",
+      "description": "Configures log stacktrace for4xx for peach.openfeign.exception.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.openfeign.exception.log-stacktrace-for5xx",
+      "type": "java.lang.Boolean",
+      "description": "Configures log stacktrace for5xx for peach.openfeign.exception.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.fallback",
+      "type": "com.peach.openfeign.config.PeachOpenfeignProperties$FallbackOptions",
+      "description": "Configures fallback for peach.openfeign."
+    },
+    {
+      "name": "peach.openfeign.fallback.fail-fast-if-missing",
+      "type": "java.lang.Boolean",
+      "description": "Configures fail fast if missing for peach.openfeign.fallback.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.fallback.production-profiles",
+      "type": "java.util.List",
+      "description": "Configures production profiles for peach.openfeign.fallback."
+    },
+    {
+      "name": "peach.openfeign.fallback.validate-on-startup",
+      "type": "java.lang.Boolean",
+      "description": "Configures validate on startup for peach.openfeign.fallback.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.relay-authorization-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Configures relay authorization enabled for peach.openfeign.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.request-id-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Configures request id enabled for peach.openfeign.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.retry",
+      "type": "com.peach.openfeign.config.PeachOpenfeignProperties$RetryOptions",
+      "description": "Configures retry for peach.openfeign."
+    },
+    {
+      "name": "peach.openfeign.retry.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enables or disables peach.openfeign.retry behavior.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.retry.exceptions",
+      "type": "java.util.List",
+      "description": "Configures exceptions for peach.openfeign.retry."
+    },
+    {
+      "name": "peach.openfeign.retry.initial-interval-millis",
+      "type": "java.lang.Long",
+      "description": "Time setting for peach.openfeign.retry; check units.",
+      "defaultValue": 100
+    },
+    {
+      "name": "peach.openfeign.retry.max-attempts",
+      "type": "java.lang.Integer",
+      "description": "Bounded capacity setting for peach.openfeign.retry.",
+      "defaultValue": 2
+    },
+    {
+      "name": "peach.openfeign.retry.max-interval-millis",
+      "type": "java.lang.Long",
+      "description": "Time setting for peach.openfeign.retry; check units.",
+      "defaultValue": 300
+    },
+    {
+      "name": "peach.openfeign.retry.methods",
+      "type": "java.util.List",
+      "description": "Configures methods for peach.openfeign.retry."
+    },
+    {
+      "name": "peach.openfeign.retry.multiplier",
+      "type": "java.lang.Double",
+      "description": "Configures multiplier for peach.openfeign.retry.",
+      "defaultValue": 2
+    },
+    {
+      "name": "peach.openfeign.retry.statuses",
+      "type": "java.util.List",
+      "description": "Configures statuses for peach.openfeign.retry."
+    },
+    {
+      "name": "peach.openfeign.same-token-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Configures same token enabled for peach.openfeign.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.same-token-fail-fast",
+      "type": "java.lang.Boolean",
+      "description": "Configures same token fail fast for peach.openfeign.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.openfeign.sentinel",
+      "type": "com.peach.openfeign.config.PeachOpenfeignProperties$SentinelOptions",
+      "description": "Configures sentinel for peach.openfeign."
+    },
+    {
+      "name": "peach.openfeign.sentinel.datasource-type",
+      "type": "java.lang.String",
+      "description": "Configures datasource type for peach.openfeign.sentinel.",
+      "defaultValue": "nacos"
+    },
+    {
+      "name": "peach.openfeign.sentinel.degrade-data-id",
+      "type": "java.lang.String",
+      "description": "Configures degrade data id for peach.openfeign.sentinel.",
+      "defaultValue": "peach-openfeign-sentinel-degrade-rules"
+    },
+    {
+      "name": "peach.openfeign.sentinel.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enables or disables peach.openfeign.sentinel behavior.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.sentinel.flow-data-id",
+      "type": "java.lang.String",
+      "description": "Configures flow data id for peach.openfeign.sentinel.",
+      "defaultValue": "peach-openfeign-sentinel-flow-rules"
+    },
+    {
+      "name": "peach.openfeign.sentinel.group-id",
+      "type": "java.lang.String",
+      "description": "Configures group id for peach.openfeign.sentinel.",
+      "defaultValue": "DEFAULT_GROUP"
+    },
+    {
+      "name": "peach.openfeign.upload-max-bytes",
+      "type": "java.lang.Long",
+      "description": "Bounded capacity setting for peach.openfeign.",
+      "defaultValue": 10485760
+    }
+  ],
+  "hints": []
+}
