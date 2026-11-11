@@ -11,6 +11,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,9 +43,9 @@ public class MultiCacheManager implements CacheManager {
     }
 
     public MultiCacheManager(RedisTemplate redisTemplate, MultiCacheConfig cacheConfig, RedisDao redisDao) {
-        this.redisTemplate = java.util.Objects.requireNonNull(redisTemplate, "redisTemplate");
-        this.cacheConfig = java.util.Objects.requireNonNull(cacheConfig, "cacheConfig");
-        this.redisDao = java.util.Objects.requireNonNull(redisDao, "redisDao");
+        this.redisTemplate = Objects.requireNonNull(redisTemplate, "redisTemplate");
+        this.cacheConfig = Objects.requireNonNull(cacheConfig, "cacheConfig");
+        this.redisDao = Objects.requireNonNull(redisDao, "redisDao");
         this.cacheNames = cacheConfig.getCacheNames();
     }
 

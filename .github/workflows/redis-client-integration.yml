@@ -56,9 +56,9 @@ jobs:
         run: |
           set -o pipefail
           mvn -B -ntp \
-            -pl peach-middleware/peach-redis/peach-redis-common,peach-middleware/peach-redis/peach-redis-multicache-quickstart,peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart,peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart,peach-middleware/peach-redis/peach-redis-stream-quickstart \
+            -pl peach-middleware/peach-redis/peach-redis-multicache-quickstart,peach-middleware/peach-redission/peach-redission-bloomfilter-quickstart,peach-middleware/peach-redis/peach-redis-quickstart,peach-middleware/peach-redis/peach-redis-tool-quickstart,peach-middleware/peach-redission/peach-redisson-quickstart,peach-middleware/peach-satoken/peach-satoken-quickstart,peach-middleware/peach-redis/peach-redis-stream-quickstart \
             -am \
-            -Dtest=MultiCacheTwoClientServerIntegrationTest,BloomTwoClientServerIntegrationTest,RedisOnlyServerIntegrationTest,RedisToolServerIntegrationTest,RedissonOnlyServerIntegrationTest,SaTokenRedisServerIntegrationTest,RedisStreamRecoveryServerIntegrationTest,SaTokenSearchServerIntegrationTest,LegacyNewCodecServerIntegrationTest \
+            -Dtest=MultiCacheTwoClientServerIntegrationTest,BloomTwoClientServerIntegrationTest,RedisOnlyServerIntegrationTest,RedisToolServerIntegrationTest,RedissonOnlyServerIntegrationTest,SaTokenRedisServerIntegrationTest,RedisStreamRecoveryServerIntegrationTest,SaTokenSearchServerIntegrationTest,LegacyCodecCompatibilityServerIntegrationTest \
             -Dsurefire.failIfNoSpecifiedTests=false test
 
       - name: Verify Redis Stream Pending tests actually executed
@@ -114,14 +114,14 @@ jobs:
               raise SystemExit(f"Invalid Sa-Token search test result: {vals}")
           print(f"Real Sa-Token SCAN test passed: {vals}")
           PY
-      - name: Assert legacy and independent Redis serializer compatibility actually tested
+      - name: Assert historic serialization fixture and independent Redis codec compatibility actually tested
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import xml.etree.ElementTree as ET
 
-          file = Path("peach-middleware/peach-redis/peach-redis-common/target/surefire-reports/TEST-com.peach.redis.common.LegacyNewCodecServerIntegrationTest.xml")
+          file = Path("peach-middleware/peach-redis/peach-redis-quickstart/target/surefire-reports/TEST-com.peach.redis.quickstart.LegacyCodecCompatibilityServerIntegrationTest.xml")
           if not file.is_file():
               raise SystemExit(f"Legacy/new Redis codec integration suite missing: {file}")
           result = ET.parse(file).getroot()

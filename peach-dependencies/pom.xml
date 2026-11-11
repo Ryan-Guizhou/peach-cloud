@@ -363,11 +363,6 @@
             <!-- ==================== peach-middleware / peach-redis ==================== -->
             <dependency>
                 <groupId>com.peach</groupId>
-                <artifactId>peach-redis-common</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.peach</groupId>
                 <artifactId>peach-redis-multicache-autoconfigure</artifactId>
                 <version>${revision}</version>
             </dependency>

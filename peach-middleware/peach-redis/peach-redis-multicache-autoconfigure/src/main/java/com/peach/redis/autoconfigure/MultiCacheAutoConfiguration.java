@@ -31,10 +31,7 @@ import java.util.Objects;
  */
 @Slf4j
 @AutoConfiguration
-@AutoConfigureAfter(name = {
-        "com.peach.redis.common.RedisConfig",
-        "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration"
-})
+@AutoConfigureAfter(name = "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration")
 @EnableConfigurationProperties(MultiCacheConfig.class)
 @ConditionalOnProperty(prefix = "peach.multicache", name = "enabled", matchIfMissing = true)
 public class MultiCacheAutoConfiguration<K, V>{

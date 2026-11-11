@@ -30,10 +30,7 @@ import org.springframework.stereotype.Indexed;
 @Slf4j
 @Indexed
 @AutoConfiguration
-@AutoConfigureAfter(name = {
-        "com.peach.redis.common.RedisConfig",
-        "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration"
-})
+@AutoConfigureAfter(name = "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration")
 @ConditionalOnClass({SaTokenDao.class, RedisConnectionFactory.class})
 @ConditionalOnProperty(prefix = "peach.satoken.dao", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class PeachSaTokenDaoAutoConfiguration {
