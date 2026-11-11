@@ -13,7 +13,6 @@ import com.peach.captcha.limit.FrequencyLimitHandler;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.util.AesUtil;
 import com.peach.captcha.util.CaptchaImageUtil;
-import com.peach.captcha.util.MemoryCacheUtil;
 import com.peach.common.util.Md5Util;
 import com.peach.common.response.Response;
 import com.peach.common.util.StringUtil;
@@ -22,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.awt.Font;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
+import java.util.Objects;
 
 
 /**
@@ -41,7 +41,12 @@ public abstract class AbstractCacheService implements CaptchaService {
     /**
      * 频率限制处理器 / Frequency limiting processor
      */
-    private static FrequencyLimitHandler frequencyLimitHandler;
+    private FrequencyLimitHandler frequencyLimitHandler;
+
+    private CaptchaCacheService cacheService;
+
+    /** 图片资源属于当前 CaptchaService 实例，不共享跨应用配置。 */
+    protected CaptchaImageUtil.ImageSet images;
 
     /**
      * 默认图片格式 / Default image format
@@ -51,32 +56,32 @@ public abstract class AbstractCacheService implements CaptchaService {
     /**
      * 汉字大小 / Chinese size
      */
-    protected static int HAN_ZI_SIZE = 25;
+    protected int HAN_ZI_SIZE = 25;
 
     /**
      * 汉字大小一半 / Chinese size half
      */
-    protected static int HAN_ZI_SIZE_HALF = HAN_ZI_SIZE / 2;
+    protected int HAN_ZI_SIZE_HALF = HAN_ZI_SIZE / 2;
 
     /**
      * 默认图片过期时间 / Default image expiration time
      */
-    protected static Long EXPIRE_SIN_SECONDS = 2 * 60L;
+    protected Long EXPIRE_SIN_SECONDS = 2 * 60L;
 
     /**
      * 默认图片过期时间 / Default image expiration time
      */
-    protected static Long EXPIRE_SIN_THREE = 3 * 60L;
+    protected Long EXPIRE_SIN_THREE = 3 * 60L;
 
     /**
      * 水印文字(我的水印) / Watermark text (my watermark)
      */
-    protected static String WATER_MARK = "PEACHSOFT";
+    protected String WATER_MARK = "PEACHSOFT";
 
     /**
      * 水印字体 / Watermark font
      */
-    protected static String WATER_MARK_STR = DEFAULT_FONT_FILE;
+    protected String WATER_MARK_STR = DEFAULT_FONT_FILE;
 
     /**
      * 水印字体 / Watermark font
@@ -86,27 +91,27 @@ public abstract class AbstractCacheService implements CaptchaService {
     /**
      * 滑动误差偏移量 / Slide error offset
      */
-    protected static String SLIP_OFFSET = "5";
+    protected String SLIP_OFFSET = "5";
 
     /**
      * aes加密开关 / AES encryption switch
      */
-    protected static boolean CAPTCHA_AES_STATUS = true;
+    protected boolean CAPTCHA_AES_STATUS = true;
 
     /**
      * 点选文字验证码的文字字体(宋体) / Point selection text verification code font (songti)
      */
-    protected static String CLICK_WORD_FRONT_STR = DEFAULT_FONT_FILE;
+    protected String CLICK_WORD_FRONT_STR = DEFAULT_FONT_FILE;
 
     /**
      * 缓存MEMORY/REDIS / Cache MEMORY/REDIS
      */
-    protected static String CACHE_TYPE = MEMORY_CACHE_TYPE;
+    protected String CACHE_TYPE = MEMORY_CACHE_TYPE;
 
     /**
      * 滑块干扰项(0/1/2) / Slide interference items (0/1/2)
      */
-    protected static int INTERFERENCE_OPTIONS = 0;
+    protected int INTERFERENCE_OPTIONS = 0;
 
     protected static String ONE = "1";
 
@@ -116,42 +121,33 @@ public abstract class AbstractCacheService implements CaptchaService {
 
     protected static String TTC = ".ttc";
 
-    @Override
-    public void init(Properties config) {
+    /**
+     * 当前上下文绑定的缓存 Service；自动配置注入同一个 Bean，避免静态工厂重复建实例。
+     */
+    public void bindCacheService(CaptchaCacheService cacheService) {
+        this.cacheService = Objects.requireNonNull(cacheService, "cacheService");
+    }
 
-        // 如果开启了初始化底图则开始初始化底图
-        CaptchaImageUtil.initCaptchaImage(
+    @Override
+    public synchronized void init(Properties config) {
+        Objects.requireNonNull(config, "config");
+        applyConfig(config);
+        if (cacheService == null) {
+            cacheService = CaptchaServiceFactory.getCaptchaCacheService(CACHE_TYPE);
+        }
+        this.images = CaptchaImageUtil.loadImages(
                 config.getProperty(CaptchaPropertiesConst.ORIGINAL_PATH_SILIDER),
                 config.getProperty(CaptchaPropertiesConst.ORIGINAL_PATH_PIC_CLICK),
                 config.getProperty(CaptchaPropertiesConst.ORIGINAL_PATH_ROTATE));
-
-        applyStaticConfig(config);
-
-        // 部署在linux中，如果没有安装中文字段，水印和点选文字，中文无法显示，
-        // 通过加载resources下的font字体解决，无需在linux中安装字体
         loadWaterMarkFont();
-        if (MEMORY_CACHE_TYPE.equals(CACHE_TYPE)) {
-            MemoryCacheUtil.init(Integer.parseInt(config.getProperty(CaptchaPropertiesConst.CAPTCHA_CACAHE_MAX_NUMBER, "1000")),
-                    Long.parseLong(config.getProperty(CaptchaPropertiesConst.CAPTCHA_TIMING_CLEAR_SECOND, "180")));
-        }
         if (ONE.equals(config.getProperty(CaptchaPropertiesConst.REQ_FREQUENCY_LIMIT_ENABLE, ZERO))) {
-            initFrequencyLimitHandler(config);
+            frequencyLimitHandler = new DefaultFrequencyLimitHandler(config, cacheService);
+        } else {
+            frequencyLimitHandler = null;
         }
     }
 
-    private static void initFrequencyLimitHandler(Properties config) {
-        if (frequencyLimitHandler != null) {
-            return;
-        }
-        synchronized (AbstractCacheService.class) {
-            if (frequencyLimitHandler == null) {
-                frequencyLimitHandler = new DefaultFrequencyLimitHandler(config,
-                        CaptchaServiceFactory.getCaptchaCacheService(CACHE_TYPE));
-            }
-        }
-    }
-
-    private static void applyStaticConfig(Properties config) {
+    private void applyConfig(Properties config) {
         WATER_MARK = config.getProperty(CaptchaPropertiesConst.CAPTCHA_WATER_MARK, "PEACHSOFT");
         SLIP_OFFSET = config.getProperty(CaptchaPropertiesConst.CAPTCHA_SLIP_OFFSET, "5");
         WATER_MARK_STR = config.getProperty(CaptchaPropertiesConst.CAPTCHA_WATER_FONT, DEFAULT_FONT_FILE);
@@ -219,7 +215,10 @@ public abstract class AbstractCacheService implements CaptchaService {
      * @return 缓存服务 / Cache service
      */
     protected CaptchaCacheService getCacheService(String type) {
-        return CaptchaServiceFactory.getCaptchaCacheService(type);
+        if (!CACHE_TYPE.equals(type) || cacheService == null) {
+            throw new IllegalStateException("Captcha cache was not initialized for selected type");
+        }
+        return cacheService;
     }
 
     protected String getValidateClientId(CaptchaVO captchaVO){
