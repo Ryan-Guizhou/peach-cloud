@@ -2,6 +2,7 @@ package com.peach.redis.common.tool;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
@@ -56,5 +57,44 @@ class RedisDaoFailureSemanticsTest {
         assertThatThrownBy(() -> dao.convertAndSend("events", "payload")).isSameAs(outage);
         assertThatThrownBy(() -> dao.vSet("key", "value", Duration.ZERO))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldRejectUnconfirmedListRemovalAndCounterUpdates() {
+        RedisTemplate<Object, Object> redis = mock(RedisTemplate.class);
+        ListOperations<Object, Object> list = mock(ListOperations.class);
+        ValueOperations<Object, Object> values = mock(ValueOperations.class);
+        when(redis.opsForList()).thenReturn(list);
+        when(redis.opsForValue()).thenReturn(values);
+        RedisDaoImpl dao = new RedisDaoImpl(redis);
+
+        when(list.size("list")).thenReturn(null);
+        assertThatThrownBy(() -> dao.lRemove("list", "value"))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("LLEN");
+        when(list.size("list")).thenReturn(3L);
+        when(list.remove("list", 3L, "value")).thenReturn(null);
+        assertThatThrownBy(() -> dao.lRemove("list", "value"))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("LREM");
+
+        when(values.increment("counter", 1L)).thenReturn(null);
+        when(values.decrement("counter", 1L)).thenReturn(null);
+        assertThatThrownBy(() -> dao.increaseNum("counter", 1L))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("INCRBY");
+        assertThatThrownBy(() -> dao.decreaseNum("counter", 1L))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("DECRBY");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldRejectUnconfirmedPublishButAllowZeroSubscribers() {
+        RedisTemplate<Object, Object> redis = mock(RedisTemplate.class);
+        RedisDaoImpl dao = new RedisDaoImpl(redis);
+        when(redis.convertAndSend("events", "payload")).thenReturn(null);
+        assertThatThrownBy(() -> dao.convertAndSend("events", "payload"))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("PUBLISH");
+
+        when(redis.convertAndSend("events", "payload")).thenReturn(0L);
+        dao.convertAndSend("events", "payload");
     }
 }

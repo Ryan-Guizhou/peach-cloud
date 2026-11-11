@@ -380,18 +380,27 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
                     : ((org.springframework.data.redis.serializer.RedisSerializer<Object>) redisTemplate.getValueSerializer()).serialize(value);
             return connection.listCommands().lRem(rawKey, count, rawValue);
         });
-        return size == null ? 0 : size;
+        if (size == null) {
+            throw new IllegalStateException("Redis LREM returned no confirmation");
+        }
+        return size;
     }
 
     @Override
     public long lRemove(Object k, Object v) {
         ListOperations<Object, Object> list = redisTemplate.opsForList();
         Long count = list.size(k);
-        if (count != null) {
-            Long size = list.remove(k, count, v);
-            return size == null ? 0 : size;
+        if (count == null) {
+            throw new IllegalStateException("Redis LLEN returned no confirmation");
         }
-        return 0L;
+        if (count == 0L) {
+            return 0L;
+        }
+        Long removed = list.remove(k, count, v);
+        if (removed == null) {
+            throw new IllegalStateException("Redis LREM returned no confirmation");
+        }
+        return removed;
     }
 
     @Override
@@ -678,8 +687,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
      */
     @Override
     public void convertAndSend(String channel, String message) {
-        validateChannel(channel);
-        redisTemplate.convertAndSend(channel, message);
+        convertAndSend(channel, (Object) message);
     }
 
     /**
@@ -691,7 +699,10 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     @Override
     public void convertAndSend(String channel, Object message) {
         validateChannel(channel);
-        redisTemplate.convertAndSend(channel, message);
+        Long subscribers = redisTemplate.convertAndSend(channel, message);
+        if (subscribers == null) {
+            throw new IllegalStateException("Redis PUBLISH returned no confirmation");
+        }
     }
 
     private static void validateChannel(String channel) {
@@ -723,7 +734,10 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             throw new IllegalArgumentException("key不能为空");
         }
         Long increment = redisTemplate.opsForValue().increment(key, fromIndex);
-        return increment == null ? 0 : increment;
+        if (increment == null) {
+            throw new IllegalStateException("Redis INCRBY returned no confirmation");
+        }
+        return increment;
     }
 
     @Override
@@ -735,6 +749,9 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             throw new IllegalArgumentException("key不能为空");
         }
         Long decrement = redisTemplate.opsForValue().decrement(key, decIndex);
-        return decrement == null ? 0 : decrement;
+        if (decrement == null) {
+            throw new IllegalStateException("Redis DECRBY returned no confirmation");
+        }
+        return decrement;
     }
 }
