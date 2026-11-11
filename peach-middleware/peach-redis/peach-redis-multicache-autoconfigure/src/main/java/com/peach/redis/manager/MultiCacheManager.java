@@ -50,7 +50,11 @@ public class MultiCacheManager implements CacheManager {
         this.redisTemplate = Objects.requireNonNull(redisTemplate, "redisTemplate");
         this.cacheConfig = Objects.requireNonNull(cacheConfig, "cacheConfig");
         this.redisDao = Objects.requireNonNull(redisDao, "redisDao");
-        this.cacheNames = cacheConfig.getCacheNames();
+        this.cacheNames = Set.copyOf(cacheConfig.getCacheNames());
+        if (cacheConfig.getMaxCacheInstances() <= 0
+                || this.cacheNames.size() > cacheConfig.getMaxCacheInstances()) {
+            throw new IllegalArgumentException("Invalid peach.multicache.max-cache-instances");
+        }
     }
 
     @Override
