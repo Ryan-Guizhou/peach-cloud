@@ -3,9 +3,10 @@ package com.peach.code.autoconfigure;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * 代码配置属性。
- * <p>默认实现 Redis 优先发号，Redis 不可用时使用 MySQL 原子自增兜底；关闭 Redis 后可切换为
- * MySQL 独立事务发号模式。</p>
+ * 业务编码生成器配置。
+ *
+ * <p>唯一发号权威为 MySQL。保留已有 Redis 配置字段，以便现有配置文件平滑迁移；
+ * 这些字段不再参与编码分配，不能用来切换发号权威。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -17,62 +18,42 @@ public class CodeProperties {
     /** 是否启用业务编码自动配置。 */
     private boolean enabled = true;
 
-    /** 是否启用 Redis 优先发号及故障回写。 */
+    /** 历史配置项：兼容现有配置文件，但不启用 Redis 发号。 */
+    @Deprecated
     private boolean redisEnabled = true;
 
-    /** Redis 序列 key 的命名空间前缀。 */
+    /** 历史 Redis 序列前缀配置；不再用于发号。 */
+    @Deprecated
     private String redisKeyPrefix = "peach:code:generate:";
 
-    /**
-     * 判断是否启用业务编码自动配置。
-     *
-     * @return {@code true} 表示启用
-     */
     public boolean isEnabled() {
         return enabled;
     }
 
-    /**
-     * 设置是否启用业务编码自动配置。
-     *
-     * @param enabled {@code true} 表示启用
-     */
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
 
-    /**
-     * 判断是否启用 Redis 主发号路径。
-     *
-     * @return {@code true} 表示启用 Redis 主路径和回写
-     */
+    /** @return 历史 Redis 开关；不影响实际分配策略。 */
+    @Deprecated
     public boolean isRedisEnabled() {
         return redisEnabled;
     }
 
-    /**
-     * 设置是否启用 Redis 主发号路径。
-     *
-     * @param redisEnabled {@code true} 表示启用 Redis 主路径和回写
-     */
+    /** @param redisEnabled 历史配置值；不影响实际分配策略。 */
+    @Deprecated
     public void setRedisEnabled(boolean redisEnabled) {
         this.redisEnabled = redisEnabled;
     }
 
-    /**
-     * 获取 Redis 序列键命名空间前缀。
-     *
-     * @return Redis 序列键命名空间前缀
-     */
+    /** @return 历史 Redis 前缀；不影响实际分配策略。 */
+    @Deprecated
     public String getRedisKeyPrefix() {
         return redisKeyPrefix;
     }
 
-    /**
-     * 设置 Redis 序列键命名空间前缀。
-     *
-     * @param redisKeyPrefix Redis 序列键命名空间前缀
-     */
+    /** @param redisKeyPrefix 历史 Redis 前缀；不影响实际分配策略。 */
+    @Deprecated
     public void setRedisKeyPrefix(String redisKeyPrefix) {
         this.redisKeyPrefix = redisKeyPrefix;
     }
