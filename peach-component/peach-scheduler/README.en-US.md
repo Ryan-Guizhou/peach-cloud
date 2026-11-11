@@ -40,13 +40,15 @@ English | [中文](README.md)
 | `peach-scheduler-starter` | Business integration starter |
 | `peach-scheduler-quickstart` | Locally provable Handler / Claim / executor orchestration samples |
 
+**JDBC Outbox claiming:** the dispatch path uses `MqOutboxStore.claimPending()` to return a `MqOutboxClaim` carrying a unique batch claimant token. The JDBC implementation limits claim/reclaim queries to 500 entries and accepts `markSent(claim)` / `markFailed(claim)` only while the matching claimant still owns the row. Legacy string-only acknowledgement methods remain for compatibility but must not be used for reliable JDBC delivery. A broker send may succeed before acknowledgement fails: the system remains at-least-once and consumers must use stable message IDs for idempotency.
+
 ## Core Objects
 
 | Object | Description |
 | --- | --- |
 | `@PeachJob` | Declares handler name and description |
 | `JobHandler` | Business entry point |
-| `PeachJobExecutor` | Orchestrates claim, thread-pool execution, and result reporting |
+| `PeachJobExecutor` | Orchestrates claim, managed virtual-thread execution, and result reporting |
 | `ExecutionLeaseClient` | Claims execution lease from the control plane |
 | `ExecutionResultReporter` | Publishes execution results via RocketMQ Outbox |
 | `SchedulingProvider` | Scheduling engine SPI |
