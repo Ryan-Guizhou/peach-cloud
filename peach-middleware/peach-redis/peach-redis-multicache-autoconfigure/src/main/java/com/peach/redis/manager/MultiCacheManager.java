@@ -3,6 +3,8 @@ package com.peach.redis.manager;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.peach.redis.config.CaffeineCacheConfig;
 import com.peach.redis.config.MultiCacheConfig;
+import com.peach.redis.common.tool.RedisDao;
+import com.peach.redis.common.tool.RedisDaoImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -29,14 +31,20 @@ public class MultiCacheManager implements CacheManager {
 
     private final RedisTemplate redisTemplate;
 
+    private final RedisDao redisDao;
+
     private final MultiCacheConfig cacheConfig;
 
     private final Set<String> cacheNames;
 
-    public MultiCacheManager(RedisTemplate redisTemplate,MultiCacheConfig cacheConfig) {
-        super();
-        this.redisTemplate = redisTemplate;
-        this.cacheConfig = cacheConfig;
+    public MultiCacheManager(RedisTemplate redisTemplate, MultiCacheConfig cacheConfig) {
+        this(redisTemplate, cacheConfig, new RedisDaoImpl(redisTemplate));
+    }
+
+    public MultiCacheManager(RedisTemplate redisTemplate, MultiCacheConfig cacheConfig, RedisDao redisDao) {
+        this.redisTemplate = java.util.Objects.requireNonNull(redisTemplate, "redisTemplate");
+        this.cacheConfig = java.util.Objects.requireNonNull(cacheConfig, "cacheConfig");
+        this.redisDao = java.util.Objects.requireNonNull(redisDao, "redisDao");
         this.cacheNames = cacheConfig.getCacheNames();
     }
 
@@ -46,7 +54,7 @@ public class MultiCacheManager implements CacheManager {
         if (cache != null) {
             return cache;
         }
-        cache = new MultiCache(name, redisTemplate, caffeineCache(), cacheConfig);
+        cache = new MultiCache(name, redisTemplate, caffeineCache(), cacheConfig, redisDao);
         Cache oldCache = cacheMap.putIfAbsent(name, cache);
         log.debug("create cache instance, the cache name is : {}", name);
         return oldCache == null ? cache : oldCache;
