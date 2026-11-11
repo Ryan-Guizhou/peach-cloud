@@ -127,10 +127,19 @@ class MultiCacheTwoClientServerIntegrationTest {
 
             listener = new RedisMessageListenerContainer();
             listener.setConnectionFactory(receiverFactory);
-            listener.addMessageListener(new CacheMessageListener(readerManager),
-                    new ChannelTopic(config.getRedis().getTopic()));
+            java.util.concurrent.CountDownLatch subscriptionReady =
+                    new java.util.concurrent.CountDownLatch(1);
+            listener.addMessageListener(new CacheMessageListener(readerManager) {
+                @Override
+                public void onChannelSubscribed(byte[] channel, long count) {
+                    super.onChannelSubscribed(channel, count);
+                    subscriptionReady.countDown();
+                }
+            }, new ChannelTopic(config.getRedis().getTopic()));
             listener.afterPropertiesSet();
             listener.start();
+            // 等待首次订阅确认并完成 L1 清理，避免异步 ACK 清空刚刚回填的测试值。
+            assertThat(subscriptionReady.await(5, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
 
             writer.put(key, "initial");
             assertThat(reader.get(key).get()).isEqualTo("initial");
