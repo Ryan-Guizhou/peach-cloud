@@ -90,8 +90,8 @@ public class PeachMybatisProperties {
         private boolean warnMissingWhere = true;
 
         /**
-         * DEBUG 日志中 Preparing 文本的最大长度。慢 SQL 和缺少 WHERE 的告警不截断，Parameters 行不截断。
-         * 小于等于 0 表示不截断。
+         * 所有级别 Preparing/缺少 WHERE SQL 文本的最大长度。小于等于 0 时使用安全默认值；
+         * 上限由日志组件内部限制，不能关闭长度保护。
          */
         private int maxSqlLength = 4000;
 
