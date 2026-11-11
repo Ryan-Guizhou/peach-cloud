@@ -34,10 +34,11 @@ class OpenFeignRetryPolicyTest {
     }
 
     @Test
-    void shouldRejectMissingRequestContext() {
-        RetryableException failure = new RetryableException(-1, "network failure",
-                Request.HttpMethod.GET, new IllegalStateException("timeout"), (Long) null, null);
-        assertThat(policy.canRetryException(failure)).isFalse();
+    void shouldRespectDisabledRetryOption() {
+        PeachOpenfeignProperties properties = new PeachOpenfeignProperties();
+        properties.getRetry().setEnabled(false);
+        PeachOpenfeignRetryPolicy disabled = new PeachOpenfeignRetryPolicy(properties);
+        assertThat(disabled.canRetryException(failure(Request.HttpMethod.GET))).isFalse();
     }
 
     private static RetryableException failure(Request.HttpMethod method) {
