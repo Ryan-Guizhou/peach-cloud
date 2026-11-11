@@ -55,5 +55,6 @@ mvn -pl peach-component/peach-observability/peach-observability-quickstart -am t
 - 组件不部署 Prometheus、Grafana、Loki、Tempo 或 Collector。
 - Actuator 端点暴露由应用和网络安全策略决定，敏感端点不得直接公开。
 - `requestId`、`traceId`、`spanId` 职责不同，不应混用。
+- Servlet 异步重新分派（`DispatcherType.ASYNC`）时复用请求属性中的原始 `requestId`，为当前处理线程临时设置 MDC，并在本次分派完成后恢复线程原有 MDC；不会把 Spring 事务跨线程传递。
 - Micrometer/OTLP 使用 Spring Boot `management.*` 配置；Peach 配置只承担项目自身扩展。
 - RocketMQ 链路传播仅在 `MqTraceContextPropagator` 与 Micrometer Tracing 同时存在时装配，quickstart 不引入 RocketMQ。
