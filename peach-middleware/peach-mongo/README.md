@@ -39,6 +39,8 @@ mvn -pl peach-middleware/peach-mongo/peach-mongo-quickstart -am test
 
 MongoDB URI、账号和密码只通过本地配置或环境变量提供。
 
+**大结果集边界：** `peach.mongo.max-list-size` 默认 `500`，`peach.mongo.max-page-size` 默认 `500`，均要求 1～100000。未传 `limit` 的 `findList` 最多读取 `max-list-size + 1` 条用于判断是否超额；超额则抛异常而非静默截断。显式 `limit` 和 `findPage` 的 `pageSize` 超限会在访问数据库前拒绝。旧业务若需大批量数据必须改用分页/游标；不可将 `findList(collection)` 当作全表导出接口。单文档体积及聚合管线仍需业务限制。
+
 ## 边界
 
 - Starter 不部署 MongoDB。
