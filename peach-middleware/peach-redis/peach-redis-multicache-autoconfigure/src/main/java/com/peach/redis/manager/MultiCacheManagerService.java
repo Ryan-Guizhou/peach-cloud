@@ -1,6 +1,7 @@
 package com.peach.redis.manager;
 
 
+import com.peach.virtualthread.registry.VirtualExecutorRegistry;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.lang.NonNull;
@@ -9,6 +10,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
@@ -26,12 +28,30 @@ public class MultiCacheManagerService {
 
     private static final String DEFAULT_CACHE_NAME = "default";
 
+    private static final String ASYNC_CLEAR_GROUP = "multicache-clear";
 
-    private MultiCacheManager cacheManager;
 
+    private final MultiCacheManager cacheManager;
 
+    private final VirtualExecutorRegistry virtualExecutorRegistry;
+
+    /**
+     * 保留原有构造入口，不为无受管执行器的实例隐式创建线程。
+     */
     public MultiCacheManagerService(MultiCacheManager cacheManager) {
-        this.cacheManager = cacheManager;
+        this(cacheManager, null);
+    }
+
+    /**
+     * 注册可选的虚拟线程受管组，异步清理只通过此组提交。
+     *
+     * @param cacheManager 缓存管理器
+     * @param virtualExecutorRegistry 已由 Spring 管理的虚拟线程执行器注册中心
+     */
+    public MultiCacheManagerService(MultiCacheManager cacheManager,
+                                    VirtualExecutorRegistry virtualExecutorRegistry) {
+        this.cacheManager = Objects.requireNonNull(cacheManager, "cacheManager");
+        this.virtualExecutorRegistry = virtualExecutorRegistry;
     }
 
     /**
@@ -282,9 +302,19 @@ public class MultiCacheManagerService {
     }
 
     /**
-     * 异步清除缓存（适用于大型缓存）
+     * 向已有受管虚拟线程业务组提交缓存清理任务。
+     *
+     * <p>缺少静态业务组时明确失败，不创建无管理线程；组容量耗尽时向调用方传播拒绝异常。
+     * 清理过程中发生的业务异常交由虚拟线程未承接异常处理器记录。</p>
+     *
+     * @param cacheName 待清理的缓存名
      */
-    public  void asyncClear(String cacheName) {
-        new Thread(() -> clear(cacheName), "cache-clear-thread-" + cacheName).start();
+    public void asyncClear(String cacheName) {
+        if (virtualExecutorRegistry == null
+                || !virtualExecutorRegistry.groupNames().contains(ASYNC_CLEAR_GROUP)) {
+            throw new IllegalStateException(
+                    "Managed virtual-thread group 'multicache-clear' is required for asyncClear");
+        }
+        virtualExecutorRegistry.execute(ASYNC_CLEAR_GROUP, () -> clear(cacheName));
     }
 }
