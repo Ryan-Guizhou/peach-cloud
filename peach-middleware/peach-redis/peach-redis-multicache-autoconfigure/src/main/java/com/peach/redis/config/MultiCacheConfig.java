@@ -23,6 +23,9 @@ public class MultiCacheConfig {
 
     private Set<String> cacheNames = new HashSet<>();
 
+    /** 每个缓存名独占 Caffeine L1 实例；限制动态创建缓存名的总数。 */
+    private int maxCacheInstances = 256;
+
     /**
      * 是否存储空值，默认true，防止缓存穿透
      */
