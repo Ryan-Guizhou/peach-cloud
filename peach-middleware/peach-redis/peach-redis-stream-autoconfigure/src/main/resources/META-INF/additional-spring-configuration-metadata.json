@@ -16,7 +16,7 @@
       "name": "peach.redis.stream.consumer-type",
       "type": "java.lang.String",
       "description": "Configures consumer type for peach.redis.stream.",
-      "defaultValue": "GROUP"
+      "defaultValue": "group"
     },
     {
       "name": "peach.redis.stream.recovery.batch-size",
