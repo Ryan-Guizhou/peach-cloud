@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -39,7 +40,7 @@ class BloomLocalHandleCacheTest {
         RedissonClient client = mock(RedissonClient.class);
         RList<String> segments = mock(RList.class);
         RBloomFilter<Object> filter = mock(RBloomFilter.class);
-        when(client.getList(anyString())).thenReturn(segments);
+        doReturn(segments).when(client).getList(anyString());
         when(segments.readAll()).thenReturn(List.of("segment-a"), List.of("segment-b"),
                 List.of("segment-c"), List.of("segment-a"));
         when(client.getBloomFilter(anyString(), any(Codec.class))).thenReturn(filter);
