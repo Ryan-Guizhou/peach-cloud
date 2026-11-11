@@ -57,6 +57,9 @@ public class BloomFilterProperties {
      */
     private boolean enableLocalCache = true;
 
+    /** 本地句柄缓存的最大条目数；只限制 JVM 缓存，不限制 Redis 分段数量。 */
+    private int localCacheMaximumSize = 4096;
+
     public String getKeyPrefix() {
         return keyPrefix;
     }
@@ -119,5 +122,16 @@ public class BloomFilterProperties {
 
     public void setEnableLocalCache(boolean enableLocalCache) {
         this.enableLocalCache = enableLocalCache;
+    }
+
+    public int getLocalCacheMaximumSize() {
+        return localCacheMaximumSize;
+    }
+
+    public void setLocalCacheMaximumSize(int localCacheMaximumSize) {
+        if (localCacheMaximumSize <= 0) {
+            throw new IllegalArgumentException("Bloom localCacheMaximumSize must be positive");
+        }
+        this.localCacheMaximumSize = localCacheMaximumSize;
     }
 }

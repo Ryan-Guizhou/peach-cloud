@@ -15,6 +15,7 @@ import org.redisson.api.RedissonClient;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,7 +41,7 @@ public class SegmentedBloomFilterService implements BloomFilterService {
     private final BloomScalePolicy scalePolicy;
 
     // Local caches to reduce Redis round-trips
-    private final Map<String, RBloomFilter<Object>> bfCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<String, RBloomFilter<Object>> bfCache;
 
     public SegmentedBloomFilterService(RedissonClient redisson,
                                        BloomFilterProperties props,
@@ -52,6 +53,16 @@ public class SegmentedBloomFilterService implements BloomFilterService {
         this.codecProvider = codecProvider;
         this.keyNaming = keyNaming;
         this.scalePolicy = scalePolicy;
+        int cacheLimit = props.getLocalCacheMaximumSize();
+        if (cacheLimit <= 0) {
+            throw new IllegalArgumentException("Bloom localCacheMaximumSize must be positive");
+        }
+        this.bfCache = Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, RBloomFilter<Object>> eldest) {
+                return size() > cacheLimit;
+            }
+        });
     }
 
     @Override
@@ -130,11 +141,8 @@ public class SegmentedBloomFilterService implements BloomFilterService {
             redisson.getMap(keyNaming.fppMapKey(props.getKeyPrefix(), ns)).delete();
             // invalidate local caches
             // remove filter handles for this namespace
-            List<String> namesToRemove = new ArrayList<>(bfCache.keySet());
-            for (String name : namesToRemove) {
-                if (name.startsWith(props.getKeyPrefix() + ":" + ns + ":")) {
-                    bfCache.remove(name);
-                }
+            synchronized (bfCache) {
+                bfCache.keySet().removeIf(name -> name.startsWith(props.getKeyPrefix() + ":" + ns + ":"));
             }
         } finally {
             lock.unlock();

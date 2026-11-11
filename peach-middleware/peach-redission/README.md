@@ -33,7 +33,7 @@
 - **提交防重：** `@RepeatLimit` 针对短时间重复请求；支付/订单创建必须保留数据库唯一约束与幂等记录。
 - **延迟任务：** `DelayQueueContext` 统一使用当前可靠队列。推荐传入稳定消息 ID 的重载进行去重；发布前必须先排空历史 Redisson 队列。
 - **分段元数据兼容：** 新分段计数键包含分段名；旧共享计数键保留用于回滚。旧段首次访问会用 Bloom 位图 `count()` 估计真实数量（这是近似值）；段目录不再使用无法跨节点失效的本地快照。升级时应验证新旧实例并存及回滚。
-- **大规模成员预判：** Bloom Filter 可减少无效查询，但“可能存在”必须回源验证；Redis 元数据异常不能按“必然不存在”处理。
+- **大规模成员预判：** Bloom Filter 可减少无效查询，但“可能存在”必须回源验证；Redis 元数据异常不能按“必然不存在”处理。动态命名空间的本地段句柄缓存由 `peach.redis.bloom.local-cache-maximum-size` 限制（默认 `4096`），超过上限按最近最少使用淘汰；不缓存段目录，禁用 `enable-local-cache` 可关闭句柄缓存。
 - **普通 Redis Template / Stream / Caffeine 多级缓存：** 请使用 [peach-redis](../peach-redis/README.md)。
 
 ### 最简 Maven 依赖（当前仓库）
