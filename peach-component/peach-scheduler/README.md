@@ -55,13 +55,15 @@ peach-component/peach-scheduler/
 | `peach-scheduler-starter` | 聚合 `autoconfigure` + `transport-rocket` |
 | `peach-scheduler-quickstart` | 本地可证明的 Handler / Claim / 执行器编排样例 |
 
+**JDBC Outbox 认领边界：** 发送端通过 `MqOutboxStore.claimPending()` 获得 `MqOutboxClaim`（包含本批令牌），并且只能使用 `markSent(claim)` / `markFailed(claim)` 更新状态。JDBC 实现每批使用唯一 `CLAIMED_BY`，认领及回收查询均限制每批最多 500 条；旧执行者的 ACK/FAIL 无法覆盖新认领。历史无令牌的 `markSent(String)` / `markFailed(String)` 仅为接口兼容保留，可靠生产发件箱不得继续调用。发送成功但确认失败时仍可能重复投递，业务消费者必须按稳定消息 ID 幂等处理，**不承诺 Exactly-Once**。
+
 ## 核心对象
 
 | 对象 | 说明 |
 | --- | --- |
 | `@PeachJob` | 声明 Handler 名称与描述，注册到 `JobRegistry` |
 | `JobHandler` | 业务任务入口，接收 `JobContext`，返回 `JobResult` |
-| `PeachJobExecutor` | 执行编排：校验 → Claim → 线程池提交 → 结果上报 |
+| `PeachJobExecutor` | 执行编排：校验 → Claim → 虚拟线程组提交 → 结果上报 |
 | `ExecutionLeaseClient` | 向控制面抢占 execution 租约（生产由 Feign 实现） |
 | `ExecutionResultReporter` | 上报执行结果到 RocketMQ Outbox |
 | `SchedulingProvider` | 调度引擎 SPI（schedule/reschedule/pause/resume/delete/trigger） |
