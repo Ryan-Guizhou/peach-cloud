@@ -1,6 +1,7 @@
 package com.peach.observability.web;
 
 import com.peach.observability.config.PeachObservabilityProperties;
+import jakarta.servlet.DispatcherType;
 import com.peach.observability.core.ObservabilityConstants;
 import com.peach.observability.core.RequestIdResolver;
 import org.junit.jupiter.api.AfterEach;
@@ -20,6 +21,28 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 
 class RequestIdServletFilterTest {
+
+    @Test
+    void asyncRedispatchPreservesOriginalRequestIdAndRestoresThreadMdc() throws Exception {
+        PeachObservabilityProperties.RequestId properties = new PeachObservabilityProperties.RequestId();
+        RequestIdResolver resolver = new RequestIdResolver(properties, () -> "generated-request-id");
+        RequestIdServletFilter filter = new RequestIdServletFilter(properties, resolver);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setDispatcherType(DispatcherType.ASYNC);
+        request.setAttribute(ObservabilityConstants.REQUEST_ID_ATTRIBUTE, "original-request-id");
+        request.addHeader(properties.getHeaderName(), "different-incoming-id");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MDC.put(ObservabilityConstants.REQUEST_ID_MDC_KEY, "outer-context-id");
+
+        filter.doFilter(request, response, (actualRequest, actualResponse) -> {
+            assertThat(MDC.get(ObservabilityConstants.REQUEST_ID_MDC_KEY)).isEqualTo("original-request-id");
+            assertThat(actualRequest.getAttribute(ObservabilityConstants.REQUEST_ID_ATTRIBUTE))
+                    .isEqualTo("original-request-id");
+        });
+
+        assertThat(response.getHeader(properties.getHeaderName())).isEqualTo("original-request-id");
+        assertThat(MDC.get(ObservabilityConstants.REQUEST_ID_MDC_KEY)).isEqualTo("outer-context-id");
+    }
 
     @AfterEach
     void clearMdc() {
