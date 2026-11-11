@@ -39,7 +39,7 @@ class MongoCommandsTest {
 
         assertThat(text.placeholder()).contains("\"limit\" : 1");
         assertThat(text.placeholder()).contains("?");
-        assertThat(text.parameters()).isEqualTo("it(String)");
+        assertThat(text.parameters()).isEqualTo("String");
         assertThat(text.executable()).doesNotContain("?");
     }
 
