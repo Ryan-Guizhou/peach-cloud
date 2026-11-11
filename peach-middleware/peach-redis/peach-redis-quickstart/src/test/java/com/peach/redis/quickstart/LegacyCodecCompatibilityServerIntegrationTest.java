@@ -1,6 +1,10 @@
-package com.peach.redis.common;
+package com.peach.redis.quickstart;
 
 import com.peach.redis.autoconfigure.PeachRedisAutoConfiguration;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +13,8 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -20,16 +26,16 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 在真实 Redis 7.2 上验证当前仓库旧 RedisConfig 与新 Jedis 自动装配的存储字节兼容。
+ * 在真实 Redis 7.2 上验证旧 RedisConfig 序列化配置快照与独立 Jedis 底座的存储兼容。
  *
- * <p>不代表旧发行版二进制所创建的历史 Sa-Token Session 已通过滚动升级验收。</p>
+ * <p>历史配置按删除前 RedisConfig 原样复现；不代表真实旧发行版 SaSession 二进制夹具或滚动升级验收。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/10
  */
 @EnabledIfEnvironmentVariable(named = "RUN_REDIS_CLIENT_IT", matches = "true")
-class LegacyNewCodecServerIntegrationTest {
+class LegacyCodecCompatibilityServerIntegrationTest {
 
     private JedisConnectionFactory connectionFactory;
     private RedisTemplate<String, Object> legacy;
@@ -42,8 +48,28 @@ class LegacyNewCodecServerIntegrationTest {
         config.setDatabase(0);
         connectionFactory = new JedisConnectionFactory(config);
         connectionFactory.afterPropertiesSet();
-        legacy = new RedisConfig().redisTemplate(connectionFactory);
+        legacy = historicalTemplate(connectionFactory);
         modern = new PeachRedisAutoConfiguration().redisTemplate(connectionFactory);
+    }
+
+    /**
+     * 旧 RedisConfig 的序列化约定快照：保持 Json 类型信息、字段可见性、
+     * String key 与 Hash key 的字节语义，不依赖已经移除的旧 Maven 工件。
+     */
+    private static RedisTemplate<String, Object> historicalTemplate(JedisConnectionFactory factory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        mapper.activateDefaultTyping(mapper.getPolymorphicTypeValidator(),
+                ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
+        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(mapper, Object.class);
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(serializer);
+        template.setHashValueSerializer(serializer);
+        template.afterPropertiesSet();
+        return template;
     }
 
     @AfterEach

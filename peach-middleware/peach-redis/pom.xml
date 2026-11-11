@@ -17,7 +17,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>peach-redis-common</module>
         <module>peach-redis-autoconfigure</module>
         <module>peach-redis-starter</module>
         <module>peach-redis-quickstart</module>

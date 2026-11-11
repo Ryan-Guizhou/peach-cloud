@@ -8,7 +8,6 @@ import org.redisson.config.Config;
 import org.redisson.config.SentinelServersConfig;
 import org.redisson.config.SingleServerConfig;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,14 +19,12 @@ import java.util.Arrays;
 /**
  * Redisson-only 自动装配。
  *
- * <p>先于此类加载的旧 RedisConfig 若已注册 RedissonClient，则复用旧 Bean；
- * 后续移除旧混合装配时本配置直接提供客户端。自定义 RedissonClient 优先。</p>
+ * <p>独立提供 RedissonClient，用户自定义 RedissonClient Bean 优先。</p>
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/10
  */
 @AutoConfiguration
-@AutoConfigureAfter(name = "com.peach.redis.common.RedisConfig")
 @ConditionalOnClass(RedissonClient.class)
 @ConditionalOnProperty(prefix = "peach.redis.redisson", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(PeachRedissonProperties.class)

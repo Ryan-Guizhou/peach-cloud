@@ -14,10 +14,7 @@ import org.springframework.context.annotation.Bean;
  * @CreateTime 2025/12/19 18:59
  */
 @AutoConfiguration
-@AutoConfigureAfter(name = {
-        "com.peach.redis.common.RedisConfig",
-        "com.peach.redisson.autoconfigure.PeachRedissonAutoConfiguration"
-})
+@AutoConfigureAfter(name = "com.peach.redisson.autoconfigure.PeachRedissonAutoConfiguration")
 public class RedissionCommonAutoconfigure {
 
     @Bean

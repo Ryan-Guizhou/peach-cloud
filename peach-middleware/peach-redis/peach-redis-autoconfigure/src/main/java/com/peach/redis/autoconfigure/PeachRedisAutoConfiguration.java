@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -34,14 +33,13 @@ import java.util.Set;
 
 /**
  * Spring Data Redis / Jedis 独立底座；不引用或创建 RedissonClient。
- * 历史 RedisConfig 若存在则先运行，本配置优先使用其连接工厂与模板。
+ * 用户已提供 RedisConnectionFactory 时退让，不再依赖旧混合 RedisConfig。
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/10
  */
 @AutoConfiguration(before = RedisAutoConfiguration.class)
-@AutoConfigureAfter(name = "com.peach.redis.common.RedisConfig")
 @ConditionalOnClass({RedisTemplate.class, JedisConnectionFactory.class})
 @ConditionalOnProperty(prefix = "peach.redis", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(PeachRedisProperties.class)

@@ -8,7 +8,7 @@
 
 **Redisson 是 Redis 之上的高级数据结构和协调客户端**；本项目的 `peach-redission` 是 Maven 聚合模块，提供分布式锁、提交防重、延迟队列和分段布隆过滤器。各能力以独立 Starter 形式提供，按需选用。历史目录、artifactId 与部分 Java 包名拼写为 `redission`，**不代表另一个客户端产品**。
 
-**当前基线：** Java 21 / Spring Boot 3.5.4 / Redisson 3.50.0。新增 `peach-redisson-autoconfigure` 和 `peach-redisson-starter`，只需要 Redisson 的服务可不引入 `peach-redis-common` / Jedis。若旧 `RedisConfig` 同时存在，新自动装配会退让给现有 `RedissonClient`；旧混合装配将在后续阶段迁移。参见 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
+**当前基线：** Java 21 / Spring Boot 3.5.4 / Redisson 3.50.0。Redisson 独立底座为 `peach-redisson-autoconfigure` 和 `peach-redisson-starter`，不依赖 Jedis；旧 `peach-redis-common` / `RedisConfig` 已从当前仓库移除。已有业务自行提供 `RedissonClient` 时，默认自动装配仍退让。见 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
 
 **截至本轮的代码验收：** 现有 Redis 7.2 集成已验证 Redisson 多拓扑客户端、双实例 Bloom、类级锁/防重、唯一可靠延迟队列、独立 JVM 强制终止后的租约恢复（[#78](https://github.com/Ryan-Guizhou/peach-cloud/pull/78)）、直接队列 API 的旧协议积压保护（[#92](https://github.com/Ryan-Guizhou/peach-cloud/pull/92)）。当前队列 Starter 存在时 `peach.delay.queue.enabled=true`，旧协议尚未排空的环境必须在发布前显式关闭。**尚待目标环境验收：** 历史真实消息排空/回滚、外部业务 fencing 与 Redis 基础设施故障切换，不应以源码合并或 CI 通过替代。见[迁移验收手册](../../docs/redis-redisson/acceptance-and-rollout.md)。
 
@@ -46,7 +46,7 @@
 </dependency>
 ```
 
-锁、防重、布隆和延迟队列 Starter 已传递 `peach-redisson-starter`，无需额外手工引入 `peach-redis-common` 或 Jedis；`peach-redisson-autoconfigure` 会在用户已提供 `RedissonClient` 时退让。历史工程仍可继续使用旧 `RedisConfig` 作为兼容路径。外部 Maven 工程需要使用仓库实际发布版本替换 `revision`。
+锁、防重、布隆和延迟队列 Starter 传递 `peach-redisson-starter`，无需手工引入 Jedis；用户自定义 `RedissonClient` 优先。旧混合 `peach-redis-common` 已删除，外部使用方必须升级依赖，仓库外 Maven 工程使用实际发布版本替换 `revision`。
 
 ### 最简开发配置
 
@@ -61,7 +61,7 @@ peach:
       enabled: true
 ```
 
-新 Redisson-only 装配和旧 RedisConfig 共享 `peach.redis.*` 拓扑字段，具备相同默认 JsonJacksonCodec。不要在日志写入密码；配置的 TLS、Sentinel、Cluster 行为应在目标 Redis 拓扑完成独立验证。
+Redisson-only 底座仍沿用 `peach.redis.*` 拓扑字段与 JsonJacksonCodec，不再依赖已删除的旧 `RedisConfig`。避免在日志输出凭据；TLS、Sentinel、Cluster 仍需在目标部署验证。
 
 ### 最小编程式锁示例
 
@@ -92,7 +92,7 @@ public class InventoryService {
 
 ## Redisson 依赖闭包收敛（Issue #43）
 
-`peach-redission-common`、Bloom、DistributedLock 和 DelayQueue autoconfigure 已移除对 `peach-redis-common` 的可选依赖，能力 Starter 使用独立 `peach-redisson-starter`。旧 `RedisConfig` 保留供存量应用回滚，不代表新 Starter 仍依赖旧客户端。
+`peach-redission-common`、Bloom、DistributedLock 和 DelayQueue autoconfigure 以及各能力 Starter 均使用独立 Redisson 底座，不依赖已删除的 `peach-redis-common`。旧 `RedisConfig` 不再作为源码或 Maven 工件提供；回滚需事先准备可用的历史部署制品。
 
 ## 结构
 

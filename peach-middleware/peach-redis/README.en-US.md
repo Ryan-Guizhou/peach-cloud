@@ -2,13 +2,13 @@
 
 English | [中文](README.md)
 
-`peach-redis` provides an independent Jedis / Spring Data Redis foundation via `peach-redis-starter`, plus three opt-in feature starters: Tool, MultiCache and Stream. The legacy `peach-redis-common` remains only for external legacy consumers and rollback; internal Maven modules no longer directly depend on it.
+`peach-redis` provides an independent Jedis / Spring Data Redis foundation with `peach-redis-starter`, plus Tool, MultiCache and Stream feature Starters. The obsolete mixed-client `peach-redis-common` module has been deleted from source, Maven reactor and BOM; it is no longer built as a compatibility artifact. Downstream consumers must migrate to the appropriate Starters.
 
 ## Purpose and compatibility
 
 **Audience:** Spring Boot services needing Redis data structures, Caffeine L1 + Redis L2 caching, or Redis Stream messages. `peach-redis` is a Maven aggregator, **not** one dependency that enables every feature. Select only the needed starter.
 
-**Current baseline:** Java 21 / Spring Boot 3.5.4. The legacy `peach-redis-common` still creates Jedis/templates **and** RedissonClient for compatibility. New Redisson-only services can now use `peach-redisson-starter` without this legacy common module. Internal direct dependencies have migrated; retiring the legacy artifact and verifying mixed-version production rollout remain separate work. This matrix describes what exists on main and the known limitations. See [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18) for the redesign.
+**Current baseline:** Java 21 / Spring Boot 3.5.4. Redis uses the standalone Jedis foundation; Redisson uses `peach-redisson-starter`. The old `peach-redis-common` is no longer provided. Historical serializer configuration remains as a test fixture, which does **not** establish old released-binary rolling compatibility. The matrix reflects the current sources; see [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18).
 
 **Code-level acceptance to date:** Dedicated Redis 7.2 checks cover independent clients, Sa-Token, Redis Tool, MultiCache and Stream. Merged evidence includes same-client Sentinel failover ([#70](https://github.com/Ryan-Guizhou/peach-cloud/pull/70)), Cluster primary outage and fresh-client recovery ([#74](https://github.com/Ryan-Guizhou/peach-cloud/pull/74)), legacy/current **in-repository** JSON byte compatibility ([#66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66)), and replayable Stream DLQ fields/read-only reconciliation ([#90](https://github.com/Ryan-Guizhou/peach-cloud/pull/90), [#94](https://github.com/Ryan-Guizhou/peach-cloud/pull/94)). **Still unverified in production:** a genuine released old SaSession fixture and mixed-binary rollout, actual Nacos/ACL/TLS rotation, and business fault injection. See the [migration acceptance runbook](../../docs/redis-redisson/acceptance-and-rollout.en-US.md).
 
@@ -32,7 +32,6 @@ Redis Cluster requires database `0`; invalid values fail during startup. Both Na
 | Module / starter | Main API | Capabilities | Use cases | Current limitation |
 | --- | --- | --- | --- | --- |
 | Foundation / `peach-redis-starter` (recommended) | `RedisConnectionFactory`, `RedisTemplate`, `StringRedisTemplate` | Independent Jedis, standalone/Sentinel/Cluster, TLS, ACL, pooling, custom-factory backoff | Sa-Token / Tool / cache / Stream | No `RedissonClient`; Cluster DB must be 0; stored format retained, rolling session compatibility still pending |
-| Legacy mixed module / `peach-redis-common` (compatibility only) | `RedisConfig` | Historic combined Jedis + Redisson auto-configuration | Older application rollback | No internal direct consumers; do not add to new services; retire only after external migration |
 | `peach-redis-tool-starter` | `RedisDao` | String, TTL, Hash, List, Set, ZSet, Pub/Sub and batch deletion | KV, counters, tags, session support | `scan()` supports standalone and all Cluster masters; 10,000 unique keys / 10s by default, throws on overflow; `count` remains a cursor hint; cross-slot deletion stays per-key |
 | `peach-redis-multicache-starter` | `MultiCacheManager`, `MultiCacheManagerService`, Spring Cache | Caffeine L1 and Redis L2; TTL jitter; manual and annotation APIs; Pub/Sub invalidation | Product detail, configuration and dictionary caching | Best-effort invalidation, not strong consistency; `clear()` uses bounded deletion; over-limit scans throw and still evict local L1, but Redis L2 may remain; no cross-node strong consistency |
 | `peach-redis-stream-starter` | `RedisStreamPushHandler`, `RedisStreamHandler`, `MessageConsumer` | Produce Stream records, group/broadcast consumption, consumer callbacks | Lightweight event messages | Group consumers ACK only on success and retain failures in PEL; opt-in scheduled reclaim, backoff and DLQ are implemented but disabled by default and require fault-injection acceptance |
@@ -76,7 +75,7 @@ Defaults apply without additional properties; valid ranges are 1–100000 unique
 </dependency>
 ```
 
-`revision` resolves within the peach-cloud Maven reactor; use an actual published version outside it. Tool / MultiCache / Stream Starters now transitively depend on the independent `peach-redis-starter`, and their Quickstarts no longer explicitly require `peach-redis-common`. Nacos and legacy-data rollout checks remain necessary.
+`revision` resolves within this Maven reactor; use the actual published version externally. Tool / MultiCache / Stream Starters transitively include `peach-redis-starter`; the old `peach-redis-common` is no longer built. Deployment still requires target Nacos, session and persisted-data checks.
 
 ### Minimal configuration (current project convention)
 
@@ -123,14 +122,14 @@ Uses the existing `RedisDao` API. Production code should standardize key naming,
 
 ## Application dependency migration progress (Issue #41)
 
-- **Sa-Token:** its autoconfiguration uses `RedisConnectionFactory`; the Starter transitively includes `peach-redis-starter` rather than the old `peach-redis-common`. Existing session JSON/key formats remain unchanged.
+- **Sa-Token:** its autoconfiguration consumes `RedisConnectionFactory`, and the Starter transitively supplies `peach-redis-starter`. The retired mixed artifact is deleted; existing Sa-Token JSON/key formats are unchanged.
 - **Captcha:** its autoconfiguration declares optional Spring Data Redis and Hutool compile dependencies; in-memory captcha storage remains usable independently.
 - **Auth / Setting / Message:** service modules use the independent Redis Starter. The Auth launcher removes redundant direct Jedis, Redisson and Spring Data Redis dependencies provided by the Starters.
-- **Still to verify:** existing Redis data/session compatibility, login/logout, gateway reactive Lettuce isolation, Nacos deployment profiles and Sentinel/Cluster/TLS rollout in the intended runtime. This batch does not delete the legacy `peach-redis-common`.
+- **Target-environment acceptance:** persisted keys, genuine old-release sessions and login/logout, Gateway Lettuce isolation, Nacos profiles and Sentinel/Cluster/TLS rollout must be checked in the target deployment; deleting the Maven module is not evidence that this happened.
 
 ## Legacy client dependency cleanup (Issue #43)
 
-Redis Tool / MultiCache / Stream autoconfigure and Quickstart POMs no longer declare optional or direct `peach-redis-common`; `RedisDaoImpl` uses a local Cluster-mode constant rather than depending on the legacy RedisConfig module. Redisson Common / Bloom / DistributedLock / DelayQueue optional legacy dependencies are also removed. Independent client and Tool tests run against real Redis 7.2 in dedicated CI before merging; legacy data, configuration and session rolling-upgrade checks still require explicit production acceptance.
+Redis Tool / MultiCache / Stream autoconfigure and Quickstart POMs no longer declare old `peach-redis-common`; its BOM, reactor entry and legacy `RedisConfig` source are now removed. `RedisDaoImpl` uses a local Cluster mode constant and Redisson features depend on the independent client. Real Redis 7.2 tests do not establish mixed-binary production compatibility.
 
 ## Structure
 
@@ -230,7 +229,7 @@ peach:
 
 ## Redis-only foundation (new)
 
-The repository now includes `peach-redis-autoconfigure`, `peach-redis-starter`, and `peach-redis-quickstart`. This foundation uses Spring Data Redis + Jedis and does **not** create `RedissonClient`. Tool, MultiCache and Stream feature Starters now include it. The historical `peach-redis-common` is kept for legacy services until migration acceptance is complete.
+The repository provides `peach-redis-autoconfigure`, `peach-redis-starter` and `peach-redis-quickstart`. The independent Jedis foundation does not create a `RedissonClient`; Tool / MultiCache / Stream each use their feature Starter. `peach-redis-common` has been removed; old consumers must explicitly migrate dependencies and cannot rely on the old combined artifact.
 
 | Capability | Entry point | Important contract |
 | --- | --- | --- |
@@ -251,7 +250,7 @@ The repository now includes `peach-redis-autoconfigure`, `peach-redis-starter`, 
 
 **Minimal configuration:** retain `peach.redis.mode / host / password / database`. Set `peach.redis.enabled=false` to disable the new auto-configuration, `peach.redis.ssl-enabled=true` for TLS and `peach.redis.jedis.max-total` for the connection budget. Existing `RedisConnectionFactory` wins; default pool `max-total=128`.
 
-**Shortest path:** from the repository root run `mvn -pl peach-middleware/peach-redis/peach-redis-quickstart -am spring-boot:run`. Run `-am test` on the same module for real Redis integration tests (requires Docker for Testcontainers). The example does not require Redisson. The Sa-Token Starter and Auth/Setting/Message modules now use the independent Redis Starter. Legacy `RedisConfig` remains available for phased rollout; production login and session compatibility have not been fully accepted.
+**Shortest path:** from the repository root run `mvn -pl peach-middleware/peach-redis/peach-redis-quickstart -am spring-boot:run`. Real Redis integration checks use the module test and dedicated Redis CI; Docker is required for Testcontainers. The example needs no Redisson. Sa-Token and Auth/Setting/Message now use the independent foundation. Legacy `RedisConfig` is removed; actual old-release sessions still require rolling-upgrade acceptance.
 
 ## Real Redis topology integration (Issue #47)
 
@@ -281,7 +280,7 @@ For migration steps, Nacos/key/codec/session compatibility checks, CI evidence, 
 
 ## Legacy/new Redis JSON compatibility test (Issue #65)
 
-A real Redis 7.2 service-container suite compares the value/hash-value bytes produced by the retained legacy `RedisConfig` and the independent `PeachRedisAutoConfiguration` serializers, exercising old-write/new-read, new-write/old-read and TTL on session-like Maps. This only tests both implementations in the current repository; **it does not validate old released SaSession binary fixtures or production rolling upgrades**.
+The historical `RedisConfig` Jackson serializer settings are preserved as a fixture in `peach-redis-quickstart`, independent of the deleted jar. A real Redis 7.2 test compares Map value/hash-value bytes, bidirectional reads/writes and TTL; historical [#66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66) verified both then-present implementations. **Neither check includes genuine old released SaSession binary fixtures or proves production rolling compatibility.**
 
 ## Pub/Sub reconnection compensation (Issue #67)
 

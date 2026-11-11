@@ -2,13 +2,13 @@
 
 [English](README.en-US.md) | 中文
 
-`peach-redis` 通过独立 `peach-redis-starter` 提供 Jedis / Spring Data Redis 连接底座，并按需提供 Tool、多级缓存和 Stream 三个能力 Starter。历史 `peach-redis-common` 仅保留为外部旧应用兼容与回滚工件；仓库内部 Maven 模块已不再直接依赖它。
+`peach-redis` 通过独立 `peach-redis-starter` 提供 Jedis / Spring Data Redis 连接底座，Tool、多级缓存和 Stream 按能力选择 Starter。旧混合客户端模块 `peach-redis-common` 已从仓库源码、Maven reactor 和 BOM 删除，不再作为可构建的兼容工件；原使用方必须迁移 Starter，不能继续依赖旧坐标。
 
 ## 组件定位与版本
 
 **面向谁：** 需要 Redis 数据结构操作、应用级 L1 + Redis L2 缓存或 Redis Stream 消息能力的 Spring Boot 业务服务。这里的 `peach-redis` 是 Maven 聚合模块，不是将全部能力打包的单个依赖。按需要选用对应 Starter，避免将 Stream、缓存和通用 DAO 一并接入。
 
-**当前基线：** Java 21 / Spring Boot 3.5.4；旧 `peach-redis-common` 仍兼容提供 Jedis、模板和 RedissonClient；需要单独 Redisson 的新服务现可通过 `peach-redisson-starter` 接入，不依赖旧 Redis Common。仓库内部客户端依赖迁移已完成，旧兼容工件退役与线上滚动验收仍待完成。以下表格描述 **main 当前已存在的功能**，并标明关键运行约束；后续解耦计划见 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
+**当前基线：** Java 21 / Spring Boot 3.5.4。独立 Redis 底座使用 Jedis，独立 Redisson 使用 `peach-redisson-starter`；不再发布旧 `peach-redis-common`。历史序列化配置已作为测试夹具保留，不等于旧发行版二进制滚动兼容验收。以下矩阵反映当前源码能力，项目收尾见 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
 
 **截至本轮的代码验收：** 独立客户端、Sa-Token 认证、Redis Tool、MultiCache、Stream 已通过对应的 Redis 7.2 专项验证；原位 Sentinel 故障恢复（[#70](https://github.com/Ryan-Guizhou/peach-cloud/pull/70)）、Cluster 主节点切换与新客户端恢复（[#74](https://github.com/Ryan-Guizhou/peach-cloud/pull/74)）、旧/新源码序列化字节兼容（[#66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66)）、Stream 死信字段/只读对账（[#90](https://github.com/Ryan-Guizhou/peach-cloud/pull/90)、[#94](https://github.com/Ryan-Guizhou/peach-cloud/pull/94)）均已有合并记录。**尚未完成的生产验收**是实际旧发行版 SaSession fixture 与混合发布、目标环境 Nacos/ACL/TLS 轮换及真实业务故障注入。完整证据与回滚门槛见[迁移验收手册](../../docs/redis-redisson/acceptance-and-rollout.md)。
 
@@ -32,7 +32,6 @@ Redis Cluster 只支持数据库 `0`，非法值启动时直接失败。两份 N
 | 模块 / Starter | 核心入口 | 能做什么 | 典型场景 | 当前限制 / 注意事项 |
 | --- | --- | --- | --- | --- |
 | 连接底座 / `peach-redis-starter`（推荐） | `RedisConnectionFactory`、`RedisTemplate`、`StringRedisTemplate` | 独立 Jedis、Standalone/Sentinel/Cluster、TLS、ACL、连接池、自定义工厂退让 | Sa-Token / Tool / 缓存 / Stream | 不创建 `RedissonClient`；Cluster 仅数据库 0；保留旧序列化格式，旧会话滚动兼容待验证 |
-| 旧混合组件 / `peach-redis-common`（仅兼容） | `RedisConfig` | 旧版 Jedis + Redisson 混合装配 | 存量应用回滚 | 仓库内部不再直接依赖；新服务不要引入，外部旧应用迁移后才能退役 |
 | `peach-redis-tool-starter` | `RedisDao` | String、TTL、Hash、List、Set、ZSet、Pub/Sub 和批量删除 | 会话辅助数据、计数、业务 KV、标签 | `scan()` 支持单机/Cluster；默认最多返回 10,000 个唯一 key、最长 10 秒，超限抛异常；`count` 仅为批次提示，跨槽删除逐键执行 |
 | `peach-redis-multicache-starter` | `MultiCacheManager`、`MultiCacheManagerService`、Spring Cache | Caffeine L1 + Redis L2、TTL 抖动、CacheManager/注解接入、Pub/Sub 失效广播 | 商品详情、相对稳定的配置/字典缓存 | Pub/Sub 是尽力失效而非强一致；`clear()` 使用有界模式删除；扫描超限直接失败并清理本地 L1，不能承诺 Redis L2 已全部删除；跨实例无强一致保证 |
 | `peach-redis-stream-starter` | `RedisStreamPushHandler`、`RedisStreamHandler`、`MessageConsumer` | Stream 生产、group/broadcast 消费、消费者回调 | 轻量业务消息、事件处理 | 消费组仅在业务成功后显式 ACK；失败保留 PEL；可选定时认领、指数退避及 DLQ（默认关闭，仍需故障注入） |
@@ -76,7 +75,7 @@ peach:
 </dependency>
 ```
 
-`revision` 来自 peach-cloud Maven reactor；脱离 reactor 时换为发布的具体版本。Tool / MultiCache / Stream Starter 已透传独立 `peach-redis-starter`，三个能力 Quickstart 不再显式依赖旧 `peach-redis-common`；生产部署仍需对 Nacos 和历史数据进行兼容性回归。
+`revision` 来自本仓库 Maven reactor；仓库外使用已发布的实际版本。Tool / MultiCache / Stream Starter 传递 `peach-redis-starter`，旧 `peach-redis-common` 不再构建；对旧环境升级仍需核对 Nacos 配置、Session 与存量 Redis 数据。
 
 ### 最简配置（当前项目约定）
 
@@ -123,14 +122,14 @@ public class ProfileCacheService {
 
 ## 业务依赖迁移进展（Issue #41）
 
-- **Sa-Token**：autoconfigure 通过 `RedisConnectionFactory` 接入；Starter 传递 `peach-redis-starter`，不再直接携带旧 `peach-redis-common`；原有 Sa-Token JSON/Key 规则保持不变。
+- **Sa-Token**：autoconfigure 通过 `RedisConnectionFactory` 接入，Starter 传递 `peach-redis-starter`；旧混合工件已删除，现有 Sa-Token JSON/key 约定保持不变。
 - **Captcha**：autoconfigure 只声明可选的 Spring Data Redis、Hutool 编译依赖，内存缓存实现仍可独立使用。
 - **Auth / Setting / Message**：业务模块改为独立 Redis Starter；Auth 启动模块移除能由 Starter 传递的旧 Jedis、Redisson 和 Spring Data Redis 直连依赖。
-- **未完成验收**：现有 Redis key 与会话数据读写、登录/退出、网关的响应式 Lettuce 隔离、Nacos 部署模板和 Sentinel/Cluster/TLS 迁移必须在目标环境单独验收。旧 `peach-redis-common` 不会在本批直接删除。
+- **目标环境验收**：存量 Redis key、真实旧发行版 Session 登录/退出、网关 Lettuce 隔离、Nacos 配置和 Sentinel/Cluster/TLS 发布需在目标环境复核；移除 Maven 模块本身不代表这些生产操作已执行。
 
 ## 旧客户端依赖收敛（Issue #43）
 
-Redis Tool / MultiCache / Stream 的 autoconfigure 与 Quickstart POM 已移除旧 `peach-redis-common` 可选及直接依赖；`RedisDaoImpl` 的 Cluster 判断使用模块内常量，不再从旧 RedisConfig 模块取值。Redisson Common / Bloom / DistributedLock / DelayQueue 的历史可选依赖也已清理。独立 Starter 在 Redis 7.2 真实服务容器执行基础客户端及 Tool 的测试，均须通过后合并；生产 Redis 数据、配置与会话的跨版本滚动升级仍需单独验收。
+Redis Tool / MultiCache / Stream 的 autoconfigure 与 Quickstart POM 不再依赖旧 `peach-redis-common`；本轮连同 BOM、reactor 和遗留 `RedisConfig` 源码一起删除。`RedisDaoImpl` 使用模块内 Cluster 常量，Redisson 能力也不依赖旧模块。真实 Redis 7.2 基础验证不能替代生产环境的跨版本数据及会话滚动验收。
 
 ## 结构
 
@@ -230,7 +229,7 @@ peach:
 
 ## Redis-only 底座（新增）
 
-本仓库现提供 `peach-redis-autoconfigure`、`peach-redis-starter` 以及 `peach-redis-quickstart`。独立底座基于 Spring Data Redis + Jedis，不创建 `RedissonClient`；能力模块 Tool / MultiCache / Stream 已将新底座纳入 Starter 依赖。历史 `peach-redis-common` 仍在旧项目中保留兼容路径，最终移除需结合迁移验证。
+本仓库提供 `peach-redis-autoconfigure`、`peach-redis-starter`、`peach-redis-quickstart`；独立 Jedis 底座不创建 `RedissonClient`，Tool / MultiCache / Stream 能力通过各自 Starter 接入。旧 `peach-redis-common` 已删除，旧业务须明确迁移到相应 Starter，不得依赖原聚合 jar。
 
 | 能力 | 接入入口 | 重要约束 |
 | --- | --- | --- |
@@ -251,7 +250,7 @@ peach:
 
 **最小配置**：沿用 `peach.redis.mode / host / password / database`；可通过 `peach.redis.enabled=false` 关闭新自动装配、`peach.redis.ssl-enabled=true` 开启 TLS、`peach.redis.jedis.max-total` 调整连接预算。已有 `RedisConnectionFactory` 优先，默认池 `max-total=128`。
 
-**最短路径**：在根目录运行 `mvn -pl peach-middleware/peach-redis/peach-redis-quickstart -am spring-boot:run`；真实 Redis 集成测试可运行相同模块的 `-am test`，其中 Testcontainers 需要 Docker。样例无需 Redisson。Sa-Token Starter、Auth/Setting/Message 业务模块已调整为独立 Redis Starter 依赖；历史 `RedisConfig` 仍在部分模块保留以便滚动迁移，且尚未完成生产环境登录/会话兼容性验收。
+**最短路径**：仓库根目录运行 `mvn -pl peach-middleware/peach-redis/peach-redis-quickstart -am spring-boot:run`；需 Docker 的真实集成测试执行对应 Maven test 和专用 Redis CI。Quickstart 不需要 Redisson；Sa-Token、Auth/Setting/Message 已接入独立底座。旧 `RedisConfig` 不再提供，真实旧发行版会话仍须单独做生产滚动验证。
 
 ## 真实 Redis 多拓扑集成验收（Issue #47）
 
@@ -281,7 +280,7 @@ Sa-Token 的 `PeachSaTokenDao#searchData` 已由阻塞式 Redis `KEYS` 迁移至
 
 ## 旧/新客户端 JSON 兼容验收（Issue #65）
 
-仓库保留的旧 `RedisConfig` 与独立 `PeachRedisAutoConfiguration` 的 `Jackson2JsonRedisSerializer`，在 Redis 7.2 服务容器中验证相同业务 Map 的 value/hash-value 字节相等，以及旧写新读、新写旧读与 TTL。测试仅对当前仓库版本有效，**不包含真实历史发行版 SaSession 二进制快照，也不能替代线上滚动升级测试**。
+历史 `RedisConfig` 的 Jackson 序列化设置现在以不可依赖旧 jar 的测试夹具形式保留于 `peach-redis-quickstart`。真实 Redis 7.2 检验 Map 的 value/hash-value 字节一致、双向读写与 TTL；历史 PR [#66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66) 曾验证仓库内旧/新实现。**这些都不包含真实已发布旧版 SaSession 二进制数据，也不保证生产滚动兼容。**
 
 ## 订阅断线补偿（Issue #67）
 

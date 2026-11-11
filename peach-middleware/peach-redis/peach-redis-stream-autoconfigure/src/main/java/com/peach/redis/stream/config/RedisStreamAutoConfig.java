@@ -40,10 +40,7 @@ import java.util.UUID;
  */
 @Slf4j
 @AutoConfiguration
-@AutoConfigureAfter(name = {
-        "com.peach.redis.common.RedisConfig",
-        "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration"
-})
+@AutoConfigureAfter(name = "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration")
 @EnableConfigurationProperties({RedisStreamProperties.class, RedisStreamRecoveryProperties.class})
 @ConditionalOnProperty(prefix = RedisStreamContant.REDIS_STREAM_PREFIX, value = "enable", havingValue = "true")
 public class RedisStreamAutoConfig {

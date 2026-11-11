@@ -18,7 +18,7 @@
 | 分段 Bloom | `peach-redission-bloomfilter-starter` | Redisson | 假阳性，必须回查业务真值 |
 | 延迟队列 | `peach-redission-delayqueue-starter` | Redisson | 唯一可靠 Lua 队列；Starter 存在时 `peach.delay.queue.enabled` 默认 `true`，上线前必须排空旧消息 |
 
-`peach-redis-common` 旧混合装配保留于 reactor 与 BOM，供外部旧版与回滚使用，但内部 Maven 直接依赖已清零（[PR #54](https://github.com/Ryan-Guizhou/peach-cloud/pull/54)）；**不作为新增服务依赖**。历史 `redission` 拼写仅兼容既有 artifactId/目录。WebFlux 网关使用独立响应式 Lettuce，不能在事件循环中引入同步 Jedis。
+旧混合客户端工件 `peach-redis-common` 已从 reactor、BOM、源码和自动配置列表删除（实施 Issue [#99](https://github.com/Ryan-Guizhou/peach-cloud/issues/99)）。新业务按需使用独立 Redis / Redisson Starter；外部仍引用旧坐标的工程必须先迁移依赖，回滚旧二进制需事先保存自己的历史发布制品。历史 `redission` 拼写在相应能力 artifactId/目录仍保留。WebFlux 网关继续使用独立响应式 Lettuce，不能在事件循环中执行同步 Jedis 操作。
 
 ```mermaid
 flowchart LR
@@ -37,14 +37,14 @@ flowchart LR
 | 验收域 | CI 已运行的内容 | 仍不能据此保证 |
 | --- | --- | --- |
 | 独立客户端、认证 | Redis-only/Redisson-only/Tool + Sa-Token Redis 7.2 登录→鉴权→退出（[#42](https://github.com/Ryan-Guizhou/peach-cloud/pull/42)、[#44](https://github.com/Ryan-Guizhou/peach-cloud/pull/44)） | 旧版真实登录会话混合版本滚动兼容 |
-| 业务解耦 | 6 个业务启动模块+剩余 3 个 POM 迁移；旧依赖回归门禁（[#46](https://github.com/Ryan-Guizhou/peach-cloud/pull/46)、[#54](https://github.com/Ryan-Guizhou/peach-cloud/pull/54)） | 不能安全删除旧 Common 工件 |
+| 业务解耦与旧工件下线 | 6 个业务启动模块、最后 3 个直接依赖清理（[#46](https://github.com/Ryan-Guizhou/peach-cloud/pull/46)、[#54](https://github.com/Ryan-Guizhou/peach-cloud/pull/54)）；旧 `peach-redis-common` 已按 [#99](https://github.com/Ryan-Guizhou/peach-cloud/issues/99) 从仓库删除 | 外部旧工程尚需更新坐标；真实生产切换与回滚未执行 |
 | Sentinel/Cluster/TLS | Redis 7.2 KV/TTL 与 Cluster 跨槽 SCAN（[#48](https://github.com/Ryan-Guizhou/peach-cloud/pull/48)）；**相同实例** Jedis/Redisson 的真实 Sentinel 主节点关闭恢复（[#70](https://github.com/Ryan-Guizhou/peach-cloud/pull/70)）；实际 Cluster 主节点停机/副本晋升及新客户端验证（[#74](https://github.com/Ryan-Guizhou/peach-cloud/pull/74)） | Cluster 长连接恢复、业务事务故障窗与生产 CA/证书轮换未验收 |
 | ACL + Nacos | Jedis/Redisson Sentinel 独立认证、Cluster DB=0、两份模板（[#50](https://github.com/Ryan-Guizhou/peach-cloud/pull/50)） | 线上 ACL 用户/密码轮换 |
 | Stream | XACK/PEL/XPENDING/XCLAIM/重试/DLQ；**4 项真实 Redis 恢复用例**与人工计数/重放（[#88](https://github.com/Ryan-Guizhou/peach-cloud/pull/88)）、源消息裁剪后的完整字段恢复（[#90](https://github.com/Ryan-Guizhou/peach-cloud/pull/90)）、只读 DLQ/XACK 对账（[#94](https://github.com/Ryan-Guizhou/peach-cloud/pull/94)） | 跨键 XADD/XACK 非原子；业务持久幂等、真实故障切换和生产对账仍需验收 |
 | 多实例缓存与 Bloom | 双 Jedis Client L1 失效/L2 回填，双 RedissonClient 扩段/计数（[#56](https://github.com/Ryan-Guizhou/peach-cloud/pull/56)） | 缓存订阅断线不能强一致 |
 | DelayQueue 可靠队列 | 唯一 Lua 实现、租约/fencing/DLQ、64 消息双 Worker、**8 项真实 Redis 用例**含独立 JVM 强制终止后的恢复（[#78](https://github.com/Ryan-Guizhou/peach-cloud/pull/78)）；低层 API 旧队列积压预检查（[#92](https://github.com/Ryan-Guizhou/peach-cloud/pull/92)） | Redis 基础设施故障切换、真实旧消息排空/回滚、外部业务 fencing、持续大负载测试 |
 | Sa-Token 管理检索 | 有界 SCAN、分页/排序、Cluster 全主节点、50,000 结果限制（[#58](https://github.com/Ryan-Guizhou/peach-cloud/pull/58)）；Standalone/Sentinel/Cluster/TLS 真实测试通过 | 真正旧发行版 SaSession 与混合二进制滚动兼容尚未验收 |
-| 旧/新 Redis JSON | **当前仓库内**旧 `RedisConfig` / 新 `PeachRedisAutoConfiguration` 的 Map value/hash-value 字节相等、双向读写与 TTL 验证（[#66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66)，已合并） | 仍不等于真实旧发行版 SaSession fixture 或生产混合二进制滚动验收 |
+| 历史/当前 Redis JSON | 历史旧 `RedisConfig` 序列化设置已转为独立 Redis Quickstart 测试夹具，比较 Map value/hash-value 字节、双向读写与 TTL；此前仓库内旧/新实现验证见 [#66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66) | 不是旧发行版真实 SaSession fixture，也非生产混合二进制滚动验证 |
 
 ## 3. 配置与兼容性核对
 
@@ -77,7 +77,7 @@ peach:
 2. **Session 双向兼容**：用真实旧发行版本写入脱敏 Token/Session，新版本完成读取、续期、退出；反方向验证旧版本可读取新版本数据。记录 key/TTL/对象类型。**没有此验收证据，不得宣布存量登录零感知升级。**
 3. **灰度业务**：单台无状态服务先上线，验证认证/验证码、限流网关 Lettuce、调度锁、缓存、Stream 消费者后再扩大实例数；同时观察连接池和 Redis 端日志。
 4. **Stream / 延迟队列**：Stream 恢复启用前完成业务侧幂等，保留 PEL/DLQ 与消息 ID。可靠队列 不自动导入旧 `RDelayedQueue` / `RBlockingQueue`；先停旧生产、待旧任务排空或经审核迁移，再启用 可靠队列，绝不让两个协议处理同一业务消息。
-5. **回滚**：停止灰度放量，恢复旧二进制与 Nacos 配置快照；暂留 `peach-redis-common` 工件；禁止清空 Redis。出错时先关闭可选 Stream 恢复，并通过 `peach.delay.queue.enabled=false` 停止现行队列的新增生产/消费，对账业务幂等记录、完成/待处理/DLQ 后再决定消息重放，不得盲目反向重放。
+5. **回滚**：停止灰度放量，按事先备份恢复旧业务二进制与 Nacos 配置快照；当前仓库不再提供 `peach-redis-common`，若旧制品仍依赖该模块，必须由历史发布归档准备它，不能从新 reactor 构建。禁止清空 Redis。出错时先关闭可选 Stream 恢复，并通过 `peach.delay.queue.enabled=false` 停止现行队列生产/消费；对账业务状态、Pending 与 DLQ 后再决定是否人工重放。
 
 认证故障必须 fail-closed；缓存可以按业务回源，但 Pub/Sub 不能当作可靠消息或强一致机制。Bloom 的“可能存在”要回源，不用于余额/鉴权/唯一性最终判定。
 

@@ -16,10 +16,7 @@ import org.springframework.data.redis.core.RedisTemplate;
  * @CreateTime 2025/12/19 10:23
  */
 @AutoConfiguration
-@AutoConfigureAfter(name = {
-        "com.peach.redis.common.RedisConfig",
-        "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration"
-})
+@AutoConfigureAfter(name = "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration")
 public class RedisDaoAutoConfigure {
 
     @Bean

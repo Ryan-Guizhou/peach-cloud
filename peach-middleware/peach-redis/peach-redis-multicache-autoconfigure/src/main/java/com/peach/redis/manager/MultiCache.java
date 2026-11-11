@@ -16,6 +16,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.IntStream;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -82,7 +83,7 @@ public class MultiCache extends AbstractValueAdaptingCache {
         super(config.isCacheNullValues());
         this.cacheName = cacheName;
         this.redisTemplate = redisTemplate;
-        this.redisDao = java.util.Objects.requireNonNull(redisDao, "redisDao");
+        this.redisDao = Objects.requireNonNull(redisDao, "redisDao");
         this.caffeineCache = caffeineCache;
         long maxTrackedKeys = Math.max(1L, config.getCaffeine().getMaximumSize());
         this.l2Deadlines = Caffeine.newBuilder().maximumSize(maxTrackedKeys).build();

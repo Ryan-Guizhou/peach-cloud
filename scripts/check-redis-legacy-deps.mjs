@@ -1,26 +1,28 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
-const allowed = new Set([
-  'peach-dependencies/pom.xml',
-  'peach-middleware/peach-redis/peach-redis-common/pom.xml',
-]);
-const paths = execFileSync('git', ['ls-files', '**/pom.xml', 'pom.xml'], {
-  encoding: 'utf8',
-}).split(/\r?\n/).filter(Boolean);
-const violations = [];
-for (const file of paths) {
-  if (allowed.has(file)) continue;
-  const pom = readFileSync(file, 'utf8');
-  if (/<artifactId>\s*peach-redis-common\s*<\/artifactId>/.test(pom)) {
-    violations.push(file);
+const obsoleteDir = 'peach-middleware/peach-redis/peach-redis-common';
+const files = execFileSync('git', ['ls-files', '--cached'], { encoding: 'utf8' })
+  .split(/\r?\n/).filter(Boolean);
+const failures = [];
+
+if (existsSync(obsoleteDir) || files.some(file => file.startsWith(`${obsoleteDir}/`))) {
+  failures.push(`${obsoleteDir}: obsolete mixed-client module must be deleted`);
+}
+for (const file of files) {
+  if (!/\.java$|(^|\/)pom\.xml$|AutoConfiguration\.imports$/.test(file)) continue;
+  if (!existsSync(file)) continue;
+  const source = readFileSync(file, 'utf8');
+  if (source.includes('<artifactId>peach-redis-common</artifactId>') ||
+      source.includes('com.peach.redis.common.RedisConfig') ||
+      source.includes('com.peach.redis.constant.RedisConstant')) {
+    failures.push(`${file}: obsolete Redis Common dependency or class reference`);
   }
 }
-if (violations.length) {
-  console.error('Legacy Redis Common must not be a direct project dependency:');
-  violations.forEach(file => console.error('  ' + file));
-  console.error('Use peach-redis-starter and/or peach-redisson-starter instead.');
+if (failures.length > 0) {
+  console.error('Retired Redis Common references remain:');
+  failures.forEach(failure => console.error(`  ${failure}`));
   process.exit(1);
 }
-console.log('No remaining direct legacy Redis Common consumers.');
+console.log('Retired peach-redis-common is absent from tracked modules, POMs and Java source.');
