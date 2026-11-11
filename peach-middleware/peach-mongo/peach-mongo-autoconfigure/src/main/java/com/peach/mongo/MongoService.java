@@ -11,6 +11,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 /**
  * Mongo服务类。
@@ -22,10 +23,31 @@ import java.util.Set;
 @Slf4j
 public class MongoService<T> implements IMongoService<T>{
 
+    private static final int DEFAULT_MAX_MATERIALIZED_DOCUMENTS = 500;
+
     private final MongoTemplate mongoTemplate;
+    private final int maxListSize;
+    private final int maxPageSize;
 
     public MongoService(MongoTemplate mongoTemplate) {
-        this.mongoTemplate = mongoTemplate;
+        this(mongoTemplate, DEFAULT_MAX_MATERIALIZED_DOCUMENTS, DEFAULT_MAX_MATERIALIZED_DOCUMENTS);
+    }
+
+    /**
+     * Spring 配置的查询物化上限，拒绝危险的大列表而不静默截断。
+     */
+    public MongoService(MongoTemplate mongoTemplate, PeachMongoProperties properties) {
+        this(mongoTemplate, properties.getMaxListSize(), properties.getMaxPageSize());
+    }
+
+    private MongoService(MongoTemplate mongoTemplate, int maxListSize, int maxPageSize) {
+        if (maxListSize < 1 || maxListSize > 100_000
+                || maxPageSize < 1 || maxPageSize > 100_000) {
+            throw new IllegalArgumentException("Mongo query materialization limits must be 1..100000");
+        }
+        this.mongoTemplate = Objects.requireNonNull(mongoTemplate, "mongoTemplate");
+        this.maxListSize = maxListSize;
+        this.maxPageSize = maxPageSize;
     }
 
 
@@ -62,7 +84,12 @@ public class MongoService<T> implements IMongoService<T>{
 
     @Override
     public List<Document> findList(String collectionName, Document query, Document sort, Document projection, Integer skip, Integer limit) {
-        List<Document> documentList = new ArrayList<>();
+        if (skip != null && skip < 0) {
+            throw new IllegalArgumentException("Mongo list skip must be nonnegative");
+        }
+        if (limit != null && (limit < 1 || limit > maxListSize)) {
+            throw new IllegalArgumentException("Mongo list limit must be between 1 and " + maxListSize);
+        }
         try {
             Document finalQuery = query == null ? new Document() : query;
             FindIterable<Document> findIterable = getCollection(collectionName).find(finalQuery);
@@ -75,13 +102,17 @@ public class MongoService<T> implements IMongoService<T>{
             if (skip != null && skip > 0){
                 findIterable = findIterable.skip(skip);
             }
-            if (limit != null && limit > 0){
-                findIterable = findIterable.limit(limit);
+            findIterable = findIterable.limit(limit == null ? maxListSize + 1 : limit);
+            List<Document> documents = findIterable.into(new ArrayList<>());
+            if (limit == null && documents.size() > maxListSize) {
+                throw new IllegalStateException(
+                        "Mongo list exceeds max-list-size; use findPage or cursor-based iteration");
             }
-            documentList = findIterable.into(new ArrayList<>());
-            return documentList;
-        }catch (Exception e){
-            throw new IllegalStateException("Mongo list query failed for collection: " + collectionName, e);
+            return documents;
+        } catch (IllegalStateException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IllegalStateException("Mongo list query failed for collection: " + collectionName, ex);
         }
     }
 
@@ -119,8 +150,10 @@ public class MongoService<T> implements IMongoService<T>{
     @Override
     public PageInfo<Document> findPage(String collectionName, Document query, Document sort, Document projection,
                                        Integer pageNum, Integer pageSize) {
-        if (pageNum == null || pageNum < 1 || pageSize == null || pageSize < 1) {
-            throw new IllegalArgumentException("Mongo pagination requires positive pageNum and pageSize");
+        if (pageNum == null || pageNum < 1 || pageSize == null || pageSize < 1
+                || pageSize > maxPageSize) {
+            throw new IllegalArgumentException(
+                    "Mongo pagination requires positive pageNum and pageSize <= " + maxPageSize);
         }
         long offset = ((long) pageNum - 1L) * pageSize;
         if (offset > Integer.MAX_VALUE) {
