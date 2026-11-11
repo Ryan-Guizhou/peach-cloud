@@ -21,6 +21,8 @@ flowchart LR
     Feign --> Remote[Target Service]
 ```
 
+**Starter wiring contract:** `peach-openfeign-starter` explicitly includes `spring-cloud-starter-openfeign`, not merely optional Feign compile APIs. The named-client configuration merger is created only when a `FeignClientProperties` Bean is registered, preventing accidental missing-bean startup failures.
+
 ## Quick Start
 
 The example lives in [`peach-openfeign-quickstart`](./peach-openfeign-quickstart/). Real Feign contracts remain in business `*-openfeign-external` modules; the QuickStart does not duplicate business APIs and does not call external services.

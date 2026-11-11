@@ -30,6 +30,8 @@ flowchart LR
 </dependency>
 ```
 
+**Starter 运行依赖：** `peach-email-starter` 显式提供 Jakarta Mail、FreeMarker 和 Commons Lang。AutoConfigure 内的 `optional` 仅表示可编译的条件适配，不应由业务服务额外补齐默认 SMTP 和模板引擎所需的类；Quickstart 直接依赖 Starter 验证其运行契约。
+
 Provider 凭据从环境变量、配置中心或密钥服务提供。
 
 ### QuickStart

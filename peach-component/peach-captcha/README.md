@@ -30,6 +30,8 @@ flowchart LR
 </dependency>
 ```
 
+**依赖边界：** `peach-captcha-starter` 提供验证码默认实现所需的公共 API 和 Hutool；MEMORY 模式无需 Redis。`REDIS` 模式由业务显式引入 `peach-redis-starter` 并配置可用 Redis，缺少 Redis Bean 时不能把集群缓存当作已启用。
+
 公开入口是自动装配的 `CaptchaService`：
 
 - `get(CaptchaVO)`：生成验证码
