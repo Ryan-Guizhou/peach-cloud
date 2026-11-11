@@ -6,7 +6,9 @@ import com.peach.redis.common.tool.RedisDao;
 import com.peach.redis.config.MultiCacheConfig;
 import com.peach.redis.manager.MultiCacheManager;
 import com.peach.redis.manager.MultiCacheManagerService;
+import com.peach.virtualthread.registry.VirtualExecutorRegistry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -65,9 +67,10 @@ public class MultiCacheAutoConfiguration<K, V>{
      */
     @Bean
     @ConditionalOnMissingBean(MultiCacheManagerService.class)
-    public MultiCacheManagerService cacheManagerService(MultiCacheManager cacheManager) {
+    public MultiCacheManagerService cacheManagerService(MultiCacheManager cacheManager,
+                                                       ObjectProvider<VirtualExecutorRegistry> registryProvider) {
         log.info("init MultiCacheManagerService successful");
-        return new MultiCacheManagerService(cacheManager);
+        return new MultiCacheManagerService(cacheManager, registryProvider.getIfAvailable());
     }
 
 

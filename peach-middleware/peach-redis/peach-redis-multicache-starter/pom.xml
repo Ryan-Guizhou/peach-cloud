@@ -40,5 +40,9 @@
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-virtual-thread-starter</artifactId>
+        </dependency>
     </dependencies>
 </project>
