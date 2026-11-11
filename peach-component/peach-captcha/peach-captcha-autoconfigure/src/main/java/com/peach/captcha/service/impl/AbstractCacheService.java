@@ -122,15 +122,6 @@ public abstract class AbstractCacheService implements CaptchaService {
     protected static String TTC = ".ttc";
 
     /**
-     * 返回当前服务实例实际生效的水印，供上下文隔离与健康诊断验证。
-     *
-     * @return 当前水印文本
-     */
-    public String getConfiguredWatermark() {
-        return WATER_MARK;
-    }
-
-    /**
      * 当前上下文绑定的缓存 Service；自动配置注入同一个 Bean，避免静态工厂重复建实例。
      */
     public void bindCacheService(CaptchaCacheService cacheService) {
