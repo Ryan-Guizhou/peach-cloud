@@ -407,30 +407,33 @@ public interface RedisDao {
     public Set<Object> scan(String matchKey, Integer count);
 
     /**
-     * 只支持单机redis
+     * 遍历指定 Redis 集合键的全部成员（已废弃的兼容 API）。
+     * 超出 peach.redis.tool.scan 数量/时间限制时抛异常。
      *
-     * @param matchKey 匹配字段
-     * @param count    获取条数
+     * @param matchKey 实际 Redis 集合键（非字段匹配表达式）
+     * @param count 每轮游标批次提示值，非总条数上限
      * @return
      */
     @Deprecated
     public Map hscan(String matchKey, Integer count);
 
     /**
-     * 只支持单机redis
+     * 遍历指定 Redis 集合键的全部成员（已废弃的兼容 API）。
+     * 超出 peach.redis.tool.scan 数量/时间限制时抛异常。
      *
-     * @param matchKey 匹配字段
-     * @param count    获取条数
+     * @param matchKey 实际 Redis 集合键（非字段匹配表达式）
+     * @param count 每轮游标批次提示值，非总条数上限
      * @return
      */
     @Deprecated
     public Set<String> sscan(String matchKey, Integer count);
 
     /**
-     * 只支持单机redis
+     * 遍历指定 Redis 集合键的全部成员（已废弃的兼容 API）。
+     * 超出 peach.redis.tool.scan 数量/时间限制时抛异常。
      *
-     * @param matchKey 匹配字段
-     * @param count    获取条数
+     * @param matchKey 实际 Redis 集合键（非字段匹配表达式）
+     * @param count 每轮游标批次提示值，非总条数上限
      * @return
      */
     @Deprecated
