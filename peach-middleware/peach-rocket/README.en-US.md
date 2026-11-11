@@ -107,6 +107,8 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 
 **Outbox reliability:** `MqOutboxStore.claimPending(batchSize)` returns `MqOutboxClaim` with a store-specific claimant token; the dispatcher now uses claim-aware `markSent` / `markFailed`. Existing store implementations can fall back to the default methods, but durable JDBC stores must enforce token fencing. Broker sends and JDBC acknowledgement are not one atomic transaction, so at-least-once delivery and consumer idempotency remain mandatory.
 
+**Development-only in-memory Outbox:** the default `InMemoryMqOutboxStore` caps stored events at 1,024 and payload bytes at 65,536 per event. Terminal records are cleaned opportunistically after 24h, claims have a 5-minute lease, and no background cleaning threads are created. Settings: `peach.rocket.outbox.in-memory-max-entries`, `in-memory-max-payload-bytes`, `in-memory-retention`, and `in-memory-lease`. Concurrent dispatchers atomically claim and acknowledge with owner tokens, and retry remains bounded. Capacity exhaustion rejects new writes without losing unsent messages. **In-memory Outbox loses messages on restart.** Production should enable `peach.rocket.outbox.require-durable=true` and register a transactional JDBC/other durable store; startup fails otherwise. This is still at-least-once, not exactly-once.
+
 ## SPI Overrides
 
 - Routing: `MqRouteResolver`, annotation-based by default.
