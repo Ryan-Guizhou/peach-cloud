@@ -28,12 +28,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class PeachCodeAutoConfiguration {
 
     /**
-     * 创建默认 JDBC 编码生成器。
+     * 创建默认 MySQL 唯一事实源编码生成器。
      *
      * @param jdbcTemplate 业务数据库 JDBC 模板
      * @param properties 编码生成器配置
-     * @param redisProvider 可选的 Redis 字符串模板
-     * @param transactionProvider 可选的事务管理器，用于 MySQL 兜底和水位持久化
+     * @param redisProvider 历史兼容 Redis 字符串模板，不参与发号
+     * @param transactionProvider MySQL 发号所需的事务管理器
      * @return 默认编码生成器
      */
     @Bean
