@@ -14,6 +14,20 @@
 
 **MultiCache L1 竞争边界：** 收到 Pub/Sub 失效通知后会推进本地失效版本号；在途 Redis GET/PTTL 只在版本未变化时回填 Caffeine，避免通知到达后被旧读取重新污染 L1。Redis Pub/Sub 仍是最终一致的失效通道，网络中断期间依赖重新订阅时全量清空 L1，不能替代业务数据版本或数据库事务。
 
+**异步缓存清理：** `MultiCacheManagerService.asyncClear(cacheName)` 只向 `peach-virtual-thread` 已注册的 `multicache-clear` 业务组提交任务，不再创建独立平台线程。接入多级缓存 Starter 时需配置：
+
+```yaml
+peach:
+  virtual-thread:
+    groups:
+      multicache-clear:
+        max-concurrency: 4
+        max-pending: 16
+        backpressure: REJECT
+```
+
+未配置业务组时 `asyncClear` 会明确拒绝；组满或关闭时遵守现有虚拟线程背压策略。清理操作异常由虚拟线程异常处理器记录，涉及强一致性时请使用同步 `clear` 等待结果。
+
 ## ACL、Sentinel 与 Cluster 配置契约（Issue #49）
 
 独立 `peach-redis-starter` 同时支持数据节点 ACL 和独立 Sentinel ACL；两类认证信息不应混用。下列键在未配置时保持兼容默认值：

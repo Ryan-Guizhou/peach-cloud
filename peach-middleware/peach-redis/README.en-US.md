@@ -29,6 +29,8 @@ Redis Cluster requires database `0`; invalid values fail during startup. Both Na
 
 **MultiCache L1 invalidation race:** each Pub/Sub invalidation advances a local revision; in-flight Redis GET/PTTL results populate Caffeine only if the revision is unchanged. On a detected race, reads re-fetch L2 instead of returning the invalidated value. Pub/Sub remains an eventually consistent invalidation channel and does not replace domain version checks or database transactions.
 
+**Managed async cache clear:** `MultiCacheManagerService.asyncClear(cacheName)` submits exclusively to the `peach-virtual-thread` static group `multicache-clear` rather than creating unmanaged threads. Configure `peach.virtual-thread.groups.multicache-clear` with bounded `max-concurrency`, `max-pending`, and `backpressure: REJECT` (the multicache quickstart includes an example). Without this group the method fails explicitly; rejection on capacity/shutdown is propagated to the caller. Use synchronous `clear` if the caller must observe completion.
+
 ## Complete capability matrix
 
 | Module / starter | Main API | Capabilities | Use cases | Current limitation |
