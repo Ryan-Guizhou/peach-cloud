@@ -63,6 +63,14 @@ public class PeachRocketProperties implements InitializingBean {
         if (consumer.consumeThreadMin <= 0 || consumer.consumeThreadMax < consumer.consumeThreadMin) {
             throw new MqException("peach.rocket.consumer consume thread range is invalid");
         }
+        if (outbox.enabled && (outbox.batchSize < 1 || outbox.batchSize > 500
+                || outbox.scanIntervalMs < 1 || outbox.inMemoryMaxEntries < 1
+                || outbox.inMemoryMaxPayloadBytes < 1 || outbox.inMemoryRetention == null
+                || outbox.inMemoryRetention.isZero() || outbox.inMemoryRetention.isNegative()
+                || outbox.inMemoryLease == null || outbox.inMemoryLease.isZero()
+                || outbox.inMemoryLease.isNegative())) {
+            throw new MqException("Invalid peach.rocket.outbox resource limits");
+        }
         if (topic.readQueueNums <= 0 || topic.writeQueueNums <= 0) {
             throw new MqException("peach.rocket.topic read/write queue nums must be positive");
         }
@@ -234,11 +242,26 @@ public class PeachRocketProperties implements InitializingBean {
         private boolean enabled = false;
         private int batchSize = 50;
         private long scanIntervalMs = 2000L;
+        private boolean requireDurable = false;
+        private int inMemoryMaxEntries = 1024;
+        private int inMemoryMaxPayloadBytes = 65536;
+        private Duration inMemoryRetention = Duration.ofHours(24);
+        private Duration inMemoryLease = Duration.ofMinutes(5);
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean enabled) { this.enabled = enabled; }
         public int getBatchSize() { return batchSize; }
         public void setBatchSize(int batchSize) { this.batchSize = batchSize; }
         public long getScanIntervalMs() { return scanIntervalMs; }
         public void setScanIntervalMs(long scanIntervalMs) { this.scanIntervalMs = scanIntervalMs; }
+        public boolean isRequireDurable() { return requireDurable; }
+        public void setRequireDurable(boolean requireDurable) { this.requireDurable = requireDurable; }
+        public int getInMemoryMaxEntries() { return inMemoryMaxEntries; }
+        public void setInMemoryMaxEntries(int inMemoryMaxEntries) { this.inMemoryMaxEntries = inMemoryMaxEntries; }
+        public int getInMemoryMaxPayloadBytes() { return inMemoryMaxPayloadBytes; }
+        public void setInMemoryMaxPayloadBytes(int inMemoryMaxPayloadBytes) { this.inMemoryMaxPayloadBytes = inMemoryMaxPayloadBytes; }
+        public Duration getInMemoryRetention() { return inMemoryRetention; }
+        public void setInMemoryRetention(Duration inMemoryRetention) { this.inMemoryRetention = inMemoryRetention; }
+        public Duration getInMemoryLease() { return inMemoryLease; }
+        public void setInMemoryLease(Duration inMemoryLease) { this.inMemoryLease = inMemoryLease; }
     }
 }
