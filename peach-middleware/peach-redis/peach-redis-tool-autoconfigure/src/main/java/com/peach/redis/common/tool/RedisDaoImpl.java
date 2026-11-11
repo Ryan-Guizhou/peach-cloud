@@ -237,8 +237,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     public boolean vSetUpdate(final Object key, Long expireTime) {
         boolean result = false;
         try {
-            redisTemplate.expire(key, expireTime, TimeUnit.SECONDS);
-            result = true;
+            result = Boolean.TRUE.equals(redisTemplate.expire(key, expireTime, TimeUnit.SECONDS));
         } catch (Exception e) {
             log.debug(REDIS_OPERATION_FAILED, e);
         }
@@ -584,48 +583,112 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
         }
     }
 
+    /**
+     * 遍历指定 Hash 键的全部字段；count 只表示单次游标提示，不是成员上限。
+     * 复用全局扫描数量和耗时限制，避免无限收集。
+     */
     @Override
     public Map hscan(String matchKey, Integer count) {
-        Map<Object, Object> map = new HashMap<>();
-        ScanOptions options = ScanOptions.scanOptions().match(matchKey).count(count).build();
-        try (Cursor<Map.Entry<Object, Object>> cursor = redisTemplate.opsForHash().scan("field", options)) {
-            while (cursor.hasNext()) {
+        validateCollectionKey(matchKey);
+        validateScanBounds();
+        Map<Object, Object> values = new HashMap<>();
+        long startedNanos = System.nanoTime();
+        long maxElapsedNanos = TimeUnit.MILLISECONDS.toNanos(scanTimeoutMillis);
+        try (Cursor<Map.Entry<Object, Object>> cursor = redisTemplate.opsForHash()
+                .scan(matchKey, collectionScanOptions(count))) {
+            while (true) {
+                assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
+                if (!cursor.hasNext()) {
+                    break;
+                }
                 Map.Entry<Object, Object> entry = cursor.next();
-                map.put(entry.getKey(), entry.getValue());
+                values.put(entry.getKey(), entry.getValue());
+                if (values.size() > scanMaxResults) {
+                    throw new IllegalStateException("Redis HSCAN exceeded configured result limit");
+                }
             }
-        } catch (Exception e) {
-            throw new IllegalStateException("Redis HSCAN failed, matchKey=" + matchKey, e);
+        } catch (IllegalStateException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new IllegalStateException("Redis HSCAN failed", exception);
         }
-        return map;
+        assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
+        return values;
     }
 
+    /**
+     * 遍历指定 Set 键的成员；超限时明确抛错。
+     */
     @Override
     public Set<String> sscan(String matchKey, Integer count) {
-        Set<String> keys = new HashSet<>();
-        ScanOptions options = ScanOptions.scanOptions().match(matchKey).count(count).build();
-        try (Cursor<Object> cursor = redisTemplate.opsForSet().scan("setValue", options)) {
-            while (cursor.hasNext()) {
-                keys.add(String.valueOf(cursor.next()));
+        validateCollectionKey(matchKey);
+        validateScanBounds();
+        Set<String> values = new HashSet<>();
+        long startedNanos = System.nanoTime();
+        long maxElapsedNanos = TimeUnit.MILLISECONDS.toNanos(scanTimeoutMillis);
+        try (Cursor<Object> cursor = redisTemplate.opsForSet()
+                .scan(matchKey, collectionScanOptions(count))) {
+            while (true) {
+                assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
+                if (!cursor.hasNext()) {
+                    break;
+                }
+                values.add(String.valueOf(cursor.next()));
+                if (values.size() > scanMaxResults) {
+                    throw new IllegalStateException("Redis SSCAN exceeded configured result limit");
+                }
             }
-        } catch (Exception e) {
-            throw new IllegalStateException("Redis SSCAN failed, matchKey=" + matchKey, e);
+        } catch (IllegalStateException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new IllegalStateException("Redis SSCAN failed", exception);
         }
-        return keys;
+        assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
+        return values;
     }
 
+    /**
+     * 遍历指定 ZSet 键的成员和分值；超限时明确抛错。
+     */
     @Override
     public Map zscan(String matchKey, Integer count) {
-        Map<Object, Object> map = new HashMap<>();
-        ScanOptions options = ScanOptions.scanOptions().match(matchKey).count(count).build();
-        try (Cursor<ZSetOperations.TypedTuple<Object>> cursor = redisTemplate.opsForZSet().scan("zSetValue", options)) {
-            while (cursor.hasNext()) {
-                ZSetOperations.TypedTuple<Object> tuple = cursor.next();
-                map.put(tuple.getValue(), tuple.getScore());
+        validateCollectionKey(matchKey);
+        validateScanBounds();
+        Map<Object, Object> values = new HashMap<>();
+        long startedNanos = System.nanoTime();
+        long maxElapsedNanos = TimeUnit.MILLISECONDS.toNanos(scanTimeoutMillis);
+        try (Cursor<ZSetOperations.TypedTuple<Object>> cursor = redisTemplate.opsForZSet()
+                .scan(matchKey, collectionScanOptions(count))) {
+            while (true) {
+                assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
+                if (!cursor.hasNext()) {
+                    break;
+                }
+                ZSetOperations.TypedTuple<Object> entry = cursor.next();
+                values.put(entry.getValue(), entry.getScore());
+                if (values.size() > scanMaxResults) {
+                    throw new IllegalStateException("Redis ZSCAN exceeded configured result limit");
+                }
             }
-        } catch (Exception e) {
-            throw new IllegalStateException("Redis ZSCAN failed, matchKey=" + matchKey, e);
+        } catch (IllegalStateException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new IllegalStateException("Redis ZSCAN failed", exception);
         }
-        return map;
+        assertScanWithinTimeBudget(startedNanos, maxElapsedNanos);
+        return values;
+    }
+
+    private static void validateCollectionKey(String key) {
+        if (StringUtils.isBlank(key)) {
+            throw new IllegalArgumentException("Redis collection key cannot be blank");
+        }
+    }
+
+    private static ScanOptions collectionScanOptions(Integer count) {
+        long hint = count == null || count <= 0 ? SCAN_BATCH_MAX_HINT
+                : Math.min(count.longValue(), SCAN_BATCH_MAX_HINT);
+        return ScanOptions.scanOptions().count(hint).build();
     }
 
     @Override
