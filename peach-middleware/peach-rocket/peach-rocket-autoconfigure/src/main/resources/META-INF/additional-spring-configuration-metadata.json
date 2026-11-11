@@ -1,0 +1,254 @@
+{
+  "properties": [
+    {
+      "name": "peach.rocket.app-name",
+      "type": "java.lang.String",
+      "description": "Configure app name for peach.rocket.",
+      "defaultValue": "application"
+    },
+    {
+      "name": "peach.rocket.consumer",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Consumer",
+      "description": "Configure consumer for peach.rocket."
+    },
+    {
+      "name": "peach.rocket.consumer.consume-thread-max",
+      "type": "java.lang.Integer",
+      "description": "Capacity or limit for peach.rocket.consumer.",
+      "defaultValue": 20
+    },
+    {
+      "name": "peach.rocket.consumer.consume-thread-min",
+      "type": "java.lang.Integer",
+      "description": "Capacity or limit for peach.rocket.consumer.",
+      "defaultValue": 1
+    },
+    {
+      "name": "peach.rocket.consumer.dynamic-register",
+      "type": "java.lang.Boolean",
+      "description": "Configure dynamic register for peach.rocket.consumer.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.consumer.enable-idempotent",
+      "type": "java.lang.Boolean",
+      "description": "Configure enable idempotent for peach.rocket.consumer.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.consumer.idempotent-expire",
+      "type": "java.time.Duration",
+      "description": "Time setting for peach.rocket.consumer; check units.",
+      "defaultValue": "24h"
+    },
+    {
+      "name": "peach.rocket.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.rocket.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.namespace",
+      "type": "java.lang.String",
+      "description": "Configure namespace for peach.rocket.",
+      "defaultValue": "default"
+    },
+    {
+      "name": "peach.rocket.naming",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Naming",
+      "description": "Capacity or limit for peach.rocket."
+    },
+    {
+      "name": "peach.rocket.naming.auto-prefix-env",
+      "type": "java.lang.Boolean",
+      "description": "Configure auto prefix env for peach.rocket.naming.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.naming.group-prefix",
+      "type": "java.lang.String",
+      "description": "Configure group prefix for peach.rocket.naming.",
+      "defaultValue": "cg"
+    },
+    {
+      "name": "peach.rocket.naming.topic-prefix",
+      "type": "java.lang.String",
+      "description": "Configure topic prefix for peach.rocket.naming.",
+      "defaultValue": "biz"
+    },
+    {
+      "name": "peach.rocket.naming.topic-separator",
+      "type": "java.lang.String",
+      "description": "Configure topic separator for peach.rocket.naming.",
+      "defaultValue": "-"
+    },
+    {
+      "name": "peach.rocket.outbox",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Outbox",
+      "description": "Configure outbox for peach.rocket."
+    },
+    {
+      "name": "peach.rocket.outbox.batch-size",
+      "type": "java.lang.Integer",
+      "description": "Capacity or limit for peach.rocket.outbox.",
+      "defaultValue": 50
+    },
+    {
+      "name": "peach.rocket.outbox.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.rocket.outbox.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.rocket.outbox.in-memory-lease",
+      "type": "java.time.Duration",
+      "description": "Time setting for peach.rocket.outbox; check units.",
+      "defaultValue": "5m"
+    },
+    {
+      "name": "peach.rocket.outbox.in-memory-max-entries",
+      "type": "java.lang.Integer",
+      "description": "Capacity or limit for peach.rocket.outbox.",
+      "defaultValue": 1024
+    },
+    {
+      "name": "peach.rocket.outbox.in-memory-max-payload-bytes",
+      "type": "java.lang.Integer",
+      "description": "Capacity or limit for peach.rocket.outbox.",
+      "defaultValue": 65536
+    },
+    {
+      "name": "peach.rocket.outbox.in-memory-retention",
+      "type": "java.time.Duration",
+      "description": "Time setting for peach.rocket.outbox; check units.",
+      "defaultValue": "24h"
+    },
+    {
+      "name": "peach.rocket.outbox.require-durable",
+      "type": "java.lang.Boolean",
+      "description": "Configure require durable for peach.rocket.outbox.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.rocket.outbox.scan-interval-ms",
+      "type": "java.lang.Long",
+      "description": "Time setting for peach.rocket.outbox; check units.",
+      "defaultValue": 2000
+    },
+    {
+      "name": "peach.rocket.producer",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Producer",
+      "description": "Configure producer for peach.rocket."
+    },
+    {
+      "name": "peach.rocket.producer.default-timeout",
+      "type": "java.time.Duration",
+      "description": "Time setting for peach.rocket.producer; check units.",
+      "defaultValue": "3s"
+    },
+    {
+      "name": "peach.rocket.security",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Security",
+      "description": "Configure security for peach.rocket."
+    },
+    {
+      "name": "peach.rocket.security.algorithm",
+      "type": "java.lang.String",
+      "description": "Configure algorithm for peach.rocket.security.",
+      "defaultValue": "AES_GCM"
+    },
+    {
+      "name": "peach.rocket.security.base64-key",
+      "type": "java.lang.Boolean",
+      "description": "Configure base64 key for peach.rocket.security.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.rocket.security.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.rocket.security.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.rocket.security.encrypt-payload",
+      "type": "java.lang.Boolean",
+      "description": "Configure encrypt payload for peach.rocket.security.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.rocket.security.encrypt-topics",
+      "type": "java.util.List",
+      "description": "Configure encrypt topics for peach.rocket.security."
+    },
+    {
+      "name": "peach.rocket.security.key",
+      "type": "java.lang.String",
+      "description": "Configure key for peach.rocket.security.",
+      "defaultValue": ""
+    },
+    {
+      "name": "peach.rocket.security.key-id",
+      "type": "java.lang.String",
+      "description": "Configure key id for peach.rocket.security.",
+      "defaultValue": "default"
+    },
+    {
+      "name": "peach.rocket.topic",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Topic",
+      "description": "Configure topic for peach.rocket."
+    },
+    {
+      "name": "peach.rocket.topic.auto-create",
+      "type": "java.lang.Boolean",
+      "description": "Configure auto create for peach.rocket.topic.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.rocket.topic.include-consumer-topics",
+      "type": "java.lang.Boolean",
+      "description": "Configure include consumer topics for peach.rocket.topic.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.topic.include-transaction-topics",
+      "type": "java.lang.Boolean",
+      "description": "Configure include transaction topics for peach.rocket.topic.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.topic.read-queue-nums",
+      "type": "java.lang.Integer",
+      "description": "Configure read queue nums for peach.rocket.topic.",
+      "defaultValue": 4
+    },
+    {
+      "name": "peach.rocket.topic.topics",
+      "type": "java.util.List",
+      "description": "Configure topics for peach.rocket.topic."
+    },
+    {
+      "name": "peach.rocket.topic.write-queue-nums",
+      "type": "java.lang.Integer",
+      "description": "Configure write queue nums for peach.rocket.topic.",
+      "defaultValue": 4
+    },
+    {
+      "name": "peach.rocket.transaction",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Transaction",
+      "description": "Configure transaction for peach.rocket."
+    },
+    {
+      "name": "peach.rocket.transaction.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.rocket.transaction.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.transaction.producer-group",
+      "type": "java.lang.String",
+      "description": "Configure producer group for peach.rocket.transaction.",
+      "defaultValue": "peach-rocket-transaction-producer"
+    }
+  ],
+  "hints": []
+}

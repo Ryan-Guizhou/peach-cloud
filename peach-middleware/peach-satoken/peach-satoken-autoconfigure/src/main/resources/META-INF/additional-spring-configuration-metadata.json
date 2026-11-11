@@ -1,0 +1,83 @@
+{
+  "properties": [
+    {
+      "name": "peach.satoken.dao",
+      "type": "com.peach.satoken.config.PeachSaTokenProperties$Dao",
+      "description": "Configure dao for peach.satoken."
+    },
+    {
+      "name": "peach.satoken.dao.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.satoken.dao.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.satoken.request-id.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.satoken.request-id.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.satoken.request-id.header-name",
+      "type": "java.lang.String",
+      "description": "Configure header name for peach.satoken.request-id.",
+      "defaultValue": "X-Request-Id"
+    },
+    {
+      "name": "peach.satoken.same-token",
+      "type": "com.peach.satoken.config.PeachSaTokenProperties$SameToken",
+      "description": "Configure same token for peach.satoken."
+    },
+    {
+      "name": "peach.satoken.same-token.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.satoken.same-token.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.satoken.same-token.exclude-path-patterns",
+      "type": "java.util.List",
+      "description": "Configure exclude path patterns for peach.satoken.same-token."
+    },
+    {
+      "name": "peach.satoken.same-token.log-path",
+      "type": "java.lang.Boolean",
+      "description": "Configure log path for peach.satoken.same-token.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.satoken.session-strategy",
+      "type": "com.peach.satoken.config.PeachSaTokenProperties$SessionStrategy",
+      "description": "Configure session strategy for peach.satoken."
+    },
+    {
+      "name": "peach.satoken.session-strategy.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.satoken.session-strategy.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.satoken.token-strategy",
+      "type": "com.peach.satoken.config.PeachSaTokenProperties$TokenStrategy",
+      "description": "Configure token strategy for peach.satoken."
+    },
+    {
+      "name": "peach.satoken.token-strategy.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.satoken.token-strategy.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.satoken.user-context.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.satoken.user-context.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.satoken.user-context.public-endpoints",
+      "type": "java.util.List",
+      "description": "Configure public endpoints for peach.satoken.user-context."
+    }
+  ],
+  "hints": []
+}
