@@ -7,6 +7,7 @@ import com.peach.redis.manager.MultiCacheManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.cache.Cache;
+import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -15,6 +16,8 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -127,12 +130,29 @@ class MultiCacheTwoClientServerIntegrationTest {
 
             listener = new RedisMessageListenerContainer();
             listener.setConnectionFactory(receiverFactory);
-            listener.addMessageListener(new CacheMessageListener(readerManager),
-                    new ChannelTopic(config.getRedis().getTopic()));
+            CountDownLatch subscriptionReady = new CountDownLatch(1);
+            CountDownLatch initialInvalidationReceived = new CountDownLatch(1);
+            listener.addMessageListener(new CacheMessageListener(readerManager) {
+                @Override
+                public void onChannelSubscribed(byte[] channel, long count) {
+                    super.onChannelSubscribed(channel, count);
+                    subscriptionReady.countDown();
+                }
+
+                @Override
+                public void onMessage(Message message, byte[] pattern) {
+                    super.onMessage(message, pattern);
+                    initialInvalidationReceived.countDown();
+                }
+            }, new ChannelTopic(config.getRedis().getTopic()));
             listener.afterPropertiesSet();
             listener.start();
+            // 等待首次订阅确认并完成 L1 清理，避免异步 ACK 清空刚刚回填的测试值。
+            assertThat(subscriptionReady.await(5, TimeUnit.SECONDS)).isTrue();
 
             writer.put(key, "initial");
+            // 先消费写入通知，再回填 L1，避免旧通知延迟清空新缓存导致断言竞态。
+            assertThat(initialInvalidationReceived.await(5, TimeUnit.SECONDS)).isTrue();
             assertThat(reader.get(key).get()).isEqualTo("initial");
             assertThat(((MultiCache) reader).getLocalCache().getIfPresent(key)).isEqualTo("initial");
 
