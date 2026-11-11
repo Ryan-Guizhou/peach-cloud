@@ -241,6 +241,8 @@ private final RuntimeStorageProviderFactory runtimeStorageProviderFactory;
         }
         // 云存储：分页列出所有对象并批量删除
         try (StorageProvider storageProvider = runtimeStorageProviderFactory.create(providerConfig)) {
+            // Provider 的前缀查询可能匹配同名相邻目录；删除前必须再次校验目录边界。
+            String directoryPrefix = relativePath + "/";
             List<String> objectKeys = new ArrayList<>();
             String continuationToken = null;
             // 分页递归列出目录下所有对象
@@ -256,7 +258,9 @@ private final RuntimeStorageProviderFactory runtimeStorageProviderFactory;
                     if (item == null || item.getObjectKey() == null) {
                         continue;
                     }
-                    objectKeys.add(item.getObjectKey());
+                    if (item.getObjectKey().startsWith(directoryPrefix)) {
+                        objectKeys.add(item.getObjectKey());
+                    }
                 }
                 continuationToken = result.isTruncated() ? result.getNextContinuationToken() : null;
             } while (continuationToken != null);
