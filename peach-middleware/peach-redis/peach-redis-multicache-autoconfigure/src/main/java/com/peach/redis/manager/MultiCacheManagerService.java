@@ -313,7 +313,7 @@ public class MultiCacheManagerService {
         if (virtualExecutorRegistry == null
                 || !virtualExecutorRegistry.groupNames().contains(ASYNC_CLEAR_GROUP)) {
             throw new IllegalStateException(
-                    "Managed virtual-thread group 'multicache-clear' is required for asyncClear");
+                    "Configure peach.virtual-thread.groups.multicache-clear for managed asyncClear");
         }
         virtualExecutorRegistry.execute(ASYNC_CLEAR_GROUP, () -> clear(cacheName));
     }
