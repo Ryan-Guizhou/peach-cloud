@@ -19,6 +19,10 @@ English | [中文](README.md)
 </dependency>
 ```
 
+**Startup dependency contract:** the allocator no longer carries the old Redis constructor argument or a Spring Data Redis compile dependency. The default `CodeGenerator` is auto-configured only when `JdbcTemplate` is available, and allocation requires a transaction manager. Applications without JDBC are not failed by this auto-configuration, while applications injecting `CodeGenerator` must provide a working JDBC/transaction setup.
+
+
+
 Create the rule table with [sql/PEACH_CODE_RULE.sql](../../sql/PEACH_CODE_RULE.sql); each tenant and prefix must identify one rule. Call `CodeGenerator.next(tenantId, prefix)` to obtain a code such as `MENU_00000001`.
 
 ## Allocation and failure contract

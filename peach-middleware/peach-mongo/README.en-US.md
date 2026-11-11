@@ -19,6 +19,10 @@ English | [中文](README.md)
 </dependency>
 ```
 
+**Starter runtime contract:** `peach-mongo-starter` explicitly supplies the Spring Data MongoDB client. Because `PageInfo` is part of the public API, this module depends only on the PageHelper core (6.1.0), not its MyBatis Spring Boot Starter. Depending on `peach-mongo-autoconfigure` alone does not supply a MongoDB client. Runtime read/write behavior requires a reachable database.
+
+
+
 Minimum configuration: `peach.mongo.uri`. Set `peach.mongo.database` when the URI does not include a database name. Transactions are off by default (`peach.mongo.transaction.enabled=false`) and require a replica set or sharded cluster.
 
 ## Quick Start

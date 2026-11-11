@@ -19,6 +19,10 @@
 </dependency>
 ```
 
+**启动依赖边界：** 发号器已彻底移除历史 Redis 构造参数与 Spring Data Redis 编译依赖；仅在容器存在 `JdbcTemplate` 时自动装配 `CodeGenerator`，且创建时需要事务管理器。没有数据源的应用不会因本组件自动创建 Bean 而启动失败，但业务如果强制注入 `CodeGenerator`，仍必须正确配置 JDBC 和事务。
+
+
+
 部署前执行 [sql/PEACH_CODE_RULE.sql](../../sql/PEACH_CODE_RULE.sql) 创建规则表；每个租户和前缀必须唯一。使用 `CodeGenerator.next(tenantId, prefix)` 获取如 `MENU_00000001` 的编码。
 
 ## 发号与故障语义
