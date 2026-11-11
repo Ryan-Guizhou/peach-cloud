@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +55,12 @@ public class MultiCache extends AbstractValueAdaptingCache {
      * 独立有界缓存，元数据丢失时仅回源，不会继续使用未知 TTL 的 L1。
      */
     private final Cache<Object, Long> l2Deadlines;
+
+    /** 本地失效版本号；任何通知到达都会推进版本，阻断在途的旧 L2 读取回填。 */
+    private final AtomicLong invalidationRevision = new AtomicLong();
+
+    /** 只保护极短的 L1 发布/失效操作，不在此锁内执行 Redis I/O。 */
+    private final Object localPublicationLock = new Object();
     /**
      * 二级缓存
      */
@@ -109,10 +116,15 @@ public class MultiCache extends AbstractValueAdaptingCache {
             // Missing TTL metadata is treated as expired. Never serve an unverified L1.
             clearLocal(key);
         }
+        long revision = invalidationRevision.get();
         value = this.redisTemplate.opsForValue().get(cacheKey);
         if (value != null) {
             log.debug("get cache from redis and put in caffeine, the key is : {}", cacheKey);
-            cacheLocalWithRemainingRedisTtl(key, cacheKey, value);
+            cacheLocalWithRemainingRedisTtl(key, cacheKey, value, revision);
+        }
+        // 通知在 Redis 读取期间到达时，旧结果不得直接返回或重新发布到 L1。
+        if (invalidationRevision.get() != revision) {
+            return this.redisTemplate.opsForValue().get(cacheKey);
         }
         return value;
     }
@@ -171,6 +183,7 @@ public class MultiCache extends AbstractValueAdaptingCache {
         }
         Object cacheKey = buildCacheKey(key);
         Object storeValue = toStoreValue(value);
+        long revision = invalidationRevision.get();
         Duration ttl = getExpire();
 
         Boolean inserted = ttl == null || ttl.isNegative()
@@ -180,7 +193,7 @@ public class MultiCache extends AbstractValueAdaptingCache {
             try {
                 push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
             } finally {
-                cacheLocalWithRemainingRedisTtl(key, cacheKey, storeValue);
+                cacheLocalWithRemainingRedisTtl(key, cacheKey, storeValue, revision);
             }
             return null;
         }
@@ -297,6 +310,7 @@ public class MultiCache extends AbstractValueAdaptingCache {
      */
     private void doPut(Object key, Object value) {
         Duration expire = getExpire();
+        long revision = invalidationRevision.get();
         value = toStoreValue(value);
         Object cacheKey = buildCacheKey(key);
         if (expire == null || expire.isNegative()) {
@@ -307,7 +321,7 @@ public class MultiCache extends AbstractValueAdaptingCache {
         try {
             push(new CacheMessage(this.cacheName, key, this.caffeineCache.hashCode()));
         } finally {
-            cacheLocalWithRemainingRedisTtl(key, cacheKey, value);
+            cacheLocalWithRemainingRedisTtl(key, cacheKey, value, revision);
         }
     }
 
@@ -318,7 +332,7 @@ public class MultiCache extends AbstractValueAdaptingCache {
      * 自定义 TTL 与随机抖动；纯 L1 命中不访问 Redis。
      * 如果 PTTL 查询失败/元数据缺失，禁止缓存不确定寿命的值。</p>
      */
-    private void cacheLocalWithRemainingRedisTtl(Object key, Object redisKey, Object value) {
+    private void cacheLocalWithRemainingRedisTtl(Object key, Object redisKey, Object value, long expectedRevision) {
         Long remainingMillis;
         try {
             remainingMillis = redisTemplate.getExpire(redisKey, TimeUnit.MILLISECONDS);
@@ -341,9 +355,15 @@ public class MultiCache extends AbstractValueAdaptingCache {
             deadline = span > Long.MAX_VALUE - Math.max(0L, now)
                     ? Long.MAX_VALUE : now + span;
         }
-        // Publish metadata first; losing metadata only causes a conservative cache miss.
-        l2Deadlines.put(key, deadline);
-        caffeineCache.put(key, value);
+        // 与失效通知串行化：旧的 Redis GET/PTTL 结果不能在通知之后回填。
+        synchronized (localPublicationLock) {
+            if (expectedRevision != invalidationRevision.get()) {
+                return;
+            }
+            // Publish metadata first; losing metadata only causes a conservative cache miss.
+            l2Deadlines.put(key, deadline);
+            caffeineCache.put(key, value);
+        }
     }
 
     /**
@@ -352,12 +372,15 @@ public class MultiCache extends AbstractValueAdaptingCache {
      */
     public void clearLocal(Object key) {
         log.debug("clear local cache, the key is : {}", key);
-        if (key == null) {
-            caffeineCache.invalidateAll();
-            l2Deadlines.invalidateAll();
-        } else {
-            caffeineCache.invalidate(key);
-            l2Deadlines.invalidate(key);
+        synchronized (localPublicationLock) {
+            invalidationRevision.incrementAndGet();
+            if (key == null) {
+                caffeineCache.invalidateAll();
+                l2Deadlines.invalidateAll();
+            } else {
+                caffeineCache.invalidate(key);
+                l2Deadlines.invalidate(key);
+            }
         }
     }
 
