@@ -2,21 +2,15 @@
 
 English | [中文](README.md)
 
-`peach-code` generates tenant-scoped business codes such as `MENU_00000001` and `NOTICE_00000001`. The sequence scope is `(TENANT_ID, CODE_PREFIX)`, so two tenants may independently receive the same numeric suffix.
+`peach-code` allocates business codes within each `TENANT_ID + CODE_PREFIX` scope. **MySQL is the sole sequence authority**; Redis is no longer an alternative allocator.
 
-The default implementation uses Redis as the fast primary allocator and MySQL as the durable fallback. Redis Lua atomically calibrates and increments the counter. When Redis is unavailable, MySQL uses an atomic `LAST_INSERT_ID` update and the recovered Redis counter is advanced monotonically. Redis can be disabled with `peach.code.redis-enabled=false` to use the MySQL-only mode.
+## Modules and integration
 
-This component does not add `TENANT_ID` to business tables and does not derive sequences from `MAX(code)`.
-
-## Modules
-
-| Module | Responsibility |
+| Module | Capability |
 | --- | --- |
-| `peach-code-autoconfigure` | `CodeGenerator`, `PeachCodeGenerator`, properties, and auto-configuration |
-| `peach-code-starter` | Recommended dependency for business modules |
-| `peach-code-quickstart` | Runnable in-memory demo of the public `CodeGenerator` API |
-
-## Quick Start
+| `peach-code-autoconfigure` | `CodeGenerator` API, MySQL transaction allocation, Spring auto-configuration |
+| `peach-code-starter` | Business integration dependency |
+| `peach-code-quickstart` | Database-free in-memory demonstration of the public API only |
 
 ```xml
 <dependency>
@@ -25,83 +19,49 @@ This component does not add `TENANT_ID` to business tables and does not derive s
 </dependency>
 ```
 
-Execute [`sql/PEACH_CODE_RULE.sql`](../../sql/PEACH_CODE_RULE.sql), then add one rule for each tenant and prefix. The table includes `ORG_ID`; the generator reads rules by `TENANT_ID + CODE_PREFIX`:
+Create the rule table with [sql/PEACH_CODE_RULE.sql](../../sql/PEACH_CODE_RULE.sql); each tenant and prefix must identify one rule. Call `CodeGenerator.next(tenantId, prefix)` to obtain a code such as `MENU_00000001`.
 
-```sql
-INSERT INTO PEACH_CODE_RULE
-    (TENANT_ID, ORG_ID, CODE_PREFIX, MAX_CODE_WIDTH, CURRENT_VALUE, STATUS)
-VALUES
-    ('T001', 'ORG001', 'NOTICE', 8, 0, 'ENABLE');
-```
-
-`MAX_CODE_WIDTH` is the maximum length of the numeric part. Values shorter than the configured width are left-padded with zeroes. Values that exceed it are rejected.
-
-Inject the public `CodeGenerator` API:
-
-```java
-public void saveNotice(String tenantId, NoticeDO notice) {
-    notice.setNoticeCode(codeGenerator.next(tenantId, "NOTICE"));
-    noticeDao.insert(notice);
-}
-```
-
-`CodeGenerator.next` does not require an active business transaction. A Redis-allocated number is not reclaimed when the business transaction rolls back. If gaps on rollback are unacceptable, disable `peach.code.redis-enabled` and generate the code in the same MySQL transaction as the business insert.
-
-## Configuration
-
-| Property | Default | Description |
-| --- | --- | --- |
-| `peach.code.enabled` | `true` | Enables auto-configuration |
-| `peach.code.redis-enabled` | `true` | Enables Redis-primary allocation and MySQL fallback |
-| `peach.code.redis-key-prefix` | `peach:code:generate:` | Redis sequence key prefix |
-
-Redis keys also append the tenant and the upper-cased prefix, for example `peach:code:generate:T001:NOTICE`. Complete business payloads are not written to Redis or logs.
-
-## Runtime and failure semantics
+## Allocation and failure contract
 
 ```text
-business call CodeGenerator.next
-  -> read the PEACH_CODE_RULE value and width
-  -> Redis Lua calibrates and increments atomically
-  -> format the code using MAX_CODE_WIDTH and return
-
-Redis unavailable
-  -> MySQL atomically increments with LAST_INSERT_ID(CURRENT_VALUE + 1)
-  -> commit the independent fallback transaction
-  -> monotonically write the value back to Redis
+CodeGenerator.next
+  -> MySQL REQUIRES_NEW transaction
+  -> SELECT ... FOR UPDATE by TENANT_ID + CODE_PREFIX
+  -> validate ENABLE, width and overflow
+  -> conditional UPDATE CURRENT_VALUE
+  -> return business code only after COMMIT
 ```
 
-- Redis-primary allocation is independent from the business transaction, so a business rollback does not reclaim the Redis number and may create a gap.
-- If strict rollback-without-gap behavior is required, disable `peach.code.redis-enabled` and generate the code inside the same MySQL transaction as the business insert.
-- Deleted business rows do not release codes for reuse.
-- Redis loss is recovered from the MySQL rule value; Redis outages fall back to MySQL and recovery advances Redis monotonically.
-- A retry must retry the complete transactional service method, not only `CodeGenerator.next`.
-- Database repair or manual sequence changes can still create gaps; uniqueness is prioritized over continuity.
+- MySQL is the sole authority. Redis outages and recovery cannot switch the allocator or roll back the sequence.
+- InnoDB row locks serialize allocation within one tenant/prefix; independent scopes can run concurrently.
+- Database failure throws an exception; there is no Redis/in-memory fallback. A committed allocation followed by a caller failure can leave a gap.
+- The allocation transaction commits independently of the caller's business transaction. Business table unique constraints remain necessary.
+- `MAX_CODE_WIDTH` supports 1–18 digits. Overflow does not update the counter.
+- `peach.code.enabled` defaults to `true`. The historical `peach.code.redis-enabled` and `peach.code.redis-key-prefix` properties are still accepted but **have no effect on allocation** and should be removed from future deployment configs.
 
-## Quickstart and verification
+## Mandatory migration from Redis-primary allocation
 
-- Module: [`peach-code-quickstart`](./peach-code-quickstart/)
-- Default in-memory mode: `peach.code.redis-enabled=false`, DataSource/Redis auto-configuration excluded, injects public `CodeGenerator`
-- Capability samples:
-  - **Sequential allocation**: two `next` calls for the same tenant + `MENU` yield `MENU_00000001` then `MENU_00000002`
-  - **Isolation**: `T001/MENU`, `T001/NOTICE`, and `T002/MENU` keep independent sequences
-  - **Invalid input**: unsupported tenant or prefix characters throw `CodeGeneratorException`
-- `CodeDemoRunner` runs on startup; disable with `quickstart.code.demo.enabled=false`
+**Do not run old Redis-primary allocators together with new MySQL-authoritative instances.**
+
+1. Quiesce all code-generating traffic and wait for in-flight calls on old instances.
+2. Back up `PEACH_CODE_RULE` and historical Redis counters; compare the highest issued Redis value with `CURRENT_VALUE` for each tenant/prefix.
+3. Advance each MySQL counter to at least the maximum previously allocated Redis value. Never lower counters. Ensure no external writer is still allocating.
+4. Detect duplicate rules before creating the unique constraint:
+   ```sql
+   SELECT TENANT_ID, CODE_PREFIX, COUNT(*) AS COUNT_ROWS
+   FROM PEACH_CODE_RULE
+   GROUP BY TENANT_ID, CODE_PREFIX HAVING COUNT(*) > 1;
+   ```
+5. Resolve duplicate rules and add `UNIQUE KEY UK_PEACH_CODE_TENANT_PREFIX (TENANT_ID, CODE_PREFIX)`. Fresh databases can use the supplied CREATE TABLE script.
+6. Deploy all instances of the new implementation, then resume traffic. Do not restart old allocators without another full cutover and watermark reconciliation.
+
+`ORG_ID` remains rule ownership metadata rather than a sequence isolation key. The public API does not accept `ORG_ID`; multiple organizations under one tenant/prefix must be resolved explicitly, never merged automatically.
+
+## Verification and limits
+
 - Run: `mvn -pl peach-component/peach-code/peach-code-quickstart -am spring-boot:run`
 - Test: `mvn -pl peach-component/peach-code/peach-code-quickstart -am test`
+- The quickstart uses an in-process allocator; it does not validate production MySQL concurrency, outages, or migration. Verify same-key contention, rollback, database outage and overflow against a real MySQL instance before deployment.
+- Business-table tenant constraints and unique keys are outside this module.
 
-Production use still needs `PEACH_CODE_RULE`, a datasource, and optional Redis (`peach.code.redis-enabled=true`).
-
-## Boundaries
-
-- The current implementation does not modify `PEACH_MENU` or `PEACH_NOTICE` to add tenant columns.
-- Business tables should later add `TENANT_ID` and a composite unique key with their code column.
-- Auto-configuration creates `PeachCodeGenerator` only when no `CodeGenerator` bean exists.
-- Secrets, credentials, complete SQL payloads, and full Redis payloads must not be logged.
-
-## Project conventions
-
-- Backend documentation follows the current peach-cloud baseline: Java 21, Spring Boot 3.5.4, Spring Cloud 2025.0.0, and Spring Cloud Alibaba 2025.0.0.0.
-- Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
-- Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as target/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
-- Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+Project baseline: Java 21, Spring Boot 3.5.4, Spring Cloud 2025.0.0, Spring Cloud Alibaba 2025.0.0.0. Chinese Javadoc, English logs, UTF-8 without BOM.
