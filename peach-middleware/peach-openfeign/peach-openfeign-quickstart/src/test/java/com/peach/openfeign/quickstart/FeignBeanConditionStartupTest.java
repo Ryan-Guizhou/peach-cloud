@@ -11,6 +11,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 保护 Feign 配置装配边界，避免缺少 FeignClientProperties 时导致业务服务启动失败。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/11
  */
 class FeignBeanConditionStartupTest {
 

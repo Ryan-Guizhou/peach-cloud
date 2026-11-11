@@ -15,6 +15,10 @@ import static org.mockito.Mockito.mock;
  * 验证纯 JDBC 编码 Starter 在无 Redis、无数据源时不会产生缺失 Bean 的启动异常。
  *
  * <p>可用数据源与事务管理器同时存在时，才注册默认编码服务。</p>
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/11
  */
 class CodeAutoConfigurationStartupTest {
 
