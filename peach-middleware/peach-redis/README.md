@@ -30,6 +30,8 @@ peach:
 
 **动态缓存数量上限：** `peach.multicache.max-cache-instances` 默认为 `256`，限定一个 `MultiCacheManager` 可创建的 Caffeine/L1 缓存实例总数；新缓存名超过上限会显式报错，而不是无限占用堆内存。已创建的动态缓存也计入 `getCacheNames()`，可被 `clearAll()` 遍历。请不要直接使用无限变化的用户输入作为缓存名称；缓存 Key 应放在固定缓存名之下。
 
+**Redis DAO 失败语义：** `RedisDaoImpl` 的 `existsKey`、`delete`、`vSet`、`vSetUpdate`、`expire`、`convertAndSend` 现在拒绝将 Redis 网络故障、空确认或服务端异常静默转换为“未命中/写入失败”。只有 Redis 明确返回 `false` 才表示目标键不存在；`expire` 是 `void` 接口，目标不存在也会显式抛出异常。批量 DEL 遇到 null 结果也不再假装删除数量为 0。删除不对“结果未知”的网络故障执行自动重试，以免隐藏双重副作用。调用方必须处理 Redis 故障并使用业务幂等、补偿及状态对账；此调整是对旧的静默失败行为的有意收紧。
+
 ## ACL、Sentinel 与 Cluster 配置契约（Issue #49）
 
 独立 `peach-redis-starter` 同时支持数据节点 ACL 和独立 Sentinel ACL；两类认证信息不应混用。下列键在未配置时保持兼容默认值：
