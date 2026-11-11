@@ -1,0 +1,179 @@
+{
+  "properties": [
+    {
+      "name": "peach.redis.database",
+      "type": "java.lang.Integer",
+      "description": "Configures database for peach.redis.",
+      "defaultValue": 0
+    },
+    {
+      "name": "peach.redis.host",
+      "type": "java.lang.String",
+      "description": "Configures host for peach.redis."
+    },
+    {
+      "name": "peach.redis.mode",
+      "type": "java.lang.String",
+      "description": "Configures mode for peach.redis.",
+      "defaultValue": "standalone"
+    },
+    {
+      "name": "peach.redis.password",
+      "type": "java.lang.String",
+      "description": "Sensitive value: load password from a secure source."
+    },
+    {
+      "name": "peach.redis.redisson",
+      "type": "com.peach.redisson.autoconfigure.PeachRedissonProperties$RedissonOptions",
+      "description": "Configures redisson for peach.redis."
+    },
+    {
+      "name": "peach.redis.redisson.connect-timeout",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "defaultValue": 10000
+    },
+    {
+      "name": "peach.redis.redisson.connection-minimum-idle-size",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "defaultValue": 10
+    },
+    {
+      "name": "peach.redis.redisson.connection-pool-size",
+      "type": "java.lang.Integer",
+      "description": "Concurrency, sizing or capacity setting for peach.redis.redisson.",
+      "defaultValue": 64
+    },
+    {
+      "name": "peach.redis.redisson.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.redis.redisson functionality.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.redis.redisson.idle-connection-timeout",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "defaultValue": 10000
+    },
+    {
+      "name": "peach.redis.redisson.lock-watchdog-timeout",
+      "type": "java.lang.Long",
+      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "defaultValue": 30000
+    },
+    {
+      "name": "peach.redis.redisson.master-connection-minimum-idle-size",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "defaultValue": 10
+    },
+    {
+      "name": "peach.redis.redisson.master-connection-pool-size",
+      "type": "java.lang.Integer",
+      "description": "Concurrency, sizing or capacity setting for peach.redis.redisson.",
+      "defaultValue": 64
+    },
+    {
+      "name": "peach.redis.redisson.netty-threads",
+      "type": "java.lang.Integer",
+      "description": "Configures netty threads for peach.redis.redisson.",
+      "defaultValue": 32
+    },
+    {
+      "name": "peach.redis.redisson.ping-timeout",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "defaultValue": 1000
+    },
+    {
+      "name": "peach.redis.redisson.retry-attempts",
+      "type": "java.lang.Integer",
+      "description": "Configures retry attempts for peach.redis.redisson.",
+      "defaultValue": 3
+    },
+    {
+      "name": "peach.redis.redisson.retry-interval",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "defaultValue": 1500
+    },
+    {
+      "name": "peach.redis.redisson.scan-interval",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "defaultValue": 1000
+    },
+    {
+      "name": "peach.redis.redisson.slave-connection-minimum-idle-size",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "defaultValue": 10
+    },
+    {
+      "name": "peach.redis.redisson.slave-connection-pool-size",
+      "type": "java.lang.Integer",
+      "description": "Concurrency, sizing or capacity setting for peach.redis.redisson.",
+      "defaultValue": 64
+    },
+    {
+      "name": "peach.redis.redisson.ssl-enable",
+      "type": "java.lang.Boolean",
+      "description": "Configures ssl enable for peach.redis.redisson.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.redis.redisson.subscription-connection-minimum-idle-size",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "defaultValue": 1
+    },
+    {
+      "name": "peach.redis.redisson.subscription-connection-pool-size",
+      "type": "java.lang.Integer",
+      "description": "Concurrency, sizing or capacity setting for peach.redis.redisson.",
+      "defaultValue": 50
+    },
+    {
+      "name": "peach.redis.redisson.subscriptions-per-connection",
+      "type": "java.lang.Integer",
+      "description": "Configures subscriptions per connection for peach.redis.redisson.",
+      "defaultValue": 5
+    },
+    {
+      "name": "peach.redis.redisson.threads",
+      "type": "java.lang.Integer",
+      "description": "Configures threads for peach.redis.redisson.",
+      "defaultValue": 16
+    },
+    {
+      "name": "peach.redis.redisson.timeout",
+      "type": "java.lang.Integer",
+      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "defaultValue": 3000
+    },
+    {
+      "name": "peach.redis.sentinel-master",
+      "type": "java.lang.String",
+      "description": "Configures sentinel master for peach.redis.",
+      "defaultValue": "master"
+    },
+    {
+      "name": "peach.redis.sentinel-password",
+      "type": "java.lang.String",
+      "description": "Sensitive value: load sentinel password from a secure source."
+    },
+    {
+      "name": "peach.redis.sentinel-username",
+      "type": "java.lang.String",
+      "description": "Configures sentinel username for peach.redis."
+    },
+    {
+      "name": "peach.redis.username",
+      "type": "java.lang.String",
+      "description": "Configures username for peach.redis."
+    }
+  ],
+  "hints": []
+}
