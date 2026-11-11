@@ -17,7 +17,9 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,6 +62,9 @@ public final class RedisDelayQueue implements AutoCloseable {
     private final Semaphore availableWorkers;
     private final ScheduledExecutorService heartbeat;
     private final Map<String, ScheduledFuture<?>> pollingTopics = new ConcurrentHashMap<>();
+    /** 仅保护本地订阅表/关闭状态；Redis 请求及退出等待在锁外执行。 */
+    private final Object lifecycleLock = new Object();
+    private final Set<String> pendingTopics = new HashSet<>();
     private final Map<String, LeasedMessage> active = new ConcurrentHashMap<>();
 
     /**
@@ -322,36 +327,58 @@ public final class RedisDelayQueue implements AutoCloseable {
      * 注册主题的有界轮询任务。认领由独立调度线程完成，业务回调使用受管虚拟线程组；
      * 多个主题共享 workerCount 个并发许可，同一主题只注册一次。
      */
-    public synchronized void start(String topic, ConsumerTask task) {
+    public void start(String topic, ConsumerTask task) {
         ensureOpen();
-        if (closing) {
-            throw new IllegalStateException("Delay queue is closing");
-        }
         validateTopic(topic);
         Objects.requireNonNull(task, "task");
         if (!topic.equals(task.topic())) {
             throw new IllegalArgumentException("Delay queue task topic does not match requested topic");
         }
-        if (pollingTopics.containsKey(topic)) {
-            return;
+        synchronized (lifecycleLock) {
+            if (closing || closed) {
+                throw new IllegalStateException("Delay queue is closing");
+            }
+            if (pollingTopics.containsKey(topic) || pendingTopics.contains(topic)) {
+                return;
+            }
+            if (pollingTopics.size() + pendingTopics.size() >= properties.getMaxTopicSubscriptions()) {
+                throw new IllegalStateException("Delay queue topic subscription limit reached");
+            }
+            pendingTopics.add(topic);
         }
-        // 对直接使用 RedisDelayQueue 的调用方也执行一次真实预检查。
-        assertLegacyDrained(topic);
-        if (workerRegistry == null || !workerRegistry.groupNames().contains(WORKER_GROUP)) {
-            throw new IllegalStateException("Managed virtual-thread group 'delayqueue-worker' is required");
+        try {
+            // 真实 Redis 访问放在 monitor 外，避免 Java 21 虚拟线程固定载体线程。
+            assertLegacyDrained(topic);
+            if (workerRegistry == null || !workerRegistry.groupNames().contains(WORKER_GROUP)) {
+                throw new IllegalStateException("Managed virtual-thread group 'delayqueue-worker' is required");
+            }
+            synchronized (lifecycleLock) {
+                if (closing || closed) {
+                    throw new IllegalStateException("Delay queue is closing");
+                }
+                // stop 可取消正在预检查的订阅，不能在检查结束后重新注册。
+                if (!pendingTopics.contains(topic)) {
+                    return;
+                }
+                long period = properties.getPollInterval().toMillis();
+                ScheduledFuture<?> future = poller.scheduleWithFixedDelay(
+                        () -> pollSafely(topic, task), 0, period, TimeUnit.MILLISECONDS);
+                pollingTopics.put(topic, future);
+                inspectedLegacyTopics.put(topic, Boolean.TRUE);
+            }
+        } finally {
+            synchronized (lifecycleLock) {
+                pendingTopics.remove(topic);
+            }
         }
-        inspectedLegacyTopics.put(topic, Boolean.TRUE);
-        if (pollingTopics.size() >= properties.getMaxTopicSubscriptions()) {
-            throw new IllegalStateException("Delay queue topic subscription limit reached");
-        }
-        long period = properties.getPollInterval().toMillis();
-        ScheduledFuture<?> future = poller.scheduleWithFixedDelay(
-                () -> pollSafely(topic, task), 0, period, TimeUnit.MILLISECONDS);
-        pollingTopics.put(topic, future);
     }
 
-    public synchronized void stop(String topic) {
-        ScheduledFuture<?> future = pollingTopics.remove(topic);
+    public void stop(String topic) {
+        ScheduledFuture<?> future;
+        synchronized (lifecycleLock) {
+            pendingTopics.remove(topic);
+            future = pollingTopics.remove(topic);
+        }
         if (future != null) {
             future.cancel(false);
         }
@@ -569,19 +596,23 @@ public final class RedisDelayQueue implements AutoCloseable {
     }
 
     @Override
-    public synchronized void close() {
-        if (closing || closed) {
-            return;
+    public void close() {
+        List<ScheduledFuture<?>> futures;
+        synchronized (lifecycleLock) {
+            if (closing || closed) {
+                return;
+            }
+            closing = true;
+            futures = new ArrayList<>(pollingTopics.values());
+            pollingTopics.clear();
+            pendingTopics.clear();
+            inspectedLegacyTopics.clear();
         }
-        closing = true;
-        for (ScheduledFuture<?> future : pollingTopics.values()) {
+        for (ScheduledFuture<?> future : futures) {
             future.cancel(false);
         }
-        pollingTopics.clear();
-        inspectedLegacyTopics.clear();
         poller.shutdownNow();
-        // 不关闭由 Spring 统一管理的业务虚拟线程组。关闭期间仍保留心跳，
-        // 给已经准入的回调一个有界的自然完成窗口，超时租约交由 Redis 回收。
+        // 等待任务完成不可持有 Java monitor，避免虚拟线程 pinning 和管理接口串行等待。
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         try {
             while (!active.isEmpty() && System.nanoTime() - deadline < 0) {

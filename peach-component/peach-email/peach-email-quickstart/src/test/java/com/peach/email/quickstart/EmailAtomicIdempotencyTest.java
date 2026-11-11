@@ -102,6 +102,46 @@ class EmailAtomicIdempotencyTest {
         assertThat(store.exists("key")).isTrue();
     }
 
+    @Test
+    void independentKeysShouldRespectCapacityAndReleaseClaimTokensConcurrently() throws Exception {
+        SimpleIdempotencyStore store = new SimpleIdempotencyStore(Duration.ofMinutes(10), 16);
+        java.util.concurrent.CountDownLatch begin = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicInteger accepted = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.atomic.AtomicInteger rejected = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.ConcurrentMap<String, String> tokens = new java.util.concurrent.ConcurrentHashMap<>();
+        try (java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor()) {
+            java.util.List<java.util.concurrent.Future<?>> futures = new java.util.ArrayList<>();
+            for (int i = 0; i < 64; i++) {
+                final String key = "parallel-" + i;
+                futures.add(executor.submit(() -> {
+                    try {
+                        begin.await();
+                        String token = store.tryClaim(key);
+                        if (token != null) {
+                            tokens.put(key, token);
+                            accepted.incrementAndGet();
+                        }
+                    } catch (IllegalStateException exception) {
+                        rejected.incrementAndGet();
+                    } catch (InterruptedException exception) {
+                        Thread.currentThread().interrupt();
+                    }
+                }));
+            }
+            begin.countDown();
+            for (var future : futures) {
+                future.get();
+            }
+        }
+        assertThat(accepted.get()).isEqualTo(16);
+        assertThat(rejected.get()).isEqualTo(48);
+
+        var admitted = tokens.entrySet().iterator().next();
+        assertThat(store.tryClaim(admitted.getKey())).isNull();
+        store.releaseClaim(admitted.getKey(), admitted.getValue());
+        assertThat(store.tryClaim("after-release")).isNotNull();
+    }
+
     private static EmailMessage message(String key) {
         return EmailMessage.builder().from("sender@example.invalid")
                 .to(List.of("receiver@example.invalid"))

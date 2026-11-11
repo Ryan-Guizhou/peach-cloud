@@ -24,6 +24,9 @@ public class FileContent implements UploadContent {
 
     private final List<InputStream> openedStreams = new ArrayList<>();
 
+    /** 只保护生命周期状态和流注册，不在监视器内做文件 I/O。 */
+    private final Object lifecycleLock = new Object();
+
     private boolean closed;
 
     public FileContent(File file) throws FileNotFoundException {
@@ -34,17 +37,28 @@ public class FileContent implements UploadContent {
     }
 
     @Override
-    public synchronized InputStream read() throws IOException {
-        if (closed) {
-            throw new IOException("Upload content is already closed");
+    public InputStream read() throws IOException {
+        synchronized (lifecycleLock) {
+            if (closed) {
+                throw new IOException("Upload content is already closed");
+            }
         }
+        // 文件打开可能阻塞，不能在 Java 21 的 monitor 内执行。
+        InputStream stream;
         try {
-            InputStream stream = new FileInputStream(file);
-            openedStreams.add(stream);
-            return stream;
+            stream = new FileInputStream(file);
         } catch (IOException ex) {
             throw new IllegalStateException("File disappeared: " + file, ex);
         }
+        synchronized (lifecycleLock) {
+            if (!closed) {
+                openedStreams.add(stream);
+                return stream;
+            }
+        }
+        // close 已赢得生命周期竞态，必须回收刚打开但未注册的流。
+        stream.close();
+        throw new IOException("Upload content is already closed");
     }
 
     @Override
@@ -53,13 +67,19 @@ public class FileContent implements UploadContent {
     }
 
     @Override
-    public synchronized void close() throws IOException {
-        if (closed) {
-            return;
+    public void close() throws IOException {
+        List<InputStream> toClose;
+        synchronized (lifecycleLock) {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            toClose = new ArrayList<>(openedStreams);
+            openedStreams.clear();
         }
-        closed = true;
+        // 关闭文件流可能阻塞，状态已发布；其他线程读不到未注册的流。
         IOException failure = null;
-        for (InputStream stream : openedStreams) {
+        for (InputStream stream : toClose) {
             try {
                 stream.close();
             } catch (IOException ex) {
@@ -70,7 +90,6 @@ public class FileContent implements UploadContent {
                 }
             }
         }
-        openedStreams.clear();
         if (failure != null) {
             throw failure;
         }

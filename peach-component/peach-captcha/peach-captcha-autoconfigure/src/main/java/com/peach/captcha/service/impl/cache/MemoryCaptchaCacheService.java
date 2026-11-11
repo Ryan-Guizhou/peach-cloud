@@ -4,8 +4,8 @@ import com.peach.captcha.service.CaptchaCacheService;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Objects;
 
 /**
@@ -21,7 +21,7 @@ public class MemoryCaptchaCacheService implements CaptchaCacheService {
     private static final int DEFAULT_MAX_ENTRIES = 1000;
     private static final int MAX_VALUE_LENGTH = 65536;
 
-    private final Map<String, Entry> entries = new HashMap<>();
+    private final Map<String, Entry> entries = new ConcurrentHashMap<>();
     private final int maxEntries;
     private final Clock clock;
 
@@ -53,7 +53,7 @@ public class MemoryCaptchaCacheService implements CaptchaCacheService {
     }
 
     @Override
-    public synchronized boolean exists(String key) {
+    public boolean exists(String key) {
         return readCurrent(key) != null;
     }
 
@@ -63,7 +63,7 @@ public class MemoryCaptchaCacheService implements CaptchaCacheService {
     }
 
     @Override
-    public synchronized String get(String key) {
+    public String get(String key) {
         Entry current = readCurrent(key);
         return current == null ? null : current.value();
     }
@@ -112,7 +112,7 @@ public class MemoryCaptchaCacheService implements CaptchaCacheService {
         }
         Entry current = entries.get(key);
         if (current != null && !current.expiresAt().isAfter(clock.instant())) {
-            entries.remove(key);
+            entries.remove(key, current);
             return null;
         }
         return current;
