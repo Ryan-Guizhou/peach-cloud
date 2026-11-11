@@ -3,6 +3,7 @@ package com.peach.redission.delayqueue.quickstart;
 import com.peach.redission.delayqueue.core.ConsumerTask;
 import com.peach.redission.delayqueue.config.DelayQueueProperties;
 import com.peach.redission.delayqueue.core.RedisDelayQueue;
+import com.peach.virtualthread.registry.VirtualExecutorRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CompletableFuture;
@@ -28,6 +30,11 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * 用 GitHub Actions Redis 7.2 服务容器执行不可跳过的延迟队列 reliable Lua 集成验收。
@@ -324,7 +331,14 @@ class DelayQueueServerIntegrationTest {
         AtomicInteger inFlight = new AtomicInteger();
         AtomicInteger peak = new AtomicInteger();
 
-        try (RedisDelayQueue concurrent = new RedisDelayQueue(redisson, settings)) {
+        VirtualExecutorRegistry managedWorkers = mock(VirtualExecutorRegistry.class);
+        when(managedWorkers.groupNames()).thenReturn(Set.of(RedisDelayQueue.WORKER_GROUP));
+        doAnswer(invocation -> {
+            Runnable callback = invocation.getArgument(1);
+            Thread.ofVirtual().start(callback);
+            return null;
+        }).when(managedWorkers).execute(eq(RedisDelayQueue.WORKER_GROUP), any(Runnable.class));
+        try (RedisDelayQueue concurrent = new RedisDelayQueue(redisson, settings, managedWorkers)) {
             ConsumerTask task = new ConsumerTask() {
                 @Override
                 public void execute(String payload) {
