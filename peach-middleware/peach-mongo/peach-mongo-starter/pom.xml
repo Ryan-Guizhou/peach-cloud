@@ -21,6 +21,11 @@
             <groupId>com.peach</groupId>
             <artifactId>peach-mongo-autoconfigure</artifactId>
         </dependency>
+        <!-- Starter 必须提供 MongoClient / MongoTemplate 所需的运行时依赖。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

@@ -8,6 +8,7 @@ import com.peach.mongo.log.MongoCommandMetrics;
 import com.peach.mongo.log.PeachMongoCommandListener;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -32,6 +33,7 @@ import java.util.concurrent.TimeUnit;
  * @CreateTime 2026/1/13 17:01
  */
 @AutoConfiguration
+@ConditionalOnClass(name = {"com.mongodb.client.MongoClient", "org.springframework.data.mongodb.core.MongoTemplate"})
 @EnableConfigurationProperties(PeachMongoProperties.class)
 public class MongoAutoConfigure {
 

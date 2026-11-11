@@ -50,7 +50,7 @@ import static org.mockito.Mockito.mock;
  * @Version 1.0.0
  * @CreateTime 2026/11/05
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 class RateLimitRedisIntegrationTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitRedisIntegrationTest.class);
