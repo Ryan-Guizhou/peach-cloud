@@ -1,6 +1,7 @@
 package com.peach.storage.provider;
 
 import com.peach.config.StorageProperties;
+import com.peach.content.UploadContent;
 import com.peach.enums.StorageCapability;
 import com.peach.enums.StorageResultCode;
 import com.peach.enums.StorageType;
@@ -29,15 +30,18 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -143,15 +147,23 @@ public class LocalFileStorageProvider implements StorageProvider {
         }
         String objectKey = buildObjectKey(config, request.getObjectKey());
         Path target = resolveObjectKey(objectKey);
-        try {
+        try (UploadContent content = request.getContent()) {
             Path parent = target.getParent();
-            if (!Objects.isNull(parent)) {
+            // 先校验已存在的路径组件，避免 createDirectories 跟随链接在根目录外创建目录。
+            verifyNoSymbolicLinks(target);
+            if (parent != null) {
                 Files.createDirectories(parent);
             }
-            try (InputStream inputStream = request.getContent().read()) {
-                Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
+            verifyNoSymbolicLinks(target);
+            Path staged = Files.createTempFile(parent, ".peach-upload-", ".tmp");
+            try {
+                try (InputStream inputStream = content.read()) {
+                    Files.copy(inputStream, staged, StandardCopyOption.REPLACE_EXISTING);
+                }
+                verifyNoSymbolicLinks(target);
+                moveReplacing(staged, target, true);
             } finally {
-                request.getContent().close();
+                Files.deleteIfExists(staged);
             }
             long size = Files.size(target);
             return new UploadResult(name(), bucketName(config, request.getBucketName()),
@@ -251,10 +263,8 @@ public class LocalFileStorageProvider implements StorageProvider {
                 throw new StorageException(StorageResultCode.BAD_REQUEST,
                         "Target object already exists: " + request.getTargetObjectKey());
             }
-            if (Files.exists(target)) {
-                deletePath(target);
-            }
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+            // 不预先删除目标；移动失败时必须保留旧目标对象。
+            moveReplacing(source, target, request.isOverwrite());
             return new MoveResult(name(),
                     bucketName(config, request.getSourceBucketName()), rawObjectKey(request.getSourceObjectKey()),
                     bucketName(config, request.getTargetBucketName()), rawObjectKey(request.getTargetObjectKey()), true);
@@ -276,7 +286,7 @@ public class LocalFileStorageProvider implements StorageProvider {
                     request.getPrefix(), objects, null, false, noCommonPrefixes());
         }
         try (Stream<Path> stream = Files.walk(startPath)) {
-            stream.filter(Files::isRegularFile)
+            stream.filter(path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS))
                     .map(path -> toObjectInfo(path, request.getBucketName()))
                     .sorted(Comparator.comparing(ObjectInfo::getObjectKey))
                     .forEach(objects::add);
@@ -346,7 +356,41 @@ public class LocalFileStorageProvider implements StorageProvider {
      * @return 本地文件路径
      */
     private Path resolveObjectKey(String objectKey) {
-        return StoragePathUtil.resolveLocalPath(rootPath, objectKey);
+        Path resolved = StoragePathUtil.resolveLocalPath(rootPath, objectKey);
+        verifyNoSymbolicLinks(resolved);
+        return resolved;
+    }
+
+    /**
+     * 禁止对象 Key 的任意子路径穿过符号链接，防止通过现存链接逃逸存储根目录。
+     * 部署目录本身由管理员配置并视为受信任边界。
+     */
+    private void verifyNoSymbolicLinks(Path path) {
+        Path current = rootPath;
+        for (Path part : rootPath.relativize(path)) {
+            current = current.resolve(part);
+            if (Files.isSymbolicLink(current)) {
+                throw new StorageException(StorageResultCode.BAD_REQUEST,
+                        "Symbolic links are not allowed in local object paths");
+            }
+        }
+    }
+
+    /**
+     * 原子替换文件或移动目标。目标文件系统不支持 ATOMIC_MOVE 时退回普通 move，
+     * 但绝不提前删除原文件。
+     */
+    private static void moveReplacing(Path source, Path target, boolean overwrite) throws IOException {
+        if (!overwrite) {
+            // ATOMIC_MOVE 可能忽略“目标已存在”的保护，不能在无覆盖模式下使用。
+            Files.move(source, target);
+            return;
+        }
+        try {
+            Files.move(source, target, ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException ex) {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     /**
@@ -438,10 +482,13 @@ public class LocalFileStorageProvider implements StorageProvider {
             log.warn("Target object already exists, target={}, overwrite={}", target, overwrite);
             throw new StorageException(StorageResultCode.BAD_REQUEST, "Target object already exists: " + target);
         }
-        if (overwrite) {
-            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-        } else {
-            Files.copy(source, target);
+        Path staged = Files.createTempFile(target.getParent(), ".peach-copy-", ".tmp");
+        try {
+            Files.copy(source, staged, StandardCopyOption.REPLACE_EXISTING);
+            verifyNoSymbolicLinks(target);
+            moveReplacing(staged, target, overwrite);
+        } finally {
+            Files.deleteIfExists(staged);
         }
     }
 
@@ -458,7 +505,12 @@ public class LocalFileStorageProvider implements StorageProvider {
             for (Path path : stream.toList()) {
                 Path relative = source.relativize(path);
                 Path currentTarget = target.resolve(relative);
-                if (Files.isDirectory(path)) {
+                if (Files.isSymbolicLink(path)) {
+                    throw new StorageException(StorageResultCode.BAD_REQUEST,
+                            "Symbolic links are not supported when copying a directory");
+                }
+                verifyNoSymbolicLinks(currentTarget);
+                if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
                     Files.createDirectories(currentTarget);
                 } else {
                     Path parent = currentTarget.getParent();
