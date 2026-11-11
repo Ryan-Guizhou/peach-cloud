@@ -47,6 +47,12 @@ Redis Cluster 只支持数据库 `0`，非法值启动时直接失败。两份 N
 - **需要锁、布隆过滤器、延迟队列、防重复：** 转到 [peach-redission](../peach-redission/README.md)，不要把该能力误归入 Redis Tool。
 - **Gateway：** 使用独立响应式 Lettuce；不要通过 Redis Tool 为 WebFlux 事件循环引入阻塞调用。
 
+### 集合扫描与缓存清理兼容说明（Issue #97）
+
+- 已废弃的 `RedisDao#hscan/sscan/zscan(matchKey, count)` 使用第一个参数作为实际 **Hash/Set/ZSet Redis key**，而不是字段 glob；它们读取全部成员，`count` 只是批次提示，并受下面的 `max-results` / `timeout-millis` 限制，超限抛异常。之前依赖硬编码的 `field`、`setValue`、`zSetValue` 键的调用方须显式传入实际键。
+- `MultiCache.clear()` 通过构造器注入的 `RedisDao` 执行有界命名空间删除，不再依赖全局 Hutool `SpringUtil`；扫描失败仍清理本地 L1，不能视为远端 L2 成功删除。
+- `vSetUpdate` 现在按 Redis `EXPIRE` 返回值报告结果；键不存在时返回 `false`，不再误报成功。
+
 ### Redis Tool 有界扫描配置
 
 ```yaml
