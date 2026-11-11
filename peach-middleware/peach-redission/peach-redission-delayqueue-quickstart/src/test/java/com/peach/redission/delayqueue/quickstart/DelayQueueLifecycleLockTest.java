@@ -5,6 +5,7 @@ import com.peach.redission.delayqueue.core.RedisDelayQueue;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RBlockingQueue;
 import org.redisson.api.RDelayedQueue;
+import org.redisson.api.RMap;
 import org.redisson.api.RedissonClient;
 
 import java.time.Duration;
@@ -38,6 +39,12 @@ class DelayQueueLifecycleLockTest {
 
         when(redisson.<String>getBlockingQueue("slow-topic")).thenReturn(ready);
         when(redisson.getDelayedQueue(ready)).thenReturn(delayed);
+        @SuppressWarnings("unchecked")
+        RMap<String, String> processing = mock(RMap.class);
+        @SuppressWarnings("unchecked")
+        RMap<String, String> deadLetters = mock(RMap.class);
+        when(redisson.<String, String>getMap("slow-topic:processing")).thenReturn(processing);
+        when(redisson.<String, String>getMap("slow-topic-dead-letter")).thenReturn(deadLetters);
         when(delayed.size()).thenAnswer(invocation -> {
             entered.countDown();
             if (!release.await(4, TimeUnit.SECONDS)) {
