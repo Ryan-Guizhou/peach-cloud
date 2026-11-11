@@ -7,7 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
@@ -52,4 +56,33 @@ class FileUploadContentLifecycleTest {
         assertThatThrownBy(content::read).isInstanceOf(IOException.class)
                 .hasMessageContaining("closed");
     }
+    @Test
+    void shouldNotLeakStreamsWhenReadRacesWithClose() throws Exception {
+        Path path = Files.writeString(temporaryDirectory.resolve("race.txt"), "payload");
+        for (int i = 0; i < 32; i++) {
+            PathContent content = new PathContent(path);
+            CountDownLatch start = new CountDownLatch(1);
+            AtomicReference<InputStream> opened = new AtomicReference<>();
+            Thread reader = Thread.ofVirtual().start(() -> {
+                try {
+                    start.await();
+                    opened.set(content.read());
+                } catch (IOException ignored) {
+                    // close 抢先时 read 被拒绝是合法结果。
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+            start.countDown();
+            content.close();
+            reader.join(TimeUnit.SECONDS.toMillis(2));
+            assertThat(reader.isAlive()).isFalse();
+            assertThatThrownBy(content::read).isInstanceOf(IOException.class);
+            InputStream racedStream = opened.get();
+            if (racedStream != null) {
+                assertThatThrownBy(racedStream::read).isInstanceOf(IOException.class);
+            }
+        }
+    }
 }
+
