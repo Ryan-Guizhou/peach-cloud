@@ -50,6 +50,8 @@ mvn -pl peach-component/peach-observability/peach-observability-quickstart -am s
 mvn -pl peach-component/peach-observability/peach-observability-quickstart -am test
 ```
 
+Servlet async redispatch (`DispatcherType.ASYNC`) reuses the original request attribute `requestId`, installs it only for the dispatching thread and restores the previous MDC after the dispatch. It does not propagate Spring transactions across threads.
+
 ## Boundaries
 
 - The component does not deploy Prometheus, Grafana, Loki, Tempo or a Collector.
