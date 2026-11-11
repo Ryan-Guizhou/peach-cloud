@@ -2,6 +2,7 @@ package com.peach.redis.autoconfigure;
 
 
 import com.peach.redis.listener.CacheMessageListener;
+import com.peach.redis.common.tool.RedisDao;
 import com.peach.redis.config.MultiCacheConfig;
 import com.peach.redis.manager.MultiCacheManager;
 import com.peach.redis.manager.MultiCacheManagerService;
@@ -41,9 +42,9 @@ public class MultiCacheAutoConfiguration<K, V>{
     @Bean
     @DependsOn("redisTemplate")
     @ConditionalOnMissingBean(MultiCacheManager.class)
-    public MultiCacheManager cacheManager(RedisTemplate<K, V> redisTemplate, MultiCacheConfig cacheConfig) {
+    public MultiCacheManager cacheManager(RedisTemplate<K, V> redisTemplate, MultiCacheConfig cacheConfig, RedisDao redisDao) {
         log.info("init MultiCacheManager successful");
-        return new MultiCacheManager(redisTemplate, cacheConfig);
+        return new MultiCacheManager(redisTemplate, cacheConfig, redisDao);
     }
 
 

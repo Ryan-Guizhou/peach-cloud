@@ -1,6 +1,5 @@
 package com.peach.redis.manager;
 
-import cn.hutool.extra.spring.SpringUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.peach.redis.constant.MultiCacheConstant;
@@ -59,6 +58,8 @@ public class MultiCache extends AbstractValueAdaptingCache {
      */
     private RedisTemplate redisTemplate;
 
+    private final RedisDao redisDao;
+
     /**
      * 缓存前缀
      */
@@ -77,10 +78,11 @@ public class MultiCache extends AbstractValueAdaptingCache {
 
     private final Duration randomJitter;
 
-    protected MultiCache(String cacheName, RedisTemplate redisTemplate, Cache<Object, Object> caffeineCache, MultiCacheConfig config) {
+    protected MultiCache(String cacheName, RedisTemplate redisTemplate, Cache<Object, Object> caffeineCache, MultiCacheConfig config, RedisDao redisDao) {
         super(config.isCacheNullValues());
         this.cacheName = cacheName;
         this.redisTemplate = redisTemplate;
+        this.redisDao = java.util.Objects.requireNonNull(redisDao, "redisDao");
         this.caffeineCache = caffeineCache;
         long maxTrackedKeys = Math.max(1L, config.getCaffeine().getMaximumSize());
         this.l2Deadlines = Caffeine.newBuilder().maximumSize(maxTrackedKeys).build();
@@ -206,7 +208,6 @@ public class MultiCache extends AbstractValueAdaptingCache {
     public void clear() {
         // 先清除redis中缓存数据，然后清除caffeine中的缓存，
         // 避免短时间内如果先清除caffeine缓存后其他请求会再从redis里加载到caffeine中
-        RedisDao redisDao = SpringUtil.getBean(RedisDao.class);
         String pattern;
         if (StringUtils.isNotBlank(cachePrefix)) {
             pattern = cachePrefix
