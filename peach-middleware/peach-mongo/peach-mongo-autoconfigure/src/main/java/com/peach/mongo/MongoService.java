@@ -90,6 +90,7 @@ public class MongoService<T> implements IMongoService<T>{
         if (limit != null && (limit < 1 || limit > maxListSize)) {
             throw new IllegalArgumentException("Mongo list limit must be between 1 and " + maxListSize);
         }
+        List<Document> documents;
         try {
             Document finalQuery = query == null ? new Document() : query;
             FindIterable<Document> findIterable = getCollection(collectionName).find(finalQuery);
@@ -103,17 +104,15 @@ public class MongoService<T> implements IMongoService<T>{
                 findIterable = findIterable.skip(skip);
             }
             findIterable = findIterable.limit(limit == null ? maxListSize + 1 : limit);
-            List<Document> documents = findIterable.into(new ArrayList<>());
-            if (limit == null && documents.size() > maxListSize) {
-                throw new IllegalStateException(
-                        "Mongo list exceeds max-list-size; use findPage or cursor-based iteration");
-            }
-            return documents;
-        } catch (IllegalStateException ex) {
-            throw ex;
+            documents = findIterable.into(new ArrayList<>());
         } catch (Exception ex) {
             throw new IllegalStateException("Mongo list query failed for collection: " + collectionName, ex);
         }
+        if (limit == null && documents.size() > maxListSize) {
+            throw new IllegalStateException(
+                    "Mongo list exceeds max-list-size; use findPage or cursor-based iteration");
+        }
+        return documents;
     }
 
     @Override
