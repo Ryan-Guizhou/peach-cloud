@@ -20,7 +20,6 @@
         <module>peach-email</module>
         <module>peach-storage</module>
         <module>peach-initialize</module>
-        <module>peach-threadpool</module>
         <module>peach-observability</module>
         <module>peach-mybatis</module>
         <module>peach-code</module>

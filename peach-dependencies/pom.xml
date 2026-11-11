@@ -566,18 +566,6 @@
                 <version>${revision}</version>
             </dependency>
 
-            <!-- ==================== peach-component / peach-threadpool ==================== -->
-            <dependency>
-                <groupId>com.peach</groupId>
-                <artifactId>peach-threadpool-autoconfigure</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.peach</groupId>
-                <artifactId>peach-threadpool-starter</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
             <!-- ==================== peach-component / peach-observability ==================== -->
             <dependency>
                 <groupId>com.peach</groupId>

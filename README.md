@@ -64,7 +64,7 @@ flowchart LR
 
 ### 通用组件
 
-[`peach-component`](peach-component/README.md) 维护 Captcha、Code、Email、Initialize、Observability、Scheduler、Storage、ThreadPool 兼容层与 Virtual Thread 等可复用能力。
+[`peach-component`](peach-component/README.md) 维护 Captcha、Code、Email、Initialize、Observability、Scheduler、Storage 与 Virtual Thread 等可复用能力。
 
 ### 中间件
 
