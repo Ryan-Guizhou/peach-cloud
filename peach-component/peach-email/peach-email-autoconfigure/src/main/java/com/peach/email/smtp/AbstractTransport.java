@@ -3,14 +3,19 @@ package com.peach.email.smtp;
 import com.peach.email.build.MimeMessageBuilder;
 import com.peach.email.constant.EmailConstant;
 import com.peach.email.core.EmailContext;
+import com.peach.email.core.EmailFailureKind;
 import com.peach.email.core.EmailMessage;
 import com.peach.email.core.EmailTransport;
 import com.peach.email.core.SendResult;
 
+import jakarta.mail.AuthenticationFailedException;
+import jakarta.mail.MessagingException;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.MimeMessage;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 抽象的SMTP传输实现 子类可重写。
@@ -21,6 +26,8 @@ import java.util.Properties;
  * @Description 抽象的SMTP传输实现 子类可重写
  */
 public abstract class AbstractTransport implements EmailTransport {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractTransport.class);
 
     private final String name;
 
@@ -35,6 +42,8 @@ public abstract class AbstractTransport implements EmailTransport {
         long start = System.currentTimeMillis();
         SmtpConnectionProvider connectionProvider = SmtpConnections.getProvider();
         Transport transport = null;
+        boolean connectionAttempted = false;
+        boolean submissionAttempted = false;
         try {
             Properties props = new Properties();
             props.put(EmailConstant.MAIL_STMP_AUTH, EmailConstant.DEFAULT_MAIL_STMP_AUTH);
@@ -53,17 +62,37 @@ public abstract class AbstractTransport implements EmailTransport {
             }
             Session session = Session.getInstance(props);
             MimeMessage mime = MimeMessageBuilder.build(session, emailMessage);
+            connectionAttempted = true;
             transport = connectionProvider.acquire(session, context);
+            submissionAttempted = true;
             transport.sendMessage(mime, mime.getAllRecipients());
             long dur = System.currentTimeMillis() - start;
             String mid = mime.getMessageID();
             return new SendResult(name, mid, dur, true, null);
         } catch (Exception e) {
             long dur = System.currentTimeMillis() - start;
-            return new SendResult(name, null, dur, false, e.getMessage());
+            EmailFailureKind kind;
+            if (submissionAttempted) {
+                kind = EmailFailureKind.DELIVERY_UNKNOWN;
+            } else if (e instanceof AuthenticationFailedException) {
+                kind = EmailFailureKind.PERMANENT_BEFORE_SEND;
+            } else if (connectionAttempted && e instanceof MessagingException) {
+                kind = EmailFailureKind.RETRYABLE_BEFORE_SEND;
+            } else {
+                kind = EmailFailureKind.PERMANENT_BEFORE_SEND;
+            }
+            log.warn("SMTP delivery failed, provider={}, phase={}, cause={}",
+                    name, kind, e.getClass().getSimpleName());
+            return new SendResult(name, null, dur, false, e.getClass().getSimpleName(), kind);
         } finally {
             if (transport != null) {
-                connectionProvider.release(transport);
+                try {
+                    connectionProvider.release(transport);
+                } catch (RuntimeException closeError) {
+                    // 发送可能已成功；连接清理失败不能反转结果触发重复投递。
+                    log.warn("SMTP connection release failed, provider={}, cause={}",
+                            name, closeError.getClass().getSimpleName());
+                }
             }
         }
     }

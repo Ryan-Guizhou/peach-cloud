@@ -46,6 +46,8 @@ Provider 凭据从环境变量、配置中心或密钥服务提供。
 
 SMTP provider、用户名和授权码只通过环境变量或配置中心提供，QuickStart 不保存真实凭据。模板渲染不在 `sendAuto` 内自动发生，本样例直接设置 HTML。
 
+**SMTP 重试与故障转移：** `SendResult` 保留原有五参数构造器，并增加失败阶段 `EmailFailureKind`：`RETRYABLE_BEFORE_SEND`、`PERMANENT_BEFORE_SEND`、`DELIVERY_UNKNOWN`。只有连接阶段确认未进入 `sendMessage` 的临时故障才会自动重试或切换 Provider；一旦开始 SMTP 投递，失败可能表示服务端已接收，默认停止自动重试并要求人工核查。未知类型的自定义 `EmailTransport` 失败默认按 `DELIVERY_UNKNOWN` 处理。重试指数退避最大 5 分钟，不能用重试伪装邮件“恰好一次”送达。
+
 ## 边界
 
 - SMTP 密码、授权码、完整收件人列表、正文和附件内容不得进入日志。
