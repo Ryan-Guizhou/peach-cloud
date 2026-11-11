@@ -54,6 +54,8 @@ mvn -pl peach-component/peach-captcha/peach-captcha-quickstart -am spring-boot:r
 mvn -pl peach-component/peach-captcha/peach-captcha-quickstart -am test
 ```
 
+**Context isolation and memory safety:** each Spring application context owns its own `CaptchaService`, `CaptchaCacheService`, frequency limiter, configuration, and immutable image snapshot. MEMORY defaults to a 1000-entry bounded cache (`peach.captcha.cache-number`, valid 1–1000000); capacity exhaustion fails explicitly rather than clearing valid challenge keys. Expiry is lazy and no private scheduler/cleaner is started. Values are capped at 64Ki characters and TTL at 604800 seconds. Redis mode binds `StringRedisTemplate` from the current context. Custom image directories load up to 32 images per directory with a 2MiB per-image limit; snapshots never overwrite those of other application contexts.
+
 ## Boundaries
 
 - Captcha does not replace login risk control, account lockout or device identification.
