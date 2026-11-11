@@ -39,6 +39,8 @@ mvn -pl peach-middleware/peach-mongo/peach-mongo-quickstart -am test
 
 MongoDB URIs and credentials are supplied only through local configuration or environment variables.
 
+**Bounded materialization:** `peach.mongo.max-list-size` and `peach.mongo.max-page-size` both default to `500` (allowed range 1–100000). A `findList` without an explicit limit fetches at most max+1 documents and rejects results beyond the cap instead of silently truncating them. Explicit list limits or page sizes above the configured cap fail before querying MongoDB. Existing callers relying on full-collection reads must migrate to pagination/cursor iteration; per-document size and aggregation pipelines still require business-specific limits.
+
 ## Boundaries
 
 - The starter does not deploy MongoDB.

@@ -23,6 +23,12 @@ public class PeachMongoProperties {
 
     private String database;
 
+    /** 无显式 limit 的列表查询最大返回文档数；超出时抛异常，要求业务分页。 */
+    private int maxListSize = 500;
+
+    /** 单次 findPage 最多可物化的文档数。 */
+    private int maxPageSize = 500;
+
     /**
      * 连接池相关配置
      */

@@ -97,8 +97,8 @@ public class MongoAutoConfigure {
 
     @Bean
     @ConditionalOnMissingBean(IMongoService.class)
-    public IMongoService mongoService(MongoTemplate mongoTemplate){
-        return new MongoService(mongoTemplate);
+    public IMongoService mongoService(MongoTemplate mongoTemplate, PeachMongoProperties properties) {
+        return new MongoService<>(mongoTemplate, properties);
     }
 
     @Bean
