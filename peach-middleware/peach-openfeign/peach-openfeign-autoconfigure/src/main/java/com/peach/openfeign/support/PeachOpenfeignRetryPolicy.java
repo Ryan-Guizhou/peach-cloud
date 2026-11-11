@@ -86,8 +86,11 @@ public class PeachOpenfeignRetryPolicy {
         if (!isEnabled() || throwable == null) {
             return false;
         }
-        if (throwable instanceof RetryableException) {
-            return true;
+        if (throwable instanceof RetryableException retryableException) {
+            // 网络异常不表示请求未到达服务端，重试必须同时满足 HTTP 方法白名单。
+            return retryableException.request() != null
+                    && retryableException.request().httpMethod() != null
+                    && methods.contains(normalizeMethod(retryableException.request().httpMethod().name()));
         }
         Class<?> current = throwable.getClass();
         while (current != null) {
