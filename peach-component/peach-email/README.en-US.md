@@ -46,6 +46,8 @@ Supply provider credentials through environment variables, configuration service
 
 Continue to supply SMTP credentials via environment variables or configuration services. The QuickStart stores no real credentials. Template rendering does not happen inside `sendAuto`; this sample sets HTML directly.
 
+**SMTP retry and fallback:** the existing five-argument `SendResult` constructor is preserved, with an optional `EmailFailureKind` of `RETRYABLE_BEFORE_SEND`, `PERMANENT_BEFORE_SEND`, or `DELIVERY_UNKNOWN`. Automatic retry/provider failover is permitted only for transient failures before `sendMessage` is attempted. Once submission begins, failures are ambiguous and must not trigger another automatic send. Failures returned by legacy custom transports default to `DELIVERY_UNKNOWN`. Exponential retry delay is capped at five minutes. This is not an exactly-once email guarantee.
+
 ## Boundaries
 
 - SMTP passwords/tokens, full recipient lists, bodies and attachments must not enter logs.
