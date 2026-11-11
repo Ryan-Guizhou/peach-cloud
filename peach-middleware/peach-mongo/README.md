@@ -19,6 +19,10 @@
 </dependency>
 ```
 
+**Starter 运行依赖：** `peach-mongo-starter` 明确引入 MongoDB Spring Data 客户端；`PageInfo` 是公开返回类型，因此仅保留 PageHelper 核心依赖（6.1.0），不引入其 MyBatis Spring Boot Starter。仅引入 `peach-mongo-autoconfigure` 不保证拥有 MongoDB 客户端。缺少可用数据库时不能把运行时读写视为已通过验证。
+
+
+
 最小配置：`peach.mongo.uri`；URI 未带库名时再配 `peach.mongo.database`。事务默认关闭（`peach.mongo.transaction.enabled=false`），开启需要副本集或分片集群。
 
 ## Quick Start

@@ -39,7 +39,7 @@ class MysqlCodeAllocationTest {
         jdbc = mock(JdbcTemplate.class);
         PlatformTransactionManager manager = mock(PlatformTransactionManager.class);
         when(manager.getTransaction(any())).thenAnswer(invocation -> new SimpleTransactionStatus());
-        generator = new PeachCodeGenerator(jdbc, new CodeProperties(), null, manager);
+        generator = new PeachCodeGenerator(jdbc, new CodeProperties(), manager);
     }
 
     @Test

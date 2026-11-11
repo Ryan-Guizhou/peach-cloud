@@ -21,6 +21,8 @@ flowchart LR
     Feign --> Remote[目标服务]
 ```
 
+**Starter 装配契约：** `peach-openfeign-starter` 显式包含 `spring-cloud-starter-openfeign`，不是只依赖可选的 Feign 编译 API。命名客户端配置合并器只有在 `FeignClientProperties` Bean 已注册后才创建，避免缺失 Bean 导致非预期启动失败。
+
 ## Quick Start
 
 示例代码位于 [`peach-openfeign-quickstart`](./peach-openfeign-quickstart/)。真实 Feign 契约仍应来自业务 `*-openfeign-external` 模块，QuickStart 不复制业务接口，也不依赖外部真实服务。

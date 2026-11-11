@@ -67,8 +67,8 @@ class MysqlCodeConcurrentIntegrationTest {
         jdbc.update("INSERT INTO PEACH_CODE_RULE(TENANT_ID,CODE_PREFIX,MAX_CODE_WIDTH,CURRENT_VALUE,STATUS)"
                         + " VALUES ('T001','MENU',8,0,'ENABLE')");
         DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
-        first = new PeachCodeGenerator(jdbc, new CodeProperties(), null, transactionManager);
-        second = new PeachCodeGenerator(jdbc, new CodeProperties(), null, transactionManager);
+        first = new PeachCodeGenerator(jdbc, new CodeProperties(), transactionManager);
+        second = new PeachCodeGenerator(jdbc, new CodeProperties(), transactionManager);
     }
 
     @Test

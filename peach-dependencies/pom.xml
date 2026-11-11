@@ -41,6 +41,7 @@
         <commons-io.version>2.19.0</commons-io.version>
         <freemarker.version>2.3.34</freemarker.version>
         <pagehelper.version>2.1.0</pagehelper.version>
+        <pagehelper.core.version>6.1.0</pagehelper.core.version>
         <user-agent.version>1.2.3</user-agent.version>
         <guava-retry.version>2.0.0</guava-retry.version>
         <persistence.version>3.2.0</persistence.version>
@@ -115,6 +116,12 @@
                 <groupId>com.github.pagehelper</groupId>
                 <artifactId>pagehelper-spring-boot-starter</artifactId>
                 <version>${pagehelper.version}</version>
+            </dependency>
+            <!-- MongoDB PageInfo only: avoid importing the MyBatis Spring Boot starter. -->
+            <dependency>
+                <groupId>com.github.pagehelper</groupId>
+                <artifactId>pagehelper</artifactId>
+                <version>${pagehelper.core.version}</version>
             </dependency>
             <!-- Knife4j 网关聚合 -->
             <dependency>

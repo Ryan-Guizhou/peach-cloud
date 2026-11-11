@@ -39,17 +39,10 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- 分页插件 剔除mybatis的相关依赖，确保不会影响不使用mysql的模块 -->
+        <!-- PageInfo 是 MongoService 的公共返回类型，只引入核心包，不启动 MyBatis。 -->
         <dependency>
             <groupId>com.github.pagehelper</groupId>
-            <artifactId>pagehelper-spring-boot-starter</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.mybatis.spring.boot</groupId>
-                    <artifactId>mybatis-spring-boot-starter</artifactId>
-                </exclusion>
-            </exclusions>
-            <optional>true</optional>
+            <artifactId>pagehelper</artifactId>
         </dependency>
 
         <dependency>

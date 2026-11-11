@@ -30,6 +30,8 @@ flowchart LR
 </dependency>
 ```
 
+**Dependency boundary:** `peach-captcha-starter` provides the shared API and Hutool required by the default captcha implementation; MEMORY mode needs no Redis. REDIS mode requires the application to add `peach-redis-starter` and configure a reachable Redis instance. A missing Redis Bean must not be treated as a working shared cache.
+
 The public entry is the auto-configured `CaptchaService`:
 
 - `get(CaptchaVO)`: generate a captcha

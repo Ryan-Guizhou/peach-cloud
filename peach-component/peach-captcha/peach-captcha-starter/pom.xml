@@ -21,6 +21,15 @@
             <groupId>com.peach</groupId>
             <artifactId>peach-captcha-autoconfigure</artifactId>
         </dependency>
+        <!-- Required by public captcha API and image generation implementation. -->
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+        </dependency>
 
     </dependencies>
 

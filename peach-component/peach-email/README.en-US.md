@@ -30,6 +30,8 @@ flowchart LR
 </dependency>
 ```
 
+**Starter runtime dependencies:** `peach-email-starter` explicitly provides Jakarta Mail, FreeMarker and Commons Lang. Optional entries in AutoConfigure describe compile-time adapters rather than permission for the Starter to omit classes required by default SMTP and template behavior. The Quickstart now validates the Starter without adding those dependencies directly.
+
 Supply provider credentials through environment variables, configuration services or secret management.
 
 ### QuickStart
