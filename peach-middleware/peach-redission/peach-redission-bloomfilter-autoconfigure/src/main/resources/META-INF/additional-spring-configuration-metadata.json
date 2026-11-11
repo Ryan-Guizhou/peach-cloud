@@ -13,6 +13,12 @@
       "defaultValue": true
     },
     {
+      "name": "peach.redis.bloom.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enables segmented Bloom filter auto-configuration when Redisson is present.",
+      "defaultValue": true
+    },
+    {
       "name": "peach.redis.bloom.false-positive-probability",
       "type": "java.lang.Double",
       "description": "误判率（FPP），建议 0.001。",

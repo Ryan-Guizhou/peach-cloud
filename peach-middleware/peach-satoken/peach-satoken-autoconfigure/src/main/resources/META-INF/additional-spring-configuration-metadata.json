@@ -12,6 +12,12 @@
       "defaultValue": true
     },
     {
+      "name": "peach.satoken.dao.search-max-matches",
+      "type": "java.lang.Integer",
+      "description": "Maximum Redis-backed Sa-Token DAO search matches; limits memory use on broad scans.",
+      "defaultValue": 50000
+    },
+    {
       "name": "peach.satoken.request-id.enabled",
       "type": "java.lang.Boolean",
       "description": "Enable or disable peach.satoken.request-id.",

@@ -89,6 +89,39 @@ function propertyModel(source,file,constants = {}){
  return props;
 }
 
+function inlineConfigurationProperties(source,constants = {}){
+ const properties = new Map();
+ for(const match of source.matchAll(/@ConditionalOnProperty\s*\(([\s\S]*?)\)/g)){
+  const annotation=match[1];
+  const pref=annotation.match(/\bprefix\s*=\s*("[^"]+"|[\w.]+)/)?.[1]??"";
+  const prefix=pref.startsWith('"')?pref.slice(1,-1):constants[pref]??"";
+  const rawNames=annotation.match(/\b(?:name|value)\s*=\s*(\{[^}]*\}|"[^"]+")/)?.[1];
+  if(!rawNames)continue;
+  const names=[...rawNames.matchAll(/"([^"]+)"/g)].map(x=>x[1]);
+  for(const n of names){
+   const full=(prefix?prefix+".":"")+n;
+   if(!full.startsWith("peach."))continue;
+   const having=annotation.match(/\bhavingValue\s*=\s*"([^"]+)"/)?.[1];
+   const isBoolean=having==="true"||having==="false"||(!having&&/(?:^|[.-])enable(?:d)?$/.test(n));
+   const property={name:full,type:isBoolean?"java.lang.Boolean":"java.lang.String",
+     description:describe(full)};
+   if(isBoolean)property.defaultValue=/\bmatchIfMissing\s*=\s*true\b/.test(annotation);
+   properties.set(full,property);
+  }
+ }
+ for(const match of source.matchAll(/@Value\s*\(\s*"\$\{(peach\.[^}:]+)(?::([^}]+))?\}"\s*\)/g)){
+  const name=match[1];const raw=match[2];
+  const property={name,type:"java.lang.String",description:describe(name)};
+  if(raw!==undefined){
+   if(/^(?:true|false)$/.test(raw)){property.type="java.lang.Boolean";property.defaultValue=raw==="true";}
+   else if(/^\d+$/.test(raw)){property.type="java.lang.Integer";property.defaultValue=Number(raw);}
+   else property.defaultValue=raw;
+  }
+  properties.set(name,property);
+ }
+ return [...properties.values()];
+}
+
 function describe(name,def){
  const parts=name.split(".");
  const item=parts.at(-1).replaceAll("-"," ");
@@ -159,6 +192,16 @@ function checkOne(moduleDir) {
             const expected = propertyModel(current.source + "\n" + siblings, relative(ROOT, current.file), constants);
             if (expected.length) configFiles.push(...expected);
         }
+    }
+    const inlineProperties = new Map();
+    for (const current of sources) {
+        for (const property of inlineConfigurationProperties(current.source, constants)) {
+            inlineProperties.set(property.name, property);
+        }
+    }
+    const declaredNames = new Set(configFiles.map((property) => property.name));
+    for (const property of inlineProperties.values()) {
+        if (!declaredNames.has(property.name)) configFiles.push(property);
     }
     if (configFiles.length &&
             !readFileSync(join(moduleDir, "pom.xml"), "utf8")
@@ -238,6 +281,12 @@ function selfTest() {
     const fields = propertyModel(example, "ExampleProperties.java", {
         "ExampleConstants.TOPIC": "test-topic"
     });
+    const switches=inlineConfigurationProperties('@ConditionalOnProperty(prefix = "peach.sample", name = "toggle", havingValue = "true", matchIfMissing = true)' +
+            '@Value("${peach.sample.size:10}")');
+    if (!switches.some((x) => x.name === "peach.sample.toggle" && x.defaultValue === true) ||
+            !switches.some((x) => x.name === "peach.sample.size" && x.defaultValue === 10)) {
+        throw new Error("metadata inline property self-test failed");
+    }
     if (!fields.some((x) => x.name === "peach.sample.group.wait-timeout" && x.defaultValue === "5s") ||
             !fields.some((x) => x.name === "peach.sample.enabled" && x.defaultValue === true) ||
             !fields.some((x) => x.name === "peach.sample.group.topic" && x.defaultValue === "test-topic")) {

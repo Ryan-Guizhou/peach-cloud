@@ -65,6 +65,12 @@
       "defaultValue": "STRONG"
     },
     {
+      "name": "peach.multicache.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enables the multi-level cache auto-configuration when the Redis cache dependencies are available.",
+      "defaultValue": true
+    },
+    {
       "name": "peach.multicache.max-cache-instances",
       "type": "java.lang.Integer",
       "description": "Capacity or limit for peach.multicache.",

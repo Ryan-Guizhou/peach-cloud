@@ -19,6 +19,12 @@
       "defaultValue": "group"
     },
     {
+      "name": "peach.redis.stream.enable",
+      "type": "java.lang.Boolean",
+      "description": "Enables Redis Stream consumer auto-configuration. Disabled by default until explicitly enabled.",
+      "defaultValue": false
+    },
+    {
       "name": "peach.redis.stream.recovery.batch-size",
       "type": "java.lang.Integer",
       "description": "Bounded capacity setting for peach.redis.stream.recovery.",
