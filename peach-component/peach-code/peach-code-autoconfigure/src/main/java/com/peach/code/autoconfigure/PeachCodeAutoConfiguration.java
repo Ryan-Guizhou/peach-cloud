@@ -14,8 +14,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 /**
  * Peach代码自动配置。
  * <p>仅在引入 {@code JdbcTemplate}、启用 {@code peach.code} 且业务方没有自定义
- * {@link CodeGenerator} 时创建默认实现。Redis 客户端和事务管理器均采用可选注入，分别用于
- * Redis 主路径和 MySQL 故障兜底。</p>
+ * {@link CodeGenerator} 时创建默认实现。Redis 参数仅用于保留历史构造器兼容性；发号必须配置 MySQL 事务管理器。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
