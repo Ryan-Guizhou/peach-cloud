@@ -3,6 +3,8 @@ package com.peach.code.autoconfigure;
 import com.peach.code.CodeGenerator;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -21,6 +23,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * @CreateTime 2026/3/20 16:58
  */
 @AutoConfiguration
+@AutoConfigureAfter(JdbcTemplateAutoConfiguration.class)
 @ConditionalOnClass({JdbcTemplate.class, CodeGenerator.class})
 @ConditionalOnProperty(prefix = "peach.code", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(CodeProperties.class)

@@ -6,11 +6,13 @@ import com.peach.openfeign.web.PeachOpenfeignExceptionHandler;
 import com.peach.openfeign.web.PeachOpenfeignSentinelExceptionHandler;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.openfeign.FeignAutoConfiguration;
 import org.springframework.cloud.openfeign.FeignClientProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -29,7 +31,7 @@ import org.springframework.stereotype.Indexed;
  */
 @Indexed
 @AutoConfiguration
-@AutoConfigureAfter(PeachOpenfeignClientAutoConfiguration.class)
+@AutoConfigureAfter({PeachOpenfeignClientAutoConfiguration.class, FeignAutoConfiguration.class})
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnProperty(prefix = "peach.openfeign", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(PeachOpenfeignProperties.class)
@@ -45,6 +47,7 @@ public class PeachOpenfeignWebAutoConfiguration {
      */
     @Bean
     @ConditionalOnClass(FeignClientProperties.class)
+    @ConditionalOnBean(FeignClientProperties.class)
     @ConditionalOnMissingBean
     public PeachOpenfeignNamedClientMerger peachOpenfeignNamedClientMerger(
             PeachOpenfeignProperties properties,
