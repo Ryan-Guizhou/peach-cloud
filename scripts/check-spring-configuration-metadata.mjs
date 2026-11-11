@@ -130,15 +130,29 @@ function walk(directory, callback) {
 function checkOne(moduleDir) {
     const javaDir = join(moduleDir, "src/main/java");
     const configFiles = [];
+    const sources = [];
     walk(javaDir, (file) => {
         if (file.endsWith(".java")) {
             const source = readFileSync(file, "utf8");
-            if (source.includes("@ConfigurationProperties(")) {
-                const expected = propertyModel(source, relative(ROOT, file));
-                if (expected.length) configFiles.push(...expected);
-            }
+            const javaPackage = source.match(/^\s*package\s+([\w.]+)\s*;/m)?.[1];
+            sources.push({ file, source, javaPackage });
         }
     });
+    for (const current of sources) {
+        if (current.source.includes("@ConfigurationProperties(")) {
+            // 同包的嵌套配置对象可能声明在另一份 Java 文件中（如 MultiCache）。
+            const siblings = sources.filter((other) => other.file !== current.file &&
+                    other.javaPackage === current.javaPackage).map((other) => other.source).join("\n");
+            const expected = propertyModel(current.source + "\n" + siblings, relative(ROOT, current.file));
+            if (expected.length) configFiles.push(...expected);
+        }
+    }
+    if (configFiles.length &&
+            !readFileSync(join(moduleDir, "pom.xml"), "utf8")
+                .includes("<artifactId>spring-boot-configuration-processor</artifactId>")) {
+        errors.push(relative(ROOT, moduleDir) +
+            ": @ConfigurationProperties modules must declare spring-boot-configuration-processor");
+    }
     const metaFile = join(moduleDir, META_RELATIVE);
     const fileName = relative(ROOT, metaFile);
     let existing = {};
