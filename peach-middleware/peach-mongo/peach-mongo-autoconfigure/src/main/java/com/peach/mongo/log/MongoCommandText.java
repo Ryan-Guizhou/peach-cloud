@@ -10,7 +10,7 @@ import java.util.Set;
 
 /**
  * Mongo 命令的两种互斥文本。
- * <p>placeholder 把用户数据换成 {@code ?}，parameters 按出现顺序列出这些值。
+ * <p>placeholder 把用户数据换成 {@code ?}，parameters 按出现顺序列出至多 16 个 BSON 类型。
  * executable 是可以在 mongosh 执行的 {@code db.runCommand(...)}。
  * 调用方只能选择其中一种写入日志。</p>
  *
@@ -27,6 +27,9 @@ public record MongoCommandText(String placeholder, String parameters, String exe
      * 这些字段的值是业务数据，需要换成 {@code ?}。
      * limit、lsid、$db 等驱动控制字段保持原样，避免把会话信息记进 Parameters。
      */
+    /** 参数日志只展示至多 16 个类型，永不保留参数原值。 */
+    private static final int MAX_PARAMETER_TYPES = 16;
+
     private static final Set<String> USER_VALUE_KEYS = Set.of(
             "filter", "query", "q", "u", "projection", "sort", "hint",
             "pipeline", "let", "arrayFilters", "document");
@@ -134,7 +137,11 @@ public record MongoCommandText(String placeholder, String parameters, String exe
             return;
         }
         rendered.append('?');
-        values.add(value == null ? "null" : describe(value));
+        if (values.size() < MAX_PARAMETER_TYPES) {
+            values.add(value == null ? "null" : describeType(value));
+        } else if (values.size() == MAX_PARAMETER_TYPES) {
+            values.add("...");
+        }
     }
 
     private static Scope childScope(String key, BsonValue value, Scope scope) {
@@ -169,29 +176,30 @@ public record MongoCommandText(String placeholder, String parameters, String exe
         return String.valueOf(value);
     }
 
-    private static String describe(BsonValue value) {
+    /** 只保留 BSON 类型，不能通过 Parameters 行泄露字符串、标识符或凭据。 */
+    private static String describeType(BsonValue value) {
         if (value.isString()) {
-            return value.asString().getValue() + "(String)";
+            return "String";
         }
         if (value.isInt32()) {
-            return value.asInt32().getValue() + "(Int32)";
+            return "Int32";
         }
         if (value.isInt64()) {
-            return value.asInt64().getValue() + "(Int64)";
+            return "Int64";
         }
         if (value.isDouble()) {
-            return value.asDouble().getValue() + "(Double)";
+            return "Double";
         }
         if (value.isBoolean()) {
-            return value.asBoolean().getValue() + "(Boolean)";
+            return "Boolean";
         }
         if (value.isObjectId()) {
-            return value.asObjectId().getValue().toHexString() + "(ObjectId)";
+            return "ObjectId";
         }
         if (value.isDateTime()) {
-            return value.asDateTime().getValue() + "(DateTime)";
+            return "DateTime";
         }
-        return String.valueOf(value);
+        return value.getBsonType().name();
     }
 
     private static String quote(String text) {

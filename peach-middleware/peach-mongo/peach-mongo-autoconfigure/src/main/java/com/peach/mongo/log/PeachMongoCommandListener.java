@@ -9,18 +9,17 @@ import org.bson.BsonDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
  * 记录 Mongo 命令耗时，并输出普通命令与慢命令。
- * <p>默认 Preparing 把 filter、更新文档、插入文档中的值换成 {@code ?}，Parameters 按顺序给出这些值。
+ * <p>默认 Preparing 把 filter、更新文档、插入文档中的值换成 {@code ?}，Parameters 只给出有界的类型列表。
  * {@code peach.mongo.log.executable=true} 时 Preparing 改为 {@code db.runCommand(...)}，不再输出 Parameters。
  * 同一次命令只输出其中一种。慢命令使用 WARN，失败命令使用 ERROR，其余命令在 DEBUG 输出。
  * ping、hello 等驱动心跳命令默认不记录。</p>
@@ -44,9 +43,8 @@ public class PeachMongoCommandListener implements CommandListener {
 
     private final Set<String> excludedCommands;
 
-    private final ConcurrentMap<Long, BsonDocument> commands = new ConcurrentHashMap<>();
-
-    private final ConcurrentLinkedDeque<Long> commandOrder = new ConcurrentLinkedDeque<>();
+    /** 通过插入顺序快速剔除最旧请求，所有访问均在短临界区内完成，避免 O(n) 队列删除。 */
+    private final Map<Long, BsonDocument> commands = new LinkedHashMap<>();
 
     private final AtomicBoolean inflightOverflowLogged = new AtomicBoolean();
 
@@ -68,17 +66,19 @@ public class PeachMongoCommandListener implements CommandListener {
         if (excluded(event.getCommandName())) {
             return;
         }
-        while (commands.size() >= MAX_INFLIGHT_COMMANDS) {
-            Long dropped = commandOrder.pollFirst();
-            if (dropped == null) {
-                break;
+        boolean overflow = false;
+        synchronized (commands) {
+            if (!commands.containsKey(event.getOperationId()) && commands.size() >= MAX_INFLIGHT_COMMANDS) {
+                var oldest = commands.entrySet().iterator();
+                oldest.next();
+                oldest.remove();
+                overflow = true;
             }
-            if (commands.remove(dropped) != null && inflightOverflowLogged.compareAndSet(false, true)) {
-                log.warn("Dropped an in-flight Mongo command log because the buffer reached {}", MAX_INFLIGHT_COMMANDS);
-            }
+            commands.put(event.getOperationId(), event.getCommand());
         }
-        commands.put(event.getOperationId(), event.getCommand());
-        commandOrder.addLast(event.getOperationId());
+        if (overflow && inflightOverflowLogged.compareAndSet(false, true)) {
+            log.warn("Dropped an in-flight Mongo command log because the buffer reached {}", MAX_INFLIGHT_COMMANDS);
+        }
     }
 
     @Override
@@ -110,7 +110,8 @@ public class PeachMongoCommandListener implements CommandListener {
         String statement = null;
         String parameters = null;
         if (logStatement) {
-            if (properties.isExecutable()) {
+            // 警告与失败日志必须保持占位符形式，即使显式开启 executable DEBUG。
+            if (failure == null && !slow && !missingFilter && properties.isExecutable()) {
                 statement = MongoCommands.executable(command);
             } else {
                 MongoCommandText.Placeholder placeholder = MongoCommandText.placeholder(command);
@@ -122,19 +123,19 @@ public class PeachMongoCommandListener implements CommandListener {
         if (failure != null) {
             log.error("!!!mongo failed->{}!!!", statementId);
             log.error("==>{}", statementId);
-            log.error("==>  Preparing: {}{}", lineSeparator, statement);
+            log.error("==>  Preparing: {}{}", lineSeparator, limit(statement));
             if (parameters != null) {
-                log.error("==> Parameters: {}", parameters);
+                log.error("==> Parameters: {}", limit(parameters));
             }
-            log.error("{}{}", lineSeparator, elapsedText, failure);
+            log.error("{}{} cause={}", lineSeparator, elapsedText, failure.getClass().getSimpleName());
         } else if (slow) {
             log.warn("!!!slow query->{}!!!", statementId);
-            writeStatement(true, statementId, statement, parameters, elapsedText);
+            writeStatement(true, statementId, limit(statement), limit(parameters), elapsedText);
         } else if (log.isDebugEnabled()) {
-            writeStatement(false, statementId, limit(statement), parameters, elapsedText);
+            writeStatement(false, statementId, limit(statement), limit(parameters), elapsedText);
         }
         if (missingFilter) {
-            log.warn("!!!missing filter->{}!!!{}{}", statementId, lineSeparator, statement);
+            log.warn("!!!missing filter->{}!!!{}{}", statementId, lineSeparator, limit(statement));
         }
         int size = MongoCommands.resultSize(response);
         if (properties.getLargeResultThreshold() > 0 && size > properties.getLargeResultThreshold()) {
@@ -163,15 +164,14 @@ public class PeachMongoCommandListener implements CommandListener {
         log.debug("{}{}", lineSeparator, elapsedText);
     }
 
-    /**
-     * 只截断 DEBUG 的 Preparing 文本。慢命令和失败命令保持完整，便于直接查看或执行。
-     */
+    /** 所有级别强制截断，不能通过非正值配置绕过保护。 */
     private String limit(String statement) {
-        int maxLength = properties.getMaxCommandLength();
-        if (maxLength <= 0 || statement.length() <= maxLength) {
-            return statement;
+        if (statement == null) {
+            return null;
         }
-        return statement.substring(0, maxLength) + "...";
+        int configured = properties.getMaxCommandLength();
+        int maxLength = Math.min(configured > 0 ? configured : 4000, 16384);
+        return statement.length() <= maxLength ? statement : statement.substring(0, maxLength) + "...";
     }
 
     private static String elapsedText(String statementId, long elapsed) {
@@ -183,8 +183,9 @@ public class PeachMongoCommandListener implements CommandListener {
     }
 
     private BsonDocument forget(long operationId) {
-        commandOrder.remove(operationId);
-        return commands.remove(operationId);
+        synchronized (commands) {
+            return commands.remove(operationId);
+        }
     }
 
     private boolean excluded(String commandName) {
@@ -195,7 +196,7 @@ public class PeachMongoCommandListener implements CommandListener {
         try {
             action.run();
         } catch (Exception exception) {
-            log.warn("Failed to write Mongo command log", exception);
+            log.warn("Failed to write Mongo command log, cause={}", exception.getClass().getSimpleName());
         }
     }
 }

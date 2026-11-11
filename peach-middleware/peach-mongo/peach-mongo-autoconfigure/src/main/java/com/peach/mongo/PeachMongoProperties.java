@@ -159,7 +159,7 @@ public class PeachMongoProperties {
 
         /**
          * 是否输出可执行命令。
-         * <p>false：Preparing 中的用户数据为 {@code ?}，并单独输出 Parameters。
+         * <p>false：Preparing 中的用户数据为 {@code ?}，Parameters 只显示 BSON 类型。
          * true：Preparing 为 {@code db.runCommand(...) }，不再输出 Parameters，也不再输出 {@code ?} 形式。</p>
          */
         private boolean executable = false;
@@ -170,7 +170,7 @@ public class PeachMongoProperties {
         private int longQueryTime = 3000;
 
         /**
-         * DEBUG 日志中 Preparing 文本的最大长度。慢命令和失败命令不截断，Parameters 行不截断。
+         * 所有级别命令及参数文本的最大长度。非正值使用 4000 字符的安全默认值，硬上限 16384。
          */
         private int maxCommandLength = 4000;
 
