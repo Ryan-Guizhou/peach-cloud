@@ -27,6 +27,12 @@
       "type": "java.lang.Integer",
       "defaultValue": 1000,
       "description": "Maximum sanitized error message length reported back to the scheduler control plane."
+    },
+    {
+      "name": "peach.scheduler.executor",
+      "type": "com.peach.scheduler.config.PeachSchedulerProperties$Executor",
+      "description": "Configure executor for peach.scheduler."
     }
-  ]
+  ],
+  "hints": []
 }

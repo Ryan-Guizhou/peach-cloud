@@ -1,0 +1,88 @@
+{
+  "properties": [
+    {
+      "name": "peach.storage.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.storage functionality.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.storage.primary",
+      "type": "java.lang.String",
+      "description": "Configure primary for peach.storage."
+    },
+    {
+      "name": "peach.storage.providers",
+      "type": "java.util.Map",
+      "description": "Configure providers for peach.storage."
+    },
+    {
+      "name": "peach.storage.providers.*.name",
+      "type": "java.lang.String",
+      "description": "Configure name for peach.storage.providers.*."
+    },
+    {
+      "name": "peach.storage.providers.*.type",
+      "type": "com.peach.enums.StorageType",
+      "description": "Configure type for peach.storage.providers.*."
+    },
+    {
+      "name": "peach.storage.providers.*.bucket-name",
+      "type": "java.lang.String",
+      "description": "Configure bucket name for peach.storage.providers.*."
+    },
+    {
+      "name": "peach.storage.providers.*.prefix",
+      "type": "java.lang.String",
+      "description": "Configure prefix for peach.storage.providers.*."
+    },
+    {
+      "name": "peach.storage.providers.*.endpoint",
+      "type": "java.lang.String",
+      "description": "Configure endpoint for peach.storage.providers.*."
+    },
+    {
+      "name": "peach.storage.providers.*.region",
+      "type": "java.lang.String",
+      "description": "Configure region for peach.storage.providers.*."
+    },
+    {
+      "name": "peach.storage.providers.*.access-key",
+      "type": "java.lang.String",
+      "description": "Configure access key using a secure secret source."
+    },
+    {
+      "name": "peach.storage.providers.*.secret-key",
+      "type": "java.lang.String",
+      "description": "Configure secret key using a secure secret source."
+    },
+    {
+      "name": "peach.storage.providers.*.root-path",
+      "type": "java.lang.String",
+      "description": "Configure root path for peach.storage.providers.*."
+    },
+    {
+      "name": "peach.storage.providers.*.domain",
+      "type": "java.lang.String",
+      "description": "Configure domain for peach.storage.providers.*."
+    },
+    {
+      "name": "peach.storage.providers.*.path-style-access",
+      "type": "java.lang.Boolean",
+      "description": "Configure path style access for peach.storage.providers.*.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.storage.providers.*.public-read",
+      "type": "java.lang.Boolean",
+      "description": "Configure public read for peach.storage.providers.*.",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.storage.providers.*.extra-properties",
+      "type": "java.util.Map",
+      "description": "Configure extra properties for peach.storage.providers.*."
+    }
+  ],
+  "hints": []
+}

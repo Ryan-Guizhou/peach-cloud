@@ -27,6 +27,29 @@
       "description": "BLOCK 背压策略下，调用线程等待获取准入许可的最大超时时间。当 backpressure 为 BLOCK 时必须大于 0。",
       "sourceType": "com.peach.virtualthread.config.VirtualThreadProperties$Group",
       "defaultValue": "50ms"
+    },
+    {
+      "name": "peach.virtual-thread.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable or disable peach.virtual-thread functionality.",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.virtual-thread.thread-name-prefix",
+      "type": "java.lang.String",
+      "description": "Configure thread name prefix for peach.virtual-thread.",
+      "defaultValue": "peach-vt-"
+    },
+    {
+      "name": "peach.virtual-thread.shutdown-await",
+      "type": "java.time.Duration",
+      "description": "Configure shutdown await for peach.virtual-thread.",
+      "defaultValue": "30s"
+    },
+    {
+      "name": "peach.virtual-thread.groups",
+      "type": "java.util.Map",
+      "description": "Configure groups for peach.virtual-thread."
     }
   ],
   "hints": [
