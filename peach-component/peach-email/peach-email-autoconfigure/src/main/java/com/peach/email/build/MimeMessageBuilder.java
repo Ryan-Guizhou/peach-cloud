@@ -15,6 +15,9 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.util.ByteArrayDataSource;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -147,14 +150,16 @@ public class MimeMessageBuilder {
             return;
         }
         for (Attachment a : attachments) {
+            if (a == null) {
+                throw new MessagingException("Attachment must not be null");
+            }
             MimeBodyPart part = new MimeBodyPart();
             DataSource ds;
-            if (a.content() != null) {
-                ds = new ByteArrayDataSource(a.content(), a.contentType() != null ? a.contentType() : "application/octet-stream");
-            } else if (a.path() != null) {
-                ds = new FileDataSource(a.path());
+            byte[] content = a.content();
+            if (content != null) {
+                ds = new ByteArrayDataSource(content, a.contentType() != null ? a.contentType() : "application/octet-stream");
             } else {
-                continue;
+                ds = new FileDataSource(requireReadableFile(a.path(), "Attachment"));
             }
             part.setDataHandler(new DataHandler(ds));
             if (a.filename() != null) {
@@ -171,14 +176,16 @@ public class MimeMessageBuilder {
     private static void addInlineResources(MimeMultipart related, List<InlineResource> inlineResources) throws MessagingException {
         if (inlineResources == null) return;
         for (InlineResource r : inlineResources) {
+            if (r == null) {
+                throw new MessagingException("Inline resource must not be null");
+            }
             MimeBodyPart part = new MimeBodyPart();
             DataSource ds;
-            if (r.content() != null) {
-                ds = new ByteArrayDataSource(r.content(), r.contentType() != null ? r.contentType() : "application/octet-stream");
-            } else if (r.path() != null) {
-                ds = new FileDataSource(r.path());
+            byte[] content = r.content();
+            if (content != null) {
+                ds = new ByteArrayDataSource(content, r.contentType() != null ? r.contentType() : "application/octet-stream");
             } else {
-                continue;
+                ds = new FileDataSource(requireReadableFile(r.path(), "Inline resource"));
             }
             part.setDataHandler(new DataHandler(ds));
             if (r.contentId() != null) {
@@ -186,6 +193,29 @@ public class MimeMessageBuilder {
             }
             related.addBodyPart(part);
         }
+    }
+
+    /**
+     * 发送之前校验文件资源。构建阶段拒绝不存在的文件，避免附件静默丢失。
+     *
+     * @param filePath 资源路径
+     * @param kind 资源类型
+     * @return 已验证的路径
+     * @throws MessagingException 路径无效、不是可读文件时抛出
+     */
+    private static String requireReadableFile(String filePath, String kind) throws MessagingException {
+        if (filePath == null || filePath.isBlank()) {
+            throw new MessagingException(kind + " requires content or a readable file path");
+        }
+        try {
+            Path path = Path.of(filePath);
+            if (!Files.isRegularFile(path) || !Files.isReadable(path)) {
+                throw new MessagingException(kind + " file is not readable");
+            }
+        } catch (InvalidPathException ex) {
+            throw new MessagingException(kind + " file path is invalid", ex);
+        }
+        return filePath;
     }
 
 }
