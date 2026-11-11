@@ -1,7 +1,6 @@
 package com.peach.rocket.outbox;
 
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.messaging.support.MessageBuilder;
@@ -29,15 +28,15 @@ public class MqOutboxDispatcher {
 
     @Scheduled(fixedDelayString = "${peach.rocket.outbox.scan-interval-ms:2000}")
     public void dispatch() {
-        List<MqOutboxEvent> events = outboxStore.findPending(properties.getOutbox().getBatchSize());
-        for (MqOutboxEvent event : events) {
+        for (MqOutboxClaim claim : outboxStore.claimPending(properties.getOutbox().getBatchSize())) {
+            MqOutboxEvent event = claim.event();
             try {
                 String destination = event.tag() == null || event.tag().isEmpty() ? event.topic() : event.topic() + ":" + event.tag();
                 rocketMQTemplate.syncSend(destination, MessageBuilder.withPayload(event.body()).build());
-                outboxStore.markSent(event.messageId());
+                outboxStore.markSent(claim);
                 log.info("[mq-outbox] message sent. messageId={} topic={} tag={}", event.messageId(), event.topic(), event.tag());
             } catch (RuntimeException ex) {
-                outboxStore.markFailed(event.messageId());
+                outboxStore.markFailed(claim);
                 log.error("[mq-outbox-error] messageId={} topic={} tag={} exception={}", event.messageId(), event.topic(), event.tag(), ex.getClass().getName(), ex);
             }
         }

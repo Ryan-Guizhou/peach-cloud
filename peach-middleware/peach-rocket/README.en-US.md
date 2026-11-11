@@ -105,6 +105,8 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 }
 ```
 
+**Outbox reliability:** `MqOutboxStore.claimPending(batchSize)` returns `MqOutboxClaim` with a store-specific claimant token; the dispatcher now uses claim-aware `markSent` / `markFailed`. Existing store implementations can fall back to the default methods, but durable JDBC stores must enforce token fencing. Broker sends and JDBC acknowledgement are not one atomic transaction, so at-least-once delivery and consumer idempotency remain mandatory.
+
 ## SPI Overrides
 
 - Routing: `MqRouteResolver`, annotation-based by default.
