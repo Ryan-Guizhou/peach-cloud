@@ -1,6 +1,7 @@
 package com.peach.redission.delayqueue.core;
 
 import com.peach.redission.delayqueue.config.DelayQueueProperties;
+import com.peach.virtualthread.registry.VirtualExecutorRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBlockingQueue;
 import org.redisson.api.RDelayedQueue;
@@ -20,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
@@ -45,6 +45,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class RedisDelayQueue implements AutoCloseable {
 
     private static final String SCRIPT_ROOT = "lua/delayqueue/";
+
+    /** 业务回调唯一受管虚拟线程组，调度心跳保留独立基础设施线程。 */
+    public static final String WORKER_GROUP = "delayqueue-worker";
     private static final String TOPIC_PATTERN = "[a-zA-Z0-9._:-]{1,96}";
     private static final String ID_PATTERN = "[a-zA-Z0-9._:-]{1,128}";
 
@@ -53,7 +56,7 @@ public final class RedisDelayQueue implements AutoCloseable {
     private final RScript redisScripts;
     private final Map<String, String> scripts;
     private final ScheduledThreadPoolExecutor poller;
-    private final ExecutorService workers;
+    private final VirtualExecutorRegistry workerRegistry;
     private final Semaphore availableWorkers;
     private final ScheduledExecutorService heartbeat;
     private final Map<String, ScheduledFuture<?>> pollingTopics = new ConcurrentHashMap<>();
@@ -65,6 +68,7 @@ public final class RedisDelayQueue implements AutoCloseable {
      */
     private final Map<String, Boolean> inspectedLegacyTopics = new ConcurrentHashMap<>();
     private volatile boolean closed;
+    private volatile boolean closing;
 
     /**
      * 任务由 Redis Lua 操作原子认领，fencingToken 单调递增。
@@ -94,8 +98,20 @@ public final class RedisDelayQueue implements AutoCloseable {
     private record LeasedMessage(String topic, ClaimedMessage message) {
     }
 
+    /**
+     * 保留同步管理 API 的现有构造器；自动消费必须注入受管虚拟线程组。
+     */
     public RedisDelayQueue(RedissonClient redisson, DelayQueueProperties properties) {
+        this(redisson, properties, null);
+    }
+
+    /**
+     * 构造使用 peach-virtual-thread 业务组执行回调的可靠队列。
+     */
+    public RedisDelayQueue(RedissonClient redisson, DelayQueueProperties properties,
+                           VirtualExecutorRegistry workerRegistry) {
         this.redisson = Objects.requireNonNull(redisson, "redisson");
+        this.workerRegistry = workerRegistry;
         this.properties = Objects.requireNonNull(properties, "properties");
         properties.validate();
         this.redisScripts = redisson.getScript(StringCodec.INSTANCE);
@@ -117,12 +133,6 @@ public final class RedisDelayQueue implements AutoCloseable {
             return thread;
         });
         poller.setRemoveOnCancelPolicy(true);
-        AtomicInteger workerCounter = new AtomicInteger(1);
-        this.workers = Executors.newFixedThreadPool(properties.getWorkerCount(), task -> {
-            Thread thread = new Thread(task, "peach-delayqueue-worker-" + workerCounter.getAndIncrement());
-            thread.setDaemon(true);
-            return thread;
-        });
         this.availableWorkers = new Semaphore(properties.getWorkerCount());
         this.heartbeat = Executors.newSingleThreadScheduledExecutor(task -> {
             Thread thread = new Thread(task, "peach-delayqueue-heartbeat");
@@ -309,11 +319,17 @@ public final class RedisDelayQueue implements AutoCloseable {
     }
 
     /**
-     * 注册主题的有界轮询任务。认领和业务执行使用独立线程池；
-     * 多主题共享 workerCount 个实际执行业务的线程，同一主题只注册一次。
+     * 注册主题的有界轮询任务。认领由独立调度线程完成，业务回调使用受管虚拟线程组；
+     * 多个主题共享 workerCount 个并发许可，同一主题只注册一次。
      */
     public synchronized void start(String topic, ConsumerTask task) {
         ensureOpen();
+        if (closing) {
+            throw new IllegalStateException("Delay queue is closing");
+        }
+        if (workerRegistry == null || !workerRegistry.groupNames().contains(WORKER_GROUP)) {
+            throw new IllegalStateException("Managed virtual-thread group 'delayqueue-worker' is required");
+        }
         validateTopic(topic);
         Objects.requireNonNull(task, "task");
         if (!topic.equals(task.topic())) {
@@ -377,6 +393,9 @@ public final class RedisDelayQueue implements AutoCloseable {
      * 失败时租约仍留在 Redis，由原有 reclaim 脚本恢复。
      */
     private void dispatchOnce(String topic, ConsumerTask task) {
+        if (closing) {
+            return;
+        }
         ensureOpen();
         validateTask(topic, task);
         reclaimExpired(topic);
@@ -392,7 +411,7 @@ public final class RedisDelayQueue implements AutoCloseable {
                 String key = activeKey(lease);
                 active.put(key, lease);
                 try {
-                    workers.execute(() -> {
+                    workerRegistry.execute(WORKER_GROUP, () -> {
                         try {
                             processClaimed(task, lease);
                         } finally {
@@ -550,24 +569,31 @@ public final class RedisDelayQueue implements AutoCloseable {
     }
 
     @Override
-    public void close() {
-        closed = true;
+    public synchronized void close() {
+        if (closing || closed) {
+            return;
+        }
+        closing = true;
         for (ScheduledFuture<?> future : pollingTopics.values()) {
             future.cancel(false);
         }
         pollingTopics.clear();
         inspectedLegacyTopics.clear();
         poller.shutdownNow();
-        workers.shutdown();
+        // 不关闭由 Spring 统一管理的业务虚拟线程组。关闭期间仍保留心跳，
+        // 给已经准入的回调一个有界的自然完成窗口，超时租约交由 Redis 回收。
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         try {
-            if (!workers.awaitTermination(5, TimeUnit.SECONDS)) {
-                log.warn("Delay queue worker shutdown timed out; unfinished leases remain reclaimable");
-                workers.shutdownNow();
+            while (!active.isEmpty() && System.nanoTime() - deadline < 0) {
+                Thread.sleep(25L);
             }
         } catch (InterruptedException exception) {
-            workers.shutdownNow();
             Thread.currentThread().interrupt();
         } finally {
+            if (!active.isEmpty()) {
+                log.warn("Delay queue shutdown left {} leases to be reclaimed", active.size());
+            }
+            closed = true;
             heartbeat.shutdownNow();
             active.clear();
         }

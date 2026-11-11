@@ -29,5 +29,9 @@
             <groupId>com.peach</groupId>
             <artifactId>peach-initialize-starter</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-virtual-thread-starter</artifactId>
+        </dependency>
     </dependencies>
 </project>

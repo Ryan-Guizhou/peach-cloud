@@ -16,6 +16,8 @@
 
 独立 `peach-redisson-starter` 沿用 `peach.redis.mode / host / username / password`，新增可选 `peach.redis.sentinel-username`、`peach.redis.sentinel-password`，仅在 Sentinel 认证信息与数据节点不同时配置；默认空值保持旧行为。Redisson TLS 的开关仍为 `peach.redis.redisson.ssl-enable`（与 Jedis 的 `peach.redis.ssl-enabled` 不同）。Cluster 不支持数据库非零值，本配置会启动失败而非悄悄落在数据库 0。实际生产 ACL、证书与故障切换仍需环境验收。两份 Nacos 模板保持相同键名，禁止写入真实凭据。
 
+**DelayQueue 业务执行器：** 自动消费的业务 `ConsumerTask.execute` 使用 `peach-virtual-thread` 的固定业务组 `delayqueue-worker`，不再创建专用平台工作线程池。独立平台调度线程只用于轮询和心跳（基础设施，不执行业务）。Starter 会校验该组存在；推荐 `max-concurrency` 与 `peach.delay.queue.worker-count` 一致、`max-pending: 0`、`backpressure: REJECT`，防止 Redis 已认领消息在本地排队超出租约。示例：`peach.virtual-thread.groups.delayqueue-worker.max-concurrency=4`；缺失业务组会在启动时失败，不会回退到原线程池。显式调用 `pollOnce` 仍在调用方线程同步执行，适用于人工运维验证。
+
 ## 完整能力矩阵
 
 | 能力 / Starter | 对外入口 | 当前功能 | 典型用途 | 当前限制 |

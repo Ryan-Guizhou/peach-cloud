@@ -10,6 +10,12 @@ peach:
     host: ${PEACH_REDIS_HOST:127.0.0.1:6379}
     password: ${PEACH_REDIS_PASSWORD:}
     database: 1
+  virtual-thread:
+    groups:
+      delayqueue-worker:
+        max-concurrency: 4
+        max-pending: 0
+        backpressure: REJECT
   delay:
     queue:
       isolation-region-count: 1

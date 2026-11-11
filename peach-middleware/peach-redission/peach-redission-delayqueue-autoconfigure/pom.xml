@@ -46,5 +46,10 @@
             <artifactId>redisson</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-virtual-thread-autoconfigure</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>
