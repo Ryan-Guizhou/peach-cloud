@@ -12,6 +12,8 @@
 
 **截至本轮的代码验收：** 独立客户端、Sa-Token 认证、Redis Tool、MultiCache、Stream 已通过对应的 Redis 7.2 专项验证；原位 Sentinel 故障恢复（[#70](https://github.com/Ryan-Guizhou/peach-cloud/pull/70)）、Cluster 主节点切换与新客户端恢复（[#74](https://github.com/Ryan-Guizhou/peach-cloud/pull/74)）、旧/新源码序列化字节兼容（[#66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66)）、Stream 死信字段/只读对账（[#90](https://github.com/Ryan-Guizhou/peach-cloud/pull/90)、[#94](https://github.com/Ryan-Guizhou/peach-cloud/pull/94)）均已有合并记录。**尚未完成的生产验收**是实际旧发行版 SaSession fixture 与混合发布、目标环境 Nacos/ACL/TLS 轮换及真实业务故障注入。完整证据与回滚门槛见[迁移验收手册](../../docs/redis-redisson/acceptance-and-rollout.md)。
 
+**MultiCache L1 竞争边界：** 收到 Pub/Sub 失效通知后会推进本地失效版本号；在途 Redis GET/PTTL 只在版本未变化时回填 Caffeine，避免通知到达后被旧读取重新污染 L1。Redis Pub/Sub 仍是最终一致的失效通道，网络中断期间依赖重新订阅时全量清空 L1，不能替代业务数据版本或数据库事务。
+
 **异步缓存清理：** `MultiCacheManagerService.asyncClear(cacheName)` 只向 `peach-virtual-thread` 已注册的 `multicache-clear` 业务组提交任务，不再创建独立平台线程。接入多级缓存 Starter 时需配置：
 
 ```yaml

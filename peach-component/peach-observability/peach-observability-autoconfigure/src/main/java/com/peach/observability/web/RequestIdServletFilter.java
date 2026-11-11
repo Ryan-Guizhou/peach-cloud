@@ -3,6 +3,7 @@ package com.peach.observability.web;
 import com.peach.observability.config.PeachObservabilityProperties;
 import com.peach.observability.core.ObservabilityConstants;
 import com.peach.observability.core.RequestIdResolver;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,10 +38,21 @@ public final class RequestIdServletFilter extends OncePerRequestFilter {
         this.resolver = resolver;
     }
 
+    /**
+     * 异步重新分派发生在线程切换后，必须重新设置并恢复本线程的请求 MDC。
+     */
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return false;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String requestId = resolver.resolve(request.getHeader(properties.getHeaderName()));
+        Object existing = request.getAttribute(ObservabilityConstants.REQUEST_ID_ATTRIBUTE);
+        String requestId = request.getDispatcherType() == DispatcherType.ASYNC
+                && existing instanceof String value && !value.isBlank()
+                ? value : resolver.resolve(request.getHeader(properties.getHeaderName()));
         String previousRequestId = MDC.get(ObservabilityConstants.REQUEST_ID_MDC_KEY);
         request.setAttribute(ObservabilityConstants.REQUEST_ID_ATTRIBUTE, requestId);
         response.setHeader(properties.getHeaderName(), requestId);
