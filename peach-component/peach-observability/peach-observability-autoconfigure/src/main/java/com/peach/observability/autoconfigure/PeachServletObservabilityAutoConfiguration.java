@@ -53,6 +53,8 @@ public class PeachServletObservabilityAutoConfiguration {
      * @return Servlet 过滤器注册对象
      */
     @Bean
+    @ConditionalOnProperty(prefix = "peach.observability.request-id", name = "enabled",
+            havingValue = "true", matchIfMissing = true)
     @ConditionalOnMissingBean(name = "peachRequestIdServletFilterRegistration")
     public FilterRegistrationBean<RequestIdServletFilter> peachRequestIdServletFilterRegistration(
             RequestIdServletFilter filter) {
