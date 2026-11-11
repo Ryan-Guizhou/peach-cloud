@@ -258,11 +258,6 @@
                         <release>${java.version}</release>
                         <encoding>${project.build.sourceEncoding}</encoding>
                         <parameters>true</parameters>
-                        <fork>true</fork>
-                        <compilerArgs>
-                            <arg>-J-Dfile.encoding=UTF-8</arg>
-                            <arg>-J-Dsun.jnu.encoding=UTF-8</arg>
-                        </compilerArgs>
                         <annotationProcessorPaths>
                             <path>
                                 <groupId>org.projectlombok</groupId>
