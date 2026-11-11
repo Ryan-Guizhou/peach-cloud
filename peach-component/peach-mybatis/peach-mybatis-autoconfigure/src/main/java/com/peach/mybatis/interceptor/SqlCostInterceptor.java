@@ -44,6 +44,9 @@ public class SqlCostInterceptor implements Interceptor {
 
     private static final Logger log = LoggerFactory.getLogger("SQL_LOG");
 
+    private static final int DEFAULT_MAX_SQL_LOG_LENGTH = 4000;
+    private static final int HARD_MAX_SQL_LOG_LENGTH = 16384;
+
     private final PeachMybatisProperties properties;
 
     private final SqlMetricRecorder metricRecorder;
@@ -95,7 +98,7 @@ public class SqlCostInterceptor implements Interceptor {
             if (!slow && !log.isDebugEnabled()) {
                 return;
             }
-            StatementText text = statementText(sqlDetail);
+            StatementText text = statementText(sqlDetail, slow);
             if (slow) {
                 log.warn("!!!slow query->{}!!!", sqlDetail.id);
                 writeStatement(true, sqlDetail.id, text, watch);
@@ -103,7 +106,8 @@ public class SqlCostInterceptor implements Interceptor {
             }
             writeStatement(false, sqlDetail.id, text, watch);
         } catch (Exception exception) {
-            log.warn("Failed to write SQL log: {}", sqlDetail.id, exception);
+            log.warn("Failed to write SQL log, statementId={}, cause={}",
+                    sqlDetail.id, exception.getClass().getSimpleName());
         }
     }
 
@@ -111,20 +115,28 @@ public class SqlCostInterceptor implements Interceptor {
      * 按开关选择一种语句文本。只有真正输出日志时才读取参数。
      * executable 为 true 时 parameters 为 null，调用方不能再拼 Parameters 行。
      */
-    private StatementText statementText(SqlDetail sqlDetail) {
-        if (properties.getLog().isExecutable()) {
-            return new StatementText(ExecutableSqlRenderer.render(sqlDetail.sql, sqlDetail.values()), null);
+    private StatementText statementText(SqlDetail sqlDetail, boolean warning) {
+        // 告警一律使用占位符模板，避免敏感参数通过慢 SQL 公开。
+        if (!warning && properties.getLog().isExecutable()) {
+            List<Object> values = sqlDetail.values();
+            // 对超大参数跳过可执行渲染，防止二进制/大文本膨胀造成额外堆占用。
+            if (values.stream().anyMatch(value ->
+                    value instanceof byte[] bytes && bytes.length > 4096
+                            || value instanceof CharSequence text && text.length() > 4096)) {
+                return new StatementText(sqlDetail.sql, SqlParameters.typeSummary(values));
+            }
+            return new StatementText(ExecutableSqlRenderer.render(sqlDetail.sql, values), null);
         }
-        return new StatementText(sqlDetail.sql, SqlParameters.format(sqlDetail.values()));
+        return new StatementText(sqlDetail.sql, SqlParameters.typeSummary(sqlDetail.values()));
     }
 
     private void writeStatement(boolean warn, String statementId, StatementText text, StopWatch watch) {
-        String statement = warn ? text.statement() : limit(text.statement());
+        String statement = limit(text.statement());
         if (warn) {
             log.warn("==>{}", statementId);
             log.warn("==>  Preparing: {}{}", lineSeparator, statement);
             if (text.parameters() != null) {
-                log.warn("==> Parameters: {}", text.parameters());
+                log.warn("==> Parameters: {}", limit(text.parameters()));
             }
             log.warn("{}{}", lineSeparator, watch.prettyPrint());
             return;
@@ -132,28 +144,29 @@ public class SqlCostInterceptor implements Interceptor {
         log.debug("==>{}", statementId);
         log.debug("==>  Preparing: {}{}", lineSeparator, statement);
         if (text.parameters() != null) {
-            log.debug("==> Parameters: {}", text.parameters());
+            log.debug("==> Parameters: {}", limit(text.parameters()));
         }
         log.debug("{}{}", lineSeparator, watch.prettyPrint());
     }
 
     /**
-     * 只截断 DEBUG 的 Preparing 文本。慢 SQL 和缺少 WHERE 的告警保持完整。
+     * 所有日志级别统一有界输出。配置不能关闭上限，也不能超过安全硬限制。
      */
     private String limit(String statement) {
-        int maxLength = properties.getLog().getMaxSqlLength();
-        if (statement == null || maxLength <= 0 || statement.length() <= maxLength) {
-            return statement;
+        if (statement == null) {
+            return null;
         }
-        return statement.substring(0, maxLength) + "...";
+        int configured = properties.getLog().getMaxSqlLength();
+        int maxLength = Math.min(configured > 0 ? configured : DEFAULT_MAX_SQL_LOG_LENGTH,
+                HARD_MAX_SQL_LOG_LENGTH);
+        return statement.length() <= maxLength ? statement : statement.substring(0, maxLength) + "...";
     }
 
     private void warnMissingWhere(SqlDetail sqlDetail) {
         if (!properties.getLog().isWarnMissingWhere() || !SqlTexts.missingWhere(sqlDetail.sql)) {
             return;
         }
-        String statement = properties.getLog().isExecutable() ? statementText(sqlDetail).statement() : sqlDetail.sql;
-        log.warn("!!!missing where->{}!!!{}{}", sqlDetail.id, lineSeparator, statement);
+        log.warn("!!!missing where->{}!!!{}{}", sqlDetail.id, lineSeparator, limit(sqlDetail.sql));
     }
 
     private void warnLargeResult(String statementId, Object result) {
@@ -178,7 +191,7 @@ public class SqlCostInterceptor implements Interceptor {
             BoundSql boundSql = delegateHandler.getBoundSql();
             return Optional.of(new SqlDetail(mappedStatement.getId(), boundSql.getSql(), mappedStatement, boundSql));
         } catch (Exception exception) {
-            log.warn("Failed to read SQL for logging", exception);
+            log.warn("Failed to read SQL for logging, cause={}", exception.getClass().getSimpleName());
             return Optional.empty();
         }
     }
