@@ -5,8 +5,9 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 const ROOT = resolve(import.meta.dirname, "..");
 function kebab(name){return name.replace(/([A-Z])([A-Z][a-z])/g,"$1-$2").replace(/([a-z0-9])([A-Z])/g,"$1-$2").toLowerCase();}
 
-function inferDefault(field){
+function inferDefault(field, constants = {}){
  const init=(field.init||"").replace(/;\s*$/,"").trim();
+ if(Object.prototype.hasOwnProperty.call(constants, init))return constants[init];
  if(!init){if(field.type==="boolean")return false;if(["int","long","double","float"].includes(field.type))return 0;return undefined;}
  if(init==="true"||init==="false")return init==="true";
  if(/^"(?:\\.|[^"\\])*"$/.test(init)){return init.slice(1,-1);}
@@ -18,7 +19,7 @@ function inferDefault(field){
  const dur=init.match(/^Duration\.of(Millis|Seconds|Minutes|Hours|Days)\((\d+)[lL]?\)$/);
  if(dur){return dur[2]+({Millis:"ms",Seconds:"s",Minutes:"m",Hours:"h",Days:"d"}[dur[1]]);}
  if(init==="Duration.ZERO")return "0ms";
- if(!["boolean","int","long","float","double","Integer","Long","Double","Float"].includes(field.type)){
+ if(!["boolean","int","long","float","double","Integer","Long","Double","Float","String"].includes(field.type)){
   const en=init.match(/^([\w.]+)\.([A-Z][A-Z0-9_]*)$/);
   if(en&&!["Font"].includes(en[1]))return en[2];
  }
@@ -40,7 +41,7 @@ function javaType(type,pack,root,classes,imports){
  return imports[type]??(pack+"."+type);
 }
 
-function propertyModel(source,file){
+function propertyModel(source,file,constants = {}){
  const ann=source.match(/@ConfigurationProperties\s*\(\s*(?:prefix|value)\s*=\s*("[^"]+"|[\w.]+)\s*\)/);
  if(!ann)return [];
  const symbolic={ "CaptchaConst.CAPTCHA_SUFFIX":"peach.captcha","RedisStreamContant.REDIS_STREAM_PREFIX":"peach.redis.stream","DelayQueueProperties.PREFIX":"peach.delay.queue"};
@@ -73,7 +74,7 @@ function propertyModel(source,file){
    if(seen.has(name))continue;
    seen.add(name);
    const model={name,type:javaType(fld.type,pack,clsName,classes,imports)};
-   const def=inferDefault(fld);
+   const def=inferDefault(fld,constants);
    if(def!==undefined)model.defaultValue=def;
    props.push(model);
    let nested=classes.has(fld.type)?fld.type:null;
@@ -138,12 +139,24 @@ function checkOne(moduleDir) {
             sources.push({ file, source, javaPackage });
         }
     });
+    const constants = {};
+    for (const current of sources) {
+        const javaClass = current.source.match(/^\s*public\s+(?:final\s+)?class\s+(\w+)/m)?.[1];
+        if (!javaClass) continue;
+        const literalPattern = /^\s*public\s+static\s+final\s+(?:String|Integer|Long|int|long|boolean)\s+([A-Z][A-Z0-9_]*)\s*=\s*("[^"]*"|\d+[lL]?|true|false)\s*;/gm;
+        for (const match of current.source.matchAll(literalPattern)) {
+            const raw = match[2];
+            constants[javaClass + "." + match[1]] = raw.startsWith('"') ? raw.slice(1, -1)
+                    : raw === "true" ? true : raw === "false" ? false
+                    : Number(raw.replace(/[lL]$/, ""));
+        }
+    }
     for (const current of sources) {
         if (current.source.includes("@ConfigurationProperties(")) {
             // 同包的嵌套配置对象可能声明在另一份 Java 文件中（如 MultiCache）。
             const siblings = sources.filter((other) => other.file !== current.file &&
                     other.javaPackage === current.javaPackage).map((other) => other.source).join("\n");
-            const expected = propertyModel(current.source + "\n" + siblings, relative(ROOT, current.file));
+            const expected = propertyModel(current.source + "\n" + siblings, relative(ROOT, current.file), constants);
             if (expected.length) configFiles.push(...expected);
         }
     }
@@ -221,10 +234,13 @@ function selfTest() {
     const example = 'package x.y;\n@ConfigurationProperties(prefix = "peach.sample")\n' +
         'public class ExampleProperties {\n private boolean enabled = true;\n' +
         'private final Group group = new Group();\npublic static class Group {\n' +
-        'private Duration waitTimeout = Duration.ofSeconds(5);\nprivate int maxSize = 20;\n}\n}';
-    const fields = propertyModel(example, "ExampleProperties.java");
+        'private Duration waitTimeout = Duration.ofSeconds(5);\nprivate int maxSize = 20;\nprivate String topic = ExampleConstants.TOPIC;\n}\n}';
+    const fields = propertyModel(example, "ExampleProperties.java", {
+        "ExampleConstants.TOPIC": "test-topic"
+    });
     if (!fields.some((x) => x.name === "peach.sample.group.wait-timeout" && x.defaultValue === "5s") ||
-            !fields.some((x) => x.name === "peach.sample.enabled" && x.defaultValue === true)) {
+            !fields.some((x) => x.name === "peach.sample.enabled" && x.defaultValue === true) ||
+            !fields.some((x) => x.name === "peach.sample.group.topic" && x.defaultValue === "test-topic")) {
         throw new Error("metadata parser nested/default-value self-test failed");
     }
 }

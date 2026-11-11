@@ -65,12 +65,14 @@
     {
       "name": "peach.email.retry.base-delay-millis",
       "type": "java.lang.Long",
-      "description": "基准延迟毫秒（选填，默认200），指数退避：delay = base * 2^(attempt-1)"
+      "description": "基准延迟毫秒（选填，默认200），指数退避：delay = base * 2^(attempt-1)",
+      "defaultValue": 200
     },
     {
       "name": "peach.email.retry.max-attempts",
       "type": "java.lang.Integer",
-      "description": "最大尝试次数（选填，默认3）"
+      "description": "最大尝试次数（选填，默认3）",
+      "defaultValue": 3
     }
   ],
   "hints": []

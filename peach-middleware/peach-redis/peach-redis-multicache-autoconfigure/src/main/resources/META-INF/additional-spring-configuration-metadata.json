@@ -15,8 +15,7 @@
     {
       "name": "peach.multicache.cache-prefix",
       "type": "java.lang.String",
-      "description": "缓存 key 前缀。",
-      "defaultValue": ""
+      "description": "缓存 key 前缀。"
     },
     {
       "name": "peach.multicache.caffeine",
@@ -97,7 +96,7 @@
       "name": "peach.multicache.redis.topic",
       "type": "java.lang.String",
       "description": "多节点缓存同步用的 Redis 频道名称。",
-      "defaultValue": "CACHE_MESSAGE_TOPIC"
+      "defaultValue": "cache-message-topic"
     }
   ],
   "hints": [
