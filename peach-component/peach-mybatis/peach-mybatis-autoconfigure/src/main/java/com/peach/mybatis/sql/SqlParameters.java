@@ -73,6 +73,33 @@ public final class SqlParameters {
         return formatted.toString();
     }
 
+    /**
+     * 返回仅包含数量和 Java 类型的安全摘要，不输出任何参数值。
+     *
+     * <p>最多列出前 16 个类型，防止巨大 IN 查询产生无界日志字符串。</p>
+     *
+     * @param values SQL 参数
+     * @return 有界且不包含参数值的摘要
+     */
+    public static String typeSummary(List<?> values) {
+        if (values == null || values.isEmpty()) {
+            return "count=0";
+        }
+        final int maxTypes = 16;
+        StringBuilder summary = new StringBuilder("count=").append(values.size()).append(", types=[");
+        for (int index = 0; index < Math.min(values.size(), maxTypes); index++) {
+            if (index > 0) {
+                summary.append(", ");
+            }
+            Object value = values.get(index);
+            summary.append(value == null ? "null" : value.getClass().getSimpleName());
+        }
+        if (values.size() > maxTypes) {
+            summary.append(", ...");
+        }
+        return summary.append(']').toString();
+    }
+
     private static Object read(Configuration configuration, BoundSql boundSql, TypeHandlerRegistry typeHandlerRegistry,
                                Object parameterObject, String property) {
         if (boundSql.hasAdditionalParameter(property)) {
