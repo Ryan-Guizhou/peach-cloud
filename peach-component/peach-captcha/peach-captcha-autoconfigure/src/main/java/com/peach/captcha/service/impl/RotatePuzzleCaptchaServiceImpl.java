@@ -43,7 +43,7 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
         }
 
         // 1. Get original rotate image / 获取旋转底图
-        BufferedImage originalImage = CaptchaImageUtil.getRotateImage();
+        BufferedImage originalImage = images.getRotateImage();
         if (originalImage == null) {
             log.error("init original rotate image error");
             return Response.fail("init original rotate image error");
