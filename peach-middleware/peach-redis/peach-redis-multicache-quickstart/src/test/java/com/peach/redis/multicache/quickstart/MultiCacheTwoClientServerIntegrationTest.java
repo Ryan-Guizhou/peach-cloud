@@ -79,6 +79,15 @@ class MultiCacheTwoClientServerIntegrationTest {
             // 此 Manager 未运行在 Hutool SpringUtil 静态上下文中，也必须能清理。
             writer.clear();
             assertThat(writer.get(key)).isNull();
+            boolean clearReceived = false;
+            for (int attempt = 0; attempt < 100; attempt++) {
+                if (((MultiCache) reader).getLocalCache().getIfPresent(key) == null) {
+                    clearReceived = true;
+                    break;
+                }
+                Thread.sleep(50);
+            }
+            assertThat(clearReceived).as("Remote clear notification should invalidate L1").isTrue();
             assertThat(reader.get(key)).isNull();
             assertThat(Boolean.TRUE.equals(firstRedis.hasKey(redisKey))).isFalse();
         } finally {
