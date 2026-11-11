@@ -19,6 +19,7 @@ import java.net.InetAddress;
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
@@ -84,18 +85,19 @@ public class DefaultPeachJobExecutor implements PeachJobExecutor {
                     command.executionId(), command.jobCode(), instanceId);
             return;
         }
-        JobHandler handler = registry.getRequired(command.handlerName());
         Instant startedAt = Instant.now();
-        log.info("Scheduler execution started, executionId={}, jobCode={}, handlerName={}, attempt={}, executorInstance={}",
-                command.executionId(), command.jobCode(), command.handlerName(), command.attempt(), instanceId);
-        Future<JobResult> future = virtualExecutorRegistry.submit(SCHEDULER_EXECUTOR_GROUP, () -> handler.execute(new JobContext(
-                command.executionId(), command.jobCode(), command.applicationName(), command.parameters(),
-                Math.max(1, command.attempt()), command.traceId())));
         JobExecutionResultEvent.Builder eventBuilder = JobExecutionResultEvent.builder()
                 .executionId(command.executionId())
                 .executorInstance(instanceId)
                 .startedAt(startedAt);
+        Future<JobResult> future = null;
         try {
+            JobHandler handler = registry.getRequired(command.handlerName());
+            log.info("Scheduler execution started, executionId={}, jobCode={}, handlerName={}, attempt={}, executorInstance={}",
+                    command.executionId(), command.jobCode(), command.handlerName(), command.attempt(), instanceId);
+            future = virtualExecutorRegistry.submit(SCHEDULER_EXECUTOR_GROUP, () -> handler.execute(new JobContext(
+                    command.executionId(), command.jobCode(), command.applicationName(), command.parameters(),
+                    Math.max(1, command.attempt()), command.traceId())));
             JobResult result = waitFor(future, command.timeoutMs());
             if (result == null || !result.isSuccess()) {
                 eventBuilder.status(ExecutionResultStatus.FAILED)
@@ -108,11 +110,16 @@ public class DefaultPeachJobExecutor implements PeachJobExecutor {
                         .resultCode(result.getCode());
             }
         } catch (TimeoutException ex) {
-            future.cancel(true);
+            if (future != null) {
+                future.cancel(true);
+            }
             eventBuilder.status(ExecutionResultStatus.TIMED_OUT)
                     .resultCode("TIMEOUT")
                     .errorMessage("Execution exceeded configured timeout");
         } catch (InterruptedException ex) {
+            if (future != null) {
+                future.cancel(true);
+            }
             Thread.currentThread().interrupt();
             eventBuilder.status(ExecutionResultStatus.FAILED)
                     .resultCode("INTERRUPTED")
@@ -125,6 +132,19 @@ public class DefaultPeachJobExecutor implements PeachJobExecutor {
                             Math.max(64, properties.getExecutor().getMaxErrorMessageLength())));
             log.error("Scheduler execution failed, executionId={}, jobCode={}, errorType={}",
                     command.executionId(), command.jobCode(), cause.getClass().getName());
+        } catch (RejectedExecutionException ex) {
+            eventBuilder.status(ExecutionResultStatus.FAILED)
+                    .resultCode("SUBMISSION_REJECTED")
+                    .errorMessage("Scheduler virtual thread task was rejected");
+            log.warn("Scheduler execution was rejected, executionId={}, jobCode={}",
+                    command.executionId(), command.jobCode());
+        } catch (RuntimeException ex) {
+            eventBuilder.status(ExecutionResultStatus.FAILED)
+                    .resultCode(ex.getClass().getSimpleName())
+                    .errorMessage(DesensitizeUtil.sanitizeErrorMessage(ex.getMessage(),
+                            Math.max(64, properties.getExecutor().getMaxErrorMessageLength())));
+            log.error("Scheduler execution preparation failed, executionId={}, jobCode={}, errorType={}",
+                    command.executionId(), command.jobCode(), ex.getClass().getName());
         }
         JobExecutionResultEvent event = eventBuilder.finishedAt(Instant.now()).build();
         resultReporter.report(event);
