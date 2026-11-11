@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,7 +37,8 @@ class MongoServicePaginationTest {
         when(collection.find(any(Document.class))).thenReturn(iterable);
         when(iterable.skip(anyInt())).thenReturn(iterable);
         when(iterable.limit(anyInt())).thenReturn(iterable);
-        when(iterable.into(any(ArrayList.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        doAnswer(invocation -> invocation.getArgument(0))
+                .when(iterable).into(any(ArrayList.class));
 
         PageInfo<Document> page = new MongoService<Document>(template)
                 .findPage("audit", 1, 100);
