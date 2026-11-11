@@ -5,6 +5,7 @@ import java.time.ZoneId;
 import org.springframework.stereotype.Indexed;
 
 import com.peach.rocket.outbox.MqOutboxEvent;
+import com.peach.rocket.outbox.MqOutboxClaim;
 import com.peach.rocket.outbox.MqOutboxStatus;
 import com.peach.rocket.outbox.MqOutboxStore;
 import java.sql.ResultSet;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
+import java.util.Objects;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -38,7 +40,6 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
                     + "RETRY_COUNT,NEXT_RETRY_TIME,CREATED_AT,UPDATED_AT) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
 
     private final JdbcTemplate jdbcTemplate;
-    private final String claimantId;
 
     /**
      * 创建 JDBC outbox 存储。
@@ -46,8 +47,7 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
      * @param jdbcTemplate JDBC 操作模板。
      */
     public SchedulerJdbcMqOutboxStore(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.claimantId = "scheduler-outbox-" + UUID.randomUUID().toString();
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
     }
 
     /**
@@ -75,23 +75,88 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
      */
     @Override
     public List<MqOutboxEvent> findPending(int batchSize) {
+        return claimPending(batchSize).stream().map(MqOutboxClaim::event).toList();
+    }
+
+    /**
+     * 使用每批唯一认领标识领取并读取本批消息，避免重复读取同进程尚未完成的旧批次。
+     *
+     * @param batchSize 最大批量大小
+     * @return 本批次消息与认领令牌
+     */
+    @Override
+    public List<MqOutboxClaim> claimPending(int batchSize) {
         int boundedBatch = Math.clamp(batchSize, 1, MAX_BATCH_SIZE);
         recoverStaleClaims();
+        String batchClaimToken = "scheduler-outbox-" + UUID.randomUUID();
         jdbcTemplate.update(
                 "UPDATE MQ_OUTBOX_EVENT SET STATUS=?,CLAIMED_BY=?,CLAIMED_AT=NOW(3),UPDATED_AT=NOW(3) "
                         + "WHERE STATUS IN (?,?) AND NEXT_RETRY_TIME<=NOW(3) "
                         + "ORDER BY UPDATED_AT ASC LIMIT ?",
                 MqOutboxStatus.SENDING.name(),
-                claimantId,
+                batchClaimToken,
                 MqOutboxStatus.INIT.name(),
                 MqOutboxStatus.RETRY.name(),
                 boundedBatch);
-        return jdbcTemplate.query(
+        List<MqOutboxEvent> events = jdbcTemplate.query(
                 "SELECT MESSAGE_ID,TOPIC,TAG,BUSINESS_KEY,PAYLOAD,STATUS,RETRY_COUNT,CREATED_AT,UPDATED_AT "
-                        + "FROM MQ_OUTBOX_EVENT WHERE STATUS=? AND CLAIMED_BY=? ORDER BY CLAIMED_AT ASC",
+                        + "FROM MQ_OUTBOX_EVENT WHERE STATUS=? AND CLAIMED_BY=? "
+                        + "ORDER BY CLAIMED_AT ASC LIMIT ?",
                 new OutboxRowMapper(),
                 MqOutboxStatus.SENDING.name(),
-                claimantId);
+                batchClaimToken,
+                boundedBatch);
+        return events.stream().map(event -> new MqOutboxClaim(event, batchClaimToken)).toList();
+    }
+
+    /**
+     * 只允许实际领取本消息的执行者完成状态变更，拒绝旧租约持有者覆盖新认领。
+     *
+     * @param claim 当前领取快照
+     */
+    @Override
+    public void markSent(MqOutboxClaim claim) {
+        String token = requireClaimToken(claim);
+        int updated = jdbcTemplate.update(
+                "UPDATE MQ_OUTBOX_EVENT SET STATUS=?,SENT_AT=NOW(3),CLAIMED_BY=NULL,"
+                        + "CLAIMED_AT=NULL,UPDATED_AT=NOW(3) "
+                        + "WHERE MESSAGE_ID=? AND STATUS=? AND CLAIMED_BY=?",
+                MqOutboxStatus.SENT.name(), claim.event().messageId(),
+                MqOutboxStatus.SENDING.name(), token);
+        if (updated != 1) {
+            throw new IllegalStateException("Outbox claim is stale when marking sent");
+        }
+    }
+
+    /**
+     * 当前认领失败时，只有令牌仍有效才更新重试状态。
+     */
+    @Override
+    public void markFailed(MqOutboxClaim claim) {
+        String token = requireClaimToken(claim);
+        int updated = jdbcTemplate.update(
+                "UPDATE MQ_OUTBOX_EVENT SET "
+                        + "STATUS=CASE WHEN RETRY_COUNT+1>=? THEN ? ELSE ? END,"
+                        + "RETRY_COUNT=RETRY_COUNT+1,"
+                        + "NEXT_RETRY_TIME=DATE_ADD(NOW(3), INTERVAL LEAST(300, POW(2,RETRY_COUNT)) SECOND),"
+                        + "CLAIMED_BY=NULL,CLAIMED_AT=NULL,UPDATED_AT=NOW(3) "
+                        + "WHERE MESSAGE_ID=? AND STATUS=? AND CLAIMED_BY=?",
+                MAX_RETRY_COUNT,
+                MqOutboxStatus.FAILED.name(),
+                MqOutboxStatus.RETRY.name(),
+                claim.event().messageId(), MqOutboxStatus.SENDING.name(), token);
+        if (updated != 1) {
+            throw new IllegalStateException("Outbox claim is stale when marking failed");
+        }
+    }
+
+    private static String requireClaimToken(MqOutboxClaim claim) {
+        Objects.requireNonNull(claim, "claim");
+        String token = claim.claimToken();
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("JDBC Outbox requires a nonblank claim token");
+        }
+        return token;
     }
 
     /**
@@ -145,10 +210,12 @@ public class SchedulerJdbcMqOutboxStore implements MqOutboxStore {
     private void recoverStaleClaims() {
         jdbcTemplate.update(
                 "UPDATE MQ_OUTBOX_EVENT SET STATUS=?,CLAIMED_BY=NULL,CLAIMED_AT=NULL,NEXT_RETRY_TIME=NOW(3),"
-                        + "UPDATED_AT=NOW(3) WHERE STATUS=? AND CLAIMED_AT<DATE_SUB(NOW(3), INTERVAL ? MINUTE)",
+                        + "UPDATED_AT=NOW(3) WHERE STATUS=? AND CLAIMED_AT<DATE_SUB(NOW(3), INTERVAL ? MINUTE) "
+                        + "ORDER BY CLAIMED_AT ASC LIMIT ?",
                 MqOutboxStatus.RETRY.name(),
                 MqOutboxStatus.SENDING.name(),
-                CLAIM_TIMEOUT_MINUTES);
+                CLAIM_TIMEOUT_MINUTES,
+                MAX_BATCH_SIZE);
     }
 
     /**
