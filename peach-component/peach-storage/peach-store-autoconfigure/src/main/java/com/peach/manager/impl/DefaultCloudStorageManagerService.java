@@ -48,6 +48,8 @@ public class DefaultCloudStorageManagerService implements CloudStorageManagerSer
 
     public static final String DIRECTORY_PLACEHOLDER_FILE = ".peach-dir";
 
+    private static final int DIRECTORY_DELETE_BATCH_SIZE = 1000;
+
 private final RuntimeStorageProviderFactory runtimeStorageProviderFactory;
 
 
@@ -224,7 +226,7 @@ private final RuntimeStorageProviderFactory runtimeStorageProviderFactory;
      * 实现策略：
      * <ul>
      *   <li><b>本地存储</b>：递归遍历目录树，按逆序删除所有文件和子目录</li>
-     *   <li><b>云存储</b>：分页递归列出所有子对象，然后批量删除，并清理占位符文件</li>
+     *   <li><b>云存储</b>：逐页有界批量删除子对象，并清理目录占位符文件</li>
      * </ul>
      *
      * @param providerConfig 存储提供者配置
@@ -243,43 +245,52 @@ private final RuntimeStorageProviderFactory runtimeStorageProviderFactory;
         try (StorageProvider storageProvider = runtimeStorageProviderFactory.create(providerConfig)) {
             // Provider 的前缀查询可能匹配同名相邻目录；删除前必须再次校验目录边界。
             String directoryPrefix = relativePath + "/";
-            List<String> objectKeys = new ArrayList<>();
             String continuationToken = null;
-            // 分页递归列出目录下所有对象
+            // 每页完成删除再读取下一页，避免把整棵目录的对象键加载到堆中。
             do {
                 ListObjectsRequest request = ListObjectsRequest.builder()
                         .prefix(relativePath)
                         .recursive(true)
-                        .maxKeys(1000)  // 每页最多1000个对象
+                        .maxKeys(DIRECTORY_DELETE_BATCH_SIZE)
                         .continuationToken(continuationToken)
                         .build();
                 ListObjectsResult result = storageProvider.list(request);
+                if (result == null || result.getItems() == null) {
+                    throw new IllegalStateException("Storage provider returned an invalid directory page");
+                }
+                List<String> pageKeys = new ArrayList<>();
                 for (ObjectInfo item : result.getItems()) {
-                    if (item == null || item.getObjectKey() == null) {
-                        continue;
-                    }
-                    if (item.getObjectKey().startsWith(directoryPrefix)) {
-                        objectKeys.add(item.getObjectKey());
+                    if (item != null && item.getObjectKey() != null
+                            && item.getObjectKey().startsWith(directoryPrefix)) {
+                        pageKeys.add(item.getObjectKey());
+                        if (pageKeys.size() == DIRECTORY_DELETE_BATCH_SIZE) {
+                            storageProvider.batchDelete(BatchDeleteObjectsRequest.builder()
+                                    .objectKeys(pageKeys)
+                                    .build());
+                            pageKeys.clear();
+                        }
                     }
                 }
-                continuationToken = result.isTruncated() ? result.getNextContinuationToken() : null;
-            } while (continuationToken != null);
+                if (!pageKeys.isEmpty()) {
+                    storageProvider.batchDelete(BatchDeleteObjectsRequest.builder()
+                            .objectKeys(pageKeys)
+                            .build());
+                }
+                if (!result.isTruncated()) {
+                    break;
+                }
+                String nextToken = result.getNextContinuationToken();
+                if (nextToken == null || nextToken.isBlank() || nextToken.equals(continuationToken)) {
+                    throw new IllegalStateException("Storage provider did not advance directory pagination");
+                }
+                continuationToken = nextToken;
+            } while (true);
 
-            // 如果存在目录占位符文件，一并删除
+            // 部分服务端不返回逻辑目录占位符，单独兜底删除。
             String placeholderKey = StoragePathUtil.joinObjectKey(relativePath, DIRECTORY_PLACEHOLDER_FILE);
             if (storageProvider.exists(placeholderKey)) {
-                objectKeys.add(placeholderKey);
+                storageProvider.delete(DeleteObjectRequest.builder().objectKey(placeholderKey).build());
             }
-
-            // 没有对象则直接返回
-            if (objectKeys.isEmpty()) {
-                return;
-            }
-
-            // 批量删除所有对象
-            storageProvider.batchDelete(BatchDeleteObjectsRequest.builder()
-                    .objectKeys(objectKeys)
-                    .build());
         } catch (Exception ex) {
             throw new RuntimeException("Failed to delete storage directory", ex);
         }
