@@ -1,6 +1,12 @@
 {
   "properties": [
     {
+      "name": "peach.redis.mode",
+      "type": "java.lang.String",
+      "description": "Redis 部署模式，可选择 standalone（单机）、sentinel（哨兵）或 cluster（集群）。",
+      "defaultValue": "standalone"
+    },
+    {
       "name": "peach.redis.tool.scan.max-results",
       "type": "java.lang.Integer",
       "sourceType": "com.peach.redis.common.tool.RedisDaoImpl",
@@ -14,5 +20,6 @@
       "description": "单次 Redis SCAN 的本地遍历时间预算，单位毫秒；包含 Cluster 遍历",
       "defaultValue": 10000
     }
-  ]
+  ],
+  "hints": []
 }

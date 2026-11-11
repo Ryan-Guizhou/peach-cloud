@@ -1,0 +1,254 @@
+{
+  "properties": [
+    {
+      "name": "peach.rocket.app-name",
+      "type": "java.lang.String",
+      "description": "RocketMQ 客户端应用名称，用于消息生产者与消费者标识。",
+      "defaultValue": "application"
+    },
+    {
+      "name": "peach.rocket.consumer",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Consumer",
+      "description": "RocketMQ 消费者线程、幂等与动态注册相关参数。"
+    },
+    {
+      "name": "peach.rocket.consumer.consume-thread-max",
+      "type": "java.lang.Integer",
+      "description": "RocketMQ 消费线程池允许的最大工作线程数。",
+      "defaultValue": 20
+    },
+    {
+      "name": "peach.rocket.consumer.consume-thread-min",
+      "type": "java.lang.Integer",
+      "description": "RocketMQ 消费线程池应维持的最小工作线程数。",
+      "defaultValue": 1
+    },
+    {
+      "name": "peach.rocket.consumer.dynamic-register",
+      "type": "java.lang.Boolean",
+      "description": "是否允许在运行期间动态注册 RocketMQ 消费者。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.consumer.enable-idempotent",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 RocketMQ 消息消费幂等保护。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.consumer.idempotent-expire",
+      "type": "java.time.Duration",
+      "description": "消息消费幂等记录的有效期限（Duration）。",
+      "defaultValue": "24h"
+    },
+    {
+      "name": "peach.rocket.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 RocketMQ 消息组件自动配置。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.namespace",
+      "type": "java.lang.String",
+      "description": "RocketMQ 消息命名空间，用于隔离不同环境或业务。",
+      "defaultValue": "default"
+    },
+    {
+      "name": "peach.rocket.naming",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Naming",
+      "description": "RocketMQ Topic 和消费组名称的生成规则。"
+    },
+    {
+      "name": "peach.rocket.naming.auto-prefix-env",
+      "type": "java.lang.Boolean",
+      "description": "是否在 Topic 和消费组名称前自动添加环境标识。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.naming.group-prefix",
+      "type": "java.lang.String",
+      "description": "RocketMQ 消费组名称统一前缀。",
+      "defaultValue": "cg"
+    },
+    {
+      "name": "peach.rocket.naming.topic-prefix",
+      "type": "java.lang.String",
+      "description": "RocketMQ Topic 名称统一前缀。",
+      "defaultValue": "biz"
+    },
+    {
+      "name": "peach.rocket.naming.topic-separator",
+      "type": "java.lang.String",
+      "description": "组成 RocketMQ Topic 名称时使用的分隔符。",
+      "defaultValue": "-"
+    },
+    {
+      "name": "peach.rocket.outbox",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Outbox",
+      "description": "RocketMQ Outbox 可靠发送及本地缓存参数。"
+    },
+    {
+      "name": "peach.rocket.outbox.batch-size",
+      "type": "java.lang.Integer",
+      "description": "每次扫描 Outbox 待发送消息的最大批量。",
+      "defaultValue": 50
+    },
+    {
+      "name": "peach.rocket.outbox.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 RocketMQ Outbox 可靠发送功能。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.rocket.outbox.in-memory-lease",
+      "type": "java.time.Duration",
+      "description": "内存 Outbox 消息被认领后持有租约的最长时间（Duration）。",
+      "defaultValue": "5m"
+    },
+    {
+      "name": "peach.rocket.outbox.in-memory-max-entries",
+      "type": "java.lang.Integer",
+      "description": "内存 Outbox 允许保留的最大消息条目数。",
+      "defaultValue": 1024
+    },
+    {
+      "name": "peach.rocket.outbox.in-memory-max-payload-bytes",
+      "type": "java.lang.Integer",
+      "description": "单条内存 Outbox 消息允许的最大正文大小，单位字节。",
+      "defaultValue": 65536
+    },
+    {
+      "name": "peach.rocket.outbox.in-memory-retention",
+      "type": "java.time.Duration",
+      "description": "内存 Outbox 消息记录的保留时间（Duration）。",
+      "defaultValue": "24h"
+    },
+    {
+      "name": "peach.rocket.outbox.require-durable",
+      "type": "java.lang.Boolean",
+      "description": "是否要求 Outbox 必须采用持久化存储实现；不满足时阻止使用非持久化降级方案。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.rocket.outbox.scan-interval-ms",
+      "type": "java.lang.Long",
+      "description": "Outbox 待发送消息的周期扫描间隔，单位毫秒。",
+      "defaultValue": 2000
+    },
+    {
+      "name": "peach.rocket.producer",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Producer",
+      "description": "RocketMQ 生产者发送与超时配置。"
+    },
+    {
+      "name": "peach.rocket.producer.default-timeout",
+      "type": "java.time.Duration",
+      "description": "RocketMQ 生产者默认消息发送超时时间（Duration）。",
+      "defaultValue": "3s"
+    },
+    {
+      "name": "peach.rocket.security",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Security",
+      "description": "RocketMQ 消息载荷加密、密钥与安全策略配置。"
+    },
+    {
+      "name": "peach.rocket.security.algorithm",
+      "type": "java.lang.String",
+      "description": "消息载荷加密算法，例如 AES_GCM。",
+      "defaultValue": "AES_GCM"
+    },
+    {
+      "name": "peach.rocket.security.base64-key",
+      "type": "java.lang.Boolean",
+      "description": "是否将配置的消息加密密钥按 Base64 解码后使用。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.rocket.security.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 RocketMQ 消息安全增强功能。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.rocket.security.encrypt-payload",
+      "type": "java.lang.Boolean",
+      "description": "是否加密 RocketMQ 消息正文。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.rocket.security.encrypt-topics",
+      "type": "java.util.List",
+      "description": "需要启用消息载荷加密的 Topic 名称列表。"
+    },
+    {
+      "name": "peach.rocket.security.key",
+      "type": "java.lang.String",
+      "description": "消息加密密钥，建议通过密钥管理系统或环境变量安全注入，禁止在源码中保存明文。",
+      "defaultValue": ""
+    },
+    {
+      "name": "peach.rocket.security.key-id",
+      "type": "java.lang.String",
+      "description": "消息加密密钥标识，用于选择当前使用的密钥。",
+      "defaultValue": "default"
+    },
+    {
+      "name": "peach.rocket.topic",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Topic",
+      "description": "RocketMQ Topic 创建、维护及队列分配配置。"
+    },
+    {
+      "name": "peach.rocket.topic.auto-create",
+      "type": "java.lang.Boolean",
+      "description": "是否允许组件自动创建 RocketMQ Topic。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.rocket.topic.include-consumer-topics",
+      "type": "java.lang.Boolean",
+      "description": "自动发现 Topic 时是否包含消费者订阅的 Topic。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.topic.include-transaction-topics",
+      "type": "java.lang.Boolean",
+      "description": "自动发现 Topic 时是否包含事务消息相关的 Topic。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.topic.read-queue-nums",
+      "type": "java.lang.Integer",
+      "description": "自动创建 RocketMQ Topic 时配置的读取队列数。",
+      "defaultValue": 4
+    },
+    {
+      "name": "peach.rocket.topic.topics",
+      "type": "java.util.List",
+      "description": "需要显式管理或自动创建的 RocketMQ Topic 名称列表。"
+    },
+    {
+      "name": "peach.rocket.topic.write-queue-nums",
+      "type": "java.lang.Integer",
+      "description": "自动创建 RocketMQ Topic 时配置的写入队列数。",
+      "defaultValue": 4
+    },
+    {
+      "name": "peach.rocket.transaction",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Transaction",
+      "description": "RocketMQ 事务消息生产者配置。"
+    },
+    {
+      "name": "peach.rocket.transaction.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 RocketMQ 事务消息功能。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.transaction.producer-group",
+      "type": "java.lang.String",
+      "description": "RocketMQ 事务消息生产者组名称。",
+      "defaultValue": "peach-rocket-transaction-producer"
+    }
+  ],
+  "hints": []
+}

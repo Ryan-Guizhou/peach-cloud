@@ -1,0 +1,90 @@
+{
+  "properties": [
+    {
+      "name": "peach.redis.database",
+      "type": "java.lang.Integer",
+      "description": "Redis 独立数据库编号；Cluster 模式不支持按数据库编号切换。",
+      "defaultValue": 0
+    },
+    {
+      "name": "peach.redis.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 Peach Redis 客户端自动配置。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.redis.host",
+      "type": "java.lang.String",
+      "description": "Redis 服务地址或节点地址列表，具体格式取决于连接模式。"
+    },
+    {
+      "name": "peach.redis.jedis",
+      "type": "com.peach.redis.autoconfigure.PeachRedisProperties$JedisPool",
+      "description": "Jedis 客户端连接池配置。"
+    },
+    {
+      "name": "peach.redis.jedis.max-idle",
+      "type": "java.lang.Integer",
+      "description": "Jedis 连接池允许保留的最大空闲连接数。",
+      "defaultValue": 10
+    },
+    {
+      "name": "peach.redis.jedis.max-total",
+      "type": "java.lang.Integer",
+      "description": "Jedis 连接池允许创建的最大连接数。",
+      "defaultValue": 128
+    },
+    {
+      "name": "peach.redis.jedis.max-wait-millis",
+      "type": "java.lang.Long",
+      "description": "Jedis 连接池获取连接的最长等待时间，单位毫秒。",
+      "defaultValue": 60000
+    },
+    {
+      "name": "peach.redis.jedis.min-idle",
+      "type": "java.lang.Integer",
+      "description": "Jedis 连接池需维持的最小空闲连接数。",
+      "defaultValue": 1
+    },
+    {
+      "name": "peach.redis.mode",
+      "type": "java.lang.String",
+      "description": "Redis 部署模式，可选择 standalone（单机）、sentinel（哨兵）或 cluster（集群）。",
+      "defaultValue": "standalone"
+    },
+    {
+      "name": "peach.redis.password",
+      "type": "java.lang.String",
+      "description": "Redis 认证密码，建议通过环境变量或配置中心安全注入，禁止在源码中明文保存。",
+      "defaultValue": ""
+    },
+    {
+      "name": "peach.redis.sentinel-master",
+      "type": "java.lang.String",
+      "description": "Sentinel 监控的 Redis 主节点逻辑名称。",
+      "defaultValue": "master"
+    },
+    {
+      "name": "peach.redis.sentinel-password",
+      "type": "java.lang.String",
+      "description": "Redis Sentinel 认证密码，应从安全配置源注入。"
+    },
+    {
+      "name": "peach.redis.sentinel-username",
+      "type": "java.lang.String",
+      "description": "Redis Sentinel ACL 认证用户名。"
+    },
+    {
+      "name": "peach.redis.ssl-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否通过 TLS/SSL 加密 Redis 客户端连接。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.redis.username",
+      "type": "java.lang.String",
+      "description": "Redis ACL 认证用户名。"
+    }
+  ],
+  "hints": []
+}

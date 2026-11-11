@@ -11,5 +11,49 @@
       "sourceType": "com.peach.observability.config.PeachObservabilityProperties",
       "sourceMethod": "getRequestId()"
     }
-  ]
+  ],
+  "properties": [
+    {
+      "name": "peach.observability.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 Peach Observability 可观测性自动配置。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.observability.request-id",
+      "type": "com.peach.observability.config.PeachObservabilityProperties$RequestId",
+      "description": "HTTP 请求 ID 的生成、传递和校验配置。"
+    },
+    {
+      "name": "peach.observability.request-id.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用请求 ID 的生成与传递功能。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.observability.request-id.header-name",
+      "type": "java.lang.String",
+      "description": "用于传递请求 ID 的 HTTP 请求头名称。",
+      "defaultValue": "X-Request-Id"
+    },
+    {
+      "name": "peach.observability.request-id.trust-incoming",
+      "type": "java.lang.Boolean",
+      "description": "是否接受并使用满足校验要求的上游请求 ID。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.observability.request-id.min-length",
+      "type": "java.lang.Integer",
+      "description": "有效请求 ID 允许的最小字符长度。",
+      "defaultValue": 8
+    },
+    {
+      "name": "peach.observability.request-id.max-length",
+      "type": "java.lang.Integer",
+      "description": "有效请求 ID 允许的最大字符长度。",
+      "defaultValue": 64
+    }
+  ],
+  "hints": []
 }

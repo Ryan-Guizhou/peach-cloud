@@ -1,0 +1,88 @@
+{
+  "properties": [
+    {
+      "name": "peach.storage.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用对象存储自动配置。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.storage.primary",
+      "type": "java.lang.String",
+      "description": "默认使用的存储提供者标识，应与 providers 中的配置键对应。"
+    },
+    {
+      "name": "peach.storage.providers",
+      "type": "java.util.Map",
+      "description": "按名称配置多个存储提供者，可分别指定服务类型、地址和凭据。"
+    },
+    {
+      "name": "peach.storage.providers.*.name",
+      "type": "java.lang.String",
+      "description": "存储提供者的名称，用于显示和识别。"
+    },
+    {
+      "name": "peach.storage.providers.*.type",
+      "type": "com.peach.enums.StorageType",
+      "description": "存储提供者类型，例如 S3 兼容服务或其他云厂商对象存储。"
+    },
+    {
+      "name": "peach.storage.providers.*.bucket-name",
+      "type": "java.lang.String",
+      "description": "对象存储桶名称。"
+    },
+    {
+      "name": "peach.storage.providers.*.prefix",
+      "type": "java.lang.String",
+      "description": "上传对象键使用的路径前缀。"
+    },
+    {
+      "name": "peach.storage.providers.*.endpoint",
+      "type": "java.lang.String",
+      "description": "对象存储服务的访问端点地址。"
+    },
+    {
+      "name": "peach.storage.providers.*.region",
+      "type": "java.lang.String",
+      "description": "对象存储服务所在区域标识。"
+    },
+    {
+      "name": "peach.storage.providers.*.access-key",
+      "type": "java.lang.String",
+      "description": "对象存储访问凭据的 Access Key，建议从环境变量或安全配置中心注入，禁止写入源码。"
+    },
+    {
+      "name": "peach.storage.providers.*.secret-key",
+      "type": "java.lang.String",
+      "description": "对象存储访问凭据的 Secret Key，建议从环境变量或安全配置中心注入，禁止写入源码。"
+    },
+    {
+      "name": "peach.storage.providers.*.root-path",
+      "type": "java.lang.String",
+      "description": "本地文件系统或指定存储实现使用的根目录路径。"
+    },
+    {
+      "name": "peach.storage.providers.*.domain",
+      "type": "java.lang.String",
+      "description": "对外访问文件时使用的自定义域名或访问域名。"
+    },
+    {
+      "name": "peach.storage.providers.*.path-style-access",
+      "type": "java.lang.Boolean",
+      "description": "访问 S3 兼容存储时是否使用路径式寻址。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.storage.providers.*.public-read",
+      "type": "java.lang.Boolean",
+      "description": "是否允许上传对象被公开读取；请结合存储桶访问控制策略使用。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.storage.providers.*.extra-properties",
+      "type": "java.util.Map",
+      "description": "当前存储提供者的扩展参数集合，具体键由对应实现解析。"
+    }
+  ],
+  "hints": []
+}

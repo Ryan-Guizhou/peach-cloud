@@ -1,0 +1,215 @@
+{
+  "properties": [
+    {
+      "name": "peach.openfeign.client",
+      "type": "com.peach.openfeign.config.PeachOpenfeignProperties$ClientOptions",
+      "description": "OpenFeign HTTP 客户端与连接参数配置。"
+    },
+    {
+      "name": "peach.openfeign.client.connect-timeout-millis",
+      "type": "java.lang.Integer",
+      "description": "HTTP 客户端连接超时时间，单位毫秒。",
+      "defaultValue": 3000
+    },
+    {
+      "name": "peach.openfeign.client.follow-redirects",
+      "type": "java.lang.Boolean",
+      "description": "HTTP 客户端是否自动跟随重定向响应。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.client.named",
+      "type": "java.util.Map",
+      "description": "按 Feign 客户端名称配置独立的连接和读取超时。"
+    },
+    {
+      "name": "peach.openfeign.client.named.*.connect-timeout-millis",
+      "type": "java.lang.Integer",
+      "description": "指定 Feign 客户端的连接超时时间，单位毫秒。"
+    },
+    {
+      "name": "peach.openfeign.client.named.*.read-timeout-millis",
+      "type": "java.lang.Integer",
+      "description": "指定 Feign 客户端的响应读取超时时间，单位毫秒。"
+    },
+    {
+      "name": "peach.openfeign.client.okhttp-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否使用 OkHttp 作为 Feign 底层 HTTP 客户端。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.client.read-timeout-millis",
+      "type": "java.lang.Integer",
+      "description": "HTTP 客户端响应读取超时时间，单位毫秒。",
+      "defaultValue": 10000
+    },
+    {
+      "name": "peach.openfeign.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 Peach OpenFeign 增强功能。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.exception",
+      "type": "com.peach.openfeign.config.PeachOpenfeignProperties$ExceptionOptions",
+      "description": "远端异常信息透出与异常日志策略。"
+    },
+    {
+      "name": "peach.openfeign.exception.expose-remote-message",
+      "type": "java.lang.Boolean",
+      "description": "是否将远端服务返回的异常消息暴露给调用方，生产环境需评估敏感信息泄露风险。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.openfeign.exception.log-stacktrace-for4xx",
+      "type": "java.lang.Boolean",
+      "description": "是否记录 HTTP 4xx 客户端错误响应对应的异常堆栈。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.openfeign.exception.log-stacktrace-for5xx",
+      "type": "java.lang.Boolean",
+      "description": "是否记录 HTTP 5xx 服务端错误响应对应的异常堆栈。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.fallback",
+      "type": "com.peach.openfeign.config.PeachOpenfeignProperties$FallbackOptions",
+      "description": "Feign 降级实现校验及缺失处理策略。"
+    },
+    {
+      "name": "peach.openfeign.fallback.fail-fast-if-missing",
+      "type": "java.lang.Boolean",
+      "description": "缺少所需 Feign 降级实现时，是否在启动阶段快速失败。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.fallback.production-profiles",
+      "type": "java.util.List",
+      "description": "需要强制执行降级实现校验的生产环境 Profile 名称列表。"
+    },
+    {
+      "name": "peach.openfeign.fallback.validate-on-startup",
+      "type": "java.lang.Boolean",
+      "description": "是否在应用启动时校验 Feign 降级实现。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.relay-authorization-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否向下游服务透传当前请求的 Authorization 请求头。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.request-id-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否向下游请求传递当前请求 ID。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.retry",
+      "type": "com.peach.openfeign.config.PeachOpenfeignProperties$RetryOptions",
+      "description": "Feign 失败重试的次数、间隔、触发条件及退避策略。"
+    },
+    {
+      "name": "peach.openfeign.retry.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 Feign 请求失败重试。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.retry.exceptions",
+      "type": "java.util.List",
+      "description": "允许触发重试的异常类型列表。"
+    },
+    {
+      "name": "peach.openfeign.retry.initial-interval-millis",
+      "type": "java.lang.Long",
+      "description": "首次重试前的等待间隔，单位毫秒。",
+      "defaultValue": 100
+    },
+    {
+      "name": "peach.openfeign.retry.max-attempts",
+      "type": "java.lang.Integer",
+      "description": "单次请求允许的最大尝试次数（包含首次请求）。",
+      "defaultValue": 2
+    },
+    {
+      "name": "peach.openfeign.retry.max-interval-millis",
+      "type": "java.lang.Long",
+      "description": "重试退避等待间隔的最大值，单位毫秒。",
+      "defaultValue": 300
+    },
+    {
+      "name": "peach.openfeign.retry.methods",
+      "type": "java.util.List",
+      "description": "允许自动重试的 HTTP 请求方法列表，需避免对非幂等操作重复提交。"
+    },
+    {
+      "name": "peach.openfeign.retry.multiplier",
+      "type": "java.lang.Double",
+      "description": "重试退避间隔的增长倍率。",
+      "defaultValue": 2
+    },
+    {
+      "name": "peach.openfeign.retry.statuses",
+      "type": "java.util.List",
+      "description": "允许触发重试的 HTTP 响应状态码列表。"
+    },
+    {
+      "name": "peach.openfeign.same-token-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用同一登录 Token 的跨服务传递能力。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.same-token-fail-fast",
+      "type": "java.lang.Boolean",
+      "description": "同一 Token 透传所需信息缺失时是否快速失败。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.openfeign.sentinel",
+      "type": "com.peach.openfeign.config.PeachOpenfeignProperties$SentinelOptions",
+      "description": "Feign 调用的 Sentinel 限流与熔断规则配置。"
+    },
+    {
+      "name": "peach.openfeign.sentinel.datasource-type",
+      "type": "java.lang.String",
+      "description": "Sentinel 规则的数据源类型，例如 Nacos。",
+      "defaultValue": "nacos"
+    },
+    {
+      "name": "peach.openfeign.sentinel.degrade-data-id",
+      "type": "java.lang.String",
+      "description": "Sentinel 熔断降级规则在配置中心中的 Data ID。",
+      "defaultValue": "peach-openfeign-sentinel-degrade-rules"
+    },
+    {
+      "name": "peach.openfeign.sentinel.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否为 Feign 客户端启用 Sentinel 防护能力。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.openfeign.sentinel.flow-data-id",
+      "type": "java.lang.String",
+      "description": "Sentinel 流量控制规则在配置中心中的 Data ID。",
+      "defaultValue": "peach-openfeign-sentinel-flow-rules"
+    },
+    {
+      "name": "peach.openfeign.sentinel.group-id",
+      "type": "java.lang.String",
+      "description": "Sentinel 规则在配置中心中的 Group ID。",
+      "defaultValue": "DEFAULT_GROUP"
+    },
+    {
+      "name": "peach.openfeign.upload-max-bytes",
+      "type": "java.lang.Long",
+      "description": "经 Feign 上传时允许传输的最大请求体大小，单位字节。",
+      "defaultValue": 10485760
+    }
+  ],
+  "hints": []
+}

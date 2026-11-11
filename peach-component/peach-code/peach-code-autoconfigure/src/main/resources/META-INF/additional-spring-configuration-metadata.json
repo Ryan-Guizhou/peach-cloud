@@ -1,0 +1,23 @@
+{
+  "properties": [
+    {
+      "name": "peach.code.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用代码生成组件。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.code.redis-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否使用 Redis 存储代码生成相关数据。",
+      "defaultValue": true
+    },
+    {
+      "name": "peach.code.redis-key-prefix",
+      "type": "java.lang.String",
+      "description": "代码生成数据在 Redis 中使用的键前缀。",
+      "defaultValue": "peach:code:generate:"
+    }
+  ],
+  "hints": []
+}
