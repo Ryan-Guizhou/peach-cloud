@@ -29,6 +29,8 @@ Redis Cluster requires database `0`; invalid values fail during startup. Both Na
 
 **MultiCache L1 invalidation race:** each Pub/Sub invalidation advances a local revision; in-flight Redis GET/PTTL results populate Caffeine only if the revision is unchanged. On a detected race, reads re-fetch L2 instead of returning the invalidated value. Pub/Sub remains an eventually consistent invalidation channel and does not replace domain version checks or database transactions.
 
+**Dynamic cache instance cap:** `peach.multicache.max-cache-instances` defaults to `256` and limits the number of named Caffeine/L1 caches created per manager. A new name beyond the limit fails explicitly instead of retaining unbounded cache objects. `getCacheNames()` now includes instantiated dynamic names, so `clearAll()` can clear them. Keep cache names stable and put user-specific values in cache keys.
+
 ## Complete capability matrix
 
 | Module / starter | Main API | Capabilities | Use cases | Current limitation |
