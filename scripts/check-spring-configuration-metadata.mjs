@@ -1,6 +1,6 @@
 
-import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
 function kebab(name){return name.replace(/([A-Z])([A-Z][a-z])/g,"$1-$2").replace(/([a-z0-9])([A-Z])/g,"$1-$2").toLowerCase();}
@@ -155,6 +155,7 @@ function checkOne(moduleDir) {
     }
     if (FIX) {
         const next = mergeMetadata(existing, configFiles);
+        mkdirSync(dirname(metaFile), { recursive: true });
         writeFileSync(metaFile, JSON.stringify(next, null, 2) + "\n", "utf8");
         return;
     }
@@ -196,8 +197,8 @@ function checkOne(moduleDir) {
 
 function findAutoconfigProjects(directory) {
     walk(directory, (file) => {
-        if (file.endsWith("/pom.xml") && file.split("/").at(-2).endsWith("-autoconfigure")) {
-            checkOne(resolve(file, ".."));
+        if (basename(file) === "pom.xml" && basename(dirname(file)).endsWith("-autoconfigure")) {
+            checkOne(dirname(file));
         }
     });
 }
