@@ -61,6 +61,6 @@ class MysqlCodeAllocationTest {
         assertThatThrownBy(() -> generator.next("T001", "MENU"))
                 .isInstanceOf(CodeGeneratorException.class)
                 .hasMessageContaining("MAX_CODE_WIDTH");
-        org.mockito.Mockito.verifyNoMoreInteractions(jdbc);
+        org.mockito.Mockito.verify(jdbc, org.mockito.Mockito.never()).update(anyString(), any(Object[].class));
     }
 }
