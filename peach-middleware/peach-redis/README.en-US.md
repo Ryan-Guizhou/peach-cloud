@@ -33,6 +33,8 @@ Redis Cluster requires database `0`; invalid values fail during startup. Both Na
 
 **Dynamic cache instance cap:** `peach.multicache.max-cache-instances` defaults to `256` and limits the number of named Caffeine/L1 caches created per manager. A new name beyond the limit fails explicitly instead of retaining unbounded cache objects. `getCacheNames()` now includes instantiated dynamic names, so `clearAll()` can clear them. Keep cache names stable and put user-specific values in cache keys.
 
+**Redis DAO failure semantics:** `RedisDaoImpl` `existsKey`, `delete`, `vSet`, `vSetUpdate`, `expire`, and `convertAndSend` now propagate network failures, invalid confirmations, and command errors rather than silently returning false or void success. Only an explicit Redis false means an absent key; `expire` has a void contract and throws on missing keys. Batch DEL no longer converts null count to zero. Deletes no longer retry an ambiguous network outcome automatically. Null acknowledgements for Pub/Sub publishing, list removal and counter increments/decrements also fail explicitly; a publish returning zero subscribers is a valid acknowledged result. Callers must handle infrastructure failures separately from cache misses and use domain-level idempotency/compensation where needed.
+
 ## Complete capability matrix
 
 | Module / starter | Main API | Capabilities | Use cases | Current limitation |
