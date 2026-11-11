@@ -3,6 +3,8 @@ package com.peach.rocket.idempotent;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * InMemoryMQ幂等存储。
@@ -13,22 +15,29 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class InMemoryMqIdempotentStore implements MqIdempotentStore {
 
+    private static final int CLEANUP_INTERVAL = 1024;
+
     private final Map<String, Record> records = new ConcurrentHashMap<String, Record>();
+
+    private final AtomicInteger attempts = new AtomicInteger();
 
     @Override
     public boolean tryStart(MqIdempotentContext context) {
-        cleanupExpired();
+        if (attempts.incrementAndGet() % CLEANUP_INTERVAL == 0) {
+            cleanupExpired();
+        }
         String key = storageKey(context);
-        Record newRecord = new Record(Status.PROCESSING, Instant.now().plus(context.expire()));
-        Record old = records.putIfAbsent(key, newRecord);
-        if (old == null) {
-            return true;
-        }
-        if (old.getExpiresAt().isBefore(Instant.now())) {
-            records.put(key, newRecord);
-            return true;
-        }
-        return false;
+        Instant now = Instant.now();
+        Record newRecord = new Record(Status.PROCESSING, now.plus(context.expire()));
+        AtomicBoolean acquired = new AtomicBoolean(false);
+        records.compute(key, (ignored, old) -> {
+            if (old == null || !old.getExpiresAt().isAfter(now)) {
+                acquired.set(true);
+                return newRecord;
+            }
+            return old;
+        });
+        return acquired.get();
     }
 
     @Override
