@@ -1,6 +1,7 @@
 package com.peach.captcha.factory;
 
 import com.peach.captcha.constant.CaptchaConst;
+import com.peach.captcha.constant.CaptchaPropertiesConst;
 import com.peach.captcha.provider.CaptchaCacheProvider;
 import com.peach.captcha.provider.CaptchaServiceProvider;
 import com.peach.captcha.service.CaptchaCacheService;
@@ -74,7 +75,7 @@ public class CaptchaServiceFactory {
      */
     public static CaptchaService getCaptchaService(Properties config) {
         Objects.requireNonNull(config, "config");
-        String cacheType = config.getProperty("captcha.cacheType", "MEMORY");
+        String cacheType = config.getProperty(CaptchaPropertiesConst.CAPTCHA_CACHETYPE, "MEMORY");
         return getCaptchaService(config, getCaptchaCacheService(cacheType));
     }
 
