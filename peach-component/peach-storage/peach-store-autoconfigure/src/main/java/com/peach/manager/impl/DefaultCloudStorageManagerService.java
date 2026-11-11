@@ -48,6 +48,8 @@ public class DefaultCloudStorageManagerService implements CloudStorageManagerSer
 
     public static final String DIRECTORY_PLACEHOLDER_FILE = ".peach-dir";
 
+    private static final int DIRECTORY_DELETE_BATCH_SIZE = 1000;
+
 private final RuntimeStorageProviderFactory runtimeStorageProviderFactory;
 
 
@@ -249,7 +251,7 @@ private final RuntimeStorageProviderFactory runtimeStorageProviderFactory;
                 ListObjectsRequest request = ListObjectsRequest.builder()
                         .prefix(relativePath)
                         .recursive(true)
-                        .maxKeys(1000)
+                        .maxKeys(DIRECTORY_DELETE_BATCH_SIZE)
                         .continuationToken(continuationToken)
                         .build();
                 ListObjectsResult result = storageProvider.list(request);
@@ -261,6 +263,12 @@ private final RuntimeStorageProviderFactory runtimeStorageProviderFactory;
                     if (item != null && item.getObjectKey() != null
                             && item.getObjectKey().startsWith(directoryPrefix)) {
                         pageKeys.add(item.getObjectKey());
+                        if (pageKeys.size() == DIRECTORY_DELETE_BATCH_SIZE) {
+                            storageProvider.batchDelete(BatchDeleteObjectsRequest.builder()
+                                    .objectKeys(pageKeys)
+                                    .build());
+                            pageKeys.clear();
+                        }
                     }
                 }
                 if (!pageKeys.isEmpty()) {
