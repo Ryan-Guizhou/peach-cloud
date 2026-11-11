@@ -51,7 +51,7 @@ public final class MemoryCacheUtil {
      */
     public static void init(int cacheMaxNumber, long second) {
         CACHE_MAX_NUMBER = cacheMaxNumber;
-        if (second > 0L) {
+        if (second > 0L && cacheCleaner == null) {
             cacheCleaner = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "thd-captcha-cache-clean"),
                     new ThreadPoolExecutor.CallerRunsPolicy());
             cacheCleaner.scheduleAtFixedRate(MemoryCacheUtil::refresh, 10, second, TimeUnit.SECONDS);
@@ -71,7 +71,7 @@ public final class MemoryCacheUtil {
     }
 
 
-    public static void set(String key, Object value, long expiresInSeconds) {
+    public static synchronized void set(String key, Object value, long expiresInSeconds) {
         if (MEMORY_CACHE.size() > CACHE_MAX_NUMBER * TWO){
             refresh();
             if (MEMORY_CACHE.size() > CACHE_MAX_NUMBER * TWO){
@@ -83,8 +83,37 @@ public final class MemoryCacheUtil {
     }
 
     public static String get(String key) {
-        Object o = MEMORY_CACHE.get(key);
-        return o == null ? null : StringUtil.getStringValue(o);
+        if (!exists(key)) {
+            return null;
+        }
+        Object value = MEMORY_CACHE.get(key);
+        return value == null ? null : StringUtil.getStringValue(value);
+    }
+
+    /**
+     * 在本进程内原子递增，并在首次创建时设置过期时间。
+     */
+    public static synchronized long incrementAndExpire(String key, long increment, long expiresInSeconds) {
+        if (increment <= 0 || expiresInSeconds <= 0) {
+            throw new IllegalArgumentException("Increment and expiration must be positive");
+        }
+        String current = get(key);
+        long updated = current == null ? increment : Math.addExact(Long.parseLong(current), increment);
+        if (current == null) {
+            set(key, String.valueOf(updated), expiresInSeconds);
+        } else {
+            MEMORY_CACHE.put(key, String.valueOf(updated));
+        }
+        return updated;
+    }
+
+    /**
+     * 原子读取并移除未过期的缓存键。
+     */
+    public static synchronized String getAndDelete(String key) {
+        String value = get(key);
+        remove(key);
+        return value;
     }
 
     /**
@@ -119,10 +148,8 @@ public final class MemoryCacheUtil {
      * 删除缓存
      * @param key 缓存key
      */
-    public static void remove(String key){
-        log.info("MemoryCacheUtil has remove key:{}",key);
+    public static synchronized void remove(String key){
         MEMORY_CACHE.remove(key);
-        log.info("MemoryCacheUtil has remove key:{}",key + KEY_SUFFIX);
         MEMORY_CACHE.remove(key + KEY_SUFFIX);
     }
 

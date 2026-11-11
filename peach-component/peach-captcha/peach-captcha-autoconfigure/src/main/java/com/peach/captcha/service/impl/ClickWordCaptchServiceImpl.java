@@ -129,15 +129,12 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
         String codeKey = KeyBuilder
                 .from(CaptchaRedisKey.RUNNING_CAPTCHA, captchaVO.getToken())
                 .getRealKey();
-        if (!existCaptchaKey(codeKey)){
+        // 原子消费一次性验证码，防止并发重复创建二次验证凭证。
+        String s = consumeCaptchaByKey(codeKey);
+        if (s == null) {
             log.warn("captcha check cache entry not found");
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
-
-        // 2. Get cached correct points / 获取缓存的正确坐标点
-        String s = getCaptchaByKey(codeKey);
-        // Delete immediately after retrieval to prevent replay / 取出后立即删除，防止重放
-        deleteCaptchKey(codeKey);
 
         List<PointVO> cachePoints = null;
         List<PointVO> userPoints = new ArrayList<>();

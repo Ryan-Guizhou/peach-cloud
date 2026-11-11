@@ -142,13 +142,8 @@ public class DefaultFrequencyLimitHandler implements FrequencyLimitHandler {
      * @param expireSeconds
      * @return
      */
-    private synchronized long incrementOrInit(String key, long expireSeconds) {
-        String value = captchCacheService.get(key);
-        if (value == null) {
-            captchCacheService.set(key, "1", expireSeconds);
-            return 1L;
-        }
-        return captchCacheService.increment(key, 1L);
+    private long incrementOrInit(String key, long expireSeconds) {
+        return captchCacheService.incrementAndExpire(key, 1L, expireSeconds);
     }
     /**
      * 获取配置值，不存在则返回默认值

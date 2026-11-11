@@ -1,8 +1,12 @@
 package com.peach.captcha.service.impl.cache;
 
 import com.peach.captcha.service.CaptchaCacheService;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 
@@ -14,6 +18,9 @@ import java.util.concurrent.TimeUnit;
  * @CreateTime 2025/12/29 17:55
  */
 public class RedisCaptchaCacheService implements CaptchaCacheService {
+
+    private static final RedisScript<Long> INCREMENT_SCRIPT = RedisScript.of(
+            new ClassPathResource("lua/captcha-increment-with-ttl.lua"), Long.class);
 
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -39,5 +46,25 @@ public class RedisCaptchaCacheService implements CaptchaCacheService {
     @Override
     public String get(String key) {
         return stringRedisTemplate.opsForValue().get(key);
+    }
+
+    @Override
+    public Long increment(String key, long val) {
+        return incrementAndExpire(key, val, 60L);
+    }
+
+    @Override
+    public Long incrementAndExpire(String key, long val, long expiresInSeconds) {
+        if (val <= 0 || expiresInSeconds <= 0) {
+            throw new IllegalArgumentException("Increment and expiration must be positive");
+        }
+        return Objects.requireNonNull(stringRedisTemplate.execute(INCREMENT_SCRIPT,
+                List.of(key), String.valueOf(val), String.valueOf(expiresInSeconds)),
+                "Redis captcha counter increment returned no result");
+    }
+
+    @Override
+    public String getAndDelete(String key) {
+        return stringRedisTemplate.opsForValue().getAndDelete(key);
     }
 }

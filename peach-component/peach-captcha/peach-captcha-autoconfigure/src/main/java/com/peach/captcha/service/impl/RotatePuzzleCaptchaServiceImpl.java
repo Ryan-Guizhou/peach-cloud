@@ -101,14 +101,11 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
                 .from(CaptchaRedisKey.RUNNING_CAPTCHA, captchaVO.getToken())
                 .getRealKey();
 
-        if (!existCaptchaKey(codeKey)) {
+        String s = consumeCaptchaByKey(codeKey);
+        if (s == null) {
             log.warn("captcha check cache entry not found");
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
-
-        String s = getCaptchaByKey(codeKey);
-        // Delete immediately after retrieval / 取出后立即删除
-        deleteCaptchKey(codeKey);
 
         if (StringUtil.isBlank(s)) {
             log.warn("captcha check cache value is empty");
@@ -170,11 +167,10 @@ public class RotatePuzzleCaptchaServiceImpl extends AbstractCacheService {
                 .from(CaptchaRedisKey.RUNNING_CAPTCHA_SECOND, captchaVO.getCaptchaVerification())
                 .getRealKey();
 
-        if (!existCaptchaKey(codeKey)){
-            log.warn("captcha secondary verification cache entry not found");
-            return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
-        }
-        deleteCaptchKey(codeKey);
+        if (consumeCaptchaByKey(codeKey) == null) {
+                log.warn("captcha secondary verification cache entry not found");
+                return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
+            }
         return Response.success();
     }
 

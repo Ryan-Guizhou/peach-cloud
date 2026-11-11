@@ -208,7 +208,7 @@ public abstract class AbstractCacheService implements CaptchaService {
         }
         if (frequencyLimitHandler != null){
             captchaVO.setClientUid(getValidateClientId(captchaVO));
-            return frequencyLimitHandler.validateGet(captchaVO);
+            return frequencyLimitHandler.validataVerify(captchaVO);
         }
         return null;
     }
@@ -265,10 +265,7 @@ public abstract class AbstractCacheService implements CaptchaService {
                     .from(CaptchaRedisKey.CAPTCHA_REQ_LIMIT,data.getClientUid(),CaptchaEnum.CaptchaOpertionType.FAIL.getCode())
                     .getRealKey();
             CaptchaCacheService cs = getCacheService(CACHE_TYPE);
-            if (!cs.exists(fails)) {
-                cs.set(fails, "1", 60);
-            }
-            cs.increment(fails, 1);
+            cs.incrementAndExpire(fails, 1L, 60L);
         }
     }
 
@@ -304,6 +301,16 @@ public abstract class AbstractCacheService implements CaptchaService {
     protected String getCaptchaByKey(String captchaKey){
         CaptchaCacheService cacheService = getCacheService(CACHE_TYPE);
         return cacheService.get(captchaKey);
+    }
+
+    /**
+     * 原子消费验证码，防止并发验证重复使用相同凭证。
+     *
+     * @param captchaKey 验证码缓存键
+     * @return 验证码内容，不存在或过期时为 null
+     */
+    protected String consumeCaptchaByKey(String captchaKey) {
+        return getCacheService(CACHE_TYPE).getAndDelete(captchaKey);
     }
 
     protected int getEnOrChLength(String s) {

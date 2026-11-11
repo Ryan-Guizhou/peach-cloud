@@ -45,9 +45,25 @@ public interface CaptchaCacheService {
      * @param val 值
      * @return 结果
      */
-    default Long increment(String key, long val){
-        return 0L;
-    }
+    Long increment(String key, long val);
+
+    /**
+     * 原子增加计数，首次写入时设置过期时间。
+     *
+     * @param key 计数键
+     * @param val 增量
+     * @param expiresInSeconds 首次写入的有效期
+     * @return 当前计数
+     */
+    Long incrementAndExpire(String key, long val, long expiresInSeconds);
+
+    /**
+     * 原子读取并移除验证码，保证凭证只消费一次。
+     *
+     * @param key 验证码键
+     * @return 已消费的值，不存在或过期返回 null
+     */
+    String getAndDelete(String key);
 
 
 }
