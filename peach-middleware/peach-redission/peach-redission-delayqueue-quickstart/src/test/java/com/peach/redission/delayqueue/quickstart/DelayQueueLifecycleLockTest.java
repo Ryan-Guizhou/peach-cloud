@@ -36,7 +36,7 @@ class DelayQueueLifecycleLockTest {
         CountDownLatch entered = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
 
-        when(redisson.getBlockingQueue("slow-topic")).thenReturn(ready);
+        when(redisson.<String>getBlockingQueue("slow-topic")).thenReturn(ready);
         when(redisson.getDelayedQueue(ready)).thenReturn(delayed);
         when(delayed.size()).thenAnswer(invocation -> {
             entered.countDown();
