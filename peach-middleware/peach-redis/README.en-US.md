@@ -47,6 +47,12 @@ Redis Cluster requires database `0`; invalid values fail during startup. Both Na
 - **Distributed locks / bloom filters / delay queues / duplicate suppression:** use [peach-redission](../peach-redission/README.en-US.md), not the Redis Tool.
 - **Gateway:** retain the standalone reactive Lettuce setup; avoid blocking Redis calls on WebFlux event-loop threads.
 
+### Collection scans and cache-clear compatibility (Issue #97)
+
+- Deprecated `RedisDao#hscan/sscan/zscan(matchKey, count)` now treats the first argument as the **actual Hash/Set/ZSet Redis key**, not a field glob. It enumerates the collection; `count` is only a cursor hint and existing `max-results` / `timeout-millis` limits apply, with explicit failures on overflow. Callers that accidentally relied on literal keys `field`, `setValue`, or `zSetValue` must pass their intended collection key.
+- `MultiCache.clear()` uses an injected `RedisDao`, not a global Hutool `SpringUtil` lookup; it retains bounded namespace deletion and evicts local L1 even when the remote L2 delete fails.
+- `vSetUpdate` now reflects the Redis `EXPIRE` boolean; a missing key returns `false`, not apparent success.
+
 ### Bounded Redis Tool SCAN configuration
 
 ```yaml
