@@ -1,6 +1,12 @@
 package com.peach.captcha;
 
 import com.peach.captcha.factory.CaptchaServiceFactory;
+import com.peach.captcha.constant.CaptchaEnum;
+import com.peach.captcha.service.impl.cache.MemoryCaptchaCacheService;
+import com.peach.captcha.service.impl.cache.RedisCaptchaCacheService;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import com.peach.captcha.service.CaptchaCacheService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -16,8 +22,16 @@ import org.springframework.context.annotation.Bean;
 public class CaptchaCacheAutoconfigure {
 
     @Bean
-    public CaptchaCacheService captchaCacheService(CaptchaProperties captchaProperties) {
-        return CaptchaServiceFactory.getCaptchaCacheService(captchaProperties.getCacheType().getCode());
+    @ConditionalOnMissingBean(CaptchaCacheService.class)
+    public CaptchaCacheService captchaCacheService(CaptchaProperties captchaProperties, BeanFactory beanFactory) {
+        CaptchaEnum.CaptchaCacheType type = captchaProperties.getCacheType();
+        if (type == CaptchaEnum.CaptchaCacheType.MEMORY) {
+            return new MemoryCaptchaCacheService(Integer.parseInt(captchaProperties.getCacheNumber()));
+        }
+        if (type == CaptchaEnum.CaptchaCacheType.REDIS) {
+            return new RedisCaptchaCacheService(beanFactory.getBean(StringRedisTemplate.class));
+        }
+        return CaptchaServiceFactory.getCaptchaCacheService(type.getCode());
     }
 
 
