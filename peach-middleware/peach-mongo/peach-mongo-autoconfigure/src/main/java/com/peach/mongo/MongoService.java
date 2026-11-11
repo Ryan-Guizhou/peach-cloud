@@ -81,8 +81,7 @@ public class MongoService<T> implements IMongoService<T>{
             documentList = findIterable.into(new ArrayList<>());
             return documentList;
         }catch (Exception e){
-            log.error("MongoService.findList() error: {}", e.getMessage(), e);
-            return documentList;
+            throw new IllegalStateException("Mongo list query failed for collection: " + collectionName, e);
         }
     }
 
@@ -118,38 +117,46 @@ public class MongoService<T> implements IMongoService<T>{
     }
 
     @Override
-    public PageInfo<Document> findPage(String collectionName, Document query, Document sort, Document projection, Integer pageNum, Integer pageSize) {
-        PageInfo<Document> pageInfo = new PageInfo<>();
+    public PageInfo<Document> findPage(String collectionName, Document query, Document sort, Document projection,
+                                       Integer pageNum, Integer pageSize) {
+        if (pageNum == null || pageNum < 1 || pageSize == null || pageSize < 1) {
+            throw new IllegalArgumentException("Mongo pagination requires positive pageNum and pageSize");
+        }
+        long offset = ((long) pageNum - 1L) * pageSize;
+        if (offset > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Mongo pagination offset exceeds supported range");
+        }
         try {
-            MongoCollection<Document> mongoCollection = getCollection(collectionName);
-            pageInfo.setPageNum(pageNum);
-            pageInfo.setPageSize(pageSize);
-            int total = (query == null || query.isEmpty()) ? (int)mongoCollection.estimatedDocumentCount() :(int)mongoCollection.countDocuments(query);
-            pageInfo.setTotal(total);
+            MongoCollection<Document> collection = getCollection(collectionName);
+            Document filter = query == null ? new Document() : query;
+            long total = collection.countDocuments(filter);
+            long pageCount = total / pageSize + (total % pageSize == 0L ? 0L : 1L);
+            if (pageCount > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("Mongo page count exceeds supported range");
+            }
 
-            if (total == 0){
-                pageInfo.setList(List.of());
-                return pageInfo;
+            PageInfo<Document> page = new PageInfo<>();
+            page.setPageNum(pageNum);
+            page.setPageSize(pageSize);
+            page.setTotal(total);
+            page.setPages((int) pageCount);
+            if (total == 0L || offset >= total) {
+                page.setList(List.of());
+                return page;
             }
-            int pages = total / pageSize;
-            if (total % pageSize > 0) {
-                pages++;
+            FindIterable<Document> iterable = collection.find(filter);
+            if (sort != null && !sort.isEmpty()) {
+                iterable = iterable.sort(sort);
             }
-            pageInfo.setPages(pages);
-            FindIterable<Document> findIterable = mongoCollection.find(query);
-            if (sort != null && !sort.isEmpty()){
-                findIterable = findIterable.sort(sort);
+            if (projection != null && !projection.isEmpty()) {
+                iterable = iterable.projection(projection);
             }
-            if (projection != null && !projection.isEmpty()){
-                findIterable = findIterable.projection(projection);
-            }
-            findIterable = findIterable.skip((pageNum - 1) * pageSize).limit(pageSize);
-            List<Document> list = findIterable.into(new ArrayList<>());
-            pageInfo.setList(list);
-            return pageInfo;
-        }catch (Exception e){
-            log.error("MongoService.findPage() error: {}", e.getMessage(), e);
-            return pageInfo;
+            page.setList(iterable.skip((int) offset).limit(pageSize).into(new ArrayList<>()));
+            return page;
+        } catch (IllegalArgumentException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IllegalStateException("Mongo page query failed for collection: " + collectionName, ex);
         }
     }
 
@@ -171,7 +178,16 @@ public class MongoService<T> implements IMongoService<T>{
     @Override
     public PageInfo<T> findPage(String collectionName, Document query, Document sort, Document projection, Integer pageNum, Integer pageSize, Class<T> clazz) {
         PageInfo<Document> pageInfo = findPage(collectionName, query, sort, projection, pageNum, pageSize);
-        return PageInfo.of(pageInfo.getList().stream().map(Document::toJson).map(json -> JSON.parseObject(json, clazz)).toList(), pageInfo.getNavigatePages());
+        PageInfo<T> mappedPage = new PageInfo<>();
+        mappedPage.setPageNum(pageInfo.getPageNum());
+        mappedPage.setPageSize(pageInfo.getPageSize());
+        mappedPage.setTotal(pageInfo.getTotal());
+        mappedPage.setPages(pageInfo.getPages());
+        mappedPage.setList(pageInfo.getList().stream()
+                .map(Document::toJson)
+                .map(json -> JSON.parseObject(json, clazz))
+                .toList());
+        return mappedPage;
     }
 
     @Override
@@ -195,7 +211,7 @@ public class MongoService<T> implements IMongoService<T>{
             getCollection(collectionName).insertOne(document);
             return true;
         }catch (Exception e){
-            log.error("MongoService.insert() collectionName: {}, document: {}", collectionName, document, e);
+            log.error("MongoService.insert() failed, collection={}, cause={}", collectionName, e.getClass().getSimpleName());
             return false;
         }
     }
@@ -206,7 +222,7 @@ public class MongoService<T> implements IMongoService<T>{
             getCollection(collectionName).insertMany(documents);
             return true;
         }catch (Exception e){
-            log.error("MongoService.insertMany() collectionName: {}, documents: {}", collectionName, documents, e);
+            log.error("MongoService.insertMany() failed, collection={}, cause={}", collectionName, e.getClass().getSimpleName());
             return false;
         }
     }
@@ -217,7 +233,7 @@ public class MongoService<T> implements IMongoService<T>{
             getCollection(collectionName).deleteOne(query);
             return true;
         }catch (Exception e){
-            log.error("MongoService.deleteOne() collectionName: {}, query: {}", collectionName, query, e);
+            log.error("MongoService.deleteOne() failed, collection={}, cause={}", collectionName, e.getClass().getSimpleName());
             return false;
         }
     }
@@ -228,7 +244,7 @@ public class MongoService<T> implements IMongoService<T>{
             getCollection(collectionName).deleteMany(query);
             return true;
         }catch (Exception e){
-            log.error("MongoService.deleteMany() collectionName: {}, query: {}", collectionName, query, e);
+            log.error("MongoService.deleteMany() failed, collection={}, cause={}", collectionName, e.getClass().getSimpleName());
             return false;
         }
     }
@@ -239,7 +255,7 @@ public class MongoService<T> implements IMongoService<T>{
             getCollection(collectionName).updateOne(query, update);
             return true;
         }catch (Exception e){
-            log.error("MongoService.updateOne() collectionName: {}, query: {}, update: {}", collectionName, query, update, e);
+            log.error("MongoService.updateOne() failed, collection={}, cause={}", collectionName, e.getClass().getSimpleName());
             return false;
         }
     }
@@ -250,7 +266,7 @@ public class MongoService<T> implements IMongoService<T>{
             getCollection(collectionName).updateMany(query, update);
             return true;
         }catch (Exception e){
-            log.error("MongoService.updateMany() collectionName: {}, query: {}, update: {}", collectionName, query, update, e);
+            log.error("MongoService.updateMany() failed, collection={}, cause={}", collectionName, e.getClass().getSimpleName());
             return false;
         }
     }
