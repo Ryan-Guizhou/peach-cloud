@@ -42,9 +42,9 @@ Do not declare `databaseIdProvider` or the paging and timing plugins again in `m
 
 ## Logging
 
-By default, Preparing keeps `?` and Parameters lists values in placeholder order. With `peach.mybatis.log.executable=true`, Preparing becomes the statement with values substituted and Parameters is omitted. One log event contains only one of the two forms.
+By default, Preparing keeps `?`; Parameters contains a bounded summary of parameter count and Java types (at most 16 types), **not parameter values**. `peach.mybatis.log.executable=true` explicitly enables value-substituted SQL in DEBUG for troubleshooting and may expose sensitive values: do not enable it in production. Slow-query and missing-WHERE WARN logs always retain parameter placeholders.
 
-Slow SQL, failed statements, and missing-WHERE warnings follow the same switch. DEBUG Preparing text is limited to 4000 characters. Slow SQL and missing-WHERE warnings stay complete.
+Preparing and missing-WHERE SQL text is bounded at every log level (default 4000, hard maximum 16384). Non-positive configured limits fall back to the safe default; very large binary/text parameters skip executable rendering.
 
 | Property | Default | Meaning |
 | --- | --- | --- |
@@ -53,7 +53,7 @@ Slow SQL, failed statements, and missing-WHERE warnings follow the same switch. 
 | `peach.mybatis.jdbc-type-for-null` | `false` | Set the JDBC type of null parameters to NULL when true |
 | `peach.mybatis.log.executable` | `false` | Emit executable SQL |
 | `peach.mybatis.log.warn-missing-where` | `true` | Warn when UPDATE / DELETE has no WHERE after quotes and comments are removed |
-| `peach.mybatis.log.max-sql-length` | `4000` | Maximum DEBUG Preparing length; zero or negative disables truncation |
+| `peach.mybatis.log.max-sql-length` | `4000` | Maximum SQL text length for DEBUG/WARN; non-positive uses safe default; hard cap 16384 |
 | `peach.mybatis.log.large-result-threshold` | `5000` | Warn when the row count exceeds this value; zero or negative disables it |
 | `peach.mybatis.pagehelper.helper-dialect` | empty | PageHelper detects the dialect once from the current connection |
 | `peach.mybatis.pagehelper.auto-runtime-dialect` | `false` | Detect the dialect on every page when true |
