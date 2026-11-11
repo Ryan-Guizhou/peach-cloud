@@ -76,6 +76,11 @@ class MultiCacheTwoClientServerIntegrationTest {
             }
             assertThat(invalidated).as("Remote Pub/Sub listener should invalidate L1").isTrue();
             assertThat(reader.get(key).get()).isEqualTo("after");
+            // 此 Manager 未运行在 Hutool SpringUtil 静态上下文中，也必须能清理。
+            writer.clear();
+            assertThat(writer.get(key)).isNull();
+            assertThat(reader.get(key)).isNull();
+            assertThat(Boolean.TRUE.equals(firstRedis.hasKey(redisKey))).isFalse();
         } finally {
             firstRedis.delete(redisKey);
             if (listener != null) {
