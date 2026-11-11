@@ -42,7 +42,17 @@ public class ThreadSmtpConnectionProvider implements SmtpConnectionProvider{
     }
 
     @Override
-    public void release(Transport transport) {/* 保留连接，不立即关闭 */}
+    public void release(Transport transport) {
+        if (transport == null) {
+            return;
+        }
+        Holder holder = threadLocal.get();
+        if (holder != null && holder.transport == transport) {
+            clearThreadState();
+        } else {
+            closeTransportQuietly(transport);
+        }
+    }
 
     /**
      * 清理当前线程持有的 SMTP 连接，避免 ThreadLocal 泄漏。
