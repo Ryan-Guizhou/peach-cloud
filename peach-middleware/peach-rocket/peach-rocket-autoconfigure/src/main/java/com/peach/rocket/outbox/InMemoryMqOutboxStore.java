@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * InMemoryMQ发件箱存储。
@@ -48,7 +49,7 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
 
     @Override
     public boolean replay(String messageId) {
-        java.util.concurrent.atomic.AtomicBoolean replayed = new java.util.concurrent.atomic.AtomicBoolean();
+        AtomicBoolean replayed = new AtomicBoolean();
         events.computeIfPresent(messageId, (key, event) -> {
             if (event.status() != MqOutboxStatus.FAILED) {
                 return event;
