@@ -105,6 +105,8 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 }
 ```
 
+**Outbox 可靠性：** `MqOutboxStore` 增加兼容的 `claimPending(batchSize)` 和携带令牌的 `markSent(MqOutboxClaim)` / `markFailed(MqOutboxClaim)` 方法。默认旧存储实现可以沿用现有 `findPending`，但持久化 JDBC Store 必须实现认领者令牌校验；Dispatcher 现使用该入口。外部发送与数据库确认之间不存在分布式原子事务，仍为 at-least-once。
+
 ## SPI 覆盖
 
 - 路由：`MqRouteResolver`，默认基于注解解析。
