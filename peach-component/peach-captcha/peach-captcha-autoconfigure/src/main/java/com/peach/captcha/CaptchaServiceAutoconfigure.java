@@ -1,9 +1,9 @@
 package com.peach.captcha;
 
-import com.alibaba.fastjson.JSON;
 import com.peach.captcha.constant.CaptchaPropertiesConst;
 import com.peach.captcha.factory.CaptchaServiceFactory;
 import com.peach.captcha.service.CaptchaService;
+import com.peach.captcha.service.CaptchaCacheService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -24,8 +24,8 @@ public class CaptchaServiceAutoconfigure {
 
     @Bean
     @ConditionalOnMissingBean(CaptchaService.class)
-    public CaptchaService captchaService(CaptchaProperties config){
-        log.info("Custom configuration items: {}", JSON.toJSONString(config));
+    public CaptchaService captchaService(CaptchaProperties config, CaptchaCacheService cacheService){
+        log.info("Initialize Captcha, type={}, cacheType={}", config.getServiceType(), config.getCacheType());
         Properties properties = new Properties();
         // 缓存类型
         properties.setProperty(CaptchaPropertiesConst.CAPTCHA_CACHETYPE, config.getCacheType().getCode());
@@ -69,7 +69,7 @@ public class CaptchaServiceAutoconfigure {
         // 旋转底图路径
         properties.setProperty(CaptchaPropertiesConst.ORIGINAL_PATH_ROTATE, config.getRotate());
 
-        return CaptchaServiceFactory.getCaptchaService(properties);
+        return CaptchaServiceFactory.getCaptchaService(properties, cacheService);
     }
 
 

@@ -54,6 +54,8 @@ mvn -pl peach-component/peach-captcha/peach-captcha-quickstart -am spring-boot:r
 mvn -pl peach-component/peach-captcha/peach-captcha-quickstart -am test
 ```
 
+**上下文隔离与内存保护：** 每个 Spring 应用上下文创建自己的 `CaptchaService`、`CaptchaCacheService`、频控处理器、验证码配置和图片资源快照，不再因其他应用上下文初始化而修改静态服务配置。MEMORY 缓存默认最多保存 1000 个有效凭证，可通过 `peach.captcha.cache-number` 调整（取值 1～1000000）；写入超限会明确拒绝而非清空有效验证码，过期记录按需惰性回收，不再启动私有定时清理线程。每条缓存值最长 64Ki 字符，TTL 限于 1～604800 秒。Redis 模式由当前容器提供的 `StringRedisTemplate` 绑定，不依赖静态 Bean 查找。自定义图片每种目录最多读取 32 张、单张上限 2MiB；自定义目录资源为本实例快照。
+
 ## 边界
 
 - 验证码不替代登录风控、账号锁定和设备识别。

@@ -81,7 +81,7 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
         this.wordTotalCount = Integer.parseInt(config.getProperty(CaptchaPropertiesConst.CAPTCHA_WORD_COUNT, "4"));
     }
 
-    private static void applyClickWordFontType(Properties config) {
+    private void applyClickWordFontType(Properties config) {
         CLICK_WORD_FRONT_STR = config.getProperty(CaptchaPropertiesConst.CAPTCHA_FONT_TYPE, "SourceHanSansCN-Normal.otf");
     }
 
@@ -98,7 +98,7 @@ public class ClickWordCaptchServiceImpl extends AbstractCacheService {
         }
 
         // 1. Get background image / 获取底图
-        BufferedImage backgroundImage = CaptchaImageUtil.getPicClickImage();
+        BufferedImage backgroundImage = images.getPicClickImage();
         if (backgroundImage == null) {
             log.error("init original click word image error");
             return Response.fail("init original click word image error");
