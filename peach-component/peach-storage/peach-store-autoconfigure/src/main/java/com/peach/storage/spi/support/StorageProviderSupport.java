@@ -12,6 +12,7 @@ import com.peach.request.DownloadObjectRequest;
 import com.peach.request.ListObjectsRequest;
 import com.peach.request.MoveObjectRequest;
 import com.peach.request.UploadObjectRequest;
+import com.peach.response.BatchDeleteResult;
 import com.peach.response.CopyResult;
 import com.peach.response.ListObjectsResult;
 import com.peach.response.MoveResult;
@@ -51,6 +52,11 @@ import java.util.Set;
  * @CreateTime 2026/6/18 18:02
  */
 public final class StorageProviderSupport {
+
+    /** SDK 退化递归操作的最大可物化键数量，超限显式失败并建议调用方分批处理。 */
+    private static final int MAX_RECURSIVE_OBJECTS = 10000;
+
+    private static final int LIST_PAGE_SIZE = 1000;
 
     private StorageProviderSupport() {
         // 私有构造函数，防止实例化
@@ -236,20 +242,16 @@ public final class StorageProviderSupport {
                         request.getTargetBucketName(), request.getTargetObjectKey(), true);
             }
 
-            // 递归拷贝：列举所有源对象
+            // 先校验递归目标边界，再对云端对象执行有界分页扫描。
+            String sourcePrefix = normalizeDirectoryPrefix(provider, request.getSourceObjectKey());
+            String targetPrefix = normalizeDirectoryPrefix(provider, request.getTargetObjectKey());
+            validateRecursiveTarget(sourcePrefix, targetPrefix);
             LinkedHashSet<String> sourceKeys = listRecursiveSourceKeys(
                     provider, request.getSourceBucketName(), request.getSourceObjectKey());
             if (sourceKeys.isEmpty()) {
                 throw new StorageException(StorageResultCode.OBJECT_NOT_FOUND,
                         "Object not found: " + request.getSourceObjectKey());
             }
-
-            // 规范化源路径和目标路径（确保以 / 结尾）
-            String sourcePrefix = normalizeDirectoryPrefix(provider, request.getSourceObjectKey());
-            String targetPrefix = normalizeDirectoryPrefix(provider, request.getTargetObjectKey());
-
-            // 安全校验：防止递归拷贝陷入死循环
-            validateRecursiveTarget(sourcePrefix, targetPrefix);
 
             // 逐个拷贝，保持相对路径结构
             for (String sourceKey : sourceKeys) {
@@ -271,8 +273,8 @@ public final class StorageProviderSupport {
      * 执行对象移动操作（支持单个或递归移动）。
      *
      * <p>实现原理：先执行 {@link #copy(StorageProvider, CopyObjectRequest)}，
-     * 拷贝成功后删除源对象。若拷贝过程中发生异常，源对象不受影响（保证原子性）。
-     * 递归移动时，批量删除所有源对象。</p>
+     * 拷贝成功后删除源对象。若拷贝过程中发生异常，尚未删除源对象；跨云存储复制与删除不保证原子性。
+     * 递归移动时，分批删除源对象，失败时需对账已复制对象。</p>
      *
      * @param provider 存储提供者实例
      * @param request 移动请求参数
@@ -305,10 +307,19 @@ public final class StorageProviderSupport {
                 // 批量删除（递归模式）
                 LinkedHashSet<String> sourceKeys = listRecursiveSourceKeys(
                         provider, request.getSourceBucketName(), request.getSourceObjectKey());
-                provider.batchDelete(BatchDeleteObjectsRequest.builder()
-                        .bucketName(request.getSourceBucketName())
-                        .objectKeys(new ArrayList<String>(sourceKeys))
-                        .build());
+                // 按固定大小分批删除，拒绝部分完成假成功；删除可能已部分成功，调用方需幂等对账。
+                List<String> keys = new ArrayList<>(sourceKeys);
+                for (int index = 0; index < keys.size(); index += LIST_PAGE_SIZE) {
+                    List<String> batch = keys.subList(index, Math.min(index + LIST_PAGE_SIZE, keys.size()));
+                    BatchDeleteResult deleted = provider.batchDelete(BatchDeleteObjectsRequest.builder()
+                            .bucketName(request.getSourceBucketName())
+                            .objectKeys(batch)
+                            .build());
+                    if (deleted == null || deleted.getDeletedCount() != batch.size()) {
+                        throw new StorageException(StorageResultCode.STORAGE_ERROR,
+                                "Recursive move source deletion was incomplete; reconcile copied and remaining objects");
+                    }
+                }
             }
             return new MoveResult(provider.name(), request.getSourceBucketName(), request.getSourceObjectKey(),
                     request.getTargetBucketName(), request.getTargetObjectKey(), true);
@@ -393,34 +404,41 @@ public final class StorageProviderSupport {
                                                                  String sourceObjectKey) {
         LinkedHashSet<String> sourceKeys = new LinkedHashSet<String>();
 
-        // 如果直接命中一个文件，直接返回
         if (provider.exists(bucketName, sourceObjectKey)) {
             sourceKeys.add(sourceObjectKey);
         }
-
-        // 以 / 结尾作为目录前缀进行递归列举
         String prefix = normalizeDirectoryPrefix(provider, sourceObjectKey);
         String continuationToken = null;
-        do {
-            ListObjectsResult result = provider.list(ListObjectsRequest.builder()
-                    .bucketName(bucketName)
-                    .prefix(prefix)
-                    .recursive(true) // 递归模式，直接返回所有子对象
-                    .maxKeys(1000)   // 分页大小
-                    .continuationToken(continuationToken)
-                    .build());
-
-            if (result.getItems() != null) {
-                for (ObjectInfo item : result.getItems()) {
-                    if (item != null && item.getObjectKey() != null) {
-                        sourceKeys.add(item.getObjectKey());
+        Set<String> visitedTokens = new LinkedHashSet<>();
+        while (true) {
+            ListObjectsResult page = provider.list(ListObjectsRequest.builder()
+                    .bucketName(bucketName).prefix(prefix).recursive(true)
+                    .maxKeys(LIST_PAGE_SIZE).continuationToken(continuationToken).build());
+            if (page == null || page.getItems() == null) {
+                throw new StorageException(StorageResultCode.STORAGE_ERROR,
+                        "Storage provider returned an invalid recursive list page");
+            }
+            for (ObjectInfo item : page.getItems()) {
+                String objectKey = item == null ? null : item.getObjectKey();
+                // 部分 SDK 返回相邻前缀甚至错误的数据，严禁拷贝/删除源目录以外的对象。
+                if (objectKey != null && objectKey.startsWith(prefix)) {
+                    sourceKeys.add(objectKey);
+                    if (sourceKeys.size() > MAX_RECURSIVE_OBJECTS) {
+                        throw new StorageException(StorageResultCode.BAD_REQUEST,
+                                "Recursive operation exceeds 10000 objects; use paged batch APIs");
                     }
                 }
             }
-            continuationToken = result.getNextContinuationToken();
-        } while (continuationToken != null && !continuationToken.isBlank());
-
-        return sourceKeys;
+            if (!page.isTruncated()) {
+                return sourceKeys;
+            }
+            String next = page.getNextContinuationToken();
+            if (next == null || next.isBlank() || !visitedTokens.add(next)) {
+                throw new StorageException(StorageResultCode.STORAGE_ERROR,
+                        "Storage recursive list cursor did not advance");
+            }
+            continuationToken = next;
+        }
     }
 
     /**

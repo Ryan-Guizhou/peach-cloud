@@ -106,6 +106,8 @@ Adding a provider requires at least:
 - Register the factory in `META-INF/services/com.peach.storage.spi.StorageProviderFactory`.
 - Add type constraints in `StorageType` and validation logic.
 
+**SDK recursive fallback limits:** `StorageProviderSupport.copy/move` recursively enumerates at most 10,000 objects, with up to 1,000 per page. Oversized results, missing pages and stalled continuation tokens fail explicitly; entries outside the source-directory prefix are excluded. A target nested under the source is rejected before listing. Recursive move source deletions use batches of at most 1,000, rejecting partial delete responses rather than reporting success. Cloud copy/delete are not atomic transactions; use a paged job or provider-native migration API for large directories and reconcile partial outcomes.
+
 ## Boundaries
 
 - `objectKey` is a business object key, not a local absolute path, and must not contain `..`.
