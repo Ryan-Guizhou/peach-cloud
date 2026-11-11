@@ -41,6 +41,8 @@ MongoDB URIs and credentials are supplied only through local configuration or en
 
 **Bounded materialization:** `peach.mongo.max-list-size` and `peach.mongo.max-page-size` both default to `500` (allowed range 1–100000). A `findList` without an explicit limit fetches at most max+1 documents and rejects results beyond the cap instead of silently truncating them. Explicit list limits or page sizes above the configured cap fail before querying MongoDB. Existing callers relying on full-collection reads must migrate to pagination/cursor iteration; per-document size and aggregation pipelines still require business-specific limits.
 
+**Mongo command log safety:** command placeholders replace query/update values with `?`. `Parameters` contains at most 16 BSON type names and **never actual values**. WARN/ERROR for slow, failed, or missing-filter commands always use placeholders even with `peach.mongo.log.executable=true`; only normal DEBUG may show executable commands (potentially sensitive; disable in production). `peach.mongo.log.max-command-length` defaults to 4000 with hard cap 16384 and cannot be disabled with non-positive settings. In-flight diagnostics use bounded insertion-order bookkeeping (4096 entries) without linear-time deque removals.
+
 ## Boundaries
 
 - The starter does not deploy MongoDB.

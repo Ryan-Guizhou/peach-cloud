@@ -24,7 +24,8 @@ class MongoCommandsTest {
         assertThat(text.placeholder()).contains("\"find\" : \"audit_log\"");
         assertThat(text.placeholder()).contains("\"actor\" : ?");
         assertThat(text.placeholder()).doesNotContain("\"it\"");
-        assertThat(text.parameters()).isEqualTo("it(String)");
+        assertThat(text.parameters()).isEqualTo("String");
+        assertThat(text.parameters()).doesNotContain("it");
         assertThat(text.executable()).startsWith("db.runCommand(");
         assertThat(text.executable()).contains("\"actor\": \"it\"");
         assertThat(text.executable()).doesNotContain("?");
@@ -38,7 +39,7 @@ class MongoCommandsTest {
 
         assertThat(text.placeholder()).contains("\"limit\" : 1");
         assertThat(text.placeholder()).contains("?");
-        assertThat(text.parameters()).isEqualTo("it(String)");
+        assertThat(text.parameters()).isEqualTo("String");
         assertThat(text.executable()).doesNotContain("?");
     }
 
@@ -65,8 +66,8 @@ class MongoCommandsTest {
 
         assertThat(modifyText.text()).contains("\"findAndModify\" : \"audit_log\"");
         assertThat(modifyText.text()).doesNotContain("peach");
-        assertThat(modifyText.parameters()).isEqualTo("it(String), peach(String), 1(Int32)");
+        assertThat(modifyText.parameters()).isEqualTo("String, String, Int32");
         assertThat(updateText.text()).contains("\"update\" : \"audit_log\"");
-        assertThat(updateText.parameters()).isEqualTo("1(Int32), 2(Int32)");
+        assertThat(updateText.parameters()).isEqualTo("Int32, Int32");
     }
 }

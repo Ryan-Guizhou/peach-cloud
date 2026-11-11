@@ -41,6 +41,8 @@ MongoDB URI、账号和密码只通过本地配置或环境变量提供。
 
 **大结果集边界：** `peach.mongo.max-list-size` 默认 `500`，`peach.mongo.max-page-size` 默认 `500`，均要求 1～100000。未传 `limit` 的 `findList` 最多读取 `max-list-size + 1` 条用于判断是否超额；超额则抛异常而非静默截断。显式 `limit` 和 `findPage` 的 `pageSize` 超限会在访问数据库前拒绝。旧业务若需大批量数据必须改用分页/游标；不可将 `findList(collection)` 当作全表导出接口。单文档体积及聚合管线仍需业务限制。
 
+**Mongo 命令日志安全边界：** 默认命令以 `?` 隐藏查询/更新参数，`Parameters` 仅输出最多 16 个 BSON 类型，不记录任何参数原值。慢查询、缺少过滤条件及命令失败的 WARN/ERROR **始终输出占位符命令**，即使调试时启用了 `peach.mongo.log.executable=true`；仅普通 DEBUG 可选择可执行命令（可能包含敏感值，生产环境应关闭）。`peach.mongo.log.max-command-length` 默认 4000、硬上限 16384，所有日志级别均截断，非正值也不能关闭限制。Inflight 日志缓冲限定 4096 条，通过有界插入顺序结构维护，不持有已结束命令。
+
 ## 边界
 
 - Starter 不部署 MongoDB。
