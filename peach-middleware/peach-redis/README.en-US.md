@@ -31,6 +31,8 @@ Redis Cluster requires database `0`; invalid values fail during startup. Both Na
 
 **Managed async cache clear:** `MultiCacheManagerService.asyncClear(cacheName)` submits exclusively to the `peach-virtual-thread` static group `multicache-clear` rather than creating unmanaged threads. Configure `peach.virtual-thread.groups.multicache-clear` with bounded `max-concurrency`, `max-pending`, and `backpressure: REJECT` (the multicache quickstart includes an example). Without this group the method fails explicitly; rejection on capacity/shutdown is propagated to the caller. Use synchronous `clear` if the caller must observe completion.
 
+**Dynamic cache instance cap:** `peach.multicache.max-cache-instances` defaults to `256` and limits the number of named Caffeine/L1 caches created per manager. A new name beyond the limit fails explicitly instead of retaining unbounded cache objects. `getCacheNames()` now includes instantiated dynamic names, so `clearAll()` can clear them. Keep cache names stable and put user-specific values in cache keys.
+
 ## Complete capability matrix
 
 | Module / starter | Main API | Capabilities | Use cases | Current limitation |

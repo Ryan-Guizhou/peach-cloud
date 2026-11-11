@@ -11,6 +11,8 @@ import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -30,6 +32,8 @@ public class MultiCacheManager implements CacheManager {
 
     private final ConcurrentMap<String, Cache> cacheMap = new ConcurrentHashMap<>();
 
+    private final Object creationLock = new Object();
+
     private final RedisTemplate redisTemplate;
 
     private final RedisDao redisDao;
@@ -46,24 +50,47 @@ public class MultiCacheManager implements CacheManager {
         this.redisTemplate = Objects.requireNonNull(redisTemplate, "redisTemplate");
         this.cacheConfig = Objects.requireNonNull(cacheConfig, "cacheConfig");
         this.redisDao = Objects.requireNonNull(redisDao, "redisDao");
-        this.cacheNames = cacheConfig.getCacheNames();
+        this.cacheNames = Set.copyOf(cacheConfig.getCacheNames());
+        if (cacheConfig.getMaxCacheInstances() <= 0
+                || this.cacheNames.size() > cacheConfig.getMaxCacheInstances()) {
+            throw new IllegalArgumentException("Invalid peach.multicache.max-cache-instances");
+        }
     }
 
     @Override
     public Cache getCache(String name) {
-        Cache cache = cacheMap.get(name);
-        if (cache != null) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Cache name must not be blank");
+        }
+        Cache existing = cacheMap.get(name);
+        if (existing != null) {
+            return existing;
+        }
+        // 动态缓存名的容量校验与实例创建必须是一项不可分割的入场操作。
+        synchronized (creationLock) {
+            existing = cacheMap.get(name);
+            if (existing != null) {
+                return existing;
+            }
+            int maxInstances = cacheConfig.getMaxCacheInstances();
+            if (maxInstances <= 0) {
+                throw new IllegalArgumentException("peach.multicache.max-cache-instances must be positive");
+            }
+            if (cacheMap.size() >= maxInstances) {
+                throw new IllegalStateException("MultiCache instance limit reached: " + maxInstances);
+            }
+            Cache cache = new MultiCache(name, redisTemplate, caffeineCache(), cacheConfig, redisDao);
+            cacheMap.put(name, cache);
+            log.debug("create cache instance, name={}", name);
             return cache;
         }
-        cache = new MultiCache(name, redisTemplate, caffeineCache(), cacheConfig, redisDao);
-        Cache oldCache = cacheMap.putIfAbsent(name, cache);
-        log.debug("create cache instance, the cache name is : {}", name);
-        return oldCache == null ? cache : oldCache;
     }
 
     @Override
     public Collection<String> getCacheNames() {
-        return this.cacheNames;
+        Set<String> names = new HashSet<>(cacheNames);
+        names.addAll(cacheMap.keySet());
+        return Collections.unmodifiableSet(names);
     }
 
     /**
