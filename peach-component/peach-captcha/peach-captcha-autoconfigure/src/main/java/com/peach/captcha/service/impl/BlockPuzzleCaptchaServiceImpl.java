@@ -45,7 +45,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         if (!validatedReq(response)){
             return response;
         }
-        BufferedImage originalSlidingImage = CaptchaImageUtil.getSlidingImage();
+        BufferedImage originalSlidingImage = images.getSlidingImage();
         if (originalSlidingImage == null){
             log.error("init original sliding image error");
             return Response.fail("init original sliding image error");
@@ -59,7 +59,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         graphics.setFont(waterMarkFont);
         graphics.drawString(WATER_MARK, width - getEnOrChLength(WATER_MARK), height - (HAN_ZI_SIZE / 2) + 7);
 
-        String slidingBlockString = CaptchaImageUtil.getSlidingBlockString();
+        String slidingBlockString = images.getSlidingBlockString();
         BufferedImage slidingBlockImage = CaptchaImageUtil.getBase64StrToImage(slidingBlockString);
         if (slidingBlockImage == null){
             log.error("init sliding block image error");
@@ -233,7 +233,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
                 position = RandomUtils.getRandomInt(100, x - slidingBlockingWidth - 5);
             }
             while (true) {
-                String s = CaptchaImageUtil.getSlidingBlockString();
+                String s = images.getSlidingBlockString();
                 if (!slidingBlockingBase64.equals(s)) {
                     interferenceByTemplate(slidingOriginalImage, Objects.requireNonNull(CaptchaImageUtil.getBase64StrToImage(s)), position);
                     break;
@@ -242,7 +242,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         }
         if (INTERFERENCE_OPTIONS > 1) {
             while (true) {
-                String s = CaptchaImageUtil.getSlidingBlockString();
+                String s = images.getSlidingBlockString();
                 if (!slidingBlockingBase64.equals(s)) {
                     Integer randomInt = RandomUtils.getRandomInt(slidingBlockingWidth, 100 - slidingBlockingWidth);
                     interferenceByTemplate(slidingOriginalImage, Objects.requireNonNull(CaptchaImageUtil.getBase64StrToImage(s)), randomInt);
@@ -399,7 +399,7 @@ public class BlockPuzzleCaptchaServiceImpl extends AbstractCacheService{
         return rgb < 0 && downRgb >= 0;
     }
 
-    private static PointVO generateSlidingPoint(int slidingOriginalWidth, int slidingOriginalHeight, int slidingBlockingWidth, int slidingBlockingHeight) {
+    private PointVO generateSlidingPoint(int slidingOriginalWidth, int slidingOriginalHeight, int slidingBlockingWidth, int slidingBlockingHeight) {
         var random = PeachSecureRandom.get();
         int widthDifference = slidingOriginalWidth - slidingBlockingWidth;
         int heightDifference = slidingOriginalHeight - slidingBlockingHeight;
