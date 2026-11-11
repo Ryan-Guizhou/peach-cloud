@@ -43,10 +43,6 @@ import java.util.concurrent.TimeUnit;
 @Repository("redisDao")
 public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implements RedisDao {
 
-    private static final Integer TRY_TIMES = 3;
-
-    private static final String REDIS_OPERATION_FAILED = "Redis operation failed";
-
     private static final String REDIS_CLUSTER_MODE = "cluster";
 
     private static final int DEFAULT_SCAN_MAX_RESULTS = 10_000;
@@ -86,29 +82,23 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
     public boolean existsKey(final Object key) {
         Boolean retryFlag = redisTemplate.hasKey(key);
         if (retryFlag == null) {
-            return false;
+            throw new IllegalStateException("Redis EXISTS returned no confirmation");
         }
         return retryFlag;
     }
 
 
+    /**
+     * Redis 请求故障时结果未知，不能把异常吞成未删除。
+     */
     @Override
     public boolean delete(final Object key) {
-        Integer retryNum = 1;
-        boolean flag = false;
-        while (retryNum <= TRY_TIMES) {
-            try {
-                flag = Boolean.TRUE.equals(redisTemplate.delete(key));
-                if (flag) {
-                    break;
-                }
-                retryNum++;
-            } catch (Exception e) {
-                log.error("Retry failed, message={}", e.getMessage(), e);
-                retryNum++;
-            }
+        Objects.requireNonNull(key, "key");
+        Boolean deleted = redisTemplate.delete(key);
+        if (deleted == null) {
+            throw new IllegalStateException("Redis DEL returned no confirmation");
         }
-        return flag;
+        return deleted;
     }
 
     @Override
@@ -162,7 +152,7 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
         if (REDIS_CLUSTER_MODE.equalsIgnoreCase(redisMode)) {
             long deleted = 0L;
             for (Object key : keys) {
-                if (Boolean.TRUE.equals(redisTemplate.delete(key))) {
+                if (delete(key)) {
                     deleted++;
                 }
             }
@@ -175,18 +165,18 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
             if (deleteKeys.size() >= 10) {
                 Long count = redisTemplate.delete(deleteKeys);
                 if (count == null) {
-                    count = 0L;
+                    throw new IllegalStateException("Redis batch DEL returned no confirmation");
                 }
-                size = size + count;
+                size = Math.addExact(size, count);
                 deleteKeys.clear();
             }
         }
         if (!deleteKeys.isEmpty()) {
             Long count = redisTemplate.delete(deleteKeys);
             if (count == null) {
-                count = 0L;
+                throw new IllegalStateException("Redis batch DEL returned no confirmation");
             }
-            size = size + count;
+            size = Math.addExact(size, count);
             deleteKeys.clear();
         }
         return size;
@@ -194,54 +184,38 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
 
     @Override
     public boolean vSet(final Object key, Object value) {
-        boolean result = false;
-        try {
-            ValueOperations<Object, Object> operations = redisTemplate.opsForValue();
-            operations.set(key, value);
-            result = true;
-        } catch (Exception e) {
-            log.debug(REDIS_OPERATION_FAILED, e);
-        }
-        return result;
+        redisTemplate.opsForValue().set(key, value);
+        return true;
     }
 
     @Override
     public boolean vSet(final Object key, Object value, Long expireTime) {
-        boolean result = false;
-        try {
-            ValueOperations<Object, Object> operations = redisTemplate.opsForValue();
-            if (expireTime == null || expireTime <= 0) {
-                throw new IllegalArgumentException("expireTime must be positive seconds");
-            }
-            operations.set(key, value, expireTime, TimeUnit.SECONDS);
-            result = true;
-        } catch (Exception e) {
-            log.debug(REDIS_OPERATION_FAILED, e);
+        if (expireTime == null || expireTime <= 0L) {
+            throw new IllegalArgumentException("expireTime must be positive seconds");
         }
-        return result;
+        redisTemplate.opsForValue().set(key, value, expireTime, TimeUnit.SECONDS);
+        return true;
     }
 
     @Override
     public boolean vSet(Object key, Object value, Duration expire) {
-        boolean result = false;
-        try {
-            redisTemplate.opsForValue().set(key, value, expire);
-            result = true;
-        } catch (Exception e) {
-            log.debug(REDIS_OPERATION_FAILED, e);
+        if (expire == null || expire.isNegative() || expire.isZero()) {
+            throw new IllegalArgumentException("Redis value expiration must be positive");
         }
-        return result;
+        redisTemplate.opsForValue().set(key, value, expire);
+        return true;
     }
 
     @Override
     public boolean vSetUpdate(final Object key, Long expireTime) {
-        boolean result = false;
-        try {
-            result = Boolean.TRUE.equals(redisTemplate.expire(key, expireTime, TimeUnit.SECONDS));
-        } catch (Exception e) {
-            log.debug(REDIS_OPERATION_FAILED, e);
+        if (expireTime == null || expireTime <= 0L) {
+            throw new IllegalArgumentException("expireTime must be positive seconds");
         }
-        return result;
+        Boolean updated = redisTemplate.expire(key, expireTime, TimeUnit.SECONDS);
+        if (updated == null) {
+            throw new IllegalStateException("Redis EXPIRE returned no confirmation");
+        }
+        return updated;
     }
 
     @Override
@@ -704,11 +678,8 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
      */
     @Override
     public void convertAndSend(String channel, String message) {
-        try {
-            redisTemplate.convertAndSend(channel, message);
-        } catch (Exception e) {
-            log.debug(REDIS_OPERATION_FAILED, e);
-        }
+        validateChannel(channel);
+        redisTemplate.convertAndSend(channel, message);
     }
 
     /**
@@ -719,19 +690,27 @@ public class RedisDaoImpl extends AbstractBaseRedisDao<Object, Object> implement
      */
     @Override
     public void convertAndSend(String channel, Object message) {
-        try {
-            redisTemplate.convertAndSend(channel, message);
-        } catch (Exception e) {
-            log.debug(REDIS_OPERATION_FAILED, e);
+        validateChannel(channel);
+        redisTemplate.convertAndSend(channel, message);
+    }
+
+    private static void validateChannel(String channel) {
+        if (StringUtils.isBlank(channel)) {
+            throw new IllegalArgumentException("Redis Pub/Sub channel must not be blank");
         }
     }
 
     @Override
     public void expire(Object k, long timeout) {
-        try {
-            redisTemplate.expire(k, timeout, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            log.debug(REDIS_OPERATION_FAILED, e);
+        if (timeout <= 0L) {
+            throw new IllegalArgumentException("Redis expire timeout must be positive");
+        }
+        Boolean expired = redisTemplate.expire(k, timeout, TimeUnit.SECONDS);
+        if (expired == null) {
+            throw new IllegalStateException("Redis EXPIRE returned no confirmation");
+        }
+        if (!expired) {
+            throw new IllegalStateException("Redis EXPIRE key was not found");
         }
     }
 
