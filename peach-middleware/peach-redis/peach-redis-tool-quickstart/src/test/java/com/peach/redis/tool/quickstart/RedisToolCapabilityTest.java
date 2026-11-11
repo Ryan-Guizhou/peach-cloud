@@ -17,6 +17,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
+import java.util.UUID;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
+import com.peach.redis.common.tool.RedisDaoImpl;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.Map;
 import java.util.Set;
 
@@ -91,18 +96,55 @@ class RedisToolCapabilityTest {
     }
 
     @Test
-    void hscanShouldReturnAllFieldsWithoutSkipping() {
-        String key = "field";
+    void collectionScansShouldUseActualKeysAndEnforceLimits() {
+        String prefix = "test:collection:scan:" + UUID.randomUUID();
+        String hash = prefix + ":hash";
+        String set = prefix + ":set";
+        String zset = prefix + ":zset";
         try {
-            redisDao.hmSet(key, "scan-a", "one");
-            redisDao.hmSet(key, "scan-b", "two");
-            assertThat(redisDao.hscan("scan-*", 20))
-                    .containsEntry("scan-a", "one")
-                    .containsEntry("scan-b", "two");
+            redisDao.hmSet(hash, "scan-a", "one");
+            redisDao.hmSet(hash, "scan-b", "two");
+            redisDao.sAdd(set, "alpha");
+            redisDao.sAdd(set, "beta");
+            redisDao.zAdd(zset, "first", 1.0);
+            redisDao.zAdd(zset, "second", 2.0);
+
+            assertThat(redisDao.hscan(hash, 1))
+                    .containsEntry("scan-a", "one").containsEntry("scan-b", "two");
+            assertThat(redisDao.sscan(set, 1)).containsExactlyInAnyOrder("alpha", "beta");
+            assertThat(redisDao.zscan(zset, 1))
+                    .containsEntry("first", 1.0).containsEntry("second", 2.0);
+
+            RedisDaoImpl bounded = new RedisDaoImpl(
+                    (RedisTemplate<?, ?>) redisDaoTemplate());
+            ReflectionTestUtils.setField(bounded, "scanMaxResults", 1);
+            assertThatThrownBy(() -> bounded.hscan(hash, 1))
+                    .isInstanceOf(IllegalStateException.class).hasMessageContaining("result limit");
+            assertThatThrownBy(() -> bounded.sscan(set, 1))
+                    .isInstanceOf(IllegalStateException.class).hasMessageContaining("result limit");
+            assertThatThrownBy(() -> bounded.zscan(zset, 1))
+                    .isInstanceOf(IllegalStateException.class).hasMessageContaining("result limit");
         } finally {
-            redisDao.hmDel(key, "scan-a");
-            redisDao.hmDel(key, "scan-b");
+            redisDao.delete(hash);
+            redisDao.delete(set);
+            redisDao.delete(zset);
         }
+    }
+
+    @Autowired
+    private RedisTemplate<?, ?> redisTemplate;
+
+    private RedisTemplate<?, ?> redisDaoTemplate() {
+        return redisTemplate;
+    }
+
+    @Test
+    void missingKeyShouldNotReportSuccessfulTtlUpdate() {
+        String key = "test:redisdao:missing:" + UUID.randomUUID();
+        assertThat(redisDao.vSetUpdate(key, 30L)).isFalse();
+        assertThat(redisDao.vSet(key, "value", 30L)).isTrue();
+        assertThat(redisDao.vSetUpdate(key, 20L)).isTrue();
+        redisDao.delete(key);
     }
 
     @Test
