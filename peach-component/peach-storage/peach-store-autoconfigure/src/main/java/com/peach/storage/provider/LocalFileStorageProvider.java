@@ -1,6 +1,7 @@
 package com.peach.storage.provider;
 
 import com.peach.config.StorageProperties;
+import com.peach.content.UploadContent;
 import com.peach.enums.StorageCapability;
 import com.peach.enums.StorageResultCode;
 import com.peach.enums.StorageType;
@@ -32,6 +33,7 @@ import java.net.URI;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
@@ -145,8 +147,10 @@ public class LocalFileStorageProvider implements StorageProvider {
         }
         String objectKey = buildObjectKey(config, request.getObjectKey());
         Path target = resolveObjectKey(objectKey);
-        try (com.peach.content.UploadContent content = request.getContent()) {
+        try (UploadContent content = request.getContent()) {
             Path parent = target.getParent();
+            // 先校验已存在的路径组件，避免 createDirectories 跟随链接在根目录外创建目录。
+            verifyNoSymbolicLinks(target);
             if (parent != null) {
                 Files.createDirectories(parent);
             }
@@ -377,18 +381,15 @@ public class LocalFileStorageProvider implements StorageProvider {
      * 但绝不提前删除原文件。
      */
     private static void moveReplacing(Path source, Path target, boolean overwrite) throws IOException {
+        if (!overwrite) {
+            // ATOMIC_MOVE 可能忽略“目标已存在”的保护，不能在无覆盖模式下使用。
+            Files.move(source, target);
+            return;
+        }
         try {
-            if (overwrite) {
-                Files.move(source, target, ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-            } else {
-                Files.move(source, target, ATOMIC_MOVE);
-            }
+            Files.move(source, target, ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (AtomicMoveNotSupportedException ex) {
-            if (overwrite) {
-                Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
-            } else {
-                Files.move(source, target);
-            }
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
