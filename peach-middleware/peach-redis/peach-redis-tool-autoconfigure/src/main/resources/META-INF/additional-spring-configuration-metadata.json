@@ -1,6 +1,12 @@
 {
   "properties": [
     {
+      "name": "peach.redis.mode",
+      "type": "java.lang.String",
+      "description": "Shared peach-redis-starter connection mode; standalone, sentinel, or cluster.",
+      "defaultValue": "standalone"
+    },
+    {
       "name": "peach.redis.tool.scan.max-results",
       "type": "java.lang.Integer",
       "sourceType": "com.peach.redis.common.tool.RedisDaoImpl",

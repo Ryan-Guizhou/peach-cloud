@@ -111,10 +111,12 @@ function inlineConfigurationProperties(source,constants = {}){
  }
  for(const match of source.matchAll(/@Value\s*\(\s*"\$\{(peach\.[^}:]+)(?::([^}]+))?\}"\s*\)/g)){
   const name=match[1];const raw=match[2];
+  const following=source.slice(match.index+match[0].length,match.index+match[0].length+140);
+  const declaredType=following.match(/^\s*(?:private|protected|public)\s+(?:final\s+)?(long|Long|int|Integer|boolean|Boolean|String)\s+/)?.[1];
   const property={name,type:"java.lang.String",description:describe(name)};
   if(raw!==undefined){
    if(/^(?:true|false)$/.test(raw)){property.type="java.lang.Boolean";property.defaultValue=raw==="true";}
-   else if(/^\d+$/.test(raw)){property.type="java.lang.Integer";property.defaultValue=Number(raw);}
+   else if(/^\d+$/.test(raw)){property.type=declaredType==="long"||declaredType==="Long"?"java.lang.Long":"java.lang.Integer";property.defaultValue=Number(raw);}
    else property.defaultValue=raw;
   }
   properties.set(name,property);
@@ -200,10 +202,11 @@ function checkOne(moduleDir) {
         }
     }
     const declaredNames = new Set(configFiles.map((property) => property.name));
+    const hasBoundConfigurationProperties = configFiles.length > 0;
     for (const property of inlineProperties.values()) {
         if (!declaredNames.has(property.name)) configFiles.push(property);
     }
-    if (configFiles.length &&
+    if (hasBoundConfigurationProperties &&
             !readFileSync(join(moduleDir, "pom.xml"), "utf8")
                 .includes("<artifactId>spring-boot-configuration-processor</artifactId>")) {
         errors.push(relative(ROOT, moduleDir) +
@@ -278,6 +281,10 @@ function selfTest() {
         'public class ExampleProperties {\n private boolean enabled = true;\n' +
         'private final Group group = new Group();\npublic static class Group {\n' +
         'private Duration waitTimeout = Duration.ofSeconds(5);\nprivate int maxSize = 20;\nprivate String topic = ExampleConstants.TOPIC;\n}\n}';
+    const typedValue=inlineConfigurationProperties('@Value("${peach.sample.timeout-millis:10000}") private long timeoutMillis;');
+    if (!typedValue.some((x) => x.name === "peach.sample.timeout-millis" && x.type === "java.lang.Long")) {
+        throw new Error("metadata @Value long inference self-test failed");
+    }
     const fields = propertyModel(example, "ExampleProperties.java", {
         "ExampleConstants.TOPIC": "test-topic"
     });
