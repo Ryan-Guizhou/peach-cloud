@@ -42,9 +42,9 @@ flowchart LR
 
 ## 日志
 
-默认 Preparing 保留 `?`，Parameters 按占位符顺序输出。`peach.mybatis.log.executable=true` 时 Preparing 改为参数已替换的语句，不再输出 Parameters。同一次日志只出现其中一种。
+默认 Preparing 保留 `?`，Parameters 仅记录参数数量和类型（最多 16 个类型），**不记录参数值**。`peach.mybatis.log.executable=true` 是显式的 DEBUG 排障选项，可能包含敏感值，生产环境不要开启；慢 SQL 与缺少 WHERE 告警始终使用安全的占位符 SQL。
 
-慢 SQL、执行失败和缺少 WHERE 的告警走同一开关。DEBUG 的 Preparing 文本默认最长 4000 字符，慢 SQL 和缺少 WHERE 的告警保持全文。
+DEBUG、慢 SQL 和缺少 WHERE 的 SQL 文本均限制长度（默认 4000、硬上限 16384），即使配置小于等于 0 也不能关闭限制。超大的字节数组或文本参数不执行可执行 SQL 渲染。
 
 | 配置 | 默认值 | 说明 |
 | --- | --- | --- |
@@ -53,7 +53,7 @@ flowchart LR
 | `peach.mybatis.jdbc-type-for-null` | `false` | 为 `true` 时把空参数的 JDBC 类型设为 NULL |
 | `peach.mybatis.log.executable` | `false` | 是否输出可执行 SQL |
 | `peach.mybatis.log.warn-missing-where` | `true` | UPDATE / DELETE 去掉引号和注释后没有 WHERE 时告警 |
-| `peach.mybatis.log.max-sql-length` | `4000` | DEBUG Preparing 的最大长度，小于等于 0 表示不截断 |
+| `peach.mybatis.log.max-sql-length` | `4000` | 所有 SQL 日志的最大长度；小于等于 0 使用安全默认值，上限 16384 |
 | `peach.mybatis.log.large-result-threshold` | `5000` | 返回行数超过该值时告警，小于等于 0 表示关闭 |
 | `peach.mybatis.pagehelper.helper-dialect` | 空 | 为空时 PageHelper 按当前连接识别一次 |
 | `peach.mybatis.pagehelper.auto-runtime-dialect` | `false` | 为 `true` 时每次分页都重新识别方言 |
