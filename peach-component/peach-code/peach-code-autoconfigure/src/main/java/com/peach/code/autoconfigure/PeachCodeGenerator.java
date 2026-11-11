@@ -2,13 +2,13 @@ package com.peach.code.autoconfigure;
 
 import com.peach.code.CodeGenerator;
 import com.peach.code.CodeGeneratorException;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -36,17 +36,15 @@ public class PeachCodeGenerator implements CodeGenerator {
     private final TransactionTemplate allocationTransaction;
 
     /**
-     * 创建发号器。保留原构造签名供已有配置与扩展使用。
+     * 创建仅依赖 JDBC 和事务管理器的发号器。
      *
      * @param jdbcTemplate 业务数据源 JDBC 模板
      * @param properties 原有配置对象；Redis 开关不再决定发号权威
-     * @param redisTemplate 原有可选 Redis 依赖；不再执行 Redis 发号
      * @param transactionManager 必需的 MySQL 事务管理器
      */
     public PeachCodeGenerator(JdbcTemplate jdbcTemplate, CodeProperties properties,
-                              StringRedisTemplate redisTemplate,
                               PlatformTransactionManager transactionManager) {
-        this.jdbcTemplate = java.util.Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
         if (transactionManager == null) {
             throw new CodeGeneratorException("MySQL transaction manager is required for code allocation");
         }
