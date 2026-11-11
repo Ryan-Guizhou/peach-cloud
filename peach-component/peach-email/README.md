@@ -48,6 +48,8 @@ SMTP provider、用户名和授权码只通过环境变量或配置中心提供�
 
 **SMTP 重试与故障转移：** `SendResult` 保留原有五参数构造器，并增加失败阶段 `EmailFailureKind`：`RETRYABLE_BEFORE_SEND`、`PERMANENT_BEFORE_SEND`、`DELIVERY_UNKNOWN`。只有连接阶段确认未进入 `sendMessage` 的临时故障才会自动重试或切换 Provider；一旦开始 SMTP 投递，失败可能表示服务端已接收，默认停止自动重试并要求人工核查。未知类型的自定义 `EmailTransport` 失败默认按 `DELIVERY_UNKNOWN` 处理。重试指数退避最大 5 分钟，不能用重试伪装邮件“恰好一次”送达。
 
+**并发幂等与容量：** `sendAuto` 在外发前先尝试原子占用幂等键；`SimpleIdempotencyStore` 区分 `IN_FLIGHT`、`SENT`、`UNKNOWN`，只有拥有当前认领令牌的调用可结束认领。SMTP 结果未知时保留占用，后续同键调用不会谎报发送成功；成功则记录至 TTL 到期，确认未发送则释放。默认 `peach.email.idempotency.retention=24h`、`max-entries=10000`，容量用尽会在外发前明确拒绝，清理仅在读写时执行，不创建额外工作线程；`sendAuto` 同进程最多 256 个在途请求。**本地 Store 不能在多实例间保证原子性**，必须使用支持共享 CAS/租约的 `ClaimingIdempotencyStore` 自定义 Bean。老 `IdempotencyStore` 可继续使用，但只具有 JVM 内同键并发保护；直连 `send(provider,message)` 不自动应用本幂等入口。未知结果过期后仍可能重复，必须配合业务调和。
+
 ## 边界
 
 - SMTP 密码、授权码、完整收件人列表、正文和附件内容不得进入日志。

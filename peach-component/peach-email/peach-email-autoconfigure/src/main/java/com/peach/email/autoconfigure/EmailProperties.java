@@ -3,6 +3,7 @@ package com.peach.email.autoconfigure;
 import com.peach.email.constant.EmailConstant;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,6 +33,9 @@ public class EmailProperties {
      */
     private Retry retry = new Retry();
 
+    /** 原子幂等存储容量与结果保留时间。 */
+    private Idempotency idempotency = new Idempotency();
+
     /** 默认提供商名称，自动发送时优先尝试该提供商 */
     public String getDefaultProvider() {
         return defaultProvider;
@@ -55,6 +59,42 @@ public class EmailProperties {
 
     public void setRetry(Retry retry) {
         this.retry = retry;
+    }
+
+    public Idempotency getIdempotency() {
+        return idempotency;
+    }
+
+    public void setIdempotency(Idempotency idempotency) {
+        this.idempotency = idempotency;
+    }
+
+    /**
+     * 邮件幂等信息的本地有限驻留配置。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/11/11 13:31
+     */
+    public static class Idempotency {
+        private Duration retention = Duration.ofHours(24);
+        private int maxEntries = 10_000;
+
+        public Duration getRetention() {
+            return retention;
+        }
+
+        public void setRetention(Duration retention) {
+            this.retention = retention;
+        }
+
+        public int getMaxEntries() {
+            return maxEntries;
+        }
+
+        public void setMaxEntries(int maxEntries) {
+            this.maxEntries = maxEntries;
+        }
     }
 
     public static class Provider {

@@ -78,8 +78,10 @@ public class EmailAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(IdempotencyStore.class)
-    public IdempotencyStore idempotencyStore() {
-        return new SimpleIdempotencyStore();
+    public IdempotencyStore idempotencyStore(EmailProperties properties) {
+        return new SimpleIdempotencyStore(
+                properties.getIdempotency().getRetention(),
+                properties.getIdempotency().getMaxEntries());
     }
 
     /**

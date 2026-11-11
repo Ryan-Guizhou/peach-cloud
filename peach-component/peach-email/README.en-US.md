@@ -48,6 +48,8 @@ Continue to supply SMTP credentials via environment variables or configuration s
 
 **SMTP retry and fallback:** the existing five-argument `SendResult` constructor is preserved, with an optional `EmailFailureKind` of `RETRYABLE_BEFORE_SEND`, `PERMANENT_BEFORE_SEND`, or `DELIVERY_UNKNOWN`. Automatic retry/provider failover is permitted only for transient failures before `sendMessage` is attempted. Once submission begins, failures are ambiguous and must not trigger another automatic send. Failures returned by legacy custom transports default to `DELIVERY_UNKNOWN`. Exponential retry delay is capped at five minutes. This is not an exactly-once email guarantee.
 
+**Concurrent idempotency and memory budget:** `sendAuto` reserves an idempotency key *before* external SMTP side effects. `SimpleIdempotencyStore` tracks `IN_FLIGHT`, `SENT`, and `UNKNOWN` with owner tokens; unconfirmed delivery keeps a protective UNKNOWN claim and is never falsely reported as SENT. Confirmed unsent outcomes release claims. Defaults: `peach.email.idempotency.retention=24h`, `max-entries=10000`; capacity exhaustion rejects before SMTP, expiry is cleaned opportunistically without background threads. Each service instance also bounds auto-send concurrency to 256. The in-memory store **cannot** provide atomic cross-node idempotency; multi-instance production should replace it with a shared CAS/lease-backed `ClaimingIdempotencyStore` bean. Legacy `IdempotencyStore` implementations remain supported but offer only local in-flight protection. Direct `send(provider,message)` bypasses this idempotency entry point. Expiry cannot guarantee exactly-once email delivery.
+
 ## Boundaries
 
 - SMTP passwords/tokens, full recipient lists, bodies and attachments must not enter logs.
