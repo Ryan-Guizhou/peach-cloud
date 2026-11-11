@@ -3,9 +3,9 @@ package com.peach.captcha.service;
 import com.peach.captcha.constant.CaptchaEnum;
 import com.peach.captcha.constant.CaptchaPropertiesConst;
 import com.peach.captcha.factory.CaptchaServiceFactory;
-import com.peach.captcha.service.impl.AbstractCacheService;
 import com.peach.captcha.service.impl.cache.MemoryCaptchaCacheService;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Properties;
 
@@ -36,8 +36,8 @@ class CaptchaContextIsolationTest {
         secondCache.set("shared-key", "second", 60);
         assertThat(firstCache.getAndDelete("shared-key")).isEqualTo("first");
         assertThat(secondCache.get("shared-key")).isEqualTo("second");
-        assertThat(((AbstractCacheService) first).getConfiguredWatermark()).isEqualTo("first-watermark");
-        assertThat(((AbstractCacheService) second).getConfiguredWatermark()).isEqualTo("second-watermark");
+        assertThat(ReflectionTestUtils.getField(first, "WATER_MARK")).isEqualTo("first-watermark");
+        assertThat(ReflectionTestUtils.getField(second, "WATER_MARK")).isEqualTo("second-watermark");
     }
 
     @Test
