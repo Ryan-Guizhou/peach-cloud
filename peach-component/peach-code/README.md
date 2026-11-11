@@ -57,6 +57,8 @@ CodeGenerator.next
 
 旧表的 `ORG_ID` 是规则归属字段而非序号隔离维度；当前公开 API 不接受 `ORG_ID`。若同租户+前缀存在多个组织记录，必须先明确保留规则，不应自动合并。
 
+**真实 MySQL 竞争与故障测试：** 新增 `MysqlCodeConcurrentIntegrationTest`，使用 Testcontainers MySQL 8.4 检验两个独立 `PeachCodeGenerator` 在同一租户/前缀下并发 32 次时每个编号只分配一次，并使用 MySQL `BEFORE UPDATE` 故障触发器验证数据库持久化失败时不会从 Redis 或内存继续发号，恢复后水位顺序正确。Docker 不可用时该集成测试会明确跳过；**生产切换前必须完成旧 Redis/MySQL 历史水位、唯一索引和滚动发布排查**，自动化测试不能代替目标库的数据迁移验收。
+
 ## 验证与边界
 
 - 运行：`mvn -pl peach-component/peach-code/peach-code-quickstart -am spring-boot:run`

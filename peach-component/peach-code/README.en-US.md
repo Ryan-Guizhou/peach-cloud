@@ -57,6 +57,8 @@ CodeGenerator.next
 
 `ORG_ID` remains rule ownership metadata rather than a sequence isolation key. The public API does not accept `ORG_ID`; multiple organizations under one tenant/prefix must be resolved explicitly, never merged automatically.
 
+**Real MySQL concurrency/fault validation:** `MysqlCodeConcurrentIntegrationTest` uses MySQL 8.4 Testcontainers to allocate 32 codes concurrently from two independently configured generator instances. It verifies no duplicate sequence values, injects a `BEFORE UPDATE` SQL failure, and ensures no Redis/in-memory fallback and a safe next allocation after recovery. Tests skip when Docker is unavailable. **Production rollout still requires historical Redis/MySQL counter reconciliation, duplicate-rule cleanup, unique-index verification and old-instance shutdown**; CI cannot validate customer data migration.
+
 ## Verification and limits
 
 - Run: `mvn -pl peach-component/peach-code/peach-code-quickstart -am spring-boot:run`
