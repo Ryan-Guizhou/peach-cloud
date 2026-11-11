@@ -8,7 +8,7 @@ English | [中文](README.md)
 
 **Redisson is a Redis client with higher-level distributed data structures and coordination primitives.** The project's `peach-redission` is a Maven aggregator for locks, duplicate submission protection, delayed queues and segmented bloom filters. Choose the feature Starter you need. The historical directory/artifact and some Java package spellings use `redission`; **this is not a separate client product**.
 
-**Current baseline:** Java 21 / Spring Boot 3.5.4 / Redisson 3.50.0. New `peach-redisson-autoconfigure` and `peach-redisson-starter` allow Redisson-only services without `peach-redis-common` or Jedis. When legacy `RedisConfig` is present, the new configuration backs off from its existing `RedissonClient`; migrating the old mixed configuration is a follow-up stage. See [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18).
+**Current baseline:** Java 21 / Spring Boot 3.5.4 / Redisson 3.50.0. Independent `peach-redisson-autoconfigure` and `peach-redisson-starter` require no Jedis. Old `peach-redis-common` / `RedisConfig` have been removed from this repository. Default auto-configuration still backs off when an application supplies its own `RedissonClient`. See [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18).
 
 **Code-level acceptance to date:** Existing Redis 7.2 integration validates the Redisson client topologies, two-instance Bloom, class-level locking/repeat guard, the single reliable delay queue, independent-JVM forced-kill lease recovery ([#78](https://github.com/Ryan-Guizhou/peach-cloud/pull/78)), and direct queue API preflight against old protocol backlog ([#92](https://github.com/Ryan-Guizhou/peach-cloud/pull/92)). With the queue Starter installed, `peach.delay.queue.enabled=true` by default; explicitly disable it before deploying into an environment with undrained historical messages. **Still requires target-environment acceptance:** actual historic queue draining/rollback, external business fencing and Redis infrastructure failover. Code merge or CI alone does not certify production rollout. See the [migration acceptance runbook](../../docs/redis-redisson/acceptance-and-rollout.en-US.md).
 
@@ -46,7 +46,7 @@ The independent `peach-redisson-starter` retains `peach.redis.mode / host / user
 </dependency>
 ```
 
-Lock, repeat guard, bloom, and delay queue Starters now transitively include `peach-redisson-starter`, without requiring explicit `peach-redis-common` or Jedis. The new auto-configuration backs off when the user supplies `RedissonClient`. Existing applications may retain the legacy `RedisConfig` compatibility path. Use an actual published version outside the Maven reactor.
+Lock, repeat, bloom and delay queue Starters include the independent `peach-redisson-starter`, without Jedis. An application-provided `RedissonClient` wins. The old mixed `peach-redis-common` is deleted; downstream consumers must migrate dependencies and use the actual published artifact version.
 
 ### Minimal development configuration
 
@@ -61,7 +61,7 @@ peach:
       enabled: true
 ```
 
-The new Redisson-only configuration and legacy RedisConfig retain the same `peach.redis.*` topology fields and the default JsonJacksonCodec. Keep passwords out of logs and independently validate TLS/Sentinel/Cluster in the intended Redis deployment.
+Redisson-only uses the same `peach.redis.*` topology keys and JsonJacksonCodec, without the removed `RedisConfig`. Keep credentials out of logs and validate TLS/Sentinel/Cluster in the target deployment.
 
 ### Minimal programmatic lock example
 
@@ -92,7 +92,7 @@ Lock names follow current business naming rules; do not change keys during rolli
 
 ## Redisson dependency-closure cleanup (Issue #43)
 
-`peach-redission-common`, Bloom, DistributedLock and DelayQueue autoconfigure modules no longer declare optional `peach-redis-common`. Feature Starters use `peach-redisson-starter`. Legacy `RedisConfig` stays available for existing installations, but is no longer a new Starter dependency.
+`peach-redission-common`, Bloom, DistributedLock and DelayQueue autoconfigure and feature Starters use the independent Redisson foundation; they do not depend on the deleted `peach-redis-common`. The former `RedisConfig` is no longer provided; rollback requires a separately preserved historical deployment artifact.
 
 ## Structure
 
