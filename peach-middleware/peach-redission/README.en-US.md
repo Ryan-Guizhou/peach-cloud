@@ -16,7 +16,9 @@ English | [中文](README.md)
 
 The independent `peach-redisson-starter` retains `peach.redis.mode / host / username / password` and adds optional `peach.redis.sentinel-username` and `peach.redis.sentinel-password` for Sentinel-specific credentials. Leaving these blank preserves existing behavior. Redisson TLS continues to use `peach.redis.redisson.ssl-enable`, independently of Jedis `peach.redis.ssl-enabled`. A nonzero database in Cluster mode fails at startup rather than silently accessing database zero. Production ACL, certificates and failover still require separate acceptance. The two Nacos templates share the same names and must never embed real credentials.
 
-Dynamic Bloom namespaces use a bounded local segment-handle cache (`peach.redis.bloom.local-cache-maximum-size`, default `4096`), with LRU eviction. The segment directory itself is always read from Redis to preserve cross-instance visibility; disabling `enable-local-cache` bypasses this handle cache.\n\n## Complete capability matrix
+Dynamic Bloom namespaces use a bounded local segment-handle cache (`peach.redis.bloom.local-cache-maximum-size`, default `4096`), with LRU eviction. The segment directory itself is always read from Redis to preserve cross-instance visibility; disabling `enable-local-cache` bypasses this handle cache.\n\n**Managed DelayQueue callbacks:** Automatic `ConsumerTask.execute` dispatch uses the `peach-virtual-thread` static group `delayqueue-worker` and never creates a private platform worker pool. Platform scheduler threads remain only for polling and lease heartbeat. Configure `peach.virtual-thread.groups.delayqueue-worker` with `max-concurrency` matching `peach.delay.queue.worker-count`, `max-pending: 0`, and `backpressure: REJECT`. The enabled Starter fails startup when the group is absent. Manual `pollOnce` remains synchronous on the caller's thread.
+
+## Complete capability matrix
 
 | Capability / starter | Public API | Current functionality | Example use | Current limitation |
 | --- | --- | --- | --- | --- |
