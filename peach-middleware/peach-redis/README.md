@@ -12,6 +12,20 @@
 
 **截至本轮的代码验收：** 独立客户端、Sa-Token 认证、Redis Tool、MultiCache、Stream 已通过对应的 Redis 7.2 专项验证；原位 Sentinel 故障恢复（[#70](https://github.com/Ryan-Guizhou/peach-cloud/pull/70)）、Cluster 主节点切换与新客户端恢复（[#74](https://github.com/Ryan-Guizhou/peach-cloud/pull/74)）、旧/新源码序列化字节兼容（[#66](https://github.com/Ryan-Guizhou/peach-cloud/pull/66)）、Stream 死信字段/只读对账（[#90](https://github.com/Ryan-Guizhou/peach-cloud/pull/90)、[#94](https://github.com/Ryan-Guizhou/peach-cloud/pull/94)）均已有合并记录。**尚未完成的生产验收**是实际旧发行版 SaSession fixture 与混合发布、目标环境 Nacos/ACL/TLS 轮换及真实业务故障注入。完整证据与回滚门槛见[迁移验收手册](../../docs/redis-redisson/acceptance-and-rollout.md)。
 
+**异步缓存清理：** `MultiCacheManagerService.asyncClear(cacheName)` 只向 `peach-virtual-thread` 已注册的 `multicache-clear` 业务组提交任务，不再创建独立平台线程。接入多级缓存 Starter 时需配置：
+
+```yaml
+peach:
+  virtual-thread:
+    groups:
+      multicache-clear:
+        max-concurrency: 4
+        max-pending: 16
+        backpressure: REJECT
+```
+
+未配置业务组时 `asyncClear` 会明确拒绝；组满或关闭时遵守现有虚拟线程背压策略。清理操作异常由虚拟线程异常处理器记录，涉及强一致性时请使用同步 `clear` 等待结果。
+
 ## ACL、Sentinel 与 Cluster 配置契约（Issue #49）
 
 独立 `peach-redis-starter` 同时支持数据节点 ACL 和独立 Sentinel ACL；两类认证信息不应混用。下列键在未配置时保持兼容默认值：
