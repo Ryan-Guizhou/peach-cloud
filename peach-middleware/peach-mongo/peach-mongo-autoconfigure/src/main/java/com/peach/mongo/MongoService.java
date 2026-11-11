@@ -211,7 +211,7 @@ public class MongoService<T> implements IMongoService<T>{
             getCollection(collectionName).insertOne(document);
             return true;
         }catch (Exception e){
-            log.error("MongoService.insert() collectionName: {}, document: {}", collectionName, document, e);
+            log.error("MongoService.insert() failed, collection={}, cause={}", collectionName, e.getClass().getSimpleName());
             return false;
         }
     }
@@ -222,7 +222,7 @@ public class MongoService<T> implements IMongoService<T>{
             getCollection(collectionName).insertMany(documents);
             return true;
         }catch (Exception e){
-            log.error("MongoService.insertMany() collectionName: {}, documents: {}", collectionName, documents, e);
+            log.error("MongoService.insertMany() failed, collection={}, cause={}", collectionName, e.getClass().getSimpleName());
             return false;
         }
     }
@@ -233,7 +233,7 @@ public class MongoService<T> implements IMongoService<T>{
             getCollection(collectionName).deleteOne(query);
             return true;
         }catch (Exception e){
-            log.error("MongoService.deleteOne() collectionName: {}, query: {}", collectionName, query, e);
+            log.error("MongoService.deleteOne() failed, collection={}, cause={}", collectionName, e.getClass().getSimpleName());
             return false;
         }
     }
@@ -244,7 +244,7 @@ public class MongoService<T> implements IMongoService<T>{
             getCollection(collectionName).deleteMany(query);
             return true;
         }catch (Exception e){
-            log.error("MongoService.deleteMany() collectionName: {}, query: {}", collectionName, query, e);
+            log.error("MongoService.deleteMany() failed, collection={}, cause={}", collectionName, e.getClass().getSimpleName());
             return false;
         }
     }
@@ -255,7 +255,7 @@ public class MongoService<T> implements IMongoService<T>{
             getCollection(collectionName).updateOne(query, update);
             return true;
         }catch (Exception e){
-            log.error("MongoService.updateOne() collectionName: {}, query: {}, update: {}", collectionName, query, update, e);
+            log.error("MongoService.updateOne() failed, collection={}, cause={}", collectionName, e.getClass().getSimpleName());
             return false;
         }
     }
@@ -266,7 +266,7 @@ public class MongoService<T> implements IMongoService<T>{
             getCollection(collectionName).updateMany(query, update);
             return true;
         }catch (Exception e){
-            log.error("MongoService.updateMany() collectionName: {}, query: {}, update: {}", collectionName, query, update, e);
+            log.error("MongoService.updateMany() failed, collection={}, cause={}", collectionName, e.getClass().getSimpleName());
             return false;
         }
     }
