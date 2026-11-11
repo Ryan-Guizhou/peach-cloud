@@ -327,9 +327,6 @@ public final class RedisDelayQueue implements AutoCloseable {
         if (closing) {
             throw new IllegalStateException("Delay queue is closing");
         }
-        if (workerRegistry == null || !workerRegistry.groupNames().contains(WORKER_GROUP)) {
-            throw new IllegalStateException("Managed virtual-thread group 'delayqueue-worker' is required");
-        }
         validateTopic(topic);
         Objects.requireNonNull(task, "task");
         if (!topic.equals(task.topic())) {
@@ -340,6 +337,9 @@ public final class RedisDelayQueue implements AutoCloseable {
         }
         // 对直接使用 RedisDelayQueue 的调用方也执行一次真实预检查。
         assertLegacyDrained(topic);
+        if (workerRegistry == null || !workerRegistry.groupNames().contains(WORKER_GROUP)) {
+            throw new IllegalStateException("Managed virtual-thread group 'delayqueue-worker' is required");
+        }
         inspectedLegacyTopics.put(topic, Boolean.TRUE);
         if (pollingTopics.size() >= properties.getMaxTopicSubscriptions()) {
             throw new IllegalStateException("Delay queue topic subscription limit reached");
