@@ -24,12 +24,12 @@
     },
     {
       "name": "peach.openfeign.client.named.*.connect-timeout-millis",
-      "type": "com.peach.openfeign.config.Integer",
+      "type": "java.lang.Integer",
       "description": "Time setting for peach.openfeign.client.named.*; check units."
     },
     {
       "name": "peach.openfeign.client.named.*.read-timeout-millis",
-      "type": "com.peach.openfeign.config.Integer",
+      "type": "java.lang.Integer",
       "description": "Time setting for peach.openfeign.client.named.*; check units."
     },
     {
