@@ -27,6 +27,8 @@ The independent `peach-redis-starter` supports separate credentials for data nod
 
 Redis Cluster requires database `0`; invalid values fail during startup. Both Nacos templates use the same property keys. Put real passwords in a secure configuration source, never the repository. User-provided `RedisConnectionFactory` still wins over the default Jedis factory. See the Issue #47 section below for real topology verification.
 
+**Managed async cache clear:** `MultiCacheManagerService.asyncClear(cacheName)` submits exclusively to the `peach-virtual-thread` static group `multicache-clear` rather than creating unmanaged threads. Configure `peach.virtual-thread.groups.multicache-clear` with bounded `max-concurrency`, `max-pending`, and `backpressure: REJECT` (the multicache quickstart includes an example). Without this group the method fails explicitly; rejection on capacity/shutdown is propagated to the caller. Use synchronous `clear` if the caller must observe completion.
+
 ## Complete capability matrix
 
 | Module / starter | Main API | Capabilities | Use cases | Current limitation |
