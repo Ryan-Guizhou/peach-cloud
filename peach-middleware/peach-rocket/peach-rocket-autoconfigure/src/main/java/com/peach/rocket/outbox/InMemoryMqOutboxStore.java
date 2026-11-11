@@ -34,27 +34,28 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
 
     @Override
     public void markSent(String messageId) {
-        MqOutboxEvent event = events.get(messageId);
-        if (event != null) {
-            events.put(messageId, event.withStatus(MqOutboxStatus.SENT));
-        }
+        events.computeIfPresent(messageId, (key, event) ->
+                event.status() == MqOutboxStatus.FAILED ? event : event.withStatus(MqOutboxStatus.SENT));
     }
 
     @Override
     public void markFailed(String messageId) {
-        MqOutboxEvent event = events.get(messageId);
-        if (event != null) {
-            events.put(messageId, event.withRetryCount(event.retryCount() + 1).withStatus(MqOutboxStatus.RETRY));
-        }
+        events.computeIfPresent(messageId, (key, event) ->
+                event.status() == MqOutboxStatus.SENT || event.status() == MqOutboxStatus.FAILED
+                        ? event
+                        : event.withRetryCount(event.retryCount() + 1).withStatus(MqOutboxStatus.RETRY));
     }
 
     @Override
     public boolean replay(String messageId) {
-        MqOutboxEvent event = events.get(messageId);
-        if (event == null || event.status() != MqOutboxStatus.FAILED) {
-            return false;
-        }
-        events.put(messageId, event.withStatus(MqOutboxStatus.RETRY));
-        return true;
+        java.util.concurrent.atomic.AtomicBoolean replayed = new java.util.concurrent.atomic.AtomicBoolean();
+        events.computeIfPresent(messageId, (key, event) -> {
+            if (event.status() != MqOutboxStatus.FAILED) {
+                return event;
+            }
+            replayed.set(true);
+            return event.withStatus(MqOutboxStatus.RETRY);
+        });
+        return replayed.get();
     }
 }
