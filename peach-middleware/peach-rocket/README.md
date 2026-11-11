@@ -107,6 +107,8 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 
 **Outbox 可靠性：** `MqOutboxStore` 增加兼容的 `claimPending(batchSize)` 和携带令牌的 `markSent(MqOutboxClaim)` / `markFailed(MqOutboxClaim)` 方法。默认旧存储实现可以沿用现有 `findPending`，但持久化 JDBC Store 必须实现认领者令牌校验；Dispatcher 现使用该入口。外部发送与数据库确认之间不存在分布式原子事务，仍为 at-least-once。
 
+**内存 Outbox 仅限开发环境：** 默认 `InMemoryMqOutboxStore` 保留现有发送接口，但最多缓存 `1024` 条、每条载荷不超过 `65536` 字节，终态保持 `24h`（读写时惰性清理），认领租约 `5m`；配置分别为 `peach.rocket.outbox.in-memory-max-entries`、`in-memory-max-payload-bytes`、`in-memory-retention`、`in-memory-lease`。多 Dispatcher 通过 `claimPending` 原子领取并以令牌完成 ACK/FAIL，失败重试有界且没有后台清理线程。容量耗尽拒绝新消息，绝不删除未发送消息。**内存 Store 重启丢数据**，生产开启 `peach.rocket.outbox.require-durable=true` 并提供 JDBC 等持久化实现，缺失会启动失败；即使持久化仍是 at-least-once。
+
 ## SPI 覆盖
 
 - 路由：`MqRouteResolver`，默认基于注解解析。
