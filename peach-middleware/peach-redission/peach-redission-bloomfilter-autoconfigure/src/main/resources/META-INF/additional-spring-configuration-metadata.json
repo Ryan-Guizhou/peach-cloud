@@ -15,7 +15,7 @@
     {
       "name": "peach.redis.bloom.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enables segmented Bloom filter auto-configuration when Redisson is present.",
+      "description": "检测到 Redisson 客户端时是否自动配置分段布隆过滤器。",
       "defaultValue": true
     },
     {
@@ -45,7 +45,7 @@
     {
       "name": "peach.redis.bloom.local-cache-maximum-size",
       "type": "java.lang.Integer",
-      "description": "Concurrency, sizing or capacity setting for peach.redis.bloom.",
+      "description": "布隆过滤器本地缓存允许的最大条目数量。",
       "defaultValue": 4096
     },
     {

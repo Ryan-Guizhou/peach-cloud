@@ -4,34 +4,34 @@
       "name": "peach.scheduler.enabled",
       "type": "java.lang.Boolean",
       "defaultValue": true,
-      "description": "Enable Peach Scheduler."
+      "description": "是否启用 Peach Scheduler 调度组件。"
     },
     {
       "name": "peach.scheduler.executor.application-name",
       "type": "java.lang.String",
-      "description": "Logical application name used by scheduler metadata."
+      "description": "调度执行器上报的逻辑应用名称。"
     },
     {
       "name": "peach.scheduler.executor.instance-id",
       "type": "java.lang.String",
-      "description": "Executor instance id reported with scheduler lease claims. Empty values use the local host name when available."
+      "description": "调度执行器实例标识，用于租约认领与状态上报；留空时尽可能使用本机主机名。"
     },
     {
       "name": "peach.scheduler.executor.default-timeout-ms",
       "type": "java.lang.Long",
       "defaultValue": 1800000,
-      "description": "Best-effort execution timeout in milliseconds. Values less than or equal to zero wait indefinitely."
+      "description": "任务默认执行超时时间，单位毫秒；值小于或等于 0 时不设置超时。"
     },
     {
       "name": "peach.scheduler.executor.max-error-message-length",
       "type": "java.lang.Integer",
       "defaultValue": 1000,
-      "description": "Maximum sanitized error message length reported back to the scheduler control plane."
+      "description": "向调度控制端上报的异常信息最大长度，超出部分将截断。"
     },
     {
       "name": "peach.scheduler.executor",
       "type": "com.peach.scheduler.config.PeachSchedulerProperties$Executor",
-      "description": "Configure executor for peach.scheduler."
+      "description": "调度执行器的身份、超时及错误上报配置。"
     }
   ],
   "hints": []

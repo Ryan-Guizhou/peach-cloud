@@ -3,72 +3,72 @@
     {
       "name": "peach.redis.stream.consumer-group",
       "type": "java.lang.String",
-      "description": "Configures consumer group for peach.redis.stream.",
+      "description": "Redis Stream 消费者组名称。",
       "defaultValue": "user-log-group"
     },
     {
       "name": "peach.redis.stream.consumer-name",
       "type": "java.lang.String",
-      "description": "Configures consumer name for peach.redis.stream.",
+      "description": "Redis Stream 消费者实例名称。",
       "defaultValue": "user-log-consumer"
     },
     {
       "name": "peach.redis.stream.consumer-type",
       "type": "java.lang.String",
-      "description": "Configures consumer type for peach.redis.stream.",
+      "description": "Redis Stream 消费模式，例如消费者组（group）或广播（broadcast）。",
       "defaultValue": "group"
     },
     {
       "name": "peach.redis.stream.enable",
       "type": "java.lang.Boolean",
-      "description": "Enables Redis Stream consumer auto-configuration. Disabled by default until explicitly enabled.",
+      "description": "是否启用 Redis Stream 消费端自动配置；默认关闭，需要显式开启。",
       "defaultValue": false
     },
     {
       "name": "peach.redis.stream.recovery.batch-size",
       "type": "java.lang.Integer",
-      "description": "Bounded capacity setting for peach.redis.stream.recovery.",
+      "description": "每轮处理待恢复 Redis Stream 消息的最大数量。",
       "defaultValue": 32
     },
     {
       "name": "peach.redis.stream.recovery.dead-letter-stream",
       "type": "java.lang.String",
-      "description": "Configures dead letter stream for peach.redis.stream.recovery."
+      "description": "Redis Stream 重试失败后转移消息的死信流名称。"
     },
     {
       "name": "peach.redis.stream.recovery.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enables or disables peach.redis.stream.recovery behavior.",
+      "description": "是否启用 Redis Stream 待确认消息恢复机制。",
       "defaultValue": false
     },
     {
       "name": "peach.redis.stream.recovery.interval",
       "type": "java.time.Duration",
-      "description": "Time setting for peach.redis.stream.recovery; check units.",
+      "description": "Redis Stream 待确认消息恢复任务的运行间隔（Duration）。",
       "defaultValue": "30s"
     },
     {
       "name": "peach.redis.stream.recovery.max-attempts",
       "type": "java.lang.Integer",
-      "description": "Bounded capacity setting for peach.redis.stream.recovery.",
+      "description": "Redis Stream 消息允许的最大重试次数。",
       "defaultValue": 5
     },
     {
       "name": "peach.redis.stream.recovery.max-retry-delay",
       "type": "java.time.Duration",
-      "description": "Time setting for peach.redis.stream.recovery; check units.",
+      "description": "Redis Stream 重试退避的最长等待时间（Duration）。",
       "defaultValue": "15m"
     },
     {
       "name": "peach.redis.stream.recovery.min-idle",
       "type": "java.time.Duration",
-      "description": "Time setting for peach.redis.stream.recovery; check units.",
+      "description": "消息进入待恢复流程前必须达到的最小空闲时间（Duration）。",
       "defaultValue": "60s"
     },
     {
       "name": "peach.redis.stream.stream-name",
       "type": "java.lang.String",
-      "description": "Configures stream name for peach.redis.stream.",
+      "description": "Redis Stream 使用的消息流键名。",
       "defaultValue": "user-log"
     }
   ],

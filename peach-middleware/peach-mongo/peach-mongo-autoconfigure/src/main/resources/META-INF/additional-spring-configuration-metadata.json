@@ -3,7 +3,7 @@
     {
       "name": "peach.mongo.cluster",
       "type": "com.peach.mongo.PeachMongoProperties$Cluster",
-      "description": "Configures cluster for peach.mongo."
+      "description": "MongoDB 集群发现与服务器选择配置。"
     },
     {
       "name": "peach.mongo.cluster.server-selection-timeout-ms",
@@ -19,65 +19,65 @@
     {
       "name": "peach.mongo.log",
       "type": "com.peach.mongo.PeachMongoProperties$Log",
-      "description": "Configures log for peach.mongo."
+      "description": "MongoDB 命令日志与慢查询诊断配置。"
     },
     {
       "name": "peach.mongo.log.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enables or disables peach.mongo.log behavior.",
+      "description": "是否启用 MongoDB 命令日志采集。",
       "defaultValue": true
     },
     {
       "name": "peach.mongo.log.exclude-commands",
       "type": "java.util.List",
-      "description": "Configures exclude commands for peach.mongo.log."
+      "description": "不参与 MongoDB 命令日志统计或记录的命令名称列表。"
     },
     {
       "name": "peach.mongo.log.executable",
       "type": "java.lang.Boolean",
-      "description": "Configures executable for peach.mongo.log.",
+      "description": "是否记录适合排查问题的 MongoDB 命令执行详情；请注意敏感数据保护。",
       "defaultValue": false
     },
     {
       "name": "peach.mongo.log.large-result-threshold",
       "type": "java.lang.Integer",
-      "description": "Configures large result threshold for peach.mongo.log.",
+      "description": "MongoDB 查询结果数量达到该阈值时触发大结果集诊断。",
       "defaultValue": 5000
     },
     {
       "name": "peach.mongo.log.long-query-time",
       "type": "java.lang.Integer",
-      "description": "Configures long query time for peach.mongo.log.",
+      "description": "MongoDB 慢查询判定阈值，单位毫秒。",
       "defaultValue": 3000
     },
     {
       "name": "peach.mongo.log.max-command-length",
       "type": "java.lang.Integer",
-      "description": "Bounded capacity setting for peach.mongo.log.",
+      "description": "MongoDB 命令日志的最大字符长度，超出部分截断。",
       "defaultValue": 4000
     },
     {
       "name": "peach.mongo.log.warn-empty-filter",
       "type": "java.lang.Boolean",
-      "description": "Configures warn empty filter for peach.mongo.log.",
+      "description": "是否对未指定过滤条件的 MongoDB 操作输出风险警告。",
       "defaultValue": true
     },
     {
       "name": "peach.mongo.max-list-size",
       "type": "java.lang.Integer",
-      "description": "Bounded capacity setting for peach.mongo.",
+      "description": "单次列表查询返回的最大文档数，防止无界查询耗尽内存。",
       "defaultValue": 500
     },
     {
       "name": "peach.mongo.max-page-size",
       "type": "java.lang.Integer",
-      "description": "Bounded capacity setting for peach.mongo.",
+      "description": "分页查询允许的最大页容量。",
       "defaultValue": 500
     },
     {
       "name": "peach.mongo.pool",
       "type": "com.peach.mongo.PeachMongoProperties$Pool",
-      "description": "Configures pool for peach.mongo."
+      "description": "MongoDB 连接池容量、空闲回收和维护任务配置。"
     },
     {
       "name": "peach.mongo.pool.maintenance-frequency-ms",
@@ -130,7 +130,7 @@
     {
       "name": "peach.mongo.socket",
       "type": "com.peach.mongo.PeachMongoProperties$Socket",
-      "description": "Configures socket for peach.mongo."
+      "description": "MongoDB Socket 连接及读写超时配置。"
     },
     {
       "name": "peach.mongo.socket.connect-timeout-ms",
@@ -147,7 +147,7 @@
     {
       "name": "peach.mongo.template",
       "type": "com.peach.mongo.PeachMongoProperties$Template",
-      "description": "Configures template for peach.mongo."
+      "description": "MongoDB Template 查询结果映射与操作行为配置。"
     },
     {
       "name": "peach.mongo.template.remove-class-field",
@@ -158,7 +158,7 @@
     {
       "name": "peach.mongo.transaction",
       "type": "com.peach.mongo.PeachMongoProperties$Transaction",
-      "description": "Configures transaction for peach.mongo."
+      "description": "MongoDB 事务功能配置，使用前需确认集群拓扑支持事务。"
     },
     {
       "name": "peach.mongo.transaction.enabled",

@@ -67,13 +67,13 @@
     {
       "name": "peach.multicache.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enables the multi-level cache auto-configuration when the Redis cache dependencies are available.",
+      "description": "是否启用 Redis 与本地缓存组合的多级缓存自动配置。",
       "defaultValue": true
     },
     {
       "name": "peach.multicache.max-cache-instances",
       "type": "java.lang.Integer",
-      "description": "Capacity or limit for peach.multicache.",
+      "description": "当前进程允许创建的最大多级缓存实例数，超过上限时拒绝新实例。",
       "defaultValue": 256
     },
     {
@@ -95,7 +95,7 @@
     {
       "name": "peach.multicache.redis.random-jitter",
       "type": "java.time.Duration",
-      "description": "Configure random jitter for peach.multicache.redis.",
+      "description": "缓存过期时间使用的随机抖动范围（Duration），用于缓解缓存雪崩。",
       "defaultValue": "0ms"
     },
     {

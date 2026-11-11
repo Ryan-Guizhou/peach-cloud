@@ -3,176 +3,176 @@
     {
       "name": "peach.redis.database",
       "type": "java.lang.Integer",
-      "description": "Configures database for peach.redis.",
+      "description": "Redis 独立数据库编号；Cluster 模式不支持按数据库编号切换。",
       "defaultValue": 0
     },
     {
       "name": "peach.redis.host",
       "type": "java.lang.String",
-      "description": "Configures host for peach.redis."
+      "description": "Redis 服务地址或节点地址列表，具体格式取决于连接模式。"
     },
     {
       "name": "peach.redis.mode",
       "type": "java.lang.String",
-      "description": "Configures mode for peach.redis.",
+      "description": "Redis 部署模式，可选择 standalone（单机）、sentinel（哨兵）或 cluster（集群）。",
       "defaultValue": "standalone"
     },
     {
       "name": "peach.redis.password",
       "type": "java.lang.String",
-      "description": "Sensitive value: load password from a secure source."
+      "description": "Redis 认证密码，建议从环境变量或配置中心安全注入。"
     },
     {
       "name": "peach.redis.redisson",
       "type": "com.peach.redisson.autoconfigure.PeachRedissonProperties$RedissonOptions",
-      "description": "Configures redisson for peach.redis."
+      "description": "Redisson 客户端线程、连接池、超时和重试等参数。"
     },
     {
       "name": "peach.redis.redisson.connect-timeout",
       "type": "java.lang.Integer",
-      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "description": "Redisson 连接 Redis 节点的超时时间，单位毫秒。",
       "defaultValue": 10000
     },
     {
       "name": "peach.redis.redisson.connection-minimum-idle-size",
       "type": "java.lang.Integer",
-      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "description": "普通 Redis 连接池需维持的最小空闲连接数。",
       "defaultValue": 10
     },
     {
       "name": "peach.redis.redisson.connection-pool-size",
       "type": "java.lang.Integer",
-      "description": "Concurrency, sizing or capacity setting for peach.redis.redisson.",
+      "description": "普通 Redis 连接池允许的最大连接数。",
       "defaultValue": 64
     },
     {
       "name": "peach.redis.redisson.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enable or disable peach.redis.redisson functionality.",
+      "description": "是否启用 Redisson 客户端自动配置。",
       "defaultValue": true
     },
     {
       "name": "peach.redis.redisson.idle-connection-timeout",
       "type": "java.lang.Integer",
-      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "description": "空闲连接被回收前允许的最长空闲时间，单位毫秒。",
       "defaultValue": 10000
     },
     {
       "name": "peach.redis.redisson.lock-watchdog-timeout",
       "type": "java.lang.Long",
-      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "description": "Redisson 分布式锁看门狗续期超时时间，单位毫秒。",
       "defaultValue": 30000
     },
     {
       "name": "peach.redis.redisson.master-connection-minimum-idle-size",
       "type": "java.lang.Integer",
-      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "description": "主节点连接池需维持的最小空闲连接数。",
       "defaultValue": 10
     },
     {
       "name": "peach.redis.redisson.master-connection-pool-size",
       "type": "java.lang.Integer",
-      "description": "Concurrency, sizing or capacity setting for peach.redis.redisson.",
+      "description": "主节点连接池允许的最大连接数。",
       "defaultValue": 64
     },
     {
       "name": "peach.redis.redisson.netty-threads",
       "type": "java.lang.Integer",
-      "description": "Configures netty threads for peach.redis.redisson.",
+      "description": "Redisson 底层 Netty I/O 线程数量。",
       "defaultValue": 32
     },
     {
       "name": "peach.redis.redisson.ping-timeout",
       "type": "java.lang.Integer",
-      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "description": "Redis PING 命令的响应超时时间，单位毫秒。",
       "defaultValue": 1000
     },
     {
       "name": "peach.redis.redisson.retry-attempts",
       "type": "java.lang.Integer",
-      "description": "Configures retry attempts for peach.redis.redisson.",
+      "description": "Redisson 命令执行失败时允许的重试次数。",
       "defaultValue": 3
     },
     {
       "name": "peach.redis.redisson.retry-interval",
       "type": "java.lang.Integer",
-      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "description": "Redisson 命令重试之间的等待时间，单位毫秒。",
       "defaultValue": 1500
     },
     {
       "name": "peach.redis.redisson.scan-interval",
       "type": "java.lang.Integer",
-      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "description": "Redisson 集群拓扑或节点状态扫描间隔，单位毫秒。",
       "defaultValue": 1000
     },
     {
       "name": "peach.redis.redisson.slave-connection-minimum-idle-size",
       "type": "java.lang.Integer",
-      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "description": "从节点连接池需维持的最小空闲连接数。",
       "defaultValue": 10
     },
     {
       "name": "peach.redis.redisson.slave-connection-pool-size",
       "type": "java.lang.Integer",
-      "description": "Concurrency, sizing or capacity setting for peach.redis.redisson.",
+      "description": "从节点连接池允许的最大连接数。",
       "defaultValue": 64
     },
     {
       "name": "peach.redis.redisson.ssl-enable",
       "type": "java.lang.Boolean",
-      "description": "Configures ssl enable for peach.redis.redisson.",
+      "description": "是否为 Redisson 连接启用 TLS/SSL 加密。",
       "defaultValue": false
     },
     {
       "name": "peach.redis.redisson.subscription-connection-minimum-idle-size",
       "type": "java.lang.Integer",
-      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "description": "发布订阅专用连接池需维持的最小空闲连接数。",
       "defaultValue": 1
     },
     {
       "name": "peach.redis.redisson.subscription-connection-pool-size",
       "type": "java.lang.Integer",
-      "description": "Concurrency, sizing or capacity setting for peach.redis.redisson.",
+      "description": "发布订阅专用连接池允许的最大连接数。",
       "defaultValue": 50
     },
     {
       "name": "peach.redis.redisson.subscriptions-per-connection",
       "type": "java.lang.Integer",
-      "description": "Configures subscriptions per connection for peach.redis.redisson.",
+      "description": "每条 Redis 连接允许承载的最大订阅数量。",
       "defaultValue": 5
     },
     {
       "name": "peach.redis.redisson.threads",
       "type": "java.lang.Integer",
-      "description": "Configures threads for peach.redis.redisson.",
+      "description": "Redisson 内部事件监听与业务回调使用的线程数量。",
       "defaultValue": 16
     },
     {
       "name": "peach.redis.redisson.timeout",
       "type": "java.lang.Integer",
-      "description": "Time setting for peach.redis.redisson; check duration units.",
+      "description": "Redisson 命令等待响应的超时时间，单位毫秒。",
       "defaultValue": 3000
     },
     {
       "name": "peach.redis.sentinel-master",
       "type": "java.lang.String",
-      "description": "Configures sentinel master for peach.redis.",
+      "description": "Sentinel 监控的 Redis 主节点逻辑名称。",
       "defaultValue": "master"
     },
     {
       "name": "peach.redis.sentinel-password",
       "type": "java.lang.String",
-      "description": "Sensitive value: load sentinel password from a secure source."
+      "description": "Redis Sentinel 认证密码，应从安全配置源注入。"
     },
     {
       "name": "peach.redis.sentinel-username",
       "type": "java.lang.String",
-      "description": "Configures sentinel username for peach.redis."
+      "description": "Redis Sentinel ACL 认证用户名。"
     },
     {
       "name": "peach.redis.username",
       "type": "java.lang.String",
-      "description": "Configures username for peach.redis."
+      "description": "Redis ACL 认证用户名。"
     }
   ],
   "hints": []

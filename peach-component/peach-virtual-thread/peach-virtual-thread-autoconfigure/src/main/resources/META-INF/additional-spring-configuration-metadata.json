@@ -31,25 +31,25 @@
     {
       "name": "peach.virtual-thread.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enable or disable peach.virtual-thread functionality.",
+      "description": "是否启用受管虚拟线程组件。",
       "defaultValue": true
     },
     {
       "name": "peach.virtual-thread.thread-name-prefix",
       "type": "java.lang.String",
-      "description": "Configure thread name prefix for peach.virtual-thread.",
+      "description": "新建虚拟线程的名称前缀，便于日志追踪和问题定位。",
       "defaultValue": "peach-vt-"
     },
     {
       "name": "peach.virtual-thread.shutdown-await",
       "type": "java.time.Duration",
-      "description": "Configure shutdown await for peach.virtual-thread.",
+      "description": "应用关闭时等待受管虚拟线程任务完成的最长时间（Duration）。",
       "defaultValue": "30s"
     },
     {
       "name": "peach.virtual-thread.groups",
       "type": "java.util.Map",
-      "description": "Configure groups for peach.virtual-thread."
+      "description": "按名称配置虚拟线程执行组，各组可以独立设置并发上限、待处理任务数量和背压策略。"
     }
   ],
   "hints": [

@@ -124,15 +124,30 @@ function inlineConfigurationProperties(source,constants = {}){
  return [...properties.values()];
 }
 
-function describe(name,def){
- const parts=name.split(".");
- const item=parts.at(-1).replaceAll("-"," ");
- if(/password|secret|access.key|token|credential/i.test(name))return "Configures "+item+"; supply sensitive values from a secure configuration source.";
- if(/enabled$/.test(name))return "Enables or disables "+parts.slice(0,-1).join(".")+" functionality.";
- if(/timeout|interval|wait|lease|retention|expire|delay/i.test(item))return "Configures "+item+" for "+parts.slice(0,-1).join(".")+"; check units and bounds.";
- if(/max|min|limit|capacity|count|size/i.test(item))return "Sets the "+item+" limit for "+parts.slice(0,-1).join(".")+"; validate capacity and memory budgets.";
- if(/\.providers$|\.named$|\.groups$/.test(name))return "Configures named entries; add a map key before the nested properties.";
- return "Configures "+item+" for "+parts.slice(0,-1).join(".")+".";
+function describe(name) {
+    const parts = name.split(".");
+    const field = parts.at(-1);
+    const parent = parts.slice(0, -1).join(".");
+    if (/password|secret|access-key|credential/i.test(field)) {
+        return "敏感配置 " + name + "，请通过配置中心或环境变量安全注入，禁止将明文提交到源码仓库。";
+    }
+    if (/^enabled?$/.test(field)) {
+        return "是否启用 " + parent + " 对应的功能。";
+    }
+    if (/timeout|interval|wait|lease|retention|expire|delay/i.test(field)) {
+        return parent + " 的时间参数（请确认单位与合理范围）。";
+    }
+    if (/max|min|limit|capacity|count|size/i.test(field)) {
+        return parent + " 的容量或数量限制，请结合并发与内存预算设置。";
+    }
+    if (field === "*" || /^(providers|named|groups)$/.test(field)) {
+        return parent + " 的命名配置集合，使用实际名称替换通配符。";
+    }
+    return "配置 " + parent + " 下的 " + field + " 参数；请根据实际业务含义完善中文说明。";
+}
+
+function hasChineseDescription(value) {
+    return typeof value === "string" && /\p{Script=Han}/u.test(value);
 }
 
 function mergeMetadata(existing,expected){
@@ -244,8 +259,23 @@ function checkOne(moduleDir) {
         }
         if (known.has(prop.name)) errors.push(fileName + ": duplicate property: " + prop.name);
         if (typeof prop.type !== "string" || !prop.type.trim()) errors.push(fileName + ": missing type: " + prop.name);
-        if (typeof prop.description !== "string" || !prop.description.trim()) errors.push(fileName + ": missing description: " + prop.name);
+        if (!hasChineseDescription(prop.description)) {
+            errors.push(fileName + ": property description must contain Chinese: " + prop.name);
+        }
         known.set(prop.name, prop);
+    }
+    if (existing.hints != null && !Array.isArray(existing.hints)) {
+        errors.push(fileName + ": hints must be an array");
+    }
+    for (const hint of Array.isArray(existing.hints) ? existing.hints : []) {
+        if (hint.description != null && !hasChineseDescription(hint.description)) {
+            errors.push(fileName + ": hint description must contain Chinese: " + hint.name);
+        }
+        for (const value of Array.isArray(hint.values) ? hint.values : []) {
+            if (value.description != null && !hasChineseDescription(value.description)) {
+                errors.push(fileName + ": hint value description must contain Chinese: " + hint.name);
+            }
+        }
     }
     for (const expected of configFiles) {
         const actual = known.get(expected.name);
@@ -277,6 +307,9 @@ function findAutoconfigProjects(directory) {
 }
 
 function selfTest() {
+    if (hasChineseDescription("Configure a key") || !hasChineseDescription("配置项的说明")) {
+        throw new Error("Chinese configuration description gate self-test failed");
+    }
     const example = 'package x.y;\n@ConfigurationProperties(prefix = "peach.sample")\n' +
         'public class ExampleProperties {\n private boolean enabled = true;\n' +
         'private final Group group = new Group();\npublic static class Group {\n' +

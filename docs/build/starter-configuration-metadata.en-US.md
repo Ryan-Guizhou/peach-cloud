@@ -10,7 +10,7 @@ After adding a `peach-*-starter`, Spring Boot-aware editors should offer discove
 
 1. Every `*-autoconfigure` module under `peach-component` and `peach-middleware` contains `src/main/resources/META-INF/additional-spring-configuration-metadata.json`, available transitively through its Starter. Empty `properties` and `hints` arrays are allowed only where no public settings exist.
 2. Modules declaring `@ConfigurationProperties` depend on `spring-boot-configuration-processor` with `optional=true`. Let the annotation processor generate `META-INF/spring-configuration-metadata.json`; do not commit its compiled output. Additional metadata fills in descriptions, dynamic-map hints and defaults that need manual help.
-3. Every added property must have an additional metadata entry. Defaults must agree with literal Java initializers where statically inferable. Never fabricate defaults for credentials, endpoints or runtime-computed values; explain external configuration and conditional defaults in descriptions.
+3. All metadata `properties[].description` values must be written in Chinese with a meaningful explanation of the setting; hint descriptions must also use Chinese. English placeholders are rejected by CI. Every added property must have an additional metadata entry. Defaults must agree with literal Java initializers where statically inferable. Never fabricate defaults for credentials, endpoints or runtime-computed values; explain external configuration and conditional defaults in descriptions.
 4. Use canonical kebab-case paths; nested data uses dotted paths and dynamic map keys use `*` (e.g. `peach.storage.providers.*.endpoint`). Do not define contradictory defaults in multiple libraries.
 5. Include public `@ConditionalOnProperty` and `@Value` switches not represented by a configuration-properties class manually. An empty document is valid for a genuinely parameter-free Starter.
 
@@ -21,7 +21,7 @@ node scripts/check-spring-configuration-metadata.mjs
 node scripts/verify-changes.mjs
 ```
 
-The existing repository gate checks every AutoConfigure metadata file, JSON syntax, uniqueness, names, types, descriptions, Java field coverage (including nested types and same-package config objects), annotation processor dependencies and statically inferable default-value drift.
+The existing repository gate checks every AutoConfigure metadata file, JSON syntax, uniqueness, names, types, Chinese descriptions, Java field coverage (including nested types and same-package config objects), annotation processor dependencies and statically inferable default-value drift.
 
 For initial scaffolding:
 

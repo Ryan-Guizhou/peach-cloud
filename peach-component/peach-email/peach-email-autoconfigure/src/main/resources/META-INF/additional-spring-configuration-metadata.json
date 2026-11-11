@@ -8,18 +8,18 @@
     {
       "name": "peach.email.idempotency",
       "type": "com.peach.email.autoconfigure.EmailProperties$Idempotency",
-      "description": "Configure idempotency for peach.email."
+      "description": "邮件发送幂等控制配置。"
     },
     {
       "name": "peach.email.idempotency.max-entries",
       "type": "java.lang.Integer",
-      "description": "Capacity or limit setting for peach.email.idempotency.",
+      "description": "单进程邮件幂等记录允许保存的最大条目数，达到上限时拒绝新键认领。",
       "defaultValue": 10000
     },
     {
       "name": "peach.email.idempotency.retention",
       "type": "java.time.Duration",
-      "description": "Time setting for peach.email.idempotency; check units and valid range.",
+      "description": "邮件幂等记录的保留时间（Duration），过期后允许重新认领。",
       "defaultValue": "24h"
     },
     {

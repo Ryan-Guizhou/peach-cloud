@@ -3,88 +3,88 @@
     {
       "name": "peach.mybatis.database-ids",
       "type": "java.util.Map",
-      "description": "Configure database ids for peach.mybatis."
+      "description": "数据库产品与方言标识的映射关系，用于识别不同数据库类型。"
     },
     {
       "name": "peach.mybatis.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enable or disable peach.mybatis.",
+      "description": "是否启用 MyBatis 组件自动配置。",
       "defaultValue": true
     },
     {
       "name": "peach.mybatis.jdbc-type-for-null",
       "type": "java.lang.Boolean",
-      "description": "Configure jdbc type for null for peach.mybatis.",
+      "description": "是否为 null 参数指定 JDBC 类型，避免数据库驱动处理空值时出现兼容性问题。",
       "defaultValue": false
     },
     {
       "name": "peach.mybatis.log",
       "type": "com.peach.mybatis.config.PeachMybatisProperties$Log",
-      "description": "Configure log for peach.mybatis."
+      "description": "MyBatis SQL 日志及诊断配置。"
     },
     {
       "name": "peach.mybatis.log.executable",
       "type": "java.lang.Boolean",
-      "description": "Configure executable for peach.mybatis.log.",
+      "description": "是否将 SQL 与参数整理为便于调试的可执行形式；请注意日志中的敏感信息。",
       "defaultValue": false
     },
     {
       "name": "peach.mybatis.log.large-result-threshold",
       "type": "java.lang.Integer",
-      "description": "Configure large result threshold for peach.mybatis.log.",
+      "description": "判定查询结果集过大的记录数阈值，用于诊断与告警。",
       "defaultValue": 5000
     },
     {
       "name": "peach.mybatis.log.max-sql-length",
       "type": "java.lang.Integer",
-      "description": "Capacity or limit setting for peach.mybatis.log.",
+      "description": "单条 SQL 日志允许记录的最大字符长度，超出部分截断。",
       "defaultValue": 4000
     },
     {
       "name": "peach.mybatis.log.warn-missing-where",
       "type": "java.lang.Boolean",
-      "description": "Configure warn missing where for peach.mybatis.log.",
+      "description": "是否对缺少 WHERE 条件的 SQL 输出风险警告。",
       "defaultValue": true
     },
     {
       "name": "peach.mybatis.long-query-time",
       "type": "java.lang.Integer",
-      "description": "Configure long query time for peach.mybatis.",
+      "description": "SQL 慢查询判定阈值，单位毫秒。",
       "defaultValue": 3000
     },
     {
       "name": "peach.mybatis.pagehelper",
       "type": "com.peach.mybatis.config.PeachMybatisProperties$Pagehelper",
-      "description": "Configure pagehelper for peach.mybatis."
+      "description": "PageHelper 分页插件的配置参数。"
     },
     {
       "name": "peach.mybatis.pagehelper.auto-runtime-dialect",
       "type": "java.lang.Boolean",
-      "description": "Configure auto runtime dialect for peach.mybatis.pagehelper.",
+      "description": "是否根据运行时数据库连接自动识别分页方言。",
       "defaultValue": false
     },
     {
       "name": "peach.mybatis.pagehelper.close-conn",
       "type": "java.lang.Boolean",
-      "description": "Configure close conn for peach.mybatis.pagehelper.",
+      "description": "自动探测分页方言后是否关闭用于探测的数据库连接。",
       "defaultValue": false
     },
     {
       "name": "peach.mybatis.pagehelper.helper-dialect",
       "type": "java.lang.String",
-      "description": "Configure helper dialect for peach.mybatis.pagehelper.",
+      "description": "指定 PageHelper 使用的数据库分页方言；留空时使用自动识别策略。",
       "defaultValue": ""
     },
     {
       "name": "peach.mybatis.pagehelper.reasonable",
       "type": "java.lang.Boolean",
-      "description": "Configure reasonable for peach.mybatis.pagehelper.",
+      "description": "是否启用分页参数合理化处理，例如修正越界页码。",
       "defaultValue": true
     },
     {
       "name": "peach.mybatis.pagehelper.support-methods-arguments",
       "type": "java.lang.Boolean",
-      "description": "Configure support methods arguments for peach.mybatis.pagehelper.",
+      "description": "是否允许从方法参数中提取分页参数。",
       "defaultValue": false
     }
   ],

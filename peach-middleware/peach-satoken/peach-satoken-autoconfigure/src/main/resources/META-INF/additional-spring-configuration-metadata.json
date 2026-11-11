@@ -3,86 +3,86 @@
     {
       "name": "peach.satoken.dao",
       "type": "com.peach.satoken.config.PeachSaTokenProperties$Dao",
-      "description": "Configure dao for peach.satoken."
+      "description": "Sa-Token 数据访问层配置，可使用 Redis 等存储策略。"
     },
     {
       "name": "peach.satoken.dao.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enable or disable peach.satoken.dao.",
+      "description": "是否启用 Sa-Token DAO 自动配置。",
       "defaultValue": true
     },
     {
       "name": "peach.satoken.dao.search-max-matches",
       "type": "java.lang.Integer",
-      "description": "Maximum Redis-backed Sa-Token DAO search matches; limits memory use on broad scans.",
+      "description": "Sa-Token DAO 使用 Redis 扫描时允许匹配的最大条目数，限制宽泛扫描导致的内存占用。",
       "defaultValue": 50000
     },
     {
       "name": "peach.satoken.request-id.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enable or disable peach.satoken.request-id.",
+      "description": "是否启用 Sa-Token 请求 ID 提取与传递。",
       "defaultValue": true
     },
     {
       "name": "peach.satoken.request-id.header-name",
       "type": "java.lang.String",
-      "description": "Configure header name for peach.satoken.request-id.",
+      "description": "Sa-Token 请求 ID 使用的 HTTP 请求头名称。",
       "defaultValue": "X-Request-Id"
     },
     {
       "name": "peach.satoken.same-token",
       "type": "com.peach.satoken.config.PeachSaTokenProperties$SameToken",
-      "description": "Configure same token for peach.satoken."
+      "description": "Sa-Token 同一 Token 检查与传递规则。"
     },
     {
       "name": "peach.satoken.same-token.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enable or disable peach.satoken.same-token.",
+      "description": "是否启用 Sa-Token 同一 Token 处理功能。",
       "defaultValue": true
     },
     {
       "name": "peach.satoken.same-token.exclude-path-patterns",
       "type": "java.util.List",
-      "description": "Configure exclude path patterns for peach.satoken.same-token."
+      "description": "无需执行同一 Token 处理的请求路径匹配规则列表。"
     },
     {
       "name": "peach.satoken.same-token.log-path",
       "type": "java.lang.Boolean",
-      "description": "Configure log path for peach.satoken.same-token.",
+      "description": "是否在日志中记录同一 Token 相关请求路径。",
       "defaultValue": true
     },
     {
       "name": "peach.satoken.session-strategy",
       "type": "com.peach.satoken.config.PeachSaTokenProperties$SessionStrategy",
-      "description": "Configure session strategy for peach.satoken."
+      "description": "Sa-Token Session 生命周期与处理策略配置。"
     },
     {
       "name": "peach.satoken.session-strategy.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enable or disable peach.satoken.session-strategy.",
+      "description": "是否启用 Sa-Token 自定义 Session 策略。",
       "defaultValue": true
     },
     {
       "name": "peach.satoken.token-strategy",
       "type": "com.peach.satoken.config.PeachSaTokenProperties$TokenStrategy",
-      "description": "Configure token strategy for peach.satoken."
+      "description": "Sa-Token Token 生成与处理策略配置。"
     },
     {
       "name": "peach.satoken.token-strategy.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enable or disable peach.satoken.token-strategy.",
+      "description": "是否启用 Sa-Token 自定义 Token 策略。",
       "defaultValue": true
     },
     {
       "name": "peach.satoken.user-context.enabled",
       "type": "java.lang.Boolean",
-      "description": "Enable or disable peach.satoken.user-context.",
+      "description": "是否启用 Sa-Token 用户上下文注入。",
       "defaultValue": true
     },
     {
       "name": "peach.satoken.user-context.public-endpoints",
       "type": "java.util.List",
-      "description": "Configure public endpoints for peach.satoken.user-context."
+      "description": "无需认证即可访问的公开接口匹配规则列表。"
     }
   ],
   "hints": []

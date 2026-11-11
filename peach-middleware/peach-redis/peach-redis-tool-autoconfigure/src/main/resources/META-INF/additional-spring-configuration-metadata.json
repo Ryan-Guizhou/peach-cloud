@@ -3,7 +3,7 @@
     {
       "name": "peach.redis.mode",
       "type": "java.lang.String",
-      "description": "Shared peach-redis-starter connection mode; standalone, sentinel, or cluster.",
+      "description": "Redis 部署模式，可选择 standalone（单机）、sentinel（哨兵）或 cluster（集群）。",
       "defaultValue": "standalone"
     },
     {
