@@ -9,7 +9,6 @@ import com.peach.redission.distrbutedlock.locker.RedissionWriteLocker;
 import org.redisson.api.RedissonClient;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.peach.redission.distrbutedlock.locker.LockType.FAIR;
 import static com.peach.redission.distrbutedlock.locker.LockType.READ;
@@ -25,28 +24,29 @@ import static com.peach.redission.distrbutedlock.locker.LockType.WRITE;
  */
 public class DistrbutedLockerManager {
 
-    public static final Map<LockType, DistributedLocker> LOCKER_CACHE = new ConcurrentHashMap<>();
+    private final Map<LockType, DistributedLocker> lockerCache;
 
     public DistrbutedLockerManager(RedissonClient redissonClient){
-        LOCKER_CACHE.put(FAIR, new RedissionFairLocker(redissonClient));
-        LOCKER_CACHE.put(READ, new RedissionReadLocker(redissonClient));
-        LOCKER_CACHE.put(WRITE, new RedissionWriteLocker(redissonClient));
-        LOCKER_CACHE.put(REENTRANT, new RedissionRenntrantLocker(redissonClient));
+        this.lockerCache = Map.of(
+                FAIR, new RedissionFairLocker(redissonClient),
+                READ, new RedissionReadLocker(redissonClient),
+                WRITE, new RedissionWriteLocker(redissonClient),
+                REENTRANT, new RedissionRenntrantLocker(redissonClient));
     }
 
     public DistributedLocker getReentrantLocker(){
-        return LOCKER_CACHE.get(REENTRANT);
+        return lockerCache.get(REENTRANT);
     }
 
     public DistributedLocker getFairLocker(){
-        return LOCKER_CACHE.get(FAIR);
+        return lockerCache.get(FAIR);
     }
 
     public DistributedLocker getWriteLocker(){
-        return LOCKER_CACHE.get(WRITE);
+        return lockerCache.get(WRITE);
     }
 
     public DistributedLocker getReadLocker(){
-        return LOCKER_CACHE.get(READ);
+        return lockerCache.get(READ);
     }
 }
