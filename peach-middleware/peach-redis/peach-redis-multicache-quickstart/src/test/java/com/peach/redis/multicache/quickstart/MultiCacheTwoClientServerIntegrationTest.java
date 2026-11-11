@@ -15,6 +15,8 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -127,8 +129,7 @@ class MultiCacheTwoClientServerIntegrationTest {
 
             listener = new RedisMessageListenerContainer();
             listener.setConnectionFactory(receiverFactory);
-            java.util.concurrent.CountDownLatch subscriptionReady =
-                    new java.util.concurrent.CountDownLatch(1);
+            CountDownLatch subscriptionReady = new CountDownLatch(1);
             listener.addMessageListener(new CacheMessageListener(readerManager) {
                 @Override
                 public void onChannelSubscribed(byte[] channel, long count) {
@@ -139,7 +140,7 @@ class MultiCacheTwoClientServerIntegrationTest {
             listener.afterPropertiesSet();
             listener.start();
             // 等待首次订阅确认并完成 L1 清理，避免异步 ACK 清空刚刚回填的测试值。
-            assertThat(subscriptionReady.await(5, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+            assertThat(subscriptionReady.await(5, TimeUnit.SECONDS)).isTrue();
 
             writer.put(key, "initial");
             assertThat(reader.get(key).get()).isEqualTo("initial");
