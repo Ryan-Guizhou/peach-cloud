@@ -102,6 +102,41 @@ class EmailAtomicIdempotencyTest {
         assertThat(store.exists("key")).isTrue();
     }
 
+    @Test
+    void independentKeysShouldRespectCapacityAndReleaseClaimTokensConcurrently() throws Exception {
+        SimpleIdempotencyStore store = new SimpleIdempotencyStore(Duration.ofMinutes(10), 16);
+        java.util.concurrent.CountDownLatch begin = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicInteger accepted = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.atomic.AtomicInteger rejected = new java.util.concurrent.atomic.AtomicInteger();
+        try (java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor()) {
+            java.util.List<java.util.concurrent.Future<?>> futures = new java.util.ArrayList<>();
+            for (int i = 0; i < 64; i++) {
+                final String key = "parallel-" + i;
+                futures.add(executor.submit(() -> {
+                    try {
+                        begin.await();
+                        if (store.tryClaim(key) != null) {
+                            accepted.incrementAndGet();
+                        }
+                    } catch (IllegalStateException exception) {
+                        rejected.incrementAndGet();
+                    } catch (InterruptedException exception) {
+                        Thread.currentThread().interrupt();
+                    }
+                }));
+            }
+            begin.countDown();
+            for (var future : futures) {
+                future.get();
+            }
+        }
+        assertThat(accepted.get()).isEqualTo(16);
+        assertThat(rejected.get()).isEqualTo(48);
+
+        String token = store.tryClaim("parallel-0");
+        assertThat(token).isNull();
+    }
+
     private static EmailMessage message(String key) {
         return EmailMessage.builder().from("sender@example.invalid")
                 .to(List.of("receiver@example.invalid"))
