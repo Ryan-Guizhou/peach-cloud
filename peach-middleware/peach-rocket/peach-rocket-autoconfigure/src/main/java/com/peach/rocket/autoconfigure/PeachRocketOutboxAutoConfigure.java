@@ -11,6 +11,7 @@ import com.peach.rocket.outbox.MqOutboxReplayService;
 import com.peach.rocket.outbox.MqOutboxStore;
 import com.peach.rocket.route.MqRouteResolver;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -39,8 +40,24 @@ public class PeachRocketOutboxAutoConfigure {
 
     @Bean
     @ConditionalOnMissingBean
-    public MqOutboxStore mqOutboxStore() {
-        return new InMemoryMqOutboxStore();
+    public MqOutboxStore mqOutboxStore(PeachRocketProperties properties) {
+        PeachRocketProperties.Outbox outbox = properties.getOutbox();
+        return new InMemoryMqOutboxStore(outbox.getInMemoryMaxEntries(),
+                outbox.getInMemoryMaxPayloadBytes(), outbox.getInMemoryRetention(), outbox.getInMemoryLease());
+    }
+
+    /**
+     * 生产环境要求持久化 Outbox 时明确禁止内存实现。
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "peach.rocket.outbox", name = "require-durable", havingValue = "true")
+    public SmartInitializingSingleton rocketOutboxDurabilityVerifier(MqOutboxStore outboxStore) {
+        return () -> {
+            if (outboxStore instanceof InMemoryMqOutboxStore) {
+                throw new IllegalStateException(
+                        "peach.rocket.outbox.require-durable requires a persistent MqOutboxStore");
+            }
+        };
     }
 
     @Bean
