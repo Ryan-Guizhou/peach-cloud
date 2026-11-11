@@ -32,4 +32,19 @@ public class MemoryCaptchaCacheService implements CaptchaCacheService {
     public String get(String key) {
         return MemoryCacheUtil.get(key);
     }
+
+    @Override
+    public Long increment(String key, long val) {
+        return incrementAndExpire(key, val, 60L);
+    }
+
+    @Override
+    public Long incrementAndExpire(String key, long val, long expiresInSeconds) {
+        return MemoryCacheUtil.incrementAndExpire(key, val, expiresInSeconds);
+    }
+
+    @Override
+    public String getAndDelete(String key) {
+        return MemoryCacheUtil.getAndDelete(key);
+    }
 }

@@ -79,13 +79,11 @@ public class TextCaptchaServiceImpl extends AbstractCacheService {
                 .from(CaptchaRedisKey.RUNNING_CAPTCHA, captchaVO.getToken())
                 .getRealKey();
 
-        if (!existCaptchaKey(codeKey)) {
+        String val = consumeCaptchaByKey(codeKey);
+        if (val == null) {
             log.warn("captcha check cache entry not found");
             return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
         }
-
-        String val = getCaptchaByKey(codeKey);
-        deleteCaptchKey(codeKey);
 
         if (StringUtil.isBlank(val)) {
             log.warn("captcha check cache value is empty");
@@ -139,12 +137,10 @@ public class TextCaptchaServiceImpl extends AbstractCacheService {
         try {
             String codeKey = KeyBuilder.from(CaptchaRedisKey.RUNNING_CAPTCHA_SECOND, captchaVO.getCaptchaVerification())
                     .getRealKey();
-            if (!existCaptchaKey(codeKey)) {
+            if (consumeCaptchaByKey(codeKey) == null) {
                 log.warn("captcha secondary verification cache entry not found");
                 return Response.fail(StatusEnum.API_CAPTCHA_INVALID);
             }
-            // Secondary validation token invalid immediately after use / 二次校验取值后，即刻失效
-            deleteCaptchKey(codeKey);
             return Response.success();
         } catch (Exception e) {
             log.warn("captcha verification failed, reason={}", e.getClass().getSimpleName());
