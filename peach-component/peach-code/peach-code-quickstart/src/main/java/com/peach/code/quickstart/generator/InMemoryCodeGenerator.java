@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
  * 内存版 {@link CodeGenerator}：在无 MySQL/Redis 时复现公开契约——租户+前缀隔离、顺序递增、
  * 前缀大写补零格式，以及租户/前缀字符校验。
  *
- * <p>不替代默认 {@code PeachCodeGenerator}；生产仍应走 Redis 优先、MySQL 兜底的自动配置实现。</p>
+ * <p>不替代默认 {@code PeachCodeGenerator}；生产必须使用 MySQL 单一发号权威的自动配置实现。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
