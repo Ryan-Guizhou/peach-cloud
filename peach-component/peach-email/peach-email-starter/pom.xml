@@ -20,6 +20,19 @@
             <groupId>com.peach</groupId>
             <artifactId>peach-email-autoconfigure</artifactId>
         </dependency>
+        <!-- AutoConfigure 的编译可选项不应让 Starter 在运行时缺失模板/SMTP 类。 -->
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>jakarta.mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
