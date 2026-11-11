@@ -33,6 +33,8 @@ public abstract class AbstractTransport implements EmailTransport {
 
     public SendResult send(EmailMessage emailMessage, EmailContext context){
         long start = System.currentTimeMillis();
+        SmtpConnectionProvider connectionProvider = SmtpConnections.getProvider();
+        Transport transport = null;
         try {
             Properties props = new Properties();
             props.put(EmailConstant.MAIL_STMP_AUTH, EmailConstant.DEFAULT_MAIL_STMP_AUTH);
@@ -51,15 +53,18 @@ public abstract class AbstractTransport implements EmailTransport {
             }
             Session session = Session.getInstance(props);
             MimeMessage mime = MimeMessageBuilder.build(session, emailMessage);
-            Transport transport = SmtpConnections.getProvider().acquire(session, context);
+            transport = connectionProvider.acquire(session, context);
             transport.sendMessage(mime, mime.getAllRecipients());
-            SmtpConnections.getProvider().release(transport);
             long dur = System.currentTimeMillis() - start;
             String mid = mime.getMessageID();
             return new SendResult(name, mid, dur, true, null);
         } catch (Exception e) {
             long dur = System.currentTimeMillis() - start;
             return new SendResult(name, null, dur, false, e.getMessage());
+        } finally {
+            if (transport != null) {
+                connectionProvider.release(transport);
+            }
         }
     }
 }
