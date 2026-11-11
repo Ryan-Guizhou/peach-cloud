@@ -26,10 +26,10 @@ flowchart LR
 | [`peach-observability`](peach-observability/README.md) | Metrics、Trace、RequestId 与 OTLP 接入 | `peach-observability-quickstart` |
 | [`peach-scheduler`](peach-scheduler/README.md) | 调度执行侧 SDK、Provider 与 Transport | `peach-scheduler-quickstart` |
 | [`peach-storage`](peach-storage/README.md) | 统一存储契约、Provider、直传与分片 | `peach-store-quickstart` |
-| [`peach-threadpool`](peach-threadpool/README.md) | 存量平台线程池兼容能力 | `peach-threadpool-quickstart` |
 | [`peach-virtual-thread`](peach-virtual-thread/README.md) | Java 21 虚拟线程分组、背压、取消与生命周期 | `peach-virtual-thread-quickstart` |
 
-`peach-threadpool` 仅用于兼容历史调用，新建阻塞 IO 异步任务优先使用 `peach-virtual-thread`。
+
+业务阻塞 I/O 异步任务统一使用 `peach-virtual-thread`，不再提供独立平台线程池组件。
 
 ## 开发约定
 

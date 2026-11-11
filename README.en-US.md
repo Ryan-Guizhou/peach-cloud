@@ -64,7 +64,7 @@ See [`docs/starter-architecture.md`](docs/starter-architecture.md) for the full 
 
 ### Components
 
-[`peach-component`](peach-component/README.en-US.md) contains reusable Captcha, Code, Email, Initialize, Observability, Scheduler, Storage, legacy ThreadPool compatibility and Virtual Thread capabilities.
+[`peach-component`](peach-component/README.en-US.md) contains reusable Captcha, Code, Email, Initialize, Observability, Scheduler, Storage and Virtual Thread capabilities.
 
 ### Middleware
 

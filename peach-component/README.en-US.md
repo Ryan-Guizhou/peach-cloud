@@ -26,10 +26,10 @@ See [`../docs/starter-architecture.md`](../docs/starter-architecture.md) for the
 | [`peach-observability`](peach-observability/README.en-US.md) | Metrics, tracing, RequestId and OTLP integration | `peach-observability-quickstart` |
 | [`peach-scheduler`](peach-scheduler/README.en-US.md) | Scheduler execution SDK, providers and transports | `peach-scheduler-quickstart` |
 | [`peach-storage`](peach-storage/README.en-US.md) | Unified storage contracts, providers, direct and multipart upload | `peach-store-quickstart` |
-| [`peach-threadpool`](peach-threadpool/README.en-US.md) | Legacy platform-thread-pool compatibility | `peach-threadpool-quickstart` |
 | [`peach-virtual-thread`](peach-virtual-thread/README.en-US.md) | Java 21 virtual-thread groups, backpressure, cancellation and lifecycle | `peach-virtual-thread-quickstart` |
 
-`peach-threadpool` remains for compatibility only. New blocking-I/O asynchronous work should prefer `peach-virtual-thread`.
+
+Blocking-I/O business tasks use `peach-virtual-thread` as the single managed asynchronous execution component. No separate platform-thread-pool starter is provided.
 
 ## Development Convention
 
