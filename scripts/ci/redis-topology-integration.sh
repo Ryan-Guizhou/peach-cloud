@@ -202,7 +202,7 @@ for file in sorted(suites):
         raise SystemExit(f"Missing surefire integration report: {path}")
     result = ET.parse(path).getroot()
     values = {key: int(result.attrib.get(key, "0")) for key in ("tests", "failures", "errors", "skipped")}
-    expected = 2 if "RedisAclAuthenticationServerIntegrationTest" in file else 1
+    expected = 2 if ("RedisAclAuthenticationServerIntegrationTest" in file or "RedisToolTopologyServerIntegrationTest" in file) else 1
     if values["tests"] != expected or any(values[key] for key in ("failures", "errors", "skipped")):
         raise SystemExit(f"Invalid integration result {file}: {values}")
     print(f"PASS {file}: {values}")
@@ -302,7 +302,8 @@ for file in suites:
         raise SystemExit(f"Missing post-promotion integration report: {p}")
     result = ET.parse(p).getroot()
     stats = {k: int(result.get(k, "0")) for k in ("tests", "failures", "errors", "skipped")}
-    if stats["tests"] != 1 or any(stats[k] for k in ("failures", "errors", "skipped")):
+    expected = 2 if "RedisToolTopologyServerIntegrationTest" in file else 1
+    if stats["tests"] != expected or any(stats[k] for k in ("failures", "errors", "skipped")):
         raise SystemExit(f"Post-failover suite failed/skipped: {p} {stats}")
     print(f"PASS after Sentinel promotion: {p}")
 PY
@@ -404,7 +405,8 @@ for report in reports:
         raise SystemExit(f"Missing post-promotion Redis Cluster suite: {report}")
     suite = ET.parse(report).getroot()
     result = {key: int(suite.get(key, "0")) for key in ("tests", "failures", "errors", "skipped")}
-    if result["tests"] != 1 or any(result[key] for key in ("failures", "errors", "skipped")):
+    expected = 2 if "RedisToolTopologyServerIntegrationTest" in str(report) else 1
+    if result["tests"] != expected or any(result[key] for key in ("failures", "errors", "skipped")):
         raise SystemExit(f"Post-promotion suite did not execute successfully: {report} {result}")
     print(f"PASS after Redis Cluster replica promotion: {report}")
 PY
