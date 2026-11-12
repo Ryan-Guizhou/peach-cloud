@@ -10,6 +10,7 @@ import com.peach.rocket.context.MqTraceContextPropagator;
 import com.peach.rocket.error.MqErrorHandler;
 import com.peach.rocket.error.MqExceptionClassifier;
 import com.peach.rocket.error.MqFailureAction;
+import com.peach.rocket.error.MqFailureRecorder;
 import com.peach.rocket.exception.MqException;
 import com.peach.rocket.idempotent.MqIdempotentClaim;
 import com.peach.rocket.idempotent.MqIdempotentContext;
@@ -37,6 +38,7 @@ public class MqConsumerInvoker {
     private final MqIdempotentKeyResolver idempotentKeyResolver;
     private final MqErrorHandler errorHandler;
     private final MqExceptionClassifier exceptionClassifier;
+    private final MqFailureRecorder failureRecorder;
     private final PeachRocketProperties properties;
     private final MqTraceContextPropagator traceContextPropagator;
 
@@ -61,6 +63,27 @@ public class MqConsumerInvoker {
                              MqIdempotentKeyResolver idempotentKeyResolver, MqErrorHandler errorHandler,
                              MqExceptionClassifier exceptionClassifier, PeachRocketProperties properties,
                              MqTraceContextPropagator traceContextPropagator) {
+        this(codec, idempotentStore, idempotentKeyResolver, errorHandler, exceptionClassifier, properties,
+                traceContextPropagator, MqFailureRecorder.NOOP);
+    }
+
+    /**
+     * 创建支持持久化失败回执的消费调用器。
+     *
+     * @param codec 消息编解码器
+     * @param idempotentStore 幂等存储
+     * @param idempotentKeyResolver 幂等键解析器
+     * @param errorHandler 错误处理器
+     * @param exceptionClassifier 错误分类器
+     * @param properties RocketMQ 配置
+     * @param traceContextPropagator Trace 传播器
+     * @param failureRecorder 持久化失败回执
+     */
+    public MqConsumerInvoker(MqMessageCodec codec, MqIdempotentStore idempotentStore,
+                             MqIdempotentKeyResolver idempotentKeyResolver, MqErrorHandler errorHandler,
+                             MqExceptionClassifier exceptionClassifier, PeachRocketProperties properties,
+                             MqTraceContextPropagator traceContextPropagator, MqFailureRecorder failureRecorder) {
+        this.failureRecorder = failureRecorder == null ? MqFailureRecorder.NOOP : failureRecorder;
         this.codec = codec;
         this.idempotentStore = idempotentStore;
         this.idempotentKeyResolver = idempotentKeyResolver;
@@ -142,11 +165,13 @@ public class MqConsumerInvoker {
 
             // ==================== 4. 执行业务逻辑 ====================
             long start = System.currentTimeMillis();
+            boolean handlerCompleted = false;
             try {
                 // 4.1 调用业务 Handler 处理消息
                 // envelope.getPayload() 返回解码后的业务对象（如 OrderDTO）
                 // context 包含消息元数据，业务方可根据需要进行使用
                 handler.handle(envelope.payload(), context);
+                handlerCompleted = true;
 
                 // 4.2 处理成功：标记幂等记录为成功状态
                 if (useIdempotent) {
@@ -162,35 +187,47 @@ public class MqConsumerInvoker {
                 traceScope.error(ex);
                 // ==================== 5. 异常处理 ====================
 
-                // 5.1 处理失败：标记幂等记录为失败状态
-                // 这样后续该消息重试时，可以重新尝试处理
-                if (useIdempotent) {
+                // Handler 已成功但幂等 ACK 失败时不能释放认领，避免重复执行。
+                boolean stateUpdated = true;
+                if (useIdempotent && !handlerCompleted) {
                     try {
                         idempotentStore.markFailed(idempotentContext, idempotentClaim);
                     } catch (RuntimeException storeError) {
-                        // 保留原始业务异常，同时记录失败状态写回可能仍待恢复。
+                        stateUpdated = false;
                         ex.addSuppressed(storeError);
                     }
                 }
-
-                // 5.2 调用错误处理器（可自定义扩展，如发送告警、记录死信等）
-                errorHandler.handle(ex, envelope, context);
-
-                // 5.3 异常分类：判断是否需要重试
-                // 通过 MqExceptionClassifier 可自定义分类逻辑
-                // 例如：网络超时可重试，参数校验失败不重试
-                if (exceptionClassifier.classify(ex, envelope, context) == MqFailureAction.RETRY) {
-                    // 需要重试：直接抛出异常，RocketMQ 会按配置进行重试投递
+                try {
+                    errorHandler.handle(ex, envelope, context);
+                } catch (RuntimeException handlerError) {
+                    ex.addSuppressed(handlerError);
+                }
+                if (handlerCompleted) {
                     throw ex;
                 }
 
-                // 5.4 不需要重试：记录警告日志，消息消费成功（不抛出异常）
-                // 这样消息会从 Broker 中确认删除，不会进入无限重试
-                log.warn("[mq-consume-skip-retry] consumer={} topic={} tag={} key={} messageId={} exception={}",
-                        handlerName, context.topic(), context.tag(), context.key(),
-                        context.messageId(), ex.getClass().getName());
-                // 注意：这里不再抛出异常，相当于告诉 RocketMQ 消息已消费成功
-                // 但业务上该消息实际处理失败了（适用于非关键业务或已记录告警的场景）
+                MqFailureAction action;
+                try {
+                    action = exceptionClassifier.classify(ex, envelope, context);
+                } catch (RuntimeException classifierError) {
+                    ex.addSuppressed(classifierError);
+                    throw ex;
+                }
+                if (action == MqFailureAction.SKIP && stateUpdated) {
+                    boolean persisted = false;
+                    try {
+                        persisted = failureRecorder.record(ex, envelope, context);
+                    } catch (RuntimeException recordError) {
+                        ex.addSuppressed(recordError);
+                    }
+                    if (persisted) {
+                        log.warn("[mq-consume-recorded-failure] consumer={} topic={} messageId={}",
+                                handlerName, context.topic(), context.messageId());
+                        return;
+                    }
+                }
+                // 无持久化失败记录时一律 fail-closed，而不将消息 ACK 为成功。
+                throw ex;
             }
         }
     }

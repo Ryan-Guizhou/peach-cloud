@@ -13,6 +13,7 @@ import com.peach.rocket.error.DefaultMqErrorHandler;
 import com.peach.rocket.error.DefaultMqExceptionClassifier;
 import com.peach.rocket.error.MqErrorHandler;
 import com.peach.rocket.error.MqExceptionClassifier;
+import com.peach.rocket.error.MqFailureRecorder;
 import com.peach.rocket.idempotent.DefaultMqIdempotentKeyResolver;
 import com.peach.rocket.idempotent.InMemoryMqIdempotentStore;
 import com.peach.rocket.idempotent.MqIdempotentKeyResolver;
@@ -153,10 +154,12 @@ public class PeachRocketAutoConfigure {
                                                MqErrorHandler errorHandler,
                                                MqExceptionClassifier exceptionClassifier,
                                                PeachRocketProperties properties,
-                                               ObjectProvider<MqTraceContextPropagator> traceContextPropagatorProvider) {
+                                               ObjectProvider<MqTraceContextPropagator> traceContextPropagatorProvider,
+                                               ObjectProvider<MqFailureRecorder> failureRecorderProvider) {
         return new MqConsumerInvoker(codec, idempotentStore, idempotentKeyResolver,
                                      errorHandler, exceptionClassifier, properties,
-                                     traceContextPropagatorProvider.getIfAvailable(() -> MqTraceContextPropagator.NOOP));
+                                     traceContextPropagatorProvider.getIfAvailable(() -> MqTraceContextPropagator.NOOP),
+                                     failureRecorderProvider.getIfAvailable(() -> MqFailureRecorder.NOOP));
     }
 
     @Bean
