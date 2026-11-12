@@ -42,6 +42,16 @@
       "defaultValue": "24h"
     },
     {
+      "name": "peach.rocket.consumer.in-memory-max-entries",
+      "defaultValue": 32768,
+      "description": "开发/测试使用的单 JVM 幂等存储最大条目数；达到上限将拒绝新消息。"
+    },
+    {
+      "name": "peach.rocket.consumer.require-durable-idempotency",
+      "defaultValue": false,
+      "description": "要求跨实例的持久化幂等存储且支持 owner token fencing；不满足则启动失败。"
+    },
+    {
       "name": "peach.rocket.enabled",
       "type": "java.lang.Boolean",
       "description": "是否启用 RocketMQ 消息组件自动配置。",

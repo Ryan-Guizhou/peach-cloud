@@ -11,6 +11,7 @@ import com.peach.rocket.error.MqErrorHandler;
 import com.peach.rocket.error.MqExceptionClassifier;
 import com.peach.rocket.error.MqFailureAction;
 import com.peach.rocket.exception.MqException;
+import com.peach.rocket.idempotent.MqIdempotentClaim;
 import com.peach.rocket.idempotent.MqIdempotentContext;
 import com.peach.rocket.idempotent.MqIdempotentKeyResolver;
 import com.peach.rocket.idempotent.MqIdempotentStore;
@@ -125,18 +126,18 @@ public class MqConsumerInvoker {
                     properties.getConsumer().getIdempotentExpire()
             );
 
-            // 3.2 幂等检查：如果该消息已经被成功消费过，直接返回，不重复执行业务逻辑
-            if (useIdempotent && idempotentStore.isSuccess(idempotentContext)) {
-                log.info("[mq-consume-idempotent-hit] consumer={} topic={} tag={} key={} messageId={}",
-                        handlerName, context.topic(), context.tag(),
-                        context.key(), context.messageId());
-                return;  // 幂等命中，直接返回
-            }
-
-            // 3.3 幂等抢占：尝试标记该消息正在处理中
-            // 如果返回 false，说明有其他线程或实例正在处理该消息，抛出异常让 RocketMQ 稍后重试
-            if (useIdempotent && !idempotentStore.tryStart(idempotentContext)) {
-                throw new MqException("MQ message is already being processed, idempotentKey=" + idempotentKey);
+            // 3.2 原子认领消除独立 isSuccess 与 tryStart 之间的竞态窗口。
+            MqIdempotentClaim idempotentClaim = null;
+            if (useIdempotent) {
+                idempotentClaim = idempotentStore.claim(idempotentContext);
+                if (idempotentClaim.status() == MqIdempotentClaim.Status.SUCCEEDED) {
+                    log.debug("[mq-consume-idempotent-hit] consumer={} topic={} messageId={}",
+                            handlerName, context.topic(), context.messageId());
+                    return;
+                }
+                if (idempotentClaim.status() != MqIdempotentClaim.Status.ACQUIRED) {
+                    throw new MqException("MQ message is already being processed, idempotentKey=" + idempotentKey);
+                }
             }
 
             // ==================== 4. 执行业务逻辑 ====================
@@ -149,7 +150,7 @@ public class MqConsumerInvoker {
 
                 // 4.2 处理成功：标记幂等记录为成功状态
                 if (useIdempotent) {
-                    idempotentStore.markSuccess(idempotentContext);
+                    idempotentStore.markSuccess(idempotentContext, idempotentClaim);
                 }
 
                 // 4.3 记录成功消费日志（包含耗时）
@@ -164,7 +165,12 @@ public class MqConsumerInvoker {
                 // 5.1 处理失败：标记幂等记录为失败状态
                 // 这样后续该消息重试时，可以重新尝试处理
                 if (useIdempotent) {
-                    idempotentStore.markFailed(idempotentContext);
+                    try {
+                        idempotentStore.markFailed(idempotentContext, idempotentClaim);
+                    } catch (RuntimeException storeError) {
+                        // 保留原始业务异常，同时记录失败状态写回可能仍待恢复。
+                        ex.addSuppressed(storeError);
+                    }
                 }
 
                 // 5.2 调用错误处理器（可自定义扩展，如发送告警、记录死信等）

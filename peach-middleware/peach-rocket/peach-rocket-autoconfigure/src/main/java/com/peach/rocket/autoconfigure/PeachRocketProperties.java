@@ -60,7 +60,8 @@ public class PeachRocketProperties implements InitializingBean {
         if (consumer.idempotentExpire == null || consumer.idempotentExpire.isNegative() || consumer.idempotentExpire.isZero()) {
             throw new MqException("peach.rocket.consumer.idempotent-expire must be positive");
         }
-        if (consumer.consumeThreadMin <= 0 || consumer.consumeThreadMax < consumer.consumeThreadMin) {
+        if (consumer.consumeThreadMin <= 0 || consumer.consumeThreadMax < consumer.consumeThreadMin
+                || consumer.inMemoryMaxEntries < 1) {
             throw new MqException("peach.rocket.consumer consume thread range is invalid");
         }
         if (outbox.enabled && (outbox.batchSize < 1 || outbox.batchSize > 500
@@ -122,6 +123,8 @@ public class PeachRocketProperties implements InitializingBean {
         private boolean dynamicRegister = true;
         private int consumeThreadMin = 1;
         private int consumeThreadMax = 20;
+        private int inMemoryMaxEntries = 32768;
+        private boolean requireDurableIdempotency = false;
         public boolean isEnableIdempotent() { return enableIdempotent; }
         public void setEnableIdempotent(boolean enableIdempotent) { this.enableIdempotent = enableIdempotent; }
         public Duration getIdempotentExpire() { return idempotentExpire; }
@@ -132,6 +135,12 @@ public class PeachRocketProperties implements InitializingBean {
         public void setConsumeThreadMin(int consumeThreadMin) { this.consumeThreadMin = consumeThreadMin; }
         public int getConsumeThreadMax() { return consumeThreadMax; }
         public void setConsumeThreadMax(int consumeThreadMax) { this.consumeThreadMax = consumeThreadMax; }
+        public int getInMemoryMaxEntries() { return inMemoryMaxEntries; }
+        public void setInMemoryMaxEntries(int inMemoryMaxEntries) { this.inMemoryMaxEntries = inMemoryMaxEntries; }
+        public boolean isRequireDurableIdempotency() { return requireDurableIdempotency; }
+        public void setRequireDurableIdempotency(boolean requireDurableIdempotency) {
+            this.requireDurableIdempotency = requireDurableIdempotency;
+        }
     }
 
     /**
