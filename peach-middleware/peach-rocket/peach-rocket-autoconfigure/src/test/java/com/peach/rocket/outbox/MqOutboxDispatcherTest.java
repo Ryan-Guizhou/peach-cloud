@@ -18,7 +18,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** Broker 发送与 Store ACK 失败场景的回归验证。 */
+/** Broker 发送与 Store ACK 失败场景的回归验证。 * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/12
+ */
 class MqOutboxDispatcherTest {
 
     @Test

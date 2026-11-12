@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
  *
  * @Author Mr Shu
  * @Version 1.0.0
+ * @CreateTime 2026/11/12
  */
 @Slf4j
 public class MqOutboxDispatcher {

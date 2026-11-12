@@ -24,7 +24,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-/** 发送参数和延迟级别的边界验证。 */
+/** 发送参数和延迟级别的边界验证。 * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/12
+ */
 class RocketMqPublisherBoundaryTest {
 
     @Test
