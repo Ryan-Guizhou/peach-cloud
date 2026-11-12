@@ -136,7 +136,7 @@ export function buildAdminRoutes(loginInfo: LoginInfo | null): RouteRecordRaw[] 
       }
       return {
         path,
-        name: routerInfo.routerCode || fallback?.name || path.replace(/\//g, '-').replace(/^-/, ''),
+        name: fallback?.name || routerInfo.routerCode || path.replace(/\//g, '-').replace(/^-/, ''),
         componentPath: matchedView,
         meta: {
           title: routerInfo.routerName || fallback?.meta.title || path,

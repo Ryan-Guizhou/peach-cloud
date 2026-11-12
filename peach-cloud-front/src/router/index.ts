@@ -70,6 +70,16 @@ export function clearDynamicRoutes(): void {
   dynamicRouteNames.clear()
 }
 
+function workspaceLocation(): { name: string } | { path: string } | null {
+  if (router.hasRoute('workspace-overview')) {
+    return { name: 'workspace-overview' }
+  }
+  if (router.getRoutes().some(route => route.path === '/workspace')) {
+    return { path: '/workspace' }
+  }
+  return null
+}
+
 router.beforeEach((to) => {
   const authStore = useAuthStore(pinia)
   const hasValidSession = authStore.ensureValidSession()
@@ -84,10 +94,10 @@ router.beforeEach((to) => {
   }
   const permissionCode = typeof to.meta.permissionCode === 'string' ? to.meta.permissionCode : undefined
   if (to.meta.requiresAuth && permissionCode && !hasRoutePermission(authStore, permissionCode)) {
-    return { name: 'workspace-overview' }
+    return workspaceLocation() ?? { name: 'login' }
   }
-  if (to.name === 'login' && hasValidSession) {
-    return { name: 'workspace-overview' }
+  if ((to.name === 'login' || to.path === '/') && hasValidSession) {
+    return workspaceLocation() ?? true
   }
   return true
 })
