@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.context.annotation.ComponentScan;
 
 
 /**
@@ -16,8 +15,7 @@ import org.springframework.context.annotation.ComponentScan;
  */
 @Slf4j
 @EnableDiscoveryClient
-@ComponentScan("com.peach")
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.peach")
 public class PeachMonitorApplication {
 
     public static void main(String[] args) {

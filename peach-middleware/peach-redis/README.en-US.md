@@ -6,6 +6,8 @@ English | [中文](README.md)
 
 ## Purpose and compatibility
 
+**Assembly boundary:** feature Starters supply the Jedis foundation; Tool/Stream do not declare unused Redisson dependencies. MultiCache autoconfigure references the Tool contracts, while its Starter assembles runtime dependencies. Application entry points retain Boot's default scan filters to avoid evaluating conditional beans too early. See the [starter architecture guide](../../docs/starter-architecture.md#6-自动装配与依赖边界) for dependency boundaries and troubleshooting.
+
 **Audience:** Spring Boot services needing Redis data structures, Caffeine L1 + Redis L2 caching, or Redis Stream messages. `peach-redis` is a Maven aggregator, **not** one dependency that enables every feature. Select only the needed starter.
 
 **Current baseline:** Java 21 / Spring Boot 3.5.4. Redis uses the standalone Jedis foundation; Redisson uses `peach-redisson-starter`. The old `peach-redis-common` is no longer provided. Historical serializer configuration remains as a test fixture, which does **not** establish old released-binary rolling compatibility. The matrix reflects the current sources; see [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18).

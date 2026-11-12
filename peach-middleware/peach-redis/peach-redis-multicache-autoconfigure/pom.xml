@@ -16,6 +16,12 @@
     <description>peach-redis-multicache</description>
 
     <dependencies>
+        <!-- CacheMessageCodec directly uses Jackson; do not rely on another Starter's transitive dependencies. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -53,7 +59,7 @@
         </dependency>
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-redis-tool-starter</artifactId>
+            <artifactId>peach-redis-tool-autoconfigure</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>

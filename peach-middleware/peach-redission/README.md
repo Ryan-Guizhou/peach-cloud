@@ -50,6 +50,8 @@
 
 锁、防重、布隆和延迟队列 Starter 传递 `peach-redisson-starter`，无需手工引入 Jedis；用户自定义 `RedissonClient` 优先。旧混合 `peach-redis-common` 已删除，外部使用方必须升级依赖，仓库外 Maven 工程使用实际发布版本替换 `revision`。
 
+**装配边界：** 仓库内这批业务启动入口使用 `@SpringBootApplication(scanBasePackages = "com.peach")`，不叠加 `@ComponentScan`，保留 Boot 自动配置扫描过滤器。Bloom 支持任意名称的自定义 `RedissonClient`；禁用默认客户端但继续使用锁能力时，必须提供替代客户端。扫描顺序导致锁 Template 缺失的复现、依赖规则与排查步骤见 [Starter 架构说明](../../docs/starter-architecture.md#6-自动装配与依赖边界)。
+
 ### 最简开发配置
 
 ```yaml

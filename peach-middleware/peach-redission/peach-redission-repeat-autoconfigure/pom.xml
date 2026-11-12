@@ -54,7 +54,7 @@
         </dependency>
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-redission-distributedlock-starter</artifactId>
+            <artifactId>peach-redission-distributedlock-autoconfigure</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>

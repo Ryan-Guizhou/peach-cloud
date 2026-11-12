@@ -10,7 +10,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import java.io.IOException;
 
 import org.springframework.context.annotation.Primary;
@@ -27,8 +26,7 @@ import javax.sql.DataSource;
  * @Version 1.0.0
  * @CreateTime 2026/1/25 16:02
  */
-@SpringBootApplication
-@ComponentScan({"com.peach"})
+@SpringBootApplication(scanBasePackages = "com.peach")
 @MapperScan(basePackages = {"com.peach.*.dao"},
         annotationClass = MybatisDao.class,
         sqlSessionFactoryRef = "mybatisSession")

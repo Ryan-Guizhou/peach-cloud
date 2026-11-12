@@ -8,6 +8,7 @@ const commands = [
   ['node', ['scripts/check-starter-layout.mjs']],
   ['node', ['scripts/check-spring-configuration-metadata.mjs']],
   ['node', ['scripts/check-redis-legacy-deps.mjs']],
+  ['node', ['scripts/check-spring-wiring.mjs']],
   ['node', ['scripts/check-readme-sync.mjs']],
   ['node', ['scripts/check-docs.mjs']],
   ['git', ['diff', '--check']],

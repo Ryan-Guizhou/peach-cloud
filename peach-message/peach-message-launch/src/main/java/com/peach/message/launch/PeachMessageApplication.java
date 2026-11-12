@@ -12,7 +12,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import java.io.IOException;
 
 import org.springframework.context.annotation.Primary;
@@ -34,9 +33,8 @@ import javax.sql.DataSource;
 @Slf4j
 @EnableDiscoveryClient
 @EnableScheduling
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.peach")
 @EnableConfigurationProperties(DataSourceProperties.class)
-@ComponentScan("com.peach")
 @MapperScan(basePackages = {"com.peach.*.dao"},
         annotationClass = MybatisDao.class,
         sqlSessionFactoryRef = "mybatisSession")
