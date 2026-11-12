@@ -6,12 +6,9 @@ spring:
 
 peach:
   mongo:
-    uri: ${PEACH_MONGO_URI:mongodb://127.0.0.1:27017/peach_qs}
-    database: ${PEACH_MONGO_DATABASE:peach_qs}
+#    uri: ${PEACH_MONGO_URI:mongodb://127.0.0.1:27017/peach_qs}
+    uri: mongodb://test:test123@127.0.0.1:27017/crowd_label_hr
+    database: ${PEACH_MONGO_DATABASE:}
     transaction:
       enabled: false
 
-quickstart:
-  mongo:
-    demo:
-      enabled: true

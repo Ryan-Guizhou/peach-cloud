@@ -2,7 +2,6 @@ package com.peach.rocket.quickstart.example;
 
 import com.peach.rocket.core.MqPublisher;
 import com.peach.rocket.core.MqSendResult;
-import com.peach.rocket.quickstart.config.InProcessMqPublisher;
 import com.peach.rocket.quickstart.consumer.OrderPaidConsumer;
 import com.peach.rocket.quickstart.event.OrderPaidEvent;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +29,6 @@ import java.util.List;
 public class OrderOrderlyPublishExample {
 
     private final MqPublisher mqPublisher;
-    private final InProcessMqPublisher inProcessMqPublisher;
     private final OrderPaidConsumer paidConsumer;
 
     /**
@@ -41,20 +39,12 @@ public class OrderOrderlyPublishExample {
      */
     public MqSendResult publishPaidOrderly(long orderId) {
         paidConsumer.reset();
-        inProcessMqPublisher.reset();
         OrderPaidEvent event = new OrderPaidEvent(orderId, LocalDateTime.now(ZoneId.systemDefault()));
         String shardingKey = String.valueOf(orderId);
         MqSendResult result = mqPublisher.publishOrderly(event, shardingKey);
         log.info("published order paid orderly, orderId={}, shardingKey={}, consumed={}",
                 orderId, shardingKey, paidConsumer.handled().size());
         return result;
-    }
-
-    /**
-     * @return 已记录的顺序分片键
-     */
-    public List<String> orderlyShardingKeys() {
-        return inProcessMqPublisher.orderlyShardingKeys();
     }
 
     /**

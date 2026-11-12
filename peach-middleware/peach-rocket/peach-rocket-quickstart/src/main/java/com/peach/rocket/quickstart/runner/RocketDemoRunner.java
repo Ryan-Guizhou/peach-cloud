@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
 
 import java.util.UUID;
+import java.time.Duration;
+import java.util.function.BooleanSupplier;
 
 /**
  * 启动后演示订单发布-消费、顺序发布与内存消费幂等。
@@ -28,30 +30,37 @@ import java.util.UUID;
 @ConditionalOnProperty(prefix = "quickstart.rocket.demo", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class RocketDemoRunner implements ApplicationRunner {
 
+    private static final Duration CONSUME_TIMEOUT = Duration.ofSeconds(60);
+
     private final OrderPublishConsumeExample publishConsumeExample;
     private final OrderOrderlyPublishExample orderlyPublishExample;
     private final ConsumeIdempotentExample idempotentExample;
 
     @Override
-    public void run(ApplicationArguments args) {
-        runPublishConsumeDemo();
-        runOrderlyDemo();
+    public void run(ApplicationArguments args) throws InterruptedException {
+        long orderId = System.currentTimeMillis();
+        runPublishConsumeDemo(orderId);
+        runOrderlyDemo(orderId);
         runIdempotentDemo();
         log.info("rocket demo finished");
     }
 
-    private void runPublishConsumeDemo() {
+    private void runPublishConsumeDemo(long orderId) throws InterruptedException {
         log.info("=== order publish-consume demo ===");
-        MqSendResult result = publishConsumeExample.publishCreated(10001L);
+        MqSendResult result = publishConsumeExample.publishCreated(orderId);
+        awaitConsumption(() -> publishConsumeExample.consumedCreated().stream()
+                .anyMatch(event -> event.orderId() == orderId));
         log.info("publish-consume success={}, consumed={}",
                 result.isSuccess(), publishConsumeExample.consumedCreated().size());
     }
 
-    private void runOrderlyDemo() {
+    private void runOrderlyDemo(long orderId) throws InterruptedException {
         log.info("=== order orderly publish demo ===");
-        MqSendResult result = orderlyPublishExample.publishPaidOrderly(10001L);
-        log.info("orderly success={}, shardingKeys={}, consumed={}",
-                result.isSuccess(), orderlyPublishExample.orderlyShardingKeys(),
+        MqSendResult result = orderlyPublishExample.publishPaidOrderly(orderId);
+        awaitConsumption(() -> orderlyPublishExample.consumedPaid().stream()
+                .anyMatch(event -> event.orderId() == orderId));
+        log.info("orderly success={}, shardingKey={}, consumed={}",
+                result.isSuccess(), orderId,
                 orderlyPublishExample.consumedPaid().size());
     }
 
@@ -59,5 +68,15 @@ public class RocketDemoRunner implements ApplicationRunner {
         log.info("=== consume idempotent demo ===");
         int processed = idempotentExample.consumeTwice("qs:rocket:idem:" + UUID.randomUUID());
         log.info("idempotent processed={}", processed);
+    }
+
+    private void awaitConsumption(BooleanSupplier consumed) throws InterruptedException {
+        long started = System.nanoTime();
+        while (!consumed.getAsBoolean()) {
+            if (System.nanoTime() - started >= CONSUME_TIMEOUT.toNanos()) {
+                throw new IllegalStateException("RocketMQ demo consumption timed out after 60 seconds");
+            }
+            Thread.sleep(100);
+        }
     }
 }

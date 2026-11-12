@@ -2,6 +2,7 @@ package com.peach.rocket.quickstart.consumer;
 
 import com.peach.rocket.annotation.MqConsumer;
 import com.peach.rocket.core.MqConsumeContext;
+import com.peach.rocket.core.MqConsumeMode;
 import com.peach.rocket.core.MqMessageHandler;
 import com.peach.rocket.quickstart.event.OrderPaidEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +22,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Slf4j
 @Indexed
 @Component
-@MqConsumer(topic = "order", tag = "paid", consumerGroup = "peach-rocket-quickstart-order-paid")
+@MqConsumer(topic = "order", tag = "paid", consumerGroup = "peach-rocket-quickstart-order-paid",
+        consumeMode = MqConsumeMode.ORDERLY)
 public class OrderPaidConsumer implements MqMessageHandler<OrderPaidEvent> {
 
     private final List<OrderPaidEvent> handled = new CopyOnWriteArrayList<>();

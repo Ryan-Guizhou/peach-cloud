@@ -6,6 +6,7 @@ import com.peach.rocket.idempotent.MqIdempotentStore;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Indexed;
 
 /**
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Indexed;
  */
 @Indexed
 @Configuration
+@ConditionalOnProperty(prefix = "peach.rocket", name = "enabled", havingValue = "false")
 public class InProcessRocketConfiguration {
 
     /**

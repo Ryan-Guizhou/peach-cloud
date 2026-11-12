@@ -15,7 +15,7 @@ import java.time.ZoneId;
 import java.util.List;
 
 /**
- * 订单创建发布-消费闭环：{@link MqPublisher#publish} 后同步投递给 {@code @MqConsumer}。
+ * 订单创建发布-消费闭环：真实 Broker 异步投递，进程内模式同步投递给 {@code @MqConsumer}。
  *
  * @Author Mr Shu
  * @Version 1.0.0

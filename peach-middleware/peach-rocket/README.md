@@ -123,18 +123,19 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 
 ## Quick Start
 
-[`peach-rocket-quickstart`](./peach-rocket-quickstart/) 用进程内 `MqPublisher` 跑通订单闭环（`web-application-type: none`），不连接外部 NameServer / Broker。
+[`peach-rocket-quickstart`](./peach-rocket-quickstart/) 默认连接本机 `127.0.0.1:9876` NameServer 与对应 Broker（`web-application-type: none`），通过 starter 提供的真实 `MqPublisher` 跑通订单闭环。需要 Java 21，并确保 Broker 对客户端可达；默认关闭 Topic 自动创建，请提前准备当前命名配置对应的 `dev-biz-order` Topic。
 
 - 能力样例：
-  - **发布-消费**：`MqPublisher.publish` 订单创建事件，按 `@MqEvent` / `@MqConsumer` 的 topic+tag 同步投递给 Handler
-  - **顺序发布**：`publishOrderly` 使用稳定 `orderId` 作为 `shardingKey`，再投递给 paid 消费者
+  - **发布-消费**：`MqPublisher.publish` 订单创建事件，Broker 按 topic+tag 异步投递给消费者
+  - **顺序发布**：`publishOrderly` 使用稳定 `orderId` 作为 `shardingKey`，paid 消费者使用 `ORDERLY` 模式
   - **消费幂等**：starter 默认 `InMemoryMqIdempotentStore`，同一键 `tryStart + markSuccess` 后再次 `tryStart` 被拒绝
-- 启动后 `RocketDemoRunner` 依次执行；关闭演示：`quickstart.rocket.demo.enabled=false`
-- 事务消息 / Outbox / Broker 队列级顺序需要真实 RocketMQ，不在本样例覆盖
-- 运行：`mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am spring-boot:run`
+- 启动后 `RocketDemoRunner` 依次执行，每次发布最多等待 60 秒确认对应订单已消费，超时则启动失败；关闭演示：`quickstart.rocket.demo.enabled=false`
+- 事务消息、Outbox 和多消息顺序保证不在本样例验证范围内
+- 构建：`mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am package -DskipTests`
+- 运行：`java -jar peach-middleware/peach-rocket/peach-rocket-quickstart/target/peach-rocket-quickstart-1.0.0-SNAPSHOT.jar`
 - 测试：`mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am test`
 
-Quickstart 将 `peach.rocket.enabled` 设为 `false` 并排除 `RocketMQAutoConfiguration`，避免启动期连接 Broker。业务接入仍按上方配置开启 starter。
+离线演示可在上述运行命令末尾添加 `--spring.profiles.active=in-process`；该 profile 关闭 Peach Rocket 自动配置并排除 `RocketMQAutoConfiguration`，仅在此模式装配进程内发布器与内存幂等存储，不连接 Broker。自动化能力测试固定使用此 profile；另有装配测试验证真实模式选择 `RocketMqPublisher`，传输层使用替身。
 
 ## 生产边界
 

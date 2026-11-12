@@ -3,6 +3,8 @@ package com.peach.rocket.quickstart;
 import com.peach.rocket.annotation.MqConsumer;
 import com.peach.rocket.annotation.MqEvent;
 import com.peach.rocket.core.MqSendResult;
+import com.peach.rocket.core.MqPublisher;
+import com.peach.rocket.quickstart.config.InProcessMqPublisher;
 import com.peach.rocket.quickstart.consumer.OrderCreatedConsumer;
 import com.peach.rocket.quickstart.consumer.OrderPaidConsumer;
 import com.peach.rocket.quickstart.event.OrderCreatedEvent;
@@ -13,6 +15,7 @@ import com.peach.rocket.quickstart.example.OrderPublishConsumeExample;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.UUID;
 
@@ -26,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @CreateTime 2026/9/11 19:00
  */
 @SpringBootTest(properties = "quickstart.rocket.demo.enabled=false")
+@ActiveProfiles("in-process")
 class RocketCapabilityTest {
 
     @Autowired
@@ -36,6 +40,9 @@ class RocketCapabilityTest {
 
     @Autowired
     private ConsumeIdempotentExample idempotentExample;
+
+    @Autowired
+    private MqPublisher mqPublisher;
 
     @Test
     void shouldDeclareEventAndConsumerRoutes() {
@@ -71,10 +78,12 @@ class RocketCapabilityTest {
 
     @Test
     void shouldPublishPaidOrderlyWithStableShardingKey() {
+        InProcessMqPublisher publisher = (InProcessMqPublisher) mqPublisher;
+        publisher.reset();
         MqSendResult result = orderlyPublishExample.publishPaidOrderly(20002L);
 
         assertThat(result.isSuccess()).isTrue();
-        assertThat(orderlyPublishExample.orderlyShardingKeys()).containsExactly("20002");
+        assertThat(publisher.orderlyShardingKeys()).containsExactly("20002");
         assertThat(orderlyPublishExample.consumedPaid()).hasSize(1);
         assertThat(orderlyPublishExample.consumedPaid().get(0).orderId()).isEqualTo(20002L);
     }

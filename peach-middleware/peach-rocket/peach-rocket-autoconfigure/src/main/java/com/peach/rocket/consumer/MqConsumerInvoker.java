@@ -107,85 +107,85 @@ public class MqConsumerInvoker {
         try (MqTraceContextPropagator.MqTraceScope traceScope = traceContextPropagator
                 .startConsumerSpan(context.topic(), context.headers())) {
 
-        // ==================== 3. 幂等性处理 ====================
-        // 3.1 解析幂等 Key（默认为 messageId，也可通过 SpEL 表达式自定义）
-        String idempotentKey = idempotentKeyResolver.resolve(envelope, context);
+            // ==================== 3. 幂等性处理 ====================
+            // 3.1 解析幂等 Key（默认为 messageId，也可通过 SpEL 表达式自定义）
+            String idempotentKey = idempotentKeyResolver.resolve(envelope, context);
 
-        // 判断是否启用幂等：全局配置开启 && 消费者注解允许幂等
-        boolean useIdempotent = properties.getConsumer().isEnableIdempotent() && consumer.idempotent();
+            // 判断是否启用幂等：全局配置开启 && 消费者注解允许幂等
+            boolean useIdempotent = properties.getConsumer().isEnableIdempotent() && consumer.idempotent();
 
-        // 构建幂等上下文，包含存储幂等记录所需的所有信息
-        MqIdempotentContext idempotentContext = new MqIdempotentContext(
-                idempotentKey,
-                RocketMqNaming.normalizeConsumerGroup(consumer.consumerGroup()),
-                context.topic(),
-                context.tag(),
-                context.key(),
-                context.messageId(),
-                properties.getConsumer().getIdempotentExpire()
-        );
+            // 构建幂等上下文，包含存储幂等记录所需的所有信息
+            MqIdempotentContext idempotentContext = new MqIdempotentContext(
+                    idempotentKey,
+                    RocketMqNaming.normalizeConsumerGroup(consumer.consumerGroup()),
+                    context.topic(),
+                    context.tag(),
+                    context.key(),
+                    context.messageId(),
+                    properties.getConsumer().getIdempotentExpire()
+            );
 
-        // 3.2 幂等检查：如果该消息已经被成功消费过，直接返回，不重复执行业务逻辑
-        if (useIdempotent && idempotentStore.isSuccess(idempotentContext)) {
-            log.info("[mq-consume-idempotent-hit] consumer={} topic={} tag={} key={} messageId={}",
-                    handlerName, context.topic(), context.tag(),
-                    context.key(), context.messageId());
-            return;  // 幂等命中，直接返回
-        }
-
-        // 3.3 幂等抢占：尝试标记该消息正在处理中
-        // 如果返回 false，说明有其他线程或实例正在处理该消息，抛出异常让 RocketMQ 稍后重试
-        if (useIdempotent && !idempotentStore.tryStart(idempotentContext)) {
-            throw new MqException("MQ message is already being processed, idempotentKey=" + idempotentKey);
-        }
-
-        // ==================== 4. 执行业务逻辑 ====================
-        long start = System.currentTimeMillis();
-        try {
-            // 4.1 调用业务 Handler 处理消息
-            // envelope.getPayload() 返回解码后的业务对象（如 OrderDTO）
-            // context 包含消息元数据，业务方可根据需要进行使用
-            handler.handle(envelope.payload(), context);
-
-            // 4.2 处理成功：标记幂等记录为成功状态
-            if (useIdempotent) {
-                idempotentStore.markSuccess(idempotentContext);
+            // 3.2 幂等检查：如果该消息已经被成功消费过，直接返回，不重复执行业务逻辑
+            if (useIdempotent && idempotentStore.isSuccess(idempotentContext)) {
+                log.info("[mq-consume-idempotent-hit] consumer={} topic={} tag={} key={} messageId={}",
+                        handlerName, context.topic(), context.tag(),
+                        context.key(), context.messageId());
+                return;  // 幂等命中，直接返回
             }
 
-            // 4.3 记录成功消费日志（包含耗时）
-            log.info("[mq-consume] consumer={} topic={} tag={} key={} messageId={} retry={} cost={}ms success=true",
-                    handlerName, context.topic(), context.tag(), context.key(),
-                    context.messageId(), reconsumeTimes, System.currentTimeMillis() - start);
-
-        } catch (RuntimeException ex) {
-            traceScope.error(ex);
-            // ==================== 5. 异常处理 ====================
-
-            // 5.1 处理失败：标记幂等记录为失败状态
-            // 这样后续该消息重试时，可以重新尝试处理
-            if (useIdempotent) {
-                idempotentStore.markFailed(idempotentContext);
+            // 3.3 幂等抢占：尝试标记该消息正在处理中
+            // 如果返回 false，说明有其他线程或实例正在处理该消息，抛出异常让 RocketMQ 稍后重试
+            if (useIdempotent && !idempotentStore.tryStart(idempotentContext)) {
+                throw new MqException("MQ message is already being processed, idempotentKey=" + idempotentKey);
             }
 
-            // 5.2 调用错误处理器（可自定义扩展，如发送告警、记录死信等）
-            errorHandler.handle(ex, envelope, context);
+            // ==================== 4. 执行业务逻辑 ====================
+            long start = System.currentTimeMillis();
+            try {
+                // 4.1 调用业务 Handler 处理消息
+                // envelope.getPayload() 返回解码后的业务对象（如 OrderDTO）
+                // context 包含消息元数据，业务方可根据需要进行使用
+                handler.handle(envelope.payload(), context);
 
-            // 5.3 异常分类：判断是否需要重试
-            // 通过 MqExceptionClassifier 可自定义分类逻辑
-            // 例如：网络超时可重试，参数校验失败不重试
-            if (exceptionClassifier.classify(ex, envelope, context) == MqFailureAction.RETRY) {
-                // 需要重试：直接抛出异常，RocketMQ 会按配置进行重试投递
-                throw ex;
+                // 4.2 处理成功：标记幂等记录为成功状态
+                if (useIdempotent) {
+                    idempotentStore.markSuccess(idempotentContext);
+                }
+
+                // 4.3 记录成功消费日志（包含耗时）
+                log.info("[mq-consume] consumer={} topic={} tag={} key={} messageId={} retry={} cost={}ms success=true",
+                        handlerName, context.topic(), context.tag(), context.key(),
+                        context.messageId(), reconsumeTimes, System.currentTimeMillis() - start);
+
+            } catch (RuntimeException ex) {
+                traceScope.error(ex);
+                // ==================== 5. 异常处理 ====================
+
+                // 5.1 处理失败：标记幂等记录为失败状态
+                // 这样后续该消息重试时，可以重新尝试处理
+                if (useIdempotent) {
+                    idempotentStore.markFailed(idempotentContext);
+                }
+
+                // 5.2 调用错误处理器（可自定义扩展，如发送告警、记录死信等）
+                errorHandler.handle(ex, envelope, context);
+
+                // 5.3 异常分类：判断是否需要重试
+                // 通过 MqExceptionClassifier 可自定义分类逻辑
+                // 例如：网络超时可重试，参数校验失败不重试
+                if (exceptionClassifier.classify(ex, envelope, context) == MqFailureAction.RETRY) {
+                    // 需要重试：直接抛出异常，RocketMQ 会按配置进行重试投递
+                    throw ex;
+                }
+
+                // 5.4 不需要重试：记录警告日志，消息消费成功（不抛出异常）
+                // 这样消息会从 Broker 中确认删除，不会进入无限重试
+                log.warn("[mq-consume-skip-retry] consumer={} topic={} tag={} key={} messageId={} exception={}",
+                        handlerName, context.topic(), context.tag(), context.key(),
+                        context.messageId(), ex.getClass().getName());
+                // 注意：这里不再抛出异常，相当于告诉 RocketMQ 消息已消费成功
+                // 但业务上该消息实际处理失败了（适用于非关键业务或已记录告警的场景）
             }
-
-            // 5.4 不需要重试：记录警告日志，消息消费成功（不抛出异常）
-            // 这样消息会从 Broker 中确认删除，不会进入无限重试
-            log.warn("[mq-consume-skip-retry] consumer={} topic={} tag={} key={} messageId={} exception={}",
-                    handlerName, context.topic(), context.tag(), context.key(),
-                    context.messageId(), ex.getClass().getName());
-            // 注意：这里不再抛出异常，相当于告诉 RocketMQ 消息已消费成功
-            // 但业务上该消息实际处理失败了（适用于非关键业务或已记录告警的场景）
-        }
         }
     }
 

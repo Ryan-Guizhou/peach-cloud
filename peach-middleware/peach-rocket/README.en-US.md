@@ -123,18 +123,19 @@ Prefer explicit `@Bean` overrides for in-memory idempotency and in-memory Outbox
 
 ## Quick Start
 
-[`peach-rocket-quickstart`](./peach-rocket-quickstart/) runs an in-process `MqPublisher` order loop (`web-application-type: none`) and does not connect to an external NameServer or Broker.
+[`peach-rocket-quickstart`](./peach-rocket-quickstart/) connects to the local NameServer at `127.0.0.1:9876` and its Broker by default (`web-application-type: none`), using the starter's real `MqPublisher`. Use Java 21 and ensure the Broker is reachable from the client. Topic auto-creation is disabled; prepare `dev-biz-order`, as resolved by the current naming configuration, beforehand.
 
 - Capability samples:
-  - **Publish-consume**: `MqPublisher.publish` an order-created event and deliver it synchronously to the matching `@MqConsumer` by topic+tag
-  - **Orderly publish**: `publishOrderly` uses a stable `orderId` as `shardingKey`, then delivers to the paid consumer
+  - **Publish-consume**: `MqPublisher.publish` an order-created event; the Broker delivers it asynchronously by topic+tag
+  - **Orderly publish**: `publishOrderly` uses a stable `orderId` as `shardingKey`; the paid consumer uses `ORDERLY` mode
   - **Consume idempotency**: starter default `InMemoryMqIdempotentStore`; a second `tryStart` after `tryStart + markSuccess` is rejected
-- `RocketDemoRunner` runs these on startup; disable with `quickstart.rocket.demo.enabled=false`
-- Transaction messages, Outbox, and broker-level queue ordering require a real RocketMQ and are not covered here
-- Run: `mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am spring-boot:run`
+- `RocketDemoRunner` runs these on startup, waiting up to 60 seconds after each publish to confirm consumption of that order; a timeout fails startup. Disable with `quickstart.rocket.demo.enabled=false`
+- Transaction messages, Outbox, and ordering guarantees across multiple messages are outside this sample's verification scope
+- Build: `mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am package -DskipTests`
+- Run: `java -jar peach-middleware/peach-rocket/peach-rocket-quickstart/target/peach-rocket-quickstart-1.0.0-SNAPSHOT.jar`
 - Test: `mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am test`
 
-The quickstart sets `peach.rocket.enabled` to `false` and excludes `RocketMQAutoConfiguration` so startup does not contact a broker. Business integration should still enable the starter with the configuration above.
+Append `--spring.profiles.active=in-process` to the run command for an offline demo. This profile disables Peach Rocket auto-configuration and excludes `RocketMQAutoConfiguration`; only this mode installs the in-process publisher and in-memory idempotency store without contacting a Broker. Capability tests always use this profile. A separate wiring test verifies that real mode selects `RocketMqPublisher`, with a transport test double.
 
 ## Production Boundaries
 

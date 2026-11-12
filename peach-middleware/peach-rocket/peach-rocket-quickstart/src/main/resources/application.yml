@@ -4,11 +4,24 @@ spring:
   main:
     web-application-type: none
 
+rocketmq:
+  name-server: 127.0.0.1:9876
+  producer:
+    group: order-service-producer
+
 peach:
   rocket:
-    enabled: false
-
-quickstart:
-  rocket:
-    demo:
+    enabled: true
+    namespace: dev
+    app-name: order-service
+    naming:
+      topic-prefix: biz
+      topic-separator: "-"
+      auto-prefix-env: true
+    consumer:
+      dynamic-register: true
+      enable-idempotent: true
+    topic:
+      auto-create: true
+    outbox:
       enabled: true
