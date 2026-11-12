@@ -34,7 +34,7 @@ public class DefaultMqOutboxPublisher implements MqOutboxPublisher {
 
     @Override
     public <T> String publish(T payload, MqSendOptions options) {
-        MqSendOptions actualOptions = options == null ? MqSendOptions.defaults() : options;
+        MqSendOptions actualOptions = MqSendOptions.copyOf(options);
         MqRoute route = routeResolver.resolve(payload, actualOptions);
         MqMessageEnvelope<T> envelope = MqMessageEnvelope.create(
                 UUID.randomUUID().toString(),
