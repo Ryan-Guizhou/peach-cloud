@@ -1,0 +1,10 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration
+
+peach:
+  rocket:
+    enabled: false
+    outbox:
+      enabled: false
