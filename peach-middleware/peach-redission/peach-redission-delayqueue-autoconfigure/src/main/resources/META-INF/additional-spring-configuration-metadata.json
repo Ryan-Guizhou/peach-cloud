@@ -2,8 +2,8 @@
   "groups": [
     {
       "name": "peach.delay.queue",
-      "type": "com.peach.redission.delayqueue.config.DelayQueueProperties",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "type": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "单一 Lua 原子状态机延迟队列；历史 Redisson 消息需切换前排空"
     }
   ],
@@ -11,84 +11,84 @@
     {
       "name": "peach.delay.queue.batch-size",
       "type": "java.lang.Integer",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "单轮原子认领条数",
       "defaultValue": 16
     },
     {
       "name": "peach.delay.queue.completed-retention",
       "type": "java.time.Duration",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "已完成消息 ID 防重复保留时长",
       "defaultValue": "7d"
     },
     {
       "name": "peach.delay.queue.enabled",
       "type": "java.lang.Boolean",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "启用当前可靠队列运行时",
       "defaultValue": true
     },
     {
       "name": "peach.delay.queue.isolation-region-count",
       "type": "java.lang.Integer",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "同主题的稳定 ID 分区数；生产和消费必须一致",
       "defaultValue": 5
     },
     {
       "name": "peach.delay.queue.lease",
       "type": "java.time.Duration",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "认领租约；执行期间心跳延长",
       "defaultValue": "2m"
     },
     {
       "name": "peach.delay.queue.max-attempts",
       "type": "java.lang.Integer",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "单消息最大交付尝试次数",
       "defaultValue": 5
     },
     {
       "name": "peach.delay.queue.max-payload-bytes",
       "type": "java.lang.Integer",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "单消息 payload UTF-8 长度上限",
       "defaultValue": 65536
     },
     {
       "name": "peach.delay.queue.max-topic-subscriptions",
       "type": "java.lang.Integer",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "进程内允许的主题分区监听数上限",
       "defaultValue": 512
     },
     {
       "name": "peach.delay.queue.poll-interval",
       "type": "java.time.Duration",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "轮询间隔",
       "defaultValue": "500ms"
     },
     {
       "name": "peach.delay.queue.retry-initial",
       "type": "java.time.Duration",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "失败首次退避",
       "defaultValue": "5s"
     },
     {
       "name": "peach.delay.queue.retry-max",
       "type": "java.time.Duration",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "失败最大退避",
       "defaultValue": "5m"
     },
     {
       "name": "peach.delay.queue.worker-count",
       "type": "java.lang.Integer",
-      "sourceType": "com.peach.redission.delayqueue.config.DelayQueueProperties",
+      "sourceType": "com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties",
       "description": "独立业务执行线程数上限；轮询认领只在有空闲执行槽位时进行",
       "defaultValue": 4
     }

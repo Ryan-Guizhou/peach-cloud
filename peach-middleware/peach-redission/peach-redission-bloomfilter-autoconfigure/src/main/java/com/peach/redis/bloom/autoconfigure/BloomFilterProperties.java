@@ -1,4 +1,4 @@
-package com.peach.redis.bloom.config;
+package com.peach.redis.bloom.autoconfigure;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

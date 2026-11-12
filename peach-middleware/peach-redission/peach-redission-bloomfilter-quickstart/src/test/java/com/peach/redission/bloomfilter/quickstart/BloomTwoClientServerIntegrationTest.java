@@ -1,6 +1,6 @@
 package com.peach.redission.bloomfilter.quickstart;
 
-import com.peach.redis.bloom.config.BloomFilterProperties;
+import com.peach.redis.bloom.autoconfigure.BloomFilterProperties;
 import com.peach.redis.bloom.core.BloomStatus;
 import com.peach.redis.bloom.core.SegmentedBloomFilterService;
 import com.peach.redis.bloom.spi.BloomScalePolicy;

@@ -1,6 +1,6 @@
 package com.peach.redis.manager;
 
-import com.peach.redis.common.tool.RedisDao;
+import com.peach.redis.tool.RedisDao;
 import com.peach.redis.config.MultiCacheConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.core.RedisTemplate;

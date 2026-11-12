@@ -3,7 +3,7 @@ package com.peach.sample.multicache;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Indexed;
-import com.peach.redis.common.tool.RedisDao;
+import com.peach.redis.tool.RedisDao;
 import com.peach.redis.manager.MultiCacheManagerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;

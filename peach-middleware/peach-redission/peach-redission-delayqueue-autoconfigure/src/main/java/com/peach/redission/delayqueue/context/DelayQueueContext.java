@@ -1,6 +1,6 @@
 package com.peach.redission.delayqueue.context;
 
-import com.peach.redission.delayqueue.config.DelayQueueProperties;
+import com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties;
 import com.peach.redission.delayqueue.core.RedisDelayQueue;
 
 import java.time.Duration;

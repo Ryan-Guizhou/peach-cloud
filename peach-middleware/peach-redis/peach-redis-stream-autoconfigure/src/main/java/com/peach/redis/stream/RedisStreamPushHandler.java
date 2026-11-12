@@ -1,6 +1,6 @@
 package com.peach.redis.stream;
 
-import com.peach.redis.stream.config.RedisStreamProperties;
+import com.peach.redis.stream.autoconfigure.RedisStreamProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.connection.stream.RecordId;

@@ -1,1 +1,1 @@
-com.peach.redis.stream.config.RedisStreamAutoConfig
+com.peach.redis.stream.autoconfigure.RedisStreamAutoConfiguration

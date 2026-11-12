@@ -1,6 +1,6 @@
 package com.peach.redis.tool.quickstart;
 
-import com.peach.redis.common.tool.RedisDao;
+import com.peach.redis.tool.RedisDao;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import com.peach.redis.tool.quickstart.example.SessionStringExample;
 import com.peach.redis.tool.quickstart.example.UserProfileHashExample;
@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.util.UUID;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
-import com.peach.redis.common.tool.RedisDaoImpl;
+import com.peach.redis.tool.RedisDaoImpl;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.Map;
 import java.util.Set;
@@ -28,7 +28,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 验证 RedisDao 对外能力：String+TTL、Hash、Set。
+ * 验证 RedisDao 全方法示例覆盖、清理配置及集合扫描预算。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -37,6 +37,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(properties = "quickstart.redis-tool.demo.enabled=false")
 @Testcontainers(disabledWithoutDocker = true)
 class RedisToolCapabilityTest {
+
+    @Autowired
+    private org.springframework.data.redis.connection.RedisConnectionFactory connectionFactory;
+
+    @Test
+    void allOperationsAndCleanupModesShouldWork() throws Exception {
+        RedisToolScenarioAssertions.verify(redisDao, connectionFactory);
+    }
 
     @Container
     @SuppressWarnings("resource")
@@ -109,20 +117,20 @@ class RedisToolCapabilityTest {
             redisDao.zAdd(zset, "first", 1.0);
             redisDao.zAdd(zset, "second", 2.0);
 
-            assertThat(redisDao.hscan(hash, 1))
+            assertThat(redisDao.hmScan(hash, 1))
                     .containsEntry("scan-a", "one").containsEntry("scan-b", "two");
-            assertThat(redisDao.sscan(set, 1)).containsExactlyInAnyOrder("alpha", "beta");
-            assertThat(redisDao.zscan(zset, 1))
+            assertThat(redisDao.sScan(set, 1)).containsExactlyInAnyOrder("alpha", "beta");
+            assertThat(redisDao.zScan(zset, 1))
                     .containsEntry("first", 1.0).containsEntry("second", 2.0);
 
             RedisDaoImpl bounded = new RedisDaoImpl(
                     (RedisTemplate<?, ?>) redisDaoTemplate());
             ReflectionTestUtils.setField(bounded, "scanMaxResults", 1);
-            assertThatThrownBy(() -> bounded.hscan(hash, 1))
+            assertThatThrownBy(() -> bounded.hmScan(hash, 1))
                     .isInstanceOf(IllegalStateException.class).hasMessageContaining("result limit");
-            assertThatThrownBy(() -> bounded.sscan(set, 1))
+            assertThatThrownBy(() -> bounded.sScan(set, 1))
                     .isInstanceOf(IllegalStateException.class).hasMessageContaining("result limit");
-            assertThatThrownBy(() -> bounded.zscan(zset, 1))
+            assertThatThrownBy(() -> bounded.zScan(zset, 1))
                     .isInstanceOf(IllegalStateException.class).hasMessageContaining("result limit");
         } finally {
             redisDao.delete(hash);
@@ -141,9 +149,9 @@ class RedisToolCapabilityTest {
     @Test
     void missingKeyShouldNotReportSuccessfulTtlUpdate() {
         String key = "test:redisdao:missing:" + UUID.randomUUID();
-        assertThat(redisDao.vSetUpdate(key, 30L)).isFalse();
+        assertThat(redisDao.expire(key, Duration.ofSeconds(30))).isFalse();
         assertThat(redisDao.vSet(key, "value", 30L)).isTrue();
-        assertThat(redisDao.vSetUpdate(key, 20L)).isTrue();
+        assertThat(redisDao.expire(key, Duration.ofSeconds(20))).isTrue();
         redisDao.delete(key);
     }
 
@@ -159,7 +167,6 @@ class RedisToolCapabilityTest {
             stringRedisTemplate.opsForValue().set(unrelated, "keep");
 
             assertThat(redisDao.scan(prefix + "*", null)).containsExactlyInAnyOrder(first, second);
-            assertThat(redisDao.keys(prefix + "*")).containsExactlyInAnyOrder(first, second);
             assertThat(redisDao.deletePattern(prefix + "*", 2)).isEqualTo(2L);
             assertThat(stringRedisTemplate.hasKey(first)).isFalse();
             assertThat(stringRedisTemplate.hasKey(second)).isFalse();

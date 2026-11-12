@@ -1,6 +1,8 @@
 package com.peach.redis.tool.quickstart.example;
 
-import com.peach.redis.common.tool.RedisDao;
+import com.peach.redis.tool.RedisDao;
+import com.peach.redis.tool.quickstart.config.RedisToolDemoContext;
+import com.peach.redis.tool.quickstart.enums.RedisToolKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
@@ -22,12 +24,12 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserProfileHashExample {
 
-    public static final String KEY_PREFIX = "peach:qs:tool:profile:";
-
     private final RedisDao redisDao;
 
+    private final RedisToolDemoContext context;
+
     public void saveProfile(String userId, String nickname, String city) {
-        String key = KEY_PREFIX + userId;
+        String key = context.key(RedisToolKey.PROFILE, userId);
         Map<Object, Object> fields = new LinkedHashMap<>();
         fields.put("nickname", nickname);
         fields.put("city", city);
@@ -36,22 +38,22 @@ public class UserProfileHashExample {
     }
 
     public String getNickname(String userId) {
-        Object value = redisDao.hmGet(KEY_PREFIX + userId, "nickname");
+        Object value = redisDao.hmGet(context.key(RedisToolKey.PROFILE, userId), "nickname");
         String nickname = value == null ? null : String.valueOf(value);
         log.info("profile getNickname, userId={}, hit={}", userId, nickname != null);
         return nickname;
     }
 
     public Map<Object, Object> getAll(String userId) {
-        return redisDao.hmGet(KEY_PREFIX + userId);
+        return redisDao.hmGet(context.key(RedisToolKey.PROFILE, userId));
     }
 
     public void removeCity(String userId) {
-        redisDao.hmDel(KEY_PREFIX + userId, "city");
+        redisDao.hmDelete(context.key(RedisToolKey.PROFILE, userId), "city");
         log.info("profile removeCity, userId={}", userId);
     }
 
     public void deleteProfile(String userId) {
-        redisDao.delete(KEY_PREFIX + userId);
+        redisDao.delete(context.key(RedisToolKey.PROFILE, userId));
     }
 }

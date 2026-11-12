@@ -1,5 +1,6 @@
 package com.peach.redis.common.tool;
 
+import com.peach.redis.tool.RedisDaoImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.ListOperations;
@@ -69,12 +70,8 @@ class RedisDaoFailureSemanticsTest {
         when(redis.opsForValue()).thenReturn(values);
         RedisDaoImpl dao = new RedisDaoImpl(redis);
 
-        when(list.size("list")).thenReturn(null);
-        assertThatThrownBy(() -> dao.lRemove("list", "value"))
-                .isInstanceOf(IllegalStateException.class).hasMessageContaining("LLEN");
-        when(list.size("list")).thenReturn(3L);
-        when(list.remove("list", 3L, "value")).thenReturn(null);
-        assertThatThrownBy(() -> dao.lRemove("list", "value"))
+        when(list.remove("list", 0L, "value")).thenReturn(null);
+        assertThatThrownBy(() -> dao.lRemove("list", 0L, "value"))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("LREM");
 
         when(values.increment("counter", 1L)).thenReturn(null);

@@ -1,6 +1,11 @@
 {
   "properties": [
     {
+      "name": "peach.redis.tool.scan",
+      "type": "com.peach.redis.tool.RedisToolProperties$Scan",
+      "description": "Redis 工具的扫描数量与时间预算。"
+    },
+    {
       "name": "peach.redis.mode",
       "type": "java.lang.String",
       "description": "Redis 部署模式，可选择 standalone（单机）、sentinel（哨兵）或 cluster（集群）。",
@@ -9,14 +14,14 @@
     {
       "name": "peach.redis.tool.scan.max-results",
       "type": "java.lang.Integer",
-      "sourceType": "com.peach.redis.common.tool.RedisDaoImpl",
+      "sourceType": "com.peach.redis.tool.RedisToolProperties$Scan",
       "description": "单次 Redis SCAN 返回的唯一 key 数量上限；超过上限抛异常而不返回部分结果",
       "defaultValue": 10000
     },
     {
       "name": "peach.redis.tool.scan.timeout-millis",
       "type": "java.lang.Long",
-      "sourceType": "com.peach.redis.common.tool.RedisDaoImpl",
+      "sourceType": "com.peach.redis.tool.RedisToolProperties$Scan",
       "description": "单次 Redis SCAN 的本地遍历时间预算，单位毫秒；包含 Cluster 遍历",
       "defaultValue": 10000
     }

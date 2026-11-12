@@ -1,1 +1,1 @@
-com.peach.redission.delayqueue.config.DelayQueueAutoConfig
+com.peach.redission.delayqueue.autoconfigure.DelayQueueAutoConfiguration

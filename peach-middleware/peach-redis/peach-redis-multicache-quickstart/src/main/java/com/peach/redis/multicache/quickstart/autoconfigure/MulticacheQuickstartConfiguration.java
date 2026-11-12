@@ -1,4 +1,4 @@
-package com.peach.redis.multicache.quickstart.config;
+package com.peach.redis.multicache.quickstart.autoconfigure;
 
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Configuration;

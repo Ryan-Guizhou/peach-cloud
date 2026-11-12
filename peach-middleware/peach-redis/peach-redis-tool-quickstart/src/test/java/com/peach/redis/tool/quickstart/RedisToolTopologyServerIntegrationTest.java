@@ -1,6 +1,6 @@
 package com.peach.redis.tool.quickstart;
 
-import com.peach.redis.common.tool.RedisDao;
+import com.peach.redis.tool.RedisDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +36,14 @@ class RedisToolTopologyServerIntegrationTest {
 
     @Autowired
     private StringRedisTemplate strings;
+
+    @Autowired
+    private org.springframework.data.redis.connection.RedisConnectionFactory connectionFactory;
+
+    @Test
+    void allOperationsAndCleanupModesShouldWorkAcrossSlots() throws Exception {
+        RedisToolScenarioAssertions.verify(dao, connectionFactory);
+    }
 
     @Test
     void scansAndDeletesAcrossHashSlotsWithoutAffectingUnrelatedKeys() {

@@ -1,4 +1,4 @@
-package com.peach.redission.delayqueue.config;
+package com.peach.redission.delayqueue.autoconfigure;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

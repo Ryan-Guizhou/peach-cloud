@@ -1,5 +1,6 @@
 package com.peach.redisson.autoconfigure;
 
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.codec.JsonJacksonCodec;
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Indexed;
 
 import java.util.Arrays;
 
@@ -24,6 +26,8 @@ import java.util.Arrays;
  * @Version 1.0.0
  * @CreateTime 2026/11/10
  */
+@Slf4j
+@Indexed
 @AutoConfiguration
 @ConditionalOnClass(RedissonClient.class)
 @ConditionalOnProperty(prefix = "peach.redis.redisson", name = "enabled", havingValue = "true", matchIfMissing = true)

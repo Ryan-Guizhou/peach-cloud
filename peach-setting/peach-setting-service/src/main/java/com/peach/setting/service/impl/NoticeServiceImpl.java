@@ -9,7 +9,7 @@ import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.PageResult;
 import com.peach.common.constant.PubCommonConst;
 import com.peach.common.util.DateUtil;
-import com.peach.redis.common.tool.RedisDao;
+import com.peach.redis.tool.RedisDao;
 import com.peach.common.audit.AuditContext;
 import com.peach.setting.common.enums.SettingConst;
 import com.peach.setting.common.enums.SettingEnum;

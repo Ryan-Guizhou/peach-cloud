@@ -8,12 +8,14 @@ import com.peach.redission.distrbutedlock.lockinfo.impl.DistributedLockInfoHandl
 import com.peach.redission.distrbutedlock.manage.DistrbutedLockerFactory;
 import com.peach.redission.distrbutedlock.manage.DistrbutedLockerManager;
 import com.peach.redission.distrbutedlock.support.DistributedLockTemplate;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Indexed;
 
 /**
  * Distributed锁Auto自动配置。
@@ -24,12 +26,14 @@ import org.springframework.context.annotation.Bean;
  * @Version 1.0.0
  * @CreateTime 2025/12/26
  */
+@Slf4j
+@Indexed
 @AutoConfiguration
 @AutoConfigureAfter(name = {
         "com.peach.redisson.autoconfigure.PeachRedissonAutoConfiguration",
-        "com.peach.redission.common.RedissionCommonAutoconfigure"
+        "com.peach.redission.common.RedissionCommonAutoconfiguration"
 })
-public class DistributedLockAutoConfigure {
+public class DistributedLockAutoConfiguration {
 
 
     @Bean(LockInfoType.DISTRIBUTE)

@@ -2,8 +2,8 @@ package com.peach.redis.stream.quickstart;
 
 import com.peach.redis.stream.MessageConsumer;
 import com.peach.redis.stream.RedisStreamPendingRecovery;
-import com.peach.redis.stream.config.RedisStreamProperties;
-import com.peach.redis.stream.config.RedisStreamRecoveryProperties;
+import com.peach.redis.stream.autoconfigure.RedisStreamProperties;
+import com.peach.redis.stream.autoconfigure.RedisStreamRecoveryProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

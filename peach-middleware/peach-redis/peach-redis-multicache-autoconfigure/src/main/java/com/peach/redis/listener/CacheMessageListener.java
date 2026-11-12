@@ -6,6 +6,8 @@ import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.connection.SubscriptionListener;
 
+import java.nio.charset.StandardCharsets;
+
 
 /**
  * 缓存失效监听器。
@@ -41,8 +43,17 @@ public class CacheMessageListener implements MessageListener, SubscriptionListen
     @Override
     public void onMessage(Message message, byte[] pattern) {
         try {
-            CacheMessage cacheMessage = CacheMessageCodec.deserialize(message.getBody());
+            byte[] body = message.getBody();
+            if (body == null || body.length == 0) {
+                log.warn("Received empty multi-cache sync message, ignore. channel={}",
+                        new String(message.getChannel(), StandardCharsets.UTF_8));
+                return;
+            }
+
+            CacheMessage cacheMessage = CacheMessageCodec.deserialize(body);
             if (cacheMessage == null) {
+                log.warn("Received null multi-cache sync message after deserialize, ignore. channel={}",
+                        new String(message.getChannel(), StandardCharsets.UTF_8));
                 return;
             }
             multiCacheManager.clearLocal(cacheMessage.cacheName(), cacheMessage.key(), cacheMessage.sender());

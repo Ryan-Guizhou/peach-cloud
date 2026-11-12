@@ -1,10 +1,12 @@
 package com.peach.redission.common;
 
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Indexed;
 
 /**
  * RedissionCommonAutoconfigure相关类。
@@ -13,9 +15,11 @@ import org.springframework.context.annotation.Bean;
  * @Version 1.0.0
  * @CreateTime 2025/12/19 18:59
  */
+@Slf4j
+@Indexed
 @AutoConfiguration
 @AutoConfigureAfter(name = "com.peach.redisson.autoconfigure.PeachRedissonAutoConfiguration")
-public class RedissionCommonAutoconfigure {
+public class RedissionCommonAutoconfiguration {
 
     @Bean
     @ConditionalOnMissingBean(LocalCacheLock.class)

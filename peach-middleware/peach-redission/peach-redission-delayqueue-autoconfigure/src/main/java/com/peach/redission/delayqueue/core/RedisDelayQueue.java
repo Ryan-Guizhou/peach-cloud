@@ -1,6 +1,6 @@
 package com.peach.redission.delayqueue.core;
 
-import com.peach.redission.delayqueue.config.DelayQueueProperties;
+import com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties;
 import com.peach.virtualthread.registry.VirtualExecutorRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBlockingQueue;

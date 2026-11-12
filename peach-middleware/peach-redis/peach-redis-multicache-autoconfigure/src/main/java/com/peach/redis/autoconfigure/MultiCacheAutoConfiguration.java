@@ -2,7 +2,7 @@ package com.peach.redis.autoconfigure;
 
 
 import com.peach.redis.listener.CacheMessageListener;
-import com.peach.redis.common.tool.RedisDao;
+import com.peach.redis.tool.RedisDao;
 import com.peach.redis.config.MultiCacheConfig;
 import com.peach.redis.manager.MultiCacheManager;
 import com.peach.redis.manager.MultiCacheManagerService;
@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -59,13 +60,8 @@ public class MultiCacheAutoConfiguration<K, V>{
         return cacheListenerContainer;
     }
 
-    /**
-     * 缓存服务 通过cacheManager操作缓存的工具类实现类
-     *
-     * @param cacheManager
-     * @return
-     */
     @Bean
+    @ConditionalOnBean(MultiCacheManager.class)
     @ConditionalOnMissingBean(MultiCacheManagerService.class)
     public MultiCacheManagerService cacheManagerService(MultiCacheManager cacheManager,
                                                        ObjectProvider<VirtualExecutorRegistry> registryProvider) {

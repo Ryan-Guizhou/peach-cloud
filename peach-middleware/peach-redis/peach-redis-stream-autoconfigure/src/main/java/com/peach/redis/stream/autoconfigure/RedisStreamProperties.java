@@ -1,4 +1,4 @@
-package com.peach.redis.stream.config;
+package com.peach.redis.stream.autoconfigure;
 
 import com.peach.redis.stream.constant.RedisStreamContant;
 import lombok.Data;

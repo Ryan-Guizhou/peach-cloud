@@ -1,4 +1,4 @@
-package com.peach.redis.stream.config;
+package com.peach.redis.stream.autoconfigure;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

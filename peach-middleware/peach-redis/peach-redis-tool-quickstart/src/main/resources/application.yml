@@ -8,10 +8,13 @@ peach:
   redis:
     mode: standalone
     host: ${PEACH_REDIS_HOST:127.0.0.1:6379}
-    password: ${PEACH_REDIS_PASSWORD:}
+    password: ${PEACH_REDIS_PASSWORD:123456}
     database: 1
 
 quickstart:
   redis-tool:
     demo:
       enabled: true
+      # 执行示例前始终清理本次精确 Key；此项仅控制结束后的清理。
+      cleanup-after-run: false
+      # run-id: local-demo # 默认随机生成；固定标识不可被并行运行复用。

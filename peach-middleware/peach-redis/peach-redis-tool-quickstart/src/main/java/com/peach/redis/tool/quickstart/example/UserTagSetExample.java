@@ -1,6 +1,8 @@
 package com.peach.redis.tool.quickstart.example;
 
-import com.peach.redis.common.tool.RedisDao;
+import com.peach.redis.tool.RedisDao;
+import com.peach.redis.tool.quickstart.config.RedisToolDemoContext;
+import com.peach.redis.tool.quickstart.enums.RedisToolKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
@@ -21,12 +23,12 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class UserTagSetExample {
 
-    public static final String KEY_PREFIX = "peach:qs:tool:tags:";
-
     private final RedisDao redisDao;
 
+    private final RedisToolDemoContext context;
+
     public void addTags(String userId, String... tags) {
-        String key = KEY_PREFIX + userId;
+        String key = context.key(RedisToolKey.TAGS, userId);
         for (String tag : tags) {
             redisDao.sAdd(key, tag);
         }
@@ -34,17 +36,17 @@ public class UserTagSetExample {
     }
 
     public Set<Object> listTags(String userId) {
-        Set<Object> tags = redisDao.sMembers(KEY_PREFIX + userId);
+        Set<Object> tags = redisDao.sMembers(context.key(RedisToolKey.TAGS, userId));
         log.info("tag list, userId={}, size={}", userId, tags == null ? 0 : tags.size());
         return tags;
     }
 
     public void removeTag(String userId, String tag) {
-        redisDao.sRemove(KEY_PREFIX + userId, tag);
+        redisDao.sRemove(context.key(RedisToolKey.TAGS, userId), tag);
         log.info("tag remove, userId={}, tag={}", userId, tag);
     }
 
     public void clear(String userId) {
-        redisDao.delete(KEY_PREFIX + userId);
+        redisDao.delete(context.key(RedisToolKey.TAGS, userId));
     }
 }

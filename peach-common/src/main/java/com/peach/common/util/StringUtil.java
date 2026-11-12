@@ -22,7 +22,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -79,14 +81,10 @@ public final class StringUtil implements Serializable {
      * @return 转换后的非 null 字符串
      */
     public static String nullToEmpty(Object value) {
-        if (null == value) {
-            return EMPTY;
-        }
-        String tempString = String.valueOf(value);
-        if (PubCommonConst.STR_NULL_TEXT.equalsIgnoreCase(tempString) || EMPTY.equals(tempString)) {
-            return EMPTY;
-        }
-        return tempString;
+        return Optional.ofNullable(value)
+                .map(String::valueOf)
+                .filter(v -> !PubCommonConst.STR_NULL_TEXT.equalsIgnoreCase(v) && !EMPTY.equals(v))
+                .orElse(EMPTY);
     }
 
     /**
@@ -97,14 +95,10 @@ public final class StringUtil implements Serializable {
      * @return 转换后的字符串或默认值
      */
     public static String nvl(Object value, String def) {
-        if (null == value) {
-            return def;
-        }
-        String tempString = String.valueOf(value);
-        if (PubCommonConst.STR_NULL_TEXT.equalsIgnoreCase(tempString) || EMPTY.equals(tempString)) {
-            return def;
-        }
-        return tempString;
+        return Optional.ofNullable(value)
+                .map(String::valueOf)
+                .filter(v -> !PubCommonConst.STR_NULL_TEXT.equalsIgnoreCase(v) && !EMPTY.equals(v))
+                .orElse(def);
     }
 
     /**
@@ -714,17 +708,18 @@ public final class StringUtil implements Serializable {
             separator = PubCommonConst.COMMA;
         }
         StringBuilder res = new StringBuilder();
-        if (PeachCollectionUtil.isNotEmpty(strs)) {
-            for (int i = 0; i < strs.size(); i++) {
-                String s = strs.get(i);
-                if (limit != 0 && i == limit) {
-                    res.append(ELLIPSIS);
+        if (PeachCollectionUtil.isEmpty(strs)) {
+            return res.toString();
+        }
+        for (int i = 0; i < strs.size(); i++) {
+            String s = strs.get(i);
+            if (limit != 0 && i == limit) {
+                res.append(ELLIPSIS);
+            } else {
+                if (isEmpty(res.toString())) {
+                    res.append(s);
                 } else {
-                    if (isEmpty(res.toString())) {
-                        res.append(s);
-                    } else {
-                        res.append(separator).append(s);
-                    }
+                    res.append(separator).append(s);
                 }
             }
         }
@@ -789,5 +784,25 @@ public final class StringUtil implements Serializable {
      */
     public static String decodeUtf8(String str) {
         return str == null ? EMPTY : URLDecoder.decode(str, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 校验字符串有值后执行消费逻辑，若为空则抛出异常
+     *
+     * @param value      待校验的字符串
+     * @param consumer   消费逻辑
+     * @param fieldName  字段名称（用于日志和报错定位）
+     */
+    private static void acceptIfHasText(String value, Consumer<String> consumer, String fieldName) {
+        if (isBlank(value)) {
+            log.error("Validation failed: parameter [{}] must not be null, empty, or whitespace-only.", fieldName);
+            throw new IllegalArgumentException(String.format("Parameter [%s] must not be blank.", fieldName));
+        }
+        if (consumer == null) {
+            log.error("Validation failed: consumer must not be null for parameter [{}].", fieldName);
+            throw new NullPointerException(String.format("Consumer must not be null for parameter [%s].", fieldName));
+        }
+
+        consumer.accept(value);
     }
 }

@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * @Version 1.0.0
  * @CreateTime 2025/12/22 10:18
  */
-public abstract class AbstracyLockInfoHandle implements LockInfoHandle{
+public abstract class AbstractLockInfoHandle implements LockInfoHandle{
 
     private static final String LOCK_PREFIX_NAME = "LOCK_DISTRIBUTE_ID";
 

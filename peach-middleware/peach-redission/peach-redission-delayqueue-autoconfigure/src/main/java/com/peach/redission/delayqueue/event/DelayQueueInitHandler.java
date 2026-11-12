@@ -1,7 +1,7 @@
 package com.peach.redission.delayqueue.event;
 
 import com.peach.initialize.base.AbstractAppStartedEventHandler;
-import com.peach.redission.delayqueue.config.DelayQueueProperties;
+import com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties;
 import com.peach.redission.delayqueue.core.ConsumerTask;
 import com.peach.redission.delayqueue.core.RedisDelayQueue;
 import lombok.extern.slf4j.Slf4j;

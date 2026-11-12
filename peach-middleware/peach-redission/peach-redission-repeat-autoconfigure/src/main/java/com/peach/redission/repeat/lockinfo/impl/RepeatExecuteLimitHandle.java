@@ -1,6 +1,6 @@
 package com.peach.redission.repeat.lockinfo.impl;
 
-import com.peach.redission.common.AbstracyLockInfoHandle;
+import com.peach.redission.common.AbstractLockInfoHandle;
 
 /**
  * 防重复Execute限流处理器。
@@ -9,7 +9,7 @@ import com.peach.redission.common.AbstracyLockInfoHandle;
  * @Version 1.0.0
  * @CreateTime 2025/12/22 11:21
  */
-public class RepeatExecuteLimitHandle extends AbstracyLockInfoHandle {
+public class RepeatExecuteLimitHandle extends AbstractLockInfoHandle {
 
     public static final String LOCK_PREFIX_NAME = "REPEAT_EXECUTE_LIMIT";
 

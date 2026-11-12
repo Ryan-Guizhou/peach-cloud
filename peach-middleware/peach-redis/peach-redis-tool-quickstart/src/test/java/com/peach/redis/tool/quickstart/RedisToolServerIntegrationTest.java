@@ -1,7 +1,7 @@
 package com.peach.redis.tool.quickstart;
 
-import com.peach.redis.common.tool.RedisDao;
-import com.peach.redis.common.tool.RedisDaoImpl;
+import com.peach.redis.tool.RedisDao;
+import com.peach.redis.tool.RedisDaoImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +28,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest(properties = {
         "quickstart.redis-tool.demo.enabled=false",
         "peach.redis.mode=standalone",
-        "peach.redis.host=127.0.0.1:6379",
+        "peach.redis.host=${REDIS_TOOL_IT_HOST:127.0.0.1:6379}",
         "peach.redis.database=0",
         "peach.redis.password="
 })
 class RedisToolServerIntegrationTest {
+
+    @Autowired
+    private RedisConnectionFactory connectionFactory;
+
+    @Test
+    void allOperationsAndCleanupModesShouldWork() throws Exception {
+        RedisToolScenarioAssertions.verify(redisDao, connectionFactory);
+    }
 
     @Autowired
     private RedisDao redisDao;

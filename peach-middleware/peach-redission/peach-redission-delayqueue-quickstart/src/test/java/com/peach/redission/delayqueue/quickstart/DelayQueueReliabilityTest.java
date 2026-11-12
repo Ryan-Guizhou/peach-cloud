@@ -1,6 +1,6 @@
 package com.peach.redission.delayqueue.quickstart;
 
-import com.peach.redission.delayqueue.config.DelayQueueProperties;
+import com.peach.redission.delayqueue.autoconfigure.DelayQueueProperties;
 import com.peach.redission.delayqueue.core.RedisDelayQueue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

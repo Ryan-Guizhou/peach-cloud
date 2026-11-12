@@ -1,7 +1,7 @@
 package com.peach.redis.bloom.core;
 
 
-import com.peach.redis.bloom.config.BloomFilterProperties;
+import com.peach.redis.bloom.autoconfigure.BloomFilterProperties;
 import com.peach.redis.bloom.spi.BloomScalePolicy;
 import com.peach.redis.bloom.spi.CodecProvider;
 import com.peach.redis.bloom.spi.KeyNamingStrategy;

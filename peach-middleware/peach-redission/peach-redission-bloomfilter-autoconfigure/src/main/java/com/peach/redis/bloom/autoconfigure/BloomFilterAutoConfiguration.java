@@ -2,7 +2,6 @@ package com.peach.redis.bloom.autoconfigure;
 
 
 import org.springframework.stereotype.Indexed;
-import com.peach.redis.bloom.config.BloomFilterProperties;
 import com.peach.redis.bloom.constant.SpiConstant;
 import com.peach.redis.bloom.core.BloomFilterService;
 import com.peach.redis.bloom.core.SegmentedBloomFilterService;

@@ -1,6 +1,8 @@
 package com.peach.redis.tool.quickstart.example;
 
-import com.peach.redis.common.tool.RedisDao;
+import com.peach.redis.tool.RedisDao;
+import com.peach.redis.tool.quickstart.config.RedisToolDemoContext;
+import com.peach.redis.tool.quickstart.enums.RedisToolKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
@@ -21,29 +23,33 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class SessionStringExample {
 
-    public static final String KEY_PREFIX = "peach:qs:tool:session:";
-
     private final RedisDao redisDao;
 
+    private final RedisToolDemoContext context;
+
     public void save(String sessionId, String token, Duration ttl) {
-        String key = KEY_PREFIX + sessionId;
-        redisDao.vSet(key, token, ttl);
+        redisDao.vSet(getRealKey(sessionId), token, ttl);
         log.info("session save, sessionId={}, ttl={}", sessionId, ttl);
     }
 
     public String get(String sessionId) {
-        Object value = redisDao.vGet(KEY_PREFIX + sessionId);
+        String realKey = getRealKey(sessionId);
+        Object value = redisDao.vGet(realKey);
         String token = value == null ? null : String.valueOf(value);
         log.info("session get, sessionId={}, hit={}", sessionId, token != null);
         return token;
     }
 
     public boolean exists(String sessionId) {
-        return redisDao.existsKey(KEY_PREFIX + sessionId);
+        return redisDao.existsKey(getRealKey(sessionId));
     }
 
     public void delete(String sessionId) {
-        redisDao.delete(KEY_PREFIX + sessionId);
+        redisDao.delete(getRealKey(sessionId));
         log.info("session delete, sessionId={}", sessionId);
+    }
+
+    private String getRealKey(String sessionId) {
+        return context.key(RedisToolKey.SESSION, sessionId);
     }
 }

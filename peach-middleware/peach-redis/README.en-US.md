@@ -35,7 +35,7 @@ Redis Cluster requires database `0`; invalid values fail during startup. Both Na
 
 **Dynamic cache instance cap:** `peach.multicache.max-cache-instances` defaults to `256` and limits the number of named Caffeine/L1 caches created per manager. A new name beyond the limit fails explicitly instead of retaining unbounded cache objects. `getCacheNames()` now includes instantiated dynamic names, so `clearAll()` can clear them. Keep cache names stable and put user-specific values in cache keys.
 
-**Redis DAO failure semantics:** `RedisDaoImpl` `existsKey`, `delete`, `vSet`, `vSetUpdate`, `expire`, and `convertAndSend` now propagate network failures, invalid confirmations, and command errors rather than silently returning false or void success. Only an explicit Redis false means an absent key; `expire` has a void contract and throws on missing keys. Batch DEL no longer converts null count to zero. Deletes no longer retry an ambiguous network outcome automatically. Null acknowledgements for Pub/Sub publishing, list removal and counter increments/decrements also fail explicitly; a publish returning zero subscribers is a valid acknowledged result. Callers must handle infrastructure failures separately from cache misses and use domain-level idempotency/compensation where needed.
+**Redis DAO failure semantics:** Key management, writes, publishing, list removal and counters do not hide Redis failures or missing confirmations as success. `expire(key, Duration)` returns false for missing keys; conditional writes return false when their conditions fail. Batch deletion failures may leave partially deleted data, not a rollback. Publishing to zero subscribers is valid. Callers must still handle failures and business idempotency.
 
 ## Complete capability matrix
 
@@ -58,9 +58,9 @@ Redis Cluster requires database `0`; invalid values fail during startup. Both Na
 
 ### Collection scans and cache-clear compatibility (Issue #97)
 
-- Deprecated `RedisDao#hscan/sscan/zscan(matchKey, count)` now treats the first argument as the **actual Hash/Set/ZSet Redis key**, not a field glob. It enumerates the collection; `count` is only a cursor hint and existing `max-results` / `timeout-millis` limits apply, with explicit failures on overflow. Callers that accidentally relied on literal keys `field`, `setValue`, or `zSetValue` must pass their intended collection key.
+- Collection scans use typed `RedisDao#hmScan/sScan/zScan(key, count)`. The first argument is the actual Hash/Set/ZSet key, COUNT is only a cursor hint, and result/time budgets apply. See [removed API migration](./docs/redis-tool-reference.en-US.md#removed-api-migration).
 - `MultiCache.clear()` uses an injected `RedisDao`, not a global Hutool `SpringUtil` lookup; it retains bounded namespace deletion and evicts local L1 even when the remote L2 delete fails.
-- `vSetUpdate` now reflects the Redis `EXPIRE` boolean; a missing key returns `false`, not apparent success.
+- Update TTL with `expire(key, Duration)`, which returns false for a missing key. The seconds-based `vSet` remains and still atomically writes value and TTL.
 
 ### Bounded Redis Tool SCAN configuration
 
@@ -73,7 +73,7 @@ peach:
         timeout-millis: 10000
 ```
 
-Defaults apply without additional properties; valid ranges are 1–100000 unique keys and 1–60000 milliseconds. Existing `scan(matchKey, count)`, `keys(pattern)` and `deletePattern(pattern, count)` signatures remain unchanged. Limits fail explicitly, not via truncated results. `MultiCache.clear()` evicts its local L1 even if the L2 scan fails; this does not imply all remote Redis values were deleted.
+Defaults apply without additional properties; valid ranges are 1–100000 unique keys and 1–60000 milliseconds. `scan(matchKey, count)` and `deletePattern(pattern, count)` remain; the duplicate `keys` alias was removed. Limits fail explicitly, not via truncated results. `MultiCache.clear()` evicts its local L1 even if the L2 scan fails; this does not imply all remote Redis values were deleted.
 
 ### Minimal Maven dependency (current release)
 
@@ -172,13 +172,13 @@ Each capability ships a non-web quickstart (`spring.main.web-application-type=no
 ### Tool
 
 - Module: [`peach-redis-tool-quickstart`](./peach-redis-tool-quickstart/)
-- Capability samples (inject `RedisDao`):
-  - **String + TTL**: session token save / get / exists / delete
-  - **Hash**: user profile write-all, field get, field delete
-  - **Set**: user tags add / list / remove
+- Capability samples (inject `RedisDao`): String/TTL/conditional writes/counters, Hash, List, Set, ZSet ranking and pagination, scan/delete and Pub/Sub, covering all 71 public signatures, including overloads.
+- Every sample key is defined by `RedisToolKey`, which implements `KeyDefinition`, and built through `KeyBuilder`. Each run first cleans its exact keys.
+- `quickstart.redis-tool.demo.cleanup-after-run=false` retains final data by default; `true` cleans on completion. Delete, pop and expiration samples still execute. Configure `run-id` for sequential repeat runs, never concurrent reuse.
 - `RedisToolDemoRunner` runs the demos on startup; disable with `quickstart.redis-tool.demo.enabled=false`
 - Run: `mvn -pl peach-middleware/peach-redis/peach-redis-tool-quickstart -am spring-boot:run`
 - Test: `mvn -pl peach-middleware/peach-redis/peach-redis-tool-quickstart -am test`
+- Complete API, configuration limits and verification: [Tool operations reference](./docs/redis-tool-reference.en-US.md).
 
 ### MultiCache
 

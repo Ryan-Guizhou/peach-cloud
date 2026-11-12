@@ -32,7 +32,7 @@ peach:
 
 **动态缓存数量上限：** `peach.multicache.max-cache-instances` 默认为 `256`，限定一个 `MultiCacheManager` 可创建的 Caffeine/L1 缓存实例总数；新缓存名超过上限会显式报错，而不是无限占用堆内存。已创建的动态缓存也计入 `getCacheNames()`，可被 `clearAll()` 遍历。请不要直接使用无限变化的用户输入作为缓存名称；缓存 Key 应放在固定缓存名之下。
 
-**Redis DAO 失败语义：** `RedisDaoImpl` 的 `existsKey`、`delete`、`vSet`、`vSetUpdate`、`expire`、`convertAndSend` 现在拒绝将 Redis 网络故障、空确认或服务端异常静默转换为“未命中/写入失败”。只有 Redis 明确返回 `false` 才表示目标键不存在；`expire` 是 `void` 接口，目标不存在也会显式抛出异常。批量 DEL 遇到 null 结果也不再假装删除数量为 0。删除不对“结果未知”的网络故障执行自动重试，以免隐藏双重副作用。 同理，Pub/Sub 发布、列表删除、计数器增减操作收到 null 确认时明确抛错；发布给 0 个订阅者属于已确认返回，不视为 Redis 故障。调用方必须处理 Redis 故障并使用业务幂等、补偿及状态对账；此调整是对旧的静默失败行为的有意收紧。
+**Redis DAO 失败语义：** 键管理、写入、发布、列表删除和计数器操作不会将 Redis 故障或未知确认静默解释为成功。`expire(key, Duration)` 对不存在的键返回 `false`；条件写入的 `false` 表示条件不满足。批量删除失败时可能已有部分键被删除，不能视为整体回滚；Pub/Sub 发布给 0 个订阅者属于正常结果。调用方仍需处理故障与业务幂等。
 
 ## ACL、Sentinel 与 Cluster 配置契约（Issue #49）
 
@@ -70,9 +70,9 @@ Redis Cluster 只支持数据库 `0`，非法值启动时直接失败。两份 N
 
 ### 集合扫描与缓存清理兼容说明（Issue #97）
 
-- 已废弃的 `RedisDao#hscan/sscan/zscan(matchKey, count)` 使用第一个参数作为实际 **Hash/Set/ZSet Redis key**，而不是字段 glob；它们读取全部成员，`count` 只是批次提示，并受下面的 `max-results` / `timeout-millis` 限制，超限抛异常。之前依赖硬编码的 `field`、`setValue`、`zSetValue` 键的调用方须显式传入实际键。
+- 集合扫描统一使用 `RedisDao#hmScan/sScan/zScan(key, count)`，第一个参数是实际 Hash/Set/ZSet 键，`count` 只是游标提示；结果类型明确并受数量和时间预算保护。重复及废弃接口的迁移见 [Tool 操作参考](./docs/redis-tool-reference.md#已删除接口迁移)。
 - `MultiCache.clear()` 通过构造器注入的 `RedisDao` 执行有界命名空间删除，不再依赖全局 Hutool `SpringUtil`；扫描失败仍清理本地 L1，不能视为远端 L2 成功删除。
-- `vSetUpdate` 现在按 Redis `EXPIRE` 返回值报告结果；键不存在时返回 `false`，不再误报成功。
+- TTL 更新统一使用 `expire(key, Duration)`，键不存在返回 `false`；秒数版 `vSet` 保留，写入值与 TTL 仍原子执行。
 
 ### Redis Tool 有界扫描配置
 
@@ -85,7 +85,7 @@ peach:
         timeout-millis: 10000
 ```
 
-这些限制默认生效，分别允许 1–100000 个唯一 key、1–60000 毫秒。历史 `scan(matchKey, count)`、`keys(pattern)`、`deletePattern(pattern, count)` 签名不变。超过上限会失败，不静默截断结果；`MultiCache.clear()` 在二级删除失败时仍清空本实例 L1，但不会声称其他节点 L2 已清空。
+这些限制默认生效，分别允许 1–100000 个唯一 key、1–60000 毫秒。`scan(matchKey, count)` 和 `deletePattern(pattern, count)` 保留，重复的 `keys` 别名已删除。超过上限会失败，不静默截断结果；`MultiCache.clear()` 在二级删除失败时仍清空本实例 L1，但不会声称其他节点 L2 已清空。
 
 ### 最简依赖（当前版本）
 
@@ -184,13 +184,13 @@ flowchart LR
 ### Tool
 
 - 模块：[`peach-redis-tool-quickstart`](./peach-redis-tool-quickstart/)
-- 能力样例（注入 `RedisDao`）：
-  - **String + TTL**：会话 token 写入 / 读取 / 存在判断 / 删除
-  - **Hash**：用户资料批量写入、按字段读取与字段删除
-  - **Set**：用户标签添加 / 列表 / 移除
+- 能力样例（注入 `RedisDao`）：String/TTL/条件写入/计数器、Hash、List、Set、ZSet 排名分页、扫描删除、Pub/Sub，覆盖全部 71 个公开方法签名（含重载）。
+- 所有示例 Key 由实现 `KeyDefinition` 的 `RedisToolKey` 定义，通过 `KeyBuilder` 构建；每次运行先清理本次精确 Key。
+- `quickstart.redis-tool.demo.cleanup-after-run=false` 默认保留执行后的数据，设为 `true` 则在结束时清理；删除、弹出和过期示例仍正常执行。可配置 `run-id` 串行复现同一运行，不可并行复用。
 - 启动后 `RedisToolDemoRunner` 依次执行；关闭演示：`quickstart.redis-tool.demo.enabled=false`
 - 运行：`mvn -pl peach-middleware/peach-redis/peach-redis-tool-quickstart -am spring-boot:run`
 - 测试：`mvn -pl peach-middleware/peach-redis/peach-redis-tool-quickstart -am test`
+- 完整 API、配置边界与验证方式：[Tool 操作参考](./docs/redis-tool-reference.md)。
 
 ### MultiCache
 

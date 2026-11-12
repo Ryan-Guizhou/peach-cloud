@@ -1,6 +1,10 @@
 package com.peach.redis.tool.quickstart.runner;
 
 import com.peach.redis.tool.quickstart.example.SessionStringExample;
+import com.peach.redis.tool.quickstart.example.RedisToolOperationsExample;
+import com.peach.redis.tool.quickstart.config.RedisToolDemoContext;
+import com.peach.redis.tool.quickstart.config.RedisToolDemoProperties;
+import com.peach.redis.tool.quickstart.enums.RedisToolKey;
 import com.peach.redis.tool.quickstart.example.UserProfileHashExample;
 import com.peach.redis.tool.quickstart.example.UserTagSetExample;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 启动后演示 RedisDao 的 String/Hash/Set 典型用法。
+ * 启动后演示全部 RedisDao 操作；前置清理必执行，后置清理由配置控制。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -33,44 +37,65 @@ public class RedisToolDemoRunner implements ApplicationRunner {
     private final UserProfileHashExample userProfileHashExample;
     private final UserTagSetExample userTagSetExample;
 
+    private final RedisToolOperationsExample operations;
+    private final RedisToolDemoContext context;
+    private final RedisToolDemoProperties properties;
+
     @Override
-    public void run(ApplicationArguments args) {
-        runSessionDemo();
-        runProfileDemo();
-        runTagDemo();
-        log.info("redis-tool demo finished");
+    public void run(ApplicationArguments args) throws Exception {
+        operations.prepare();
+        context.key(RedisToolKey.SESSION, "s-1001");
+        context.key(RedisToolKey.PROFILE, "u-2001");
+        context.key(RedisToolKey.TAGS, "u-2001");
+        context.clear();
+        Exception failure = null;
+        try {
+            runSessionDemo();
+            runProfileDemo();
+            runTagDemo();
+            operations.run();
+            log.info("Redis tool demo finished, runId={}, cleanupAfterRun={}",
+                    properties.getRunId(), properties.isCleanupAfterRun());
+        } catch (Exception exception) {
+            failure = exception;
+            throw exception;
+        } finally {
+            if (properties.isCleanupAfterRun()) {
+                try {
+                    context.clear();
+                } catch (RuntimeException cleanupFailure) {
+                    if (failure == null) {
+                        throw cleanupFailure;
+                    }
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+        }
     }
 
     private void runSessionDemo() {
         log.info("=== Session String + TTL demo ===");
-        sessionStringExample.delete("s-1001");
         sessionStringExample.save("s-1001", "token-abc", Duration.ofMinutes(30));
         String token = sessionStringExample.get("s-1001");
         log.info("session exists={}, tokenPresent={}, tokenLength={}",
                 sessionStringExample.exists("s-1001"), token != null, token == null ? 0 : token.length());
-        sessionStringExample.delete("s-1001");
-        log.info("session after delete exists={}", sessionStringExample.exists("s-1001"));
     }
 
     private void runProfileDemo() {
         log.info("=== User Profile Hash demo ===");
-        userProfileHashExample.deleteProfile("u-2001");
         userProfileHashExample.saveProfile("u-2001", "Peach", "Shanghai");
         Map<Object, Object> all = userProfileHashExample.getAll("u-2001");
-        log.info("profile all={}, nickname={}", all, userProfileHashExample.getNickname("u-2001"));
+        log.info("Profile field count={}", all.size());
         userProfileHashExample.removeCity("u-2001");
-        log.info("profile after removeCity={}", userProfileHashExample.getAll("u-2001"));
-        userProfileHashExample.deleteProfile("u-2001");
+        log.info("Profile field count after removal={}", userProfileHashExample.getAll("u-2001").size());
     }
 
     private void runTagDemo() {
         log.info("=== User Tag Set demo ===");
-        userTagSetExample.clear("u-2001");
         userTagSetExample.addTags("u-2001", "vip", "beta", "cn");
         Set<Object> tags = userTagSetExample.listTags("u-2001");
-        log.info("tags={}", tags);
+        log.info("Tag count={}", tags.size());
         userTagSetExample.removeTag("u-2001", "beta");
-        log.info("tags after remove={}", userTagSetExample.listTags("u-2001"));
-        userTagSetExample.clear("u-2001");
+        log.info("Tag count after removal={}", userTagSetExample.listTags("u-2001").size());
     }
 }

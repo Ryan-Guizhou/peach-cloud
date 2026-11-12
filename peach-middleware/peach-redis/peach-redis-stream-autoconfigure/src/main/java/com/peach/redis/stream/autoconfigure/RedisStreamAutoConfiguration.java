@@ -1,4 +1,4 @@
-package com.peach.redis.stream.config;
+package com.peach.redis.stream.autoconfigure;
 
 import com.peach.redis.stream.MessageConsumer;
 import com.peach.redis.stream.RedisStreamHandler;
@@ -23,6 +23,7 @@ import org.springframework.data.redis.connection.stream.ReadOffset;
 import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.stream.StreamMessageListenerContainer;
+import org.springframework.stereotype.Indexed;
 
 import java.time.Duration;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -39,11 +40,12 @@ import java.util.UUID;
  * @CreateTime 2025/12/18 16:12
  */
 @Slf4j
+@Indexed
 @AutoConfiguration
 @AutoConfigureAfter(name = "com.peach.redis.autoconfigure.PeachRedisAutoConfiguration")
 @EnableConfigurationProperties({RedisStreamProperties.class, RedisStreamRecoveryProperties.class})
 @ConditionalOnProperty(prefix = RedisStreamContant.REDIS_STREAM_PREFIX, value = "enable", havingValue = "true")
-public class RedisStreamAutoConfig {
+public class RedisStreamAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(RedisStreamPushHandler.class)

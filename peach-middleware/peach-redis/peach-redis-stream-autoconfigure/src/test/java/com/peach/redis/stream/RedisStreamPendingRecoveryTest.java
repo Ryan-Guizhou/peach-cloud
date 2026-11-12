@@ -1,7 +1,7 @@
 package com.peach.redis.stream;
 
-import com.peach.redis.stream.config.RedisStreamProperties;
-import com.peach.redis.stream.config.RedisStreamRecoveryProperties;
+import com.peach.redis.stream.autoconfigure.RedisStreamProperties;
+import com.peach.redis.stream.autoconfigure.RedisStreamRecoveryProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Range;
 import org.springframework.data.redis.connection.stream.Consumer;
