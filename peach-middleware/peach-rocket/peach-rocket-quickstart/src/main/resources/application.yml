@@ -22,6 +22,6 @@ peach:
       dynamic-register: true
       enable-idempotent: true
     topic:
-      auto-create: true
+      auto-create: false
     outbox:
-      enabled: true
+      enabled: false
