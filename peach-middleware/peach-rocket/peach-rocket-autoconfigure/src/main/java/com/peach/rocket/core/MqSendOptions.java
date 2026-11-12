@@ -54,6 +54,27 @@ public class MqSendOptions {
         return builder().build();
     }
 
+    /**
+     * 为每次发送创建参数副本，避免修改业务调用方的原始参数。
+     *
+     * @param source 业务参数，可为空
+     * @return 独立的参数快照
+     */
+    public static MqSendOptions copyOf(MqSendOptions source) {
+        MqSendOptions original = source == null ? defaults() : source;
+        MqSendOptions copy = new MqSendOptions();
+        copy.topic = original.topic;
+        copy.tag = original.tag;
+        copy.key = original.key;
+        copy.shardingKey = original.shardingKey;
+        copy.timeoutMillis = original.timeoutMillis;
+        copy.delay = original.delay;
+        copy.headers = original.headers == null
+                ? new LinkedHashMap<>()
+                : new LinkedHashMap<>(original.headers);
+        return copy;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -111,7 +132,7 @@ public class MqSendOptions {
     }
 
     public void setHeaders(Map<String, String> headers) {
-        this.headers = headers == null ? new LinkedHashMap<String, String>() : headers;
+        this.headers = headers == null ? new LinkedHashMap<>() : new LinkedHashMap<>(headers);
     }
 
     public static class Builder {

@@ -155,7 +155,7 @@ public class RocketMqPublisher implements MqPublisher {
     }
 
     private MqSendOptions prepareOptions(MqSendOptions options) {
-        MqSendOptions actualOptions = options == null ? MqSendOptions.defaults() : options;
+        MqSendOptions actualOptions = MqSendOptions.copyOf(options);
         if (actualOptions.getTimeoutMillis() <= 0) {
             actualOptions.setTimeoutMillis(properties.getProducer().getDefaultTimeout().toMillis());
         }
@@ -207,15 +207,26 @@ public class RocketMqPublisher implements MqPublisher {
             return null;
         }
         if (delay.rocketMqDelayLevel() != null) {
-            return delay.rocketMqDelayLevel();
+            int level = delay.rocketMqDelayLevel();
+            if (level < 1 || level > DEFAULT_DELAY_LEVELS.size()) {
+                throw new MqException("Unsupported RocketMQ delay level: " + level);
+            }
+            return level;
         }
         Duration duration = delay.duration();
+        if (duration == null || duration.isNegative() || duration.isZero()) {
+            throw new MqException("MQ delay duration must be positive");
+        }
+        Duration maximum = DEFAULT_DELAY_LEVELS.get(DEFAULT_DELAY_LEVELS.size() - 1).getDuration();
+        if (duration.compareTo(maximum) > 0) {
+            throw new MqException("MQ delay duration exceeds the supported maximum: " + maximum);
+        }
         for (DelayLevel level : DEFAULT_DELAY_LEVELS) {
-            if (!level.getDuration().minus(duration).isNegative()) {
+            if (level.getDuration().compareTo(duration) >= 0) {
                 return level.getLevel();
             }
         }
-        return DEFAULT_DELAY_LEVELS.get(DEFAULT_DELAY_LEVELS.size() - 1).getLevel();
+        throw new MqException("Unsupported RocketMQ delay duration: " + duration);
     }
 
     /**
