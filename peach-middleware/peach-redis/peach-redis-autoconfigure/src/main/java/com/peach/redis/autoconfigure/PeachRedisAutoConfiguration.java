@@ -194,7 +194,7 @@ public class PeachRedisAutoConfiguration {
                 .ifPresent(pwd -> cfg.setPassword(RedisPassword.of(pwd)));
         Optional.ofNullable(props.getSentinelUsername())
                 .filter(StringUtils::hasText)
-                .ifPresent(cfg::setUsername);
+                .ifPresent(cfg::setSentinelUsername);
         Optional.ofNullable(props.getSentinelPassword())
                 .filter(StringUtils::hasText)
                 .ifPresent(pwd -> cfg.setSentinelPassword(RedisPassword.of(pwd)));
