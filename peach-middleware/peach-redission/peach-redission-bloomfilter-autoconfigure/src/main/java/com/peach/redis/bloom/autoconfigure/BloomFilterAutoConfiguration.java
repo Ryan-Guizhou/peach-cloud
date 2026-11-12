@@ -17,7 +17,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Primary;
 
 import java.util.ArrayList;
@@ -45,7 +44,6 @@ public class BloomFilterAutoConfiguration {
 
     @Bean
     @Primary
-    @DependsOn("redissonClient")
     @ConditionalOnMissingBean(BloomFilterService.class)
     public BloomFilterService bloomFilterService(RedissonClient redissonClient,
                                                  BloomFilterProperties properties) {

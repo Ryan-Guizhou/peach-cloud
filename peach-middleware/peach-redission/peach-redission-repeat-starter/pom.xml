@@ -23,10 +23,6 @@
         </dependency>
         <dependency>
             <groupId>com.peach</groupId>
-            <artifactId>peach-redisson-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.peach</groupId>
             <artifactId>peach-redission-distributedlock-starter</artifactId>
         </dependency>
     </dependencies>

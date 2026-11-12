@@ -47,6 +47,8 @@ flowchart LR
 
 See [`docs/starter-architecture.md`](docs/starter-architecture.md) for the full convention.
 
+The auth, fileservice, gateway, generator, message, monitor and setting entry points use `@SpringBootApplication(scanBasePackages = "com.peach")` to retain Boot's default scan filters, without an additional `@ComponentScan`. Auto-configurations load through `AutoConfiguration.imports`, preventing early scanning from skipping conditional beans. Select Redis and Redisson starters by capability; each starter supplies its required client dependencies. The centralized quality gate checks scan boundaries and the relevant dependency paths. See the [starter architecture guide](docs/starter-architecture.md#6-自动装配与依赖边界) for ordering, dependency boundaries and troubleshooting.
+
 ## Module Navigation
 
 ### Business services

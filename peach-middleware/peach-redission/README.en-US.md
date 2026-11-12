@@ -50,6 +50,8 @@ Dynamic Bloom namespaces use a bounded local segment-handle cache (`peach.redis.
 
 Lock, repeat, bloom and delay queue Starters include the independent `peach-redisson-starter`, without Jedis. An application-provided `RedissonClient` wins. The old mixed `peach-redis-common` is deleted; downstream consumers must migrate dependencies and use the actual published artifact version.
 
+**Assembly boundary:** use `@SpringBootApplication(scanBasePackages = "com.peach")` for these repository business entry points without adding `@ComponentScan`, preserving Boot's auto-configuration scan filters. Bloom accepts an application-provided `RedissonClient` with any bean name. If the default client is disabled while locking remains required, supply a replacement client. See the [starter architecture guide](../../docs/starter-architecture.md#6-自动装配与依赖边界) for the missing lock Template reproduction, dependency rules and troubleshooting steps.
+
 ### Minimal development configuration
 
 ```yaml

@@ -47,6 +47,8 @@ flowchart LR
 
 完整约定见 [`docs/starter-architecture.md`](docs/starter-architecture.md)。
 
+auth、fileservice、gateway、generator、message、monitor、setting 的启动入口通过 `@SpringBootApplication(scanBasePackages = "com.peach")` 保留 Boot 默认扫描过滤器，不再额外声明 `@ComponentScan`。自动配置由 `AutoConfiguration.imports` 加载，避免条件 Bean 因提前扫描而缺失。Redis 与 Redisson 按能力引入 Starter，由 Starter 提供必要客户端依赖；统一质量门禁检查扫描边界与相关依赖路径。装配顺序、依赖边界和排障见 [Starter 架构说明](docs/starter-architecture.md#6-自动装配与依赖边界)。
+
 ## 模块导航
 
 ### 业务服务

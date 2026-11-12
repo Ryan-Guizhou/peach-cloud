@@ -6,6 +6,8 @@
 
 ## 组件定位与版本
 
+**装配边界：** 业务通过能力 Starter 获取 Jedis 底座，Tool/Stream 不声明未使用的 Redisson 依赖；MultiCache 的 autoconfigure 只引用 Tool 契约，运行依赖由 Starter 聚合。启动入口保留 Boot 默认扫描过滤器，避免条件 Bean 提前评估。依赖关系与排障见 [Starter 架构说明](../../docs/starter-architecture.md#6-自动装配与依赖边界)。
+
 **面向谁：** 需要 Redis 数据结构操作、应用级 L1 + Redis L2 缓存或 Redis Stream 消息能力的 Spring Boot 业务服务。这里的 `peach-redis` 是 Maven 聚合模块，不是将全部能力打包的单个依赖。按需要选用对应 Starter，避免将 Stream、缓存和通用 DAO 一并接入。
 
 **当前基线：** Java 21 / Spring Boot 3.5.4。独立 Redis 底座使用 Jedis，独立 Redisson 使用 `peach-redisson-starter`；不再发布旧 `peach-redis-common`。历史序列化配置已作为测试夹具保留，不等于旧发行版二进制滚动兼容验收。以下矩阵反映当前源码能力，项目收尾见 [Issue #18](https://github.com/Ryan-Guizhou/peach-cloud/issues/18)。
