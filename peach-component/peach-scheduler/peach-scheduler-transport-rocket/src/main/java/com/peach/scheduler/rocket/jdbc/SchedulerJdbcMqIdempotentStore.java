@@ -4,11 +4,13 @@ import java.time.ZoneId;
 
 import org.springframework.stereotype.Indexed;
 
+import com.peach.rocket.idempotent.MqIdempotentClaim;
 import com.peach.rocket.idempotent.MqIdempotentContext;
 import com.peach.rocket.idempotent.MqIdempotentStore;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -24,6 +26,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @Indexed
 public class SchedulerJdbcMqIdempotentStore implements MqIdempotentStore {
 
+    private static final int PROCESSING_LEASE_SECONDS = 300;
+
     private final JdbcTemplate jdbcTemplate;
 
     /**
@@ -33,6 +37,81 @@ public class SchedulerJdbcMqIdempotentStore implements MqIdempotentStore {
      */
     public SchedulerJdbcMqIdempotentStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    /**
+     * 数据库原子认领；使用 owner token 防止旧处理者覆盖新处理者。
+     *
+     * @param context 幂等上下文
+     * @return 认领结果
+     */
+    @Override
+    public MqIdempotentClaim claim(MqIdempotentContext context) {
+        String token = UUID.randomUUID().toString();
+        try {
+            jdbcTemplate.update(
+                    "INSERT INTO MQ_CONSUME_RECORD(IDEMPOTENT_KEY,CONSUMER_GROUP,TOPIC,TAG,BUSINESS_KEY,"
+                            + "MESSAGE_ID,STATUS,CONSUME_COUNT,CREATED_AT,UPDATED_AT,OWNER_TOKEN,LEASE_UNTIL) "
+                            + "VALUES(?,?,?,?,?,?,'PROCESSING',1,NOW(3),NOW(3),?,"
+                            + "DATE_ADD(NOW(3), INTERVAL ? SECOND))",
+                    context.idempotentKey(), context.consumerGroup(), context.topic(), context.tag(),
+                    context.businessKey(), context.messageId(), token, PROCESSING_LEASE_SECONDS);
+            return MqIdempotentClaim.acquired(token);
+        } catch (DuplicateKeyException ignored) {
+            if (isSuccess(context)) {
+                return MqIdempotentClaim.succeeded();
+            }
+            int updated = jdbcTemplate.update(
+                    "UPDATE MQ_CONSUME_RECORD SET STATUS='PROCESSING',OWNER_TOKEN=?,"
+                            + "LEASE_UNTIL=DATE_ADD(NOW(3), INTERVAL ? SECOND),"
+                            + "CONSUME_COUNT=CONSUME_COUNT+1,LAST_ERROR=NULL,UPDATED_AT=NOW(3) "
+                            + "WHERE IDEMPOTENT_KEY=? AND CONSUMER_GROUP=? "
+                            + "AND (STATUS='FAILED' OR (STATUS='PROCESSING' "
+                            + "AND (LEASE_UNTIL IS NULL OR LEASE_UNTIL<NOW(3))))",
+                    token, PROCESSING_LEASE_SECONDS, context.idempotentKey(), context.consumerGroup());
+            return updated == 1 ? MqIdempotentClaim.acquired(token) : MqIdempotentClaim.inProgress();
+        }
+    }
+
+    @Override
+    public void markSuccess(MqIdempotentContext context, MqIdempotentClaim claim) {
+        String token = requireOwnerToken(claim);
+        int updated = jdbcTemplate.update(
+                "UPDATE MQ_CONSUME_RECORD SET STATUS='SUCCESS',OWNER_TOKEN=NULL,"
+                        + "LEASE_UNTIL=NULL,LAST_ERROR=NULL,UPDATED_AT=NOW(3) "
+                        + "WHERE IDEMPOTENT_KEY=? AND CONSUMER_GROUP=? "
+                        + "AND STATUS='PROCESSING' AND OWNER_TOKEN=?",
+                context.idempotentKey(), context.consumerGroup(), token);
+        if (updated != 1) {
+            throw new IllegalStateException("Stale MQ idempotent owner cannot confirm success");
+        }
+    }
+
+    @Override
+    public void markFailed(MqIdempotentContext context, MqIdempotentClaim claim) {
+        String token = requireOwnerToken(claim);
+        int updated = jdbcTemplate.update(
+                "UPDATE MQ_CONSUME_RECORD SET STATUS='FAILED',OWNER_TOKEN=NULL,"
+                        + "LEASE_UNTIL=NULL,UPDATED_AT=NOW(3) "
+                        + "WHERE IDEMPOTENT_KEY=? AND CONSUMER_GROUP=? "
+                        + "AND STATUS='PROCESSING' AND OWNER_TOKEN=?",
+                context.idempotentKey(), context.consumerGroup(), token);
+        if (updated != 1) {
+            throw new IllegalStateException("Stale MQ idempotent owner cannot mark failure");
+        }
+    }
+
+    @Override
+    public boolean supportsOwnerFencing() {
+        return true;
+    }
+
+    private String requireOwnerToken(MqIdempotentClaim claim) {
+        if (claim == null || claim.status() != MqIdempotentClaim.Status.ACQUIRED
+                || claim.ownerToken() == null || claim.ownerToken().isBlank()) {
+            throw new IllegalArgumentException("MQ JDBC idempotent owner token is required");
+        }
+        return claim.ownerToken();
     }
 
     /**
