@@ -16,6 +16,7 @@
 
     <modules>
         <module>peach-rocket-autoconfigure</module>
+        <module>peach-rocket-jdbc</module>
         <module>peach-rocket-starter</module>
         <module>peach-rocket-quickstart</module>
     </modules>

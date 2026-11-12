@@ -47,6 +47,8 @@ public class PeachRocketProperties implements InitializingBean {
 
     private final Outbox outbox = new Outbox();
 
+    private final Jdbc jdbc = new Jdbc();
+
     @Override
     public void afterPropertiesSet() {
         requireText(namespace, "peach.rocket.namespace");
@@ -96,6 +98,7 @@ public class PeachRocketProperties implements InitializingBean {
     public Transaction getTransaction() { return transaction; }
     public Topic getTopic() { return topic; }
     public Outbox getOutbox() { return outbox; }
+    public Jdbc getJdbc() { return jdbc; }
 
     /**
      * 生产者。
@@ -238,6 +241,19 @@ public class PeachRocketProperties implements InitializingBean {
         public void setIncludeTransactionTopics(boolean includeTransactionTopics) { this.includeTransactionTopics = includeTransactionTopics; }
         public List<String> getTopics() { return topics; }
         public void setTopics(List<String> topics) { this.topics = topics == null ? new ArrayList<String>() : topics; }
+    }
+
+    /**
+     * JDBC 持久化存储模块（需显式引入 peach-rocket-jdbc）。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/11/12
+     */
+    public static class Jdbc {
+        private boolean enabled = false;
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
     }
 
     /**

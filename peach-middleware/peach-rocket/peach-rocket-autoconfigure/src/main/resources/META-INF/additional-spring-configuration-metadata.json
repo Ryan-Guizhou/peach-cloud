@@ -58,6 +58,11 @@
       "defaultValue": true
     },
     {
+      "name": "peach.rocket.jdbc.enabled",
+      "defaultValue": false,
+      "description": "仅在显式依赖 peach-rocket-jdbc 且本项为 true 时，自动装配通用 JDBC Outbox 和幂等存储。"
+    },
+    {
       "name": "peach.rocket.namespace",
       "type": "java.lang.String",
       "description": "RocketMQ 消息命名空间，用于隔离不同环境或业务。",
