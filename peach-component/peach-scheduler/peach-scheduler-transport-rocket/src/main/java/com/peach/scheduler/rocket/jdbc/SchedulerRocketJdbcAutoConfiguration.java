@@ -31,6 +31,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @AutoConfigureBefore({PeachRocketAutoConfigure.class, PeachRocketOutboxAutoConfigure.class})
 @ConditionalOnClass(JdbcTemplate.class)
 @ConditionalOnBean(JdbcTemplate.class)
+@org.springframework.boot.context.properties.EnableConfigurationProperties(com.peach.rocket.autoconfigure.PeachRocketProperties.class)
 @Indexed
 public class SchedulerRocketJdbcAutoConfiguration {
 
@@ -49,8 +50,9 @@ public class SchedulerRocketJdbcAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(MqOutboxStore.class)
-    public MqOutboxStore schedulerJdbcMqOutboxStore(JdbcTemplate jdbcTemplate) {
-        return new SchedulerJdbcMqOutboxStore(jdbcTemplate);
+    public MqOutboxStore schedulerJdbcMqOutboxStore(JdbcTemplate jdbcTemplate,
+            com.peach.rocket.autoconfigure.PeachRocketProperties properties) {
+        return new SchedulerJdbcMqOutboxStore(jdbcTemplate, properties);
     }
 
     /**
@@ -61,7 +63,8 @@ public class SchedulerRocketJdbcAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(MqIdempotentStore.class)
-    public MqIdempotentStore schedulerJdbcMqIdempotentStore(JdbcTemplate jdbcTemplate) {
-        return new SchedulerJdbcMqIdempotentStore(jdbcTemplate);
+    public MqIdempotentStore schedulerJdbcMqIdempotentStore(JdbcTemplate jdbcTemplate,
+            com.peach.rocket.autoconfigure.PeachRocketProperties properties) {
+        return new SchedulerJdbcMqIdempotentStore(jdbcTemplate, properties);
     }
 }

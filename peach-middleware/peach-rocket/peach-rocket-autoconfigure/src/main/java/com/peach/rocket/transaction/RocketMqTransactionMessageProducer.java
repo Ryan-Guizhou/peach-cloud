@@ -169,6 +169,14 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
 
         // 解析消息路由
         MqRoute route = routeResolver.resolve(payload, actualOptions);
+        if (!handlers.containsKey(handlerKey(route.topic(), route.tag()))
+                && !handlers.containsKey(handlerKey(route.topic(), "*"))) {
+            throw new MqException("No local transaction handler matches the message route");
+        }
+        if (actualOptions.getTimeoutMillis() > 0
+                && actualOptions.getTimeoutMillis() != properties.getProducer().getDefaultTimeout().toMillis()) {
+            throw new MqException("Per-message transaction timeout is unsupported; configure producer.default-timeout");
+        }
 
         // 构建消息信封
         MqMessageEnvelope<T> envelope = buildEnvelope(payload, actualOptions, route);
@@ -185,7 +193,7 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
 
         // 设置业务 Key（用于消息查询）
         if (StringUtils.hasText(route.key())) {
-            message.putUserProperty(MessageConst.PROPERTY_KEYS, route.key());
+            message.setKeys(route.key());
         }
 
         // 构建事务参数对象，传递给 TransactionListener
@@ -205,21 +213,24 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
                     isSendOk(result));
 
             return MqSendResult.builder()
-                    .success(isSendOk(result))
+                    .success(isSendOk(result) && result instanceof org.apache.rocketmq.client.producer.TransactionSendResult transaction
+                            && transaction.getLocalTransactionState() == LocalTransactionState.COMMIT_MESSAGE)
                     .messageId(result == null ? null : result.getMsgId())
                     .topic(route.topic())
                     .tag(route.tag())
                     .key(route.key())
-                    .rawStatus(result == null || result.getSendStatus() == null ? null : result.getSendStatus().name())
+                    .rawStatus(result == null || result.getSendStatus() == null ? null : result.getSendStatus().name()
+                            + "/" + (result instanceof org.apache.rocketmq.client.producer.TransactionSendResult transaction
+                            ? transaction.getLocalTransactionState() : "UNKNOWN"))
                     .build();
 
         } catch (Exception ex) {
             log.error("[mq-transaction-send-error] topic={} tag={} errorType={}",
-                    route.topic(), route.tag(), ex.getClass().getName(), ex);
+                    route.topic(), route.tag(), ex.getClass().getName());
             if (ex instanceof MqException mqException) {
                 throw mqException;
             }
-            throw new MqException("Failed to send RocketMQ transaction message", ex);
+            throw new MqException("Failed to send RocketMQ transaction message");
         }
     }
 
@@ -237,8 +248,11 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
             try {
                 candidate = createProducer(properties.getTransaction().getProducerGroup());
                 candidate.setNamesrvAddr(rocketMQProperties.getNameServer());
+                com.peach.rocket.support.MqClientSecurity.configureClient(candidate, rocketMQProperties, properties);
+                candidate.setSendMsgTimeout(Math.toIntExact(properties.getProducer().getDefaultTimeout().toMillis()));
                 candidate.setTransactionListener(new DelegatingTransactionListener());
                 candidate.start();
+                admission.open();
                 producer = candidate;
                 running = true;
                 log.info("[mq-transaction] producer started. group={} handlers={}",
@@ -257,8 +271,8 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
                     }
                 }
                 log.error("[mq-transaction] producer start failed. group={} errorType={}",
-                        properties.getTransaction().getProducerGroup(), ex.getClass().getName(), ex);
-                throw new MqException("Failed to start RocketMQ transaction producer", ex);
+                        properties.getTransaction().getProducerGroup(), ex.getClass().getName());
+                throw new MqException("Failed to start RocketMQ transaction producer");
             }
         } finally {
             lifecycleLock.unlock();
@@ -272,7 +286,8 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
      * @return 未启动的 SDK 实例
      */
     protected TransactionMQProducer createProducer(String group) {
-        return new TransactionMQProducer(group);
+        return new TransactionMQProducer(group,
+                com.peach.rocket.support.MqClientSecurity.rpcHook(rocketMQProperties, properties));
     }
 
     /**
@@ -285,6 +300,9 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
             TransactionMQProducer current = producer;
             producer = null;
             running = false;
+            if (!admission.closeAndDrain(properties.getConsumer().getShutdownDrainTimeout())) {
+                log.warn("[mq-transaction] shutdown drain timed out; broker checks must recover uncertain results");
+            }
             if (current == null) {
                 return;
             }
@@ -294,7 +312,7 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
                         properties.getTransaction().getProducerGroup());
             } catch (RuntimeException ex) {
                 log.error("[mq-transaction] producer shutdown failed. group={} errorType={}",
-                        properties.getTransaction().getProducerGroup(), ex.getClass().getName(), ex);
+                        properties.getTransaction().getProducerGroup(), ex.getClass().getName());
             }
         } finally {
             lifecycleLock.unlock();
@@ -434,7 +452,7 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
             } catch (RuntimeException ex) {
                 // 不确定的业务结果必须交 Broker 回查，不能擅自判定提交或回滚。
                 log.error("[mq-transaction] local execution failed. topic={} errorType={}",
-                        message.getTopic(), ex.getClass().getName(), ex);
+                        message.getTopic(), ex.getClass().getName());
                 return LocalTransactionState.UNKNOW;
             }
         }
@@ -460,7 +478,7 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
                 return toRocketState(adapter.check(envelope.payload(), transactionKey));
             } catch (RuntimeException ex) {
                 log.error("[mq-transaction] transaction check failed. topic={} messageId={} errorType={}",
-                        message.getTopic(), message.getMsgId(), ex.getClass().getName(), ex);
+                        message.getTopic(), message.getMsgId(), ex.getClass().getName());
                 return LocalTransactionState.UNKNOW;
             }
         }

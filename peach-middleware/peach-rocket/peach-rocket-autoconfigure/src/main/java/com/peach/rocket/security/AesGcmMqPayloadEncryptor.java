@@ -36,6 +36,7 @@ public class AesGcmMqPayloadEncryptor implements MqPayloadEncryptor {
             secureRandom.nextBytes(iv);
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyProvider.getKey(context.keyId()), "AES"), new GCMParameterSpec(TAG_LENGTH_BIT, iv));
+            authenticate(cipher, context);
             byte[] encrypted = cipher.doFinal(plainBytes);
             ByteBuffer buffer = ByteBuffer.allocate(iv.length + encrypted.length);
             buffer.put(iv).put(encrypted);
@@ -55,9 +56,22 @@ public class AesGcmMqPayloadEncryptor implements MqPayloadEncryptor {
             byte[] encrypted = Arrays.copyOfRange(cipherBytes, IV_LENGTH, cipherBytes.length);
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyProvider.getKey(context.keyId()), "AES"), new GCMParameterSpec(TAG_LENGTH_BIT, iv));
+            authenticate(cipher, context);
             return cipher.doFinal(encrypted);
         } catch (Exception ex) {
             throw new MqException("Failed to decrypt MQ payload", ex);
+        }
+    }
+
+    private void authenticate(Cipher cipher, MqEncryptionContext context) {
+        if ("AES_GCM_AAD".equals(context.algorithm())) {
+            byte[] aad = context.associatedData();
+            if (aad == null || aad.length == 0) {
+                throw new MqException("Authenticated MQ envelope requires associated data");
+            }
+            cipher.updateAAD(aad);
+        } else if (!"AES_GCM".equals(context.algorithm())) {
+            throw new MqException("Unsupported MQ encryption algorithm");
         }
     }
 }

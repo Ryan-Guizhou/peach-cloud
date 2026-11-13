@@ -34,9 +34,14 @@
         <esdk-obs.version>3.25.10</esdk-obs.version>
         <knife4j.version>4.5.0</knife4j.version>
         <springdoc.version>2.8.17</springdoc.version>
-        <fastjson.version>2.0.58</fastjson.version>
+        <fastjson.version>2.0.65</fastjson.version>
+        <netty.version>4.1.140.Final</netty.version>
+        <grpc.version>1.82.1</grpc.version>
+        <protobuf.version>3.25.8</protobuf.version>
         <redisson.version>3.50.0</redisson.version>
-        <rocketmq.version>5.3.2</rocketmq.version>
+        <rocketmq.version>5.3.4</rocketmq.version>
+        <!-- ACL 独立制品当前发布到 5.3.2，不能假定存在同版本的 5.3.4。 -->
+        <rocketmq-acl.version>5.3.2</rocketmq-acl.version>
         <sa-token.version>1.44.0</sa-token.version>
         <commons-io.version>2.19.0</commons-io.version>
         <freemarker.version>2.3.34</freemarker.version>
@@ -69,6 +74,50 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- 网络与序列化安全基线先于 Spring BOM，统一所有同族组件版本。 -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${grpc.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-bom</artifactId>
+                <version>${protobuf.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom-alpha</artifactId>
+                <version>1.49.0-alpha</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2-extension</artifactId>
+                <version>${fastjson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-acl</artifactId>
+                <version>${rocketmq-acl.version}</version>
+            </dependency>
             <!-- ==================== Spring 生态 BOM ==================== -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>

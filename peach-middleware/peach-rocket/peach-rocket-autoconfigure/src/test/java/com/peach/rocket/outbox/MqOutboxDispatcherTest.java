@@ -38,7 +38,7 @@ class MqOutboxDispatcherTest {
         RocketMQTemplate template = mock(RocketMQTemplate.class);
         MqOutboxClaim first = claim("first");
         MqOutboxClaim second = claim("second");
-        when(store.claimPending(50)).thenReturn(List.of(first, second));
+        when(store.claimPending(1)).thenReturn(List.of(first), List.of(second), List.of());
 
         SendResult failed = mock(SendResult.class);
         when(failed.getSendStatus()).thenReturn(SendStatus.FLUSH_DISK_TIMEOUT);
@@ -60,7 +60,7 @@ class MqOutboxDispatcherTest {
         RocketMQTemplate template = mock(RocketMQTemplate.class);
         MqOutboxClaim first = claim("first");
         MqOutboxClaim second = claim("second");
-        when(store.claimPending(50)).thenReturn(List.of(first, second));
+        when(store.claimPending(1)).thenReturn(List.of(first), List.of(second), List.of());
         SendResult success = mock(SendResult.class);
         when(success.getSendStatus()).thenReturn(SendStatus.SEND_OK);
         when(template.syncSend(anyString(), any(Message.class), anyLong())).thenReturn(success);
@@ -70,6 +70,13 @@ class MqOutboxDispatcherTest {
 
         verify(store, never()).markFailed(first);
         verify(store).markSent(second);
+        var deliveryOrder = org.mockito.Mockito.inOrder(store, template);
+        deliveryOrder.verify(store).claimPending(1);
+        deliveryOrder.verify(template).syncSend(anyString(), any(Message.class), anyLong());
+        deliveryOrder.verify(store).markSent(first);
+        deliveryOrder.verify(store).claimPending(1);
+        deliveryOrder.verify(template).syncSend(anyString(), any(Message.class), anyLong());
+        deliveryOrder.verify(store).markSent(second);
     }
 
     @Test
@@ -80,7 +87,7 @@ class MqOutboxDispatcherTest {
         PeachRocketProperties properties = new PeachRocketProperties();
         properties.getOutbox().setParallelEnabled(true);
         MqOutboxClaim first = claim("parallel");
-        when(store.claimPending(50)).thenReturn(List.of(first));
+        when(store.claimPending(1)).thenReturn(List.of(first), List.of());
         SendResult sent = mock(SendResult.class);
         when(sent.getSendStatus()).thenReturn(SendStatus.SEND_OK);
         when(template.syncSend(anyString(), any(Message.class), anyLong())).thenReturn(sent);
@@ -103,7 +110,7 @@ class MqOutboxDispatcherTest {
         PeachRocketProperties properties = new PeachRocketProperties();
         properties.getOutbox().setParallelEnabled(true);
         MqOutboxClaim claim = claim("rejected");
-        when(store.claimPending(50)).thenReturn(List.of(claim));
+        when(store.claimPending(1)).thenReturn(List.of(claim), List.of());
         when(executor.submit(any(Runnable.class))).thenThrow(new RejectedExecutionException("group saturated"));
 
         new MqOutboxDispatcher(store, template, properties, executor).dispatch();
@@ -127,7 +134,7 @@ class MqOutboxDispatcherTest {
         MqOutboxClaim ordered = new MqOutboxClaim(new MqOutboxEvent(e.messageId(), e.body(),
                 e.topic(), e.tag(), e.businessKey(), opts, e.status(), e.retryCount(),
                 e.createdAt(), e.updatedAt()), original.claimToken());
-        when(store.claimPending(50)).thenReturn(List.of(ordered));
+        when(store.claimPending(1)).thenReturn(List.of(ordered), List.of());
         SendResult sent = mock(SendResult.class);
         when(sent.getSendStatus()).thenReturn(SendStatus.SEND_OK);
         when(template.syncSendOrderly(anyString(), any(Message.class), eq("order-1"), anyLong()))
@@ -149,7 +156,7 @@ class MqOutboxDispatcherTest {
         opts.setTimeoutMillis(3500L);
         opts.setHeaders(java.util.Map.of("x-request-id", "req-1"));
         MqOutboxClaim claim = withOptions("ordered", opts);
-        when(store.claimPending(50)).thenReturn(List.of(claim));
+        when(store.claimPending(1)).thenReturn(List.of(claim), List.of());
         SendResult success = mock(SendResult.class);
         when(success.getSendStatus()).thenReturn(SendStatus.SEND_OK);
         when(template.syncSendOrderly(anyString(), any(Message.class), eq("order-1"), eq(3500L)))
@@ -171,7 +178,7 @@ class MqOutboxDispatcherTest {
         MqSendOptions options = new MqSendOptions();
         options.setDelay(MqDelay.level(3));
         MqOutboxClaim claim = withOptions("delayed", options);
-        when(store.claimPending(50)).thenReturn(List.of(claim));
+        when(store.claimPending(1)).thenReturn(List.of(claim), List.of());
         SendResult success = mock(SendResult.class);
         when(success.getSendStatus()).thenReturn(SendStatus.SEND_OK);
         when(template.syncSend(anyString(), any(Message.class), anyLong(), eq(3))).thenReturn(success);

@@ -16,6 +16,17 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
  * @CreateTime 2026/11/13
  */
 class MqProducerMessageGuardTest {
+    @Test
+    void rejectReservedOrSensitiveBusinessHeaders() {
+        var properties = new PeachRocketProperties.Producer();
+        for (String name : new String[]{"KEYS", "Authorization", "x-access-token", "PEACH_ROCKET_TRANSACTION_KEY"}) {
+            assertThatThrownBy(() -> new com.peach.rocket.context.DefaultMqHeaderResolver()
+                    .resolve(Map.of(name, "test-value"))).isInstanceOf(MqException.class);
+        }
+        properties.setMaxHeaderBytes(8);
+        assertThatThrownBy(() -> MqProducerMessageGuard.validate(new byte[]{1}, Map.of("KEYS", "x"),
+                "large-business-key", properties)).isInstanceOf(MqException.class);
+    }
 
     @Test
     void shouldRejectOversizedEncodedPayload() {

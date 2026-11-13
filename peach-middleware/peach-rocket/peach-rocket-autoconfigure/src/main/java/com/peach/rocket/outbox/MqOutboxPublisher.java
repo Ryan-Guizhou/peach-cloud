@@ -20,4 +20,8 @@ public interface MqOutboxPublisher {
      * @return Outbox 消息 ID
      */
     <T> String publish(T payload, MqSendOptions options);
+    /** 写入独立事件；不保证与业务事务原子提交，旧实现需显式支持。 */
+    default <T> String publishStandalone(T payload, MqSendOptions options) {
+        throw new UnsupportedOperationException("Standalone Outbox publishing is not supported");
+    }
 }

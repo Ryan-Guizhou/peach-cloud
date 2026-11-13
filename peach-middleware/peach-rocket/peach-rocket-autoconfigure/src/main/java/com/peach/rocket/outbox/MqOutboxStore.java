@@ -10,6 +10,31 @@ import java.util.List;
  * @CreateTime 2026/6/26
  */
 public interface MqOutboxStore {
+    /** @return 是否提供跨重启的持久性保证 */
+    default boolean isDurable() {
+        return false;
+    }
+    /** @return 是否支持通过认领令牌隔离过期执行者 */
+    default boolean supportsOwnerFencing() {
+        return false;
+    }
+    /** @return 是否支持通过有效认领令牌续租 */
+    default boolean supportsLeaseRenewal() {
+        return false;
+    }
+    /** 仅为当前未过期认领续租；旧实现默认不支持。 */
+    default boolean renew(MqOutboxClaim claim) {
+        return false;
+    }
+    /** 写入独立事件，不宣称与调用方业务事务原子提交。 */
+    default void saveStandalone(MqOutboxEvent event) {
+        save(event);
+    }
+    /** 有界清理已完成终态；不得删除待投递记录。 */
+    default int cleanupTerminal(int limit) {
+        return 0;
+    }
+
 
     /**
      * 保存待发送消息。

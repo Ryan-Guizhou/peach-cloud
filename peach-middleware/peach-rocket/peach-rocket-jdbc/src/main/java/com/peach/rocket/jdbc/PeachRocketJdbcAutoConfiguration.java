@@ -1,6 +1,8 @@
 package com.peach.rocket.jdbc;
 
 import com.peach.rocket.autoconfigure.PeachRocketAutoConfigure;
+import com.peach.rocket.autoconfigure.PeachRocketProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import com.peach.rocket.autoconfigure.PeachRocketOutboxAutoConfigure;
 import com.peach.rocket.idempotent.MqIdempotentStore;
 import com.peach.rocket.outbox.MqOutboxStore;
@@ -22,6 +24,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * @Version 1.0.0
  * @CreateTime 2026/11/12
  */
+@EnableConfigurationProperties(PeachRocketProperties.class)
 @AutoConfiguration
 @AutoConfigureAfter(JdbcTemplateAutoConfiguration.class)
 @AutoConfigureBefore({PeachRocketAutoConfigure.class, PeachRocketOutboxAutoConfigure.class})
@@ -36,8 +39,8 @@ public class PeachRocketJdbcAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(MqOutboxStore.class)
-    public MqOutboxStore jdbcMqOutboxStore(JdbcTemplate jdbcTemplate) {
-        return new JdbcMqOutboxStore(jdbcTemplate);
+    public MqOutboxStore jdbcMqOutboxStore(JdbcTemplate jdbcTemplate, PeachRocketProperties properties) {
+        return new JdbcMqOutboxStore(jdbcTemplate, properties);
     }
 
     /**
@@ -46,7 +49,7 @@ public class PeachRocketJdbcAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(MqIdempotentStore.class)
-    public MqIdempotentStore jdbcMqIdempotentStore(JdbcTemplate jdbcTemplate) {
-        return new JdbcMqIdempotentStore(jdbcTemplate);
+    public MqIdempotentStore jdbcMqIdempotentStore(JdbcTemplate jdbcTemplate, PeachRocketProperties properties) {
+        return new JdbcMqIdempotentStore(jdbcTemplate, properties);
     }
 }

@@ -1,91 +1,17 @@
-# Peach RocketMQ Starter
+# peach-rocket
 
 English | [中文](README.md)
 
-`peach-rocket` is a RocketMQ business integration starter. It provides unified publishing, annotation-based routing, dynamic consumer registration, consumer idempotency, error handling, transaction messages, topic management, payload encryption, and Outbox reliable messaging.
-
-`peach-rocket-starter` aggregates RocketMQ Spring Boot and Topic Admin runtime dependencies. Business modules should not redeclare `rocketmq-spring-boot-starter` or `rocketmq-tools`. Depending on autoconfigure alone is not the supported business entry point; missing RocketMQ client or admin classes will disable the related auto-configuration.
-
-## Structure
-
-| Submodule | Responsibility |
-| --- | --- |
-| `peach-rocket-autoconfigure` | Core APIs, auto-configuration, default implementations, and SPI |
-| `peach-rocket-starter` | Starter exposed to business modules |
-| `peach-rocket-jdbc` | Optional durable JDBC Outbox/idempotency module (explicit opt-in) |
-| `peach-rocket-quickstart` | Order publish-consume, orderly publish, and in-memory idempotency samples |
-
-```mermaid
-flowchart LR
-    App[Business Service] --> Starter[peach-rocket-starter]
-    Starter --> Auto[peach-rocket-autoconfigure]
-    Quick[peach-rocket-quickstart] --> Starter
-    Auto --> Pub[MqPublisher]
-    Auto --> Consumer["@MqConsumer"]
-```
-
-## Capability Matrix (Current Implementation)
-
-| Capability | Default | Production boundary |
-| --- | --- | --- |
-| Synchronous, asynchronous and one-way publishing | `MqPublisher` | Synchronous send checks SEND_OK; one-way means submission, not Broker acknowledgement |
-| Orderly / delayed messages | `publishOrderly` / `publishDelay` | Stable shardingKey required; classic RocketMQ delay levels 1–18 |
-| Dynamic consumers | `@MqConsumer` | Concurrent/orderly, clustering/broadcasting, Topic/Tag subscription |
-| Consumer idempotency | In-memory per JVM | Use `peach-rocket-jdbc` or another durable owner-token store in production |
-| Retry and failure handling | Classification + failure receipt SPI | SKIP ACK only after durable receipt; otherwise retry |
-| Transactional messages | Transaction producer and handlers | Separate reliability mechanism from transactional Outbox |
-| Reliable Outbox | Disabled by default | Business transaction persistence plus JDBC leases/token fencing; at-least-once |
-| Outbox ordinary/orderly/delay | JDBC send options persisted | Global strict ordering needs additional business-key serialization |
-| Consumer backpressure | Bounded per-process inflight | No ACK for rejected work; optional managed virtual-thread Outbox |
-| Encryption | Disabled by default | AES-GCM + key ID rotation via protected secret source |
-| Topic management | Auto-create disabled | Pre-create in platform, avoid Broker admin permission in services |
-| Tracing & metrics | Optional peach-observability | Trace context + low-cardinality Micrometer counters/timers |
-
-## Metrics and Alerting
-
-With `peach-observability-starter` and a registered `MeterRegistry`, an optional `MqMetrics` bean is automatically configured; without monitoring support, it remains NOOP.
-
-| Metric | Type | Tags | Monitor |
-| --- | --- | --- | --- |
-| `peach.rocket.publish.total` | Counter | fixed `mode` / `outcome` | sustained send failure/rejection |
-| `peach.rocket.publish.duration` | Timer | fixed `mode` / `outcome` | publish latency percentiles |
-| `peach.rocket.consume.total` | Counter | fixed `outcome` | handler error proportion |
-| `peach.rocket.consume.duration` | Timer | fixed `outcome` | handler latency vs claim lease |
-| `peach.rocket.outbox.total` | Counter | fixed `outcome` | growing send/ack failures |
-| `peach.rocket.consumer.backpressure.total` | Counter | none | sustained admission rejection |
-
-Do **not** tag metrics with message IDs, keys, tenant IDs, dynamic Topics or consumer bean names. Monitor Broker lag and DLQ, durable Outbox backlog, expired claims, and JDBC pool saturation separately. Never log secrets, tokens or message bodies. Distributed tracing uses the existing `MqTraceContextPropagator` SPI.
-
-## Real-Broker Acceptance
-
-The Quickstart contains the opt-in `RocketBrokerEndToEndTest`. Maven CI uses mocked/offline tests by default. Deploy NameServer/Broker first, pre-create `dev-biz-order`, and grant the consumer groups necessary subscription permissions:
-
-```bash
-export PEACH_ROCKET_BROKER_TEST=true
-mvn -B -ntp -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am \
-  -Dtest=RocketBrokerEndToEndTest -Dsurefire.failIfNoSpecifiedTests=false \
-  -Drocketmq.name-server=127.0.0.1:9876 test
-```
-
-The test publishes created and paid order events through a real Broker and waits for the corresponding consumers. **Offline Maven/CI success does not imply real-Broker acceptance.** If no accessible Broker environment exists, mark this check **unverified**. For a production release, additionally verify the JDBC migration, replay, retry/DLQ, graceful restart, consumer offsets and prolonged backlog recovery.
-
-## Core Objects
-
-| Object | Description |
-| --- | --- |
-| `MqPublisher` | Unified publish entrypoint |
-| `@MqEvent` | Topic, tag, key, and version route declaration |
-| `@MqConsumer` | Dynamic consumer declaration |
-| `MqMessageHandler<T>` | Message handler interface |
-| `MqConsumeContext` | Consume context |
-| `MqSendOptions` | Per-send override options |
-| `MqTransactionHandler<T>` / `@MqTransaction` | Transaction message handling |
-| `MqIdempotentStore` | Consumer idempotency SPI |
-| `MqOutboxStore` | Outbox storage SPI |
-| `MqPayloadEncryptor`, `MqEncryptionPolicy`, `MqKeyProvider` | Payload encryption SPI |
-| `MqTraceContextPropagator` | Optional MQ trace-context propagation SPI |
+A RocketMQ integration starter providing unified publishing, annotation routing, dynamic consumers, consumer idempotency, transaction messages, authenticated encrypted envelopes, and Outbox. Production acceptance has not passed. The [24-item remediation status (Chinese)](docs/production-remediation-status.md) separates repository changes from pending external acceptance; the [original audit (Chinese)](docs/production-readiness-audit-2026-11-13.md) remains a historical snapshot.
 
 ## Integration
+
+| Module | Responsibility |
+| --- | --- |
+| peach-rocket-autoconfigure | Public APIs, defaults, auto-configuration, SPI |
+| peach-rocket-starter | Business entry point, aggregating RocketMQ Spring and Admin runtime dependencies |
+| peach-rocket-jdbc | Explicitly optional durable idempotency/Outbox, requiring a DataSource and DDL |
+| peach-rocket-quickstart | Real-Broker and in-process samples/tests |
 
 ```xml
 <dependency>
@@ -94,202 +20,46 @@ The test publishes created and paid order events through a real Broker and waits
 </dependency>
 ```
 
-Baseline configuration:
+Minimal development configuration (without production durability/security):
 
 ```yaml
 rocketmq:
   name-server: 127.0.0.1:9876
   producer:
     group: order-service-producer
-
 peach:
   rocket:
-    enabled: true
     namespace: dev
     app-name: order-service
-    naming:
-      topic-prefix: biz
-      topic-separator: "-"
-      auto-prefix-env: true
-    consumer:
-      dynamic-register: true
-      enable-idempotent: true
     topic:
       auto-create: false
-    outbox:
-      enabled: false
 ```
 
-## Publishing and Consuming
+Pre-create `dev-biz-order` for the current naming settings. Publish through `MqPublisher.publish(event)`; an event can declare `@MqEvent(topic="order", tag="created", key="#orderId")`. Consumers implement `MqMessageHandler<OrderCreatedEvent>` and declare `@MqConsumer(topic="order", tag="created", consumerGroup="order-created-consumer")`. Annotation keys only allow read-only property paths; runtime `MqSendOptions.key` is literal text.
 
-```java
-@MqEvent(topic = "order", tag = "created", key = "#orderId")
-public class OrderCreatedEvent {
-    private String orderId;
-}
+## Production boundaries
 
-@Service
-@RequiredArgsConstructor
-public class OrderEventPublisher {
+- Default in-memory stores are development-only. Explicitly enable `production=true`, durable/fenced/renewable stores, ACL/TLS, and AES_GCM_AAD encryption of all payloads without legacy downgrade. The platform pre-creates Topics.
+- Deduplication defaults to stable envelope `messageId` as the event ID; business query keys and Broker message IDs cannot replace it. Business side effects still require unique constraints, state machines, or downstream idempotency.
+- Outbox is disabled by default. Ordinary production publish requires a business transaction on the same DataSource; `publishStandalone` explicitly publishes independently. Sends and database ACKs are not atomic: delivery remains at-least-once, timeouts may follow delivery, and one-way sends have no Broker ACK.
+- Ordinary orderly sends require a stable shardingKey. Production rejects orderly Outbox and broadcasting. Strict global ordering across instances is Unsupported.
+- Bounded encoding, envelope/Header/JSON sizes, publishing/consumption admission, and Consumer drain still require capacity and shutdown drills across all publishing paths. SKIP requires successful durable recording. Replay is a programmatic SPI, without an HTTP management endpoint.
+- Consumer Group prefixing defaults off to protect existing offsets, but strict production requires it on; migrate offsets/deduplication domains first. Strict mode provides fail-closed checks; external acceptance remains necessary.
 
-    private final MqPublisher mqPublisher;
+## Quickstart and verification
 
-    public void publish(OrderCreatedEvent event) {
-        mqPublisher.publish(event);
-    }
-}
-```
-
-```java
-@Component
-@MqConsumer(topic = "order", tag = "created", consumerGroup = "order-created-consumer")
-public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent> {
-    @Override
-    public void handle(OrderCreatedEvent message, MqConsumeContext context) {
-        // handle message
-    }
-}
-```
-
-**Outbox reliability:** `MqOutboxStore.claimPending(batchSize)` returns `MqOutboxClaim` with a store-specific claimant token; the dispatcher now uses claim-aware `markSent` / `markFailed`. Existing store implementations can fall back to the default methods, but durable JDBC stores must enforce token fencing. Broker sends and JDBC acknowledgement are not one atomic transaction, so at-least-once delivery and consumer idempotency remain mandatory.
-
-**Development-only in-memory Outbox:** the default `InMemoryMqOutboxStore` caps stored events at 1,024 and payload bytes at 65,536 per event. Terminal records are cleaned opportunistically after 24h, claims have a 5-minute lease, and no background cleaning threads are created. Settings: `peach.rocket.outbox.in-memory-max-entries`, `in-memory-max-payload-bytes`, `in-memory-retention`, and `in-memory-lease`. Concurrent dispatchers atomically claim and acknowledge with owner tokens, and retry remains bounded. Capacity exhaustion rejects new writes without losing unsent messages. **In-memory Outbox loses messages on restart.** Production should enable `peach.rocket.outbox.require-durable=true` and register a transactional JDBC/other durable store; startup fails otherwise. This is still at-least-once, not exactly-once.
-
-### Producer Payload Limits and Backpressure
-
-The default **encoded envelope** limit is 4 MiB; message headers (including business key) are limited to 64 entries and 64 KiB. Each Producer instance allows up to 1,024 in-flight sends; capacity acquisition waits up to 200ms before rejecting. These are **local JVM/Producer limits**, not cluster-wide quotas or substitutes for Broker limits.
-
-| Property (`peach.rocket.producer.*`) | Default |
-| --- | --- |
-| `max-payload-bytes` | `4194304` (4 MiB) |
-| `max-header-count` | `64` |
-| `max-header-bytes` | `65536` (64 KiB) |
-| `max-inflight` | `1024` |
-| `inflight-acquire-timeout` | `200ms` |
-
-Synchronous and one-way sends release permits when the SDK call exits. **Asynchronous sends release permits only after SDK success/failure callbacks or a synchronous SDK submission exception**, with idempotent release under races. Saturation throws `MqException`, not an acknowledged success; callers must apply their retry/rate-limit policies. Transaction Producers manage their own admission and lifecycle. Review payload sizes and Broker configuration before overriding the limits.
-
-## Consumer Backpressure and Graceful Shutdown
-
-Dynamic consumers use RocketMQ SDK-managed worker threads without adding another fixed executor or unbounded message queue. All dynamic consumers in one JVM share a bounded handler execution budget. When `max-inflight` is saturated beyond `inflight-acquire-timeout`, concurrent listeners return `RECONSUME_LATER`, and orderly listeners return `SUSPEND_CURRENT_QUEUE_A_MOMENT`. **Unprocessed messages are not acknowledged.** Keep idempotency enabled and configure retry/DLQ policy for the expected load.
-
-| Property (`peach.rocket.consumer.*`) | Default | Meaning |
-| --- | --- | --- |
-| `consume-thread-min` / `consume-thread-max` | `1` / `20` | SDK workers per individual consumer |
-| `max-dynamic-consumers` | `64` | Maximum dynamically registered consumers in one JVM; fail startup if exceeded |
-| `max-inflight` | `128` | Total concurrent business handlers across dynamic consumers in one JVM |
-| `inflight-acquire-timeout` | `200ms` | Maximum time waiting for a handler slot; `0ms` means immediate rejection |
-| `shutdown-drain-timeout` | `30s` | Maximum time to drain active handlers on shutdown |
-
-A partial startup failure closes the failed consumer and rolls back earlier clients. Shutdown stops admission, waits up to the configured timeout, and closes all clients even when one shutdown fails. A timeout **does not guarantee business completion**; durable idempotency and retries remain necessary. These bounds apply to **one JVM only**, not a distributed or Broker-wide quota. RocketMQ SDK threads remain SDK-managed; use the existing project's virtual-thread component for separate application asynchronous work when appropriate.
-
-**Optional parallel Outbox I/O:** Scanning and publishing remain serial by default. To parallelize ordinary messages, set `peach.rocket.outbox.parallel-enabled=true` and point `executor-bean-name` at a pre-registered bounded `peach-virtual-thread` `ExecutorService` bean (default: `rocket-outboxVirtualExecutor`). For example:
-
-```yaml
-peach:
-  virtual-thread:
-    groups:
-      rocket-outbox:
-        max-concurrency: 8
-        max-pending: 32
-        backpressure: REJECT
-  rocket:
-    outbox:
-      enabled: true
-      parallel-enabled: true
-      executor-bean-name: rocket-outboxVirtualExecutor
-```
-
-The dispatcher awaits the batch's Future results. Rejected submissions are marked failed using the claim token and retried normally; they are not acknowledged or silently dropped. A batch containing sharding-key or delay options uses the serial path to avoid additional parallel reordering. **Phase four implements ordered and delayed Broker send paths, but cross-instance claiming does not guarantee globally strict order.** Bound executor pending/concurrency according to Broker throughput, DB pool capacity, and send latency.
-
-## Message Types, Consumer Groups, and Key Rotation
-
-- **Generic payloads:** The invoker resolves inherited `MqMessageHandler<List<Order>>` types. Both standard and secure Jackson codecs support full Java `Type`. The previous custom-codec `decode(byte[], Class)` API remains compatible; custom codecs need `decode(byte[], Type)` to decode parameterized payloads.
-- **Consumer groups:** `peach.rocket.naming.auto-prefix-consumer-group` defaults to `false` to retain existing groups and offsets. Opting in prefixes with `namespace + separator + group-prefix + separator + group`. Plan offset and idempotency migration before changing a production group.
-- **Key rotation:** `peach.rocket.security.keys` maps key IDs to encryption keys. New messages use the active `key-id`; historical messages decrypt using their stored ID. Unknown IDs fail closed. Legacy `security.key` only works with the current key ID. Inject secrets from an approved secret/config source.
-
-```yaml
-peach:
-  rocket:
-    naming:
-      auto-prefix-consumer-group: false
-    security:
-      enabled: true
-      encrypt-payload: true
-      base64-key: true
-      key-id: current
-      keys:
-        current: ${MQ_KEY_CURRENT_B64}
-        previous: ${MQ_KEY_PREVIOUS_B64}
-```
-
-## JDBC Outbox Options and Migration
-
-The JDBC Outbox now persists/restores `SEND_MODE`, `SHARDING_KEY`, `DELAY_LEVEL`, `HEADERS`, and `SEND_TIMEOUT_MS`. The dispatcher uses the corresponding ordinary, orderly, or delayed RocketMQ API. Combining an ordered sharding key with delay is rejected. Retries and ACK remain claim-token scoped.
-
-**Before deployment:** Pause Outbox dispatch and apply the non-destructive [20261113 migration](../../sql/migrations/20261113_rocket_outbox_send_options.sql) to existing databases; new installations use the updated [schema](../../sql/MQ_OUTBOX_EVENT.sql). Then deploy the application. Old rows with no timeout use the configured default. Headers are stored as plain JSON and must not contain secrets or tokens. **Selecting the same Broker queue by sharding key does not guarantee globally strict ordering with multiple concurrent Outbox claimants.**
-
-## SPI Overrides
-
-- Routing: `MqRouteResolver`, annotation-based by default.
-- Codec: `MqMessageCodec`.
-- Idempotency: `MqIdempotentStore`, `MqIdempotentKeyResolver`.
-- Error handling: `MqErrorHandler`, `MqExceptionClassifier`.
-- Encryption: `MqKeyProvider`, `MqPayloadEncryptor`, `MqEncryptionPolicy`.
-- Outbox: `MqOutboxStore`, `MqOutboxPublisher`, `MqOutboxReplayService`.
-- Trace context: `MqTraceContextPropagator`; a no-op is used when Tracing is not present.
-
-Prefer explicit `@Bean` overrides for in-memory idempotency and in-memory Outbox in production.
-
-## Quick Start
-
-[`peach-rocket-quickstart`](./peach-rocket-quickstart/) connects to the local NameServer at `127.0.0.1:9876` and its Broker by default (`web-application-type: none`), using the starter's real `MqPublisher`. Use Java 21 and ensure the Broker is reachable from the client. Topic auto-creation is disabled; prepare `dev-biz-order`, as resolved by the current naming configuration, beforehand.
-
-- Capability samples:
-  - **Publish-consume**: `MqPublisher.publish` an order-created event; the Broker delivers it asynchronously by topic+tag
-  - **Orderly publish**: `publishOrderly` uses a stable `orderId` as `shardingKey`; the paid consumer uses `ORDERLY` mode
-  - **Consume idempotency**: starter default `InMemoryMqIdempotentStore`; a second `tryStart` after `tryStart + markSuccess` is rejected
-- `RocketDemoRunner` runs these on startup, waiting up to 60 seconds after each publish to confirm consumption of that order; a timeout fails startup. Disable with `quickstart.rocket.demo.enabled=false`
-- Transaction messages, Outbox, and ordering guarantees across multiple messages are outside this sample's verification scope
-- Build: `mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am package -DskipTests`
-- Run: `java -jar peach-middleware/peach-rocket/peach-rocket-quickstart/target/peach-rocket-quickstart-1.0.0-SNAPSHOT.jar`
-- Test: `mvn -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am test`
-
-Append `--spring.profiles.active=in-process` to the run command for an offline demo. This profile disables Peach Rocket auto-configuration and excludes `RocketMQAutoConfiguration`; only this mode installs the in-process publisher and in-memory idempotency store without contacting a Broker. Capability tests always use this profile. A separate wiring test verifies that real mode selects `RocketMqPublisher`, with a transport test double.
-
-## Production Boundaries
-
-- Default in-memory idempotency and in-memory Outbox are for development or single-instance testing only.
-- Production environments should override `MqIdempotentStore`, `MqOutboxStore`, and related SPI with explicit `@Bean`s.
-- Topic auto-create is disabled by default; production topics should usually be managed by the platform.
-- Orderly messages require a stable `shardingKey`.
-- Outbox improves reliable delivery but does not replace business final-consistency state machines.
-- Retries may invoke external systems more than once; consumers must be idempotent.
-- RocketMQ Broker, NameServer, and console deployment are outside this module.
-- After introducing `peach-observability-starter`, the standard Trace Context is written to message headers and restored on consume; do not set `traceparent` in business code.
-
-## Verification
+Use Java 21 with reachable NameServer/Broker. The current user-modified workspace `RocketDemoRunner` only runs ordinary publishing: orderly/idempotency demos and waiting for ordinary consumption are commented out. Publishing logs do not prove consumption. Set `quickstart.rocket.demo.enabled=false` to disable the demo. Append `--spring.profiles.active=in-process` when running the executable quickstart JAR for an offline sample.
 
 ```bash
-mvn -f "peach-middleware/peach-rocket/pom.xml" test
-mvn -f "peach-middleware/peach-rocket/pom.xml" clean package -DskipTests -Pdevelopment
+mvn -B -ntp -pl peach-middleware/peach-rocket/peach-rocket-jdbc,peach-middleware/peach-rocket/peach-rocket-quickstart -am test -DfailIfNoTests=false
+node scripts/verify-changes.mjs
 ```
 
-## Troubleshooting
+`RocketBrokerEndToEndTest` requires explicit `PEACH_ROCKET_BROKER_TEST=true` and a real environment. Unit/Mock tests and skipped tests do not prove production acceptance. Docker engine is currently unavailable; real MySQL/Broker, multi-instance recovery, and final-artifact SCA remain pending.
 
-| Symptom | Check | Action |
-| --- | --- | --- |
-| `MqPublisher` is not injected | `peach-rocket-starter` is present; `peach.rocket.enabled` is on | Check the dependency and auto-configuration conditions |
-| Consumer is not registered | `@MqConsumer` beans are scanned; `dynamic-register` is on | Check package scan and configuration |
-| Duplicate consume | Idempotency key is stable; store is production-ready | Override `MqIdempotentStore` |
-| Transaction message is not checked back | `@MqTransaction` matches `MqTransactionHandler` | Check transaction handler registration |
-| Outbox backlog | Dispatcher is running; store status can be updated | Check `MqOutboxStore` and scheduler logs |
-| Startup reports missing `RocketMQTemplate` | Autoconfigure-only dependency; final artifact includes RocketMQ Spring | Use `peach-rocket-starter` and rebuild |
-| Topic auto-create misses `DefaultMQAdminExt` | Final artifact includes `rocketmq-tools` | Use the latest `peach-rocket-starter` and rebuild |
+## Further reading
 
-## Project conventions
-
-- Backend documentation follows the current peach-cloud baseline: Java 21, Spring Boot 3.5.4, Spring Cloud 2025.0.0, and Spring Cloud Alibaba 2025.0.0.0.
-- Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
-- Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as target/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
-- Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+- [Production configuration reference (Chinese)](docs/production-configuration.md): every property/default/unit/constraint, a full production example, secret sources, and native namespace distinctions.
+- [Production operations and migration (Chinese)](docs/production-operations.md): new/existing databases, legacy protocol, keys, offsets, leases, replay, cleanup, shutdown, business idempotency, and acceptance evidence.
+- [Remediation status (Chinese)](docs/production-remediation-status.md), [implementation plan (Chinese)](docs/production-hardening-plan.md), [historical audit (Chinese)](docs/production-readiness-audit-2026-11-13.md).
+- Versions follow the [module POM](pom.xml) and [current BOM](../../peach-dependencies/pom.xml); scan the final artifact to assess security.

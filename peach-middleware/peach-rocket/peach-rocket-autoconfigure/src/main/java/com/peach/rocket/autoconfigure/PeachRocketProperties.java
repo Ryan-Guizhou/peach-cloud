@@ -24,14 +24,20 @@ import org.springframework.util.StringUtils;
  */
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "peach.rocket")
+@ConfigurationProperties(prefix = "peach.rocket", ignoreUnknownFields = false)
 public class PeachRocketProperties implements InitializingBean {
 
     /**
      * 是否启用 Peach RocketMQ 自动配置，默认启用。
      */
-    /** 是否启用当前子功能。 */
     private boolean enabled = true;
+
+    /** 生产严格模式：禁止内存可靠性降级、广播和未证明严格顺序的 Outbox。 */
+    private boolean production = false;
+
+    private final Client client = new Client();
+
+    private final Protocol protocol = new Protocol();
 
     /**
      * 命名空间，通常用于区分环境。
@@ -63,10 +69,13 @@ public class PeachRocketProperties implements InitializingBean {
     public void afterPropertiesSet() {
         requireText(namespace, "peach.rocket.namespace");
         requireText(appName, "peach.rocket.app-name");
+        if (!namespace.matches("[A-Za-z0-9_.-]{1,64}") || !appName.matches("[A-Za-z0-9_.-]{1,64}")) {
+            throw new MqException("MQ namespace and app-name must be 1-64 ASCII identifier characters");
+        }
         requireText(naming.topicPrefix, "peach.rocket.naming.topic-prefix");
         requireText(naming.groupPrefix, "peach.rocket.naming.group-prefix");
         requireText(naming.topicSeparator, "peach.rocket.naming.topic-separator");
-        if (producer.defaultTimeout == null || producer.defaultTimeout.isNegative() || producer.defaultTimeout.isZero()) {
+        if (!validMillis(producer.defaultTimeout, 60000)) {
             throw new MqException("peach.rocket.producer.default-timeout must be positive");
         }
         if (producer.maxPayloadBytes < 1 || producer.maxHeaderCount < 1 || producer.maxHeaderBytes < 1
@@ -96,6 +105,49 @@ public class PeachRocketProperties implements InitializingBean {
         if (topic.readQueueNums <= 0 || topic.writeQueueNums <= 0) {
             throw new MqException("peach.rocket.topic read/write queue nums must be positive");
         }
+        if (producer.maxEncodingInflight < 1
+                || producer.inflightAcquireTimeout.compareTo(Duration.ofSeconds(30)) > 0
+                || consumer.inflightAcquireTimeout.compareTo(Duration.ofSeconds(30)) > 0
+                || !validMillis(consumer.shutdownDrainTimeout, 300000)
+                || protocol.maxDepth < 1 || protocol.maxDepth > 256
+                || protocol.maxStringLength < 1 || protocol.maxNumberLength < 1) {
+            throw new MqException("Invalid RocketMQ resource or protocol budget");
+        }
+        if (!"AES_GCM_AAD".equals(security.algorithm) && !"AES_GCM".equals(security.algorithm)) {
+            throw new MqException("Unsupported MQ encryption algorithm");
+        }
+        if (StringUtils.hasText(client.accessKey) != StringUtils.hasText(client.secretKey)) {
+            throw new MqException("MQ client access-key and secret-key must be configured together");
+        }
+        if (!java.util.Set.of("FIRST_OFFSET", "LAST_OFFSET").contains(consumer.consumeFromWhere)) {
+            throw new MqException("MQ consume-from-where must be FIRST_OFFSET or LAST_OFFSET");
+        }
+        if (!validMillis(jdbc.processingLease, 3600000) || !validMillis(jdbc.outboxLease, 3600000)
+                || jdbc.retention == null || jdbc.retention.compareTo(Duration.ofHours(1)) < 0
+                || jdbc.outboxLease.toMillis() <= 2 * producer.defaultTimeout.toMillis()) {
+            throw new MqException("MQ JDBC leases must cover send timeout; retention must be at least one hour");
+        }
+        if (production && (!client.tlsEnabled || !StringUtils.hasText(client.accessKey)
+                || !consumer.enableIdempotent || topic.autoCreate || consumer.legacyIdempotentKey
+                || !naming.autoPrefixConsumerGroup
+                || !security.enabled || !security.encryptPayload || security.acceptLegacyEncryption
+                || !"AES_GCM_AAD".equals(security.algorithm)
+                || "default".equals(namespace) || "application".equals(appName))) {
+            throw new MqException("Production RocketMQ requires explicit identity, ACL/TLS, authenticated encryption, durable idempotency and governed topics");
+        }
+        if (production && transaction.enabled && "peach-rocket-transaction-producer".equals(transaction.producerGroup)) {
+            throw new MqException("Production transaction producer-group must be explicitly scoped to environment and service");
+        }
+        if (production && (!Boolean.parseBoolean(System.getProperty("tls.client.authServer", "false"))
+                || Boolean.parseBoolean(System.getProperty("tls.test.mode.enable", "true"))
+                || !java.nio.file.Files.isRegularFile(java.nio.file.Path.of(System.getProperty("tls.client.trustCertPath", ""))))) {
+            throw new MqException("Production requires TLS test mode disabled, server authentication and a readable trust certificate file");
+        }
+    }
+
+    private boolean validMillis(Duration value, long upperBound) {
+        return value != null && !value.isNegative() && value.compareTo(Duration.ofMillis(1)) >= 0
+                && value.compareTo(Duration.ofMillis(upperBound)) <= 0;
     }
 
     private void requireText(String value, String propertyName) {
@@ -115,6 +167,8 @@ public class PeachRocketProperties implements InitializingBean {
     @Getter
     @Setter
     public static class Producer {
+        /** 单实例并发编码/加密预算，避免发送准入之前出现无界序列化。 */
+        private int maxEncodingInflight = 64;
         /**
          * 普通发送超时时间。
          */
@@ -143,7 +197,6 @@ public class PeachRocketProperties implements InitializingBean {
         /**
          * 获取发送额度允许等待的最长时间。
          */
-        /** 等待业务执行额度的最长时间。 */
         private Duration inflightAcquireTimeout = Duration.ofMillis(200);
     }
 
@@ -157,6 +210,10 @@ public class PeachRocketProperties implements InitializingBean {
     @Getter
     @Setter
     public static class Consumer {
+        /** 仅供迁移旧幂等键；生产严格模式禁止启用。 */
+        private boolean legacyIdempotentKey = false;
+        /** 新消费组首次启动的位置，不影响已经存在的位点。 */
+        private String consumeFromWhere = "LAST_OFFSET";
         /** 是否启用消费幂等；默认启用，内存实现仅适用于单 JVM。 */
         private boolean enableIdempotent = true;
         /** 幂等记录有效期；默认 24 小时。 */
@@ -218,7 +275,9 @@ public class PeachRocketProperties implements InitializingBean {
         /** 是否对所有业务载荷启用加密。 */
         private boolean encryptPayload = false;
         /** 消息加密算法标识。 */
-        private String algorithm = "AES_GCM";
+        private String algorithm = "AES_GCM_AAD";
+        /** 显式允许没有认证信封的历史密文；仅供有限迁移窗口。 */
+        private boolean acceptLegacyEncryption = false;
         /** 新消息使用的活动密钥 ID。 */
         private String keyId = "default";
         /** 旧版单密钥配置；严禁写入仓库或输出到日志。 */
@@ -232,7 +291,10 @@ public class PeachRocketProperties implements InitializingBean {
         public void setKeys(Map<String, String> keys) {
             this.keys = keys == null ? new LinkedHashMap<>() : new LinkedHashMap<>(keys);
         }
-        public void setEncryptTopics(List<String> encryptTopics) { this.encryptTopics = encryptTopics == null ? new ArrayList<String>() : encryptTopics; }
+
+        public void setEncryptTopics(List<String> encryptTopics) {
+            this.encryptTopics = encryptTopics == null ? new ArrayList<>() : encryptTopics;
+        }
     }
 
     /**
@@ -273,7 +335,9 @@ public class PeachRocketProperties implements InitializingBean {
         private boolean includeTransactionTopics = true;
         /** 额外显式声明的 Topic。 */
         private List<String> topics = new ArrayList<String>();
-        public void setTopics(List<String> topics) { this.topics = topics == null ? new ArrayList<String>() : topics; }
+        public void setTopics(List<String> topics) {
+            this.topics = topics == null ? new ArrayList<>() : topics;
+        }
     }
 
     /**
@@ -286,6 +350,12 @@ public class PeachRocketProperties implements InitializingBean {
     @Getter
     @Setter
     public static class Jdbc {
+        /** JDBC 消费处理租约；与成功记录保留期分开。 */
+        private Duration processingLease = Duration.ofMinutes(5);
+        /** JDBC Outbox 认领租约；必须大于发送超时的两倍。 */
+        private Duration outboxLease = Duration.ofMinutes(5);
+        /** 已发送 Outbox 终态最短保留期；业务重放窗口不得短于此值。 */
+        private Duration retention = Duration.ofDays(7);
         /** 是否启用当前子功能，默认关闭。 */
         private boolean enabled = false;
     }
@@ -300,6 +370,8 @@ public class PeachRocketProperties implements InitializingBean {
     @Getter
     @Setter
     public static class Outbox {
+        /** 发布时要求当前 JDBC 资源已加入业务事务；production 会强制要求。 */
+        private boolean requireTransaction = false;
         /** 是否启用当前子功能，默认关闭。 */
         private boolean enabled = false;
         /** Outbox 每轮最多领取的消息数。 */
@@ -320,5 +392,39 @@ public class PeachRocketProperties implements InitializingBean {
         private boolean parallelEnabled = false;
         /** 并行投递绑定的受管 ExecutorService Bean 名称。 */
         private String executorBeanName = "rocket-outboxVirtualExecutor";
+    }
+
+    /**
+     * 独立 SDK 客户端的统一安全配置；凭据不得通过 toString 输出。
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/11/13 15:00
+     */
+    @Getter
+    @Setter
+    public static class Client {
+        /** 业务最小权限访问标识，通过安全配置源注入。 */
+        private String accessKey = "";
+        /** 访问密钥，通过安全配置源注入，禁止进入日志。 */
+        private String secretKey = "";
+        /** 是否要求 SDK 使用 TLS；生产必须启用。 */
+        private boolean tlsEnabled = false;
+    }
+
+    /**
+     * JSON 协议解析预算，不允许消息覆盖本地限制。
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/11/13 15:00
+     */
+    @Getter
+    @Setter
+    public static class Protocol {
+        /** 最大 JSON 嵌套深度。 */
+        private int maxDepth = 64;
+        /** 单个字符串最大字符数。 */
+        private int maxStringLength = 1048576;
+        /** 单个数字最大字符数。 */
+        private int maxNumberLength = 128;
     }
 }

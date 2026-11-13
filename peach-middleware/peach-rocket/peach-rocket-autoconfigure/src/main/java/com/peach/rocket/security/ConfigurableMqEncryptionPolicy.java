@@ -28,7 +28,8 @@ public class ConfigurableMqEncryptionPolicy implements MqEncryptionPolicy {
             return true;
         }
         if (!CollectionUtils.isEmpty(properties.getSecurity().getEncryptTopics())
-                && properties.getSecurity().getEncryptTopics().contains(topic)) {
+                && properties.getSecurity().getEncryptTopics().stream().anyMatch(configured ->
+                        com.peach.rocket.support.RocketMqNaming.normalizeTopic(configured, properties).equals(topic))) {
             return true;
         }
         return payload != null && payload.getClass().isAnnotationPresent(MqEncrypted.class);

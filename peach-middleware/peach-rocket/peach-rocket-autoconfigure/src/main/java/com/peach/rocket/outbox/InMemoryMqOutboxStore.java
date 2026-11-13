@@ -129,6 +129,11 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
                 if (!ready(previous, now) && !expiredLease(previous, now)) {
                     return previous;
                 }
+                if (expiredLease(previous, now)) {
+                    int attempts = Math.min(MAX_ATTEMPTS, previous.event().retryCount()+1);
+                    if (attempts >= MAX_ATTEMPTS) return new Entry(previous.event().withRetryCount(attempts).withStatus(MqOutboxStatus.FAILED), null, null, now, now);
+                    previous = new Entry(previous.event().withRetryCount(attempts), previous.claimToken(), previous.claimedAt(), previous.updatedAt(), previous.nextAttemptAt());
+                }
                 String token = UUID.randomUUID().toString();
                 MqOutboxEvent sending = previous.event().withStatus(MqOutboxStatus.SENDING);
                 claimed.set(new MqOutboxClaim(sending, token));
@@ -148,7 +153,7 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
     public void markSent(String messageId) {
         Instant now = clock.instant();
         events.computeIfPresent(messageId, (key, previous) ->
-                previous.event().status() == MqOutboxStatus.FAILED ? previous
+                previous.claimToken() != null || previous.event().status() == MqOutboxStatus.FAILED ? previous
                         : new Entry(previous.event().withStatus(MqOutboxStatus.SENT),
                         null, null, now, now));
     }
@@ -157,13 +162,16 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
     public void markFailed(String messageId) {
         Instant now = clock.instant();
         events.computeIfPresent(messageId, (key, previous) -> {
-            if (previous.event().status() == MqOutboxStatus.SENT
+            if (previous.claimToken() != null || previous.event().status() == MqOutboxStatus.SENT
                     || previous.event().status() == MqOutboxStatus.FAILED) {
                 return previous;
             }
-            MqOutboxEvent retry = previous.event().withRetryCount(previous.event().retryCount() + 1)
-                    .withStatus(MqOutboxStatus.RETRY);
-            return new Entry(retry, null, null, now, now);
+            int attempts = Math.min(MAX_ATTEMPTS, previous.event().retryCount() + 1);
+            MqOutboxStatus status = attempts >= MAX_ATTEMPTS ? MqOutboxStatus.FAILED : MqOutboxStatus.RETRY;
+            long seconds = Math.min(300L, 1L << Math.min(20, attempts - 1));
+            MqOutboxEvent retry = previous.event().withRetryCount(attempts).withStatus(status);
+            return new Entry(retry, null, null, now,
+                    status == MqOutboxStatus.FAILED ? now : now.plusSeconds(seconds));
         });
     }
 
@@ -220,6 +228,48 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
                     null, null, now, now);
         });
         return replayed.get();
+    }
+
+    @Override
+    public boolean supportsOwnerFencing() {
+        return true;
+    }
+
+    @Override
+    public boolean supportsLeaseRenewal() {
+        return true;
+    }
+
+    @Override
+    public boolean renew(MqOutboxClaim claim) {
+        Instant now = clock.instant();
+        AtomicBoolean renewed = new AtomicBoolean();
+        events.computeIfPresent(claim.event().messageId(), (id, old) -> {
+            if (old.event().status() != MqOutboxStatus.SENDING || expiredLease(old, now)
+                    || !Objects.equals(old.claimToken(), claim.claimToken()) || claim.claimToken() == null) {
+                return old;
+            }
+            renewed.set(true);
+            return new Entry(old.event(), old.claimToken(), now, now, old.nextAttemptAt());
+        });
+        return renewed.get();
+    }
+
+    @Override
+    public int cleanupTerminal(int limit) {
+        if (limit < 1) {
+            throw new IllegalArgumentException("Cleanup limit must be positive");
+        }
+        int removed = 0;
+        Instant now = clock.instant();
+        for (var item : events.entrySet()) {
+            Entry old = item.getValue();
+            if ((old.event().status() == MqOutboxStatus.SENT || old.event().status() == MqOutboxStatus.FAILED)
+                    && !old.updatedAt().plus(retention).isAfter(now) && events.remove(item.getKey(), old)) {
+                if (++removed >= Math.min(limit, MAX_BATCH_SIZE)) break;
+            }
+        }
+        return removed;
     }
 
     private boolean ready(Entry entry, Instant now) {

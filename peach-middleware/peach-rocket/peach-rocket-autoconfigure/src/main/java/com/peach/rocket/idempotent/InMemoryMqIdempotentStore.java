@@ -19,6 +19,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class InMemoryMqIdempotentStore implements MqIdempotentStore {
+    @Override
+    public boolean supportsLeaseRenewal() {
+        return true;
+    }
 
     private static final int DEFAULT_MAX_ENTRIES = 32768;
     private static final int CLEANUP_INTERVAL = 1024;
@@ -68,14 +72,20 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
 
     @Override
     public boolean tryStart(MqIdempotentContext context) {
-        return claim(context).status() == MqIdempotentClaim.Status.ACQUIRED;
+        synchronized (capacityLock) {
+            MqIdempotentClaim claim = claim(context);
+            if (claim.status() != MqIdempotentClaim.Status.ACQUIRED) return false;
+            Record owned = records.get(storageKey(context));
+            records.put(storageKey(context), new Record(owned.status(), owned.expiresAt(), null));
+            return true;
+        }
     }
 
     @Override
     public void markSuccess(MqIdempotentContext context, MqIdempotentClaim claim) {
         synchronized (capacityLock) {
             Record current = requireOwner(context, claim);
-            records.put(storageKey(context), new Record(Status.SUCCESS, current.expiresAt(), current.ownerToken()));
+            records.put(storageKey(context), new Record(Status.SUCCESS, Instant.now().plus(context.expire()), null));
         }
     }
 
@@ -100,7 +110,7 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
         synchronized (capacityLock) {
             String key = storageKey(context);
             Record old = records.get(key);
-            if (old != null) {
+            if (old != null && old.status() == Status.PROCESSING && old.ownerToken() == null) {
                 records.put(key, new Record(Status.SUCCESS, old.expiresAt(), old.ownerToken()));
             }
         }
@@ -112,7 +122,10 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
     @Override
     public void markFailed(MqIdempotentContext context) {
         synchronized (capacityLock) {
-            records.remove(storageKey(context));
+            Record old = records.get(storageKey(context));
+            if (old != null && old.status() == Status.PROCESSING && old.ownerToken() == null) {
+                records.remove(storageKey(context));
+            }
         }
     }
 
@@ -123,6 +136,20 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
                 && record.expiresAt().isAfter(Instant.now());
     }
 
+    @Override
+    public boolean renew(MqIdempotentContext context, MqIdempotentClaim claim) {
+        synchronized (capacityLock) {
+            try {
+                Record current = requireOwner(context, claim);
+                records.put(storageKey(context), new Record(Status.PROCESSING,
+                        Instant.now().plus(context.expire()), current.ownerToken()));
+                return true;
+            } catch (IllegalStateException stale) {
+                return false;
+            }
+        }
+    }
+
     private Record requireOwner(MqIdempotentContext context, MqIdempotentClaim claim) {
         if (claim == null || claim.status() != MqIdempotentClaim.Status.ACQUIRED
                 || !StringUtils.hasText(claim.ownerToken())) {
@@ -130,10 +157,27 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
         }
         Record current = records.get(storageKey(context));
         if (current == null || current.status() != Status.PROCESSING
-                || !claim.ownerToken().equals(current.ownerToken())) {
+                || !claim.ownerToken().equals(current.ownerToken()) || !current.expiresAt().isAfter(Instant.now())) {
             throw new IllegalStateException("Stale MQ idempotent owner cannot update the record");
         }
         return current;
+    }
+
+    @Override
+    public int cleanupTerminal(int limit) {
+        if (limit < 1) {
+            throw new IllegalArgumentException("Cleanup limit must be positive");
+        }
+        synchronized (capacityLock) {
+            int removed = 0;
+            Instant now = Instant.now();
+            for (var entry : records.entrySet()) {
+                Record old = entry.getValue();
+                if (old.status() == Status.SUCCESS && !old.expiresAt().isAfter(now)
+                        && records.remove(entry.getKey(), old) && ++removed >= Math.min(500, limit)) break;
+            }
+            return removed;
+        }
     }
 
     private void cleanupExpired(Instant now) {
@@ -145,7 +189,7 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
     }
 
     private String storageKey(MqIdempotentContext context) {
-        return context.consumerGroup() + ':' + context.idempotentKey();
+        return context.consumerGroup().length() + ":" + context.consumerGroup() + context.idempotentKey();
     }
 
     private enum Status {

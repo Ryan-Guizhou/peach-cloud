@@ -20,4 +20,10 @@ public class SchedulerJdbcMqOutboxStore extends JdbcMqOutboxStore {
     public SchedulerJdbcMqOutboxStore(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
+
+    /** 继承生产事务校验、租约及保留期，保留历史类型名称。 */
+    public SchedulerJdbcMqOutboxStore(JdbcTemplate jdbcTemplate,
+            com.peach.rocket.autoconfigure.PeachRocketProperties properties) {
+        super(jdbcTemplate, properties);
+    }
 }

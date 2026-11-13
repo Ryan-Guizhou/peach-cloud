@@ -8,6 +8,23 @@ package com.peach.rocket.idempotent;
  * @CreateTime 2026/6/26
  */
 public interface MqIdempotentStore {
+    /** 是否支持有效 owner 的续租；生产长任务必须显式具备此能力。 */
+    default boolean supportsLeaseRenewal() {
+        return false;
+    }
+    /** @return 是否提供跨重启的持久性保证 */
+    default boolean isDurable() {
+        return false;
+    }
+    /** 仅为当前有效认领续租；旧实现默认不支持。 */
+    default boolean renew(MqIdempotentContext context, MqIdempotentClaim claim) {
+        return false;
+    }
+    /** 有界清理过期终态；不得删除仍在处理的记录。 */
+    default int cleanupTerminal(int limit) {
+        return 0;
+    }
+
 
     /**
      * 尝试开始处理消息。

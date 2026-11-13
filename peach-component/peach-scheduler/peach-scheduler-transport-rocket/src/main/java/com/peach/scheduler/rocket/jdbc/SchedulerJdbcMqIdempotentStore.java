@@ -20,4 +20,10 @@ public class SchedulerJdbcMqIdempotentStore extends JdbcMqIdempotentStore {
     public SchedulerJdbcMqIdempotentStore(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
+
+    /** 继承统一租约配置，避免 Scheduler 适配层回退到默认处理期限。 */
+    public SchedulerJdbcMqIdempotentStore(JdbcTemplate jdbcTemplate,
+            com.peach.rocket.autoconfigure.PeachRocketProperties properties) {
+        super(jdbcTemplate, properties);
+    }
 }

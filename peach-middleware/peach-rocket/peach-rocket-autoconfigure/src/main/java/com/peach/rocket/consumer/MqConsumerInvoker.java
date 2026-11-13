@@ -44,6 +44,7 @@ public class MqConsumerInvoker {
     private final PeachRocketProperties properties;
     private final MqTraceContextPropagator traceContextPropagator;
     private final MqMetrics metrics;
+    private final MqLeaseRenewer leaseRenewer;
 
     public MqConsumerInvoker(MqMessageCodec codec, MqIdempotentStore idempotentStore,
                              MqIdempotentKeyResolver idempotentKeyResolver, MqErrorHandler errorHandler,
@@ -100,6 +101,16 @@ public class MqConsumerInvoker {
                              MqExceptionClassifier exceptionClassifier, PeachRocketProperties properties,
                              MqTraceContextPropagator traceContextPropagator, MqFailureRecorder failureRecorder,
                              MqMetrics metrics) {
+        this(codec, idempotentStore, idempotentKeyResolver, errorHandler, exceptionClassifier,
+                properties, traceContextPropagator, failureRecorder, metrics, null);
+    }
+
+    public MqConsumerInvoker(MqMessageCodec codec, MqIdempotentStore idempotentStore,
+                             MqIdempotentKeyResolver idempotentKeyResolver, MqErrorHandler errorHandler,
+                             MqExceptionClassifier exceptionClassifier, PeachRocketProperties properties,
+                             MqTraceContextPropagator traceContextPropagator, MqFailureRecorder failureRecorder,
+                             MqMetrics metrics, MqLeaseRenewer leaseRenewer) {
+        this.leaseRenewer = leaseRenewer;
         this.metrics = MqMetricsGuard.of(metrics);
         this.failureRecorder = failureRecorder == null ? MqFailureRecorder.NOOP : failureRecorder;
         this.codec = codec;
@@ -126,9 +137,17 @@ public class MqConsumerInvoker {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void invoke(MqMessageHandler handler, String handlerName, byte[] body,
                        MqConsumer consumer, String messageId, int reconsumeTimes) {
+        invoke(handler, handlerName, body, consumer, messageId, reconsumeTimes, null, null, null);
+    }
+
+    /** 从 SDK 元数据校验实际路由后执行业务；历史入口仅保留程序内兼容。 */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void invoke(MqMessageHandler handler, String handlerName, byte[] body,
+                       MqConsumer consumer, String messageId, int reconsumeTimes,
+                       String brokerTopic, String brokerTag, String brokerKey) {
         long started = System.nanoTime();
         try {
-            invokeInternal(handler, handlerName, body, consumer, messageId, reconsumeTimes);
+            invokeInternal(handler, handlerName, body, consumer, messageId, reconsumeTimes, brokerTopic, brokerTag, brokerKey);
             metrics.consume("success", System.nanoTime() - started);
         } catch (RuntimeException ex) {
             metrics.consume("failed", System.nanoTime() - started);
@@ -138,7 +157,8 @@ public class MqConsumerInvoker {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void invokeInternal(MqMessageHandler handler, String handlerName, byte[] body,
-                                MqConsumer consumer, String messageId, int reconsumeTimes) {
+                                MqConsumer consumer, String messageId, int reconsumeTimes,
+                                String brokerTopic, String brokerTag, String brokerKey) {
 
         // ==================== 1. 解析消息体类型 ====================
         // 通过反射解析 Handler 的泛型参数，确定 Payload 的实际类型（如 OrderDTO）
@@ -147,11 +167,20 @@ public class MqConsumerInvoker {
         // 解码消息体：将字节数组反序列化为 MqMessageEnvelope 对象
         // 信封中包含：业务数据（payload）、消息ID、Topic、Tag、Key、Headers 等
         MqMessageEnvelope<?> envelope = codec.decode(body, payloadType);
+        if (brokerTopic != null && (!brokerTopic.equals(envelope.topic())
+                || !java.util.Objects.equals(emptyToNull(brokerTag), emptyToNull(envelope.tag()))
+                || !java.util.Objects.equals(emptyToNull(brokerKey), emptyToNull(envelope.key())))) {
+            throw new MqException("MQ envelope metadata differs from trusted Broker metadata");
+        }
+        if (properties.isProduction() && (!RocketMqNaming.normalizeTopic(consumer.topic(), properties).equals(envelope.topic())
+                || !matchesTag(consumer.tag(), envelope.tag()))) {
+            throw new MqException("MQ envelope route does not match the trusted subscription");
+        }
 
         // ==================== 2. 构建消费上下文 ====================
         // 统一使用信封中的 messageId（业务生成的 ID），若为空则使用 RocketMQ 的 messageId
         MqConsumeContext context = new MqConsumeContext(
-                messageId == null ? envelope.messageId() : messageId,
+                envelope.messageId(),
                 envelope.topic(),
                 envelope.tag(),
                 envelope.key(),
@@ -190,19 +219,24 @@ public class MqConsumerInvoker {
                     return;
                 }
                 if (idempotentClaim.status() != MqIdempotentClaim.Status.ACQUIRED) {
-                    throw new MqException("MQ message is already being processed, idempotentKey=" + idempotentKey);
+                    throw new MqException("MQ message is already being processed");
                 }
             }
 
             // ==================== 4. 执行业务逻辑 ====================
             long start = System.currentTimeMillis();
             boolean handlerCompleted = false;
-            try {
+            if (properties.isProduction() && useIdempotent && leaseRenewer == null) {
+                throw new MqException("Production consumer requires a managed lease renewer");
+            }
+            try (MqLeaseRenewer.Lease lease = useIdempotent && leaseRenewer != null
+                    ? leaseRenewer.open(idempotentContext, idempotentClaim) : MqLeaseRenewer.Lease.NOOP) {
                 // 4.1 调用业务 Handler 处理消息
                 // envelope.getPayload() 返回解码后的业务对象（如 OrderDTO）
                 // context 包含消息元数据，业务方可根据需要进行使用
                 handler.handle(envelope.payload(), context);
                 handlerCompleted = true;
+                lease.checkValid();
 
                 // 4.2 处理成功：标记幂等记录为成功状态
                 if (useIdempotent) {
@@ -210,12 +244,12 @@ public class MqConsumerInvoker {
                 }
 
                 // 4.3 记录成功消费日志（包含耗时）
-                log.info("[mq-consume] consumer={} topic={} tag={} key={} messageId={} retry={} cost={}ms success=true",
-                        handlerName, context.topic(), context.tag(), context.key(),
+                log.info("[mq-consume] consumer={} topic={} tag={} key=redacted messageId={} retry={} cost={}ms success=true",
+                        handlerName, context.topic(), context.tag(),
                         context.messageId(), reconsumeTimes, System.currentTimeMillis() - start);
 
             } catch (RuntimeException ex) {
-                traceScope.error(ex);
+                traceScope.error(new MqException("MQ consumer failure: " + ex.getClass().getSimpleName()));
                 // ==================== 5. 异常处理 ====================
 
                 // Handler 已成功但幂等 ACK 失败时不能释放认领，避免重复执行。
@@ -262,6 +296,22 @@ public class MqConsumerInvoker {
             }
         }
     }
+
+    /** 校验 SDK 给出的真实 Topic；重试消息的原始 Topic 由 SDK 恢复后传入。 */
+    public void validateBrokerRoute(MqConsumer consumer, String topic, String tag) {
+        if (!RocketMqNaming.normalizeTopic(consumer.topic(), properties).equals(topic)
+                || !matchesTag(consumer.tag(), tag)) {
+            throw new MqException("Broker message route does not match subscription");
+        }
+    }
+
+    private boolean matchesTag(String expression, String tag) {
+        return expression == null || expression.isBlank() || "*".equals(expression)
+                || java.util.Arrays.stream(expression.split("\\|\\|"))
+                .map(String::trim).anyMatch(candidate -> java.util.Objects.equals(candidate, tag));
+    }
+
+    private String emptyToNull(String value) { return value == null || value.isBlank() ? null : value; }
 
     /**
      * 获取动态 Handler 的实际泛型 Payload 类型，包含继承接口/泛型父类。

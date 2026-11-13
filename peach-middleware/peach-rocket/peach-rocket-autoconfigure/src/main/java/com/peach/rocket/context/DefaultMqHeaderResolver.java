@@ -50,6 +50,16 @@ public class DefaultMqHeaderResolver {
             if (!StringUtils.hasText(header.getKey()) || header.getValue() == null) {
                 throw new MqException("MQ header key must have text and value must not be null");
             }
+            String name = header.getKey();
+            String lower = name.toLowerCase(java.util.Locale.ROOT);
+            if (org.apache.rocketmq.common.message.MessageConst.STRING_HASH_SET.contains(name)
+                    || java.util.Set.of("id", "timestamp", "peach_rocket_transaction_key").contains(lower)
+                    || lower.contains("authorization") || lower.contains("password")
+                    || lower.contains("secret") || lower.contains("token") || lower.contains("cookie")
+                    || name.chars().anyMatch(Character::isISOControl)
+                    || header.getValue().chars().anyMatch(Character::isISOControl)) {
+                throw new MqException("Reserved or sensitive MQ business header is not permitted");
+            }
         }
         traceContextPropagator.inject(resolved);
         return resolved;

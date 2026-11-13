@@ -4,11 +4,14 @@ import com.peach.rocket.outbox.MqOutboxClaim;
 import com.peach.rocket.outbox.MqOutboxEvent;
 import com.peach.rocket.outbox.MqOutboxStatus;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDateTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -30,12 +33,14 @@ class SchedulerJdbcOutboxClaimTest {
         SchedulerJdbcMqOutboxStore store = new SchedulerJdbcMqOutboxStore(jdbc);
         MqOutboxClaim claim = new MqOutboxClaim(event(), "batch-claim-001");
         when(jdbc.update(anyString(), eq("SENT"), eq("message-1"),
-                eq("SENDING"), eq("batch-claim-001"))).thenReturn(1);
+                eq("SENDING"), eq("batch-claim-001"), anyLong())).thenReturn(1);
 
         store.markSent(claim);
 
-        verify(jdbc).update(anyString(), eq("SENT"), eq("message-1"),
-                eq("SENDING"), eq("batch-claim-001"));
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        verify(jdbc).update(sql.capture(), eq("SENT"), eq("message-1"),
+                eq("SENDING"), eq("batch-claim-001"), anyLong());
+        assertThat(sql.getValue()).contains("CLAIMED_BY=?").contains("CLAIMED_AT>");
     }
 
     @Test

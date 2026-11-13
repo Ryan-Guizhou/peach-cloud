@@ -57,6 +57,46 @@ import org.springframework.context.annotation.Bean;
 @ConditionalOnProperty(prefix = "peach.rocket", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class PeachRocketAutoConfigure {
 
+    /** 在原生 Producer 构造前应用统一安全配置，避免模板与独立客户端身份不一致。 */
+    @Bean
+    public static org.springframework.beans.factory.config.BeanPostProcessor rocketClientSecurityProperties(
+            ObjectProvider<PeachRocketProperties> properties) {
+        return new org.springframework.beans.factory.config.BeanPostProcessor() {
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String name) {
+                if (bean instanceof RocketMQProperties rocket) {
+                    com.peach.rocket.support.MqClientSecurity.configureProperties(rocket, properties.getObject());
+                }
+                return bean;
+            }
+        };
+    }
+
+    /** 生产模式及显式可靠性模式都必须验证真实 Store 能力。 */
+    @Bean
+    public SmartInitializingSingleton rocketProductionVerifier(PeachRocketProperties properties,
+            MqIdempotentStore store, ObjectProvider<MqKeyProvider> keys) {
+        return () -> {
+            if ((properties.isProduction() || properties.getConsumer().isRequireDurableIdempotency())
+                    && (!store.isDurable() || !store.supportsOwnerFencing() || !store.supportsLeaseRenewal())) {
+                throw new IllegalStateException("RocketMQ requires a durable token-fenced idempotent store");
+            }
+            if (properties.getSecurity().isEnabled()) {
+                MqKeyProvider provider = keys.getIfAvailable();
+                if (provider == null) {
+                    throw new IllegalStateException("MQ security requires a key provider");
+                }
+                provider.getKey(properties.getSecurity().getKeyId());
+            }
+        };
+    }
+
+    @Bean(destroyMethod = "close")
+    @ConditionalOnMissingBean
+    public com.peach.rocket.consumer.MqLeaseRenewer mqLeaseRenewer(MqIdempotentStore store, PeachRocketProperties properties) {
+        return new com.peach.rocket.consumer.MqLeaseRenewer(store, properties);
+    }
+
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "peach.rocket.security", name = "enabled", havingValue = "true")
@@ -85,7 +125,7 @@ public class PeachRocketAutoConfigure {
                                          ObjectProvider<MqEncryptionPolicy> encryptionPolicyProvider,
                                          PeachRocketProperties properties) {
         if (!properties.getSecurity().isEnabled()) {
-            return new JacksonMqMessageCodec(objectMapper);
+            return new JacksonMqMessageCodec(objectMapper, properties);
         }
         return new SecureJacksonMqMessageCodec(objectMapper, encryptorProvider.getIfAvailable(),
                                                encryptionPolicyProvider.getIfAvailable(), properties);
@@ -131,8 +171,8 @@ public class PeachRocketAutoConfigure {
 
     @Bean
     @ConditionalOnMissingBean
-    public MqIdempotentKeyResolver mqIdempotentKeyResolver() {
-        return new DefaultMqIdempotentKeyResolver();
+    public MqIdempotentKeyResolver mqIdempotentKeyResolver(PeachRocketProperties properties) {
+        return new DefaultMqIdempotentKeyResolver(properties.getConsumer().isLegacyIdempotentKey());
     }
 
     @Bean
@@ -157,12 +197,13 @@ public class PeachRocketAutoConfigure {
                                                PeachRocketProperties properties,
                                                ObjectProvider<MqTraceContextPropagator> traceContextPropagatorProvider,
                                                ObjectProvider<MqFailureRecorder> failureRecorderProvider,
-                                               ObjectProvider<MqMetrics> metricsProvider) {
+                                               ObjectProvider<MqMetrics> metricsProvider,
+                                               com.peach.rocket.consumer.MqLeaseRenewer leaseRenewer) {
         return new MqConsumerInvoker(codec, idempotentStore, idempotentKeyResolver,
                                      errorHandler, exceptionClassifier, properties,
                                      traceContextPropagatorProvider.getIfAvailable(() -> MqTraceContextPropagator.NOOP),
                                      failureRecorderProvider.getIfAvailable(() -> MqFailureRecorder.NOOP),
-                                     metricsProvider.getIfAvailable(() -> MqMetrics.NOOP));
+                                     metricsProvider.getIfAvailable(() -> MqMetrics.NOOP), leaseRenewer);
     }
 
     @Bean

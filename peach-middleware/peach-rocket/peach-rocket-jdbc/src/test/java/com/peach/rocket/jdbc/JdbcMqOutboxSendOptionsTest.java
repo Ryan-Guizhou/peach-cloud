@@ -39,7 +39,7 @@ class JdbcMqOutboxSendOptionsTest {
         verify(jdbc).update(contains("SHARDING_KEY,DELAY_LEVEL,HEADERS,SEND_TIMEOUT_MS"),
                 eq("ordered"), eq("orders"), eq("created"), eq("ordered"), anyString(),
                 eq("ORDERLY"), eq("order-1"), isNull(), contains("traceparent"), eq(4500L),
-                eq("INIT"), eq(0), any(Timestamp.class), any(Timestamp.class), any(Timestamp.class));
+                eq("INIT"), eq(0));
     }
 
     @Test
@@ -52,7 +52,7 @@ class JdbcMqOutboxSendOptionsTest {
         verify(jdbc).update(contains("DELAY_LEVEL"),
                 eq("delayed"), eq("orders"), eq("created"), eq("delayed"), anyString(),
                 eq("DELAY"), isNull(), eq(2), isNull(), isNull(),
-                eq("INIT"), eq(0), any(Timestamp.class), any(Timestamp.class), any(Timestamp.class));
+                eq("INIT"), eq(0));
     }
 
     private MqOutboxEvent event(String id, MqSendOptions options) {

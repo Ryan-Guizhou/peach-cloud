@@ -24,7 +24,13 @@ public final class RocketMqNaming {
      * @return 真实 topic
      */
     public static String normalizeTopic(String topic, PeachRocketProperties properties) {
-        if (!StringUtils.hasText(topic) || topic.contains("%")) {
+        if (!StringUtils.hasText(topic) || !topic.matches("[A-Za-z0-9_.%-]{1,128}")) {
+            throw new MqException("Invalid RocketMQ topic identifier");
+        }
+        if (topic.contains("%")) {
+            if (properties.isProduction()) {
+                throw new MqException("Use native Broker namespace configuration instead of embedded namespace");
+            }
             return topic;
         }
         if (!properties.getNaming().isAutoPrefixEnv()) {
@@ -32,7 +38,11 @@ public final class RocketMqNaming {
         }
         String separator = properties.getNaming().getTopicSeparator();
         String prefix = properties.getNamespace() + separator + properties.getNaming().getTopicPrefix() + separator;
-        return topic.startsWith(prefix) ? topic : prefix + topic;
+        String normalized = topic.startsWith(prefix) ? topic : prefix + topic;
+        if (normalized.length() > 128) {
+            throw new MqException("RocketMQ topic identifier is too long");
+        }
+        return normalized;
     }
 
     /**
@@ -42,7 +52,7 @@ public final class RocketMqNaming {
      * @return consumer group
      */
     public static String normalizeConsumerGroup(String consumerGroup) {
-        if (!StringUtils.hasText(consumerGroup)) {
+        if (!StringUtils.hasText(consumerGroup) || !consumerGroup.matches("[A-Za-z0-9_.%-]{1,128}")) {
             throw new MqException("consumerGroup must not be blank");
         }
         return consumerGroup;
@@ -58,11 +68,18 @@ public final class RocketMqNaming {
      */
     public static String normalizeConsumerGroup(String consumerGroup, PeachRocketProperties properties) {
         String group = normalizeConsumerGroup(consumerGroup);
+        if (properties.isProduction() && group.contains("%")) {
+            throw new MqException("Use native Broker namespace configuration for consumer groups");
+        }
         if (!properties.getNaming().isAutoPrefixConsumerGroup() || group.contains("%")) {
             return group;
         }
         String separator = properties.getNaming().getTopicSeparator();
         String prefix = properties.getNamespace() + separator + properties.getNaming().getGroupPrefix() + separator;
-        return group.startsWith(prefix) ? group : prefix + group;
+        String normalized = group.startsWith(prefix) ? group : prefix + group;
+        if (normalized.length() > 128) {
+            throw new MqException("RocketMQ consumer group is too long");
+        }
+        return normalized;
     }
 }

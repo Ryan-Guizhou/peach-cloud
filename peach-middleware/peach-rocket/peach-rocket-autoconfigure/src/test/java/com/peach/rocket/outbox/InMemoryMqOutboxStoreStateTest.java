@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 验证内存 Outbox 同一消息的状态变更不会丢失重试次数。
+ * 验证内存 Outbox 状态更新与有限重试预算的并发安全。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -28,10 +28,10 @@ class InMemoryMqOutboxStoreStateTest {
     }
 
     @Test
-    void shouldKeepAllConcurrentFailedAttempts() throws InterruptedException {
+    void shouldBoundConcurrentFailuresAtTwentyAttempts() throws InterruptedException {
         InMemoryMqOutboxStore store = new InMemoryMqOutboxStore();
         store.save(event("retry"));
-        int workers = 16;
+        int workers = 19;
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch done = new CountDownLatch(workers);
         AtomicInteger errors = new AtomicInteger();
@@ -51,8 +51,16 @@ class InMemoryMqOutboxStoreStateTest {
         start.countDown();
         done.await();
         assertThat(errors.get()).isZero();
+        assertThat(store.findPending(1)).isEmpty();
+        assertThat(store.replay("retry")).isFalse();
+        store.markFailed("retry");
+        for (int i = 0; i < 16; i++) {
+            store.markFailed("retry");
+        }
+        assertThat(store.findPending(1)).isEmpty();
+        assertThat(store.replay("retry")).isTrue();
         assertThat(store.findPending(1)).singleElement()
-                .extracting(MqOutboxEvent::retryCount).isEqualTo(workers);
+                .extracting(MqOutboxEvent::retryCount).isEqualTo(0);
     }
 
     private static MqOutboxEvent event(String id) {

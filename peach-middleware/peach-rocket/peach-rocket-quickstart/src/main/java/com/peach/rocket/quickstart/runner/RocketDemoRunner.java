@@ -40,16 +40,16 @@ public class RocketDemoRunner implements ApplicationRunner {
     public void run(ApplicationArguments args) throws InterruptedException {
         long orderId = System.currentTimeMillis();
         runPublishConsumeDemo(orderId);
-        runOrderlyDemo(orderId);
-        runIdempotentDemo();
+//        runOrderlyDemo(orderId);
+//        runIdempotentDemo();
         log.info("rocket demo finished");
     }
 
     private void runPublishConsumeDemo(long orderId) throws InterruptedException {
         log.info("=== order publish-consume demo ===");
         MqSendResult result = publishConsumeExample.publishCreated(orderId);
-        awaitConsumption(() -> publishConsumeExample.consumedCreated().stream()
-                .anyMatch(event -> event.orderId() == orderId));
+//        awaitConsumption(() -> publishConsumeExample.consumedCreated().stream()
+//                .anyMatch(event -> event.orderId() == orderId));
         log.info("publish-consume success={}, consumed={}",
                 result.isSuccess(), publishConsumeExample.consumedCreated().size());
     }

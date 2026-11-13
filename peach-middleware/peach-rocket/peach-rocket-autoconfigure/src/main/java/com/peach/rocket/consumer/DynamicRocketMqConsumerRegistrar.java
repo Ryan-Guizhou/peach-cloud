@@ -96,6 +96,22 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
             }
             log.info("[mq-consumer] scan dynamic consumers. handlerCount={} registered={} dynamicRegister={}",
                     handlers.size(), registered, properties.getConsumer().isDynamicRegister());
+            java.util.Set<String> groups = new java.util.HashSet<>();
+            for (MqMessageHandler<?> handler : handlers.values()) {
+                MqConsumer declared = AnnotationUtils.findAnnotation(AopUtils.getTargetClass(handler), MqConsumer.class);
+                if (declared == null) { continue; }
+                String group = RocketMqNaming.normalizeConsumerGroup(declared.consumerGroup(), properties);
+                if (!groups.add(group)) {
+                    throw new MqException("Each local handler requires a distinct consumer group");
+                }
+                if (declared.messageModel() == MqMessageModel.BROADCASTING
+                        && (properties.isProduction() || properties.getConsumer().isRequireDurableIdempotency())) {
+                    throw new MqException("Reliable production consumption does not permit broadcasting");
+                }
+                if (properties.isProduction() && !declared.idempotent()) {
+                    throw new MqException("Production consumer cannot disable idempotency");
+                }
+            }
 
             // 只有全部启动成功才发布消费者集合和运行状态，失败则回滚已启动实例。
             List<DefaultMQPushConsumer> started = new ArrayList<>();
@@ -180,7 +196,7 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
                 instances.get(i).shutdown();
             } catch (RuntimeException shutdownError) {
                 log.warn("[mq-consumer] consumer shutdown failed. type={}",
-                        shutdownError.getClass().getName(), shutdownError);
+                        shutdownError.getClass().getName());
                 if (cause != null) {
                     cause.addSuppressed(shutdownError);
                 }
@@ -228,7 +244,7 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
             return consumer;
         } catch (Exception ex) {
             MqException failure = new MqException(
-                    "Failed to register RocketMQ dynamic consumer for bean " + beanName, ex);
+                    "Failed to register RocketMQ dynamic consumer for bean " + beanName);
             if (consumer != null) {
                 try {
                     consumer.shutdown();
@@ -242,10 +258,13 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
 
     protected DefaultMQPushConsumer createConsumer(String beanName, MqConsumer annotation,
                                                    String topic, String consumerGroup, String tagExpression) throws MQClientException {
-        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(consumerGroup);
+        DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(consumerGroup,
+                com.peach.rocket.support.MqClientSecurity.rpcHook(rocketMQProperties, properties));
+        com.peach.rocket.support.MqClientSecurity.configureClient(consumer, rocketMQProperties, properties);
         consumer.setNamesrvAddr(rocketMQProperties.getNameServer());
         consumer.setInstanceName(properties.getAppName() + "-" + beanName + "-" + System.nanoTime());
-        consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
+        consumer.setConsumeFromWhere("FIRST_OFFSET".equals(properties.getConsumer().getConsumeFromWhere())
+                ? ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET : ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);
         consumer.setConsumeThreadMin(properties.getConsumer().getConsumeThreadMin());
         consumer.setConsumeThreadMax(properties.getConsumer().getConsumeThreadMax());
         if (annotation.maxReconsumeTimes() >= 0) {
@@ -277,7 +296,7 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
                     ? ConsumeOrderlyStatus.SUCCESS : ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
         } catch (RuntimeException ex) {
             log.error("[mq-consumer-error] consumer={} group={} mode=orderly exception={}", beanName, consumerGroup,
-                    ex.getClass().getName(), ex);
+                    ex.getClass().getName());
             return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
         }
     }
@@ -290,7 +309,7 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
                     ? ConsumeConcurrentlyStatus.CONSUME_SUCCESS : ConsumeConcurrentlyStatus.RECONSUME_LATER;
         } catch (RuntimeException ex) {
             log.error("[mq-consumer-error] consumer={} group={} mode=concurrently exception={}", beanName, consumerGroup,
-                    ex.getClass().getName(), ex);
+                    ex.getClass().getName());
             return ConsumeConcurrentlyStatus.RECONSUME_LATER;
         }
     }
@@ -308,8 +327,9 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
             }
             try {
                 logReceive(beanName, consumerGroup, message);
+                invoker.validateBrokerRoute(annotation, message.getTopic(), message.getTags());
                 invoker.invoke(handler, beanName, message.getBody(), annotation,
-                        message.getMsgId(), message.getReconsumeTimes());
+                        message.getMsgId(), message.getReconsumeTimes(), message.getTopic(), message.getTags(), message.getKeys());
             } finally {
                 admission.leave();
             }

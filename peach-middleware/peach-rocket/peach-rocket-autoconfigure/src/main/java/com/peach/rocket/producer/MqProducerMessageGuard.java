@@ -41,15 +41,19 @@ public final class MqProducerMessageGuard {
                 if (!StringUtils.hasText(header.getKey()) || header.getValue() == null) {
                     throw new MqException("RocketMQ header key must have text and value must not be null");
                 }
+                if (MessageConst.PROPERTY_KEYS.equals(header.getKey())) {
+                    continue;
+                }
                 bytes += utf8Bytes(header.getKey()) + utf8Bytes(header.getValue());
                 if (bytes > limits.getMaxHeaderBytes()) {
                     throw new MqException("RocketMQ header bytes exceed configured limit");
                 }
             }
         }
-        if (StringUtils.hasText(businessKey)
-                && (CollectionUtils.isEmpty(headers) || !headers.containsKey(MessageConst.PROPERTY_KEYS))) {
-            count++;
+        if (StringUtils.hasText(businessKey)) {
+            if (CollectionUtils.isEmpty(headers) || !headers.containsKey(MessageConst.PROPERTY_KEYS)) {
+                count++;
+            }
             bytes += utf8Bytes(MessageConst.PROPERTY_KEYS) + utf8Bytes(businessKey);
         }
         if (count > limits.getMaxHeaderCount()) {
