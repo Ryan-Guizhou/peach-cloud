@@ -14,7 +14,7 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.util.StringUtils;
 
 /**
- * AnnotationMQRoute解析器。
+ * 基于业务注解与单次发送选项解析 Topic、Tag、Key 的默认路由实现。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -30,18 +30,26 @@ public class AnnotationMqRouteResolver implements MqRouteResolver {
         this.properties = properties;
     }
 
+    /**
+     * 根据单次覆盖参数优先、事件注解次之的顺序解析业务路由。
+     *
+     * @param payload 业务消息体，不允许为 null
+     * @param options 业务发送选项，可为空
+     * @return 标准化后的 RocketMQ 路由
+     */
     @Override
     public MqRoute resolve(Object payload, MqSendOptions options) {
         if (payload == null) {
             throw new MqException("MQ payload must not be null");
         }
+        MqSendOptions actualOptions = MqSendOptions.copyOf(options);
         MqEvent event = payload.getClass().getAnnotation(MqEvent.class);
-        String topic = resolveTopic(options, event);
+        String topic = resolveTopic(actualOptions, event);
         if (!StringUtils.hasText(topic)) {
             throw new MqException("MQ topic must not be blank");
         }
-        String tag = resolveTag(options, event);
-        String keyExpression = resolveKeyExpression(options, event);
+        String tag = resolveTag(actualOptions, event);
+        String keyExpression = resolveKeyExpression(actualOptions, event);
         String key = resolveKey(payload, keyExpression);
         return new MqRoute(RocketMqNaming.normalizeTopic(topic, properties), tag, key);
     }

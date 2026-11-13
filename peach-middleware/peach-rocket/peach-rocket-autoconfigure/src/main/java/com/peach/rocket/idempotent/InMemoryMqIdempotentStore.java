@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.util.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 有界的单 JVM 消费幂等存储，支持 owner token 核对与过期认领。
@@ -15,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @Version 1.0.0
  * @CreateTime 2026/11/12
  */
+@Slf4j
 public class InMemoryMqIdempotentStore implements MqIdempotentStore {
 
     private static final int DEFAULT_MAX_ENTRIES = 32768;
@@ -53,6 +56,8 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
                 cleanupExpired(now);
             }
             if (existing == null && records.size() >= maxEntries) {
+                log.warn("[mq-idempotent] in-memory capacity reached. maxEntries={} retainedEntries={}",
+                        maxEntries, records.size());
                 throw new IllegalStateException("In-memory MQ idempotent capacity reached; configure a durable store");
             }
             String token = UUID.randomUUID().toString();
@@ -120,7 +125,7 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
 
     private Record requireOwner(MqIdempotentContext context, MqIdempotentClaim claim) {
         if (claim == null || claim.status() != MqIdempotentClaim.Status.ACQUIRED
-                || claim.ownerToken() == null || claim.ownerToken().isBlank()) {
+                || !StringUtils.hasText(claim.ownerToken())) {
             throw new IllegalArgumentException("MQ idempotent owner token is required");
         }
         Record current = records.get(storageKey(context));

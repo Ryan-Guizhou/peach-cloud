@@ -155,6 +155,20 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 
 **内存 Outbox 仅限开发环境：** 默认 `InMemoryMqOutboxStore` 保留现有发送接口，但最多缓存 `1024` 条、每条载荷不超过 `65536` 字节，终态保持 `24h`（读写时惰性清理），认领租约 `5m`；配置分别为 `peach.rocket.outbox.in-memory-max-entries`、`in-memory-max-payload-bytes`、`in-memory-retention`、`in-memory-lease`。多 Dispatcher 通过 `claimPending` 原子领取并以令牌完成 ACK/FAIL，失败重试有界且没有后台清理线程。容量耗尽拒绝新消息，绝不删除未发送消息。**内存 Store 重启丢数据**，生产开启 `peach.rocket.outbox.require-durable=true` 并提供 JDBC 等持久化实现，缺失会启动失败；即使持久化仍是 at-least-once。
 
+### 生产端消息额度与背压
+
+Producer 的**编码后信封**默认上限为 4 MiB，业务 Header（含业务 Key）最多 64 项、64 KiB；单个 Producer 实例最多 1024 个同时发送中的请求，等待额度超过 200ms 直接拒绝。配额仅在**本地 JVM/Producer 实例**生效，不取代 Broker 的消息大小限制或集群全局限流。
+
+| 配置（`peach.rocket.producer.*`） | 默认值 |
+| --- | --- |
+| `max-payload-bytes` | `4194304`（4 MiB） |
+| `max-header-count` | `64` |
+| `max-header-bytes` | `65536`（64 KiB） |
+| `max-inflight` | `1024` |
+| `inflight-acquire-timeout` | `200ms` |
+
+同步/单向发送在调用退出时释放额度；**异步发送只在 SDK 成功/失败回调，或 SDK 提交同步失败时释放额度**，对并发竞争做幂等释放，避免重复释放或回调前释放。配额饱和时抛出 `MqException`，由调用方负责限速/重试；不能误记为 Broker 已确认。事务 Producer 独立管理自身额度与生命周期。配置变动需评估业务消息大小和 Broker 限额。
+
 ## 消费并发背压与优雅停机
 
 动态消费者沿用 RocketMQ SDK 自有消费工作线程，不为消息处理额外创建固定线程池或无界队列；所有动态 Consumer 共享进程内执行额度。在 `peach.rocket.consumer.max-inflight` 达到上限或 `inflight-acquire-timeout` 超时后，并发模式返回 `RECONSUME_LATER`，顺序模式返回 `SUSPEND_CURRENT_QUEUE_A_MOMENT`，**不确认未处理的消息**。现有消息幂等逻辑仍需启用，并且 Broker 重投次数、DLQ 策略应根据业务负载配置。

@@ -45,7 +45,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
 /**
- * PeachRocketMQAuto自动配置。
+ * RocketMQ 核心自动装配：路由、编解码、幂等、消费与 Producer 均支持业务覆盖 SPI。
  *
  * @Author Mr Shu
  * @Version 1.0.0

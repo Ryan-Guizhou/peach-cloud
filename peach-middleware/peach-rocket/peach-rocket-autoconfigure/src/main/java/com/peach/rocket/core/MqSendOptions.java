@@ -1,11 +1,13 @@
 package com.peach.rocket.core;
 
-import java.util.Collections;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.util.CollectionUtils;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * MQ发送选项。
+ * RocketMQ 单次发送选项。
  * <p>该对象用于描述一次发送行为的临时覆盖项，优先级高于事件注解中的默认声明。适合在业务侧按场景动态指定
  * topic、tag、key、顺序消息分片键、超时时间、延迟级别以及透传 headers。
  *
@@ -13,6 +15,8 @@ import java.util.Map;
  * @Version 1.0.0
  * @CreateTime 2026/6/26
  */
+@Getter
+@Setter
 public class MqSendOptions {
 
     /**
@@ -79,60 +83,13 @@ public class MqSendOptions {
         return new Builder();
     }
 
-    public String getTopic() {
-        return topic;
-    }
-
-    public void setTopic(String topic) {
-        this.topic = topic;
-    }
-
-    public String getTag() {
-        return tag;
-    }
-
-    public void setTag(String tag) {
-        this.tag = tag;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public String getShardingKey() {
-        return shardingKey;
-    }
-
-    public void setShardingKey(String shardingKey) {
-        this.shardingKey = shardingKey;
-    }
-
-    public long getTimeoutMillis() {
-        return timeoutMillis;
-    }
-
-    public void setTimeoutMillis(long timeoutMillis) {
-        this.timeoutMillis = timeoutMillis;
-    }
-
-    public MqDelay getDelay() {
-        return delay;
-    }
-
-    public void setDelay(MqDelay delay) {
-        this.delay = delay;
-    }
-
-    public Map<String, String> getHeaders() {
-        return headers;
-    }
-
+    /**
+     * 替换消息头时执行防御性拷贝，禁止调用方随后修改本次发送快照。
+     *
+     * @param headers 业务消息头，可为 null
+     */
     public void setHeaders(Map<String, String> headers) {
-        this.headers = headers == null ? new LinkedHashMap<>() : new LinkedHashMap<>(headers);
+        this.headers = CollectionUtils.isEmpty(headers) ? new LinkedHashMap<>() : new LinkedHashMap<>(headers);
     }
 
     public static class Builder {
@@ -179,7 +136,9 @@ public class MqSendOptions {
         }
 
         public Builder headers(Map<String, String> headers) {
-            options.headers.putAll(headers == null ? Collections.<String, String>emptyMap() : headers);
+            if (!CollectionUtils.isEmpty(headers)) {
+                options.headers.putAll(headers);
+            }
             return this;
         }
 

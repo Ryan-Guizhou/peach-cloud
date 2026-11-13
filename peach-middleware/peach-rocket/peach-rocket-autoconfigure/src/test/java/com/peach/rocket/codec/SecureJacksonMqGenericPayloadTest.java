@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.core.MqMessageEnvelope;
-import com.peach.rocket.exception.MqException;
 import com.peach.rocket.security.AesGcmMqPayloadEncryptor;
 import com.peach.rocket.security.ConfigMqKeyProvider;
 import java.time.LocalDateTime;
@@ -13,7 +12,6 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * 加密泛型消息及历史密钥轮换后的解码验证。

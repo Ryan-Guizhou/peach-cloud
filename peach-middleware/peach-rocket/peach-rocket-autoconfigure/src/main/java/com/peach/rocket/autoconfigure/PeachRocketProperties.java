@@ -1,6 +1,8 @@
 package com.peach.rocket.autoconfigure;
 
 import com.peach.rocket.exception.MqException;
+import lombok.Getter;
+import lombok.Setter;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,18 +13,24 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
 /**
- * PeachRocketMQ配置属性。
+ * Peach RocketMQ 的统一配置契约。
+ *
+ * <p>嵌套属性使用 Lombok 生成 Spring Binder 所需访问器，保留显式校验、
+ * 默认值及集合的空值处理；安全配置不生成包含密钥的 toString。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/26
  */
+@Getter
+@Setter
 @ConfigurationProperties(prefix = "peach.rocket")
 public class PeachRocketProperties implements InitializingBean {
 
     /**
      * 是否启用 Peach RocketMQ 自动配置，默认启用。
      */
+    /** 是否启用当前子功能。 */
     private boolean enabled = true;
 
     /**
@@ -61,6 +69,11 @@ public class PeachRocketProperties implements InitializingBean {
         if (producer.defaultTimeout == null || producer.defaultTimeout.isNegative() || producer.defaultTimeout.isZero()) {
             throw new MqException("peach.rocket.producer.default-timeout must be positive");
         }
+        if (producer.maxPayloadBytes < 1 || producer.maxHeaderCount < 1 || producer.maxHeaderBytes < 1
+                || producer.maxInflight < 1 || producer.inflightAcquireTimeout == null
+                || producer.inflightAcquireTimeout.isNegative()) {
+            throw new MqException("peach.rocket.producer resource limits are invalid");
+        }
         if (consumer.idempotentExpire == null || consumer.idempotentExpire.isNegative() || consumer.idempotentExpire.isZero()) {
             throw new MqException("peach.rocket.consumer.idempotent-expire must be positive");
         }
@@ -91,20 +104,6 @@ public class PeachRocketProperties implements InitializingBean {
         }
     }
 
-    public boolean isEnabled() { return enabled; }
-    public void setEnabled(boolean enabled) { this.enabled = enabled; }
-    public String getNamespace() { return namespace; }
-    public void setNamespace(String namespace) { this.namespace = namespace; }
-    public String getAppName() { return appName; }
-    public void setAppName(String appName) { this.appName = appName; }
-    public Producer getProducer() { return producer; }
-    public Consumer getConsumer() { return consumer; }
-    public Naming getNaming() { return naming; }
-    public Security getSecurity() { return security; }
-    public Transaction getTransaction() { return transaction; }
-    public Topic getTopic() { return topic; }
-    public Outbox getOutbox() { return outbox; }
-    public Jdbc getJdbc() { return jdbc; }
 
     /**
      * 生产者。
@@ -113,10 +112,39 @@ public class PeachRocketProperties implements InitializingBean {
      * @Version 1.0.0
      * @CreateTime 2026/3/20 16:58
      */
+    @Getter
+    @Setter
     public static class Producer {
+        /**
+         * 普通发送超时时间。
+         */
         private Duration defaultTimeout = Duration.ofSeconds(3);
-        public Duration getDefaultTimeout() { return defaultTimeout; }
-        public void setDefaultTimeout(Duration defaultTimeout) { this.defaultTimeout = defaultTimeout; }
+
+        /**
+         * 已编码消息信封允许的最大字节数；默认 4 MiB。
+         */
+        private int maxPayloadBytes = 4 * 1024 * 1024;
+
+        /**
+         * 消息头最大项数，包括业务 Key 属性。
+         */
+        private int maxHeaderCount = 64;
+
+        /**
+         * 消息头 Key/Value UTF-8 总字节上限。
+         */
+        private int maxHeaderBytes = 64 * 1024;
+
+        /**
+         * 单个 Producer 实例的同步、异步和单向发送并发总上限。
+         */
+        private int maxInflight = 1024;
+
+        /**
+         * 获取发送额度允许等待的最长时间。
+         */
+        /** 等待业务执行额度的最长时间。 */
+        private Duration inflightAcquireTimeout = Duration.ofMillis(200);
     }
 
     /**
@@ -126,46 +154,31 @@ public class PeachRocketProperties implements InitializingBean {
      * @Version 1.0.0
      * @CreateTime 2026/3/20 16:58
      */
+    @Getter
+    @Setter
     public static class Consumer {
+        /** 是否启用消费幂等；默认启用，内存实现仅适用于单 JVM。 */
         private boolean enableIdempotent = true;
+        /** 幂等记录有效期；默认 24 小时。 */
         private Duration idempotentExpire = Duration.ofHours(24);
+        /** 是否扫描并启动带注解的动态 Consumer。 */
         private boolean dynamicRegister = true;
+        /** RocketMQ SDK 单 Consumer 的最小工作线程数。 */
         private int consumeThreadMin = 1;
+        /** RocketMQ SDK 单 Consumer 的最大工作线程数。 */
         private int consumeThreadMax = 20;
+        /** 本地消费幂等缓存条目上限。 */
         private int inMemoryMaxEntries = 32768;
+        /** 生产配置可要求使用具备 Owner Token 的持久化幂等 Store。 */
         private boolean requireDurableIdempotency = false;
+        /** 同一应用允许注册的最大动态 Consumer 数量。 */
         private int maxDynamicConsumers = 64;
+        /** 动态 Consumer 共享的本地业务 Handler 最大并发数。 */
         private int maxInflight = 128;
+        /** 等待业务执行额度的最长时间。 */
         private Duration inflightAcquireTimeout = Duration.ofMillis(200);
+        /** 停止 Consumer 前等待在途业务排空的最长时间。 */
         private Duration shutdownDrainTimeout = Duration.ofSeconds(30);
-        public boolean isEnableIdempotent() { return enableIdempotent; }
-        public void setEnableIdempotent(boolean enableIdempotent) { this.enableIdempotent = enableIdempotent; }
-        public Duration getIdempotentExpire() { return idempotentExpire; }
-        public void setIdempotentExpire(Duration idempotentExpire) { this.idempotentExpire = idempotentExpire; }
-        public boolean isDynamicRegister() { return dynamicRegister; }
-        public void setDynamicRegister(boolean dynamicRegister) { this.dynamicRegister = dynamicRegister; }
-        public int getConsumeThreadMin() { return consumeThreadMin; }
-        public void setConsumeThreadMin(int consumeThreadMin) { this.consumeThreadMin = consumeThreadMin; }
-        public int getConsumeThreadMax() { return consumeThreadMax; }
-        public void setConsumeThreadMax(int consumeThreadMax) { this.consumeThreadMax = consumeThreadMax; }
-        public int getInMemoryMaxEntries() { return inMemoryMaxEntries; }
-        public void setInMemoryMaxEntries(int inMemoryMaxEntries) { this.inMemoryMaxEntries = inMemoryMaxEntries; }
-        public int getMaxDynamicConsumers() { return maxDynamicConsumers; }
-        public void setMaxDynamicConsumers(int maxDynamicConsumers) { this.maxDynamicConsumers = maxDynamicConsumers; }
-        public int getMaxInflight() { return maxInflight; }
-        public void setMaxInflight(int maxInflight) { this.maxInflight = maxInflight; }
-        public Duration getInflightAcquireTimeout() { return inflightAcquireTimeout; }
-        public void setInflightAcquireTimeout(Duration inflightAcquireTimeout) {
-            this.inflightAcquireTimeout = inflightAcquireTimeout;
-        }
-        public Duration getShutdownDrainTimeout() { return shutdownDrainTimeout; }
-        public void setShutdownDrainTimeout(Duration shutdownDrainTimeout) {
-            this.shutdownDrainTimeout = shutdownDrainTimeout;
-        }
-        public boolean isRequireDurableIdempotency() { return requireDurableIdempotency; }
-        public void setRequireDurableIdempotency(boolean requireDurableIdempotency) {
-            this.requireDurableIdempotency = requireDurableIdempotency;
-        }
     }
 
     /**
@@ -175,24 +188,19 @@ public class PeachRocketProperties implements InitializingBean {
      * @Version 1.0.0
      * @CreateTime 2026/3/20 16:58
      */
+    @Getter
+    @Setter
     public static class Naming {
+        /** 业务 Topic 前缀。 */
         private String topicPrefix = "biz";
+        /** 可选 Consumer Group 前缀。 */
         private String groupPrefix = "cg";
+        /** 环境与前缀之间的分隔符。 */
         private String topicSeparator = "-";
+        /** 是否自动为 Topic 增加环境前缀。 */
         private boolean autoPrefixEnv = true;
+        /** 是否显式为 Consumer Group 增加环境前缀；默认关闭保护历史位点。 */
         private boolean autoPrefixConsumerGroup = false;
-        public boolean isAutoPrefixConsumerGroup() { return autoPrefixConsumerGroup; }
-        public void setAutoPrefixConsumerGroup(boolean autoPrefixConsumerGroup) {
-            this.autoPrefixConsumerGroup = autoPrefixConsumerGroup;
-        }
-        public String getTopicPrefix() { return topicPrefix; }
-        public void setTopicPrefix(String topicPrefix) { this.topicPrefix = topicPrefix; }
-        public String getGroupPrefix() { return groupPrefix; }
-        public void setGroupPrefix(String groupPrefix) { this.groupPrefix = groupPrefix; }
-        public String getTopicSeparator() { return topicSeparator; }
-        public void setTopicSeparator(String topicSeparator) { this.topicSeparator = topicSeparator; }
-        public boolean isAutoPrefixEnv() { return autoPrefixEnv; }
-        public void setAutoPrefixEnv(boolean autoPrefixEnv) { this.autoPrefixEnv = autoPrefixEnv; }
     }
 
     /**
@@ -202,32 +210,28 @@ public class PeachRocketProperties implements InitializingBean {
      * @Version 1.0.0
      * @CreateTime 2026/3/20 16:58
      */
+    @Getter
+    @Setter
     public static class Security {
+        /** 是否启用当前子功能，默认关闭。 */
         private boolean enabled = false;
+        /** 是否对所有业务载荷启用加密。 */
         private boolean encryptPayload = false;
+        /** 消息加密算法标识。 */
         private String algorithm = "AES_GCM";
+        /** 新消息使用的活动密钥 ID。 */
         private String keyId = "default";
+        /** 旧版单密钥配置；严禁写入仓库或输出到日志。 */
         private String key = "";
+        /** 按 keyId 配置的密钥映射，支持历史消息密钥轮换。 */
         private Map<String, String> keys = new LinkedHashMap<>();
+        /** 是否按 Base64 解码配置的密钥。 */
         private boolean base64Key = false;
+        /** 需要加密的 Topic 列表。 */
         private List<String> encryptTopics = new ArrayList<String>();
-        public boolean isEnabled() { return enabled; }
-        public void setEnabled(boolean enabled) { this.enabled = enabled; }
-        public boolean isEncryptPayload() { return encryptPayload; }
-        public void setEncryptPayload(boolean encryptPayload) { this.encryptPayload = encryptPayload; }
-        public String getAlgorithm() { return algorithm; }
-        public void setAlgorithm(String algorithm) { this.algorithm = algorithm; }
-        public String getKeyId() { return keyId; }
-        public void setKeyId(String keyId) { this.keyId = keyId; }
-        public String getKey() { return key; }
-        public void setKey(String key) { this.key = key; }
-        public Map<String, String> getKeys() { return keys; }
         public void setKeys(Map<String, String> keys) {
             this.keys = keys == null ? new LinkedHashMap<>() : new LinkedHashMap<>(keys);
         }
-        public boolean isBase64Key() { return base64Key; }
-        public void setBase64Key(boolean base64Key) { this.base64Key = base64Key; }
-        public List<String> getEncryptTopics() { return encryptTopics; }
         public void setEncryptTopics(List<String> encryptTopics) { this.encryptTopics = encryptTopics == null ? new ArrayList<String>() : encryptTopics; }
     }
 
@@ -238,13 +242,13 @@ public class PeachRocketProperties implements InitializingBean {
      * @Version 1.0.0
      * @CreateTime 2026/3/20 16:58
      */
+    @Getter
+    @Setter
     public static class Transaction {
+        /** 是否启用当前子功能。 */
         private boolean enabled = true;
+        /** 事务 Producer Group，需与 Broker 配置匹配。 */
         private String producerGroup = "peach-rocket-transaction-producer";
-        public boolean isEnabled() { return enabled; }
-        public void setEnabled(boolean enabled) { this.enabled = enabled; }
-        public String getProducerGroup() { return producerGroup; }
-        public void setProducerGroup(String producerGroup) { this.producerGroup = producerGroup; }
     }
 
     /**
@@ -254,24 +258,21 @@ public class PeachRocketProperties implements InitializingBean {
      * @Version 1.0.0
      * @CreateTime 2026/3/20 16:58
      */
+    @Getter
+    @Setter
     public static class Topic {
+        /** 是否允许在应用启动时尝试创建 Topic；生产推荐关闭。 */
         private boolean autoCreate = false;
+        /** Topic 默认读队列数量。 */
         private int readQueueNums = 4;
+        /** Topic 默认写队列数量。 */
         private int writeQueueNums = 4;
+        /** 是否自动发现消费者声明的 Topic。 */
         private boolean includeConsumerTopics = true;
+        /** 是否自动发现事务处理器声明的 Topic。 */
         private boolean includeTransactionTopics = true;
+        /** 额外显式声明的 Topic。 */
         private List<String> topics = new ArrayList<String>();
-        public boolean isAutoCreate() { return autoCreate; }
-        public void setAutoCreate(boolean autoCreate) { this.autoCreate = autoCreate; }
-        public int getReadQueueNums() { return readQueueNums; }
-        public void setReadQueueNums(int readQueueNums) { this.readQueueNums = readQueueNums; }
-        public int getWriteQueueNums() { return writeQueueNums; }
-        public void setWriteQueueNums(int writeQueueNums) { this.writeQueueNums = writeQueueNums; }
-        public boolean isIncludeConsumerTopics() { return includeConsumerTopics; }
-        public void setIncludeConsumerTopics(boolean includeConsumerTopics) { this.includeConsumerTopics = includeConsumerTopics; }
-        public boolean isIncludeTransactionTopics() { return includeTransactionTopics; }
-        public void setIncludeTransactionTopics(boolean includeTransactionTopics) { this.includeTransactionTopics = includeTransactionTopics; }
-        public List<String> getTopics() { return topics; }
         public void setTopics(List<String> topics) { this.topics = topics == null ? new ArrayList<String>() : topics; }
     }
 
@@ -282,10 +283,11 @@ public class PeachRocketProperties implements InitializingBean {
      * @Version 1.0.0
      * @CreateTime 2026/11/12
      */
+    @Getter
+    @Setter
     public static class Jdbc {
+        /** 是否启用当前子功能，默认关闭。 */
         private boolean enabled = false;
-        public boolean isEnabled() { return enabled; }
-        public void setEnabled(boolean enabled) { this.enabled = enabled; }
     }
 
     /**
@@ -295,36 +297,28 @@ public class PeachRocketProperties implements InitializingBean {
      * @Version 1.0.0
      * @CreateTime 2026/3/20 16:58
      */
+    @Getter
+    @Setter
     public static class Outbox {
+        /** 是否启用当前子功能，默认关闭。 */
         private boolean enabled = false;
+        /** Outbox 每轮最多领取的消息数。 */
         private int batchSize = 50;
+        /** Outbox 扫描间隔，单位毫秒。 */
         private long scanIntervalMs = 2000L;
+        /** 是否强制要求持久化 Outbox Store。 */
         private boolean requireDurable = false;
+        /** 本地 Outbox 最大记录数。 */
         private int inMemoryMaxEntries = 1024;
+        /** 本地 Outbox 单条消息最大字节数。 */
         private int inMemoryMaxPayloadBytes = 65536;
+        /** 本地 Outbox 已完成记录的保留时间。 */
         private Duration inMemoryRetention = Duration.ofHours(24);
+        /** 本地 Outbox 认领租约时间。 */
         private Duration inMemoryLease = Duration.ofMinutes(5);
+        /** 是否使用已配置的受管执行器并行投递普通 Outbox 消息。 */
         private boolean parallelEnabled = false;
+        /** 并行投递绑定的受管 ExecutorService Bean 名称。 */
         private String executorBeanName = "rocket-outboxVirtualExecutor";
-        public boolean isParallelEnabled() { return parallelEnabled; }
-        public void setParallelEnabled(boolean parallelEnabled) { this.parallelEnabled = parallelEnabled; }
-        public String getExecutorBeanName() { return executorBeanName; }
-        public void setExecutorBeanName(String executorBeanName) { this.executorBeanName = executorBeanName; }
-        public boolean isEnabled() { return enabled; }
-        public void setEnabled(boolean enabled) { this.enabled = enabled; }
-        public int getBatchSize() { return batchSize; }
-        public void setBatchSize(int batchSize) { this.batchSize = batchSize; }
-        public long getScanIntervalMs() { return scanIntervalMs; }
-        public void setScanIntervalMs(long scanIntervalMs) { this.scanIntervalMs = scanIntervalMs; }
-        public boolean isRequireDurable() { return requireDurable; }
-        public void setRequireDurable(boolean requireDurable) { this.requireDurable = requireDurable; }
-        public int getInMemoryMaxEntries() { return inMemoryMaxEntries; }
-        public void setInMemoryMaxEntries(int inMemoryMaxEntries) { this.inMemoryMaxEntries = inMemoryMaxEntries; }
-        public int getInMemoryMaxPayloadBytes() { return inMemoryMaxPayloadBytes; }
-        public void setInMemoryMaxPayloadBytes(int inMemoryMaxPayloadBytes) { this.inMemoryMaxPayloadBytes = inMemoryMaxPayloadBytes; }
-        public Duration getInMemoryRetention() { return inMemoryRetention; }
-        public void setInMemoryRetention(Duration inMemoryRetention) { this.inMemoryRetention = inMemoryRetention; }
-        public Duration getInMemoryLease() { return inMemoryLease; }
-        public void setInMemoryLease(Duration inMemoryLease) { this.inMemoryLease = inMemoryLease; }
     }
 }

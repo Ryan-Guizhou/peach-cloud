@@ -212,6 +212,36 @@
       "defaultValue": "3s"
     },
     {
+      "name": "peach.rocket.producer.inflight-acquire-timeout",
+      "type": "java.time.Duration",
+      "description": "发送端准入额度最长等待时间，超限后 fail-fast。",
+      "defaultValue": "200ms"
+    },
+    {
+      "name": "peach.rocket.producer.max-header-bytes",
+      "type": "java.lang.Integer",
+      "description": "消息头 Key/Value 的 UTF-8 总字节上限。",
+      "defaultValue": 65536
+    },
+    {
+      "name": "peach.rocket.producer.max-header-count",
+      "type": "java.lang.Integer",
+      "description": "消息头最大条目数，含业务 Key；超过后拒绝发送。",
+      "defaultValue": 64
+    },
+    {
+      "name": "peach.rocket.producer.max-inflight",
+      "type": "java.lang.Integer",
+      "description": "单个 Producer 实例最多并发执行/等待回调的发送数。",
+      "defaultValue": 1024
+    },
+    {
+      "name": "peach.rocket.producer.max-payload-bytes",
+      "type": "java.lang.Integer",
+      "description": "生产端编码后的消息体（含信封）的最大字节数，超过后发送前拒绝。",
+      "defaultValue": 4194304
+    },
+    {
       "name": "peach.rocket.security",
       "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Security",
       "description": "RocketMQ 消息载荷加密、密钥与安全策略配置。"

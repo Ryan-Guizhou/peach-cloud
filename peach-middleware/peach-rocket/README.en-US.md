@@ -155,6 +155,20 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 
 **Development-only in-memory Outbox:** the default `InMemoryMqOutboxStore` caps stored events at 1,024 and payload bytes at 65,536 per event. Terminal records are cleaned opportunistically after 24h, claims have a 5-minute lease, and no background cleaning threads are created. Settings: `peach.rocket.outbox.in-memory-max-entries`, `in-memory-max-payload-bytes`, `in-memory-retention`, and `in-memory-lease`. Concurrent dispatchers atomically claim and acknowledge with owner tokens, and retry remains bounded. Capacity exhaustion rejects new writes without losing unsent messages. **In-memory Outbox loses messages on restart.** Production should enable `peach.rocket.outbox.require-durable=true` and register a transactional JDBC/other durable store; startup fails otherwise. This is still at-least-once, not exactly-once.
 
+### Producer Payload Limits and Backpressure
+
+The default **encoded envelope** limit is 4 MiB; message headers (including business key) are limited to 64 entries and 64 KiB. Each Producer instance allows up to 1,024 in-flight sends; capacity acquisition waits up to 200ms before rejecting. These are **local JVM/Producer limits**, not cluster-wide quotas or substitutes for Broker limits.
+
+| Property (`peach.rocket.producer.*`) | Default |
+| --- | --- |
+| `max-payload-bytes` | `4194304` (4 MiB) |
+| `max-header-count` | `64` |
+| `max-header-bytes` | `65536` (64 KiB) |
+| `max-inflight` | `1024` |
+| `inflight-acquire-timeout` | `200ms` |
+
+Synchronous and one-way sends release permits when the SDK call exits. **Asynchronous sends release permits only after SDK success/failure callbacks or a synchronous SDK submission exception**, with idempotent release under races. Saturation throws `MqException`, not an acknowledged success; callers must apply their retry/rate-limit policies. Transaction Producers manage their own admission and lifecycle. Review payload sizes and Broker configuration before overriding the limits.
+
 ## Consumer Backpressure and Graceful Shutdown
 
 Dynamic consumers use RocketMQ SDK-managed worker threads without adding another fixed executor or unbounded message queue. All dynamic consumers in one JVM share a bounded handler execution budget. When `max-inflight` is saturated beyond `inflight-acquire-timeout`, concurrent listeners return `RECONSUME_LATER`, and orderly listeners return `SUSPEND_CURRENT_QUEUE_A_MOMENT`. **Unprocessed messages are not acknowledged.** Keep idempotency enabled and configure retry/DLQ policy for the expected load.

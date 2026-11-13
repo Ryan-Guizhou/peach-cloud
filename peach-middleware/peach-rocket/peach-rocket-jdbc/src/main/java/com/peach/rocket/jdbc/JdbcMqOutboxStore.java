@@ -1,8 +1,6 @@
 package com.peach.rocket.jdbc;
 
 import java.time.ZoneId;
-
-
 import com.peach.rocket.outbox.MqOutboxEvent;
 import com.peach.rocket.core.MqDelay;
 import com.peach.rocket.core.MqDelayLevels;
@@ -188,7 +186,7 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
     private static String requireClaimToken(MqOutboxClaim claim) {
         Objects.requireNonNull(claim, "claim");
         String token = claim.claimToken();
-        if (token == null || token.isBlank()) {
+        if (!StringUtils.hasText(token)) {
             throw new IllegalArgumentException("JDBC Outbox requires a nonblank claim token");
         }
         return token;
