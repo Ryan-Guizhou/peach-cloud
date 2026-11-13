@@ -27,7 +27,7 @@ import java.util.concurrent.ExecutorService;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * PeachRocketMQ发件箱Auto自动配置。
+ * RocketMQ Outbox 自动装配，生产中可要求持久化 Store 并可复用受管虚拟线程执行器。
  *
  * @Author Mr Shu
  * @Version 1.0.0

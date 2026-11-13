@@ -30,6 +30,7 @@ public class PeachRocketProperties implements InitializingBean {
     /**
      * 是否启用 Peach RocketMQ 自动配置，默认启用。
      */
+    /** 是否启用当前子功能。 */
     private boolean enabled = true;
 
     /**
@@ -142,6 +143,7 @@ public class PeachRocketProperties implements InitializingBean {
         /**
          * 获取发送额度允许等待的最长时间。
          */
+        /** 等待业务执行额度的最长时间。 */
         private Duration inflightAcquireTimeout = Duration.ofMillis(200);
     }
 
@@ -155,16 +157,27 @@ public class PeachRocketProperties implements InitializingBean {
     @Getter
     @Setter
     public static class Consumer {
+        /** 是否启用消费幂等；默认启用，内存实现仅适用于单 JVM。 */
         private boolean enableIdempotent = true;
+        /** 幂等记录有效期；默认 24 小时。 */
         private Duration idempotentExpire = Duration.ofHours(24);
+        /** 是否扫描并启动带注解的动态 Consumer。 */
         private boolean dynamicRegister = true;
+        /** RocketMQ SDK 单 Consumer 的最小工作线程数。 */
         private int consumeThreadMin = 1;
+        /** RocketMQ SDK 单 Consumer 的最大工作线程数。 */
         private int consumeThreadMax = 20;
+        /** 本地消费幂等缓存条目上限。 */
         private int inMemoryMaxEntries = 32768;
+        /** 生产配置可要求使用具备 Owner Token 的持久化幂等 Store。 */
         private boolean requireDurableIdempotency = false;
+        /** 同一应用允许注册的最大动态 Consumer 数量。 */
         private int maxDynamicConsumers = 64;
+        /** 动态 Consumer 共享的本地业务 Handler 最大并发数。 */
         private int maxInflight = 128;
+        /** 等待业务执行额度的最长时间。 */
         private Duration inflightAcquireTimeout = Duration.ofMillis(200);
+        /** 停止 Consumer 前等待在途业务排空的最长时间。 */
         private Duration shutdownDrainTimeout = Duration.ofSeconds(30);
     }
 
@@ -178,10 +191,15 @@ public class PeachRocketProperties implements InitializingBean {
     @Getter
     @Setter
     public static class Naming {
+        /** 业务 Topic 前缀。 */
         private String topicPrefix = "biz";
+        /** 可选 Consumer Group 前缀。 */
         private String groupPrefix = "cg";
+        /** 环境与前缀之间的分隔符。 */
         private String topicSeparator = "-";
+        /** 是否自动为 Topic 增加环境前缀。 */
         private boolean autoPrefixEnv = true;
+        /** 是否显式为 Consumer Group 增加环境前缀；默认关闭保护历史位点。 */
         private boolean autoPrefixConsumerGroup = false;
     }
 
@@ -195,13 +213,21 @@ public class PeachRocketProperties implements InitializingBean {
     @Getter
     @Setter
     public static class Security {
+        /** 是否启用当前子功能，默认关闭。 */
         private boolean enabled = false;
+        /** 是否对所有业务载荷启用加密。 */
         private boolean encryptPayload = false;
+        /** 消息加密算法标识。 */
         private String algorithm = "AES_GCM";
+        /** 新消息使用的活动密钥 ID。 */
         private String keyId = "default";
+        /** 旧版单密钥配置；严禁写入仓库或输出到日志。 */
         private String key = "";
+        /** 按 keyId 配置的密钥映射，支持历史消息密钥轮换。 */
         private Map<String, String> keys = new LinkedHashMap<>();
+        /** 是否按 Base64 解码配置的密钥。 */
         private boolean base64Key = false;
+        /** 需要加密的 Topic 列表。 */
         private List<String> encryptTopics = new ArrayList<String>();
         public void setKeys(Map<String, String> keys) {
             this.keys = keys == null ? new LinkedHashMap<>() : new LinkedHashMap<>(keys);
@@ -219,7 +245,9 @@ public class PeachRocketProperties implements InitializingBean {
     @Getter
     @Setter
     public static class Transaction {
+        /** 是否启用当前子功能。 */
         private boolean enabled = true;
+        /** 事务 Producer Group，需与 Broker 配置匹配。 */
         private String producerGroup = "peach-rocket-transaction-producer";
     }
 
@@ -233,11 +261,17 @@ public class PeachRocketProperties implements InitializingBean {
     @Getter
     @Setter
     public static class Topic {
+        /** 是否允许在应用启动时尝试创建 Topic；生产推荐关闭。 */
         private boolean autoCreate = false;
+        /** Topic 默认读队列数量。 */
         private int readQueueNums = 4;
+        /** Topic 默认写队列数量。 */
         private int writeQueueNums = 4;
+        /** 是否自动发现消费者声明的 Topic。 */
         private boolean includeConsumerTopics = true;
+        /** 是否自动发现事务处理器声明的 Topic。 */
         private boolean includeTransactionTopics = true;
+        /** 额外显式声明的 Topic。 */
         private List<String> topics = new ArrayList<String>();
         public void setTopics(List<String> topics) { this.topics = topics == null ? new ArrayList<String>() : topics; }
     }
@@ -252,6 +286,7 @@ public class PeachRocketProperties implements InitializingBean {
     @Getter
     @Setter
     public static class Jdbc {
+        /** 是否启用当前子功能，默认关闭。 */
         private boolean enabled = false;
     }
 
@@ -265,15 +300,25 @@ public class PeachRocketProperties implements InitializingBean {
     @Getter
     @Setter
     public static class Outbox {
+        /** 是否启用当前子功能，默认关闭。 */
         private boolean enabled = false;
+        /** Outbox 每轮最多领取的消息数。 */
         private int batchSize = 50;
+        /** Outbox 扫描间隔，单位毫秒。 */
         private long scanIntervalMs = 2000L;
+        /** 是否强制要求持久化 Outbox Store。 */
         private boolean requireDurable = false;
+        /** 本地 Outbox 最大记录数。 */
         private int inMemoryMaxEntries = 1024;
+        /** 本地 Outbox 单条消息最大字节数。 */
         private int inMemoryMaxPayloadBytes = 65536;
+        /** 本地 Outbox 已完成记录的保留时间。 */
         private Duration inMemoryRetention = Duration.ofHours(24);
+        /** 本地 Outbox 认领租约时间。 */
         private Duration inMemoryLease = Duration.ofMinutes(5);
+        /** 是否使用已配置的受管执行器并行投递普通 Outbox 消息。 */
         private boolean parallelEnabled = false;
+        /** 并行投递绑定的受管 ExecutorService Bean 名称。 */
         private String executorBeanName = "rocket-outboxVirtualExecutor";
     }
 }

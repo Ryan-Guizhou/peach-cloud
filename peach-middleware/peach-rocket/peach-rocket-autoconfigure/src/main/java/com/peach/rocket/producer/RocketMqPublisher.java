@@ -234,6 +234,15 @@ public class RocketMqPublisher implements MqPublisher {
         return actualOptions;
     }
 
+    /**
+     * 在 Broker I/O 之前完成信封编码、Header 拷贝和消息预算校验。
+     *
+     * @param payload 业务消息
+     * @param options 单次发送选项快照
+     * @param route 最终 Topic、Tag 与业务 Key
+     * @return SDK 可发送的二进制消息
+     * @param <T> 业务消息类型
+     */
     private <T> Message<byte[]> buildMessage(T payload, MqSendOptions options, MqRoute route) {
         MqMessageEnvelope<T> envelope = MqMessageEnvelope.create(
                 UUID.randomUUID().toString(),
@@ -249,12 +258,13 @@ public class RocketMqPublisher implements MqPublisher {
         byte[] encoded = codec.encode(envelope);
         MqProducerMessageGuard.validate(encoded, envelope.headers(), route.key(), properties.getProducer());
         MessageBuilder<byte[]> builder = MessageBuilder.withPayload(encoded);
-        if (StringUtils.hasText(route.key())) {
-            builder.setHeader(MessageConst.PROPERTY_KEYS, route.key());
-        }
         Map<String, String> headers = envelope.headers();
         if (headers != null) {
             headers.forEach(builder::setHeader);
+        }
+        // 内部业务 Key 必须最终设置，避免自定义 Header 覆写 Broker 路由追踪属性。
+        if (StringUtils.hasText(route.key())) {
+            builder.setHeader(MessageConst.PROPERTY_KEYS, route.key());
         }
         return builder.build();
     }

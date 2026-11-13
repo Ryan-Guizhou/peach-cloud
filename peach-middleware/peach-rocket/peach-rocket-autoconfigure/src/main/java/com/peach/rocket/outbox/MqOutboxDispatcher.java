@@ -124,6 +124,12 @@ public class MqOutboxDispatcher {
         });
     }
 
+    /**
+     * 对单条已认领消息执行发送与 token-scoped ACK。
+     * Broker 确认后数据库 ACK 失败只能等待租约重试，不可错误标记发送失败。
+     *
+     * @param claim 带认领令牌的消息快照
+     */
     private void deliver(MqOutboxClaim claim) {
         MqOutboxEvent event = claim.event();
         try {
@@ -182,6 +188,12 @@ public class MqOutboxDispatcher {
             }
     }
 
+    /**
+     * 仅对 Broker 未确认或任务未准入的发送执行 token-scoped 失败更新。
+     *
+     * @param claim 当前认领身份
+     * @param sendError 发送失败原因
+     */
     private void recordSendFailure(MqOutboxClaim claim, RuntimeException sendError) {
         metrics.outbox("send_failed");
         MqOutboxEvent event = claim.event();

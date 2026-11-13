@@ -2,6 +2,8 @@ package com.peach.rocket.context;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import com.peach.rocket.exception.MqException;
+import org.springframework.util.StringUtils;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -43,6 +45,12 @@ public class DefaultMqHeaderResolver {
         Map<String, String> resolved = CollectionUtils.isEmpty(headers)
                 ? new LinkedHashMap<>()
                 : new LinkedHashMap<>(headers);
+        // 在 record 的 Map.copyOf 之前校验用户 Header，避免以 NPE 掩盖输入错误。
+        for (Map.Entry<String, String> header : resolved.entrySet()) {
+            if (!StringUtils.hasText(header.getKey()) || header.getValue() == null) {
+                throw new MqException("MQ header key must have text and value must not be null");
+            }
+        }
         traceContextPropagator.inject(resolved);
         return resolved;
     }
