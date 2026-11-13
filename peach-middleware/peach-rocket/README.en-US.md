@@ -24,6 +24,51 @@ flowchart LR
     Auto --> Consumer["@MqConsumer"]
 ```
 
+## Capability Matrix (Current Implementation)
+
+| Capability | Default | Production boundary |
+| --- | --- | --- |
+| Synchronous, asynchronous and one-way publishing | `MqPublisher` | Synchronous send checks SEND_OK; one-way means submission, not Broker acknowledgement |
+| Orderly / delayed messages | `publishOrderly` / `publishDelay` | Stable shardingKey required; classic RocketMQ delay levels 1–18 |
+| Dynamic consumers | `@MqConsumer` | Concurrent/orderly, clustering/broadcasting, Topic/Tag subscription |
+| Consumer idempotency | In-memory per JVM | Use `peach-rocket-jdbc` or another durable owner-token store in production |
+| Retry and failure handling | Classification + failure receipt SPI | SKIP ACK only after durable receipt; otherwise retry |
+| Transactional messages | Transaction producer and handlers | Separate reliability mechanism from transactional Outbox |
+| Reliable Outbox | Disabled by default | Business transaction persistence plus JDBC leases/token fencing; at-least-once |
+| Outbox ordinary/orderly/delay | JDBC send options persisted | Global strict ordering needs additional business-key serialization |
+| Consumer backpressure | Bounded per-process inflight | No ACK for rejected work; optional managed virtual-thread Outbox |
+| Encryption | Disabled by default | AES-GCM + key ID rotation via protected secret source |
+| Topic management | Auto-create disabled | Pre-create in platform, avoid Broker admin permission in services |
+| Tracing & metrics | Optional peach-observability | Trace context + low-cardinality Micrometer counters/timers |
+
+## Metrics and Alerting
+
+With `peach-observability-starter` and a registered `MeterRegistry`, an optional `MqMetrics` bean is automatically configured; without monitoring support, it remains NOOP.
+
+| Metric | Type | Tags | Monitor |
+| --- | --- | --- | --- |
+| `peach.rocket.publish.total` | Counter | fixed `mode` / `outcome` | sustained send failure/rejection |
+| `peach.rocket.publish.duration` | Timer | fixed `mode` / `outcome` | publish latency percentiles |
+| `peach.rocket.consume.total` | Counter | fixed `outcome` | handler error proportion |
+| `peach.rocket.consume.duration` | Timer | fixed `outcome` | handler latency vs claim lease |
+| `peach.rocket.outbox.total` | Counter | fixed `outcome` | growing send/ack failures |
+| `peach.rocket.consumer.backpressure.total` | Counter | none | sustained admission rejection |
+
+Do **not** tag metrics with message IDs, keys, tenant IDs, dynamic Topics or consumer bean names. Monitor Broker lag and DLQ, durable Outbox backlog, expired claims, and JDBC pool saturation separately. Never log secrets, tokens or message bodies. Distributed tracing uses the existing `MqTraceContextPropagator` SPI.
+
+## Real-Broker Acceptance
+
+The Quickstart contains the opt-in `RocketBrokerEndToEndTest`. Maven CI uses mocked/offline tests by default. Deploy NameServer/Broker first, pre-create `dev-biz-order`, and grant the consumer groups necessary subscription permissions:
+
+```bash
+export PEACH_ROCKET_BROKER_TEST=true
+mvn -B -ntp -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am \
+  -Dtest=RocketBrokerEndToEndTest -Dsurefire.failIfNoSpecifiedTests=false \
+  -Drocketmq.name-server=127.0.0.1:9876 test
+```
+
+The test publishes created and paid order events through a real Broker and waits for the corresponding consumers. **Offline Maven/CI success does not imply real-Broker acceptance.** If no accessible Broker environment exists, mark this check **unverified**. For a production release, additionally verify the JDBC migration, replay, retry/DLQ, graceful restart, consumer offsets and prolonged backlog recovery.
+
 ## Core Objects
 
 | Object | Description |
