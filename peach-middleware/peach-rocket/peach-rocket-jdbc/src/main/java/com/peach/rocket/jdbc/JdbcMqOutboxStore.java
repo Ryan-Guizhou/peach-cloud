@@ -1,11 +1,14 @@
 package com.peach.rocket.jdbc;
 
-import java.time.ZoneId;
+import com.peach.rocket.autoconfigure.PeachRocketProperties;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import java.util.ArrayList;
 import com.peach.rocket.outbox.MqOutboxEvent;
 import com.peach.rocket.core.MqDelay;
 import com.peach.rocket.core.MqDelayLevels;
 import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.exception.MqException;
+import com.peach.rocket.producer.MqProducerMessageGuard;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +20,6 @@ import com.peach.rocket.outbox.MqOutboxStore;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -38,26 +40,29 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
 
     private static final int MAX_RETRY_COUNT = 20;
     private static final int MAX_BATCH_SIZE = 500;
-    private static final int CLAIM_TIMEOUT_MINUTES = 5;
+    private final PeachRocketProperties properties;
 
     private static final String INSERT_SQL =
             "INSERT INTO MQ_OUTBOX_EVENT(MESSAGE_ID,TOPIC,TAG,BUSINESS_KEY,PAYLOAD,SEND_MODE,"
                     + "SHARDING_KEY,DELAY_LEVEL,HEADERS,SEND_TIMEOUT_MS,STATUS,"
                     + "RETRY_COUNT,NEXT_RETRY_TIME,CREATED_AT,UPDATED_AT)"
-                    + " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                    + " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NOW(3),NOW(3),NOW(3))";
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final TypeReference<Map<String, String>> HEADER_TYPE = new TypeReference<>() { };
 
     private final JdbcTemplate jdbcTemplate;
 
+
     /**
-     * 创建 JDBC outbox 存储。
+     * 创建启用认领令牌、租约和事务约束的 JDBC Outbox 存储。
      *
-     * @param jdbcTemplate JDBC 操作模板。
+     * @param jdbcTemplate JDBC 操作模板
+     * @param properties RocketMQ 统一配置
      */
-    public JdbcMqOutboxStore(JdbcTemplate jdbcTemplate) {
+    public JdbcMqOutboxStore(JdbcTemplate jdbcTemplate, PeachRocketProperties properties) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
+        this.properties = Objects.requireNonNull(properties, "properties");
     }
 
     /**
@@ -65,7 +70,28 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
      */
     @Override
     public void save(MqOutboxEvent event) {
+        assertTransaction(false);
+        saveEvent(event);
+    }
+
+    private void saveEvent(MqOutboxEvent event) {
+        Objects.requireNonNull(event, "event");
+        if (!StringUtils.hasText(event.messageId()) || event.messageId().length() > 64
+                || !StringUtils.hasText(event.topic()) || event.topic().length() > 128
+                || event.body() == null || event.body().length > properties.getProducer().getMaxPayloadBytes()) {
+            throw new MqException("Invalid Outbox identifier, topic or encoded payload size");
+        }
         MqSendOptions options = event.options();
+        // 即使业务绕开 Publisher 直接使用 Store，也不得绕过最终发送预算与 Header 策略。
+        MqProducerMessageGuard.validate(event.body(),
+                options == null ? null : options.getHeaders(), event.businessKey(), properties.getProducer());
+        if (options != null && (options.getTimeoutMillis() < 0
+                || options.getTimeoutMillis() >= properties.getJdbc().getOutboxLease().toMillis())) {
+            throw new MqException("Outbox timeout must be shorter than its lease");
+        }
+        if (properties.isProduction() && options != null && StringUtils.hasText(options.getShardingKey())) {
+            throw new MqException("Production Outbox does not support strict orderly delivery");
+        }
         String shardingKey = options == null ? null : options.getShardingKey();
         Integer delayLevel = options == null ? null : MqDelayLevels.resolve(options.getDelay());
         if (StringUtils.hasText(shardingKey) && delayLevel != null) {
@@ -83,7 +109,6 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
                 throw new MqException("Failed to serialize Outbox message headers", ex);
             }
         }
-        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         jdbcTemplate.update(INSERT_SQL,
                 event.messageId(),
                 event.topic(),
@@ -96,19 +121,9 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
                 headers,
                 timeout,
                 MqOutboxStatus.INIT.name(),
-                0,
-                Timestamp.valueOf(now),
-                Timestamp.valueOf(now),
-                Timestamp.valueOf(now));
+                0);
     }
 
-    /**
-     * 查询并认领待发送消息。
-     */
-    @Override
-    public List<MqOutboxEvent> findPending(int batchSize) {
-        return claimPending(batchSize).stream().map(MqOutboxClaim::event).toList();
-    }
 
     /**
      * 使用每批唯一认领标识领取并读取本批消息，避免重复读取同进程尚未完成的旧批次。
@@ -120,7 +135,7 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
     public List<MqOutboxClaim> claimPending(int batchSize) {
         int boundedBatch = Math.clamp(batchSize, 1, MAX_BATCH_SIZE);
         recoverStaleClaims();
-        String batchClaimToken = "scheduler-outbox-" + UUID.randomUUID();
+        String batchClaimToken = "rocket-outbox-" + UUID.randomUUID();
         jdbcTemplate.update(
                 "UPDATE MQ_OUTBOX_EVENT SET STATUS=?,CLAIMED_BY=?,CLAIMED_AT=NOW(3),UPDATED_AT=NOW(3) "
                         + "WHERE STATUS IN (?,?) AND NEXT_RETRY_TIME<=NOW(3) "
@@ -130,16 +145,31 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
                 MqOutboxStatus.INIT.name(),
                 MqOutboxStatus.RETRY.name(),
                 boundedBatch);
+        List<String> corrupt = new ArrayList<>();
+        OutboxRowMapper mapper = new OutboxRowMapper(properties.getProducer());
         List<MqOutboxEvent> events = jdbcTemplate.query(
                 "SELECT MESSAGE_ID,TOPIC,TAG,BUSINESS_KEY,PAYLOAD,SEND_MODE,SHARDING_KEY,"
                         + "DELAY_LEVEL,HEADERS,SEND_TIMEOUT_MS,STATUS,RETRY_COUNT,CREATED_AT,UPDATED_AT "
                         + "FROM MQ_OUTBOX_EVENT WHERE STATUS=? AND CLAIMED_BY=? "
                         + "ORDER BY CLAIMED_AT ASC LIMIT ?",
-                new OutboxRowMapper(),
+                (rs, row) -> {
+                    try {
+                        return mapper.mapRow(rs, row);
+                    }
+                    catch (RuntimeException | SQLException invalid) {
+                        corrupt.add(rs.getString("MESSAGE_ID"));
+                        return null;
+                    }
+                },
                 MqOutboxStatus.SENDING.name(),
                 batchClaimToken,
                 boundedBatch);
-        return events.stream().map(event -> new MqOutboxClaim(event, batchClaimToken)).toList();
+        for (String id : corrupt) {
+            jdbcTemplate.update("UPDATE MQ_OUTBOX_EVENT SET STATUS='FAILED',LAST_ERROR='INVALID_STORED_EVENT',"
+                    + "CLAIMED_BY=NULL,CLAIMED_AT=NULL,UPDATED_AT=NOW(3) WHERE MESSAGE_ID=? AND STATUS='SENDING' AND CLAIMED_BY=?",
+                    id, batchClaimToken);
+        }
+        return events.stream().filter(Objects::nonNull).map(event -> new MqOutboxClaim(event, batchClaimToken)).toList();
     }
 
     /**
@@ -153,9 +183,9 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
         int updated = jdbcTemplate.update(
                 "UPDATE MQ_OUTBOX_EVENT SET STATUS=?,SENT_AT=NOW(3),CLAIMED_BY=NULL,"
                         + "CLAIMED_AT=NULL,UPDATED_AT=NOW(3) "
-                        + "WHERE MESSAGE_ID=? AND STATUS=? AND CLAIMED_BY=?",
+                        + "WHERE MESSAGE_ID=? AND STATUS=? AND CLAIMED_BY=? AND CLAIMED_AT>DATE_SUB(NOW(3), INTERVAL ? MICROSECOND)",
                 MqOutboxStatus.SENT.name(), claim.event().messageId(),
-                MqOutboxStatus.SENDING.name(), token);
+                MqOutboxStatus.SENDING.name(), token, leaseMicros());
         if (updated != 1) {
             throw new IllegalStateException("Outbox claim is stale when marking sent");
         }
@@ -170,17 +200,68 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
         int updated = jdbcTemplate.update(
                 "UPDATE MQ_OUTBOX_EVENT SET "
                         + "STATUS=CASE WHEN RETRY_COUNT+1>=? THEN ? ELSE ? END,"
-                        + "RETRY_COUNT=RETRY_COUNT+1,"
+                        + "RETRY_COUNT=LEAST(20,RETRY_COUNT+1),"
                         + "NEXT_RETRY_TIME=DATE_ADD(NOW(3), INTERVAL LEAST(300, POW(2,RETRY_COUNT)) SECOND),"
                         + "CLAIMED_BY=NULL,CLAIMED_AT=NULL,UPDATED_AT=NOW(3) "
-                        + "WHERE MESSAGE_ID=? AND STATUS=? AND CLAIMED_BY=?",
+                        + "WHERE MESSAGE_ID=? AND STATUS=? AND CLAIMED_BY=? AND CLAIMED_AT>DATE_SUB(NOW(3), INTERVAL ? MICROSECOND)",
                 MAX_RETRY_COUNT,
                 MqOutboxStatus.FAILED.name(),
                 MqOutboxStatus.RETRY.name(),
-                claim.event().messageId(), MqOutboxStatus.SENDING.name(), token);
+                claim.event().messageId(), MqOutboxStatus.SENDING.name(), token, leaseMicros());
         if (updated != 1) {
             throw new IllegalStateException("Outbox claim is stale when marking failed");
         }
+    }
+
+    @Override
+    public boolean isDurable() {
+        return true;
+    }
+    @Override
+    public boolean supportsOwnerFencing() {
+        return true;
+    }
+    @Override
+    public boolean supportsLeaseRenewal() {
+        return true;
+    }
+    @Override
+    public boolean renew(MqOutboxClaim claim) {
+        return jdbcTemplate.update("UPDATE MQ_OUTBOX_EVENT SET CLAIMED_AT=NOW(3),UPDATED_AT=NOW(3) "
+                + "WHERE MESSAGE_ID=? AND STATUS='SENDING' AND CLAIMED_BY=? "
+                + "AND CLAIMED_AT>DATE_SUB(NOW(3), INTERVAL ? MICROSECOND)",
+                claim.event().messageId(), requireClaimToken(claim), leaseMicros()) == 1;
+    }
+
+    private long leaseMicros() {
+        return properties.getJdbc().getOutboxLease().toNanos() / 1000;
+    }
+
+    @Override
+    public void saveStandalone(MqOutboxEvent event) {
+        assertTransaction(true);
+        saveEvent(event);
+    }
+
+    private void assertTransaction(boolean standalone) {
+        boolean active = TransactionSynchronizationManager.isActualTransactionActive();
+        boolean sameResource = JdbcLocalTransactionVerifier.participates(jdbcTemplate.getDataSource());
+        if (active && !sameResource) {
+            throw new MqException("Outbox transaction must own the configured DataSource connection");
+        }
+        if (!standalone && (properties.isProduction() || properties.getOutbox().isRequireTransaction()) && (!active || !sameResource)) {
+            throw new MqException("Outbox requires an active transaction on its configured DataSource");
+        }
+    }
+
+    @Override
+    public int cleanupTerminal(int limit) {
+        if (limit < 1) {
+            throw new IllegalArgumentException("Cleanup limit must be positive");
+        }
+        return jdbcTemplate.update("DELETE FROM MQ_OUTBOX_EVENT WHERE STATUS IN ('SENT','FAILED') AND CLAIMED_BY IS NULL "
+                + "AND UPDATED_AT<DATE_SUB(NOW(3), INTERVAL ? SECOND) LIMIT ?",
+                properties.getJdbc().getRetention().toSeconds(), Math.min(limit, MAX_BATCH_SIZE));
     }
 
     private static String requireClaimToken(MqOutboxClaim claim) {
@@ -192,37 +273,7 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
         return token;
     }
 
-    /**
-     * 标记消息已发送。
-     */
-    @Override
-    public void markSent(String messageId) {
-        jdbcTemplate.update(
-                "UPDATE MQ_OUTBOX_EVENT SET STATUS=?,SENT_AT=NOW(3),CLAIMED_BY=NULL,CLAIMED_AT=NULL,UPDATED_AT=NOW(3) "
-                        + "WHERE MESSAGE_ID=? AND STATUS=?",
-                MqOutboxStatus.SENT.name(),
-                messageId,
-                MqOutboxStatus.SENDING.name());
-    }
 
-    /**
-     * 标记消息发送失败并计算下一次重试时间。
-     */
-    @Override
-    public void markFailed(String messageId) {
-        jdbcTemplate.update(
-                "UPDATE MQ_OUTBOX_EVENT SET "
-                        + "STATUS=CASE WHEN RETRY_COUNT+1>=? THEN ? ELSE ? END,"
-                        + "RETRY_COUNT=RETRY_COUNT+1,"
-                        + "NEXT_RETRY_TIME=DATE_ADD(NOW(3), INTERVAL LEAST(300, POW(2,RETRY_COUNT)) SECOND),"
-                        + "CLAIMED_BY=NULL,CLAIMED_AT=NULL,UPDATED_AT=NOW(3) "
-                        + "WHERE MESSAGE_ID=? AND STATUS=?",
-                MAX_RETRY_COUNT,
-                MqOutboxStatus.FAILED.name(),
-                MqOutboxStatus.RETRY.name(),
-                messageId,
-                MqOutboxStatus.SENDING.name());
-    }
 
     /**
      * 将最终失败消息重新放回重试队列。
@@ -231,7 +282,7 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
     public boolean replay(String messageId) {
         return jdbcTemplate.update(
                 "UPDATE MQ_OUTBOX_EVENT SET STATUS=?,RETRY_COUNT=0,NEXT_RETRY_TIME=NOW(3),"
-                        + "CLAIMED_BY=NULL,CLAIMED_AT=NULL,UPDATED_AT=NOW(3) WHERE MESSAGE_ID=? AND STATUS=?",
+                        + "CLAIMED_BY=NULL,CLAIMED_AT=NULL,UPDATED_AT=NOW(3) WHERE MESSAGE_ID=? AND STATUS=? AND CLAIMED_BY IS NULL",
                 MqOutboxStatus.RETRY.name(),
                 messageId,
                 MqOutboxStatus.FAILED.name()) == 1;
@@ -242,12 +293,12 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
      */
     private void recoverStaleClaims() {
         jdbcTemplate.update(
-                "UPDATE MQ_OUTBOX_EVENT SET STATUS=?,CLAIMED_BY=NULL,CLAIMED_AT=NULL,NEXT_RETRY_TIME=NOW(3),"
-                        + "UPDATED_AT=NOW(3) WHERE STATUS=? AND CLAIMED_AT<DATE_SUB(NOW(3), INTERVAL ? MINUTE) "
+                "UPDATE MQ_OUTBOX_EVENT SET STATUS=CASE WHEN RETRY_COUNT+1>=20 THEN 'FAILED' ELSE ? END,RETRY_COUNT=LEAST(20,RETRY_COUNT+1),CLAIMED_BY=NULL,CLAIMED_AT=NULL,NEXT_RETRY_TIME=NOW(3),"
+                        + "UPDATED_AT=NOW(3) WHERE STATUS=? AND CLAIMED_AT<DATE_SUB(NOW(3), INTERVAL ? MICROSECOND) "
                         + "ORDER BY CLAIMED_AT ASC LIMIT ?",
                 MqOutboxStatus.RETRY.name(),
                 MqOutboxStatus.SENDING.name(),
-                CLAIM_TIMEOUT_MINUTES,
+                leaseMicros(),
                 MAX_BATCH_SIZE);
     }
 
@@ -259,6 +310,12 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
      * @CreateTime 2026/3/20 16:58
      */
     private static final class OutboxRowMapper implements RowMapper<MqOutboxEvent> {
+
+        private final PeachRocketProperties.Producer limits;
+
+        private OutboxRowMapper(PeachRocketProperties.Producer limits) {
+            this.limits = limits;
+        }
 
         /**
          * 将 outbox 表记录映射为消息事件。
@@ -277,6 +334,10 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
                 options.setTimeoutMillis(storedTimeout);
             }
             String headers = resultSet.getString("HEADERS");
+            // 在 JSON 解析前限制存储快照大小，避免坏行占用过量内存。
+            if (headers != null && headers.length() > 8L * limits.getMaxHeaderBytes() + 64L) {
+                throw new SQLException("Invalid Outbox headers size");
+            }
             if (StringUtils.hasText(headers)) {
                 try {
                     options.setHeaders(MAPPER.readValue(headers, HEADER_TYPE));
@@ -291,12 +352,20 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
             } else if (!"NORMAL".equals(sendMode)) {
                 throw new SQLException("Invalid Outbox send mode or required options");
             }
+            String encoded = resultSet.getString("PAYLOAD");
+            long maxEncodedSize = 4L * ((limits.getMaxPayloadBytes() + 2L) / 3L);
+            if (encoded == null || encoded.length() > maxEncodedSize) {
+                throw new SQLException("Invalid Outbox payload size");
+            }
+            byte[] body = Base64.getDecoder().decode(encoded);
+            String businessKey = resultSet.getString("BUSINESS_KEY");
+            MqProducerMessageGuard.validate(body, options.getHeaders(), businessKey, limits);
             return new MqOutboxEvent(
                     resultSet.getString("MESSAGE_ID"),
-                    Base64.getDecoder().decode(resultSet.getString("PAYLOAD")),
+                    body,
                     resultSet.getString("TOPIC"),
                     resultSet.getString("TAG"),
-                    resultSet.getString("BUSINESS_KEY"),
+                    businessKey,
                     options,
                     MqOutboxStatus.valueOf(resultSet.getString("STATUS")),
                     resultSet.getInt("RETRY_COUNT"),

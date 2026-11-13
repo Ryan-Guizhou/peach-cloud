@@ -1,6 +1,9 @@
 package com.peach.rocket.outbox;
 
 import java.time.ZoneId;
+import com.peach.rocket.autoconfigure.PeachRocketProperties;
+import com.peach.rocket.annotation.MqEvent;
+import com.peach.rocket.producer.MqProducerMessageGuard;
 
 import com.peach.rocket.codec.MqMessageCodec;
 import com.peach.rocket.context.DefaultMqHeaderResolver;
@@ -15,7 +18,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * DefaultMqOutboxPublisher相关类。
+ * 使用统一消息信封和可靠存储的 Outbox 发布器。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -23,12 +26,24 @@ import java.util.UUID;
  */
 public class DefaultMqOutboxPublisher implements MqOutboxPublisher {
 
+    private final PeachRocketProperties properties;
     private final MqOutboxStore outboxStore;
     private final MqMessageCodec codec;
     private final MqRouteResolver routeResolver;
     private final DefaultMqHeaderResolver headerResolver;
 
-    public DefaultMqOutboxPublisher(MqOutboxStore outboxStore, MqMessageCodec codec, MqRouteResolver routeResolver, DefaultMqHeaderResolver headerResolver) {
+    /**
+     * 创建使用项目真实配置校验发送选项和可靠存储的发布器。
+     *
+     * @param outboxStore 出站存储
+     * @param codec 消息信封编解码器
+     * @param routeResolver Topic/Tag 路由解析器
+     * @param headerResolver 消息头解析器
+     * @param properties RocketMQ 业务配置
+     */
+    public DefaultMqOutboxPublisher(MqOutboxStore outboxStore, MqMessageCodec codec,
+            MqRouteResolver routeResolver, DefaultMqHeaderResolver headerResolver, PeachRocketProperties properties) {
+        this.properties = properties;
         this.outboxStore = outboxStore;
         this.codec = codec;
         this.routeResolver = routeResolver;
@@ -37,7 +52,24 @@ public class DefaultMqOutboxPublisher implements MqOutboxPublisher {
 
     @Override
     public <T> String publish(T payload, MqSendOptions options) {
+        return publishEvent(payload, options, false);
+    }
+
+    @Override
+    public <T> String publishStandalone(T payload, MqSendOptions options) {
+        return publishEvent(payload, options, true);
+    }
+
+    private <T> String publishEvent(T payload, MqSendOptions options, boolean standalone) {
+        if (payload == null) throw new MqException("Outbox payload is required");
+        if ((properties.isProduction() || (!standalone && properties.getOutbox().isRequireTransaction())) && !outboxStore.isDurable()) {
+            throw new MqException("Transactional Outbox requires a durable store");
+        }
         MqSendOptions actualOptions = MqSendOptions.copyOf(options);
+        if (properties.isProduction() && StringUtils.hasText(actualOptions.getShardingKey())) {
+            throw new MqException("Production Outbox does not support strict orderly delivery");
+        }
+        if (actualOptions.getTimeoutMillis() < 0) throw new MqException("Outbox timeout must not be negative");
         Integer delayLevel = MqDelayLevels.resolve(actualOptions.getDelay());
         if (StringUtils.hasText(actualOptions.getShardingKey()) && delayLevel != null) {
             throw new MqException("Cannot combine RocketMQ shardingKey with delayed sending");
@@ -48,16 +80,19 @@ public class DefaultMqOutboxPublisher implements MqOutboxPublisher {
                 route.topic(),
                 route.tag(),
                 route.key(),
-                null,
+                properties.getAppName(),
                 payload.getClass().getName(),
-                1,
+                payload.getClass().isAnnotationPresent(MqEvent.class) ? payload.getClass().getAnnotation(MqEvent.class).version() : 1,
                 headerResolver.resolve(actualOptions.getHeaders()),
                 payload,
                 LocalDateTime.now(ZoneId.systemDefault()));
         LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
+        byte[] encoded = codec.encode(envelope);
+        MqProducerMessageGuard.validate(encoded, envelope.headers(), route.key(), properties.getProducer());
+        actualOptions.setHeaders(envelope.headers());
         MqOutboxEvent event = new MqOutboxEvent(
                 envelope.messageId(),
-                codec.encode(envelope),
+                encoded,
                 route.topic(),
                 route.tag(),
                 route.key(),
@@ -66,7 +101,7 @@ public class DefaultMqOutboxPublisher implements MqOutboxPublisher {
                 0,
                 now,
                 now);
-        outboxStore.save(event);
+        if (standalone) outboxStore.saveStandalone(event); else outboxStore.save(event);
         return event.messageId();
     }
 }

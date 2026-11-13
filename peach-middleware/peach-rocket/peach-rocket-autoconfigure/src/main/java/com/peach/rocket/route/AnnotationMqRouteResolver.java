@@ -10,7 +10,8 @@ import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
+import java.util.Arrays;
 import org.springframework.util.StringUtils;
 
 /**
@@ -50,7 +51,8 @@ public class AnnotationMqRouteResolver implements MqRouteResolver {
         }
         String tag = resolveTag(actualOptions, event);
         String keyExpression = resolveKeyExpression(actualOptions, event);
-        String key = resolveKey(payload, keyExpression);
+        String key = StringUtils.hasText(actualOptions.getKey())
+                ? actualOptions.getKey() : resolveKey(payload, keyExpression);
         return new MqRoute(RocketMqNaming.normalizeTopic(topic, properties), tag, key);
     }
 
@@ -82,7 +84,12 @@ public class AnnotationMqRouteResolver implements MqRouteResolver {
         if (!keyExpression.startsWith("#")) {
             return keyExpression;
         }
-        StandardEvaluationContext context = new StandardEvaluationContext(payload);
+        if (!keyExpression.matches("#[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*")
+                || Arrays.stream(keyExpression.substring(1).split("\\."))
+                .anyMatch(part -> part.equals("class") || part.equals("classLoader"))) {
+            throw new MqException("MQ annotation key supports read-only property paths only");
+        }
+        var context = SimpleEvaluationContext.forReadOnlyDataBinding().build();
         BeanWrapper beanWrapper = new BeanWrapperImpl(payload);
         for (PropertyDescriptor descriptor : beanWrapper.getPropertyDescriptors()) {
             String name = descriptor.getName();

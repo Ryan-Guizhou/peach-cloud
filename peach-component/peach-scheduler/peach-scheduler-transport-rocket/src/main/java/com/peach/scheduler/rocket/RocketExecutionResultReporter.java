@@ -37,6 +37,6 @@ public class RocketExecutionResultReporter implements ExecutionResultReporter {
                 .tag(SchedulerRocketTopics.EXECUTION_RESULT_TAG)
                 .key(event.executionId())
                 .build();
-        outboxPublisher.publish(event, options);
+        outboxPublisher.publishStandalone(event, options);
     }
 }

@@ -3,81 +3,83 @@ package com.peach.rocket.outbox;
 import java.util.List;
 
 /**
- * MQ发件箱存储。
+ * Outbox 存储扩展点，读取、确认和重试都使用携带令牌的原子认领。
+ *
+ * <p>不提供无 token 状态更新接口，禁止旧 Dispatcher 绕过所有者校验。</p>
+ 
  *
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2026/6/26
+ * @CreateTime 2026/11/13
  */
 public interface MqOutboxStore {
 
+    /** @return 是否跨进程持久化 */
+    default boolean isDurable() { return false; }
+
+    /** @return 是否支持所有者令牌栅栏 */
+    default boolean supportsOwnerFencing() { return false; }
+
+    /** @return 是否支持有效认领续租 */
+    default boolean supportsLeaseRenewal() { return false; }
+
     /**
-     * 保存待发送消息。
+     * 更新有效认领的租约。
      *
-     * @param event Outbox 事件
+     * @param claim 当前认领凭据
+     * @return 是否续租成功
+     */
+    default boolean renew(MqOutboxClaim claim) { return false; }
+
+    /**
+     * 有界清理已完成且超过保留期的记录。
+     *
+     * @param limit 本次清理上限
+     * @return 实际清理条数
+     */
+    default int cleanupTerminal(int limit) { return 0; }
+
+    /**
+     * 在调用方事务中持久化事件；持久化实现应验证真实事务参与关系。
+     *
+     * @param event 待投递事件
      */
     void save(MqOutboxEvent event);
 
     /**
-     * 查询待发送消息。
+     * 显式保存独立事件，不承诺与业务数据的事务原子性。
      *
-     * @param batchSize 单批数量
-     * @return 待发送消息列表
+     * @param event 待投递事件
      */
-    List<MqOutboxEvent> findPending(int batchSize);
+    void saveStandalone(MqOutboxEvent event);
 
     /**
-     * 认领待发送消息并返回本次领取令牌，供所有结果状态更新复核。
+     * 原子领取待发事件。
      *
-     * <p>默认实现用于保持旧 MqOutboxStore 实现的二进制/源码行为，
-     * 可靠持久化 Store 必须覆盖此方法并返回独立的认领凭据。</p>
-     *
-     * @param batchSize 本批最大认领数量
-     * @return 有界消息与认领令牌快照
+     * @param batchSize 最大领取数量
+     * @return 本批次事件及所有者令牌
      */
-    default List<MqOutboxClaim> claimPending(int batchSize) {
-        return findPending(batchSize).stream()
-                .map(event -> new MqOutboxClaim(event, null))
-                .toList();
-    }
+    List<MqOutboxClaim> claimPending(int batchSize);
 
     /**
-     * 标记消息发送成功。
+     * 仅在有效认领下确认 Broker 发送成功。
      *
-     * @param messageId 消息 ID
+     * @param claim 当前认领凭据
      */
-    void markSent(String messageId);
+    void markSent(MqOutboxClaim claim);
 
     /**
-     * 在当前认领凭据有效时确认已发送。
+     * 仅在有效认领下记录发送失败及后续重试。
      *
-     * @param claim 当前批次认领消息
+     * @param claim 当前认领凭据
      */
-    default void markSent(MqOutboxClaim claim) {
-        markSent(claim.event().messageId());
-    }
+    void markFailed(MqOutboxClaim claim);
 
     /**
-     * 标记消息发送失败。
+     * 重新启用已失败事件。
      *
-     * @param messageId 消息 ID
-     */
-    void markFailed(String messageId);
-
-    /**
-     * 在当前认领凭据有效时标记发送失败。
-     *
-     * @param claim 当前批次认领消息
-     */
-    default void markFailed(MqOutboxClaim claim) {
-        markFailed(claim.event().messageId());
-    }
-
-    /**
-     * 重置失败消息。
-     *
-     * @param messageId 消息 ID
-     * @return true 表示重置成功
+     * @param messageId 事件唯一标识
+     * @return 是否重置成功
      */
     boolean replay(String messageId);
 }

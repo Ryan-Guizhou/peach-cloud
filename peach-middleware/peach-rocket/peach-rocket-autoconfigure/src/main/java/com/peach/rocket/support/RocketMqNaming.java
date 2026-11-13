@@ -1,11 +1,11 @@
 package com.peach.rocket.support;
 
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
-import org.springframework.util.StringUtils;
 import com.peach.rocket.exception.MqException;
+import org.springframework.util.StringUtils;
 
 /**
- * RocketMQMQ命名。
+ * RocketMQ Topic 和 Consumer Group 命名规范化，支持环境隔离与名称校验。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -24,7 +24,13 @@ public final class RocketMqNaming {
      * @return 真实 topic
      */
     public static String normalizeTopic(String topic, PeachRocketProperties properties) {
-        if (!StringUtils.hasText(topic) || topic.contains("%")) {
+        if (!StringUtils.hasText(topic) || !topic.matches("[A-Za-z0-9_.%-]{1,128}")) {
+            throw new MqException("Invalid RocketMQ topic identifier");
+        }
+        if (topic.contains("%")) {
+            if (properties.isProduction()) {
+                throw new MqException("Use native Broker namespace configuration instead of embedded namespace");
+            }
             return topic;
         }
         if (!properties.getNaming().isAutoPrefixEnv()) {
@@ -32,7 +38,11 @@ public final class RocketMqNaming {
         }
         String separator = properties.getNaming().getTopicSeparator();
         String prefix = properties.getNamespace() + separator + properties.getNaming().getTopicPrefix() + separator;
-        return topic.startsWith(prefix) ? topic : prefix + topic;
+        String normalized = topic.startsWith(prefix) ? topic : prefix + topic;
+        if (normalized.length() > 128) {
+            throw new MqException("RocketMQ topic identifier is too long");
+        }
+        return normalized;
     }
 
     /**
@@ -42,15 +52,15 @@ public final class RocketMqNaming {
      * @return consumer group
      */
     public static String normalizeConsumerGroup(String consumerGroup) {
-        if (!StringUtils.hasText(consumerGroup)) {
+        if (!StringUtils.hasText(consumerGroup) || !consumerGroup.matches("[A-Za-z0-9_.%-]{1,128}")) {
             throw new MqException("consumerGroup must not be blank");
         }
         return consumerGroup;
     }
 
     /**
-     * 解析当前应用内生效的 Consumer Group 名称。默认保持旧名称以保留消费位点，
-     * 只有显式开启配置时才添加环境/应用前缀。
+     * 解析当前环境内生效的 Consumer Group。新项目默认开启环境/组前缀隔离；
+     * 非生产环境可显式关闭，但生产模式必须开启。
      *
      * @param consumerGroup 声明的业务组名
      * @param properties RocketMQ 配置
@@ -58,11 +68,18 @@ public final class RocketMqNaming {
      */
     public static String normalizeConsumerGroup(String consumerGroup, PeachRocketProperties properties) {
         String group = normalizeConsumerGroup(consumerGroup);
+        if (properties.isProduction() && group.contains("%")) {
+            throw new MqException("Use native Broker namespace configuration for consumer groups");
+        }
         if (!properties.getNaming().isAutoPrefixConsumerGroup() || group.contains("%")) {
             return group;
         }
         String separator = properties.getNaming().getTopicSeparator();
         String prefix = properties.getNamespace() + separator + properties.getNaming().getGroupPrefix() + separator;
-        return group.startsWith(prefix) ? group : prefix + group;
+        String normalized = group.startsWith(prefix) ? group : prefix + group;
+        if (normalized.length() > 128) {
+            throw new MqException("RocketMQ consumer group is too long");
+        }
+        return normalized;
     }
 }

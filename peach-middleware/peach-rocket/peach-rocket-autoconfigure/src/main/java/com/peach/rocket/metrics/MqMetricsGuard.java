@@ -76,7 +76,7 @@ public final class MqMetricsGuard implements MqMetrics {
     private void warnOnce(RuntimeException ex) {
         if (warned.compareAndSet(false, true)) {
             log.warn("[mq-metrics] metrics collection failed; message handling is unaffected. exception={}",
-                    ex.getClass().getName(), ex);
+                    ex.getClass().getName());
         }
     }
 }

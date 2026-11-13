@@ -1,6 +1,7 @@
 package com.peach.rocket.producer;
 
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
+import com.peach.rocket.context.DefaultMqHeaderResolver;
 import com.peach.rocket.exception.MqException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -9,28 +10,54 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * 发送前检查已序列化消息大小与业务 Header 预算，防止超大报文进入 SDK。
+ * MQ 发送准入：限制编码体、Header 与框架内部事务属性的资源预算。
  *
- * <p>不得记录 body 或 Header 原始值，以避免敏感数据泄露。</p>
+ * <p>业务 Header 必须拒绝 SDK 保留字段；事务 Key 只能通过专用的框架入口计入预算，
+ * 不得作为调用方传入的业务 Header 伪造。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/13
  */
 public final class MqProducerMessageGuard {
+
+    private static final String TRANSACTION_KEY_HEADER = "PEACH_ROCKET_TRANSACTION_KEY";
+
     private MqProducerMessageGuard() {
     }
 
     /**
-     * 验证编码后字节长度、Header 项数及 UTF-8 总字节数。
+     * 验证普通消息的序列化字节、Header 项数及 UTF-8 字节预算。
      *
-     * @param body 已编码消息信封
-     * @param headers 经链路传播后的 Header
-     * @param businessKey 本次发送的业务键
-     * @param limits Producer 限额配置
+     * @param body 编码后的消息信封
+     * @param headers 业务及 Trace Header
+     * @param businessKey 业务消息 Key
+     * @param limits Producer 资源限制
      */
     public static void validate(byte[] body, Map<String, String> headers, String businessKey,
                                 PeachRocketProperties.Producer limits) {
+        validateInternal(body, headers, businessKey, null, limits);
+    }
+
+    /**
+     * 验证事务半消息并将框架生成的事务 Key 计入预算；业务 Header 仍禁止携带保留字段。
+     *
+     * @param body 编码后的消息信封
+     * @param headers 已经校验过来源的业务与 Trace Header
+     * @param businessKey 业务消息 Key
+     * @param transactionKey 框架生成/消费的事务追踪键
+     * @param limits Producer 资源限制
+     */
+    public static void validateTransaction(byte[] body, Map<String, String> headers, String businessKey,
+                                           String transactionKey, PeachRocketProperties.Producer limits) {
+        if (!StringUtils.hasText(transactionKey)) {
+            throw new MqException("RocketMQ transaction key must not be blank");
+        }
+        validateInternal(body, headers, businessKey, transactionKey, limits);
+    }
+
+    private static void validateInternal(byte[] body, Map<String, String> headers, String businessKey,
+                                         String transactionKey, PeachRocketProperties.Producer limits) {
         if (body == null || body.length > limits.getMaxPayloadBytes()) {
             throw new MqException("RocketMQ encoded payload exceeds configured limit");
         }
@@ -38,19 +65,20 @@ public final class MqProducerMessageGuard {
         long bytes = 0L;
         if (!CollectionUtils.isEmpty(headers)) {
             for (Map.Entry<String, String> header : headers.entrySet()) {
-                if (!StringUtils.hasText(header.getKey()) || header.getValue() == null) {
-                    throw new MqException("RocketMQ header key must have text and value must not be null");
-                }
+                DefaultMqHeaderResolver.validateBusinessHeader(header.getKey(), header.getValue());
                 bytes += utf8Bytes(header.getKey()) + utf8Bytes(header.getValue());
                 if (bytes > limits.getMaxHeaderBytes()) {
                     throw new MqException("RocketMQ header bytes exceed configured limit");
                 }
             }
         }
-        if (StringUtils.hasText(businessKey)
-                && (CollectionUtils.isEmpty(headers) || !headers.containsKey(MessageConst.PROPERTY_KEYS))) {
+        if (StringUtils.hasText(businessKey)) {
             count++;
             bytes += utf8Bytes(MessageConst.PROPERTY_KEYS) + utf8Bytes(businessKey);
+        }
+        if (transactionKey != null) {
+            count++;
+            bytes += utf8Bytes(TRANSACTION_KEY_HEADER) + utf8Bytes(transactionKey);
         }
         if (count > limits.getMaxHeaderCount()) {
             throw new MqException("RocketMQ header count exceeds configured limit");

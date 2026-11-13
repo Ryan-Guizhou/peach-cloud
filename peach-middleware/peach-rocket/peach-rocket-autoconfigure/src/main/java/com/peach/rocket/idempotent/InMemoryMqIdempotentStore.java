@@ -19,6 +19,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class InMemoryMqIdempotentStore implements MqIdempotentStore {
+    @Override
+    public boolean supportsLeaseRenewal() {
+        return true;
+    }
 
     private static final int DEFAULT_MAX_ENTRIES = 32768;
     private static final int CLEANUP_INTERVAL = 1024;
@@ -66,16 +70,12 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
         }
     }
 
-    @Override
-    public boolean tryStart(MqIdempotentContext context) {
-        return claim(context).status() == MqIdempotentClaim.Status.ACQUIRED;
-    }
 
     @Override
     public void markSuccess(MqIdempotentContext context, MqIdempotentClaim claim) {
         synchronized (capacityLock) {
-            Record current = requireOwner(context, claim);
-            records.put(storageKey(context), new Record(Status.SUCCESS, current.expiresAt(), current.ownerToken()));
+            requireOwner(context, claim);
+            records.put(storageKey(context), new Record(Status.SUCCESS, Instant.now().plus(context.expire()), null));
         }
     }
 
@@ -92,35 +92,18 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
         return true;
     }
 
-    /**
-     * 兼容历史直接调用；新消费链路必须使用携带 owner token 的重载。
-     */
     @Override
-    public void markSuccess(MqIdempotentContext context) {
+    public boolean renew(MqIdempotentContext context, MqIdempotentClaim claim) {
         synchronized (capacityLock) {
-            String key = storageKey(context);
-            Record old = records.get(key);
-            if (old != null) {
-                records.put(key, new Record(Status.SUCCESS, old.expiresAt(), old.ownerToken()));
+            try {
+                Record current = requireOwner(context, claim);
+                records.put(storageKey(context), new Record(Status.PROCESSING,
+                        Instant.now().plus(context.expire()), current.ownerToken()));
+                return true;
+            } catch (IllegalStateException stale) {
+                return false;
             }
         }
-    }
-
-    /**
-     * 兼容历史直接调用；生产环境禁止使用无认领身份的状态更新。
-     */
-    @Override
-    public void markFailed(MqIdempotentContext context) {
-        synchronized (capacityLock) {
-            records.remove(storageKey(context));
-        }
-    }
-
-    @Override
-    public boolean isSuccess(MqIdempotentContext context) {
-        Record record = records.get(storageKey(context));
-        return record != null && record.status() == Status.SUCCESS
-                && record.expiresAt().isAfter(Instant.now());
     }
 
     private Record requireOwner(MqIdempotentContext context, MqIdempotentClaim claim) {
@@ -130,10 +113,27 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
         }
         Record current = records.get(storageKey(context));
         if (current == null || current.status() != Status.PROCESSING
-                || !claim.ownerToken().equals(current.ownerToken())) {
+                || !claim.ownerToken().equals(current.ownerToken()) || !current.expiresAt().isAfter(Instant.now())) {
             throw new IllegalStateException("Stale MQ idempotent owner cannot update the record");
         }
         return current;
+    }
+
+    @Override
+    public int cleanupTerminal(int limit) {
+        if (limit < 1) {
+            throw new IllegalArgumentException("Cleanup limit must be positive");
+        }
+        synchronized (capacityLock) {
+            int removed = 0;
+            Instant now = Instant.now();
+            for (var entry : records.entrySet()) {
+                Record old = entry.getValue();
+                if (old.status() == Status.SUCCESS && !old.expiresAt().isAfter(now)
+                        && records.remove(entry.getKey(), old) && ++removed >= Math.min(500, limit)) break;
+            }
+            return removed;
+        }
     }
 
     private void cleanupExpired(Instant now) {
@@ -145,7 +145,7 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
     }
 
     private String storageKey(MqIdempotentContext context) {
-        return context.consumerGroup() + ':' + context.idempotentKey();
+        return context.consumerGroup().length() + ":" + context.consumerGroup() + context.idempotentKey();
     }
 
     private enum Status {

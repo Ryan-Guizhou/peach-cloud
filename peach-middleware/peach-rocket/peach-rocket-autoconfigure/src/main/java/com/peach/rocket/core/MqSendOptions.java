@@ -97,7 +97,7 @@ public class MqSendOptions {
         private final MqSendOptions options = new MqSendOptions();
 
         private Builder() {
-            options.setTimeoutMillis(3000L);
+            options.setTimeoutMillis(0L);
         }
 
         public Builder topic(String topic) {

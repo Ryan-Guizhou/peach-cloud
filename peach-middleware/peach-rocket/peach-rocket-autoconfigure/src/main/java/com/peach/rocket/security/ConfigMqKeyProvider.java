@@ -8,7 +8,7 @@ import org.springframework.util.StringUtils;
 import com.peach.rocket.exception.MqException;
 
 /**
- * 配置MQ键提供者。
+ * 按 keyId 读取指定 AES 密钥，禁止回退到不区分密钥标识的配置。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -30,10 +30,6 @@ public class ConfigMqKeyProvider implements MqKeyProvider {
         PeachRocketProperties.Security security = properties.getSecurity();
         Map<String, String> keys = security.getKeys();
         String key = keys.get(keyId);
-        // 兼容单密钥旧配置：仅允许当前 keyId 使用旧配置，绝不让未知 keyId 隐式解密。
-        if (key == null && keyId.equals(security.getKeyId())) {
-            key = security.getKey();
-        }
         if (!StringUtils.hasText(key)) {
             throw new MqException("Unknown or empty MQ encryption key id");
         }

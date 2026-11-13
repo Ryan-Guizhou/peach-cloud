@@ -5,6 +5,7 @@ import com.peach.rocket.annotation.MqTransaction;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.exception.MqException;
 import com.peach.rocket.support.RocketMqNaming;
+import com.peach.rocket.support.MqClientSecurity;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -91,7 +92,9 @@ public class RocketMqTopicAdmin implements SmartInitializingSingleton {
         }
 
         // 创建 RocketMQ Admin 工具实例，用于执行管理操作
-        DefaultMQAdminExt admin = new DefaultMQAdminExt();
+        DefaultMQAdminExt admin = new DefaultMQAdminExt(
+                MqClientSecurity.rpcHook(rocketMQProperties, properties));
+        MqClientSecurity.configureClient(admin, rocketMQProperties, properties);
         admin.setNamesrvAddr(rocketMQProperties.getNameServer());
         admin.setInstanceName("peach-rocket-topic-admin-" + System.currentTimeMillis());
 

@@ -1,12 +1,12 @@
 package com.peach.rocket.outbox;
 
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
+import com.peach.rocket.producer.MqProducerMessageGuard;
 import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.core.MqDelayLevels;
 import com.peach.rocket.exception.MqException;
 import com.peach.rocket.metrics.MqMetrics;
 import com.peach.rocket.metrics.MqMetricsGuard;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -76,33 +76,29 @@ public class MqOutboxDispatcher {
     }
 
     /**
-     * 认领一批消息并执行 Broker I/O；在本批 Future 全部完成后再开启下一轮扫描。
-     * 超限任务只记录失败、交给 Store 的重试机制，不会丢弃或成功 ACK。
+     * 每次只认领一条消息，完成投递与确认后才认领下一条；每轮不超过配置的批量上限。
+     * 普通消息可交给受管执行器，但仍逐条等待完成，避免排队消息在首次尝试前耗尽租约。
      */
     @Scheduled(fixedDelayString = "${peach.rocket.outbox.scan-interval-ms:2000}")
     public void dispatch() {
-        List<MqOutboxClaim> claims = outboxStore.claimPending(properties.getOutbox().getBatchSize());
-        if (CollectionUtils.isEmpty(claims)) {
-            return;
-        }
-        // 同一批次包含顺序或延迟发送时使用串行路径，避免并行重排 Broker 提交次序。
-        if (parallelExecutor == null || requiresSerialDelivery(claims)) {
-            for (MqOutboxClaim claim : claims) {
+        for (int attempted = 0; attempted < properties.getOutbox().getBatchSize(); attempted++) {
+            List<MqOutboxClaim> claims = outboxStore.claimPending(1);
+            if (CollectionUtils.isEmpty(claims)) {
+                return;
+            }
+            MqOutboxClaim claim = claims.getFirst();
+            if (!properties.getOutbox().isParallelEnabled() || parallelExecutor == null
+                    || requiresSerialDelivery(claims)) {
                 deliver(claim);
+                continue;
             }
-            return;
-        }
-        List<Future<?>> pending = new ArrayList<>(claims.size());
-        for (MqOutboxClaim claim : claims) {
+            Future<?> task;
             try {
-                pending.add(parallelExecutor.submit(() -> deliver(claim)));
+                task = parallelExecutor.submit(() -> deliver(claim));
             } catch (RejectedExecutionException rejected) {
-                // 任务未准入。必须通过 owner token 记录失败，不能丢弃或 ACK。
                 recordSendFailure(claim, rejected);
+                continue;
             }
-        }
-        // 调度扫描要等待本批任务完结，不能在上一批尚未回写时继续批量认领。
-        for (Future<?> task : pending) {
             try {
                 task.get();
             } catch (InterruptedException interrupted) {
@@ -110,8 +106,9 @@ public class MqOutboxDispatcher {
                 log.warn("[mq-outbox] dispatch interrupted; unfinished claims will recover by lease");
                 return;
             } catch (ExecutionException failure) {
-                log.error("[mq-outbox] worker failed unexpectedly; claim lease recovery may be required",
-                        failure.getCause());
+                Throwable cause = failure.getCause() == null ? failure : failure.getCause();
+                log.error("[mq-outbox] worker failed unexpectedly; claim lease recovery may be required. exception={}",
+                        cause.getClass().getName(), cause);
             }
         }
     }
@@ -133,59 +130,72 @@ public class MqOutboxDispatcher {
     private void deliver(MqOutboxClaim claim) {
         MqOutboxEvent event = claim.event();
         try {
-                String destination = StringUtils.hasText(event.tag())
-                        ? event.topic() + ":" + event.tag() : event.topic();
-                MqSendOptions options = event.options();
-                long timeout = options != null && options.getTimeoutMillis() > 0
-                        ? options.getTimeoutMillis()
-                        : properties.getProducer().getDefaultTimeout().toMillis();
-                String shardingKey = options == null ? null : options.getShardingKey();
-                Integer delayLevel = options == null ? null : MqDelayLevels.resolve(options.getDelay());
-                if (StringUtils.hasText(shardingKey) && delayLevel != null) {
-                    throw new MqException("Outbox cannot combine orderly and delayed sending");
-                }
+            String destination = StringUtils.hasText(event.tag())
+                    ? event.topic() + ":" + event.tag() : event.topic();
+            MqSendOptions options = event.options();
+            long timeout = options != null && options.getTimeoutMillis() > 0
+                    ? options.getTimeoutMillis()
+                    : properties.getProducer().getDefaultTimeout().toMillis();
+            MqProducerMessageGuard.validate(event.body(), options == null ? null : options.getHeaders(),
+                    event.businessKey(), properties.getProducer());
+            if (timeout <= 0 || (outboxStore.isDurable()
+                    && timeout >= properties.getJdbc().getOutboxLease().toMillis())) {
+                throw new MqException("Outbox send timeout must be positive and shorter than its lease");
+            }
+            String shardingKey = options == null ? null : options.getShardingKey();
+            if (properties.isProduction() && StringUtils.hasText(shardingKey)) {
+                throw new MqException("Production Outbox does not support strict orderly delivery");
+            }
+            Integer delayLevel = options == null ? null : MqDelayLevels.resolve(options.getDelay());
+            if (StringUtils.hasText(shardingKey) && delayLevel != null) {
+                throw new MqException("Outbox cannot combine orderly and delayed sending");
+            }
 
-                MessageBuilder<byte[]> messageBuilder = MessageBuilder.withPayload(event.body());
-                if (options != null && !CollectionUtils.isEmpty(options.getHeaders())) {
-                    options.getHeaders().forEach((key, value) -> {
-                        if (StringUtils.hasText(key) && value != null) {
-                            messageBuilder.setHeader(key, value);
-                        }
-                    });
-                }
-                if (StringUtils.hasText(event.businessKey())) {
-                    messageBuilder.setHeader(MessageConst.PROPERTY_KEYS, event.businessKey());
-                }
-                Message<byte[]> message = messageBuilder.build();
-                SendResult result;
-                if (StringUtils.hasText(shardingKey)) {
-                    result = rocketMQTemplate.syncSendOrderly(destination, message, shardingKey, timeout);
-                } else if (delayLevel != null) {
-                    result = rocketMQTemplate.syncSend(destination, message, timeout, delayLevel);
-                } else {
-                    result = rocketMQTemplate.syncSend(destination, message, timeout);
-                }
-                if (result == null || result.getSendStatus() != SendStatus.SEND_OK) {
-                    throw new MqException("Broker did not confirm Outbox message, status="
-                            + (result == null ? "null" : result.getSendStatus()));
-                }
-            } catch (RuntimeException sendError) {
-                recordSendFailure(claim, sendError);
+            MessageBuilder<byte[]> messageBuilder = MessageBuilder.withPayload(event.body());
+            if (options != null && !CollectionUtils.isEmpty(options.getHeaders())) {
+                options.getHeaders().forEach((key, value) -> {
+                    if (StringUtils.hasText(key) && value != null) {
+                        messageBuilder.setHeader(key, value);
+                    }
+                });
+            }
+            if (StringUtils.hasText(event.businessKey())) {
+                messageBuilder.setHeader(MessageConst.PROPERTY_KEYS, event.businessKey());
+            }
+            Message<byte[]> message = messageBuilder.build();
+            if (outboxStore.supportsLeaseRenewal() && !outboxStore.renew(claim)) {
+                metrics.outbox("stale_claim");
                 return;
             }
-
-            try {
-                outboxStore.markSent(claim);
-                metrics.outbox("sent");
-                log.debug("[mq-outbox] message sent. messageId={} topic={} tag={}",
-                        event.messageId(), event.topic(), event.tag());
-            } catch (RuntimeException ackError) {
-                metrics.outbox("ack_failed");
-                // Broker 已确认，但 DB ACK 不确定。不得反向标记失败，只能等待租约回收。
-                log.error("[mq-outbox-ack-error] Broker confirmed, store ACK failed; "
-                                + "lease recovery required. messageId={} topic={} exception={}",
-                        event.messageId(), event.topic(), ackError.getClass().getName(), ackError);
+            SendResult result;
+            if (StringUtils.hasText(shardingKey)) {
+                result = rocketMQTemplate.syncSendOrderly(destination, message, shardingKey, timeout);
+            } else if (delayLevel != null) {
+                result = rocketMQTemplate.syncSend(destination, message, timeout, delayLevel);
+            } else {
+                result = rocketMQTemplate.syncSend(destination, message, timeout);
             }
+            if (result == null || result.getSendStatus() != SendStatus.SEND_OK) {
+                throw new MqException("Broker did not confirm Outbox message, status="
+                        + (result == null ? "null" : result.getSendStatus()));
+            }
+        } catch (RuntimeException sendError) {
+            recordSendFailure(claim, sendError);
+            return;
+        }
+
+        try {
+            outboxStore.markSent(claim);
+            metrics.outbox("sent");
+            log.debug("[mq-outbox] message sent. messageId={} topic={} tag={}",
+                    event.messageId(), event.topic(), event.tag());
+        } catch (RuntimeException ackError) {
+            metrics.outbox("ack_failed");
+            // Broker 已确认，但 DB ACK 不确定。不得反向标记失败，只能等待租约回收。
+            log.error("[mq-outbox-ack-error] Broker confirmed, store ACK failed; "
+                            + "lease recovery required. messageId={} topic={} exception={}",
+                    event.messageId(), event.topic(), ackError.getClass().getName(), ackError);
+        }
     }
 
     /**

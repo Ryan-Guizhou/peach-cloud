@@ -1,7 +1,5 @@
 package com.peach.rocket.producer;
 
-import java.time.ZoneId;
-
 import com.peach.rocket.annotation.MqEvent;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.codec.MqMessageCodec;
@@ -15,14 +13,16 @@ import com.peach.rocket.core.MqSendResult;
 import com.peach.rocket.exception.MqException;
 import com.peach.rocket.metrics.MqMetrics;
 import com.peach.rocket.metrics.MqMetricsGuard;
-import java.util.Map;
 import com.peach.rocket.route.MqRoute;
 import com.peach.rocket.route.MqRouteResolver;
 import com.peach.rocket.transaction.RocketMqTransactionMessageProducer;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
 import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
@@ -40,7 +40,7 @@ import org.springframework.util.StringUtils;
  * @CreateTime 2026/6/26
  */
 @Slf4j
-public class RocketMqPublisher implements MqPublisher {
+public class RocketMqPublisher implements MqPublisher, DisposableBean {
 
     private final RocketMQTemplate rocketMQTemplate;
     private final MqMessageCodec codec;
@@ -50,6 +50,7 @@ public class RocketMqPublisher implements MqPublisher {
     private final RocketMqTransactionMessageProducer transactionMessageProducer;
     private final MqMetrics metrics;
     private final MqProducerAdmission admission;
+    private final MqProducerAdmission encodingAdmission;
 
     public RocketMqPublisher(RocketMQTemplate rocketMQTemplate, MqMessageCodec codec, MqRouteResolver routeResolver,
                              DefaultMqHeaderResolver headerResolver, PeachRocketProperties properties) {
@@ -73,6 +74,8 @@ public class RocketMqPublisher implements MqPublisher {
                              RocketMqTransactionMessageProducer transactionMessageProducer, MqMetrics metrics) {
         this.metrics = MqMetricsGuard.of(metrics);
         this.admission = new MqProducerAdmission(properties.getProducer().getMaxInflight(),
+                properties.getProducer().getInflightAcquireTimeout());
+        this.encodingAdmission = new MqProducerAdmission(properties.getProducer().getMaxEncodingInflight(),
                 properties.getProducer().getInflightAcquireTimeout());
         this.rocketMQTemplate = rocketMQTemplate;
         this.codec = codec;
@@ -110,10 +113,10 @@ public class RocketMqPublisher implements MqPublisher {
         if (StringUtils.hasText(shardingKey) && delayLevel != null) {
             throw new MqException("Cannot combine RocketMQ shardingKey with delayed sending");
         }
-        Message<byte[]> message = buildMessage(payload, actualOptions, route);
         SendResult result;
         // 同步/顺序/延迟发送完成或抛错时释放配额，不在编码阶段占据额度。
         try (MqProducerAdmission.Permit permit = admission.acquire("sync")) {
+            Message<byte[]> message = buildMessage(payload, actualOptions, route);
             if (StringUtils.hasText(shardingKey)) {
                 result = rocketMQTemplate.syncSendOrderly(destination(route), message,
                         shardingKey, actualOptions.getTimeoutMillis());
@@ -125,9 +128,9 @@ public class RocketMqPublisher implements MqPublisher {
             }
         }
         MqSendResult mqSendResult = toMqSendResult(result, route);
-        log.info("[mq-send] app={} payloadType={} mode=sync topic={} tag={} key={} delayLevel={} messageId={} status={} cost={}ms success={}",
+        log.info("[mq-send] app={} payloadType={} mode=sync topic={} tag={} key=redacted delayLevel={} messageId={} status={} cost={}ms success={}",
                 properties.getAppName(), payload.getClass().getSimpleName(), mqSendResult.topic(), mqSendResult.tag(),
-                mqSendResult.key(), delayLevel, mqSendResult.messageId(), mqSendResult.rawStatus(),
+                delayLevel, mqSendResult.messageId(), mqSendResult.rawStatus(),
                 System.currentTimeMillis() - start, mqSendResult.isSuccess());
         return mqSendResult;
     }
@@ -147,8 +150,8 @@ public class RocketMqPublisher implements MqPublisher {
         final CompletableFuture<MqSendResult> future = new CompletableFuture<>();
         MqProducerAdmission.Permit permit = null;
         try {
-            Message<byte[]> message = buildMessage(payload, actualOptions, route);
             permit = admission.acquire("async");
+            Message<byte[]> message = buildMessage(payload, actualOptions, route);
             rocketMQTemplate.asyncSend(destination(route), message,
                     new AsyncSendCallback(this, properties, payload, route, start, metricStarted, future, permit),
                     actualOptions.getTimeoutMillis());
@@ -159,7 +162,7 @@ public class RocketMqPublisher implements MqPublisher {
             }
             metrics.publish("async", "failed", System.nanoTime() - metricStarted);
             log.warn("[mq-send-rejected] mode=async topic={} reason={} errorType={}",
-                    route.topic(), ex.getMessage(), ex.getClass().getName());
+                    route.topic(), ex.getClass().getSimpleName(), ex.getClass().getName());
             throw ex;
         }
     }
@@ -180,12 +183,12 @@ public class RocketMqPublisher implements MqPublisher {
         MqSendOptions actualOptions = prepareOptions(options);
         rejectUnsupportedAsyncOptions(actualOptions);
         MqRoute route = routeResolver.resolve(payload, actualOptions);
-        Message<byte[]> message = buildMessage(payload, actualOptions, route);
         try (MqProducerAdmission.Permit permit = admission.acquire("oneway")) {
+            Message<byte[]> message = buildMessage(payload, actualOptions, route);
             rocketMQTemplate.sendOneWay(destination(route), message);
         }
-        log.info("[mq-send] app={} payloadType={} mode=one-way topic={} tag={} key={} submitted=true",
-                properties.getAppName(), payload.getClass().getSimpleName(), route.topic(), route.tag(), route.key());
+        log.info("[mq-send] app={} payloadType={} mode=one-way topic={} tag={} key=redacted submitted=true",
+                properties.getAppName(), payload.getClass().getSimpleName(), route.topic(), route.tag());
     }
 
     @Override
@@ -231,6 +234,9 @@ public class RocketMqPublisher implements MqPublisher {
         if (actualOptions.getTimeoutMillis() <= 0) {
             actualOptions.setTimeoutMillis(properties.getProducer().getDefaultTimeout().toMillis());
         }
+        if (actualOptions.getTimeoutMillis() > 60000) {
+            throw new MqException("MQ send timeout must not exceed 60000ms");
+        }
         return actualOptions;
     }
 
@@ -244,7 +250,8 @@ public class RocketMqPublisher implements MqPublisher {
      * @param <T> 业务消息类型
      */
     private <T> Message<byte[]> buildMessage(T payload, MqSendOptions options, MqRoute route) {
-        MqMessageEnvelope<T> envelope = MqMessageEnvelope.create(
+        try (MqProducerAdmission.Permit encoding = encodingAdmission.acquire("encode")) {
+            MqMessageEnvelope<T> envelope = MqMessageEnvelope.create(
                 UUID.randomUUID().toString(),
                 route.topic(),
                 route.tag(),
@@ -266,7 +273,16 @@ public class RocketMqPublisher implements MqPublisher {
         if (StringUtils.hasText(route.key())) {
             builder.setHeader(MessageConst.PROPERTY_KEYS, route.key());
         }
-        return builder.build();
+            return builder.build();
+        }
+    }
+
+    @Override
+    public void destroy() {
+        if (!admission.closeAndDrain(properties.getConsumer().getShutdownDrainTimeout())) {
+            log.warn("[mq-producer] shutdown drain timed out; delivery outcome may be uncertain");
+        }
+        encodingAdmission.closeAndDrain(properties.getConsumer().getShutdownDrainTimeout());
     }
 
     private String destination(MqRoute route) {

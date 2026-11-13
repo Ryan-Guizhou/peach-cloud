@@ -65,6 +65,16 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
         this.clock = Objects.requireNonNull(clock, "clock");
     }
 
+    /**
+     * 单进程开发环境的独立事件沿用同一组容量与唯一性校验。
+     *
+     * @param event 待发送事件
+     */
+    @Override
+    public void saveStandalone(MqOutboxEvent event) {
+        save(event);
+    }
+
     @Override
     public void save(MqOutboxEvent event) {
         Objects.requireNonNull(event, "event");
@@ -90,27 +100,6 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
     }
 
     /**
-     * 兼容旧调用方的只读待处理查询，不占用租约。Dispatcher 使用 claimPending。
-     */
-    @Override
-    public List<MqOutboxEvent> findPending(int batchSize) {
-        if (batchSize <= 0) {
-            throw new IllegalArgumentException("Outbox batch size must be positive");
-        }
-        Instant now = clock.instant();
-        List<MqOutboxEvent> result = new ArrayList<>();
-        for (Entry entry : events.values()) {
-            if (ready(entry, now)) {
-                result.add(entry.event());
-                if (result.size() >= Math.min(batchSize, MAX_BATCH_SIZE)) {
-                    break;
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
      * 每一条消息执行一次原子状态转换，多个 Dispatcher 不会认领相同的活跃租约。
      */
     @Override
@@ -129,6 +118,11 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
                 if (!ready(previous, now) && !expiredLease(previous, now)) {
                     return previous;
                 }
+                if (expiredLease(previous, now)) {
+                    int attempts = Math.min(MAX_ATTEMPTS, previous.event().retryCount()+1);
+                    if (attempts >= MAX_ATTEMPTS) return new Entry(previous.event().withRetryCount(attempts).withStatus(MqOutboxStatus.FAILED), null, null, now, now);
+                    previous = new Entry(previous.event().withRetryCount(attempts), previous.claimToken(), previous.claimedAt(), previous.updatedAt(), previous.nextAttemptAt());
+                }
                 String token = UUID.randomUUID().toString();
                 MqOutboxEvent sending = previous.event().withStatus(MqOutboxStatus.SENDING);
                 claimed.set(new MqOutboxClaim(sending, token));
@@ -139,32 +133,6 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
             }
         }
         return claims;
-    }
-
-    /**
-     * 兼容只按 ID 更新的历史入口；不可用于多个 Dispatcher 的可靠认领。
-     */
-    @Override
-    public void markSent(String messageId) {
-        Instant now = clock.instant();
-        events.computeIfPresent(messageId, (key, previous) ->
-                previous.event().status() == MqOutboxStatus.FAILED ? previous
-                        : new Entry(previous.event().withStatus(MqOutboxStatus.SENT),
-                        null, null, now, now));
-    }
-
-    @Override
-    public void markFailed(String messageId) {
-        Instant now = clock.instant();
-        events.computeIfPresent(messageId, (key, previous) -> {
-            if (previous.event().status() == MqOutboxStatus.SENT
-                    || previous.event().status() == MqOutboxStatus.FAILED) {
-                return previous;
-            }
-            MqOutboxEvent retry = previous.event().withRetryCount(previous.event().retryCount() + 1)
-                    .withStatus(MqOutboxStatus.RETRY);
-            return new Entry(retry, null, null, now, now);
-        });
     }
 
     @Override
@@ -220,6 +188,48 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
                     null, null, now, now);
         });
         return replayed.get();
+    }
+
+    @Override
+    public boolean supportsOwnerFencing() {
+        return true;
+    }
+
+    @Override
+    public boolean supportsLeaseRenewal() {
+        return true;
+    }
+
+    @Override
+    public boolean renew(MqOutboxClaim claim) {
+        Instant now = clock.instant();
+        AtomicBoolean renewed = new AtomicBoolean();
+        events.computeIfPresent(claim.event().messageId(), (id, old) -> {
+            if (old.event().status() != MqOutboxStatus.SENDING || expiredLease(old, now)
+                    || !Objects.equals(old.claimToken(), claim.claimToken()) || claim.claimToken() == null) {
+                return old;
+            }
+            renewed.set(true);
+            return new Entry(old.event(), old.claimToken(), now, now, old.nextAttemptAt());
+        });
+        return renewed.get();
+    }
+
+    @Override
+    public int cleanupTerminal(int limit) {
+        if (limit < 1) {
+            throw new IllegalArgumentException("Cleanup limit must be positive");
+        }
+        int removed = 0;
+        Instant now = clock.instant();
+        for (var item : events.entrySet()) {
+            Entry old = item.getValue();
+            if ((old.event().status() == MqOutboxStatus.SENT || old.event().status() == MqOutboxStatus.FAILED)
+                    && !old.updatedAt().plus(retention).isAfter(now) && events.remove(item.getKey(), old)) {
+                if (++removed >= Math.min(limit, MAX_BATCH_SIZE)) break;
+            }
+        }
+        return removed;
     }
 
     private boolean ready(Entry entry, Instant now) {

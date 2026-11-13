@@ -6,6 +6,7 @@ import com.peach.rocket.codec.MqMessageCodec;
 import com.peach.rocket.codec.SecureJacksonMqMessageCodec;
 import com.peach.rocket.consumer.DynamicRocketMqConsumerRegistrar;
 import com.peach.rocket.consumer.MqConsumerInvoker;
+import com.peach.rocket.consumer.MqLeaseRenewer;
 import com.peach.rocket.context.DefaultMqHeaderResolver;
 import com.peach.rocket.context.MqTraceContextPropagator;
 import com.peach.rocket.core.MqPublisher;
@@ -30,11 +31,13 @@ import com.peach.rocket.security.MqKeyProvider;
 import com.peach.rocket.security.MqPayloadEncryptor;
 import com.peach.rocket.topic.RocketMqTopicAdmin;
 import com.peach.rocket.transaction.RocketMqTransactionMessageProducer;
+import com.peach.rocket.support.MqClientSecurity;
 import com.peach.rocket.core.MqTransactionHandler;
 import org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration;
 import org.apache.rocketmq.spring.autoconfigure.RocketMQProperties;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -51,11 +54,63 @@ import org.springframework.context.annotation.Bean;
  * @Version 1.0.0
  * @CreateTime 2026/6/26
  */
-@AutoConfigureAfter({RocketMQAutoConfiguration.class,RocketMQProperties.class})
+@AutoConfigureAfter({RocketMQAutoConfiguration.class, RocketMQProperties.class})
 @ConditionalOnClass(RocketMQTemplate.class)
 @EnableConfigurationProperties(PeachRocketProperties.class)
 @ConditionalOnProperty(prefix = "peach.rocket", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class PeachRocketAutoConfigure {
+
+    /**
+     * 在 RocketMQ 属性 Bean 初始化后统一设置安全参数，确保后续创建的客户端读取一致的凭据。
+     *
+     * @param properties RocketMQ 业务配置提供者
+     * @return 原生客户端配置 Bean 后置处理器
+     */
+    @Bean
+    public static BeanPostProcessor rocketClientSecurityProperties(
+            ObjectProvider<PeachRocketProperties> properties) {
+        return new BeanPostProcessor() {
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String name) {
+                if (bean instanceof RocketMQProperties rocket) {
+                    MqClientSecurity.configureProperties(rocket, properties.getObject());
+                }
+                return bean;
+            }
+        };
+    }
+
+    /**
+     * 在容器完成单例初始化后验证持久化幂等存储和加密密钥配置。
+     *
+     * @param properties RocketMQ 业务配置
+     * @param store 幂等存储 SPI
+     * @param keys 密钥提供者
+     * @return 启动阶段可靠性校验器
+     */
+    @Bean
+    public SmartInitializingSingleton rocketProductionVerifier(PeachRocketProperties properties,
+            MqIdempotentStore store, ObjectProvider<MqKeyProvider> keys) {
+        return () -> {
+            if ((properties.isProduction() || properties.getConsumer().isRequireDurableIdempotency())
+                    && (!store.isDurable() || !store.supportsOwnerFencing() || !store.supportsLeaseRenewal())) {
+                throw new IllegalStateException("RocketMQ requires a durable token-fenced idempotent store");
+            }
+            if (properties.getSecurity().isEnabled()) {
+                MqKeyProvider provider = keys.getIfAvailable();
+                if (provider == null) {
+                    throw new IllegalStateException("MQ security requires a key provider");
+                }
+                provider.getKey(properties.getSecurity().getKeyId());
+            }
+        };
+    }
+
+    @Bean(destroyMethod = "close")
+    @ConditionalOnMissingBean
+    public MqLeaseRenewer mqLeaseRenewer(MqIdempotentStore store, PeachRocketProperties properties) {
+        return new MqLeaseRenewer(store, properties);
+    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -85,7 +140,7 @@ public class PeachRocketAutoConfigure {
                                          ObjectProvider<MqEncryptionPolicy> encryptionPolicyProvider,
                                          PeachRocketProperties properties) {
         if (!properties.getSecurity().isEnabled()) {
-            return new JacksonMqMessageCodec(objectMapper);
+            return new JacksonMqMessageCodec(objectMapper, properties);
         }
         return new SecureJacksonMqMessageCodec(objectMapper, encryptorProvider.getIfAvailable(),
                                                encryptionPolicyProvider.getIfAvailable(), properties);
@@ -157,12 +212,13 @@ public class PeachRocketAutoConfigure {
                                                PeachRocketProperties properties,
                                                ObjectProvider<MqTraceContextPropagator> traceContextPropagatorProvider,
                                                ObjectProvider<MqFailureRecorder> failureRecorderProvider,
-                                               ObjectProvider<MqMetrics> metricsProvider) {
+                                               ObjectProvider<MqMetrics> metricsProvider,
+                                               MqLeaseRenewer leaseRenewer) {
         return new MqConsumerInvoker(codec, idempotentStore, idempotentKeyResolver,
                                      errorHandler, exceptionClassifier, properties,
                                      traceContextPropagatorProvider.getIfAvailable(() -> MqTraceContextPropagator.NOOP),
                                      failureRecorderProvider.getIfAvailable(() -> MqFailureRecorder.NOOP),
-                                     metricsProvider.getIfAvailable(() -> MqMetrics.NOOP));
+                                     metricsProvider.getIfAvailable(() -> MqMetrics.NOOP), leaseRenewer);
     }
 
     @Bean

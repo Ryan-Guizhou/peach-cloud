@@ -1,10 +1,11 @@
 package com.peach.rocket.jdbc;
 
 import com.peach.rocket.core.MqDelay;
+import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.outbox.MqOutboxEvent;
 import com.peach.rocket.outbox.MqOutboxStatus;
-import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -34,25 +35,25 @@ class JdbcMqOutboxSendOptionsTest {
         options.setShardingKey("order-1");
         options.setTimeoutMillis(4500L);
         options.setHeaders(Map.of("traceparent", "parent-1"));
-        new JdbcMqOutboxStore(jdbc).save(event("ordered", options));
+        new JdbcMqOutboxStore(jdbc, new PeachRocketProperties()).save(event("ordered", options));
 
         verify(jdbc).update(contains("SHARDING_KEY,DELAY_LEVEL,HEADERS,SEND_TIMEOUT_MS"),
                 eq("ordered"), eq("orders"), eq("created"), eq("ordered"), anyString(),
                 eq("ORDERLY"), eq("order-1"), isNull(), contains("traceparent"), eq(4500L),
-                eq("INIT"), eq(0), any(Timestamp.class), any(Timestamp.class), any(Timestamp.class));
+                eq("INIT"), eq(0));
     }
 
     @Test
     void shouldPersistDelayLevelWithoutShardKey() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         MqSendOptions options = new MqSendOptions();
-        options.setDelay(MqDelay.duration(java.time.Duration.ofSeconds(5)));
-        new JdbcMqOutboxStore(jdbc).save(event("delayed", options));
+        options.setDelay(MqDelay.duration(Duration.ofSeconds(5)));
+        new JdbcMqOutboxStore(jdbc, new PeachRocketProperties()).save(event("delayed", options));
 
         verify(jdbc).update(contains("DELAY_LEVEL"),
                 eq("delayed"), eq("orders"), eq("created"), eq("delayed"), anyString(),
                 eq("DELAY"), isNull(), eq(2), isNull(), isNull(),
-                eq("INIT"), eq(0), any(Timestamp.class), any(Timestamp.class), any(Timestamp.class));
+                eq("INIT"), eq(0));
     }
 
     private MqOutboxEvent event(String id, MqSendOptions options) {

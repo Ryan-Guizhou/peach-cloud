@@ -18,6 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class MqProducerAdmission {
     private final Semaphore permits;
     private final long waitNanos;
+    private final int capacity;
+    private volatile boolean accepting = true;
 
     /**
      * @param maxInflight 同一 Producer 实例最大执行中请求数
@@ -28,6 +30,7 @@ public final class MqProducerAdmission {
             throw new IllegalArgumentException("Invalid RocketMQ producer admission limits");
         }
         permits = new Semaphore(maxInflight, true);
+        capacity = maxInflight;
         waitNanos = acquireTimeout.toNanos();
     }
 
@@ -39,8 +42,15 @@ public final class MqProducerAdmission {
      */
     public Permit acquire(String mode) {
         try {
+            if (!accepting) {
+                throw new MqException("RocketMQ producer is stopping");
+            }
             if (!permits.tryAcquire(waitNanos, TimeUnit.NANOSECONDS)) {
                 throw new MqException("RocketMQ producer inflight limit reached, mode=" + mode);
+            }
+            if (!accepting) {
+                permits.release();
+                throw new MqException("RocketMQ producer is stopping");
             }
             return new Permit(permits);
         } catch (InterruptedException ex) {
@@ -48,6 +58,24 @@ public final class MqProducerAdmission {
             throw new MqException("Interrupted while acquiring RocketMQ producer permit", ex);
         }
     }
+
+    /** 禁止新发送，并在有界时间内等待所有 Permit 归还。 */
+    public boolean closeAndDrain(Duration timeout) {
+        accepting = false;
+        try {
+            if (!permits.tryAcquire(capacity, timeout.toNanos(), TimeUnit.NANOSECONDS)) {
+                return false;
+            }
+            permits.release(capacity);
+            return true;
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    /** 生命周期重启时重新开放，不创建新的 SDK 资源。 */
+    public void open() { accepting = true; }
 
     /**
      * 幂等额度令牌，回调与同步异常均可调用 close()。

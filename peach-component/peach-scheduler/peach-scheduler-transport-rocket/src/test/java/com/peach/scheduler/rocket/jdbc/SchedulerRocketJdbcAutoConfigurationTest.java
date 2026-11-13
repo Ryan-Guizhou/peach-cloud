@@ -3,6 +3,8 @@ package com.peach.scheduler.rocket.jdbc;
 import javax.sql.DataSource;
 
 import com.peach.rocket.idempotent.MqIdempotentStore;
+import com.peach.rocket.jdbc.JdbcMqIdempotentStore;
+import com.peach.rocket.jdbc.JdbcMqOutboxStore;
 import com.peach.rocket.outbox.MqOutboxStore;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -15,7 +17,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 调度RocketMQJdbcAutoConfigurationTest。
+ * 校验 Scheduler 接入层复用统一的 JDBC Outbox 和消费幂等 Store。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -37,8 +39,8 @@ class SchedulerRocketJdbcAutoConfigurationTest {
         contextRunner.run(context -> {
             assertThat(context).hasSingleBean(MqOutboxStore.class);
             assertThat(context).hasSingleBean(MqIdempotentStore.class);
-            assertThat(context.getBean(MqOutboxStore.class)).isInstanceOf(SchedulerJdbcMqOutboxStore.class);
-            assertThat(context.getBean(MqIdempotentStore.class)).isInstanceOf(SchedulerJdbcMqIdempotentStore.class);
+            assertThat(context.getBean(MqOutboxStore.class)).isInstanceOf(JdbcMqOutboxStore.class);
+            assertThat(context.getBean(MqIdempotentStore.class)).isInstanceOf(JdbcMqIdempotentStore.class);
         });
     }
 

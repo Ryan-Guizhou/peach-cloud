@@ -42,7 +42,7 @@ function javaType(type,pack,root,classes,imports){
 }
 
 function propertyModel(source,file,constants = {}){
- const ann=source.match(/@ConfigurationProperties\s*\(\s*(?:prefix|value)\s*=\s*("[^"]+"|[\w.]+)\s*\)/);
+ const ann=source.match(/@ConfigurationProperties\s*\(\s*(?:prefix|value)\s*=\s*("[^"]+"|[\w.]+)\s*(?:,|\))/);
  if(!ann)return [];
  const symbolic={ "CaptchaConst.CAPTCHA_SUFFIX":"peach.captcha","RedisStreamContant.REDIS_STREAM_PREFIX":"peach.redis.stream","DelayQueueProperties.PREFIX":"peach.delay.queue"};
  const prefix=ann[1].startsWith('"')?ann[1].slice(1,-1):symbolic[ann[1]];

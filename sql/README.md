@@ -66,7 +66,8 @@
 1. 先执行 `PEACH_SCHEDULER_*`，再执行 `QRTZ_MYSQL.sql` 与 Rocket 两张表。
 2. `spring.quartz.jdbc.initialize-schema=never`，禁止应用自动建 Quartz 表。
 3. `peach.scheduler.rocket.require-jdbc=true` 时必须存在 `MQ_OUTBOX_EVENT` 与 `MQ_CONSUME_RECORD`。
-4. 调度中心菜单与 `scheduler:*` 权限由平台权限模块维护，不在 SQL 目录提供种子脚本。
+4. `peach-rocket` 尚未投产，直接采用当前 `MQ_CONSUME_RECORD.sql`、`MQ_OUTBOX_EVENT.sql` 初始化；不保留 Rocket 历史表结构迁移脚本。字符集、排序规则和存储引擎沿用部署数据库默认配置，接入前验收标识列的大小写比较语义。
+5. 调度中心菜单与 `scheduler:*` 权限由平台权限模块维护，不在 SQL 目录提供种子脚本。
 
 ## 维护原则
 

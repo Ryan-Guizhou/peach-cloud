@@ -37,6 +37,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @AutoConfiguration
 @AutoConfigureAfter(PeachRocketAutoConfigure.class)
 @ConditionalOnClass(RocketMQTemplate.class)
+@ConditionalOnProperty(prefix = "peach.rocket", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(PeachRocketProperties.class)
 @ConditionalOnProperty(prefix = "peach.rocket.outbox", name = "enabled", havingValue = "true")
 public class PeachRocketOutboxAutoConfigure {
@@ -54,10 +55,10 @@ public class PeachRocketOutboxAutoConfigure {
      * 生产环境要求持久化 Outbox 时明确禁止内存实现。
      */
     @Bean
-    @ConditionalOnProperty(prefix = "peach.rocket.outbox", name = "require-durable", havingValue = "true")
-    public SmartInitializingSingleton rocketOutboxDurabilityVerifier(MqOutboxStore outboxStore) {
+    public SmartInitializingSingleton rocketOutboxDurabilityVerifier(MqOutboxStore outboxStore, PeachRocketProperties properties) {
         return () -> {
-            if (outboxStore instanceof InMemoryMqOutboxStore) {
+            if ((properties.isProduction() || properties.getOutbox().isRequireDurable())
+                    && (!outboxStore.isDurable() || !outboxStore.supportsOwnerFencing() || !outboxStore.supportsLeaseRenewal())) {
                 throw new IllegalStateException(
                         "peach.rocket.outbox.require-durable requires a persistent MqOutboxStore");
             }
@@ -70,8 +71,8 @@ public class PeachRocketOutboxAutoConfigure {
     public MqOutboxPublisher mqOutboxPublisher(MqOutboxStore outboxStore,
                                                MqMessageCodec codec,
                                                MqRouteResolver routeResolver,
-                                               DefaultMqHeaderResolver headerResolver) {
-        return new DefaultMqOutboxPublisher(outboxStore, codec, routeResolver, headerResolver);
+                                               DefaultMqHeaderResolver headerResolver, PeachRocketProperties properties) {
+        return new DefaultMqOutboxPublisher(outboxStore, codec, routeResolver, headerResolver, properties);
     }
 
     @Bean

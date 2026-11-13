@@ -16,7 +16,7 @@ public class DefaultMqErrorHandler implements MqErrorHandler {
 
     @Override
     public void handle(RuntimeException exception, MqMessageEnvelope<?> envelope, MqConsumeContext context) {
-        log.error("[mq-consume-error] topic={} tag={} key={} messageId={} exception={}",
-                context.topic(), context.tag(), context.key(), context.messageId(), exception.getClass().getName(), exception);
+        log.error("[mq-consume-error] topic={} tag={} key=redacted messageId={} exception={}",
+                context.topic(), context.tag(), context.messageId(), exception.getClass().getName());
     }
 }
