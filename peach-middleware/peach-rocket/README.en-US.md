@@ -12,6 +12,7 @@ English | [中文](README.md)
 | --- | --- |
 | `peach-rocket-autoconfigure` | Core APIs, auto-configuration, default implementations, and SPI |
 | `peach-rocket-starter` | Starter exposed to business modules |
+| `peach-rocket-jdbc` | Optional durable JDBC Outbox/idempotency module (explicit opt-in) |
 | `peach-rocket-quickstart` | Order publish-consume, orderly publish, and in-memory idempotency samples |
 
 ```mermaid
@@ -140,7 +141,34 @@ peach:
       executor-bean-name: rocket-outboxVirtualExecutor
 ```
 
-The dispatcher awaits the batch's Future results. Rejected submissions are marked failed using the claim token and retried normally; they are not acknowledged or silently dropped. A batch containing sharding-key or delay options uses the serial path to avoid additional parallel reordering. **The current transport path does not yet honor Outbox ordered/delay options; this is addressed in phase four. Do not rely on the current Outbox implementation for ordered or delayed messages in production.** Bound executor pending/concurrency according to Broker throughput, DB pool capacity, and send latency.
+The dispatcher awaits the batch's Future results. Rejected submissions are marked failed using the claim token and retried normally; they are not acknowledged or silently dropped. A batch containing sharding-key or delay options uses the serial path to avoid additional parallel reordering. **Phase four implements ordered and delayed Broker send paths, but cross-instance claiming does not guarantee globally strict order.** Bound executor pending/concurrency according to Broker throughput, DB pool capacity, and send latency.
+
+## Message Types, Consumer Groups, and Key Rotation
+
+- **Generic payloads:** The invoker resolves inherited `MqMessageHandler<List<Order>>` types. Both standard and secure Jackson codecs support full Java `Type`. The previous custom-codec `decode(byte[], Class)` API remains compatible; custom codecs need `decode(byte[], Type)` to decode parameterized payloads.
+- **Consumer groups:** `peach.rocket.naming.auto-prefix-consumer-group` defaults to `false` to retain existing groups and offsets. Opting in prefixes with `namespace + separator + group-prefix + separator + group`. Plan offset and idempotency migration before changing a production group.
+- **Key rotation:** `peach.rocket.security.keys` maps key IDs to encryption keys. New messages use the active `key-id`; historical messages decrypt using their stored ID. Unknown IDs fail closed. Legacy `security.key` only works with the current key ID. Inject secrets from an approved secret/config source.
+
+```yaml
+peach:
+  rocket:
+    naming:
+      auto-prefix-consumer-group: false
+    security:
+      enabled: true
+      encrypt-payload: true
+      base64-key: true
+      key-id: current
+      keys:
+        current: ${MQ_KEY_CURRENT_B64}
+        previous: ${MQ_KEY_PREVIOUS_B64}
+```
+
+## JDBC Outbox Options and Migration
+
+The JDBC Outbox now persists/restores `SEND_MODE`, `SHARDING_KEY`, `DELAY_LEVEL`, `HEADERS`, and `SEND_TIMEOUT_MS`. The dispatcher uses the corresponding ordinary, orderly, or delayed RocketMQ API. Combining an ordered sharding key with delay is rejected. Retries and ACK remain claim-token scoped.
+
+**Before deployment:** Pause Outbox dispatch and apply the non-destructive [20261113 migration](../../sql/migrations/20261113_rocket_outbox_send_options.sql) to existing databases; new installations use the updated [schema](../../sql/MQ_OUTBOX_EVENT.sql). Then deploy the application. Old rows with no timeout use the configured default. Headers are stored as plain JSON and must not contain secrets or tokens. **Selecting the same Broker queue by sharding key does not guarantee globally strict ordering with multiple concurrent Outbox claimants.**
 
 ## SPI Overrides
 

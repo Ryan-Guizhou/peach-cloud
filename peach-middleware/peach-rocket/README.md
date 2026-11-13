@@ -12,6 +12,7 @@
 | --- | --- |
 | `peach-rocket-autoconfigure` | 核心 API、自动配置、默认实现和 SPI |
 | `peach-rocket-starter` | 对业务模块暴露的 starter |
+| `peach-rocket-jdbc` | 可选 JDBC Outbox/幂等持久化模块，需显式启用 |
 | `peach-rocket-quickstart` | 订单发布-消费、顺序发布与内存幂等能力样例 |
 
 ```mermaid
@@ -140,7 +141,34 @@ peach:
       executor-bean-name: rocket-outboxVirtualExecutor
 ```
 
-Dispatcher 对已认领消息提交 Future 并等待本批结果；虚拟线程分组拒绝任务时通过 Owner Token 将消息标记为失败、交给正常重试，不会 ACK 或丢弃。含顺序分片键或延迟选项的整批消息强制走串行路径，避免并行引入额外重排。**注意：当前阶段的 Outbox 普通发送尚不能保证对 shardingKey/延迟参数的实际传输支持，该问题归阶段四修复；生产中不要用当前阶段 Outbox 发送顺序或延迟消息。** 分组应根据 Broker、数据库连接池和发送 RTT 调整，禁止设置无界 pending。
+Dispatcher 对已认领消息提交 Future 并等待本批结果；虚拟线程分组拒绝任务时通过 Owner Token 将消息标记为失败、交给正常重试，不会 ACK 或丢弃。含顺序分片键或延迟选项的整批消息强制走串行路径，避免并行引入额外重排。**阶段四已支持顺序和延迟模式的实际 Broker 发送，但跨实例并发认领不保证全局严格顺序。** 分组应根据 Broker、数据库连接池和发送 RTT 调整，禁止设置无界 pending。
+
+## 消息协议、消费组和密钥轮换
+
+- **泛型 Payload**：`MqConsumerInvoker` 支持继承实现的 `MqMessageHandler<List<Order>>`；普通/安全 Jackson Codec 使用完整 `Type` 解码。旧自定义 Codec 的 `decode(byte[], Class)` 接口保留，参数化类型需要实现新 `decode(byte[], Type)`。
+- **消费组**：`peach.rocket.naming.auto-prefix-consumer-group` 默认 `false`，维持现有 Group 和消费位点；启用后组名为 `namespace + separator + group-prefix + separator + 原组名`。**生产切换应先规划消费者位点与旧幂等记录迁移**，不可直接改组名。
+- **密钥轮换**：`peach.rocket.security.keys` 按 keyId 存储多把密钥；当前 `key-id` 加密，新旧密文按信封中各自的 keyId 解密。未知 keyId 拒绝，不回退到其他密钥。旧版单密钥 `security.key` 仅兼容活动 keyId。所有密钥通过安全配置源/环境变量注入。
+
+```yaml
+peach:
+  rocket:
+    naming:
+      auto-prefix-consumer-group: false
+    security:
+      enabled: true
+      encrypt-payload: true
+      base64-key: true
+      key-id: current
+      keys:
+        current: ${MQ_KEY_CURRENT_B64}
+        previous: ${MQ_KEY_PREVIOUS_B64}
+```
+
+## JDBC Outbox 发送选项与迁移
+
+JDBC Outbox 保存并恢复 `SEND_MODE`、`SHARDING_KEY`、`DELAY_LEVEL`、`HEADERS` 和 `SEND_TIMEOUT_MS`，Dispatcher 根据类型使用 RocketMQ 普通、顺序或延迟发送 API。禁止同时设置顺序分片键和延迟配置。失败时仍遵循 token-scoped 重试/ACK 语义。
+
+**部署前提：** 已有数据库先暂停 Outbox Dispatcher，并执行 [20261113_rocket_outbox_send_options.sql](../../sql/migrations/20261113_rocket_outbox_send_options.sql) 的非破坏性迁移；新环境使用更新的 [MQ_OUTBOX_EVENT.sql](../../sql/MQ_OUTBOX_EVENT.sql)。之后再部署服务。旧记录无超时字段时使用默认超时。headers 以 JSON 明文存储在数据库中，禁止放入密钥、Token 等敏感值。**分片键能保证路由到同一 Broker 队列，不能保证多实例并发认领情况下的全局严格顺序。**
 
 ## SPI 覆盖
 

@@ -106,6 +106,12 @@
       "description": "RocketMQ Topic 和消费组名称的生成规则。"
     },
     {
+      "name": "peach.rocket.naming.auto-prefix-consumer-group",
+      "type": "java.lang.Boolean",
+      "defaultValue": false,
+      "description": "是否显式为 Consumer Group 添加环境和 group-prefix；默认关闭以保护既有消费位点。"
+    },
+    {
       "name": "peach.rocket.naming.auto-prefix-env",
       "type": "java.lang.Boolean",
       "description": "是否在 Topic 和消费组名称前自动添加环境标识。",
@@ -250,6 +256,11 @@
       "type": "java.lang.String",
       "description": "消息加密密钥标识，用于选择当前使用的密钥。",
       "defaultValue": "default"
+    },
+    {
+      "name": "peach.rocket.security.keys",
+      "type": "java.util.Map",
+      "description": "按 keyId 配置的多密钥映射；必须经安全配置源注入，禁止向 Git 写入明文密钥。"
     },
     {
       "name": "peach.rocket.topic",
