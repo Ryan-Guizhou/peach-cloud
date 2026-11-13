@@ -15,6 +15,7 @@ import com.peach.rocket.core.MqSendResult;
 import com.peach.rocket.exception.MqException;
 import com.peach.rocket.metrics.MqMetrics;
 import com.peach.rocket.metrics.MqMetricsGuard;
+import java.util.Map;
 import com.peach.rocket.route.MqRoute;
 import com.peach.rocket.route.MqRouteResolver;
 import com.peach.rocket.transaction.RocketMqTransactionMessageProducer;
@@ -32,7 +33,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.StringUtils;
 
 /**
- * RocketMqPublisher相关类。
+ * RocketMQ 消息发布器：同步、异步、单向、顺序、延迟及事务入口统一适配。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -48,6 +49,7 @@ public class RocketMqPublisher implements MqPublisher {
     private final PeachRocketProperties properties;
     private final RocketMqTransactionMessageProducer transactionMessageProducer;
     private final MqMetrics metrics;
+    private final MqProducerAdmission admission;
 
     public RocketMqPublisher(RocketMQTemplate rocketMQTemplate, MqMessageCodec codec, MqRouteResolver routeResolver,
                              DefaultMqHeaderResolver headerResolver, PeachRocketProperties properties) {
@@ -70,6 +72,8 @@ public class RocketMqPublisher implements MqPublisher {
                              DefaultMqHeaderResolver headerResolver, PeachRocketProperties properties,
                              RocketMqTransactionMessageProducer transactionMessageProducer, MqMetrics metrics) {
         this.metrics = MqMetricsGuard.of(metrics);
+        this.admission = new MqProducerAdmission(properties.getProducer().getMaxInflight(),
+                properties.getProducer().getInflightAcquireTimeout());
         this.rocketMQTemplate = rocketMQTemplate;
         this.codec = codec;
         this.routeResolver = routeResolver;
@@ -108,14 +112,17 @@ public class RocketMqPublisher implements MqPublisher {
         }
         Message<byte[]> message = buildMessage(payload, actualOptions, route);
         SendResult result;
-        if (StringUtils.hasText(shardingKey)) {
-            result = rocketMQTemplate.syncSendOrderly(destination(route), message,
-                    shardingKey, actualOptions.getTimeoutMillis());
-        } else if (delayLevel != null) {
-            result = rocketMQTemplate.syncSend(destination(route), message,
-                    actualOptions.getTimeoutMillis(), delayLevel);
-        } else {
-            result = rocketMQTemplate.syncSend(destination(route), message, actualOptions.getTimeoutMillis());
+        // 同步/顺序/延迟发送完成或抛错时释放配额，不在编码阶段占据额度。
+        try (MqProducerAdmission.Permit permit = admission.acquire("sync")) {
+            if (StringUtils.hasText(shardingKey)) {
+                result = rocketMQTemplate.syncSendOrderly(destination(route), message,
+                        shardingKey, actualOptions.getTimeoutMillis());
+            } else if (delayLevel != null) {
+                result = rocketMQTemplate.syncSend(destination(route), message,
+                        actualOptions.getTimeoutMillis(), delayLevel);
+            } else {
+                result = rocketMQTemplate.syncSend(destination(route), message, actualOptions.getTimeoutMillis());
+            }
         }
         MqSendResult mqSendResult = toMqSendResult(result, route);
         log.info("[mq-send] app={} payloadType={} mode=sync topic={} tag={} key={} delayLevel={} messageId={} status={} cost={}ms success={}",
@@ -137,16 +144,24 @@ public class RocketMqPublisher implements MqPublisher {
         rejectUnsupportedAsyncOptions(actualOptions);
         final long start = System.currentTimeMillis();
         final MqRoute route = routeResolver.resolve(payload, actualOptions);
-        final CompletableFuture<MqSendResult> future = new CompletableFuture<MqSendResult>();
+        final CompletableFuture<MqSendResult> future = new CompletableFuture<>();
+        MqProducerAdmission.Permit permit = null;
         try {
-            rocketMQTemplate.asyncSend(destination(route), buildMessage(payload, actualOptions, route),
-                    new AsyncSendCallback(this, properties, payload, route, start, metricStarted, future),
+            Message<byte[]> message = buildMessage(payload, actualOptions, route);
+            permit = admission.acquire("async");
+            rocketMQTemplate.asyncSend(destination(route), message,
+                    new AsyncSendCallback(this, properties, payload, route, start, metricStarted, future, permit),
                     actualOptions.getTimeoutMillis());
+            return future;
         } catch (RuntimeException ex) {
+            if (permit != null) {
+                permit.close();
+            }
             metrics.publish("async", "failed", System.nanoTime() - metricStarted);
+            log.warn("[mq-send-rejected] mode=async topic={} reason={} errorType={}",
+                    route.topic(), ex.getMessage(), ex.getClass().getName());
             throw ex;
         }
-        return future;
     }
 
     @Override
@@ -165,7 +180,10 @@ public class RocketMqPublisher implements MqPublisher {
         MqSendOptions actualOptions = prepareOptions(options);
         rejectUnsupportedAsyncOptions(actualOptions);
         MqRoute route = routeResolver.resolve(payload, actualOptions);
-        rocketMQTemplate.sendOneWay(destination(route), buildMessage(payload, actualOptions, route));
+        Message<byte[]> message = buildMessage(payload, actualOptions, route);
+        try (MqProducerAdmission.Permit permit = admission.acquire("oneway")) {
+            rocketMQTemplate.sendOneWay(destination(route), message);
+        }
         log.info("[mq-send] app={} payloadType={} mode=one-way topic={} tag={} key={} submitted=true",
                 properties.getAppName(), payload.getClass().getSimpleName(), route.topic(), route.tag(), route.key());
     }
@@ -228,12 +246,15 @@ public class RocketMqPublisher implements MqPublisher {
                 headerResolver.resolve(options.getHeaders()),
                 payload,
                 LocalDateTime.now(ZoneId.systemDefault()));
-        MessageBuilder<byte[]> builder = MessageBuilder.withPayload(codec.encode(envelope));
+        byte[] encoded = codec.encode(envelope);
+        MqProducerMessageGuard.validate(encoded, envelope.headers(), route.key(), properties.getProducer());
+        MessageBuilder<byte[]> builder = MessageBuilder.withPayload(encoded);
         if (StringUtils.hasText(route.key())) {
             builder.setHeader(MessageConst.PROPERTY_KEYS, route.key());
         }
-        for (String name : envelope.headers().keySet()) {
-            builder.setHeader(name, envelope.headers().get(name));
+        Map<String, String> headers = envelope.headers();
+        if (headers != null) {
+            headers.forEach(builder::setHeader);
         }
         return builder.build();
     }
@@ -257,7 +278,7 @@ public class RocketMqPublisher implements MqPublisher {
     }
 
     /**
-     * AsyncSend回调。
+     * 异步发送 SDK 回调；只有在回调完成或提交同步失败后才能释放额度。
      *
      * @Author Mr Shu
      * @Version 1.0.0
@@ -273,13 +294,14 @@ public class RocketMqPublisher implements MqPublisher {
         private final long start;
         private final long metricStarted;
         private final CompletableFuture<MqSendResult> future;
+        private final MqProducerAdmission.Permit permit;
 
         private AsyncSendCallback(RocketMqPublisher publisher,
                                   PeachRocketProperties properties,
                                   Object payload,
                                   MqRoute route,
                                   long start, long metricStarted,
-                                  CompletableFuture<MqSendResult> future) {
+                                  CompletableFuture<MqSendResult> future, MqProducerAdmission.Permit permit) {
             this.publisher = publisher;
             this.properties = properties;
             this.payload = payload;
@@ -287,26 +309,36 @@ public class RocketMqPublisher implements MqPublisher {
             this.start = start;
             this.metricStarted = metricStarted;
             this.future = future;
+            this.permit = permit;
         }
 
         @Override
         public void onSuccess(SendResult sendResult) {
-            MqSendResult result = publisher.toMqSendResult(sendResult, route);
-            log.info("[mq-send] app={} payloadType={} mode=async topic={} tag={} key={} messageId={} status={} cost={}ms success={}",
-                    properties.getAppName(), payload.getClass().getSimpleName(), result.topic(), result.tag(),
-                    result.key(), result.messageId(), result.rawStatus(), System.currentTimeMillis() - start, result.isSuccess());
-            publisher.metrics.publish("async", result.isSuccess() ? "success" : "rejected",
-                    System.nanoTime() - metricStarted);
-            future.complete(result);
+            try {
+                MqSendResult result = publisher.toMqSendResult(sendResult, route);
+                log.info("[mq-send] app={} payloadType={} mode=async topic={} tag={} messageId={} status={} cost={}ms success={}",
+                        properties.getAppName(), payload.getClass().getSimpleName(), result.topic(), result.tag(),
+                        result.messageId(), result.rawStatus(), System.currentTimeMillis() - start, result.isSuccess());
+                publisher.metrics.publish("async", result.isSuccess() ? "success" : "rejected",
+                        System.nanoTime() - metricStarted);
+                future.complete(result);
+            } finally {
+                permit.close();
+            }
         }
 
         @Override
         public void onException(Throwable throwable) {
-            log.error("[mq-send-error] app={} payloadType={} mode=async topic={} tag={} key={} cost={}ms exception={}",
-                    properties.getAppName(), payload.getClass().getSimpleName(), route.topic(), route.tag(), route.key(),
-                    System.currentTimeMillis() - start, throwable.getClass().getName(), throwable);
-            publisher.metrics.publish("async", "failed", System.nanoTime() - metricStarted);
-            future.completeExceptionally(throwable);
+            Throwable failure = throwable == null ? new MqException("Async RocketMQ callback failed without cause") : throwable;
+            try {
+                log.error("[mq-send-error] app={} payloadType={} mode=async topic={} tag={} cost={}ms errorType={}",
+                        properties.getAppName(), payload.getClass().getSimpleName(), route.topic(), route.tag(),
+                        System.currentTimeMillis() - start, failure.getClass().getName(), failure);
+                publisher.metrics.publish("async", "failed", System.nanoTime() - metricStarted);
+                future.completeExceptionally(failure);
+            } finally {
+                permit.close();
+            }
         }
     }
 
