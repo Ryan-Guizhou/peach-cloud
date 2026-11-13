@@ -7,6 +7,11 @@ import com.peach.rocket.codec.JacksonMqMessageCodec;
 import com.peach.rocket.core.MqConsumeContext;
 import com.peach.rocket.core.MqMessageEnvelope;
 import com.peach.rocket.core.MqMessageHandler;
+import com.peach.rocket.error.MqErrorHandler;
+import com.peach.rocket.error.MqExceptionClassifier;
+import com.peach.rocket.exception.MqException;
+import com.peach.rocket.idempotent.MqIdempotentKeyResolver;
+import com.peach.rocket.idempotent.MqIdempotentStore;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -32,10 +37,10 @@ class MqConsumerInvokerGenericPayloadTest {
         properties.getConsumer().setEnableIdempotent(false);
         JacksonMqMessageCodec codec = new JacksonMqMessageCodec(new ObjectMapper().findAndRegisterModules());
         MqConsumerInvoker invoker = new MqConsumerInvoker(codec,
-                mock(com.peach.rocket.idempotent.MqIdempotentStore.class),
-                mock(com.peach.rocket.idempotent.MqIdempotentKeyResolver.class),
-                mock(com.peach.rocket.error.MqErrorHandler.class),
-                mock(com.peach.rocket.error.MqExceptionClassifier.class), properties);
+                mock(MqIdempotentStore.class),
+                mock(MqIdempotentKeyResolver.class),
+                mock(MqErrorHandler.class),
+                mock(MqExceptionClassifier.class), properties);
         MqMessageEnvelope<List<Payload>> envelope = MqMessageEnvelope.create(
                 "msg-1", "orders", "created", "order-1", "app", List.class.getName(), 1,
                 Map.of(), List.of(new Payload("p-1")), LocalDateTime.now());
@@ -43,7 +48,8 @@ class MqConsumerInvokerGenericPayloadTest {
 
         MqConsumer declaration = mock(MqConsumer.class);
         when(declaration.consumerGroup()).thenReturn("orders-test");
-        invoker.invoke(handler, "handler", codec.encode(envelope), declaration, "msg-1", 0);
+        invoker.invoke(handler, "handler", codec.encode(envelope), declaration, "msg-1", 0,
+                "orders", "created", "order-1");
 
         assertEquals("p-1", handler.received.get(0).id());
     }

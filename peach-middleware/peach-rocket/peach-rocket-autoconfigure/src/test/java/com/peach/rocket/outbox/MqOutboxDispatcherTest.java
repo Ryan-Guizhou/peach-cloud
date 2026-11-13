@@ -3,6 +3,7 @@ package com.peach.rocket.outbox;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.core.MqDelay;
 import org.springframework.messaging.Message;
@@ -128,7 +129,7 @@ class MqOutboxDispatcherTest {
         PeachRocketProperties properties = new PeachRocketProperties();
         properties.getOutbox().setParallelEnabled(true);
         MqOutboxClaim original = claim("ordered");
-        com.peach.rocket.core.MqSendOptions opts = new com.peach.rocket.core.MqSendOptions();
+        MqSendOptions opts = new MqSendOptions();
         opts.setShardingKey("order-1");
         MqOutboxEvent e = original.event();
         MqOutboxClaim ordered = new MqOutboxClaim(new MqOutboxEvent(e.messageId(), e.body(),
@@ -154,7 +155,7 @@ class MqOutboxDispatcherTest {
         MqSendOptions opts = new MqSendOptions();
         opts.setShardingKey("order-1");
         opts.setTimeoutMillis(3500L);
-        opts.setHeaders(java.util.Map.of("x-request-id", "req-1"));
+        opts.setHeaders(Map.of("x-request-id", "req-1"));
         MqOutboxClaim claim = withOptions("ordered", opts);
         when(store.claimPending(1)).thenReturn(List.of(claim), List.of());
         SendResult success = mock(SendResult.class);

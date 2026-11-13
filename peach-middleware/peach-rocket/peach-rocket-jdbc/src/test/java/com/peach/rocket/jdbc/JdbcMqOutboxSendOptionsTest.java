@@ -5,7 +5,7 @@ import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.outbox.MqOutboxEvent;
 import com.peach.rocket.outbox.MqOutboxStatus;
-import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -47,7 +47,7 @@ class JdbcMqOutboxSendOptionsTest {
     void shouldPersistDelayLevelWithoutShardKey() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         MqSendOptions options = new MqSendOptions();
-        options.setDelay(MqDelay.duration(java.time.Duration.ofSeconds(5)));
+        options.setDelay(MqDelay.duration(Duration.ofSeconds(5)));
         new JdbcMqOutboxStore(jdbc, new PeachRocketProperties()).save(event("delayed", options));
 
         verify(jdbc).update(contains("DELAY_LEVEL"),
