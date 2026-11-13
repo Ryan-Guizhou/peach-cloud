@@ -43,6 +43,24 @@ class MqProducerMessageGuardTest {
     }
 
     @Test
+    void transactionalSystemPropertyCountsTowardHeaderBudget() {
+        PeachRocketProperties.Producer props = new PeachRocketProperties.Producer();
+        assertDoesNotThrow(() -> MqProducerMessageGuard.validateTransaction(
+                new byte[]{1}, Map.of("traceparent", "trace-1"), "order-1", "txn-1", props));
+
+        props.setMaxHeaderCount(2);
+        assertThatThrownBy(() -> MqProducerMessageGuard.validateTransaction(
+                new byte[]{1}, Map.of("traceparent", "trace-1"), "order-1", "txn-1", props))
+                .isInstanceOf(MqException.class).hasMessageContaining("count");
+
+        props.setMaxHeaderCount(4);
+        props.setMaxHeaderBytes(16);
+        assertThatThrownBy(() -> MqProducerMessageGuard.validateTransaction(
+                new byte[]{1}, Map.of(), null, "transaction", props))
+                .isInstanceOf(MqException.class).hasMessageContaining("bytes");
+    }
+
+    @Test
     void shouldRejectOversizedEncodedPayload() {
         PeachRocketProperties.Producer props = new PeachRocketProperties.Producer();
         props.setMaxPayloadBytes(2);

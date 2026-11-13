@@ -184,9 +184,8 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
 
         // 对编码后的信封和包括事务 Key 的 Header 统一做预算限制。
         byte[] body = codec.encode(envelope);
-        Map<String, String> headers = new HashMap<>(envelope.headers());
-        headers.put(PROPERTY_TRANSACTION_KEY, transactionKey);
-        MqProducerMessageGuard.validate(body, headers, route.key(), properties.getProducer());
+        MqProducerMessageGuard.validateTransaction(
+                body, envelope.headers(), route.key(), transactionKey, properties.getProducer());
         Message message = new Message(route.topic(), route.tag(), route.key(), body);
 
         // 设置事务 Key 到消息用户属性
