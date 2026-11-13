@@ -11,6 +11,7 @@ import com.peach.rocket.security.MqEncryptionResult;
 import com.peach.rocket.security.MqPayloadEncryptor;
 import com.peach.rocket.security.MqEnvelopeAuthentication;
 import com.peach.rocket.annotation.MqEncrypted;
+import com.peach.rocket.support.RocketMqNaming;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
@@ -95,7 +96,7 @@ public class SecureJacksonMqMessageCodec implements MqMessageCodec {
             } else {
                 boolean required = properties.getSecurity().isEncryptPayload()
                         || properties.getSecurity().getEncryptTopics().stream().anyMatch(topic ->
-                                com.peach.rocket.support.RocketMqNaming.normalizeTopic(topic, properties).equals(raw.topic()))
+                                RocketMqNaming.normalizeTopic(topic, properties).equals(raw.topic()))
                         || actualType.getRawClass().isAnnotationPresent(MqEncrypted.class)
                         || (actualType.getContentType() != null
                                 && actualType.getContentType().getRawClass().isAnnotationPresent(MqEncrypted.class));
