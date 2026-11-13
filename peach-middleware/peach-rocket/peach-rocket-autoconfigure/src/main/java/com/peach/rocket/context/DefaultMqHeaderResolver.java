@@ -2,6 +2,9 @@ package com.peach.rocket.context;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Locale;
+import java.util.Set;
+import org.apache.rocketmq.common.message.MessageConst;
 import com.peach.rocket.exception.MqException;
 import org.springframework.util.StringUtils;
 import org.springframework.util.CollectionUtils;
@@ -51,9 +54,9 @@ public class DefaultMqHeaderResolver {
                 throw new MqException("MQ header key must have text and value must not be null");
             }
             String name = header.getKey();
-            String lower = name.toLowerCase(java.util.Locale.ROOT);
-            if (org.apache.rocketmq.common.message.MessageConst.STRING_HASH_SET.contains(name)
-                    || java.util.Set.of("id", "timestamp", "peach_rocket_transaction_key").contains(lower)
+            String lower = name.toLowerCase(Locale.ROOT);
+            if (MessageConst.STRING_HASH_SET.contains(name)
+                    || Set.of("id", "timestamp", "peach_rocket_transaction_key").contains(lower)
                     || lower.contains("authorization") || lower.contains("password")
                     || lower.contains("secret") || lower.contains("token") || lower.contains("cookie")
                     || name.chars().anyMatch(Character::isISOControl)
