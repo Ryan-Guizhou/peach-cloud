@@ -10,6 +10,7 @@ import com.peach.rocket.support.RocketMqNaming;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
@@ -42,7 +43,8 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
     private final RocketMQProperties rocketMQProperties;
     private final PeachRocketProperties properties;
     private final MqConsumerInvoker invoker;
-    private final List<DefaultMQPushConsumer> consumers = new ArrayList<DefaultMQPushConsumer>();
+    private final List<DefaultMQPushConsumer> consumers = new ArrayList<>();
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
     private ApplicationContext applicationContext;
     private volatile boolean running;
 
@@ -59,26 +61,68 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
 
     @Override
     public void start() {
-        if (running || !properties.getConsumer().isDynamicRegister()) {
-            return;
+        lifecycleLock.lock();
+        try {
+            if (running || !properties.getConsumer().isDynamicRegister()) {
+                return;
+            }
+            Map<String, MqMessageHandler> handlers =
+                    applicationContext.getBeansOfType(MqMessageHandler.class, false, false);
+            log.info("[mq-consumer] scan dynamic consumers. handlerCount={} dynamicRegister={}",
+                    handlers.size(), properties.getConsumer().isDynamicRegister());
+
+            // 只有全部启动成功才发布消费者集合和运行状态，失败则回滚已启动实例。
+            List<DefaultMQPushConsumer> started = new ArrayList<>();
+            try {
+                for (Map.Entry<String, MqMessageHandler> entry : handlers.entrySet()) {
+                    DefaultMQPushConsumer consumer = register(entry.getKey(), entry.getValue());
+                    if (consumer != null) {
+                        started.add(consumer);
+                    }
+                }
+                consumers.addAll(started);
+                running = true;
+                log.info("[mq-consumer] dynamic consumers started. count={}", consumers.size());
+            } catch (RuntimeException ex) {
+                shutdownConsumers(started, ex);
+                throw ex;
+            }
+        } finally {
+            lifecycleLock.unlock();
         }
-        Map<String, MqMessageHandler> handlers = applicationContext.getBeansOfType(MqMessageHandler.class, false, false);
-        log.info("[mq-consumer] scan dynamic consumers. handlerCount={} dynamicRegister={}", handlers.size(), properties.getConsumer().isDynamicRegister());
-        for (Map.Entry<String, MqMessageHandler> entry : handlers.entrySet()) {
-            register(entry.getKey(), entry.getValue());
-        }
-        running = true;
-        log.info("[mq-consumer] dynamic consumers started. count={}", consumers.size());
     }
 
     @Override
     public void stop() {
-        for (DefaultMQPushConsumer consumer : consumers) {
-            consumer.shutdown();
+        lifecycleLock.lock();
+        try {
+            running = false;
+            shutdownConsumers(consumers, null);
+            consumers.clear();
+            log.info("[mq-consumer] dynamic consumers stopped");
+        } finally {
+            lifecycleLock.unlock();
         }
-        consumers.clear();
-        running = false;
-        log.info("[mq-consumer] dynamic consumers stopped");
+    }
+
+    /**
+     * 尽最大努力关闭全部消费者，避免单个关闭失败造成其余实例泄漏。
+     *
+     * @param instances 待关闭的消费者
+     * @param cause 启动异常；为空时仅记录关闭失败
+     */
+    private void shutdownConsumers(List<DefaultMQPushConsumer> instances, RuntimeException cause) {
+        for (int i = instances.size() - 1; i >= 0; i--) {
+            try {
+                instances.get(i).shutdown();
+            } catch (RuntimeException shutdownError) {
+                log.warn("[mq-consumer] consumer shutdown failed. type={}",
+                        shutdownError.getClass().getName(), shutdownError);
+                if (cause != null) {
+                    cause.addSuppressed(shutdownError);
+                }
+            }
+        }
     }
 
     @Override
@@ -102,24 +146,34 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
      * @param handler 实现了 MqMessageHandler 接口的 Bean，包含实际的消息处理逻辑
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private void register(final String beanName, final MqMessageHandler handler) {
+    private DefaultMQPushConsumer register(final String beanName, final MqMessageHandler handler) {
         Class<?> targetClass = AopUtils.getTargetClass(handler);
         final MqConsumer annotation = AnnotationUtils.findAnnotation(targetClass, MqConsumer.class);
         if (annotation == null) {
-            return;
+            return null;
         }
         final String topic = RocketMqNaming.normalizeTopic(annotation.topic(), properties);
         final String consumerGroup = RocketMqNaming.normalizeConsumerGroup(annotation.consumerGroup());
         String tagExpression = StringUtils.hasText(annotation.tag()) ? annotation.tag() : "*";
+        DefaultMQPushConsumer consumer = null;
         try {
-            final DefaultMQPushConsumer consumer = createConsumer(beanName, annotation, topic, consumerGroup, tagExpression);
+            consumer = createConsumer(beanName, annotation, topic, consumerGroup, tagExpression);
             registerMessageListener(consumer, beanName, consumerGroup, handler, annotation);
             consumer.start();
-            consumers.add(consumer);
             log.info("[mq-consumer] dynamic consumer registered. bean={} topic={} tag={} group={} mode={} model={}",
                     beanName, topic, tagExpression, consumerGroup, annotation.consumeMode(), annotation.messageModel());
+            return consumer;
         } catch (Exception ex) {
-            throw new MqException("Failed to register RocketMQ dynamic consumer for bean " + beanName, ex);
+            MqException failure = new MqException(
+                    "Failed to register RocketMQ dynamic consumer for bean " + beanName, ex);
+            if (consumer != null) {
+                try {
+                    consumer.shutdown();
+                } catch (RuntimeException shutdownError) {
+                    failure.addSuppressed(shutdownError);
+                }
+            }
+            throw failure;
         }
     }
 
