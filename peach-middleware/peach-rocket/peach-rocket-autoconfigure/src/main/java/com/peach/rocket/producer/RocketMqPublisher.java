@@ -14,6 +14,7 @@ import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.core.MqSendResult;
 import com.peach.rocket.exception.MqException;
 import com.peach.rocket.metrics.MqMetrics;
+import com.peach.rocket.metrics.MqMetricsGuard;
 import com.peach.rocket.route.MqRoute;
 import com.peach.rocket.route.MqRouteResolver;
 import com.peach.rocket.transaction.RocketMqTransactionMessageProducer;
@@ -68,7 +69,7 @@ public class RocketMqPublisher implements MqPublisher {
     public RocketMqPublisher(RocketMQTemplate rocketMQTemplate, MqMessageCodec codec, MqRouteResolver routeResolver,
                              DefaultMqHeaderResolver headerResolver, PeachRocketProperties properties,
                              RocketMqTransactionMessageProducer transactionMessageProducer, MqMetrics metrics) {
-        this.metrics = metrics == null ? MqMetrics.NOOP : metrics;
+        this.metrics = MqMetricsGuard.of(metrics);
         this.rocketMQTemplate = rocketMQTemplate;
         this.codec = codec;
         this.routeResolver = routeResolver;

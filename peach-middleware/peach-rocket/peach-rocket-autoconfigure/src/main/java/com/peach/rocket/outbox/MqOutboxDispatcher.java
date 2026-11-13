@@ -5,6 +5,7 @@ import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.core.MqDelayLevels;
 import com.peach.rocket.exception.MqException;
 import com.peach.rocket.metrics.MqMetrics;
+import com.peach.rocket.metrics.MqMetricsGuard;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -63,7 +64,7 @@ public class MqOutboxDispatcher {
     public MqOutboxDispatcher(MqOutboxStore outboxStore, RocketMQTemplate rocketMQTemplate,
                               PeachRocketProperties properties, ExecutorService parallelExecutor,
                               MqMetrics metrics) {
-        this.metrics = metrics == null ? MqMetrics.NOOP : metrics;
+        this.metrics = MqMetricsGuard.of(metrics);
         if (properties.getOutbox().isParallelEnabled() && parallelExecutor == null) {
             throw new IllegalStateException("Outbox parallel mode requires a managed virtual-thread executor");
         }

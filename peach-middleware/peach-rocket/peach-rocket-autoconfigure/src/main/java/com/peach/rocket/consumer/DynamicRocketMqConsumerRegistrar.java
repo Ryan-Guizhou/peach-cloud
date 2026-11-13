@@ -7,6 +7,7 @@ import com.peach.rocket.core.MqMessageHandler;
 import com.peach.rocket.core.MqMessageModel;
 import com.peach.rocket.exception.MqException;
 import com.peach.rocket.metrics.MqMetrics;
+import com.peach.rocket.metrics.MqMetricsGuard;
 import com.peach.rocket.support.RocketMqNaming;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +65,7 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
      */
     public DynamicRocketMqConsumerRegistrar(RocketMQProperties rocketMQProperties, PeachRocketProperties properties,
                                             MqConsumerInvoker invoker, MqMetrics metrics) {
-        this.metrics = metrics == null ? MqMetrics.NOOP : metrics;
+        this.metrics = MqMetricsGuard.of(metrics);
         this.rocketMQProperties = rocketMQProperties;
         this.properties = properties;
         this.invoker = invoker;

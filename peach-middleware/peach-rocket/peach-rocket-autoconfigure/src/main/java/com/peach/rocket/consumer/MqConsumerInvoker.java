@@ -18,6 +18,7 @@ import com.peach.rocket.idempotent.MqIdempotentKeyResolver;
 import com.peach.rocket.idempotent.MqIdempotentStore;
 import com.peach.rocket.support.RocketMqNaming;
 import com.peach.rocket.metrics.MqMetrics;
+import com.peach.rocket.metrics.MqMetricsGuard;
 import java.lang.reflect.Type;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -99,7 +100,7 @@ public class MqConsumerInvoker {
                              MqExceptionClassifier exceptionClassifier, PeachRocketProperties properties,
                              MqTraceContextPropagator traceContextPropagator, MqFailureRecorder failureRecorder,
                              MqMetrics metrics) {
-        this.metrics = metrics == null ? MqMetrics.NOOP : metrics;
+        this.metrics = MqMetricsGuard.of(metrics);
         this.failureRecorder = failureRecorder == null ? MqFailureRecorder.NOOP : failureRecorder;
         this.codec = codec;
         this.idempotentStore = idempotentStore;
