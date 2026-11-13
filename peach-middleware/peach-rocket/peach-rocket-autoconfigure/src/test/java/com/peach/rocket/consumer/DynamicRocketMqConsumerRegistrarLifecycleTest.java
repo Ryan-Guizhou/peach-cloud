@@ -69,6 +69,20 @@ class DynamicRocketMqConsumerRegistrarLifecycleTest {
         return handlers;
     }
 
+    @Test
+    void shouldRejectInvalidThreadRangeBeforeCreatingConsumers() {
+        PeachRocketProperties properties = new PeachRocketProperties();
+        properties.getConsumer().setConsumeThreadMin(12);
+        properties.getConsumer().setConsumeThreadMax(4);
+        DefaultMQPushConsumer consumer = mock(DefaultMQPushConsumer.class);
+        TestRegistrar registrar = new TestRegistrar(properties, consumer);
+        registrar.setApplicationContext(context(handlers()));
+
+        assertThrows(IllegalArgumentException.class, registrar::start);
+        assertFalse(registrar.isRunning());
+        org.mockito.Mockito.verifyNoInteractions(consumer);
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static ApplicationContext context(Map<String, MqMessageHandler> handlers) {
         ApplicationContext context = mock(ApplicationContext.class);
@@ -81,7 +95,11 @@ class DynamicRocketMqConsumerRegistrarLifecycleTest {
         private int next;
 
         private TestRegistrar(DefaultMQPushConsumer... supplied) {
-            super(new RocketMQProperties(), new PeachRocketProperties(), mock(MqConsumerInvoker.class));
+            this(new PeachRocketProperties(), supplied);
+        }
+
+        private TestRegistrar(PeachRocketProperties properties, DefaultMQPushConsumer... supplied) {
+            super(new RocketMQProperties(), properties, mock(MqConsumerInvoker.class));
             this.supplied = supplied;
         }
 
