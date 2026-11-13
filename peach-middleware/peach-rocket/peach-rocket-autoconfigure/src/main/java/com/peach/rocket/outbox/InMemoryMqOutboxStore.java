@@ -11,6 +11,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.springframework.util.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 单 JVM 开发环境 Outbox，提供有限容量、租约认领和终态惰性回收。
@@ -22,6 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @Version 1.0.0
  * @CreateTime 2026/6/26
  */
+@Slf4j
 public class InMemoryMqOutboxStore implements MqOutboxStore {
 
     private static final int DEFAULT_MAX_ENTRIES = 1024;
@@ -65,7 +68,7 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
     @Override
     public void save(MqOutboxEvent event) {
         Objects.requireNonNull(event, "event");
-        if (event.messageId() == null || event.messageId().isBlank()
+        if (!StringUtils.hasText(event.messageId())
                 || event.body() == null || event.body().length > maxPayloadBytes) {
             throw new IllegalArgumentException("Invalid in-memory Outbox ID or payload size");
         }
@@ -78,6 +81,8 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
                 evictExpiredTerminal(now);
             }
             if (events.size() >= maxEntries) {
+                log.warn("[mq-outbox] in-memory capacity reached. maxEntries={} retainedEntries={}",
+                        maxEntries, events.size());
                 throw new IllegalStateException("In-memory Outbox capacity reached; configure a durable store");
             }
             events.put(event.messageId(), new Entry(event, null, null, now, now));
@@ -174,7 +179,7 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
 
     private void updateClaim(MqOutboxClaim claim, boolean sent) {
         Objects.requireNonNull(claim, "claim");
-        if (claim.claimToken() == null || claim.claimToken().isBlank()) {
+        if (!StringUtils.hasText(claim.claimToken())) {
             throw new IllegalArgumentException("In-memory Outbox requires a claim token");
         }
         Instant now = clock.instant();
@@ -203,6 +208,7 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
 
     @Override
     public boolean replay(String messageId) {
+        // 只允许 FAILED -> RETRY，其他状态不改变。
         AtomicBoolean replayed = new AtomicBoolean();
         Instant now = clock.instant();
         events.computeIfPresent(messageId, (key, previous) -> {

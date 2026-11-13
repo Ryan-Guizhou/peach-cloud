@@ -19,9 +19,10 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.util.CollectionUtils;
 
 /**
- * RocketMQMQ主题管理。
+ * RocketMQ Topic 自动发现与创建管理器（生产环境建议预先创建 Topic）。
  * <p>该组件在 Spring 容器单例 Bean 初始化完成后自动执行，扫描应用中所有需要使用的 Topic，
  * 并通过 RocketMQ Admin API 在 Broker 集群上自动创建这些 Topic。
  * <p><b>Topic 来源：</b>
@@ -84,7 +85,7 @@ public class RocketMqTopicAdmin implements SmartInitializingSingleton {
 
         // 收集所有需要创建的 Topic
         Set<String> topics = collectTopics();
-        if (topics.isEmpty()) {
+        if (CollectionUtils.isEmpty(topics)) {
             log.info("[mq-topic] no topic found for auto creation");
             return;
         }
@@ -108,8 +109,12 @@ public class RocketMqTopicAdmin implements SmartInitializingSingleton {
 
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
+            log.error("[mq-topic] auto-create interrupted. topicCount={} errorType={}",
+                    topics.size(), ex.getClass().getName(), ex);
             throw new MqException("Failed to auto create RocketMQ topic", ex);
         } catch (Exception ex) {
+            log.error("[mq-topic] auto-create failed. topicCount={} errorType={}",
+                    topics.size(), ex.getClass().getName(), ex);
             throw new MqException("Failed to auto create RocketMQ topic", ex);
         } finally {
             // 释放 Admin 客户端资源

@@ -1,8 +1,6 @@
 package com.peach.rocket.jdbc;
 
 import java.time.ZoneId;
-
-
 import com.peach.rocket.idempotent.MqIdempotentClaim;
 import com.peach.rocket.idempotent.MqIdempotentContext;
 import com.peach.rocket.idempotent.MqIdempotentStore;
@@ -12,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.util.StringUtils;
 
 /**
  * 通用 RocketMQ JDBC 幂等存储。
@@ -106,7 +105,7 @@ public class JdbcMqIdempotentStore implements MqIdempotentStore {
 
     private String requireOwnerToken(MqIdempotentClaim claim) {
         if (claim == null || claim.status() != MqIdempotentClaim.Status.ACQUIRED
-                || claim.ownerToken() == null || claim.ownerToken().isBlank()) {
+                || !StringUtils.hasText(claim.ownerToken())) {
             throw new IllegalArgumentException("MQ JDBC idempotent owner token is required");
         }
         return claim.ownerToken();

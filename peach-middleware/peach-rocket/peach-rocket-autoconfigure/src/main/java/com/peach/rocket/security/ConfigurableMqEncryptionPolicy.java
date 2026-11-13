@@ -2,9 +2,10 @@ package com.peach.rocket.security;
 
 import com.peach.rocket.annotation.MqEncrypted;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
+import org.springframework.util.CollectionUtils;
 
 /**
- * ConfigurableMQ加密策略。
+ * 可配置的消息加密选择策略；全局开关、指定 Topic 或类型注解任一命中即可加密。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -26,7 +27,8 @@ public class ConfigurableMqEncryptionPolicy implements MqEncryptionPolicy {
         if (properties.getSecurity().isEncryptPayload()) {
             return true;
         }
-        if (properties.getSecurity().getEncryptTopics().contains(topic)) {
+        if (!CollectionUtils.isEmpty(properties.getSecurity().getEncryptTopics())
+                && properties.getSecurity().getEncryptTopics().contains(topic)) {
             return true;
         }
         return payload != null && payload.getClass().isAnnotationPresent(MqEncrypted.class);

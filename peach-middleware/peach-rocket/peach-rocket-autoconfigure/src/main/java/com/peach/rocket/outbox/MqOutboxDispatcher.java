@@ -20,6 +20,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.springframework.util.StringUtils;
+import org.springframework.util.CollectionUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 
 /**
@@ -74,13 +75,17 @@ public class MqOutboxDispatcher {
         this.parallelExecutor = parallelExecutor;
     }
 
+    /**
+     * 认领一批消息并执行 Broker I/O；在本批 Future 全部完成后再开启下一轮扫描。
+     * 超限任务只记录失败、交给 Store 的重试机制，不会丢弃或成功 ACK。
+     */
     @Scheduled(fixedDelayString = "${peach.rocket.outbox.scan-interval-ms:2000}")
     public void dispatch() {
         List<MqOutboxClaim> claims = outboxStore.claimPending(properties.getOutbox().getBatchSize());
-        if (claims.isEmpty()) {
+        if (CollectionUtils.isEmpty(claims)) {
             return;
         }
-        // 顺序分片键/延迟语义在本阶段沿用单线程投递，避免异步任务打乱同键消息。
+        // 同一批次包含顺序或延迟发送时使用串行路径，避免并行重排 Broker 提交次序。
         if (parallelExecutor == null || requiresSerialDelivery(claims)) {
             for (MqOutboxClaim claim : claims) {
                 deliver(claim);
@@ -114,7 +119,7 @@ public class MqOutboxDispatcher {
     private boolean requiresSerialDelivery(List<MqOutboxClaim> claims) {
         return claims.stream().anyMatch(claim -> {
             MqSendOptions options = claim.event().options();
-            return options != null && ((options.getShardingKey() != null && !options.getShardingKey().isBlank())
+            return options != null && (StringUtils.hasText(options.getShardingKey())
                     || options.getDelay() != null);
         });
     }
@@ -122,8 +127,8 @@ public class MqOutboxDispatcher {
     private void deliver(MqOutboxClaim claim) {
         MqOutboxEvent event = claim.event();
         try {
-                String destination = event.tag() == null || event.tag().isEmpty()
-                        ? event.topic() : event.topic() + ":" + event.tag();
+                String destination = StringUtils.hasText(event.tag())
+                        ? event.topic() + ":" + event.tag() : event.topic();
                 MqSendOptions options = event.options();
                 long timeout = options != null && options.getTimeoutMillis() > 0
                         ? options.getTimeoutMillis()
@@ -135,7 +140,7 @@ public class MqOutboxDispatcher {
                 }
 
                 MessageBuilder<byte[]> messageBuilder = MessageBuilder.withPayload(event.body());
-                if (options != null && options.getHeaders() != null) {
+                if (options != null && !CollectionUtils.isEmpty(options.getHeaders())) {
                     options.getHeaders().forEach((key, value) -> {
                         if (StringUtils.hasText(key) && value != null) {
                             messageBuilder.setHeader(key, value);
