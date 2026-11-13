@@ -165,7 +165,7 @@ public class RocketMqPublisher implements MqPublisher {
         rejectUnsupportedAsyncOptions(actualOptions);
         MqRoute route = routeResolver.resolve(payload, actualOptions);
         rocketMQTemplate.sendOneWay(destination(route), buildMessage(payload, actualOptions, route));
-        log.info("[mq-send] app={} payloadType={} mode=one-way topic={} tag={} key={} success=true",
+        log.info("[mq-send] app={} payloadType={} mode=one-way topic={} tag={} key={} submitted=true",
                 properties.getAppName(), payload.getClass().getSimpleName(), route.topic(), route.tag(), route.key());
     }
 

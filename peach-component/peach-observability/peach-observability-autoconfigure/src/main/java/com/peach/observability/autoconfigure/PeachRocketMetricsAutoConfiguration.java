@@ -5,6 +5,7 @@ import com.peach.rocket.metrics.MqMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -19,6 +20,7 @@ import org.springframework.context.annotation.Bean;
  * @CreateTime 2026/11/13
  */
 @AutoConfiguration
+@AutoConfigureAfter(name = "org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration")
 @AutoConfigureBefore(name = "com.peach.rocket.autoconfigure.PeachRocketAutoConfigure")
 @ConditionalOnClass({MqMetrics.class, MeterRegistry.class})
 @ConditionalOnBean(MeterRegistry.class)

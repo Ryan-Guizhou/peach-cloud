@@ -4,7 +4,6 @@ import com.peach.rocket.metrics.MqMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.util.concurrent.TimeUnit;
-import org.springframework.util.StringUtils;
 
 /**
  * RocketMQ 低基数业务指标适配，绝不添加 messageId、key、原始 Topic 等动态标签。
@@ -54,6 +53,9 @@ public final class MicrometerMqMetrics implements MqMetrics {
     }
 
     private static String safeOutcome(String value) {
+        if (value == null) {
+            return "other";
+        }
         return switch (value) {
             case "success", "rejected", "failed", "submitted",
                     "sent", "send_failed", "ack_failed" -> value;
