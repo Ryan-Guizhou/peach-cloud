@@ -18,6 +18,7 @@ import com.peach.rocket.producer.MqProducerMessageGuard;
 import com.peach.rocket.route.MqRoute;
 import com.peach.rocket.route.MqRouteResolver;
 import com.peach.rocket.support.RocketMqNaming;
+import com.peach.rocket.support.MqClientSecurity;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +30,7 @@ import org.apache.rocketmq.client.producer.LocalTransactionState;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.client.producer.TransactionListener;
+import org.apache.rocketmq.client.producer.TransactionSendResult;
 import org.apache.rocketmq.client.producer.TransactionMQProducer;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageConst;
@@ -213,14 +215,14 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
                     isSendOk(result));
 
             return MqSendResult.builder()
-                    .success(isSendOk(result) && result instanceof org.apache.rocketmq.client.producer.TransactionSendResult transaction
+                    .success(isSendOk(result) && result instanceof TransactionSendResult transaction
                             && transaction.getLocalTransactionState() == LocalTransactionState.COMMIT_MESSAGE)
                     .messageId(result == null ? null : result.getMsgId())
                     .topic(route.topic())
                     .tag(route.tag())
                     .key(route.key())
                     .rawStatus(result == null || result.getSendStatus() == null ? null : result.getSendStatus().name()
-                            + "/" + (result instanceof org.apache.rocketmq.client.producer.TransactionSendResult transaction
+                            + "/" + (result instanceof TransactionSendResult transaction
                             ? transaction.getLocalTransactionState() : "UNKNOWN"))
                     .build();
 
@@ -248,7 +250,7 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
             try {
                 candidate = createProducer(properties.getTransaction().getProducerGroup());
                 candidate.setNamesrvAddr(rocketMQProperties.getNameServer());
-                com.peach.rocket.support.MqClientSecurity.configureClient(candidate, rocketMQProperties, properties);
+                MqClientSecurity.configureClient(candidate, rocketMQProperties, properties);
                 candidate.setSendMsgTimeout(Math.toIntExact(properties.getProducer().getDefaultTimeout().toMillis()));
                 candidate.setTransactionListener(new DelegatingTransactionListener());
                 candidate.start();
@@ -287,7 +289,7 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
      */
     protected TransactionMQProducer createProducer(String group) {
         return new TransactionMQProducer(group,
-                com.peach.rocket.support.MqClientSecurity.rpcHook(rocketMQProperties, properties));
+                MqClientSecurity.rpcHook(rocketMQProperties, properties));
     }
 
     /**
