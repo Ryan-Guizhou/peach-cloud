@@ -6,6 +6,7 @@ import com.peach.rocket.codec.MqMessageCodec;
 import com.peach.rocket.codec.SecureJacksonMqMessageCodec;
 import com.peach.rocket.consumer.DynamicRocketMqConsumerRegistrar;
 import com.peach.rocket.consumer.MqConsumerInvoker;
+import com.peach.rocket.consumer.MqLeaseRenewer;
 import com.peach.rocket.context.DefaultMqHeaderResolver;
 import com.peach.rocket.context.MqTraceContextPropagator;
 import com.peach.rocket.core.MqPublisher;
@@ -30,11 +31,13 @@ import com.peach.rocket.security.MqKeyProvider;
 import com.peach.rocket.security.MqPayloadEncryptor;
 import com.peach.rocket.topic.RocketMqTopicAdmin;
 import com.peach.rocket.transaction.RocketMqTransactionMessageProducer;
+import com.peach.rocket.support.MqClientSecurity;
 import com.peach.rocket.core.MqTransactionHandler;
 import org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration;
 import org.apache.rocketmq.spring.autoconfigure.RocketMQProperties;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -51,28 +54,40 @@ import org.springframework.context.annotation.Bean;
  * @Version 1.0.0
  * @CreateTime 2026/6/26
  */
-@AutoConfigureAfter({RocketMQAutoConfiguration.class,RocketMQProperties.class})
+@AutoConfigureAfter({RocketMQAutoConfiguration.class, RocketMQProperties.class})
 @ConditionalOnClass(RocketMQTemplate.class)
 @EnableConfigurationProperties(PeachRocketProperties.class)
 @ConditionalOnProperty(prefix = "peach.rocket", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class PeachRocketAutoConfigure {
 
-    /** 在原生 Producer 构造前应用统一安全配置，避免模板与独立客户端身份不一致。 */
+    /**
+     * 在 RocketMQ 属性 Bean 初始化后统一设置安全参数，确保后续创建的客户端读取一致的凭据。
+     *
+     * @param properties RocketMQ 业务配置提供者
+     * @return 原生客户端配置 Bean 后置处理器
+     */
     @Bean
-    public static org.springframework.beans.factory.config.BeanPostProcessor rocketClientSecurityProperties(
+    public static BeanPostProcessor rocketClientSecurityProperties(
             ObjectProvider<PeachRocketProperties> properties) {
-        return new org.springframework.beans.factory.config.BeanPostProcessor() {
+        return new BeanPostProcessor() {
             @Override
             public Object postProcessAfterInitialization(Object bean, String name) {
                 if (bean instanceof RocketMQProperties rocket) {
-                    com.peach.rocket.support.MqClientSecurity.configureProperties(rocket, properties.getObject());
+                    MqClientSecurity.configureProperties(rocket, properties.getObject());
                 }
                 return bean;
             }
         };
     }
 
-    /** 生产模式及显式可靠性模式都必须验证真实 Store 能力。 */
+    /**
+     * 在容器完成单例初始化后验证持久化幂等存储和加密密钥配置。
+     *
+     * @param properties RocketMQ 业务配置
+     * @param store 幂等存储 SPI
+     * @param keys 密钥提供者
+     * @return 启动阶段可靠性校验器
+     */
     @Bean
     public SmartInitializingSingleton rocketProductionVerifier(PeachRocketProperties properties,
             MqIdempotentStore store, ObjectProvider<MqKeyProvider> keys) {
@@ -93,8 +108,8 @@ public class PeachRocketAutoConfigure {
 
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
-    public com.peach.rocket.consumer.MqLeaseRenewer mqLeaseRenewer(MqIdempotentStore store, PeachRocketProperties properties) {
-        return new com.peach.rocket.consumer.MqLeaseRenewer(store, properties);
+    public MqLeaseRenewer mqLeaseRenewer(MqIdempotentStore store, PeachRocketProperties properties) {
+        return new MqLeaseRenewer(store, properties);
     }
 
     @Bean
@@ -198,7 +213,7 @@ public class PeachRocketAutoConfigure {
                                                ObjectProvider<MqTraceContextPropagator> traceContextPropagatorProvider,
                                                ObjectProvider<MqFailureRecorder> failureRecorderProvider,
                                                ObjectProvider<MqMetrics> metricsProvider,
-                                               com.peach.rocket.consumer.MqLeaseRenewer leaseRenewer) {
+                                               MqLeaseRenewer leaseRenewer) {
         return new MqConsumerInvoker(codec, idempotentStore, idempotentKeyResolver,
                                      errorHandler, exceptionClassifier, properties,
                                      traceContextPropagatorProvider.getIfAvailable(() -> MqTraceContextPropagator.NOOP),
