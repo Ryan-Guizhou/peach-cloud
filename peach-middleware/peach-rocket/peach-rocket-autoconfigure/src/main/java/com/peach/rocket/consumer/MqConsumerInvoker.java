@@ -245,6 +245,30 @@ public class MqConsumerInvoker {
                 || resolved.resolve() == Object.class) {
             return Map.class;
         }
-        return resolved.getType();
+        // ResolvableType.getType() 对父类 T 可能返回未绑定 TypeVariable；
+        // 显式重建嵌套类型，确保 List<T>、Map<K,V> 中的 T 也能解析为实际业务类。
+        return materializeType(resolved).getType();
+    }
+
+    /**
+     * 根据当前 Handler 继承上下文将 TypeVariable 还原为具体 Java Type。
+     *
+     * @param source 来自 Spring 的上下文泛型描述
+     * @return 不含未解析父类类型变量的描述
+     */
+    private ResolvableType materializeType(ResolvableType source) {
+        Class<?> raw = source.resolve();
+        if (raw == null) {
+            return ResolvableType.forClass(Object.class);
+        }
+        ResolvableType[] generics = source.getGenerics();
+        if (generics.length == 0) {
+            return ResolvableType.forClass(raw);
+        }
+        ResolvableType[] bound = new ResolvableType[generics.length];
+        for (int i = 0; i < generics.length; i++) {
+            bound[i] = materializeType(generics[i]);
+        }
+        return ResolvableType.forClassWithGenerics(raw, bound);
     }
 }
