@@ -7,6 +7,7 @@ import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.codec.MqMessageCodec;
 import com.peach.rocket.context.DefaultMqHeaderResolver;
 import com.peach.rocket.core.MqDelay;
+import com.peach.rocket.core.MqDelayLevels;
 import com.peach.rocket.core.MqMessageEnvelope;
 import com.peach.rocket.core.MqPublisher;
 import com.peach.rocket.core.MqSendOptions;
@@ -15,9 +16,7 @@ import com.peach.rocket.exception.MqException;
 import com.peach.rocket.route.MqRoute;
 import com.peach.rocket.route.MqRouteResolver;
 import com.peach.rocket.transaction.RocketMqTransactionMessageProducer;
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
@@ -39,17 +38,6 @@ import org.springframework.util.StringUtils;
  */
 @Slf4j
 public class RocketMqPublisher implements MqPublisher {
-
-    private static final List<DelayLevel> DEFAULT_DELAY_LEVELS = List.of(
-            new DelayLevel(1, Duration.ofSeconds(1)), new DelayLevel(2, Duration.ofSeconds(5)),
-            new DelayLevel(3, Duration.ofSeconds(10)), new DelayLevel(4, Duration.ofSeconds(30)),
-            new DelayLevel(5, Duration.ofMinutes(1)), new DelayLevel(6, Duration.ofMinutes(2)),
-            new DelayLevel(7, Duration.ofMinutes(3)), new DelayLevel(8, Duration.ofMinutes(4)),
-            new DelayLevel(9, Duration.ofMinutes(5)), new DelayLevel(10, Duration.ofMinutes(6)),
-            new DelayLevel(11, Duration.ofMinutes(7)), new DelayLevel(12, Duration.ofMinutes(8)),
-            new DelayLevel(13, Duration.ofMinutes(9)), new DelayLevel(14, Duration.ofMinutes(10)),
-            new DelayLevel(15, Duration.ofMinutes(20)), new DelayLevel(16, Duration.ofMinutes(30)),
-            new DelayLevel(17, Duration.ofHours(1)), new DelayLevel(18, Duration.ofHours(2)));
 
     private final RocketMQTemplate rocketMQTemplate;
     private final MqMessageCodec codec;
@@ -84,7 +72,7 @@ public class RocketMqPublisher implements MqPublisher {
         MqSendOptions actualOptions = prepareOptions(options);
         long start = System.currentTimeMillis();
         MqRoute route = routeResolver.resolve(payload, actualOptions);
-        Integer delayLevel = resolveDelayLevel(actualOptions.getDelay());
+        Integer delayLevel = MqDelayLevels.resolve(actualOptions.getDelay());
         SendResult result = delayLevel == null
                 ? rocketMQTemplate.syncSend(destination(route), buildMessage(payload, actualOptions, route), actualOptions.getTimeoutMillis())
                 : rocketMQTemplate.syncSend(destination(route), buildMessage(payload, actualOptions, route), actualOptions.getTimeoutMillis(), delayLevel);
@@ -202,33 +190,6 @@ public class RocketMqPublisher implements MqPublisher {
         return event == null ? 1 : event.version();
     }
 
-    private Integer resolveDelayLevel(MqDelay delay) {
-        if (delay == null) {
-            return null;
-        }
-        if (delay.rocketMqDelayLevel() != null) {
-            int level = delay.rocketMqDelayLevel();
-            if (level < 1 || level > DEFAULT_DELAY_LEVELS.size()) {
-                throw new MqException("Unsupported RocketMQ delay level: " + level);
-            }
-            return level;
-        }
-        Duration duration = delay.duration();
-        if (duration == null || duration.isNegative() || duration.isZero()) {
-            throw new MqException("MQ delay duration must be positive");
-        }
-        Duration maximum = DEFAULT_DELAY_LEVELS.get(DEFAULT_DELAY_LEVELS.size() - 1).getDuration();
-        if (duration.compareTo(maximum) > 0) {
-            throw new MqException("MQ delay duration exceeds the supported maximum: " + maximum);
-        }
-        for (DelayLevel level : DEFAULT_DELAY_LEVELS) {
-            if (level.getDuration().compareTo(duration) >= 0) {
-                return level.getLevel();
-            }
-        }
-        throw new MqException("Unsupported RocketMQ delay duration: " + duration);
-    }
-
     /**
      * AsyncSend回调。
      *
@@ -278,19 +239,4 @@ public class RocketMqPublisher implements MqPublisher {
         }
     }
 
-    /**
-     * 延迟Level。
-     *
-     * @Author Mr Shu
-     * @Version 1.0.0
-     * @CreateTime 2026/3/20 16:58
-     */
-
-    private static class DelayLevel {
-        private final int level;
-        private final Duration duration;
-        DelayLevel(int level, Duration duration) { this.level = level; this.duration = duration; }
-        int getLevel() { return level; }
-        Duration getDuration() { return duration; }
-    }
 }
