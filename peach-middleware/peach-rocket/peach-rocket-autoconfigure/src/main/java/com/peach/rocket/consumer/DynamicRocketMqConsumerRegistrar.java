@@ -177,7 +177,7 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
         }
     }
 
-    private DefaultMQPushConsumer createConsumer(String beanName, MqConsumer annotation,
+    protected DefaultMQPushConsumer createConsumer(String beanName, MqConsumer annotation,
                                                    String topic, String consumerGroup, String tagExpression) throws MQClientException {
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(consumerGroup);
         consumer.setNamesrvAddr(rocketMQProperties.getNameServer());
