@@ -17,7 +17,7 @@ class MicrometerMqMetricsTest {
 
     @Test
     void shouldRecordCountersAndTimersWithoutDynamicIdentifiers() {
-        try (SimpleMeterRegistry registry = new SimpleMeterRegistry()) {
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
             MicrometerMqMetrics metrics = new MicrometerMqMetrics(registry);
             metrics.publish("sync", "success", 1000L);
             metrics.consume("failed", 2000L);
@@ -31,17 +31,15 @@ class MicrometerMqMetricsTest {
             assertEquals(1D, registry.get("peach.rocket.outbox.total")
                     .tag("outcome", "ack_failed").counter().count());
             assertEquals(1D, registry.get("peach.rocket.consumer.backpressure.total").counter().count());
-        }
     }
 
     @Test
     void shouldReduceUnknownValuesToStableLowCardinalityLabels() {
-        try (SimpleMeterRegistry registry = new SimpleMeterRegistry()) {
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
             MicrometerMqMetrics metrics = new MicrometerMqMetrics(registry);
             metrics.publish("dynamic-tenant-123", "dynamic-message-id-abc", 0L);
 
             assertNotNull(registry.get("peach.rocket.publish.total")
                     .tag("mode", "other").tag("outcome", "other").counter());
-        }
     }
 }
