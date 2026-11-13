@@ -11,6 +11,7 @@ import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.SimpleEvaluationContext;
+import java.util.Arrays;
 import org.springframework.util.StringUtils;
 
 /**
@@ -84,7 +85,7 @@ public class AnnotationMqRouteResolver implements MqRouteResolver {
             return keyExpression;
         }
         if (!keyExpression.matches("#[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*")
-                || java.util.Arrays.stream(keyExpression.substring(1).split("\\."))
+                || Arrays.stream(keyExpression.substring(1).split("\\."))
                 .anyMatch(part -> part.equals("class") || part.equals("classLoader"))) {
             throw new MqException("MQ annotation key supports read-only property paths only");
         }
