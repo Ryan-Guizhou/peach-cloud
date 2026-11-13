@@ -9,6 +9,11 @@ import org.springframework.util.StringUtils;
  * 使用消息信封中的稳定事件 ID 生成消费幂等键。
  *
  * <p>不再回退到 Broker 投递 ID 或业务查询 Key，确保重试时获得相同的幂等标识。</p>
+ 
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/13
  */
 public class DefaultMqIdempotentKeyResolver implements MqIdempotentKeyResolver {
 

@@ -6,6 +6,11 @@ import java.util.List;
  * Outbox 存储扩展点，读取、确认和重试都使用携带令牌的原子认领。
  *
  * <p>不提供无 token 状态更新接口，禁止旧 Dispatcher 绕过所有者校验。</p>
+ 
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/13
  */
 public interface MqOutboxStore {
 

@@ -13,6 +13,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 验证 Outbox 认领状态不会被过期令牌覆盖，重试预算耗尽后可受控重放。
+ 
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/13
  */
 class InMemoryMqOutboxStoreStateTest {
 

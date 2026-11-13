@@ -4,6 +4,11 @@ package com.peach.rocket.idempotent;
  * 消费幂等存储扩展点，所有状态更新都必须携带有效的认领凭据。
  *
  * <p>不再提供无所有者令牌的兼容入口，防止绕过租约栅栏。</p>
+ 
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/13
  */
 public interface MqIdempotentStore {
 
