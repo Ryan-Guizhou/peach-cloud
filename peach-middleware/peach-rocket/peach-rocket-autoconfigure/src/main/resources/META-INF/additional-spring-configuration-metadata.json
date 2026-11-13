@@ -42,10 +42,33 @@
       "defaultValue": "24h"
     },
     {
+      "name": "peach.rocket.consumer.in-memory-max-entries",
+      "defaultValue": 32768,
+      "description": "开发/测试使用的单 JVM 幂等存储最大条目数；达到上限将拒绝新消息。",
+      "type": "java.lang.Integer"
+    },
+    {
+      "name": "peach.rocket.consumer.require-durable-idempotency",
+      "defaultValue": false,
+      "description": "要求跨实例的持久化幂等存储且支持 owner token fencing；不满足则启动失败。",
+      "type": "java.lang.Boolean"
+    },
+    {
       "name": "peach.rocket.enabled",
       "type": "java.lang.Boolean",
       "description": "是否启用 RocketMQ 消息组件自动配置。",
       "defaultValue": true
+    },
+    {
+      "name": "peach.rocket.jdbc",
+      "type": "com.peach.rocket.autoconfigure.PeachRocketProperties$Jdbc",
+      "description": "通用 JDBC Outbox/幂等存储模块的显式启用配置。"
+    },
+    {
+      "name": "peach.rocket.jdbc.enabled",
+      "defaultValue": false,
+      "description": "仅在显式依赖 peach-rocket-jdbc 且本项为 true 时，自动装配通用 JDBC Outbox 和幂等存储。",
+      "type": "java.lang.Boolean"
     },
     {
       "name": "peach.rocket.namespace",

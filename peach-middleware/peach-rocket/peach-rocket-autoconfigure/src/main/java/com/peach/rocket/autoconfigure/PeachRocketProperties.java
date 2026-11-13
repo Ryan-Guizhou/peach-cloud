@@ -47,6 +47,8 @@ public class PeachRocketProperties implements InitializingBean {
 
     private final Outbox outbox = new Outbox();
 
+    private final Jdbc jdbc = new Jdbc();
+
     @Override
     public void afterPropertiesSet() {
         requireText(namespace, "peach.rocket.namespace");
@@ -60,7 +62,8 @@ public class PeachRocketProperties implements InitializingBean {
         if (consumer.idempotentExpire == null || consumer.idempotentExpire.isNegative() || consumer.idempotentExpire.isZero()) {
             throw new MqException("peach.rocket.consumer.idempotent-expire must be positive");
         }
-        if (consumer.consumeThreadMin <= 0 || consumer.consumeThreadMax < consumer.consumeThreadMin) {
+        if (consumer.consumeThreadMin <= 0 || consumer.consumeThreadMax < consumer.consumeThreadMin
+                || consumer.inMemoryMaxEntries < 1) {
             throw new MqException("peach.rocket.consumer consume thread range is invalid");
         }
         if (outbox.enabled && (outbox.batchSize < 1 || outbox.batchSize > 500
@@ -95,6 +98,7 @@ public class PeachRocketProperties implements InitializingBean {
     public Transaction getTransaction() { return transaction; }
     public Topic getTopic() { return topic; }
     public Outbox getOutbox() { return outbox; }
+    public Jdbc getJdbc() { return jdbc; }
 
     /**
      * 生产者。
@@ -122,6 +126,8 @@ public class PeachRocketProperties implements InitializingBean {
         private boolean dynamicRegister = true;
         private int consumeThreadMin = 1;
         private int consumeThreadMax = 20;
+        private int inMemoryMaxEntries = 32768;
+        private boolean requireDurableIdempotency = false;
         public boolean isEnableIdempotent() { return enableIdempotent; }
         public void setEnableIdempotent(boolean enableIdempotent) { this.enableIdempotent = enableIdempotent; }
         public Duration getIdempotentExpire() { return idempotentExpire; }
@@ -132,6 +138,12 @@ public class PeachRocketProperties implements InitializingBean {
         public void setConsumeThreadMin(int consumeThreadMin) { this.consumeThreadMin = consumeThreadMin; }
         public int getConsumeThreadMax() { return consumeThreadMax; }
         public void setConsumeThreadMax(int consumeThreadMax) { this.consumeThreadMax = consumeThreadMax; }
+        public int getInMemoryMaxEntries() { return inMemoryMaxEntries; }
+        public void setInMemoryMaxEntries(int inMemoryMaxEntries) { this.inMemoryMaxEntries = inMemoryMaxEntries; }
+        public boolean isRequireDurableIdempotency() { return requireDurableIdempotency; }
+        public void setRequireDurableIdempotency(boolean requireDurableIdempotency) {
+            this.requireDurableIdempotency = requireDurableIdempotency;
+        }
     }
 
     /**
@@ -229,6 +241,19 @@ public class PeachRocketProperties implements InitializingBean {
         public void setIncludeTransactionTopics(boolean includeTransactionTopics) { this.includeTransactionTopics = includeTransactionTopics; }
         public List<String> getTopics() { return topics; }
         public void setTopics(List<String> topics) { this.topics = topics == null ? new ArrayList<String>() : topics; }
+    }
+
+    /**
+     * JDBC 持久化存储模块（需显式引入 peach-rocket-jdbc）。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/11/12
+     */
+    public static class Jdbc {
+        private boolean enabled = false;
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
     }
 
     /**

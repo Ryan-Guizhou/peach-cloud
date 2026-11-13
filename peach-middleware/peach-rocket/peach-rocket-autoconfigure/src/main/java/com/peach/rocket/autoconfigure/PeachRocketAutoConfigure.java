@@ -13,6 +13,7 @@ import com.peach.rocket.error.DefaultMqErrorHandler;
 import com.peach.rocket.error.DefaultMqExceptionClassifier;
 import com.peach.rocket.error.MqErrorHandler;
 import com.peach.rocket.error.MqExceptionClassifier;
+import com.peach.rocket.error.MqFailureRecorder;
 import com.peach.rocket.idempotent.DefaultMqIdempotentKeyResolver;
 import com.peach.rocket.idempotent.InMemoryMqIdempotentStore;
 import com.peach.rocket.idempotent.MqIdempotentKeyResolver;
@@ -33,6 +34,7 @@ import org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration;
 import org.apache.rocketmq.spring.autoconfigure.RocketMQProperties;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -104,8 +106,26 @@ public class PeachRocketAutoConfigure {
 
     @Bean
     @ConditionalOnMissingBean
-    public MqIdempotentStore mqIdempotentStore() {
-        return new InMemoryMqIdempotentStore();
+    public MqIdempotentStore mqIdempotentStore(PeachRocketProperties properties) {
+        return new InMemoryMqIdempotentStore(properties.getConsumer().getInMemoryMaxEntries());
+    }
+
+    /**
+     * 关键业务可要求跨实例、带 owner fencing 的幂等实现，启动时阻止退回内存实现。
+     *
+     * @param store 已装配的幂等存储
+     * @return 启动验证回调
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "peach.rocket.consumer", name = "require-durable-idempotency",
+            havingValue = "true")
+    public SmartInitializingSingleton rocketIdempotencyDurabilityVerifier(MqIdempotentStore store) {
+        return () -> {
+            if (store instanceof InMemoryMqIdempotentStore || !store.supportsOwnerFencing()) {
+                throw new IllegalStateException(
+                        "peach.rocket.consumer.require-durable-idempotency requires a durable token-fenced store");
+            }
+        };
     }
 
     @Bean
@@ -134,10 +154,12 @@ public class PeachRocketAutoConfigure {
                                                MqErrorHandler errorHandler,
                                                MqExceptionClassifier exceptionClassifier,
                                                PeachRocketProperties properties,
-                                               ObjectProvider<MqTraceContextPropagator> traceContextPropagatorProvider) {
+                                               ObjectProvider<MqTraceContextPropagator> traceContextPropagatorProvider,
+                                               ObjectProvider<MqFailureRecorder> failureRecorderProvider) {
         return new MqConsumerInvoker(codec, idempotentStore, idempotentKeyResolver,
                                      errorHandler, exceptionClassifier, properties,
-                                     traceContextPropagatorProvider.getIfAvailable(() -> MqTraceContextPropagator.NOOP));
+                                     traceContextPropagatorProvider.getIfAvailable(() -> MqTraceContextPropagator.NOOP),
+                                     failureRecorderProvider.getIfAvailable(() -> MqFailureRecorder.NOOP));
     }
 
     @Bean

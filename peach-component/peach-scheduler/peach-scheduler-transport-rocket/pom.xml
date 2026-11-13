@@ -25,6 +25,10 @@
             <artifactId>peach-rocket-starter</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-rocket-jdbc</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
         </dependency>
