@@ -5,6 +5,7 @@ import com.peach.rocket.annotation.MqTransaction;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.exception.MqException;
 import com.peach.rocket.support.RocketMqNaming;
+import com.peach.rocket.support.MqClientSecurity;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -92,8 +93,8 @@ public class RocketMqTopicAdmin implements SmartInitializingSingleton {
 
         // 创建 RocketMQ Admin 工具实例，用于执行管理操作
         DefaultMQAdminExt admin = new DefaultMQAdminExt(
-                com.peach.rocket.support.MqClientSecurity.rpcHook(rocketMQProperties, properties));
-        com.peach.rocket.support.MqClientSecurity.configureClient(admin, rocketMQProperties, properties);
+                MqClientSecurity.rpcHook(rocketMQProperties, properties));
+        MqClientSecurity.configureClient(admin, rocketMQProperties, properties);
         admin.setNamesrvAddr(rocketMQProperties.getNameServer());
         admin.setInstanceName("peach-rocket-topic-admin-" + System.currentTimeMillis());
 
@@ -112,12 +113,12 @@ public class RocketMqTopicAdmin implements SmartInitializingSingleton {
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             log.error("[mq-topic] auto-create interrupted. topicCount={} errorType={}",
-                    topics.size(), ex.getClass().getName());
-            throw new MqException("Failed to auto create RocketMQ topic");
+                    topics.size(), ex.getClass().getName(), ex);
+            throw new MqException("Failed to auto create RocketMQ topic", ex);
         } catch (Exception ex) {
             log.error("[mq-topic] auto-create failed. topicCount={} errorType={}",
-                    topics.size(), ex.getClass().getName());
-            throw new MqException("Failed to auto create RocketMQ topic");
+                    topics.size(), ex.getClass().getName(), ex);
+            throw new MqException("Failed to auto create RocketMQ topic", ex);
         } finally {
             // 释放 Admin 客户端资源
             admin.shutdown();
