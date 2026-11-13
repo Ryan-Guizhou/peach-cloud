@@ -39,6 +39,11 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-rocket-autoconfigure</artifactId>
             <optional>true</optional>
