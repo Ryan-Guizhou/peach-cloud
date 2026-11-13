@@ -44,7 +44,7 @@ Pre-create `dev-biz-order` for the current naming settings. Publish through `MqP
 - Outbox is disabled by default. Ordinary production publish requires a business transaction on the same DataSource; `publishStandalone` explicitly publishes independently. Sends and database ACKs are not atomic: delivery remains at-least-once, timeouts may follow delivery, and one-way sends have no Broker ACK.
 - Ordinary orderly sends require a stable shardingKey. Production rejects orderly Outbox and broadcasting. Strict global ordering across instances is Unsupported.
 - Bounded encoding, envelope/Header/JSON sizes, publishing/consumption admission, and Consumer drain still require capacity and shutdown drills across all publishing paths. SKIP requires successful durable recording. Replay is a programmatic SPI, without an HTTP management endpoint.
-- Consumer Group prefixing defaults off to protect existing offsets, but strict production requires it on; migrate offsets/deduplication domains first. Strict mode provides fail-closed checks; external acceptance remains necessary.
+- Consumer Group prefixing defaults off; strict production requires it on. Decide Group names and initial offsets before the first deployment. Strict mode provides fail-closed checks; external acceptance remains necessary.
 
 ## Quickstart and verification
 
@@ -60,6 +60,6 @@ node scripts/verify-changes.mjs
 ## Further reading
 
 - [Production configuration reference (Chinese)](docs/production-configuration.md): every property/default/unit/constraint, a full production example, secret sources, and native namespace distinctions.
-- [Production operations and migration (Chinese)](docs/production-operations.md): new/existing databases, legacy protocol, keys, offsets, leases, replay, cleanup, shutdown, business idempotency, and acceptance evidence.
+- [Production operations (Chinese)](docs/production-operations.md): fresh-schema initialization, keys, offsets, leases, replay, cleanup, shutdown, business idempotency, and acceptance evidence.
 - [Remediation status (Chinese)](docs/production-remediation-status.md), [implementation plan (Chinese)](docs/production-hardening-plan.md), [historical audit (Chinese)](docs/production-readiness-audit-2026-11-13.md).
 - Versions follow the [module POM](pom.xml) and [current BOM](../../peach-dependencies/pom.xml); scan the final artifact to assess security.

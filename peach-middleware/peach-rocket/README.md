@@ -44,7 +44,7 @@ peach:
 - Outbox 默认关闭；生产普通 publish 要求同 DataSource 业务事务，`publishStandalone` 显式独立发布。发送/数据库 ACK 不原子，始终 at-least-once；超时可能已经投递，单向发送无 Broker ACK。
 - 普通顺序发送需稳定 shardingKey；生产拒绝顺序 Outbox 与广播。跨实例严格全局顺序 Unsupported。
 - 有界编码、报文/Header/JSON、发送/消费准入与 Consumer 排空不替代实际容量和全发送路径停机演练。可靠记录成功才允许 SKIP；Replay 是程序化 SPI，未提供 HTTP 管理入口。
-- Consumer Group 前缀默认关闭以保护旧位点，严格生产要求开启；必须先迁移位点/去重域。严格模式是失败关闭保护，不等于外部环境验收通过。
+- Consumer Group 前缀默认关闭，生产要求显式开启；首次部署时应确定组名和初始位点。严格模式是失败关闭保护，不等于外部环境验收通过。
 
 ## Quickstart 与验证
 
@@ -60,6 +60,6 @@ node scripts/verify-changes.mjs
 ## 深入阅读
 
 - [生产配置 Reference](docs/production-configuration.md)：所有属性默认值/单位/约束、完整生产示例、secret 来源与原生 namespace 区别。
-- [生产运维与迁移](docs/production-operations.md)：新库/存量库、旧协议、密钥、位点、租约、重放、清理、停机、业务幂等及验收证据。
+- [生产运维与部署](docs/production-operations.md)：新库初始化、密钥、位点、租约、重放、清理、停机、业务幂等及验收证据。
 - [整改状态](docs/production-remediation-status.md)、[实施计划](docs/production-hardening-plan.md)、[历史审计](docs/production-readiness-audit-2026-11-13.md)。
 - 依赖版本以[模块 POM](pom.xml)和[当前 BOM](../../peach-dependencies/pom.xml)为准，最终产物安全性仍需扫描。

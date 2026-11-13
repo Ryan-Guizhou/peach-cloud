@@ -1,23 +1,23 @@
-# 生产运维与迁移手册
+# 生产运维与部署手册
 
 当前实现提供 at-least-once 投递；生产批准仍需[审计验收矩阵](production-readiness-audit-2026-11-13.md)和[整改状态](production-remediation-status.md)中未完成的外部验证。不得把本地测试成功或 `production=true` 作为发布批准。
 
-## 上线与数据库迁移
+## 上线与数据库初始化
 
 1. 固定待发布应用、BOM、数据库/Broker/JDK/镜像版本，保存依赖树、SBOM、SCA 结果、配置摘要（不含 secret）与回滚包。确认两实例共享数据库的恢复、ACL/TLS、容量和业务幂等演练报告。
 2. 保存当前 Topic、Group、订阅表达式、位点、待发/FAILED 数量、最老待发年龄、活跃租约、历史密钥 ID。备份数据库并实际验证恢复；不能通过清空幂等记录完成升级。
-3. 新数据库使用 [MQ_CONSUME_RECORD.sql](../../../sql/MQ_CONSUME_RECORD.sql) 与 [MQ_OUTBOX_EVENT.sql](../../../sql/MQ_OUTBOX_EVENT.sql)。已有数据库由 DBA 对照实际表结构依次核对 [owner token 迁移](../../../sql/migrations/20261112_rocket_idempotent_owner_token.sql)、[发送选项迁移](../../../sql/migrations/20261113_rocket_outbox_send_options.sql)、[生产加固迁移](../../../sql/migrations/20261113_rocket_production_hardening.sql)。这些是版本化迁移，不得对新库或已迁移库盲目重跑。DDL 不由 Starter 自动执行。
-4. 变更前停止旧 Dispatcher 和旧无 token 写入者，等待已认领工作结束或到达租约恢复条件；不能让旧写入绕过新 owner fencing。安排 DDL 锁、索引、大小写/排序规则及数据约束检查。DDL 只在备份和预演后由独立迁移账号运行。
+3. `peach-rocket` 尚未投产，统一使用 [MQ_CONSUME_RECORD.sql](../../../sql/MQ_CONSUME_RECORD.sql) 和 [MQ_OUTBOX_EVENT.sql](../../../sql/MQ_OUTBOX_EVENT.sql) 初始化新环境；不维护旧结构迁移 SQL。DDL 由独立账号部署，Starter 不自动执行。
+4. 首次部署前检查表唯一索引、必要列与真实数据库默认字符集/排序规则，验证大小写不同的业务标识是否允许视为相同。认领 token、消息 ID 与幂等事件 ID 以稳定标识生成；严禁因为环境排序规则不同而产生误去重。
 5. 数据库会话/JDBC 与运维工具统一时区（推荐 UTC）；记录实际隔离级别、时区、精度和排序规则。租约依据数据库时间；监控节点时钟偏差。消费 processing lease、成功去重 TTL 与 Outbox retention 分开配置，不能把 processing lease 当去重保留期。
 6. 配置 `production=true` 与[生产配置基线](production-configuration.md)，确认同一业务 DataSource、生产 Store 能力、受管执行器容量与最小权限。先验收实例再逐步放量，记录配置与迁移批次。
 
 ## 协议、密钥与位点滚动升级
 
-新信封/事件去重语义应先部署兼容读端再切新写端；明确哪些旧版本能读哪些信封，不能让不理解 AAD 的旧消费者读取新消息。`accept-legacy-encryption=true`、`algorithm=AES_GCM` 和 `legacy-idempotent-key=true` 仅可在受控非严格迁移阶段使用；生产严格模式禁止这些设置。不存在自动旧幂等键双读保证，必须由迁移设计显式处理旧记录、重放窗口和位点，必要时暂停流量。不能通过关闭安全或删除去重表绕过迁移问题。
+本模块尚未投产，不接受旧版不带认证的信封、旧式幂等键或无 owner token 的兼容入口。仅允许当前版本的受认证协议与稳定事件 ID；无需双读、旧协议灰度或旧库回填。
 
-轮换时先将新旧密钥同时下发读端，再切活动 `key-id`。旧密钥保留至 Broker、Outbox、DLQ、归档和备份的允许重放窗口全部结束；之后才撤销，并验证未知 ID 失败。禁止日志打印密钥、ACL hook、完整 Header/载荷、签名 URL。新写入已不可被旧应用识别后，回滚必须保留兼容读端；先停新写入再按协议矩阵回退。
+密钥轮换时先向消费端分发有效的密钥映射，再切换活动 `key-id`；仅保留当前部署中必须读取的历史密钥至允许的重放窗口结束。禁止日志打印密钥、ACL hook、完整 Header/载荷、签名 URL。上线后若演进协议，应重新设计显式升级与回滚计划，不通过弱化安全策略回滚。
 
-`auto-prefix-consumer-group=false` 默认保护现有 Group，严格生产模式要求 true，因此从默认开发配置进入生产必须显式迁移。修改 namespace、Topic 命名、Group 前缀、订阅或 `consume-from-where` 前先规划位点和去重域；FIRST_OFFSET/LAST_OFFSET 仅影响全新 Group，不能用它重置旧 Group。相同 Group 必须使用一致订阅。变组可能重放旧消息或跳过历史消息，必须有业务批准和可验证的位点操作记录。
+新系统首次部署前确定 namespace、Topic 与 ConsumerGroup 命名，生产模式要求 `auto-prefix-consumer-group=true`。`consume-from-where` 只决定新 Group 的初始位置，既有 Group 不可依赖该参数重置位点；修改组名及订阅关系必须保留业务去重保障。
 
 ## 业务事务与幂等责任
 
