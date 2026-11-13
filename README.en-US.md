@@ -70,7 +70,7 @@ The auth, fileservice, gateway, generator, message, monitor and setting entry po
 
 ### Middleware
 
-[`peach-middleware`](peach-middleware/README.en-US.md) contains RocketMQ, Redis, Redisson, MongoDB, Sa-Token and OpenFeign integrations. Placeholder modules without a real starter implementation are not part of the reactor.
+[`peach-middleware`](peach-middleware/README.en-US.md) contains RocketMQ, Redis, Redisson, MongoDB, Sa-Token, OpenFeign and Seata AT distributed transaction integrations. Placeholder modules without a real starter implementation are not part of the reactor.
 
 ## Build
 
