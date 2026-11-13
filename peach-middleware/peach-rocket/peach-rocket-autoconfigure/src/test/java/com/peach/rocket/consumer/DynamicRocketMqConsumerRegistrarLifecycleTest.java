@@ -36,7 +36,7 @@ class DynamicRocketMqConsumerRegistrarLifecycleTest {
         doThrow(new IllegalStateException("broker unavailable")).when(second).start();
 
         TestRegistrar registrar = new TestRegistrar(first, second);
-        registrar.setApplicationContext(context(Map.of("first", new FirstHandler(), "second", new SecondHandler())));
+        registrar.setApplicationContext(context(handlers()));
 
         assertThrows(RuntimeException.class, registrar::start);
         assertFalse(registrar.isRunning());
@@ -51,7 +51,7 @@ class DynamicRocketMqConsumerRegistrarLifecycleTest {
         doThrow(new IllegalStateException("shutdown failed")).when(second).shutdown();
 
         TestRegistrar registrar = new TestRegistrar(first, second);
-        registrar.setApplicationContext(context(Map.of("first", new FirstHandler(), "second", new SecondHandler())));
+        registrar.setApplicationContext(context(handlers()));
         registrar.start();
         assertTrue(registrar.isRunning());
 
@@ -60,6 +60,13 @@ class DynamicRocketMqConsumerRegistrarLifecycleTest {
         assertFalse(registrar.isRunning());
         verify(first, times(1)).shutdown();
         verify(second, times(1)).shutdown();
+    }
+
+    private static Map<String, MqMessageHandler> handlers() {
+        Map<String, MqMessageHandler> handlers = new LinkedHashMap<>();
+        handlers.put("first", new FirstHandler());
+        handlers.put("second", new SecondHandler());
+        return handlers;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
