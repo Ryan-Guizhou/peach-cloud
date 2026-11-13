@@ -24,6 +24,51 @@ flowchart LR
     Auto --> Consumer["@MqConsumer"]
 ```
 
+## 完整能力矩阵（当前代码能力）
+
+| 能力 | 默认行为 | 生产接入与边界 |
+| --- | --- | --- |
+| 普通同步/异步/单向消息 | `MqPublisher` | 同步按 Broker SEND_OK 判断；单向仅表示提交，不保证 ACK |
+| 顺序与延迟消息 | `publishOrderly` / `publishDelay` | 顺序需固定 shardingKey；延迟使用经典 RocketMQ 1–18 级 |
+| 动态消费者 | `@MqConsumer` | 并发/顺序、集群/广播模式及 Topic/Tag 过滤 |
+| 消费幂等 | 默认单实例内存 Store | 生产建议 `peach-rocket-jdbc` 或外部带 Owner Token 的持久化实现 |
+| 失败处理和重试 | 分类 + 自定义失败回执 SPI | SKIP 仅在持久化回执成功后 ACK；否则交给 Broker 重试 |
+| 本地事务/事务消息 | 事务发布处理器 | 与持久化 Outbox 属于不同可靠性机制 |
+| Outbox 可靠发送 | 默认关闭 | 生产需要业务事务内持久化、JDBC 租约与 Owner Token；at-least-once |
+| Outbox 同步、顺序、延迟 | JDBC 保留发送选项 | 严格全局排序需额外按业务键串行化，不应跨实例无序领取 |
+| 发送/消费容量限制 | 消费线程 + 有界 inflight | 进程级背压；超限不 ACK；可选受管虚拟线程并行 Outbox |
+| 消息加密 | 默认关闭 | AES-GCM + keyId 多密钥轮换，安全配置源注入密钥 |
+| Topic 管理 | 默认禁止自动创建 | 生产按最小权限预建 Topic；勿给业务应用管理权限 |
+| 链路与指标 | 可选接入 peach-observability | Trace Context 透传；低基数 Micrometer 计数/耗时，默认不记录业务键 |
+
+## 可观测性与告警建议
+
+引入 `peach-observability-starter` 并在运行环境提供 `MeterRegistry` 后，自动注册可选 `MqMetrics` 实现；没有监控依赖时自动使用 NOOP。重要指标名称及标签：
+
+| 指标 | 类型 | 标签 | 建议告警方向 |
+| --- | --- | --- | --- |
+| `peach.rocket.publish.total` | Counter | 固定 `mode` / `outcome` | 发送失败、Broker 拒绝持续增多 |
+| `peach.rocket.publish.duration` | Timer | 固定 `mode` / `outcome` | 发送 RTT 的高分位恶化 |
+| `peach.rocket.consume.total` | Counter | 固定 `outcome` | 消费失败比例上升 |
+| `peach.rocket.consume.duration` | Timer | 固定 `outcome` | 业务 Handler 耗时接近租约 |
+| `peach.rocket.outbox.total` | Counter | 固定 `outcome` | `send_failed` 或 `ack_failed` 积累 |
+| `peach.rocket.consumer.backpressure.total` | Counter | 无 | 业务执行容量长期饱和 |
+
+指标 **不允许**使用 `messageId`、业务 Key、租户 ID、消费者 Bean 名称或自定义 Topic 作为动态标签，以免导致时序数无限增长。应配合 Broker 消费堆积、DLQ、JDBC 待发条数、租约过期数和存储连接池监控。消息内容、token 与密钥不得进入日志；Tracing 使用现有 `MqTraceContextPropagator`。
+
+## 真实 Broker 验收（需外部 RocketMQ 环境）
+
+`peach-rocket-quickstart` 提供 opt-in 的 `RocketBrokerEndToEndTest`，默认单测不连接 Broker。真实验收需预先部署 NameServer/Broker，并创建 `dev-biz-order` Topic，确保消费者 Group 有订阅权限。示例：
+
+```bash
+export PEACH_ROCKET_BROKER_TEST=true
+mvn -B -ntp -pl peach-middleware/peach-rocket/peach-rocket-quickstart -am \
+  -Dtest=RocketBrokerEndToEndTest -Dsurefire.failIfNoSpecifiedTests=false \
+  -Drocketmq.name-server=127.0.0.1:9876 test
+```
+
+测试会通过真实 Producer 发布 created 与 paid 事件，等待对应 Consumer 在 Broker 下完成回调。必须由真实运行结果确认，**Repository Governance/Maven 单测、装配测试不代表已通过 Broker 端到端验证**。如果环境无法连接 Broker，此项保持「未验证」，不能虚报成功。发布前另外验证数据库 SQL 迁移、重复投递、重试/DLQ、停机/恢复、消费组位点及长时间堆积压力。
+
 ## 核心对象
 
 | 对象 | 说明 |

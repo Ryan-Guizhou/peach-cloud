@@ -4,6 +4,8 @@ import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.core.MqDelayLevels;
 import com.peach.rocket.exception.MqException;
+import com.peach.rocket.metrics.MqMetrics;
+import com.peach.rocket.metrics.MqMetricsGuard;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -34,6 +36,7 @@ public class MqOutboxDispatcher {
     private final RocketMQTemplate rocketMQTemplate;
     private final PeachRocketProperties properties;
     private final ExecutorService parallelExecutor;
+    private final MqMetrics metrics;
 
     public MqOutboxDispatcher(MqOutboxStore outboxStore, RocketMQTemplate rocketMQTemplate,
                               PeachRocketProperties properties) {
@@ -50,6 +53,18 @@ public class MqOutboxDispatcher {
      */
     public MqOutboxDispatcher(MqOutboxStore outboxStore, RocketMQTemplate rocketMQTemplate,
                               PeachRocketProperties properties, ExecutorService parallelExecutor) {
+        this(outboxStore, rocketMQTemplate, properties, parallelExecutor, MqMetrics.NOOP);
+    }
+
+    /**
+     * 创建支持可选发送指标的 Outbox 投递器。
+     *
+     * @param metrics 可选 MQ 指标 SPI
+     */
+    public MqOutboxDispatcher(MqOutboxStore outboxStore, RocketMQTemplate rocketMQTemplate,
+                              PeachRocketProperties properties, ExecutorService parallelExecutor,
+                              MqMetrics metrics) {
+        this.metrics = MqMetricsGuard.of(metrics);
         if (properties.getOutbox().isParallelEnabled() && parallelExecutor == null) {
             throw new IllegalStateException("Outbox parallel mode requires a managed virtual-thread executor");
         }
@@ -150,9 +165,11 @@ public class MqOutboxDispatcher {
 
             try {
                 outboxStore.markSent(claim);
+                metrics.outbox("sent");
                 log.debug("[mq-outbox] message sent. messageId={} topic={} tag={}",
                         event.messageId(), event.topic(), event.tag());
             } catch (RuntimeException ackError) {
+                metrics.outbox("ack_failed");
                 // Broker 已确认，但 DB ACK 不确定。不得反向标记失败，只能等待租约回收。
                 log.error("[mq-outbox-ack-error] Broker confirmed, store ACK failed; "
                                 + "lease recovery required. messageId={} topic={} exception={}",
@@ -161,6 +178,7 @@ public class MqOutboxDispatcher {
     }
 
     private void recordSendFailure(MqOutboxClaim claim, RuntimeException sendError) {
+        metrics.outbox("send_failed");
         MqOutboxEvent event = claim.event();
         try {
             outboxStore.markFailed(claim);
