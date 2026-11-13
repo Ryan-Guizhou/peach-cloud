@@ -8,6 +8,7 @@ import com.peach.rocket.core.MqDelay;
 import com.peach.rocket.core.MqDelayLevels;
 import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.exception.MqException;
+import com.peach.rocket.producer.MqProducerMessageGuard;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -82,6 +83,9 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
             throw new MqException("Invalid Outbox identifier, topic or encoded payload size");
         }
         MqSendOptions options = event.options();
+        // 即使业务绕开 Publisher 直接使用 Store，也不得绕过最终发送预算与 Header 策略。
+        MqProducerMessageGuard.validate(event.body(),
+                options == null ? null : options.getHeaders(), event.businessKey(), properties.getProducer());
         if (options != null && (options.getTimeoutMillis() < 0
                 || options.getTimeoutMillis() >= properties.getJdbc().getOutboxLease().toMillis())) {
             throw new MqException("Outbox timeout must be shorter than its lease");
@@ -143,6 +147,7 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
                 MqOutboxStatus.RETRY.name(),
                 boundedBatch);
         List<String> corrupt = new ArrayList<>();
+        OutboxRowMapper mapper = new OutboxRowMapper(properties.getProducer());
         List<MqOutboxEvent> events = jdbcTemplate.query(
                 "SELECT MESSAGE_ID,TOPIC,TAG,BUSINESS_KEY,PAYLOAD,SEND_MODE,SHARDING_KEY,"
                         + "DELAY_LEVEL,HEADERS,SEND_TIMEOUT_MS,STATUS,RETRY_COUNT,CREATED_AT,UPDATED_AT "
@@ -150,7 +155,7 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
                         + "ORDER BY CLAIMED_AT ASC LIMIT ?",
                 (rs, row) -> {
                     try {
-                        return new OutboxRowMapper().mapRow(rs, row);
+                        return mapper.mapRow(rs, row);
                     }
                     catch (RuntimeException | SQLException invalid) {
                         corrupt.add(rs.getString("MESSAGE_ID"));
@@ -307,6 +312,12 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
      */
     private static final class OutboxRowMapper implements RowMapper<MqOutboxEvent> {
 
+        private final PeachRocketProperties.Producer limits;
+
+        private OutboxRowMapper(PeachRocketProperties.Producer limits) {
+            this.limits = limits;
+        }
+
         /**
          * 将 outbox 表记录映射为消息事件。
          */
@@ -324,6 +335,10 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
                 options.setTimeoutMillis(storedTimeout);
             }
             String headers = resultSet.getString("HEADERS");
+            // 在 JSON 解析前限制存储快照大小，避免坏行占用过量内存。
+            if (headers != null && headers.length() > 8L * limits.getMaxHeaderBytes() + 64L) {
+                throw new SQLException("Invalid Outbox headers size");
+            }
             if (StringUtils.hasText(headers)) {
                 try {
                     options.setHeaders(MAPPER.readValue(headers, HEADER_TYPE));
@@ -338,12 +353,20 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
             } else if (!"NORMAL".equals(sendMode)) {
                 throw new SQLException("Invalid Outbox send mode or required options");
             }
+            String encoded = resultSet.getString("PAYLOAD");
+            long maxEncodedSize = 4L * ((limits.getMaxPayloadBytes() + 2L) / 3L);
+            if (encoded == null || encoded.length() > maxEncodedSize) {
+                throw new SQLException("Invalid Outbox payload size");
+            }
+            byte[] body = Base64.getDecoder().decode(encoded);
+            String businessKey = resultSet.getString("BUSINESS_KEY");
+            MqProducerMessageGuard.validate(body, options.getHeaders(), businessKey, limits);
             return new MqOutboxEvent(
                     resultSet.getString("MESSAGE_ID"),
-                    Base64.getDecoder().decode(resultSet.getString("PAYLOAD")),
+                    body,
                     resultSet.getString("TOPIC"),
                     resultSet.getString("TAG"),
-                    resultSet.getString("BUSINESS_KEY"),
+                    businessKey,
                     options,
                     MqOutboxStatus.valueOf(resultSet.getString("STATUS")),
                     resultSet.getInt("RETRY_COUNT"),

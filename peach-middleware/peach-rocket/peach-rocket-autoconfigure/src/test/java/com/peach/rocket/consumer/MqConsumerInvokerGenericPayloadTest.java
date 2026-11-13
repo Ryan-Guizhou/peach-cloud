@@ -13,6 +13,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -45,6 +46,24 @@ class MqConsumerInvokerGenericPayloadTest {
         invoker.invoke(handler, "handler", codec.encode(envelope), declaration, "msg-1", 0);
 
         assertEquals("p-1", handler.received.get(0).id());
+    }
+
+    @Test
+    void shouldRejectMissingTrustedBrokerRouteInProduction() {
+        PeachRocketProperties properties = new PeachRocketProperties();
+        properties.setProduction(true);
+        properties.getConsumer().setEnableIdempotent(false);
+        JacksonMqMessageCodec codec = new JacksonMqMessageCodec(new ObjectMapper().findAndRegisterModules());
+        MqConsumerInvoker invoker = new MqConsumerInvoker(codec,
+                mock(MqIdempotentStore.class), mock(MqIdempotentKeyResolver.class),
+                mock(MqErrorHandler.class), mock(MqExceptionClassifier.class), properties);
+        MqMessageEnvelope<List<Payload>> envelope = MqMessageEnvelope.create(
+                "msg-2", "orders", "created", "order-2", "app", List.class.getName(), 1,
+                Map.of(), List.of(new Payload("p-2")), LocalDateTime.now());
+        MqConsumer declaration = mock(MqConsumer.class);
+
+        assertThrows(MqException.class, () -> invoker.invoke(new PayloadHandler(), "handler",
+                codec.encode(envelope), declaration, "msg-2", 0, null, null, null));
     }
 
     private record Payload(String id) {

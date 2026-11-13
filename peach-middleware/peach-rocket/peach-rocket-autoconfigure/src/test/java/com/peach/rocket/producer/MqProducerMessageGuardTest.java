@@ -27,6 +27,19 @@ class MqProducerMessageGuardTest {
         properties.setMaxHeaderBytes(8);
         assertThatThrownBy(() -> MqProducerMessageGuard.validate(new byte[]{1}, Map.of("KEYS", "x"),
                 "large-business-key", properties)).isInstanceOf(MqException.class);
+        assertThatThrownBy(() -> MqProducerMessageGuard.validate(new byte[]{1}, Map.of("KEYS", "x"),
+                null, properties)).isInstanceOf(MqException.class);
+        assertThatThrownBy(() -> MqProducerMessageGuard.validate(new byte[]{1},
+                Map.of("Authorization", "secret"), null, properties)).isInstanceOf(MqException.class);
+    }
+
+    @Test
+    void shouldCountBusinessKeyWhenNoHeadersWereSupplied() {
+        PeachRocketProperties.Producer props = new PeachRocketProperties.Producer();
+        props.setMaxHeaderCount(0);
+        assertThatThrownBy(() -> MqProducerMessageGuard.validate(
+                new byte[]{1}, Map.of(), "business-id", props))
+                .isInstanceOf(MqException.class).hasMessageContaining("count");
     }
 
     @Test

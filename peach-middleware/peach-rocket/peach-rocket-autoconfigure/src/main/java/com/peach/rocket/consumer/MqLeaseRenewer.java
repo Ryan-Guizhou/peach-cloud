@@ -5,6 +5,7 @@ import com.peach.rocket.exception.MqException;
 import com.peach.rocket.idempotent.MqIdempotentClaim;
 import com.peach.rocket.idempotent.MqIdempotentContext;
 import com.peach.rocket.idempotent.MqIdempotentStore;
+import lombok.extern.slf4j.Slf4j;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @Version 1.0.0
  * @CreateTime 2026/11/13 15:00
  */
+@Slf4j
 public final class MqLeaseRenewer implements AutoCloseable {
 
     private final MqIdempotentStore store;
@@ -62,11 +64,14 @@ public final class MqLeaseRenewer implements AutoCloseable {
         AtomicBoolean valid = new AtomicBoolean(true);
         Runnable renew = () -> {
             try {
-                if (!store.renew(context, claim)) {
-                    valid.set(false);
+                if (!store.renew(context, claim) && valid.compareAndSet(true, false)) {
+                    log.warn("[mq-lease] renewal rejected; consumer will not confirm success");
                 }
             } catch (RuntimeException ex) {
-                valid.set(false);
+                if (valid.compareAndSet(true, false)) {
+                    log.warn("[mq-lease] renewal failed; consumer will not confirm success. errorType={}",
+                            ex.getClass().getName());
+                }
             }
         };
         long interval = Math.max(1, properties.getJdbc().getProcessingLease().toMillis() / 3);
@@ -94,7 +99,7 @@ public final class MqLeaseRenewer implements AutoCloseable {
             };
         } catch (RuntimeException ex) {
             capacity.release();
-            throw new MqException("MQ lease renewal scheduler is unavailable");
+            throw new MqException("MQ lease renewal scheduler is unavailable", ex);
         }
     }
 

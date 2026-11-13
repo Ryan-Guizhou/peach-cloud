@@ -1,6 +1,7 @@
 package com.peach.rocket.producer;
 
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
+import com.peach.rocket.context.DefaultMqHeaderResolver;
 import com.peach.rocket.exception.MqException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -38,12 +39,7 @@ public final class MqProducerMessageGuard {
         long bytes = 0L;
         if (!CollectionUtils.isEmpty(headers)) {
             for (Map.Entry<String, String> header : headers.entrySet()) {
-                if (!StringUtils.hasText(header.getKey()) || header.getValue() == null) {
-                    throw new MqException("RocketMQ header key must have text and value must not be null");
-                }
-                if (MessageConst.PROPERTY_KEYS.equals(header.getKey())) {
-                    continue;
-                }
+                DefaultMqHeaderResolver.validateBusinessHeader(header.getKey(), header.getValue());
                 bytes += utf8Bytes(header.getKey()) + utf8Bytes(header.getValue());
                 if (bytes > limits.getMaxHeaderBytes()) {
                     throw new MqException("RocketMQ header bytes exceed configured limit");
@@ -51,9 +47,7 @@ public final class MqProducerMessageGuard {
             }
         }
         if (StringUtils.hasText(businessKey)) {
-            if (CollectionUtils.isEmpty(headers) || !headers.containsKey(MessageConst.PROPERTY_KEYS)) {
-                count++;
-            }
+            count++;
             bytes += utf8Bytes(MessageConst.PROPERTY_KEYS) + utf8Bytes(businessKey);
         }
         if (count > limits.getMaxHeaderCount()) {

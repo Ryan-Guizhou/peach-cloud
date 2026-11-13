@@ -48,23 +48,33 @@ public class DefaultMqHeaderResolver {
         Map<String, String> resolved = CollectionUtils.isEmpty(headers)
                 ? new LinkedHashMap<>()
                 : new LinkedHashMap<>(headers);
-        // 在 record 的 Map.copyOf 之前校验用户 Header，避免以 NPE 掩盖输入错误。
+        // 上层输入先校验；Trace 插入后的字段还需通过发送准入再次校验。
         for (Map.Entry<String, String> header : resolved.entrySet()) {
-            if (!StringUtils.hasText(header.getKey()) || header.getValue() == null) {
-                throw new MqException("MQ header key must have text and value must not be null");
-            }
-            String name = header.getKey();
-            String lower = name.toLowerCase(Locale.ROOT);
-            if (MessageConst.STRING_HASH_SET.contains(name)
-                    || Set.of("id", "timestamp", "peach_rocket_transaction_key").contains(lower)
-                    || lower.contains("authorization") || lower.contains("password")
-                    || lower.contains("secret") || lower.contains("token") || lower.contains("cookie")
-                    || name.chars().anyMatch(Character::isISOControl)
-                    || header.getValue().chars().anyMatch(Character::isISOControl)) {
-                throw new MqException("Reserved or sensitive MQ business header is not permitted");
-            }
+            validateBusinessHeader(header.getKey(), header.getValue());
         }
         traceContextPropagator.inject(resolved);
         return resolved;
     }
+
+    /**
+     * 统一限制 SDK 保留属性、敏感业务 Header 与非法控制字符。
+     *
+     * @param name Header 名称
+     * @param value Header 内容
+     */
+    public static void validateBusinessHeader(String name, String value) {
+        if (!StringUtils.hasText(name) || value == null) {
+            throw new MqException("MQ header key must have text and value must not be null");
+        }
+        String lower = name.toLowerCase(Locale.ROOT);
+        if (MessageConst.STRING_HASH_SET.contains(name.toUpperCase(Locale.ROOT))
+                || Set.of("id", "timestamp", "peach_rocket_transaction_key").contains(lower)
+                || lower.contains("authorization") || lower.contains("password")
+                || lower.contains("secret") || lower.contains("token") || lower.contains("cookie")
+                || name.chars().anyMatch(Character::isISOControl)
+                || value.chars().anyMatch(Character::isISOControl)) {
+            throw new MqException("Reserved or sensitive MQ business header is not permitted");
+        }
+    }
+
 }

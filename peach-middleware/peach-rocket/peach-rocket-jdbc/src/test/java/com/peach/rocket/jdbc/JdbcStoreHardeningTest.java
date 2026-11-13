@@ -88,20 +88,31 @@ class JdbcStoreHardeningTest {
         when(valid.getString("SEND_MODE")).thenReturn("NORMAL");
         when(valid.getString("STATUS")).thenReturn("SENDING");
         when(valid.wasNull()).thenReturn(true);
+        ResultSet oversized = mock(ResultSet.class);
+        when(oversized.getString("MESSAGE_ID")).thenReturn("oversized");
+        when(oversized.getString("TOPIC")).thenReturn("topic");
+        when(oversized.getString("PAYLOAD")).thenReturn("AQID");
+        when(oversized.getString("SEND_MODE")).thenReturn("NORMAL");
+        when(oversized.getString("STATUS")).thenReturn("SENDING");
+        when(oversized.wasNull()).thenReturn(true);
         ResultSet corrupt = mock(ResultSet.class);
         when(corrupt.getString("MESSAGE_ID")).thenReturn("corrupt");
         when(corrupt.getString("SEND_MODE")).thenReturn("INVALID");
         when(corrupt.wasNull()).thenReturn(true);
         doAnswer(invocation -> {
             RowMapper<MqOutboxEvent> mapper = invocation.getArgument(1);
-            return Arrays.asList(mapper.mapRow(corrupt, 0), mapper.mapRow(valid, 1));
+            return Arrays.asList(mapper.mapRow(corrupt, 0), mapper.mapRow(oversized, 1),
+                    mapper.mapRow(valid, 2));
         }).when(jdbc).query(anyString(), any(RowMapper.class), any(), any(), any());
 
-        List<MqOutboxClaim> claims = new JdbcMqOutboxStore(jdbc, new PeachRocketProperties()).claimPending(2);
+        PeachRocketProperties properties = new PeachRocketProperties();
+        properties.getProducer().setMaxPayloadBytes(1);
+        List<MqOutboxClaim> claims = new JdbcMqOutboxStore(jdbc, properties).claimPending(3);
 
         assertThat(claims).hasSize(1);
         assertThat(claims.getFirst().event().messageId()).isEqualTo("valid");
         verify(jdbc).update(contains("INVALID_STORED_EVENT"), eq("corrupt"), anyString());
+        verify(jdbc).update(contains("INVALID_STORED_EVENT"), eq("oversized"), anyString());
     }
 
 

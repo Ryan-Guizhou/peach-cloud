@@ -23,6 +23,7 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import org.springframework.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.ResolvableType;
@@ -126,23 +127,7 @@ public class MqConsumerInvoker {
                 : traceContextPropagator;
     }
 
-    /**
-     * 消息消费核心调用器
-     *
-     * 该类负责将 RocketMQ 接收到的消息，经过解码、幂等校验、业务处理、异常分类等完整链路，
-     * 最终交给业务 Handler 执行。是整个消费者端最核心的处理流程。
-     *
-     * @author Mr Shu
-     * @version 1.0.0
-     * @since 2026/6/26
-     */
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    public void invoke(MqMessageHandler handler, String handlerName, byte[] body,
-                       MqConsumer consumer, String messageId, int reconsumeTimes) {
-        invoke(handler, handlerName, body, consumer, messageId, reconsumeTimes, null, null, null);
-    }
-
-    /** 从 SDK 元数据校验实际路由后执行业务；历史入口仅保留程序内兼容。 */
+    /** 校验真实 Broker 路由后执行消息处理；不提供缺少 Broker 元数据的历史入口。 */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void invoke(MqMessageHandler handler, String handlerName, byte[] body,
                        MqConsumer consumer, String messageId, int reconsumeTimes,
@@ -169,6 +154,9 @@ public class MqConsumerInvoker {
         // 解码消息体：将字节数组反序列化为 MqMessageEnvelope 对象
         // 信封中包含：业务数据（payload）、消息ID、Topic、Tag、Key、Headers 等
         MqMessageEnvelope<?> envelope = codec.decode(body, payloadType);
+        if (properties.isProduction() && !StringUtils.hasText(brokerTopic)) {
+            throw new MqException("Production consumer requires trusted Broker route metadata");
+        }
         if (brokerTopic != null && (!brokerTopic.equals(envelope.topic())
                 || !Objects.equals(emptyToNull(brokerTag), emptyToNull(envelope.tag()))
                 || !Objects.equals(emptyToNull(brokerKey), emptyToNull(envelope.key())))) {
@@ -180,7 +168,7 @@ public class MqConsumerInvoker {
         }
 
         // ==================== 2. 构建消费上下文 ====================
-        // 统一使用信封中的 messageId（业务生成的 ID），若为空则使用 RocketMQ 的 messageId
+        // 使用业务信封中稳定的事件 ID；不回退到 Broker 投递 ID
         MqConsumeContext context = new MqConsumeContext(
                 envelope.messageId(),
                 envelope.topic(),
@@ -194,7 +182,7 @@ public class MqConsumerInvoker {
                 .startConsumerSpan(context.topic(), context.headers())) {
 
             // ==================== 3. 幂等性处理 ====================
-            // 3.1 解析幂等 Key（默认为 messageId，也可通过 SpEL 表达式自定义）
+            // 3.1 使用稳定事件 ID 或自定义解析器生成幂等 Key，禁止执行表达式
             String idempotentKey = idempotentKeyResolver.resolve(envelope, context);
 
             // 判断是否启用幂等：全局配置开启 && 消费者注解允许幂等
@@ -211,7 +199,7 @@ public class MqConsumerInvoker {
                     properties.getConsumer().getIdempotentExpire()
             );
 
-            // 3.2 原子认领消除独立 isSuccess 与 tryStart 之间的竞态窗口。
+            // 3.2 原子认领避免将检查和写入拆开导致竞态窗口。
             MqIdempotentClaim idempotentClaim = null;
             if (useIdempotent) {
                 idempotentClaim = idempotentStore.claim(idempotentContext);
