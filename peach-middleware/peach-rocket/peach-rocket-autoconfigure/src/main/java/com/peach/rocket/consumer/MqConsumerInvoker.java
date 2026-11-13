@@ -20,7 +20,9 @@ import com.peach.rocket.support.RocketMqNaming;
 import com.peach.rocket.metrics.MqMetrics;
 import com.peach.rocket.metrics.MqMetricsGuard;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.ResolvableType;
@@ -168,8 +170,8 @@ public class MqConsumerInvoker {
         // 信封中包含：业务数据（payload）、消息ID、Topic、Tag、Key、Headers 等
         MqMessageEnvelope<?> envelope = codec.decode(body, payloadType);
         if (brokerTopic != null && (!brokerTopic.equals(envelope.topic())
-                || !java.util.Objects.equals(emptyToNull(brokerTag), emptyToNull(envelope.tag()))
-                || !java.util.Objects.equals(emptyToNull(brokerKey), emptyToNull(envelope.key())))) {
+                || !Objects.equals(emptyToNull(brokerTag), emptyToNull(envelope.tag()))
+                || !Objects.equals(emptyToNull(brokerKey), emptyToNull(envelope.key())))) {
             throw new MqException("MQ envelope metadata differs from trusted Broker metadata");
         }
         if (properties.isProduction() && (!RocketMqNaming.normalizeTopic(consumer.topic(), properties).equals(envelope.topic())
@@ -307,8 +309,8 @@ public class MqConsumerInvoker {
 
     private boolean matchesTag(String expression, String tag) {
         return expression == null || expression.isBlank() || "*".equals(expression)
-                || java.util.Arrays.stream(expression.split("\\|\\|"))
-                .map(String::trim).anyMatch(candidate -> java.util.Objects.equals(candidate, tag));
+                || Arrays.stream(expression.split("\\|\\|"))
+                .map(String::trim).anyMatch(candidate -> Objects.equals(candidate, tag));
     }
 
     private String emptyToNull(String value) { return value == null || value.isBlank() ? null : value; }
