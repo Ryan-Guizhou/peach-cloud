@@ -4,6 +4,8 @@ import com.peach.rocket.exception.MqException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
@@ -178,6 +180,11 @@ public class PeachRocketProperties implements InitializingBean {
         private String groupPrefix = "cg";
         private String topicSeparator = "-";
         private boolean autoPrefixEnv = true;
+        private boolean autoPrefixConsumerGroup = false;
+        public boolean isAutoPrefixConsumerGroup() { return autoPrefixConsumerGroup; }
+        public void setAutoPrefixConsumerGroup(boolean autoPrefixConsumerGroup) {
+            this.autoPrefixConsumerGroup = autoPrefixConsumerGroup;
+        }
         public String getTopicPrefix() { return topicPrefix; }
         public void setTopicPrefix(String topicPrefix) { this.topicPrefix = topicPrefix; }
         public String getGroupPrefix() { return groupPrefix; }
@@ -201,6 +208,7 @@ public class PeachRocketProperties implements InitializingBean {
         private String algorithm = "AES_GCM";
         private String keyId = "default";
         private String key = "";
+        private Map<String, String> keys = new LinkedHashMap<>();
         private boolean base64Key = false;
         private List<String> encryptTopics = new ArrayList<String>();
         public boolean isEnabled() { return enabled; }
@@ -213,6 +221,10 @@ public class PeachRocketProperties implements InitializingBean {
         public void setKeyId(String keyId) { this.keyId = keyId; }
         public String getKey() { return key; }
         public void setKey(String key) { this.key = key; }
+        public Map<String, String> getKeys() { return keys; }
+        public void setKeys(Map<String, String> keys) {
+            this.keys = keys == null ? new LinkedHashMap<>() : new LinkedHashMap<>(keys);
+        }
         public boolean isBase64Key() { return base64Key; }
         public void setBase64Key(boolean base64Key) { this.base64Key = base64Key; }
         public List<String> getEncryptTopics() { return encryptTopics; }

@@ -47,6 +47,9 @@ public class AesGcmMqPayloadEncryptor implements MqPayloadEncryptor {
 
     @Override
     public byte[] decrypt(byte[] cipherBytes, MqEncryptionContext context) {
+        if (cipherBytes == null || cipherBytes.length < IV_LENGTH + TAG_LENGTH_BIT / Byte.SIZE) {
+            throw new MqException("Invalid MQ encrypted payload length");
+        }
         try {
             byte[] iv = Arrays.copyOfRange(cipherBytes, 0, IV_LENGTH);
             byte[] encrypted = Arrays.copyOfRange(cipherBytes, IV_LENGTH, cipherBytes.length);

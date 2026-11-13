@@ -7,6 +7,7 @@ import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.codec.MqMessageCodec;
 import com.peach.rocket.context.DefaultMqHeaderResolver;
 import com.peach.rocket.core.MqDelay;
+import com.peach.rocket.core.MqDelayLevels;
 import com.peach.rocket.core.MqMessageEnvelope;
 import com.peach.rocket.core.MqPublisher;
 import com.peach.rocket.core.MqSendOptions;
@@ -15,9 +16,7 @@ import com.peach.rocket.exception.MqException;
 import com.peach.rocket.route.MqRoute;
 import com.peach.rocket.route.MqRouteResolver;
 import com.peach.rocket.transaction.RocketMqTransactionMessageProducer;
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
@@ -39,17 +38,6 @@ import org.springframework.util.StringUtils;
  */
 @Slf4j
 public class RocketMqPublisher implements MqPublisher {
-
-    private static final List<DelayLevel> DEFAULT_DELAY_LEVELS = List.of(
-            new DelayLevel(1, Duration.ofSeconds(1)), new DelayLevel(2, Duration.ofSeconds(5)),
-            new DelayLevel(3, Duration.ofSeconds(10)), new DelayLevel(4, Duration.ofSeconds(30)),
-            new DelayLevel(5, Duration.ofMinutes(1)), new DelayLevel(6, Duration.ofMinutes(2)),
-            new DelayLevel(7, Duration.ofMinutes(3)), new DelayLevel(8, Duration.ofMinutes(4)),
-            new DelayLevel(9, Duration.ofMinutes(5)), new DelayLevel(10, Duration.ofMinutes(6)),
-            new DelayLevel(11, Duration.ofMinutes(7)), new DelayLevel(12, Duration.ofMinutes(8)),
-            new DelayLevel(13, Duration.ofMinutes(9)), new DelayLevel(14, Duration.ofMinutes(10)),
-            new DelayLevel(15, Duration.ofMinutes(20)), new DelayLevel(16, Duration.ofMinutes(30)),
-            new DelayLevel(17, Duration.ofHours(1)), new DelayLevel(18, Duration.ofHours(2)));
 
     private final RocketMQTemplate rocketMQTemplate;
     private final MqMessageCodec codec;
@@ -84,10 +72,22 @@ public class RocketMqPublisher implements MqPublisher {
         MqSendOptions actualOptions = prepareOptions(options);
         long start = System.currentTimeMillis();
         MqRoute route = routeResolver.resolve(payload, actualOptions);
-        Integer delayLevel = resolveDelayLevel(actualOptions.getDelay());
-        SendResult result = delayLevel == null
-                ? rocketMQTemplate.syncSend(destination(route), buildMessage(payload, actualOptions, route), actualOptions.getTimeoutMillis())
-                : rocketMQTemplate.syncSend(destination(route), buildMessage(payload, actualOptions, route), actualOptions.getTimeoutMillis(), delayLevel);
+        Integer delayLevel = MqDelayLevels.resolve(actualOptions.getDelay());
+        String shardingKey = actualOptions.getShardingKey();
+        if (StringUtils.hasText(shardingKey) && delayLevel != null) {
+            throw new MqException("Cannot combine RocketMQ shardingKey with delayed sending");
+        }
+        Message<byte[]> message = buildMessage(payload, actualOptions, route);
+        SendResult result;
+        if (StringUtils.hasText(shardingKey)) {
+            result = rocketMQTemplate.syncSendOrderly(destination(route), message,
+                    shardingKey, actualOptions.getTimeoutMillis());
+        } else if (delayLevel != null) {
+            result = rocketMQTemplate.syncSend(destination(route), message,
+                    actualOptions.getTimeoutMillis(), delayLevel);
+        } else {
+            result = rocketMQTemplate.syncSend(destination(route), message, actualOptions.getTimeoutMillis());
+        }
         MqSendResult mqSendResult = toMqSendResult(result, route);
         log.info("[mq-send] app={} payloadType={} mode=sync topic={} tag={} key={} delayLevel={} messageId={} status={} cost={}ms success={}",
                 properties.getAppName(), payload.getClass().getSimpleName(), mqSendResult.topic(), mqSendResult.tag(),
@@ -104,6 +104,7 @@ public class RocketMqPublisher implements MqPublisher {
     @Override
     public <T> CompletableFuture<MqSendResult> publishAsync(final T payload, MqSendOptions options) {
         final MqSendOptions actualOptions = prepareOptions(options);
+        rejectUnsupportedAsyncOptions(actualOptions);
         final long start = System.currentTimeMillis();
         final MqRoute route = routeResolver.resolve(payload, actualOptions);
         final CompletableFuture<MqSendResult> future = new CompletableFuture<MqSendResult>();
@@ -116,6 +117,7 @@ public class RocketMqPublisher implements MqPublisher {
     @Override
     public <T> void publishOneWay(T payload, MqSendOptions options) {
         MqSendOptions actualOptions = prepareOptions(options);
+        rejectUnsupportedAsyncOptions(actualOptions);
         MqRoute route = routeResolver.resolve(payload, actualOptions);
         rocketMQTemplate.sendOneWay(destination(route), buildMessage(payload, actualOptions, route));
         log.info("[mq-send] app={} payloadType={} mode=one-way topic={} tag={} key={} success=true",
@@ -127,10 +129,7 @@ public class RocketMqPublisher implements MqPublisher {
         if (!StringUtils.hasText(shardingKey)) {
             throw new MqException("shardingKey must not be blank for orderly message");
         }
-        MqSendOptions options = MqSendOptions.builder().shardingKey(shardingKey).build();
-        MqRoute route = routeResolver.resolve(payload, options);
-        SendResult result = rocketMQTemplate.syncSendOrderly(destination(route), buildMessage(payload, options, route), shardingKey);
-        return toMqSendResult(result, route);
+        return publish(payload, MqSendOptions.builder().shardingKey(shardingKey).build());
     }
 
     @Override
@@ -152,6 +151,15 @@ public class RocketMqPublisher implements MqPublisher {
             throw new MqException("RocketMQ transaction message is disabled or no transaction producer bean is available");
         }
         return transactionMessageProducer.sendTransaction(payload, transactionKey, options);
+    }
+
+    /**
+     * 防止异步/单向发送静默丢弃顺序或延迟选项；调用方可改用同步发送。
+     */
+    private void rejectUnsupportedAsyncOptions(MqSendOptions options) {
+        if (StringUtils.hasText(options.getShardingKey()) || options.getDelay() != null) {
+            throw new MqException("Async/one-way MQ publishing does not support shardingKey or delay options");
+        }
     }
 
     private MqSendOptions prepareOptions(MqSendOptions options) {
@@ -200,33 +208,6 @@ public class RocketMqPublisher implements MqPublisher {
     private int resolveVersion(Object payload) {
         MqEvent event = payload.getClass().getAnnotation(MqEvent.class);
         return event == null ? 1 : event.version();
-    }
-
-    private Integer resolveDelayLevel(MqDelay delay) {
-        if (delay == null) {
-            return null;
-        }
-        if (delay.rocketMqDelayLevel() != null) {
-            int level = delay.rocketMqDelayLevel();
-            if (level < 1 || level > DEFAULT_DELAY_LEVELS.size()) {
-                throw new MqException("Unsupported RocketMQ delay level: " + level);
-            }
-            return level;
-        }
-        Duration duration = delay.duration();
-        if (duration == null || duration.isNegative() || duration.isZero()) {
-            throw new MqException("MQ delay duration must be positive");
-        }
-        Duration maximum = DEFAULT_DELAY_LEVELS.get(DEFAULT_DELAY_LEVELS.size() - 1).getDuration();
-        if (duration.compareTo(maximum) > 0) {
-            throw new MqException("MQ delay duration exceeds the supported maximum: " + maximum);
-        }
-        for (DelayLevel level : DEFAULT_DELAY_LEVELS) {
-            if (level.getDuration().compareTo(duration) >= 0) {
-                return level.getLevel();
-            }
-        }
-        throw new MqException("Unsupported RocketMQ delay duration: " + duration);
     }
 
     /**
@@ -278,19 +259,4 @@ public class RocketMqPublisher implements MqPublisher {
         }
     }
 
-    /**
-     * 延迟Level。
-     *
-     * @Author Mr Shu
-     * @Version 1.0.0
-     * @CreateTime 2026/3/20 16:58
-     */
-
-    private static class DelayLevel {
-        private final int level;
-        private final Duration duration;
-        DelayLevel(int level, Duration duration) { this.level = level; this.duration = duration; }
-        int getLevel() { return level; }
-        Duration getDuration() { return duration; }
-    }
 }

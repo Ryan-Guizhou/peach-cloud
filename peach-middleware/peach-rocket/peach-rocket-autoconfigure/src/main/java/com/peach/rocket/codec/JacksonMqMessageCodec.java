@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.peach.rocket.core.MqMessageEnvelope;
 import com.peach.rocket.exception.MqException;
 import java.io.IOException;
+import java.lang.reflect.Type;
 
 /**
  * JacksonMqMessageCodec相关类。
@@ -32,8 +33,15 @@ public class JacksonMqMessageCodec implements MqMessageCodec {
 
     @Override
     public <T> MqMessageEnvelope<T> decode(byte[] body, Class<T> payloadType) {
+        return decode(body, (Type) payloadType);
+    }
+
+    @Override
+    public <T> MqMessageEnvelope<T> decode(byte[] body, Type payloadType) {
         try {
-            JavaType javaType = objectMapper.getTypeFactory().constructParametricType(MqMessageEnvelope.class, payloadType);
+            JavaType elementType = objectMapper.constructType(payloadType);
+            JavaType javaType = objectMapper.getTypeFactory()
+                    .constructParametricType(MqMessageEnvelope.class, elementType);
             return objectMapper.readValue(body, javaType);
         } catch (IOException ex) {
             throw new MqException("Failed to decode MQ message envelope", ex);

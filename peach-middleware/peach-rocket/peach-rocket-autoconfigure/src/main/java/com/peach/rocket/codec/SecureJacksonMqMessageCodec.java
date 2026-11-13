@@ -10,6 +10,7 @@ import com.peach.rocket.security.MqEncryptionPolicy;
 import com.peach.rocket.security.MqEncryptionResult;
 import com.peach.rocket.security.MqPayloadEncryptor;
 import java.io.IOException;
+import java.lang.reflect.Type;
 
 /**
  * SecureJacksonMqMessageCodec相关类。
@@ -54,18 +55,27 @@ public class SecureJacksonMqMessageCodec implements MqMessageCodec {
 
     @Override
     public <T> MqMessageEnvelope<T> decode(byte[] body, Class<T> payloadType) {
+        return decode(body, (Type) payloadType);
+    }
+
+    @Override
+    public <T> MqMessageEnvelope<T> decode(byte[] body, Type payloadType) {
         try {
-            JavaType javaType = objectMapper.getTypeFactory().constructParametricType(MqMessageEnvelope.class, Object.class);
-            MqMessageEnvelope<?> raw = objectMapper.readValue(body, javaType);
-            Object payload = raw.payload();
+            JavaType rawType = objectMapper.getTypeFactory()
+                    .constructParametricType(MqMessageEnvelope.class, Object.class);
+            JavaType actualType = objectMapper.constructType(payloadType);
+            MqMessageEnvelope<?> raw = objectMapper.readValue(body, rawType);
             T actualPayload;
             if (raw.encrypted()) {
-                byte[] cipherBytes = objectMapper.convertValue(payload, byte[].class);
+                if (encryptor == null) {
+                    throw new MqException("Encrypted MQ payload requires a decryptor");
+                }
+                byte[] cipherBytes = objectMapper.convertValue(raw.payload(), byte[].class);
                 MqEncryptionContext context = new MqEncryptionContext(
                         raw.topic(), raw.payloadType(), raw.encryptionAlgorithm(), raw.encryptionKeyId());
-                actualPayload = objectMapper.readValue(encryptor.decrypt(cipherBytes, context), payloadType);
+                actualPayload = objectMapper.readValue(encryptor.decrypt(cipherBytes, context), actualType);
             } else {
-                actualPayload = objectMapper.convertValue(payload, payloadType);
+                actualPayload = objectMapper.convertValue(raw.payload(), actualType);
             }
             return raw.withPayload(actualPayload);
         } catch (IOException ex) {

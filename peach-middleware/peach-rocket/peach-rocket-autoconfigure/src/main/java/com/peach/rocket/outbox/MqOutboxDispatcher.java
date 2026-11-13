@@ -2,6 +2,7 @@ package com.peach.rocket.outbox;
 
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.core.MqSendOptions;
+import com.peach.rocket.core.MqDelayLevels;
 import com.peach.rocket.exception.MqException;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,9 @@ import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.messaging.Message;
+import org.apache.rocketmq.common.message.MessageConst;
+import org.springframework.util.StringUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 
 /**
@@ -109,8 +113,32 @@ public class MqOutboxDispatcher {
                 long timeout = options != null && options.getTimeoutMillis() > 0
                         ? options.getTimeoutMillis()
                         : properties.getProducer().getDefaultTimeout().toMillis();
-                SendResult result = rocketMQTemplate.syncSend(
-                        destination, MessageBuilder.withPayload(event.body()).build(), timeout);
+                String shardingKey = options == null ? null : options.getShardingKey();
+                Integer delayLevel = options == null ? null : MqDelayLevels.resolve(options.getDelay());
+                if (StringUtils.hasText(shardingKey) && delayLevel != null) {
+                    throw new MqException("Outbox cannot combine orderly and delayed sending");
+                }
+
+                MessageBuilder<byte[]> messageBuilder = MessageBuilder.withPayload(event.body());
+                if (options != null && options.getHeaders() != null) {
+                    options.getHeaders().forEach((key, value) -> {
+                        if (StringUtils.hasText(key) && value != null) {
+                            messageBuilder.setHeader(key, value);
+                        }
+                    });
+                }
+                if (StringUtils.hasText(event.businessKey())) {
+                    messageBuilder.setHeader(MessageConst.PROPERTY_KEYS, event.businessKey());
+                }
+                Message<byte[]> message = messageBuilder.build();
+                SendResult result;
+                if (StringUtils.hasText(shardingKey)) {
+                    result = rocketMQTemplate.syncSendOrderly(destination, message, shardingKey, timeout);
+                } else if (delayLevel != null) {
+                    result = rocketMQTemplate.syncSend(destination, message, timeout, delayLevel);
+                } else {
+                    result = rocketMQTemplate.syncSend(destination, message, timeout);
+                }
                 if (result == null || result.getSendStatus() != SendStatus.SEND_OK) {
                     throw new MqException("Broker did not confirm Outbox message, status="
                             + (result == null ? "null" : result.getSendStatus()));

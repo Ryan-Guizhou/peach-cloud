@@ -3,6 +3,10 @@ package com.peach.rocket.outbox;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.peach.rocket.core.MqSendOptions;
+import com.peach.rocket.core.MqDelay;
+import org.springframework.messaging.Message;
+import org.mockito.ArgumentCaptor;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
@@ -10,16 +14,16 @@ import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.junit.jupiter.api.Test;
-import org.springframework.messaging.Message;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 /** Broker 发送与 Store ACK 失败场景的回归验证。 * @Author Mr Shu
@@ -126,12 +130,64 @@ class MqOutboxDispatcherTest {
         when(store.claimPending(50)).thenReturn(List.of(ordered));
         SendResult sent = mock(SendResult.class);
         when(sent.getSendStatus()).thenReturn(SendStatus.SEND_OK);
-        when(template.syncSend(anyString(), any(Message.class), anyLong())).thenReturn(sent);
+        when(template.syncSendOrderly(anyString(), any(Message.class), eq("order-1"), anyLong()))
+                .thenReturn(sent);
 
         new MqOutboxDispatcher(store, template, properties, executor).dispatch();
 
         verify(executor, never()).submit(any(Runnable.class));
+        verify(template).syncSendOrderly(anyString(), any(Message.class), eq("order-1"), anyLong());
         verify(store).markSent(ordered);
+    }
+
+    @Test
+    void shouldSendOrderlyOutboxUsingShardingKeyAndKeepBusinessHeaders() {
+        MqOutboxStore store = mock(MqOutboxStore.class);
+        RocketMQTemplate template = mock(RocketMQTemplate.class);
+        MqSendOptions opts = new MqSendOptions();
+        opts.setShardingKey("order-1");
+        opts.setTimeoutMillis(3500L);
+        opts.setHeaders(java.util.Map.of("x-request-id", "req-1"));
+        MqOutboxClaim claim = withOptions("ordered", opts);
+        when(store.claimPending(50)).thenReturn(List.of(claim));
+        SendResult success = mock(SendResult.class);
+        when(success.getSendStatus()).thenReturn(SendStatus.SEND_OK);
+        when(template.syncSendOrderly(anyString(), any(Message.class), eq("order-1"), eq(3500L)))
+                .thenReturn(success);
+
+        new MqOutboxDispatcher(store, template, new PeachRocketProperties()).dispatch();
+
+        ArgumentCaptor<Message> captured = ArgumentCaptor.forClass(Message.class);
+        verify(template).syncSendOrderly(anyString(), captured.capture(), eq("order-1"), eq(3500L));
+        assertEquals("req-1", captured.getValue().getHeaders().get("x-request-id"));
+        assertEquals("ordered", captured.getValue().getHeaders().get("KEYS"));
+        verify(store).markSent(claim);
+    }
+
+    @Test
+    void shouldSendDelayedOutboxUsingRocketMqDelayLevel() {
+        MqOutboxStore store = mock(MqOutboxStore.class);
+        RocketMQTemplate template = mock(RocketMQTemplate.class);
+        MqSendOptions options = new MqSendOptions();
+        options.setDelay(MqDelay.level(3));
+        MqOutboxClaim claim = withOptions("delayed", options);
+        when(store.claimPending(50)).thenReturn(List.of(claim));
+        SendResult success = mock(SendResult.class);
+        when(success.getSendStatus()).thenReturn(SendStatus.SEND_OK);
+        when(template.syncSend(anyString(), any(Message.class), anyLong(), eq(3))).thenReturn(success);
+
+        new MqOutboxDispatcher(store, template, new PeachRocketProperties()).dispatch();
+
+        verify(template).syncSend(anyString(), any(Message.class), anyLong(), eq(3));
+        verify(store).markSent(claim);
+    }
+
+    private MqOutboxClaim withOptions(String id, MqSendOptions options) {
+        MqOutboxEvent original = claim(id).event();
+        MqOutboxEvent withOptions = new MqOutboxEvent(original.messageId(), original.body(),
+                original.topic(), original.tag(), original.businessKey(), options, original.status(),
+                original.retryCount(), original.createdAt(), original.updatedAt());
+        return new MqOutboxClaim(withOptions, "owner-" + id);
     }
 
     private MqOutboxClaim claim(String id) {

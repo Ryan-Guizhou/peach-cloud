@@ -4,6 +4,15 @@ import java.time.ZoneId;
 
 
 import com.peach.rocket.outbox.MqOutboxEvent;
+import com.peach.rocket.core.MqDelay;
+import com.peach.rocket.core.MqDelayLevels;
+import com.peach.rocket.core.MqSendOptions;
+import com.peach.rocket.exception.MqException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
+import org.springframework.util.StringUtils;
 import com.peach.rocket.outbox.MqOutboxClaim;
 import com.peach.rocket.outbox.MqOutboxStatus;
 import com.peach.rocket.outbox.MqOutboxStore;
@@ -34,8 +43,13 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
     private static final int CLAIM_TIMEOUT_MINUTES = 5;
 
     private static final String INSERT_SQL =
-            "INSERT INTO MQ_OUTBOX_EVENT(MESSAGE_ID,TOPIC,TAG,BUSINESS_KEY,PAYLOAD,SEND_MODE,STATUS,"
-                    + "RETRY_COUNT,NEXT_RETRY_TIME,CREATED_AT,UPDATED_AT) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
+            "INSERT INTO MQ_OUTBOX_EVENT(MESSAGE_ID,TOPIC,TAG,BUSINESS_KEY,PAYLOAD,SEND_MODE,"
+                    + "SHARDING_KEY,DELAY_LEVEL,HEADERS,SEND_TIMEOUT_MS,STATUS,"
+                    + "RETRY_COUNT,NEXT_RETRY_TIME,CREATED_AT,UPDATED_AT)"
+                    + " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final TypeReference<Map<String, String>> HEADER_TYPE = new TypeReference<>() { };
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -53,6 +67,24 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
      */
     @Override
     public void save(MqOutboxEvent event) {
+        MqSendOptions options = event.options();
+        String shardingKey = options == null ? null : options.getShardingKey();
+        Integer delayLevel = options == null ? null : MqDelayLevels.resolve(options.getDelay());
+        if (StringUtils.hasText(shardingKey) && delayLevel != null) {
+            throw new MqException("Outbox cannot combine orderly and delayed sending");
+        }
+        String sendMode = StringUtils.hasText(shardingKey) ? "ORDERLY"
+                : delayLevel != null ? "DELAY" : "NORMAL";
+        Long timeout = options != null && options.getTimeoutMillis() > 0
+                ? options.getTimeoutMillis() : null;
+        String headers = null;
+        if (options != null && options.getHeaders() != null && !options.getHeaders().isEmpty()) {
+            try {
+                headers = MAPPER.writeValueAsString(options.getHeaders());
+            } catch (JsonProcessingException ex) {
+                throw new MqException("Failed to serialize Outbox message headers", ex);
+            }
+        }
         LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         jdbcTemplate.update(INSERT_SQL,
                 event.messageId(),
@@ -60,7 +92,11 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
                 event.tag(),
                 event.businessKey(),
                 Base64.getEncoder().encodeToString(event.body()),
-                "NORMAL",
+                sendMode,
+                shardingKey,
+                delayLevel,
+                headers,
+                timeout,
                 MqOutboxStatus.INIT.name(),
                 0,
                 Timestamp.valueOf(now),
@@ -97,7 +133,8 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
                 MqOutboxStatus.RETRY.name(),
                 boundedBatch);
         List<MqOutboxEvent> events = jdbcTemplate.query(
-                "SELECT MESSAGE_ID,TOPIC,TAG,BUSINESS_KEY,PAYLOAD,STATUS,RETRY_COUNT,CREATED_AT,UPDATED_AT "
+                "SELECT MESSAGE_ID,TOPIC,TAG,BUSINESS_KEY,PAYLOAD,SEND_MODE,SHARDING_KEY,"
+                        + "DELAY_LEVEL,HEADERS,SEND_TIMEOUT_MS,STATUS,RETRY_COUNT,CREATED_AT,UPDATED_AT "
                         + "FROM MQ_OUTBOX_EVENT WHERE STATUS=? AND CLAIMED_BY=? "
                         + "ORDER BY CLAIMED_AT ASC LIMIT ?",
                 new OutboxRowMapper(),
@@ -232,13 +269,37 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
         public MqOutboxEvent mapRow(ResultSet resultSet, int rowNum) throws SQLException {
             Timestamp createdAt = resultSet.getTimestamp("CREATED_AT");
             Timestamp updatedAt = resultSet.getTimestamp("UPDATED_AT");
+            MqSendOptions options = new MqSendOptions();
+            String sendMode = resultSet.getString("SEND_MODE");
+            String shardingKey = resultSet.getString("SHARDING_KEY");
+            int storedDelayLevel = resultSet.getInt("DELAY_LEVEL");
+            Integer delayLevel = resultSet.wasNull() ? null : storedDelayLevel;
+            long storedTimeout = resultSet.getLong("SEND_TIMEOUT_MS");
+            if (!resultSet.wasNull()) {
+                options.setTimeoutMillis(storedTimeout);
+            }
+            String headers = resultSet.getString("HEADERS");
+            if (StringUtils.hasText(headers)) {
+                try {
+                    options.setHeaders(MAPPER.readValue(headers, HEADER_TYPE));
+                } catch (JsonProcessingException ex) {
+                    throw new SQLException("Invalid Outbox headers JSON", ex);
+                }
+            }
+            if ("ORDERLY".equals(sendMode) && StringUtils.hasText(shardingKey)) {
+                options.setShardingKey(shardingKey);
+            } else if ("DELAY".equals(sendMode) && delayLevel != null) {
+                options.setDelay(MqDelay.level(delayLevel));
+            } else if (!"NORMAL".equals(sendMode)) {
+                throw new SQLException("Invalid Outbox send mode or required options");
+            }
             return new MqOutboxEvent(
                     resultSet.getString("MESSAGE_ID"),
                     Base64.getDecoder().decode(resultSet.getString("PAYLOAD")),
                     resultSet.getString("TOPIC"),
                     resultSet.getString("TAG"),
                     resultSet.getString("BUSINESS_KEY"),
-                    null,
+                    options,
                     MqOutboxStatus.valueOf(resultSet.getString("STATUS")),
                     resultSet.getInt("RETRY_COUNT"),
                     createdAt == null ? null : createdAt.toLocalDateTime(),
