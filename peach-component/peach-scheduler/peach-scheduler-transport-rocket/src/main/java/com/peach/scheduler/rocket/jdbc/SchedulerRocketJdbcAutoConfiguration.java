@@ -1,8 +1,7 @@
 package com.peach.scheduler.rocket.jdbc;
 
-import org.springframework.stereotype.Indexed;
-
 import com.peach.rocket.autoconfigure.PeachRocketAutoConfigure;
+import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.autoconfigure.PeachRocketOutboxAutoConfigure;
 import com.peach.rocket.idempotent.MqIdempotentStore;
 import com.peach.rocket.outbox.MqOutboxStore;
@@ -13,6 +12,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.stereotype.Indexed;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -31,7 +32,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @AutoConfigureBefore({PeachRocketAutoConfigure.class, PeachRocketOutboxAutoConfigure.class})
 @ConditionalOnClass(JdbcTemplate.class)
 @ConditionalOnBean(JdbcTemplate.class)
-@org.springframework.boot.context.properties.EnableConfigurationProperties(com.peach.rocket.autoconfigure.PeachRocketProperties.class)
+@EnableConfigurationProperties(PeachRocketProperties.class)
 @Indexed
 public class SchedulerRocketJdbcAutoConfiguration {
 
@@ -39,19 +40,19 @@ public class SchedulerRocketJdbcAutoConfiguration {
      * 创建调度 RocketMQ JDBC 存储自动配置。
      */
     public SchedulerRocketJdbcAutoConfiguration() {
-        // Intentionally empty.
     }
 
     /**
      * 创建基于 JDBC 的 Outbox 持久化存储。
      *
      * @param jdbcTemplate JDBC 操作模板
+     * @param properties RocketMQ 统一配置
      * @return 调度消息 Outbox 持久化存储
      */
     @Bean
     @ConditionalOnMissingBean(MqOutboxStore.class)
     public MqOutboxStore schedulerJdbcMqOutboxStore(JdbcTemplate jdbcTemplate,
-            com.peach.rocket.autoconfigure.PeachRocketProperties properties) {
+            PeachRocketProperties properties) {
         return new SchedulerJdbcMqOutboxStore(jdbcTemplate, properties);
     }
 
@@ -64,7 +65,7 @@ public class SchedulerRocketJdbcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(MqIdempotentStore.class)
     public MqIdempotentStore schedulerJdbcMqIdempotentStore(JdbcTemplate jdbcTemplate,
-            com.peach.rocket.autoconfigure.PeachRocketProperties properties) {
+            PeachRocketProperties properties) {
         return new SchedulerJdbcMqIdempotentStore(jdbcTemplate, properties);
     }
 }
