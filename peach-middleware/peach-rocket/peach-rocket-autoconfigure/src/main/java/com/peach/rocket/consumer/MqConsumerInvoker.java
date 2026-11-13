@@ -141,7 +141,7 @@ public class MqConsumerInvoker {
             // 构建幂等上下文，包含存储幂等记录所需的所有信息
             MqIdempotentContext idempotentContext = new MqIdempotentContext(
                     idempotentKey,
-                    RocketMqNaming.normalizeConsumerGroup(consumer.consumerGroup()),
+                    RocketMqNaming.normalizeConsumerGroup(consumer.consumerGroup(), properties),
                     context.topic(),
                     context.tag(),
                     context.key(),

@@ -2,6 +2,7 @@ package com.peach.rocket.support;
 
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import org.springframework.util.StringUtils;
+import com.peach.rocket.exception.MqException;
 
 /**
  * RocketMQMQ命名。
@@ -41,6 +42,27 @@ public final class RocketMqNaming {
      * @return consumer group
      */
     public static String normalizeConsumerGroup(String consumerGroup) {
+        if (!StringUtils.hasText(consumerGroup)) {
+            throw new MqException("consumerGroup must not be blank");
+        }
         return consumerGroup;
+    }
+
+    /**
+     * 解析当前应用内生效的 Consumer Group 名称。默认保持旧名称以保留消费位点，
+     * 只有显式开启配置时才添加环境/应用前缀。
+     *
+     * @param consumerGroup 声明的业务组名
+     * @param properties RocketMQ 配置
+     * @return 最终注册且用于幂等键的组名
+     */
+    public static String normalizeConsumerGroup(String consumerGroup, PeachRocketProperties properties) {
+        String group = normalizeConsumerGroup(consumerGroup);
+        if (!properties.getNaming().isAutoPrefixConsumerGroup() || group.contains("%")) {
+            return group;
+        }
+        String separator = properties.getNaming().getTopicSeparator();
+        String prefix = properties.getNamespace() + separator + properties.getNaming().getGroupPrefix() + separator;
+        return group.startsWith(prefix) ? group : prefix + group;
     }
 }

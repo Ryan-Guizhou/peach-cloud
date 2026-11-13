@@ -201,7 +201,7 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
             return null;
         }
         final String topic = RocketMqNaming.normalizeTopic(annotation.topic(), properties);
-        final String consumerGroup = RocketMqNaming.normalizeConsumerGroup(annotation.consumerGroup());
+        final String consumerGroup = RocketMqNaming.normalizeConsumerGroup(annotation.consumerGroup(), properties);
         String tagExpression = StringUtils.hasText(annotation.tag()) ? annotation.tag() : "*";
         DefaultMQPushConsumer consumer = null;
         try {
