@@ -2,6 +2,7 @@ package com.peach.rocket.security;
 
 import com.peach.rocket.annotation.MqEncrypted;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
+import com.peach.rocket.support.RocketMqNaming;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -29,7 +30,7 @@ public class ConfigurableMqEncryptionPolicy implements MqEncryptionPolicy {
         }
         if (!CollectionUtils.isEmpty(properties.getSecurity().getEncryptTopics())
                 && properties.getSecurity().getEncryptTopics().stream().anyMatch(configured ->
-                        com.peach.rocket.support.RocketMqNaming.normalizeTopic(configured, properties).equals(topic))) {
+                        RocketMqNaming.normalizeTopic(configured, properties).equals(topic))) {
             return true;
         }
         return payload != null && payload.getClass().isAnnotationPresent(MqEncrypted.class);
