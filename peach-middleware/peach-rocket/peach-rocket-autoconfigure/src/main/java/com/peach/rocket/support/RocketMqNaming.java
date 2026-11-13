@@ -1,11 +1,11 @@
 package com.peach.rocket.support;
 
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
-import org.springframework.util.StringUtils;
 import com.peach.rocket.exception.MqException;
+import org.springframework.util.StringUtils;
 
 /**
- * RocketMQMQ命名。
+ * RocketMQ Topic 和 Consumer Group 命名规范化，支持环境隔离与名称校验。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -59,8 +59,8 @@ public final class RocketMqNaming {
     }
 
     /**
-     * 解析当前应用内生效的 Consumer Group 名称。默认保持旧名称以保留消费位点，
-     * 只有显式开启配置时才添加环境/应用前缀。
+     * 解析当前环境内生效的 Consumer Group。新项目默认开启环境/组前缀隔离；
+     * 非生产环境可显式关闭，但生产模式必须开启。
      *
      * @param consumerGroup 声明的业务组名
      * @param properties RocketMQ 配置
