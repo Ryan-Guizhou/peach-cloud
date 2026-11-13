@@ -1,5 +1,6 @@
 package com.peach.scheduler.rocket.jdbc;
 
+import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.jdbc.JdbcMqIdempotentStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Indexed;
@@ -21,9 +22,14 @@ public class SchedulerJdbcMqIdempotentStore extends JdbcMqIdempotentStore {
         super(jdbcTemplate);
     }
 
-    /** 继承统一租约配置，避免 Scheduler 适配层回退到默认处理期限。 */
+    /**
+     * 使用统一的幂等处理租约配置构造调度存储，避免继承父类默认期限。
+     *
+     * @param jdbcTemplate JDBC 操作模板
+     * @param properties RocketMQ 统一配置
+     */
     public SchedulerJdbcMqIdempotentStore(JdbcTemplate jdbcTemplate,
-            com.peach.rocket.autoconfigure.PeachRocketProperties properties) {
+            PeachRocketProperties properties) {
         super(jdbcTemplate, properties);
     }
 }
