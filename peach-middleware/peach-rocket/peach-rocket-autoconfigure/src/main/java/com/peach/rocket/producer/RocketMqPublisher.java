@@ -13,6 +13,7 @@ import com.peach.rocket.core.MqPublisher;
 import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.core.MqSendResult;
 import com.peach.rocket.exception.MqException;
+import com.peach.rocket.metrics.MqMetrics;
 import com.peach.rocket.route.MqRoute;
 import com.peach.rocket.route.MqRouteResolver;
 import com.peach.rocket.transaction.RocketMqTransactionMessageProducer;
@@ -45,6 +46,7 @@ public class RocketMqPublisher implements MqPublisher {
     private final DefaultMqHeaderResolver headerResolver;
     private final PeachRocketProperties properties;
     private final RocketMqTransactionMessageProducer transactionMessageProducer;
+    private final MqMetrics metrics;
 
     public RocketMqPublisher(RocketMQTemplate rocketMQTemplate, MqMessageCodec codec, MqRouteResolver routeResolver,
                              DefaultMqHeaderResolver headerResolver, PeachRocketProperties properties) {
@@ -54,6 +56,19 @@ public class RocketMqPublisher implements MqPublisher {
     public RocketMqPublisher(RocketMQTemplate rocketMQTemplate, MqMessageCodec codec, MqRouteResolver routeResolver,
                              DefaultMqHeaderResolver headerResolver, PeachRocketProperties properties,
                              RocketMqTransactionMessageProducer transactionMessageProducer) {
+        this(rocketMQTemplate, codec, routeResolver, headerResolver, properties,
+                transactionMessageProducer, MqMetrics.NOOP);
+    }
+
+    /**
+     * 创建支持可选发送指标的 Producer。
+     *
+     * @param metrics 可选指标采集 SPI
+     */
+    public RocketMqPublisher(RocketMQTemplate rocketMQTemplate, MqMessageCodec codec, MqRouteResolver routeResolver,
+                             DefaultMqHeaderResolver headerResolver, PeachRocketProperties properties,
+                             RocketMqTransactionMessageProducer transactionMessageProducer, MqMetrics metrics) {
+        this.metrics = metrics == null ? MqMetrics.NOOP : metrics;
         this.rocketMQTemplate = rocketMQTemplate;
         this.codec = codec;
         this.routeResolver = routeResolver;
@@ -69,6 +84,19 @@ public class RocketMqPublisher implements MqPublisher {
 
     @Override
     public <T> MqSendResult publish(T payload, MqSendOptions options) {
+        long metricStarted = System.nanoTime();
+        try {
+            MqSendResult result = publishSync(payload, options);
+            metrics.publish("sync", result.isSuccess() ? "success" : "rejected",
+                    System.nanoTime() - metricStarted);
+            return result;
+        } catch (RuntimeException ex) {
+            metrics.publish("sync", "failed", System.nanoTime() - metricStarted);
+            throw ex;
+        }
+    }
+
+    private <T> MqSendResult publishSync(T payload, MqSendOptions options) {
         MqSendOptions actualOptions = prepareOptions(options);
         long start = System.currentTimeMillis();
         MqRoute route = routeResolver.resolve(payload, actualOptions);
@@ -103,19 +131,36 @@ public class RocketMqPublisher implements MqPublisher {
 
     @Override
     public <T> CompletableFuture<MqSendResult> publishAsync(final T payload, MqSendOptions options) {
+        final long metricStarted = System.nanoTime();
         final MqSendOptions actualOptions = prepareOptions(options);
         rejectUnsupportedAsyncOptions(actualOptions);
         final long start = System.currentTimeMillis();
         final MqRoute route = routeResolver.resolve(payload, actualOptions);
         final CompletableFuture<MqSendResult> future = new CompletableFuture<MqSendResult>();
-        rocketMQTemplate.asyncSend(destination(route), buildMessage(payload, actualOptions, route),
-                new AsyncSendCallback(this, properties, payload, route, start, future),
-                actualOptions.getTimeoutMillis());
+        try {
+            rocketMQTemplate.asyncSend(destination(route), buildMessage(payload, actualOptions, route),
+                    new AsyncSendCallback(this, properties, payload, route, start, metricStarted, future),
+                    actualOptions.getTimeoutMillis());
+        } catch (RuntimeException ex) {
+            metrics.publish("async", "failed", System.nanoTime() - metricStarted);
+            throw ex;
+        }
         return future;
     }
 
     @Override
     public <T> void publishOneWay(T payload, MqSendOptions options) {
+        long started = System.nanoTime();
+        try {
+            sendOneWay(payload, options);
+            metrics.publish("oneway", "submitted", System.nanoTime() - started);
+        } catch (RuntimeException ex) {
+            metrics.publish("oneway", "failed", System.nanoTime() - started);
+            throw ex;
+        }
+    }
+
+    private <T> void sendOneWay(T payload, MqSendOptions options) {
         MqSendOptions actualOptions = prepareOptions(options);
         rejectUnsupportedAsyncOptions(actualOptions);
         MqRoute route = routeResolver.resolve(payload, actualOptions);
@@ -225,19 +270,21 @@ public class RocketMqPublisher implements MqPublisher {
         private final Object payload;
         private final MqRoute route;
         private final long start;
+        private final long metricStarted;
         private final CompletableFuture<MqSendResult> future;
 
         private AsyncSendCallback(RocketMqPublisher publisher,
                                   PeachRocketProperties properties,
                                   Object payload,
                                   MqRoute route,
-                                  long start,
+                                  long start, long metricStarted,
                                   CompletableFuture<MqSendResult> future) {
             this.publisher = publisher;
             this.properties = properties;
             this.payload = payload;
             this.route = route;
             this.start = start;
+            this.metricStarted = metricStarted;
             this.future = future;
         }
 
@@ -247,6 +294,8 @@ public class RocketMqPublisher implements MqPublisher {
             log.info("[mq-send] app={} payloadType={} mode=async topic={} tag={} key={} messageId={} status={} cost={}ms success={}",
                     properties.getAppName(), payload.getClass().getSimpleName(), result.topic(), result.tag(),
                     result.key(), result.messageId(), result.rawStatus(), System.currentTimeMillis() - start, result.isSuccess());
+            publisher.metrics.publish("async", result.isSuccess() ? "success" : "rejected",
+                    System.nanoTime() - metricStarted);
             future.complete(result);
         }
 
@@ -255,6 +304,7 @@ public class RocketMqPublisher implements MqPublisher {
             log.error("[mq-send-error] app={} payloadType={} mode=async topic={} tag={} key={} cost={}ms exception={}",
                     properties.getAppName(), payload.getClass().getSimpleName(), route.topic(), route.tag(), route.key(),
                     System.currentTimeMillis() - start, throwable.getClass().getName(), throwable);
+            publisher.metrics.publish("async", "failed", System.nanoTime() - metricStarted);
             future.completeExceptionally(throwable);
         }
     }

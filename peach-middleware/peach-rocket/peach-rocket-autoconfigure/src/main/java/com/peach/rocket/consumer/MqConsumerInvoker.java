@@ -17,6 +17,7 @@ import com.peach.rocket.idempotent.MqIdempotentContext;
 import com.peach.rocket.idempotent.MqIdempotentKeyResolver;
 import com.peach.rocket.idempotent.MqIdempotentStore;
 import com.peach.rocket.support.RocketMqNaming;
+import com.peach.rocket.metrics.MqMetrics;
 import java.lang.reflect.Type;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,7 @@ public class MqConsumerInvoker {
     private final MqFailureRecorder failureRecorder;
     private final PeachRocketProperties properties;
     private final MqTraceContextPropagator traceContextPropagator;
+    private final MqMetrics metrics;
 
     public MqConsumerInvoker(MqMessageCodec codec, MqIdempotentStore idempotentStore,
                              MqIdempotentKeyResolver idempotentKeyResolver, MqErrorHandler errorHandler,
@@ -83,6 +85,21 @@ public class MqConsumerInvoker {
                              MqIdempotentKeyResolver idempotentKeyResolver, MqErrorHandler errorHandler,
                              MqExceptionClassifier exceptionClassifier, PeachRocketProperties properties,
                              MqTraceContextPropagator traceContextPropagator, MqFailureRecorder failureRecorder) {
+        this(codec, idempotentStore, idempotentKeyResolver, errorHandler, exceptionClassifier,
+                properties, traceContextPropagator, failureRecorder, MqMetrics.NOOP);
+    }
+
+    /**
+     * 创建带可选指标采集的消费调用器。
+     *
+     * @param metrics 可选 RocketMQ 指标 SPI
+     */
+    public MqConsumerInvoker(MqMessageCodec codec, MqIdempotentStore idempotentStore,
+                             MqIdempotentKeyResolver idempotentKeyResolver, MqErrorHandler errorHandler,
+                             MqExceptionClassifier exceptionClassifier, PeachRocketProperties properties,
+                             MqTraceContextPropagator traceContextPropagator, MqFailureRecorder failureRecorder,
+                             MqMetrics metrics) {
+        this.metrics = metrics == null ? MqMetrics.NOOP : metrics;
         this.failureRecorder = failureRecorder == null ? MqFailureRecorder.NOOP : failureRecorder;
         this.codec = codec;
         this.idempotentStore = idempotentStore;
@@ -108,6 +125,19 @@ public class MqConsumerInvoker {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void invoke(MqMessageHandler handler, String handlerName, byte[] body,
                        MqConsumer consumer, String messageId, int reconsumeTimes) {
+        long started = System.nanoTime();
+        try {
+            invokeInternal(handler, handlerName, body, consumer, messageId, reconsumeTimes);
+            metrics.consume("success", System.nanoTime() - started);
+        } catch (RuntimeException ex) {
+            metrics.consume("failed", System.nanoTime() - started);
+            throw ex;
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void invokeInternal(MqMessageHandler handler, String handlerName, byte[] body,
+                                MqConsumer consumer, String messageId, int reconsumeTimes) {
 
         // ==================== 1. 解析消息体类型 ====================
         // 通过反射解析 Handler 的泛型参数，确定 Payload 的实际类型（如 OrderDTO）

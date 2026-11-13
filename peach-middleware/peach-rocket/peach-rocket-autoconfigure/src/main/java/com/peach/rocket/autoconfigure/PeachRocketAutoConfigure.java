@@ -9,6 +9,7 @@ import com.peach.rocket.consumer.MqConsumerInvoker;
 import com.peach.rocket.context.DefaultMqHeaderResolver;
 import com.peach.rocket.context.MqTraceContextPropagator;
 import com.peach.rocket.core.MqPublisher;
+import com.peach.rocket.metrics.MqMetrics;
 import com.peach.rocket.error.DefaultMqErrorHandler;
 import com.peach.rocket.error.DefaultMqExceptionClassifier;
 import com.peach.rocket.error.MqErrorHandler;
@@ -155,11 +156,13 @@ public class PeachRocketAutoConfigure {
                                                MqExceptionClassifier exceptionClassifier,
                                                PeachRocketProperties properties,
                                                ObjectProvider<MqTraceContextPropagator> traceContextPropagatorProvider,
-                                               ObjectProvider<MqFailureRecorder> failureRecorderProvider) {
+                                               ObjectProvider<MqFailureRecorder> failureRecorderProvider,
+                                               ObjectProvider<MqMetrics> metricsProvider) {
         return new MqConsumerInvoker(codec, idempotentStore, idempotentKeyResolver,
                                      errorHandler, exceptionClassifier, properties,
                                      traceContextPropagatorProvider.getIfAvailable(() -> MqTraceContextPropagator.NOOP),
-                                     failureRecorderProvider.getIfAvailable(() -> MqFailureRecorder.NOOP));
+                                     failureRecorderProvider.getIfAvailable(() -> MqFailureRecorder.NOOP),
+                                     metricsProvider.getIfAvailable(() -> MqMetrics.NOOP));
     }
 
     @Bean
@@ -167,8 +170,10 @@ public class PeachRocketAutoConfigure {
     @ConditionalOnProperty(prefix = "peach.rocket.consumer", name = "dynamic-register", havingValue = "true", matchIfMissing = true)
     public DynamicRocketMqConsumerRegistrar dynamicRocketMqConsumerRegistrar(RocketMQProperties rocketMQProperties,
                                                                             PeachRocketProperties properties,
-                                                                            MqConsumerInvoker invoker) {
-        return new DynamicRocketMqConsumerRegistrar(rocketMQProperties, properties, invoker);
+                                                                            MqConsumerInvoker invoker,
+                                                                            ObjectProvider<MqMetrics> metricsProvider) {
+        return new DynamicRocketMqConsumerRegistrar(rocketMQProperties, properties, invoker,
+                metricsProvider.getIfAvailable(() -> MqMetrics.NOOP));
     }
 
     @Bean
@@ -201,8 +206,10 @@ public class PeachRocketAutoConfigure {
                                    MqRouteResolver routeResolver,
                                    DefaultMqHeaderResolver headerResolver,
                                    PeachRocketProperties properties,
-                                   ObjectProvider<RocketMqTransactionMessageProducer> transactionProducerProvider) {
+                                   ObjectProvider<RocketMqTransactionMessageProducer> transactionProducerProvider,
+                                   ObjectProvider<MqMetrics> metricsProvider) {
         return new RocketMqPublisher(rocketMQTemplate, codec, routeResolver, headerResolver,
-                                     properties, transactionProducerProvider.getIfAvailable());
+                                     properties, transactionProducerProvider.getIfAvailable(),
+                                     metricsProvider.getIfAvailable(() -> MqMetrics.NOOP));
     }
 }

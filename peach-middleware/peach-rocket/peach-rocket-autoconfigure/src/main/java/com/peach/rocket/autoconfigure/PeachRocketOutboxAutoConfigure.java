@@ -1,6 +1,8 @@
 package com.peach.rocket.autoconfigure;
 
 import com.peach.rocket.codec.MqMessageCodec;
+import com.peach.rocket.metrics.MqMetrics;
+import org.springframework.beans.factory.ObjectProvider;
 import com.peach.rocket.context.DefaultMqHeaderResolver;
 import com.peach.rocket.outbox.DefaultMqOutboxPublisher;
 import com.peach.rocket.outbox.DefaultMqOutboxReplayService;
@@ -78,7 +80,8 @@ public class PeachRocketOutboxAutoConfigure {
     public MqOutboxDispatcher mqOutboxDispatcher(MqOutboxStore outboxStore,
                                                  RocketMQTemplate rocketMQTemplate,
                                                  PeachRocketProperties properties,
-                                                 ApplicationContext applicationContext) {
+                                                 ApplicationContext applicationContext,
+                                                 ObjectProvider<MqMetrics> metricsProvider) {
         ExecutorService executor = null;
         if (properties.getOutbox().isParallelEnabled()) {
             String beanName = properties.getOutbox().getExecutorBeanName();
@@ -88,7 +91,8 @@ public class PeachRocketOutboxAutoConfigure {
             }
             executor = managedExecutor;
         }
-        return new MqOutboxDispatcher(outboxStore, rocketMQTemplate, properties, executor);
+        return new MqOutboxDispatcher(outboxStore, rocketMQTemplate, properties, executor,
+                metricsProvider.getIfAvailable(() -> MqMetrics.NOOP));
     }
 
     @Bean

@@ -6,6 +6,7 @@ import com.peach.rocket.core.MqConsumeMode;
 import com.peach.rocket.core.MqMessageHandler;
 import com.peach.rocket.core.MqMessageModel;
 import com.peach.rocket.exception.MqException;
+import com.peach.rocket.metrics.MqMetrics;
 import com.peach.rocket.support.RocketMqNaming;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,13 +45,26 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
     private final RocketMQProperties rocketMQProperties;
     private final PeachRocketProperties properties;
     private final MqConsumerInvoker invoker;
+    private final MqMetrics metrics;
     private final List<DefaultMQPushConsumer> consumers = new ArrayList<>();
     private final ReentrantLock lifecycleLock = new ReentrantLock();
     private final MqConsumerAdmission admission;
     private ApplicationContext applicationContext;
     private volatile boolean running;
 
-    public DynamicRocketMqConsumerRegistrar(RocketMQProperties rocketMQProperties, PeachRocketProperties properties, MqConsumerInvoker invoker) {
+    public DynamicRocketMqConsumerRegistrar(RocketMQProperties rocketMQProperties, PeachRocketProperties properties,
+                                            MqConsumerInvoker invoker) {
+        this(rocketMQProperties, properties, invoker, MqMetrics.NOOP);
+    }
+
+    /**
+     * 创建支持背压指标的动态消费者注册器。
+     *
+     * @param metrics 可选指标 SPI
+     */
+    public DynamicRocketMqConsumerRegistrar(RocketMQProperties rocketMQProperties, PeachRocketProperties properties,
+                                            MqConsumerInvoker invoker, MqMetrics metrics) {
+        this.metrics = metrics == null ? MqMetrics.NOOP : metrics;
         this.rocketMQProperties = rocketMQProperties;
         this.properties = properties;
         this.invoker = invoker;
@@ -286,6 +300,7 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
         for (MessageExt message : messages) {
             // 饱和或停机时交由 Broker 重投，不提交成功 ACK，也不引入无界本地队列。
             if (!admission.tryEnter()) {
+                metrics.backpressure();
                 log.debug("[mq-consumer-backpressure] consumer={} group={} active={}",
                         beanName, consumerGroup, admission.active());
                 return false;
