@@ -147,6 +147,12 @@
       "defaultValue": false
     },
     {
+      "name": "peach.rocket.outbox.executor-bean-name",
+      "type": "java.lang.String",
+      "description": "并行发送专用已注册 ExecutorService Bean，推荐 peach-virtual-thread 的 rocket-outboxVirtualExecutor。",
+      "defaultValue": "rocket-outboxVirtualExecutor"
+    },
+    {
       "name": "peach.rocket.outbox.in-memory-lease",
       "type": "java.time.Duration",
       "description": "内存 Outbox 消息被认领后持有租约的最长时间（Duration）。",
@@ -169,6 +175,12 @@
       "type": "java.time.Duration",
       "description": "内存 Outbox 消息记录的保留时间（Duration）。",
       "defaultValue": "24h"
+    },
+    {
+      "name": "peach.rocket.outbox.parallel-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否使用外部受管有界虚拟线程执行器并行发送非顺序、非延迟的 Outbox 消息；默认保持串行。",
+      "defaultValue": false
     },
     {
       "name": "peach.rocket.outbox.require-durable",

@@ -74,7 +74,8 @@ public class PeachRocketProperties implements InitializingBean {
                 || outbox.inMemoryMaxPayloadBytes < 1 || outbox.inMemoryRetention == null
                 || outbox.inMemoryRetention.isZero() || outbox.inMemoryRetention.isNegative()
                 || outbox.inMemoryLease == null || outbox.inMemoryLease.isZero()
-                || outbox.inMemoryLease.isNegative())) {
+                || outbox.inMemoryLease.isNegative()
+                || (outbox.parallelEnabled && !StringUtils.hasText(outbox.executorBeanName)))) {
             throw new MqException("Invalid peach.rocket.outbox resource limits");
         }
         if (topic.readQueueNums <= 0 || topic.writeQueueNums <= 0) {
@@ -291,6 +292,12 @@ public class PeachRocketProperties implements InitializingBean {
         private int inMemoryMaxPayloadBytes = 65536;
         private Duration inMemoryRetention = Duration.ofHours(24);
         private Duration inMemoryLease = Duration.ofMinutes(5);
+        private boolean parallelEnabled = false;
+        private String executorBeanName = "rocket-outboxVirtualExecutor";
+        public boolean isParallelEnabled() { return parallelEnabled; }
+        public void setParallelEnabled(boolean parallelEnabled) { this.parallelEnabled = parallelEnabled; }
+        public String getExecutorBeanName() { return executorBeanName; }
+        public void setExecutorBeanName(String executorBeanName) { this.executorBeanName = executorBeanName; }
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean enabled) { this.enabled = enabled; }
         public int getBatchSize() { return batchSize; }

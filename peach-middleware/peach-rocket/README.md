@@ -123,6 +123,25 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 
 启动中某个消费者失败，将回滚之前已启动的实例并清理当前失败实例。关闭时尽最大努力释放全部 Consumer；若业务 Handler 超过停机等待时间，系统会记录告警并继续关闭 SDK，**不保证超时的业务执行已完成**，因此必须保留持久化幂等与重试机制。约束为**单 JVM 实例级别**，不能替代 Broker 配额、跨实例全局流控或生产数据库容量治理。此处无须把 RocketMQ SDK 管理的工作线程替换成虚拟线程；其他异步业务应使用项目现有虚拟线程组件。
 
+**可选并行 Outbox I/O：** 默认串行扫描发送，避免在没有容量规划时增加 Broker 与 JDBC 压力。需要并发发送普通消息时，显式设置 `peach.rocket.outbox.parallel-enabled=true`，并让 `executor-bean-name` 指向 `peach-virtual-thread` 预先注册的 **受管有界** `ExecutorService` Bean（默认 `rocket-outboxVirtualExecutor`）。示例：
+
+```yaml
+peach:
+  virtual-thread:
+    groups:
+      rocket-outbox:
+        max-concurrency: 8
+        max-pending: 32
+        backpressure: REJECT
+  rocket:
+    outbox:
+      enabled: true
+      parallel-enabled: true
+      executor-bean-name: rocket-outboxVirtualExecutor
+```
+
+Dispatcher 对已认领消息提交 Future 并等待本批结果；虚拟线程分组拒绝任务时通过 Owner Token 将消息标记为失败、交给正常重试，不会 ACK 或丢弃。含顺序分片键或延迟选项的整批消息强制走串行路径，避免并行引入额外重排。**注意：当前阶段的 Outbox 普通发送尚不能保证对 shardingKey/延迟参数的实际传输支持，该问题归阶段四修复；生产中不要用当前阶段 Outbox 发送顺序或延迟消息。** 分组应根据 Broker、数据库连接池和发送 RTT 调整，禁止设置无界 pending。
+
 ## SPI 覆盖
 
 - 路由：`MqRouteResolver`，默认基于注解解析。

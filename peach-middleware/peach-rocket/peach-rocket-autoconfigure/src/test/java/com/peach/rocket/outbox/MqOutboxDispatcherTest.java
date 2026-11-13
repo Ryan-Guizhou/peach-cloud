@@ -3,6 +3,9 @@ package com.peach.rocket.outbox;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
@@ -13,8 +16,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,6 +66,72 @@ class MqOutboxDispatcherTest {
 
         verify(store, never()).markFailed(first);
         verify(store).markSent(second);
+    }
+
+    @Test
+    void shouldSubmitNormalOutboxClaimsToManagedExecutor() {
+        MqOutboxStore store = mock(MqOutboxStore.class);
+        RocketMQTemplate template = mock(RocketMQTemplate.class);
+        ExecutorService executor = mock(ExecutorService.class);
+        PeachRocketProperties properties = new PeachRocketProperties();
+        properties.getOutbox().setParallelEnabled(true);
+        MqOutboxClaim first = claim("parallel");
+        when(store.claimPending(50)).thenReturn(List.of(first));
+        SendResult sent = mock(SendResult.class);
+        when(sent.getSendStatus()).thenReturn(SendStatus.SEND_OK);
+        when(template.syncSend(anyString(), any(Message.class), anyLong())).thenReturn(sent);
+        when(executor.submit(any(Runnable.class))).thenAnswer(invocation -> {
+            ((Runnable) invocation.getArgument(0)).run();
+            return CompletableFuture.completedFuture(null);
+        });
+
+        new MqOutboxDispatcher(store, template, properties, executor).dispatch();
+
+        verify(executor).submit(any(Runnable.class));
+        verify(store).markSent(first);
+    }
+
+    @Test
+    void shouldReturnRejectedOutboxClaimForRetryWithoutSending() {
+        MqOutboxStore store = mock(MqOutboxStore.class);
+        RocketMQTemplate template = mock(RocketMQTemplate.class);
+        ExecutorService executor = mock(ExecutorService.class);
+        PeachRocketProperties properties = new PeachRocketProperties();
+        properties.getOutbox().setParallelEnabled(true);
+        MqOutboxClaim claim = claim("rejected");
+        when(store.claimPending(50)).thenReturn(List.of(claim));
+        when(executor.submit(any(Runnable.class))).thenThrow(new RejectedExecutionException("group saturated"));
+
+        new MqOutboxDispatcher(store, template, properties, executor).dispatch();
+
+        verify(store).markFailed(claim);
+        verify(store, never()).markSent(claim);
+        verify(template, never()).syncSend(anyString(), any(Message.class), anyLong());
+    }
+
+    @Test
+    void shouldKeepShardingKeyMessagesOnSerialPath() {
+        MqOutboxStore store = mock(MqOutboxStore.class);
+        RocketMQTemplate template = mock(RocketMQTemplate.class);
+        ExecutorService executor = mock(ExecutorService.class);
+        PeachRocketProperties properties = new PeachRocketProperties();
+        properties.getOutbox().setParallelEnabled(true);
+        MqOutboxClaim original = claim("ordered");
+        com.peach.rocket.core.MqSendOptions opts = new com.peach.rocket.core.MqSendOptions();
+        opts.setShardingKey("order-1");
+        MqOutboxEvent e = original.event();
+        MqOutboxClaim ordered = new MqOutboxClaim(new MqOutboxEvent(e.messageId(), e.body(),
+                e.topic(), e.tag(), e.businessKey(), opts, e.status(), e.retryCount(),
+                e.createdAt(), e.updatedAt()), original.claimToken());
+        when(store.claimPending(50)).thenReturn(List.of(ordered));
+        SendResult sent = mock(SendResult.class);
+        when(sent.getSendStatus()).thenReturn(SendStatus.SEND_OK);
+        when(template.syncSend(anyString(), any(Message.class), anyLong())).thenReturn(sent);
+
+        new MqOutboxDispatcher(store, template, properties, executor).dispatch();
+
+        verify(executor, never()).submit(any(Runnable.class));
+        verify(store).markSent(ordered);
     }
 
     private MqOutboxClaim claim(String id) {

@@ -123,6 +123,25 @@ Dynamic consumers use RocketMQ SDK-managed worker threads without adding another
 
 A partial startup failure closes the failed consumer and rolls back earlier clients. Shutdown stops admission, waits up to the configured timeout, and closes all clients even when one shutdown fails. A timeout **does not guarantee business completion**; durable idempotency and retries remain necessary. These bounds apply to **one JVM only**, not a distributed or Broker-wide quota. RocketMQ SDK threads remain SDK-managed; use the existing project's virtual-thread component for separate application asynchronous work when appropriate.
 
+**Optional parallel Outbox I/O:** Scanning and publishing remain serial by default. To parallelize ordinary messages, set `peach.rocket.outbox.parallel-enabled=true` and point `executor-bean-name` at a pre-registered bounded `peach-virtual-thread` `ExecutorService` bean (default: `rocket-outboxVirtualExecutor`). For example:
+
+```yaml
+peach:
+  virtual-thread:
+    groups:
+      rocket-outbox:
+        max-concurrency: 8
+        max-pending: 32
+        backpressure: REJECT
+  rocket:
+    outbox:
+      enabled: true
+      parallel-enabled: true
+      executor-bean-name: rocket-outboxVirtualExecutor
+```
+
+The dispatcher awaits the batch's Future results. Rejected submissions are marked failed using the claim token and retried normally; they are not acknowledged or silently dropped. A batch containing sharding-key or delay options uses the serial path to avoid additional parallel reordering. **The current transport path does not yet honor Outbox ordered/delay options; this is addressed in phase four. Do not rely on the current Outbox implementation for ordered or delayed messages in production.** Bound executor pending/concurrency according to Broker throughput, DB pool capacity, and send latency.
+
 ## SPI Overrides
 
 - Routing: `MqRouteResolver`, annotation-based by default.
