@@ -66,6 +66,7 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
             if (running || !properties.getConsumer().isDynamicRegister()) {
                 return;
             }
+            validateConsumerConcurrency();
             Map<String, MqMessageHandler> handlers =
                     applicationContext.getBeansOfType(MqMessageHandler.class, false, false);
             log.info("[mq-consumer] scan dynamic consumers. handlerCount={} dynamicRegister={}",
@@ -89,6 +90,19 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
             }
         } finally {
             lifecycleLock.unlock();
+        }
+    }
+
+    /**
+     * 在创建客户端之前校验 SDK 的消费线程边界，避免部分 Consumer 已启动后才发现错误配置。
+     */
+    private void validateConsumerConcurrency() {
+        int min = properties.getConsumer().getConsumeThreadMin();
+        int max = properties.getConsumer().getConsumeThreadMax();
+        if (min < 1 || max < min) {
+            throw new IllegalArgumentException(
+                    "Invalid RocketMQ consumer concurrency: consumeThreadMin must be >= 1 "
+                            + "and consumeThreadMax must be >= consumeThreadMin");
         }
     }
 
