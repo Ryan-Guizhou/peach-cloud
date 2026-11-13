@@ -83,12 +83,6 @@
       "defaultValue": "200ms"
     },
     {
-      "name": "peach.rocket.consumer.legacy-idempotent-key",
-      "type": "java.lang.Boolean",
-      "description": "旧业务 Key/Broker ID 去重模式；仅迁移，生产禁止",
-      "defaultValue": false
-    },
-    {
       "name": "peach.rocket.consumer.max-dynamic-consumers",
       "type": "java.lang.Integer",
       "description": "单 JVM 动态 Consumer 上限，正数；超限启动失败",
@@ -161,8 +155,8 @@
     {
       "name": "peach.rocket.naming.auto-prefix-consumer-group",
       "type": "java.lang.Boolean",
-      "defaultValue": false,
-      "description": "Group 增加环境与组前缀；默认保护旧位点，严格生产要求 true，须先迁移"
+      "defaultValue": true,
+      "description": "为消费者组增加环境与组前缀，新服务默认开启环境隔离"
     },
     {
       "name": "peach.rocket.naming.auto-prefix-env",
@@ -341,15 +335,9 @@
       "description": "RocketMQ 消息载荷加密、密钥与安全策略配置。"
     },
     {
-      "name": "peach.rocket.security.accept-legacy-encryption",
-      "type": "java.lang.Boolean",
-      "description": "允许历史非 AAD 密文；仅有限迁移窗口，生产禁止",
-      "defaultValue": false
-    },
-    {
       "name": "peach.rocket.security.algorithm",
       "type": "java.lang.String",
-      "description": "AES_GCM_AAD 或历史 AES_GCM；生产仅接受认证信封算法",
+      "description": "唯一支持的加密算法 AES_GCM_AAD；不接受不带信封认证的密文",
       "defaultValue": "AES_GCM_AAD"
     },
     {
@@ -374,12 +362,6 @@
       "name": "peach.rocket.security.encrypt-topics",
       "type": "java.util.List",
       "description": "附加按 Topic 加密策略；生产全量 encrypt-payload 不依赖此列表"
-    },
-    {
-      "name": "peach.rocket.security.key",
-      "type": "java.lang.String",
-      "description": "旧单密钥，仅活动 ID 兼容；优先使用 keys 管理轮换",
-      "defaultValue": ""
     },
     {
       "name": "peach.rocket.security.key-id",

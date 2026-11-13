@@ -70,21 +70,11 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
         }
     }
 
-    @Override
-    public boolean tryStart(MqIdempotentContext context) {
-        synchronized (capacityLock) {
-            MqIdempotentClaim claim = claim(context);
-            if (claim.status() != MqIdempotentClaim.Status.ACQUIRED) return false;
-            Record owned = records.get(storageKey(context));
-            records.put(storageKey(context), new Record(owned.status(), owned.expiresAt(), null));
-            return true;
-        }
-    }
 
     @Override
     public void markSuccess(MqIdempotentContext context, MqIdempotentClaim claim) {
         synchronized (capacityLock) {
-            Record current = requireOwner(context, claim);
+            requireOwner(context, claim);
             records.put(storageKey(context), new Record(Status.SUCCESS, Instant.now().plus(context.expire()), null));
         }
     }
@@ -100,40 +90,6 @@ public class InMemoryMqIdempotentStore implements MqIdempotentStore {
     @Override
     public boolean supportsOwnerFencing() {
         return true;
-    }
-
-    /**
-     * 兼容历史直接调用；新消费链路必须使用携带 owner token 的重载。
-     */
-    @Override
-    public void markSuccess(MqIdempotentContext context) {
-        synchronized (capacityLock) {
-            String key = storageKey(context);
-            Record old = records.get(key);
-            if (old != null && old.status() == Status.PROCESSING && old.ownerToken() == null) {
-                records.put(key, new Record(Status.SUCCESS, old.expiresAt(), old.ownerToken()));
-            }
-        }
-    }
-
-    /**
-     * 兼容历史直接调用；生产环境禁止使用无认领身份的状态更新。
-     */
-    @Override
-    public void markFailed(MqIdempotentContext context) {
-        synchronized (capacityLock) {
-            Record old = records.get(storageKey(context));
-            if (old != null && old.status() == Status.PROCESSING && old.ownerToken() == null) {
-                records.remove(storageKey(context));
-            }
-        }
-    }
-
-    @Override
-    public boolean isSuccess(MqIdempotentContext context) {
-        Record record = records.get(storageKey(context));
-        return record != null && record.status() == Status.SUCCESS
-                && record.expiresAt().isAfter(Instant.now());
     }
 
     @Override

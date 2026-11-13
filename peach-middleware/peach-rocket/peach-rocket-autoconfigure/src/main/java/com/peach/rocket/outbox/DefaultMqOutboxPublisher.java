@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * DefaultMqOutboxPublisher相关类。
+ * 使用统一消息信封和可靠存储的 Outbox 发布器。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -32,10 +32,15 @@ public class DefaultMqOutboxPublisher implements MqOutboxPublisher {
     private final MqRouteResolver routeResolver;
     private final DefaultMqHeaderResolver headerResolver;
 
-    public DefaultMqOutboxPublisher(MqOutboxStore outboxStore, MqMessageCodec codec, MqRouteResolver routeResolver, DefaultMqHeaderResolver headerResolver) {
-        this(outboxStore, codec, routeResolver, headerResolver, new PeachRocketProperties());
-    }
-
+    /**
+     * 创建使用项目真实配置校验发送选项和可靠存储的发布器。
+     *
+     * @param outboxStore 出站存储
+     * @param codec 消息信封编解码器
+     * @param routeResolver Topic/Tag 路由解析器
+     * @param headerResolver 消息头解析器
+     * @param properties RocketMQ 业务配置
+     */
     public DefaultMqOutboxPublisher(MqOutboxStore outboxStore, MqMessageCodec codec,
             MqRouteResolver routeResolver, DefaultMqHeaderResolver headerResolver, PeachRocketProperties properties) {
         this.properties = properties;

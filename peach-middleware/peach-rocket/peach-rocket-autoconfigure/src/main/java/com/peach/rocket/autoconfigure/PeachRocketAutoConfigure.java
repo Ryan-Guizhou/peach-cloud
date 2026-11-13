@@ -186,8 +186,8 @@ public class PeachRocketAutoConfigure {
 
     @Bean
     @ConditionalOnMissingBean
-    public MqIdempotentKeyResolver mqIdempotentKeyResolver(PeachRocketProperties properties) {
-        return new DefaultMqIdempotentKeyResolver(properties.getConsumer().isLegacyIdempotentKey());
+    public MqIdempotentKeyResolver mqIdempotentKeyResolver() {
+        return new DefaultMqIdempotentKeyResolver();
     }
 
     @Bean

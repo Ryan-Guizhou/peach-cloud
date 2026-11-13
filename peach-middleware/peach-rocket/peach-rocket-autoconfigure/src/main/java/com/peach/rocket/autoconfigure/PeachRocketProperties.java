@@ -3,6 +3,8 @@ package com.peach.rocket.autoconfigure;
 import com.peach.rocket.exception.MqException;
 import lombok.Getter;
 import lombok.Setter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -114,7 +116,7 @@ public class PeachRocketProperties implements InitializingBean {
                 || protocol.maxStringLength < 1 || protocol.maxNumberLength < 1) {
             throw new MqException("Invalid RocketMQ resource or protocol budget");
         }
-        if (!"AES_GCM_AAD".equals(security.algorithm) && !"AES_GCM".equals(security.algorithm)) {
+        if (!"AES_GCM_AAD".equals(security.algorithm)) {
             throw new MqException("Unsupported MQ encryption algorithm");
         }
         if (StringUtils.hasText(client.accessKey) != StringUtils.hasText(client.secretKey)) {
@@ -129,9 +131,9 @@ public class PeachRocketProperties implements InitializingBean {
             throw new MqException("MQ JDBC leases must cover send timeout; retention must be at least one hour");
         }
         if (production && (!client.tlsEnabled || !StringUtils.hasText(client.accessKey)
-                || !consumer.enableIdempotent || topic.autoCreate || consumer.legacyIdempotentKey
+                || !consumer.enableIdempotent || topic.autoCreate
                 || !naming.autoPrefixConsumerGroup
-                || !security.enabled || !security.encryptPayload || security.acceptLegacyEncryption
+                || !security.enabled || !security.encryptPayload
                 || !"AES_GCM_AAD".equals(security.algorithm)
                 || "default".equals(namespace) || "application".equals(appName))) {
             throw new MqException("Production RocketMQ requires explicit identity, ACL/TLS, authenticated encryption, durable idempotency and governed topics");
@@ -141,7 +143,7 @@ public class PeachRocketProperties implements InitializingBean {
         }
         if (production && (!Boolean.parseBoolean(System.getProperty("tls.client.authServer", "false"))
                 || Boolean.parseBoolean(System.getProperty("tls.test.mode.enable", "true"))
-                || !java.nio.file.Files.isRegularFile(java.nio.file.Path.of(System.getProperty("tls.client.trustCertPath", ""))))) {
+                || !Files.isRegularFile(Path.of(System.getProperty("tls.client.trustCertPath", ""))))) {
             throw new MqException("Production requires TLS test mode disabled, server authentication and a readable trust certificate file");
         }
     }
@@ -211,8 +213,6 @@ public class PeachRocketProperties implements InitializingBean {
     @Getter
     @Setter
     public static class Consumer {
-        /** 仅供迁移旧幂等键；生产严格模式禁止启用。 */
-        private boolean legacyIdempotentKey = false;
         /** 新消费组首次启动的位置，不影响已经存在的位点。 */
         private String consumeFromWhere = "LAST_OFFSET";
         /** 是否启用消费幂等；默认启用，内存实现仅适用于单 JVM。 */
@@ -257,8 +257,8 @@ public class PeachRocketProperties implements InitializingBean {
         private String topicSeparator = "-";
         /** 是否自动为 Topic 增加环境前缀。 */
         private boolean autoPrefixEnv = true;
-        /** 是否显式为 Consumer Group 增加环境前缀；默认关闭保护历史位点。 */
-        private boolean autoPrefixConsumerGroup = false;
+        /** 是否为 Consumer Group 增加环境前缀；新项目默认开启环境隔离。 */
+        private boolean autoPrefixConsumerGroup = true;
     }
 
     /**
@@ -277,12 +277,8 @@ public class PeachRocketProperties implements InitializingBean {
         private boolean encryptPayload = false;
         /** 消息加密算法标识。 */
         private String algorithm = "AES_GCM_AAD";
-        /** 显式允许没有认证信封的历史密文；仅供有限迁移窗口。 */
-        private boolean acceptLegacyEncryption = false;
         /** 新消息使用的活动密钥 ID。 */
         private String keyId = "default";
-        /** 旧版单密钥配置；严禁写入仓库或输出到日志。 */
-        private String key = "";
         /** 按 keyId 配置的密钥映射，支持历史消息密钥轮换。 */
         private Map<String, String> keys = new LinkedHashMap<>();
         /** 是否按 Base64 解码配置的密钥。 */

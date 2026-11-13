@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
- * SecureJacksonMqMessageCodec相关类。
+ * 基于 Jackson 的认证信封编解码器，接收端拒绝明文降级。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -59,7 +59,7 @@ public class SecureJacksonMqMessageCodec implements MqMessageCodec {
             MqCodecSupport.envelope(toEncode, encoded, properties);
             return encoded;
         } catch (IOException ex) {
-            throw new MqException("Failed to encode MQ message envelope");
+            throw new MqException("Failed to encode MQ message envelope", ex);
         }
     }
 
@@ -83,15 +83,13 @@ public class SecureJacksonMqMessageCodec implements MqMessageCodec {
                     throw new MqException("Encrypted MQ payload requires a decryptor");
                 }
                 byte[] cipherBytes = objectMapper.convertValue(raw.payload(), byte[].class);
-                boolean authenticated = "AES_GCM_AAD".equals(raw.encryptionAlgorithm());
-                if (!authenticated && (!"AES_GCM".equals(raw.encryptionAlgorithm())
-                        || !properties.getSecurity().isAcceptLegacyEncryption())) {
-                    throw new MqException("Legacy or unsupported MQ encryption is not accepted");
+                if (!"AES_GCM_AAD".equals(raw.encryptionAlgorithm())) {
+                    throw new MqException("Unauthenticated MQ encryption is not supported");
                 }
                 MqEncryptionContext context = new MqEncryptionContext(
                         raw.topic(), raw.payloadType(), raw.encryptionAlgorithm(), raw.encryptionKeyId(),
-                        authenticated ? MqEnvelopeAuthentication.associatedData(raw,
-                                raw.encryptionAlgorithm(), raw.encryptionKeyId()) : null);
+                        MqEnvelopeAuthentication.associatedData(raw,
+                                raw.encryptionAlgorithm(), raw.encryptionKeyId()));
                 actualPayload = objectMapper.readValue(encryptor.decrypt(cipherBytes, context), actualType);
             } else {
                 boolean required = properties.getSecurity().isEncryptPayload()
@@ -107,7 +105,7 @@ public class SecureJacksonMqMessageCodec implements MqMessageCodec {
             }
             return raw.withPayload(actualPayload);
         } catch (IOException | IllegalArgumentException ex) {
-            throw new MqException("Failed to decode MQ message envelope");
+            throw new MqException("Failed to decode MQ message envelope", ex);
         }
     }
 }

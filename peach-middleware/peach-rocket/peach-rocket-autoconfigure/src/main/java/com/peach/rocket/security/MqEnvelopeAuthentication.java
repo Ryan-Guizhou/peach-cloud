@@ -41,7 +41,7 @@ public final class MqEnvelopeAuthentication {
             }
             return bytes.toByteArray();
         } catch (IOException ex) {
-            throw new MqException("Failed to authenticate MQ envelope");
+            throw new MqException("Failed to authenticate MQ envelope", ex);
         }
     }
 

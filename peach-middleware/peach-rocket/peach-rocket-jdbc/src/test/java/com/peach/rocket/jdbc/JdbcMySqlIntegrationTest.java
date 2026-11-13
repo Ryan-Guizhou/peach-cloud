@@ -1,10 +1,12 @@
 package com.peach.rocket.jdbc;
 
+import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.idempotent.MqIdempotentClaim;
 import com.peach.rocket.idempotent.MqIdempotentContext;
 import com.peach.rocket.outbox.MqOutboxClaim;
 import com.peach.rocket.outbox.MqOutboxEvent;
 import com.peach.rocket.outbox.MqOutboxStatus;
+import java.sql.Connection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -51,23 +53,27 @@ class JdbcMySqlIntegrationTest {
             throw new IllegalStateException("Repository SQL directory not found");
         }
         try {
-            try (java.sql.Connection connection = dataSource.getConnection()) {
+            try (Connection connection = dataSource.getConnection()) {
                 ScriptUtils.executeSqlScript(connection, new FileSystemResource(root.resolve("sql/MQ_CONSUME_RECORD.sql")));
                 ScriptUtils.executeSqlScript(connection, new FileSystemResource(root.resolve("sql/MQ_OUTBOX_EVENT.sql")));
             }
-            JdbcMqIdempotentStore idempotent = new JdbcMqIdempotentStore(jdbc);
+            assertThat(jdbc.queryForList(
+                    "SELECT TABLE_NAME, ENGINE FROM information_schema.TABLES "
+                            + "WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('MQ_CONSUME_RECORD','MQ_OUTBOX_EVENT')"))
+                    .as("New MQ tables must use a transactional engine")
+                    .allSatisfy(row -> assertThat(row.get("ENGINE")).isEqualTo("InnoDB"));
+            JdbcMqIdempotentStore idempotent = new JdbcMqIdempotentStore(jdbc, new PeachRocketProperties());
             MqIdempotentContext context = new MqIdempotentContext(
                     "key", "group", "topic", null, null, "id", Duration.ofHours(1));
             MqIdempotentClaim owner = idempotent.claim(context);
             assertThat(owner.status()).isEqualTo(MqIdempotentClaim.Status.ACQUIRED);
-            idempotent.markFailed(context);
             assertThat(idempotent.renew(context, owner)).isTrue();
             idempotent.markSuccess(context, owner);
-            assertThat(idempotent.isSuccess(context)).isTrue();
+            assertThat(idempotent.claim(context).status()).isEqualTo(MqIdempotentClaim.Status.SUCCEEDED);
             jdbc.update("UPDATE MQ_CONSUME_RECORD SET EXPIRES_AT=DATE_SUB(NOW(3), INTERVAL 1 SECOND)");
             assertThat(idempotent.claim(context).status()).isEqualTo(MqIdempotentClaim.Status.ACQUIRED);
 
-            JdbcMqOutboxStore outbox = new JdbcMqOutboxStore(jdbc);
+            JdbcMqOutboxStore outbox = new JdbcMqOutboxStore(jdbc, new PeachRocketProperties());
             LocalDateTime now = LocalDateTime.now();
             outbox.save(new MqOutboxEvent("good", new byte[]{1}, "topic", null, null, null, MqOutboxStatus.INIT, 0, now, now));
             outbox.save(new MqOutboxEvent("bad", new byte[]{1}, "topic", null, null, null, MqOutboxStatus.INIT, 0, now, now));
@@ -77,7 +83,6 @@ class JdbcMySqlIntegrationTest {
             assertThat(jdbc.queryForObject(
                     "SELECT STATUS FROM MQ_OUTBOX_EVENT WHERE MESSAGE_ID='bad'", String.class)).isEqualTo("FAILED");
             MqOutboxClaim claim = claims.getFirst();
-            outbox.markSent(claim.event().messageId());
             assertThat(outbox.renew(claim)).isTrue();
             outbox.markSent(claim);
             assertThat(outbox.renew(claim)).isFalse();

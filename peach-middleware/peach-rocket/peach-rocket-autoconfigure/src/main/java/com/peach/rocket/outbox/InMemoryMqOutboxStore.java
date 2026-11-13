@@ -65,6 +65,16 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
         this.clock = Objects.requireNonNull(clock, "clock");
     }
 
+    /**
+     * 单进程开发环境的独立事件沿用同一组容量与唯一性校验。
+     *
+     * @param event 待发送事件
+     */
+    @Override
+    public void saveStandalone(MqOutboxEvent event) {
+        save(event);
+    }
+
     @Override
     public void save(MqOutboxEvent event) {
         Objects.requireNonNull(event, "event");
@@ -87,27 +97,6 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
             }
             events.put(event.messageId(), new Entry(event, null, null, now, now));
         }
-    }
-
-    /**
-     * 兼容旧调用方的只读待处理查询，不占用租约。Dispatcher 使用 claimPending。
-     */
-    @Override
-    public List<MqOutboxEvent> findPending(int batchSize) {
-        if (batchSize <= 0) {
-            throw new IllegalArgumentException("Outbox batch size must be positive");
-        }
-        Instant now = clock.instant();
-        List<MqOutboxEvent> result = new ArrayList<>();
-        for (Entry entry : events.values()) {
-            if (ready(entry, now)) {
-                result.add(entry.event());
-                if (result.size() >= Math.min(batchSize, MAX_BATCH_SIZE)) {
-                    break;
-                }
-            }
-        }
-        return result;
     }
 
     /**
@@ -144,35 +133,6 @@ public class InMemoryMqOutboxStore implements MqOutboxStore {
             }
         }
         return claims;
-    }
-
-    /**
-     * 兼容只按 ID 更新的历史入口；不可用于多个 Dispatcher 的可靠认领。
-     */
-    @Override
-    public void markSent(String messageId) {
-        Instant now = clock.instant();
-        events.computeIfPresent(messageId, (key, previous) ->
-                previous.claimToken() != null || previous.event().status() == MqOutboxStatus.FAILED ? previous
-                        : new Entry(previous.event().withStatus(MqOutboxStatus.SENT),
-                        null, null, now, now));
-    }
-
-    @Override
-    public void markFailed(String messageId) {
-        Instant now = clock.instant();
-        events.computeIfPresent(messageId, (key, previous) -> {
-            if (previous.claimToken() != null || previous.event().status() == MqOutboxStatus.SENT
-                    || previous.event().status() == MqOutboxStatus.FAILED) {
-                return previous;
-            }
-            int attempts = Math.min(MAX_ATTEMPTS, previous.event().retryCount() + 1);
-            MqOutboxStatus status = attempts >= MAX_ATTEMPTS ? MqOutboxStatus.FAILED : MqOutboxStatus.RETRY;
-            long seconds = Math.min(300L, 1L << Math.min(20, attempts - 1));
-            MqOutboxEvent retry = previous.event().withRetryCount(attempts).withStatus(status);
-            return new Entry(retry, null, null, now,
-                    status == MqOutboxStatus.FAILED ? now : now.plusSeconds(seconds));
-        });
     }
 
     @Override

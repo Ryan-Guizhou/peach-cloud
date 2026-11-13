@@ -2,16 +2,16 @@ package com.peach.rocket.jdbc;
 
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.exception.MqException;
-import com.peach.rocket.idempotent.MqIdempotentContext;
 import com.peach.rocket.outbox.MqOutboxClaim;
 import com.peach.rocket.outbox.MqOutboxEvent;
 import com.peach.rocket.outbox.MqOutboxStatus;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.UUID;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -28,11 +28,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * H2 仅验证兼容 SQL 子集与本地事务，不代表 MySQL 并发保证。
+ * H2 验证有限 SQL 子集与本地事务，不代表 MySQL 并发保证。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -46,8 +45,8 @@ class JdbcStoreHardeningTest {
         DriverManagerDataSource outboxSource = new DriverManagerDataSource(
                 "jdbc:h2:mem:" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1", "sa", "") {
             @Override
-            public java.sql.Connection getConnection() throws SQLException {
-                java.sql.Connection connection = super.getConnection();
+            public Connection getConnection() throws SQLException {
+                Connection connection = super.getConnection();
                 connection.setAutoCommit(false);
                 return connection;
             }
@@ -78,14 +77,6 @@ class JdbcStoreHardeningTest {
         });
     }
 
-    @Test
-    void legacyPendingRequiresMigrationWithoutClaimingRows() {
-        JdbcTemplate jdbc = mock(JdbcTemplate.class);
-        assertThatThrownBy(() -> new JdbcMqOutboxStore(jdbc).findPending(1))
-                .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("claimPending");
-        verifyNoInteractions(jdbc);
-    }
 
     @Test
     void corruptRowDoesNotDiscardValidClaims() throws Exception {
@@ -106,39 +97,14 @@ class JdbcStoreHardeningTest {
             return Arrays.asList(mapper.mapRow(corrupt, 0), mapper.mapRow(valid, 1));
         }).when(jdbc).query(anyString(), any(RowMapper.class), any(), any(), any());
 
-        java.util.List<MqOutboxClaim> claims = new JdbcMqOutboxStore(jdbc).claimPending(2);
+        List<MqOutboxClaim> claims = new JdbcMqOutboxStore(jdbc, new PeachRocketProperties()).claimPending(2);
 
         assertThat(claims).hasSize(1);
         assertThat(claims.getFirst().event().messageId()).isEqualTo("valid");
         verify(jdbc).update(contains("INVALID_STORED_EVENT"), eq("corrupt"), anyString());
     }
 
-    @Test
-    void legacyCannotCompleteOwnedIdempotentRecord() {
-        JdbcTemplate jdbc = database();
-        jdbc.execute("CREATE TABLE MQ_CONSUME_RECORD(IDEMPOTENT_KEY VARCHAR(256), CONSUMER_GROUP VARCHAR(128), "
-                + "STATUS VARCHAR(32), OWNER_TOKEN VARCHAR(64), LAST_ERROR VARCHAR(1000), UPDATED_AT TIMESTAMP)");
-        jdbc.update("INSERT INTO MQ_CONSUME_RECORD VALUES('key','group','PROCESSING','owner',NULL,NOW())");
-        JdbcMqIdempotentStore store = new JdbcMqIdempotentStore(jdbc);
-        MqIdempotentContext context = new MqIdempotentContext(
-                "key", "group", "t", null, null, "m", Duration.ofHours(1));
 
-        store.markFailed(context);
-
-        assertThat(jdbc.queryForObject("SELECT STATUS FROM MQ_CONSUME_RECORD", String.class)).isEqualTo("PROCESSING");
-    }
-
-    @Test
-    void legacyCannotCompleteOwnedOutboxRecord() {
-        JdbcTemplate jdbc = database();
-        jdbc.execute("CREATE TABLE MQ_OUTBOX_EVENT(MESSAGE_ID VARCHAR(64), STATUS VARCHAR(32), "
-                + "CLAIMED_BY VARCHAR(128), CLAIMED_AT TIMESTAMP, SENT_AT TIMESTAMP, UPDATED_AT TIMESTAMP)");
-        jdbc.update("INSERT INTO MQ_OUTBOX_EVENT VALUES('id','SENDING','owner',NOW(),NULL,NOW())");
-
-        new JdbcMqOutboxStore(jdbc).markSent("id");
-
-        assertThat(jdbc.queryForObject("SELECT STATUS FROM MQ_OUTBOX_EVENT", String.class)).isEqualTo("SENDING");
-    }
 
     @Test
     void sameDatasourceTransactionRollsBackOutboxAndStandaloneRejectsWrongDatasource() {

@@ -9,17 +9,13 @@ package com.peach.rocket.security;
  * @param payloadType 业务载荷类型
  * @param algorithm 加密算法
  * @param keyId 密钥标识
+ * @param associatedData 与密文绑定的认证数据
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/6/26
  */
 public record MqEncryptionContext(String topic, String payloadType, String algorithm, String keyId,
                                   byte[] associatedData) {
-    /** 保留历史加密器构造入口；旧协议不具备信封认证能力。 */
-    public MqEncryptionContext(String topic, String payloadType, String algorithm, String keyId) {
-        this(topic, payloadType, algorithm, keyId, null);
-    }
-
     public MqEncryptionContext {
         associatedData = associatedData == null ? null : associatedData.clone();
     }

@@ -1,6 +1,7 @@
 package com.peach.rocket.jdbc;
 
 import com.peach.rocket.core.MqDelay;
+import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.outbox.MqOutboxEvent;
 import com.peach.rocket.outbox.MqOutboxStatus;
@@ -34,7 +35,7 @@ class JdbcMqOutboxSendOptionsTest {
         options.setShardingKey("order-1");
         options.setTimeoutMillis(4500L);
         options.setHeaders(Map.of("traceparent", "parent-1"));
-        new JdbcMqOutboxStore(jdbc).save(event("ordered", options));
+        new JdbcMqOutboxStore(jdbc, new PeachRocketProperties()).save(event("ordered", options));
 
         verify(jdbc).update(contains("SHARDING_KEY,DELAY_LEVEL,HEADERS,SEND_TIMEOUT_MS"),
                 eq("ordered"), eq("orders"), eq("created"), eq("ordered"), anyString(),
@@ -47,7 +48,7 @@ class JdbcMqOutboxSendOptionsTest {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         MqSendOptions options = new MqSendOptions();
         options.setDelay(MqDelay.duration(java.time.Duration.ofSeconds(5)));
-        new JdbcMqOutboxStore(jdbc).save(event("delayed", options));
+        new JdbcMqOutboxStore(jdbc, new PeachRocketProperties()).save(event("delayed", options));
 
         verify(jdbc).update(contains("DELAY_LEVEL"),
                 eq("delayed"), eq("orders"), eq("created"), eq("delayed"), anyString(),

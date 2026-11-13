@@ -5,13 +5,13 @@
 ## 上线与数据库初始化
 
 1. 固定待发布应用、BOM、数据库/Broker/JDK/镜像版本，保存依赖树、SBOM、SCA 结果、配置摘要（不含 secret）与回滚包。确认两实例共享数据库的恢复、ACL/TLS、容量和业务幂等演练报告。
-2. 保存当前 Topic、Group、订阅表达式、位点、待发/FAILED 数量、最老待发年龄、活跃租约、历史密钥 ID。备份数据库并实际验证恢复；不能通过清空幂等记录完成升级。
+2. 首次投产前记录目标 Topic、Group、订阅表达式、新 Group 初始位点、数据库/应用配置与活动密钥 ID；验证数据库备份、恢复与消息重放流程。
 3. `peach-rocket` 尚未投产，统一使用 [MQ_CONSUME_RECORD.sql](../../../sql/MQ_CONSUME_RECORD.sql) 和 [MQ_OUTBOX_EVENT.sql](../../../sql/MQ_OUTBOX_EVENT.sql) 初始化新环境；不维护旧结构迁移 SQL。DDL 由独立账号部署，Starter 不自动执行。
-4. 首次部署前检查表唯一索引、必要列与真实数据库默认字符集/排序规则，验证大小写不同的业务标识是否允许视为相同。认领 token、消息 ID 与幂等事件 ID 以稳定标识生成；严禁因为环境排序规则不同而产生误去重。
+4. 首次部署前检查表唯一索引、必要列、数据库默认引擎和字符集/排序规则。数据库实际表引擎必须支持事务、行级锁与回滚，不能因 DDL 不指定 `ENGINE` 而误用非事务引擎。验证大小写不同的业务标识是否应被视为相同；不允许不同消息 ID 或幂等键因默认排序规则碰撞而误去重。可检查 `information_schema.TABLES` 的 `ENGINE` 与 `information_schema.COLUMNS` 的 `COLLATION_NAME`，并执行唯一键冲突测试。
 5. 数据库会话/JDBC 与运维工具统一时区（推荐 UTC）；记录实际隔离级别、时区、精度和排序规则。租约依据数据库时间；监控节点时钟偏差。消费 processing lease、成功去重 TTL 与 Outbox retention 分开配置，不能把 processing lease 当去重保留期。
 6. 配置 `production=true` 与[生产配置基线](production-configuration.md)，确认同一业务 DataSource、生产 Store 能力、受管执行器容量与最小权限。先验收实例再逐步放量，记录配置与迁移批次。
 
-## 协议、密钥与位点滚动升级
+## 当前协议、密钥管理与首次消费位点
 
 本模块尚未投产，不接受旧版不带认证的信封、旧式幂等键或无 owner token 的兼容入口。仅允许当前版本的受认证协议与稳定事件 ID；无需双读、旧协议灰度或旧库回填。
 

@@ -11,8 +11,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * MQ 幂等内存存储同键原子领取测试。
@@ -29,30 +27,31 @@ class InMemoryMqIdempotentStoreTest {
         MqIdempotentContext context = context();
         CountDownLatch ready = new CountDownLatch(64);
         CountDownLatch start = new CountDownLatch(1);
-        List<Future<Boolean>> claims = new ArrayList<>();
+        List<Future<MqIdempotentClaim>> claims = new ArrayList<>();
 
         try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             for (int i = 0; i < 64; i++) {
                 claims.add(executor.submit(() -> {
                     ready.countDown();
                     start.await();
-                    return store.tryStart(context);
+                    return store.claim(context);
                 }));
             }
             ready.await();
             start.countDown();
             int acquired = 0;
-            for (Future<Boolean> claim : claims) {
-                if (claim.get()) {
+            MqIdempotentClaim owner = null;
+            for (Future<MqIdempotentClaim> future : claims) {
+                MqIdempotentClaim claim = future.get();
+                if (claim.status() == MqIdempotentClaim.Status.ACQUIRED) {
                     acquired++;
+                    owner = claim;
                 }
             }
             assertEquals(1, acquired);
+            store.markSuccess(context, owner);
         }
-
-        store.markSuccess(context);
-        assertTrue(store.isSuccess(context));
-        assertFalse(store.tryStart(context));
+        assertEquals(MqIdempotentClaim.Status.SUCCEEDED, store.claim(context).status());
     }
 
     private static MqIdempotentContext context() {

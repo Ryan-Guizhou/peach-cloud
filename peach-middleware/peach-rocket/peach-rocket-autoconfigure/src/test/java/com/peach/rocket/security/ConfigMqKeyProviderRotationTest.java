@@ -2,6 +2,7 @@ package com.peach.rocket.security;
 
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.exception.MqException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -26,21 +27,20 @@ class ConfigMqKeyProviderRotationTest {
                 "new", "abcdef0123456789"));
         ConfigMqKeyProvider provider = new ConfigMqKeyProvider(props);
 
-        assertArrayEquals("0123456789abcdef".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+        assertArrayEquals("0123456789abcdef".getBytes(StandardCharsets.UTF_8),
                 provider.getKey("old"));
-        assertArrayEquals("abcdef0123456789".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+        assertArrayEquals("abcdef0123456789".getBytes(StandardCharsets.UTF_8),
                 provider.getKey("new"));
         assertThrows(MqException.class, () -> provider.getKey("missing"));
     }
 
     @Test
-    void shouldPreserveSingleKeyCompatibilityOnlyForCurrentId() {
+    void shouldRejectCurrentIdWhenKeyIsNotDefined() {
         PeachRocketProperties props = new PeachRocketProperties();
         props.getSecurity().setKeyId("active");
-        props.getSecurity().setKey("0123456789abcdef");
         ConfigMqKeyProvider provider = new ConfigMqKeyProvider(props);
 
-        provider.getKey("active");
+        assertThrows(MqException.class, () -> provider.getKey("active"));
         assertThrows(MqException.class, () -> provider.getKey("inactive"));
     }
 }

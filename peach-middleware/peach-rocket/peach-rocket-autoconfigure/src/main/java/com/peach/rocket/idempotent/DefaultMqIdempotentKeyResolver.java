@@ -6,40 +6,24 @@ import com.peach.rocket.exception.MqException;
 import org.springframework.util.StringUtils;
 
 /**
- * 默认MQ幂等键解析器。
+ * 使用消息信封中的稳定事件 ID 生成消费幂等键。
  *
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2026/6/26
+ * <p>不再回退到 Broker 投递 ID 或业务查询 Key，确保重试时获得相同的幂等标识。</p>
  */
 public class DefaultMqIdempotentKeyResolver implements MqIdempotentKeyResolver {
 
-    private final boolean legacy;
-
-    public DefaultMqIdempotentKeyResolver() {
-        this(false);
-    }
-
     /**
-     * 创建幂等键解析器；旧键模式仅用于受控迁移，调用方负责双读或消费位点切换。
+     * 生成事件级幂等键。
      *
-     * @param legacy 是否启用历史幂等键格式
+     * @param envelope 业务消息信封
+     * @param context 当前消费上下文
+     * @return 稳定事件幂等键
      */
-    public DefaultMqIdempotentKeyResolver(boolean legacy) {
-        this.legacy = legacy;
-    }
-
     @Override
     public String resolve(MqMessageEnvelope<?> envelope, MqConsumeContext context) {
-        if (!legacy) {
-            if (!StringUtils.hasText(envelope.messageId())) {
-                throw new MqException("MQ stable event ID is required");
-            }
-            return "event:" + envelope.messageId();
+        if (envelope == null || !StringUtils.hasText(envelope.messageId())) {
+            throw new MqException("MQ stable event ID is required");
         }
-        if (StringUtils.hasText(context.key())) {
-            return context.topic() + ':' + context.tag() + ':' + context.key();
-        }
-        return context.topic() + ':' + context.messageId();
+        return "event:" + envelope.messageId();
     }
 }

@@ -1,103 +1,61 @@
 package com.peach.rocket.idempotent;
 
 /**
- * MQ幂等存储。
+ * 消费幂等存储扩展点，所有状态更新都必须携带有效的认领凭据。
  *
- * @Author Mr Shu
- * @Version 1.0.0
- * @CreateTime 2026/6/26
+ * <p>不再提供无所有者令牌的兼容入口，防止绕过租约栅栏。</p>
  */
 public interface MqIdempotentStore {
-    /** 是否支持有效 owner 的续租；生产长任务必须显式具备此能力。 */
-    default boolean supportsLeaseRenewal() {
-        return false;
-    }
-    /** @return 是否提供跨重启的持久性保证 */
-    default boolean isDurable() {
-        return false;
-    }
-    /** 仅为当前有效认领续租；旧实现默认不支持。 */
+
+    /**
+     * 原子领取事件；返回已完成、处理中或持有本次令牌的成功认领。
+     *
+     * @param context 幂等上下文
+     * @return 认领状态与所有者凭据
+     */
+    MqIdempotentClaim claim(MqIdempotentContext context);
+
+    /**
+     * 仅允许有效持有者确认消费成功。
+     *
+     * @param context 幂等上下文
+     * @param claim 认领凭据
+     */
+    void markSuccess(MqIdempotentContext context, MqIdempotentClaim claim);
+
+    /**
+     * 仅允许有效持有者标记处理失败。
+     *
+     * @param context 幂等上下文
+     * @param claim 认领凭据
+     */
+    void markFailed(MqIdempotentContext context, MqIdempotentClaim claim);
+
+    /** @return 是否支持有效认领续租 */
+    default boolean supportsLeaseRenewal() { return false; }
+
+    /** @return 是否跨进程持久化 */
+    default boolean isDurable() { return false; }
+
+    /** @return 是否支持所有者令牌栅栏 */
+    default boolean supportsOwnerFencing() { return false; }
+
+    /**
+     * 更新有效认领的租约。
+     *
+     * @param context 幂等上下文
+     * @param claim 认领凭据
+     * @return 是否续租成功
+     */
     default boolean renew(MqIdempotentContext context, MqIdempotentClaim claim) {
         return false;
     }
-    /** 有界清理过期终态；不得删除仍在处理的记录。 */
-    default int cleanupTerminal(int limit) {
-        return 0;
-    }
-
 
     /**
-     * 尝试开始处理消息。
+     * 有界清理过期终态记录，不得删除处理中记录。
      *
-     * @param context 幂等上下文
-     * @return true 表示允许处理
+     * @param limit 本次清理上限
+     * @return 实际清理条数
      */
-    boolean tryStart(MqIdempotentContext context);
-
-    /**
-     * 标记消费成功。
-     *
-     * @param context 幂等上下文
-     */
-    void markSuccess(MqIdempotentContext context);
-
-    /**
-     * 标记消费失败。
-     *
-     * @param context 幂等上下文
-     */
-    void markFailed(MqIdempotentContext context);
-
-    /**
-     * 判断消息是否已成功消费。
-     *
-     * @param context 幂等上下文
-     * @return true 表示已成功消费
-     */
-    boolean isSuccess(MqIdempotentContext context);
-
-    /**
-     * 原子认领与已完成检查。旧实现默认桥接以保持兼容；
-     * 需要跨实例安全性的实现必须覆盖并提供 owner token。
-     *
-     * @param context 幂等上下文
-     * @return 本次认领状态和 owner token
-     */
-    default MqIdempotentClaim claim(MqIdempotentContext context) {
-        if (isSuccess(context)) {
-            return MqIdempotentClaim.succeeded();
-        }
-        return tryStart(context) ? MqIdempotentClaim.acquired(null) : MqIdempotentClaim.inProgress();
-    }
-
-    /**
-     * 仅认领持有者可以确认成功，旧实现通过默认方法兼容。
-     *
-     * @param context 幂等上下文
-     * @param claim 本次认领
-     */
-    default void markSuccess(MqIdempotentContext context, MqIdempotentClaim claim) {
-        if (claim != null && claim.ownerToken() != null) {
-            throw new IllegalStateException("Idempotent store does not support owner fencing");
-        }
-        markSuccess(context);
-    }
-
-    /**
-     * 仅认领持有者可以结束失败，旧实现通过默认方法兼容。
-     *
-     * @param context 幂等上下文
-     * @param claim 本次认领
-     */
-    default void markFailed(MqIdempotentContext context, MqIdempotentClaim claim) {
-        if (claim != null && claim.ownerToken() != null) {
-            throw new IllegalStateException("Idempotent store does not support owner fencing");
-        }
-        markFailed(context);
-    }
-
-    /** @return 是否支持认领 owner token 核对 */
-    default boolean supportsOwnerFencing() {
-        return false;
-    }
+    default int cleanupTerminal(int limit) { return 0; }
 }

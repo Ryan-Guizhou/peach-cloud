@@ -7,7 +7,8 @@ import com.peach.rocket.codec.SecureJacksonMqMessageCodec;
 import com.peach.rocket.core.MqMessageEnvelope;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * 认证信封及明文降级防护回归。
@@ -60,5 +61,9 @@ class MqAuthenticatedEnvelopeTest {
         algorithmAltered.put("encryptionAlgorithm", "unknown");
         byte[] body = mapper.writeValueAsBytes(algorithmAltered);
         assertThrows(RuntimeException.class, () -> codec.decode(body, Map.class));
+
+        algorithmAltered.put("encryptionAlgorithm", "AES_GCM");
+        byte[] legacy = mapper.writeValueAsBytes(algorithmAltered);
+        assertThrows(RuntimeException.class, () -> codec.decode(legacy, Map.class));
     }
 }

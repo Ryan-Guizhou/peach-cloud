@@ -9,7 +9,7 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * AesGcmMQ载荷加密器。
+ * 使用 AES-GCM 与关联数据认证消息内容及信封元数据。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -64,14 +64,13 @@ public class AesGcmMqPayloadEncryptor implements MqPayloadEncryptor {
     }
 
     private void authenticate(Cipher cipher, MqEncryptionContext context) {
-        if ("AES_GCM_AAD".equals(context.algorithm())) {
-            byte[] aad = context.associatedData();
-            if (aad == null || aad.length == 0) {
-                throw new MqException("Authenticated MQ envelope requires associated data");
-            }
-            cipher.updateAAD(aad);
-        } else if (!"AES_GCM".equals(context.algorithm())) {
+        if (!"AES_GCM_AAD".equals(context.algorithm())) {
             throw new MqException("Unsupported MQ encryption algorithm");
         }
+        byte[] aad = context.associatedData();
+        if (aad == null || aad.length == 0) {
+            throw new MqException("Authenticated MQ envelope requires associated data");
+        }
+        cipher.updateAAD(aad);
     }
 }

@@ -44,7 +44,7 @@ Pre-create `dev-biz-order` for the current naming settings. Publish through `MqP
 - Outbox is disabled by default. Ordinary production publish requires a business transaction on the same DataSource; `publishStandalone` explicitly publishes independently. Sends and database ACKs are not atomic: delivery remains at-least-once, timeouts may follow delivery, and one-way sends have no Broker ACK.
 - Ordinary orderly sends require a stable shardingKey. Production rejects orderly Outbox and broadcasting. Strict global ordering across instances is Unsupported.
 - Bounded encoding, envelope/Header/JSON sizes, publishing/consumption admission, and Consumer drain still require capacity and shutdown drills across all publishing paths. SKIP requires successful durable recording. Replay is a programmatic SPI, without an HTTP management endpoint.
-- Consumer Group prefixing defaults off; strict production requires it on. Decide Group names and initial offsets before the first deployment. Strict mode provides fail-closed checks; external acceptance remains necessary.
+- Consumer Group prefixing defaults on to isolate environments. Decide Group names and initial offsets before the first deployment. Strict mode provides fail-closed checks; external acceptance remains necessary.
 
 ## Quickstart and verification
 

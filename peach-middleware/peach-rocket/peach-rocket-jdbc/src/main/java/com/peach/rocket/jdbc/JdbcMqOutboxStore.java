@@ -53,15 +53,13 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
 
     private final JdbcTemplate jdbcTemplate;
 
-    /**
-     * 创建 JDBC outbox 存储。
-     *
-     * @param jdbcTemplate JDBC 操作模板。
-     */
-    public JdbcMqOutboxStore(JdbcTemplate jdbcTemplate) {
-        this(jdbcTemplate, new PeachRocketProperties());
-    }
 
+    /**
+     * 创建启用认领令牌、租约和事务约束的 JDBC Outbox 存储。
+     *
+     * @param jdbcTemplate JDBC 操作模板
+     * @param properties RocketMQ 统一配置
+     */
     public JdbcMqOutboxStore(JdbcTemplate jdbcTemplate, PeachRocketProperties properties) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
         this.properties = Objects.requireNonNull(properties, "properties");
@@ -123,17 +121,6 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
                 0);
     }
 
-    /**
-     * 历史入口会丢失认领令牌，已停止支持；调用方必须迁移到 claimPending 和带令牌的确认方法。
-     *
-     * @deprecated 使用 {@link #claimPending(int)} 保留认领凭据。
-     */
-    @Override
-    @Deprecated
-    public List<MqOutboxEvent> findPending(int batchSize) {
-        throw new UnsupportedOperationException(
-                "JDBC Outbox requires claimPending and token-scoped markSent/markFailed; migrate legacy findPending callers");
-    }
 
     /**
      * 使用每批唯一认领标识领取并读取本批消息，避免重复读取同进程尚未完成的旧批次。
@@ -282,37 +269,7 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
         return token;
     }
 
-    /**
-     * 标记消息已发送。
-     */
-    @Override
-    public void markSent(String messageId) {
-        jdbcTemplate.update(
-                "UPDATE MQ_OUTBOX_EVENT SET STATUS=?,SENT_AT=NOW(3),CLAIMED_BY=NULL,CLAIMED_AT=NULL,UPDATED_AT=NOW(3) "
-                        + "WHERE MESSAGE_ID=? AND STATUS=? AND CLAIMED_BY IS NULL",
-                MqOutboxStatus.SENT.name(),
-                messageId,
-                MqOutboxStatus.SENDING.name());
-    }
 
-    /**
-     * 标记消息发送失败并计算下一次重试时间。
-     */
-    @Override
-    public void markFailed(String messageId) {
-        jdbcTemplate.update(
-                "UPDATE MQ_OUTBOX_EVENT SET "
-                        + "STATUS=CASE WHEN RETRY_COUNT+1>=? THEN ? ELSE ? END,"
-                        + "RETRY_COUNT=LEAST(20,RETRY_COUNT+1),"
-                        + "NEXT_RETRY_TIME=DATE_ADD(NOW(3), INTERVAL LEAST(300, POW(2,RETRY_COUNT)) SECOND),"
-                        + "CLAIMED_BY=NULL,CLAIMED_AT=NULL,UPDATED_AT=NOW(3) "
-                        + "WHERE MESSAGE_ID=? AND STATUS=? AND CLAIMED_BY IS NULL",
-                MAX_RETRY_COUNT,
-                MqOutboxStatus.FAILED.name(),
-                MqOutboxStatus.RETRY.name(),
-                messageId,
-                MqOutboxStatus.SENDING.name());
-    }
 
     /**
      * 将最终失败消息重新放回重试队列。
@@ -333,7 +290,7 @@ public class JdbcMqOutboxStore implements MqOutboxStore {
     private void recoverStaleClaims() {
         jdbcTemplate.update(
                 "UPDATE MQ_OUTBOX_EVENT SET STATUS=CASE WHEN RETRY_COUNT+1>=20 THEN 'FAILED' ELSE ? END,RETRY_COUNT=LEAST(20,RETRY_COUNT+1),CLAIMED_BY=NULL,CLAIMED_AT=NULL,NEXT_RETRY_TIME=NOW(3),"
-                        + "UPDATED_AT=NOW(3) WHERE STATUS=? AND COALESCE(CLAIMED_AT,UPDATED_AT)<DATE_SUB(NOW(3), INTERVAL ? MICROSECOND) "
+                        + "UPDATED_AT=NOW(3) WHERE STATUS=? AND CLAIMED_AT<DATE_SUB(NOW(3), INTERVAL ? MICROSECOND) "
                         + "ORDER BY CLAIMED_AT ASC LIMIT ?",
                 MqOutboxStatus.RETRY.name(),
                 MqOutboxStatus.SENDING.name(),

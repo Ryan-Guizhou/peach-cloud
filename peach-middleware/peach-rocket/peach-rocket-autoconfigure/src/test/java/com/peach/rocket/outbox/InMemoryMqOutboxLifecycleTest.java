@@ -73,7 +73,7 @@ class InMemoryMqOutboxLifecycleTest {
         store.markSent(claim);
         clock.advance(Duration.ofHours(2));
         store.save(event("two"));
-        assertThat(store.findPending(5)).hasSize(1);
+        assertThat(store.claimPending(5)).hasSize(1);
     }
 
     private static MqOutboxEvent event(String id) {

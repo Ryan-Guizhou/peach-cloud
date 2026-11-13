@@ -4,7 +4,7 @@
 
 ## 配置基线
 
-业务依赖 `peach-rocket-starter`；持久化还须显式依赖 `peach-rocket-jdbc`，提供与业务事务绑定的同一 `DataSource`，按[运维手册](production-operations.md)建表/迁移。以下环境变量均须由部署平台安全注入，无密钥默认值：
+业务依赖 `peach-rocket-starter`；持久化还须显式依赖 `peach-rocket-jdbc`，提供与业务事务绑定的同一 `DataSource`，按[运维手册](production-operations.md)使用最终 DDL 初始化。以下环境变量均须由部署平台安全注入，无密钥默认值：
 
 ```yaml
 rocketmq:
@@ -74,7 +74,6 @@ peach:
 | producer.max-inflight | 1024 | int/请求 | 单 Producer 在途上限，正数；非集群限流 |
 | producer.inflight-acquire-timeout | 200ms | Duration | 发送准入等待，0–30s；0 为立即拒绝 |
 | consumer.enable-idempotent | true | boolean | 消费 Store 去重；生产必须 true，仍需业务幂等 |
-| consumer.legacy-idempotent-key | false | boolean | 旧业务 Key/Broker ID 去重模式；仅迁移，生产禁止 |
 | consumer.consume-from-where | LAST_OFFSET | String/枚举 | FIRST_OFFSET 或 LAST_OFFSET；仅影响新 Group 初始位点 |
 | consumer.idempotent-expire | 24h | Duration | 成功去重记录 TTL，正数；覆盖完整重放窗口 |
 | consumer.dynamic-register | true | boolean | 扫描并注册注解消费者；关闭后自行负责消费接入 |
@@ -90,13 +89,11 @@ peach:
 | naming.group-prefix | cg | String | Group 前缀，非空；仅相应开关启用时应用 |
 | naming.topic-separator | - | String | 命名分隔符，非空；变更需迁移 Topic/位点 |
 | naming.auto-prefix-env | true | boolean | Topic 增加环境前缀；按最终解析名称预建 Topic |
-| naming.auto-prefix-consumer-group | false | boolean | Group 增加环境与组前缀；默认保护旧位点，严格生产要求 true，须先迁移 |
+| naming.auto-prefix-consumer-group | true | boolean | Group 增加环境与组前缀；新项目默认开启，首次部署前固定组名 |
 | security.enabled | false | boolean | 安全 Codec 开关；生产必须 true |
 | security.encrypt-payload | false | boolean | 全业务载荷加密策略，接收端也拒绝所要求消息的明文降级；生产 true |
-| security.algorithm | AES_GCM_AAD | String/枚举 | AES_GCM_AAD 或历史 AES_GCM；生产仅接受认证信封算法 |
-| security.accept-legacy-encryption | false | boolean | 允许历史非 AAD 密文；仅有限迁移窗口，生产禁止 |
+| security.algorithm | AES_GCM_AAD | String | 只支持认证信封算法 AES_GCM_AAD，其他值启动失败 |
 | security.key-id | default | String | 活动加密密钥 ID；信封携带 ID，未知 ID 拒绝 |
-| security.key | 空串 | String/秘密 | 旧单密钥，仅活动 ID 兼容；优先使用 keys 管理轮换 |
 | security.keys | 空 Map | Map<String,String>/秘密 | ID 到 AES 密钥映射；解码后应为合法 AES 长度 16/24/32 字节 |
 | security.base64-key | false | boolean | true 时配置密钥为 Base64；否则按原始文本字节解释 |
 | security.encrypt-topics | 空 List | List<String> | 附加按 Topic 加密策略；生产全量 encrypt-payload 不依赖此列表 |
@@ -130,9 +127,9 @@ peach:
 
 生产启动 JVM 还须显式设置 `-Dtls.test.mode.enable=false -Dtls.client.authServer=true -Dtls.client.trustCertPath=<已挂载且存在的 CA 文件绝对路径>`。这是 JVM/SDK 参数，不属于 `peach.rocket.*`。TLS=true 与 CA 文件存在不证明握手成功；部署团队必须按照实际依赖与 Broker 版本完成 CA 加载、证书认证、需要时的 mTLS、主机名策略及 Broker TLS listener，并验证错误证书、错误身份和越权 Topic/Group 均失败。
 
-业务身份仅授予所需 Topic 发送、Group 消费及必要重试权限；Topic 管理使用独立运维身份。数据库账号限制于目标表所需 CRUD，迁移 DDL 使用独立账号。通过 Secret Manager、受控配置服务或挂载 secret 注入凭据与密钥；限制读取权限、审计访问、设置轮换流程。示例变量名不是明文配置许可。
+业务身份仅授予所需 Topic 发送、Group 消费及必要重试权限；Topic 管理使用独立运维身份。数据库账号限制于目标表所需 CRUD，建表 DDL 使用独立账号。通过 Secret Manager、受控配置服务或挂载 secret 注入凭据与密钥；限制读取权限、审计访问、设置轮换流程。示例变量名不是明文配置许可。
 
-## 协议、超时与兼容边界
+## 协议、超时与安全边界
 
 认证信封绑定路由与元数据，消费端核对实际 Topic/Tag；未知算法、非法版本/类型、篡改、缺少解密器与不满足接收策略的明文均应失败。嵌套深度、字符串、数字、编码字节、Header 与并发编码预算须联合配置：4 MiB 信封上限并不意味着允许 4 MiB 单字符串，Base64 密文还会膨胀。应用不得为远端类型启用不受控多态反序列化。
 
@@ -140,4 +137,4 @@ peach:
 
 单次 timeout 优先于 producer 默认值，未指定才继承默认值。SDK 自带重试、Broker 重投与 Outbox 重试属于不同层；Peach 没有可配置的统一“总重试次数”保证，不要把一层 timeout 当作端到端截止时间。网络超时可能已经投递成功，Store ACK 失败也可能导致重发；必须通过稳定事件 ID 和业务幂等应对不确定结果。事务回查必须查询持久化业务结果，UNKNOWN 不等于回滚。
 
-严格模式拒绝广播消费者和顺序 Outbox；普通 `publishOrderly` 的同分片路由不证明多实例严格全局顺序。跨实例严格顺序为 Unsupported。自定义 Codec/Store/Publisher 必须重新验证这些安全与持久化契约，不能仅凭实现接口通过生产验收。迁移步骤、恢复责任和外部验收见[运维手册](production-operations.md)及[整改状态](production-remediation-status.md)。
+严格模式拒绝广播消费者和顺序 Outbox；普通 `publishOrderly` 的同分片路由不证明多实例严格全局顺序。跨实例严格顺序为 Unsupported。自定义 Codec/Store/Publisher 必须重新验证这些安全与持久化契约，不能仅凭实现接口通过生产验收。部署步骤、恢复责任和外部验收见[运维手册](production-operations.md)及[整改状态](production-remediation-status.md)。

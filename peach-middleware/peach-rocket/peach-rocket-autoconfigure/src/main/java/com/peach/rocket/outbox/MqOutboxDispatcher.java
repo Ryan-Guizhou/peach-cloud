@@ -106,8 +106,9 @@ public class MqOutboxDispatcher {
                 log.warn("[mq-outbox] dispatch interrupted; unfinished claims will recover by lease");
                 return;
             } catch (ExecutionException failure) {
+                Throwable cause = failure.getCause() == null ? failure : failure.getCause();
                 log.error("[mq-outbox] worker failed unexpectedly; claim lease recovery may be required. exception={}",
-                        failure.getCause().getClass().getName());
+                        cause.getClass().getName(), cause);
             }
         }
     }
@@ -193,7 +194,7 @@ public class MqOutboxDispatcher {
             // Broker 已确认，但 DB ACK 不确定。不得反向标记失败，只能等待租约回收。
             log.error("[mq-outbox-ack-error] Broker confirmed, store ACK failed; "
                             + "lease recovery required. messageId={} topic={} exception={}",
-                    event.messageId(), event.topic(), ackError.getClass().getName());
+                    event.messageId(), event.topic(), ackError.getClass().getName(), ackError);
         }
     }
 
@@ -211,10 +212,10 @@ public class MqOutboxDispatcher {
         } catch (RuntimeException storeError) {
             log.error("[mq-outbox-store-error] Failed to record send failure; "
                             + "lease recovery required. messageId={} topic={} exception={}",
-                    event.messageId(), event.topic(), storeError.getClass().getName());
+                    event.messageId(), event.topic(), storeError.getClass().getName(), storeError);
         }
         log.error("[mq-outbox-error] messageId={} topic={} tag={} exception={}",
                 event.messageId(), event.topic(), event.tag(),
-                sendError.getClass().getName());
+                sendError.getClass().getName(), sendError);
     }
 }

@@ -1,6 +1,7 @@
 package com.peach.rocket.quickstart.example;
 
 import com.peach.rocket.idempotent.MqIdempotentContext;
+import com.peach.rocket.idempotent.MqIdempotentClaim;
 import com.peach.rocket.idempotent.MqIdempotentStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 
 /**
- * 消费幂等：同一幂等键 {@code tryStart + markSuccess} 后再次 {@code tryStart} 应被拒绝。
+ * 消费幂等：同一事件 ID 获得认领令牌并确认后，后续认领应返回已完成。
  *
  * <p>默认 {@link com.peach.rocket.idempotent.InMemoryMqIdempotentStore} 只覆盖单进程，
  * 不能当作集群级 Exactly-Once。</p>
@@ -45,16 +46,18 @@ public class ConsumeIdempotentExample {
                 idempotentKey,
                 EXPIRE);
         int processed = 0;
-        if (idempotentStore.tryStart(context)) {
+        MqIdempotentClaim first = idempotentStore.claim(context);
+        if (first.status() == MqIdempotentClaim.Status.ACQUIRED) {
             processed++;
-            idempotentStore.markSuccess(context);
+            idempotentStore.markSuccess(context, first);
         }
-        if (idempotentStore.tryStart(context)) {
+        MqIdempotentClaim second = idempotentStore.claim(context);
+        if (second.status() == MqIdempotentClaim.Status.ACQUIRED) {
             processed++;
-            idempotentStore.markSuccess(context);
+            idempotentStore.markSuccess(context, second);
         }
-        log.info("idempotent consumeTwice, key={}, processed={}, success={}",
-                idempotentKey, processed, idempotentStore.isSuccess(context));
+        log.info("[mq-quickstart] idempotent consumeTwice processed={} completed={}",
+                processed, idempotentStore.claim(context).status() == MqIdempotentClaim.Status.SUCCEEDED);
         return processed;
     }
 }

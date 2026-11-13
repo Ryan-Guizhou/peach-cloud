@@ -44,7 +44,7 @@ peach:
 - Outbox 默认关闭；生产普通 publish 要求同 DataSource 业务事务，`publishStandalone` 显式独立发布。发送/数据库 ACK 不原子，始终 at-least-once；超时可能已经投递，单向发送无 Broker ACK。
 - 普通顺序发送需稳定 shardingKey；生产拒绝顺序 Outbox 与广播。跨实例严格全局顺序 Unsupported。
 - 有界编码、报文/Header/JSON、发送/消费准入与 Consumer 排空不替代实际容量和全发送路径停机演练。可靠记录成功才允许 SKIP；Replay 是程序化 SPI，未提供 HTTP 管理入口。
-- Consumer Group 前缀默认关闭，生产要求显式开启；首次部署时应确定组名和初始位点。严格模式是失败关闭保护，不等于外部环境验收通过。
+- Consumer Group 前缀默认开启环境隔离，首次部署前应确定组名及初始位点。严格模式是失败关闭保护，不等于外部环境验收通过。
 
 ## Quickstart 与验证
 
