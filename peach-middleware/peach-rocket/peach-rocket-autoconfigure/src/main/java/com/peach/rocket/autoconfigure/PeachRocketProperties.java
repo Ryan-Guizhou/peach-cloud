@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.LinkedHashMap;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -119,7 +120,7 @@ public class PeachRocketProperties implements InitializingBean {
         if (StringUtils.hasText(client.accessKey) != StringUtils.hasText(client.secretKey)) {
             throw new MqException("MQ client access-key and secret-key must be configured together");
         }
-        if (!java.util.Set.of("FIRST_OFFSET", "LAST_OFFSET").contains(consumer.consumeFromWhere)) {
+        if (!Set.of("FIRST_OFFSET", "LAST_OFFSET").contains(consumer.consumeFromWhere)) {
             throw new MqException("MQ consume-from-where must be FIRST_OFFSET or LAST_OFFSET");
         }
         if (!validMillis(jdbc.processingLease, 3600000) || !validMillis(jdbc.outboxLease, 3600000)
