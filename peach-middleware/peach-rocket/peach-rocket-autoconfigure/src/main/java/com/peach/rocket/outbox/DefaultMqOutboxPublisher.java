@@ -5,6 +5,9 @@ import java.time.ZoneId;
 import com.peach.rocket.codec.MqMessageCodec;
 import com.peach.rocket.context.DefaultMqHeaderResolver;
 import com.peach.rocket.core.MqMessageEnvelope;
+import com.peach.rocket.core.MqDelayLevels;
+import com.peach.rocket.exception.MqException;
+import org.springframework.util.StringUtils;
 import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.route.MqRoute;
 import com.peach.rocket.route.MqRouteResolver;
@@ -35,6 +38,10 @@ public class DefaultMqOutboxPublisher implements MqOutboxPublisher {
     @Override
     public <T> String publish(T payload, MqSendOptions options) {
         MqSendOptions actualOptions = MqSendOptions.copyOf(options);
+        Integer delayLevel = MqDelayLevels.resolve(actualOptions.getDelay());
+        if (StringUtils.hasText(actualOptions.getShardingKey()) && delayLevel != null) {
+            throw new MqException("Cannot combine RocketMQ shardingKey with delayed sending");
+        }
         MqRoute route = routeResolver.resolve(payload, actualOptions);
         MqMessageEnvelope<T> envelope = MqMessageEnvelope.create(
                 UUID.randomUUID().toString(),

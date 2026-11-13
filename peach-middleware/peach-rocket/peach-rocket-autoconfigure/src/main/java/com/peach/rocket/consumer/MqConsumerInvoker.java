@@ -17,11 +17,11 @@ import com.peach.rocket.idempotent.MqIdempotentContext;
 import com.peach.rocket.idempotent.MqIdempotentKeyResolver;
 import com.peach.rocket.idempotent.MqIdempotentStore;
 import com.peach.rocket.support.RocketMqNaming;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.core.ResolvableType;
 
 /**
  * MQConsumer调用器。
@@ -111,7 +111,7 @@ public class MqConsumerInvoker {
 
         // ==================== 1. 解析消息体类型 ====================
         // 通过反射解析 Handler 的泛型参数，确定 Payload 的实际类型（如 OrderDTO）
-        Class<?> payloadType = resolvePayloadType(handler);
+        Type payloadType = resolvePayloadType(handler);
 
         // 解码消息体：将字节数组反序列化为 MqMessageEnvelope 对象
         // 信封中包含：业务数据（payload）、消息ID、Topic、Tag、Key、Headers 等
@@ -233,50 +233,18 @@ public class MqConsumerInvoker {
     }
 
     /**
-     * 解析消息处理器（Handler）的泛型参数，获取 Payload 的实际类型
+     * 获取动态 Handler 的实际泛型 Payload 类型，包含继承接口/泛型父类。
      *
-     * 例如：MqMessageHandler<OrderDTO> 解析结果为 OrderDTO.class
-     *
-     * 实现原理：
-     * <ol>
-     *   <li>获取 Handler 的目标类（绕过 AOP 代理）</li>
-     *   <li>遍历该类实现的所有接口</li>
-     *   <li>找到 MqMessageHandler 接口的 ParameterizedType</li>
-     *   <li>提取第一个泛型参数作为 Payload 类型</li>
-     * </ol>
-     *
-     * 如果找不到泛型参数，默认返回 Map.class（兼容旧版本或非泛型写法）
-     *
-     * @param handler 消息处理器实例
-     * @return Payload 的实际类型，默认 Map.class
+     * @param handler 实际消息处理器（可能为 AOP 代理）
+     * @return 业务类型，可包含 List/Map 等泛型参数；未声明时兼容 Map
      */
-    private Class<?> resolvePayloadType(MqMessageHandler<?> handler) {
-        // 获取目标类（绕过 Spring AOP 代理，获取真实的业务类）
-        Class<?> targetClass = AopUtils.getTargetClass(handler);
-
-        // 遍历该类实现的所有接口
-        for (Type type : targetClass.getGenericInterfaces()) {
-            // 判断接口是否带泛型参数（ParameterizedType）
-            if (type instanceof ParameterizedType parameterizedType) {
-                Type raw = parameterizedType.getRawType();
-
-                // 判断原始类型是否为 MqMessageHandler 或其子类
-                if (raw instanceof Class<?> rawClass && MqMessageHandler.class.isAssignableFrom(rawClass)) {
-                    // 获取 MqMessageHandler 的第一个泛型参数（即 Payload 类型）
-                    Type actualType = parameterizedType.getActualTypeArguments()[0];
-
-                    // 如果泛型参数是具体的 Class，直接返回
-                    if (actualType instanceof Class<?> actualClass) {
-                        return actualClass;
-                    }
-                    // 注意：如果泛型参数也是泛型（如 List<Order>），这里会返回 null
-                    // 当前实现不支持嵌套泛型，默认回退到 Map.class
-                }
-            }
+    private Type resolvePayloadType(MqMessageHandler<?> handler) {
+        ResolvableType resolved = ResolvableType.forClass(AopUtils.getTargetClass(handler))
+                .as(MqMessageHandler.class).getGeneric(0);
+        if (resolved == ResolvableType.NONE || resolved.resolve() == null
+                || resolved.resolve() == Object.class) {
+            return Map.class;
         }
-
-        // 未找到泛型参数时，默认使用 Map.class 进行解码
-        // 这样兼容了非泛型写法或旧版本代码
-        return Map.class;
+        return resolved.getType();
     }
 }

@@ -73,9 +73,21 @@ public class RocketMqPublisher implements MqPublisher {
         long start = System.currentTimeMillis();
         MqRoute route = routeResolver.resolve(payload, actualOptions);
         Integer delayLevel = MqDelayLevels.resolve(actualOptions.getDelay());
-        SendResult result = delayLevel == null
-                ? rocketMQTemplate.syncSend(destination(route), buildMessage(payload, actualOptions, route), actualOptions.getTimeoutMillis())
-                : rocketMQTemplate.syncSend(destination(route), buildMessage(payload, actualOptions, route), actualOptions.getTimeoutMillis(), delayLevel);
+        String shardingKey = actualOptions.getShardingKey();
+        if (StringUtils.hasText(shardingKey) && delayLevel != null) {
+            throw new MqException("Cannot combine RocketMQ shardingKey with delayed sending");
+        }
+        Message<byte[]> message = buildMessage(payload, actualOptions, route);
+        SendResult result;
+        if (StringUtils.hasText(shardingKey)) {
+            result = rocketMQTemplate.syncSendOrderly(destination(route), message,
+                    shardingKey, actualOptions.getTimeoutMillis());
+        } else if (delayLevel != null) {
+            result = rocketMQTemplate.syncSend(destination(route), message,
+                    actualOptions.getTimeoutMillis(), delayLevel);
+        } else {
+            result = rocketMQTemplate.syncSend(destination(route), message, actualOptions.getTimeoutMillis());
+        }
         MqSendResult mqSendResult = toMqSendResult(result, route);
         log.info("[mq-send] app={} payloadType={} mode=sync topic={} tag={} key={} delayLevel={} messageId={} status={} cost={}ms success={}",
                 properties.getAppName(), payload.getClass().getSimpleName(), mqSendResult.topic(), mqSendResult.tag(),
@@ -92,6 +104,7 @@ public class RocketMqPublisher implements MqPublisher {
     @Override
     public <T> CompletableFuture<MqSendResult> publishAsync(final T payload, MqSendOptions options) {
         final MqSendOptions actualOptions = prepareOptions(options);
+        rejectUnsupportedAsyncOptions(actualOptions);
         final long start = System.currentTimeMillis();
         final MqRoute route = routeResolver.resolve(payload, actualOptions);
         final CompletableFuture<MqSendResult> future = new CompletableFuture<MqSendResult>();
@@ -104,6 +117,7 @@ public class RocketMqPublisher implements MqPublisher {
     @Override
     public <T> void publishOneWay(T payload, MqSendOptions options) {
         MqSendOptions actualOptions = prepareOptions(options);
+        rejectUnsupportedAsyncOptions(actualOptions);
         MqRoute route = routeResolver.resolve(payload, actualOptions);
         rocketMQTemplate.sendOneWay(destination(route), buildMessage(payload, actualOptions, route));
         log.info("[mq-send] app={} payloadType={} mode=one-way topic={} tag={} key={} success=true",
@@ -115,10 +129,7 @@ public class RocketMqPublisher implements MqPublisher {
         if (!StringUtils.hasText(shardingKey)) {
             throw new MqException("shardingKey must not be blank for orderly message");
         }
-        MqSendOptions options = MqSendOptions.builder().shardingKey(shardingKey).build();
-        MqRoute route = routeResolver.resolve(payload, options);
-        SendResult result = rocketMQTemplate.syncSendOrderly(destination(route), buildMessage(payload, options, route), shardingKey);
-        return toMqSendResult(result, route);
+        return publish(payload, MqSendOptions.builder().shardingKey(shardingKey).build());
     }
 
     @Override
@@ -140,6 +151,15 @@ public class RocketMqPublisher implements MqPublisher {
             throw new MqException("RocketMQ transaction message is disabled or no transaction producer bean is available");
         }
         return transactionMessageProducer.sendTransaction(payload, transactionKey, options);
+    }
+
+    /**
+     * 防止异步/单向发送静默丢弃顺序或延迟选项；调用方可改用同步发送。
+     */
+    private void rejectUnsupportedAsyncOptions(MqSendOptions options) {
+        if (StringUtils.hasText(options.getShardingKey()) || options.getDelay() != null) {
+            throw new MqException("Async/one-way MQ publishing does not support shardingKey or delay options");
+        }
     }
 
     private MqSendOptions prepareOptions(MqSendOptions options) {
