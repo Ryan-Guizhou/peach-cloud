@@ -63,8 +63,11 @@ public class PeachRocketProperties implements InitializingBean {
             throw new MqException("peach.rocket.consumer.idempotent-expire must be positive");
         }
         if (consumer.consumeThreadMin <= 0 || consumer.consumeThreadMax < consumer.consumeThreadMin
-                || consumer.inMemoryMaxEntries < 1) {
-            throw new MqException("peach.rocket.consumer consume thread range is invalid");
+                || consumer.inMemoryMaxEntries < 1 || consumer.maxInflight < 1
+                || consumer.maxDynamicConsumers < 1
+                || consumer.inflightAcquireTimeout == null || consumer.inflightAcquireTimeout.isNegative()
+                || consumer.shutdownDrainTimeout == null || consumer.shutdownDrainTimeout.isNegative()) {
+            throw new MqException("peach.rocket.consumer resource limits are invalid");
         }
         if (outbox.enabled && (outbox.batchSize < 1 || outbox.batchSize > 500
                 || outbox.scanIntervalMs < 1 || outbox.inMemoryMaxEntries < 1
@@ -128,6 +131,10 @@ public class PeachRocketProperties implements InitializingBean {
         private int consumeThreadMax = 20;
         private int inMemoryMaxEntries = 32768;
         private boolean requireDurableIdempotency = false;
+        private int maxDynamicConsumers = 64;
+        private int maxInflight = 128;
+        private Duration inflightAcquireTimeout = Duration.ofMillis(200);
+        private Duration shutdownDrainTimeout = Duration.ofSeconds(30);
         public boolean isEnableIdempotent() { return enableIdempotent; }
         public void setEnableIdempotent(boolean enableIdempotent) { this.enableIdempotent = enableIdempotent; }
         public Duration getIdempotentExpire() { return idempotentExpire; }
@@ -140,6 +147,18 @@ public class PeachRocketProperties implements InitializingBean {
         public void setConsumeThreadMax(int consumeThreadMax) { this.consumeThreadMax = consumeThreadMax; }
         public int getInMemoryMaxEntries() { return inMemoryMaxEntries; }
         public void setInMemoryMaxEntries(int inMemoryMaxEntries) { this.inMemoryMaxEntries = inMemoryMaxEntries; }
+        public int getMaxDynamicConsumers() { return maxDynamicConsumers; }
+        public void setMaxDynamicConsumers(int maxDynamicConsumers) { this.maxDynamicConsumers = maxDynamicConsumers; }
+        public int getMaxInflight() { return maxInflight; }
+        public void setMaxInflight(int maxInflight) { this.maxInflight = maxInflight; }
+        public Duration getInflightAcquireTimeout() { return inflightAcquireTimeout; }
+        public void setInflightAcquireTimeout(Duration inflightAcquireTimeout) {
+            this.inflightAcquireTimeout = inflightAcquireTimeout;
+        }
+        public Duration getShutdownDrainTimeout() { return shutdownDrainTimeout; }
+        public void setShutdownDrainTimeout(Duration shutdownDrainTimeout) {
+            this.shutdownDrainTimeout = shutdownDrainTimeout;
+        }
         public boolean isRequireDurableIdempotency() { return requireDurableIdempotency; }
         public void setRequireDurableIdempotency(boolean requireDurableIdempotency) {
             this.requireDurableIdempotency = requireDurableIdempotency;
