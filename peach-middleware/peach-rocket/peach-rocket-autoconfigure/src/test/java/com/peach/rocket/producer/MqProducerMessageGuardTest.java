@@ -4,6 +4,7 @@ import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.exception.MqException;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import com.peach.rocket.context.DefaultMqHeaderResolver;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -20,7 +21,7 @@ class MqProducerMessageGuardTest {
     void rejectReservedOrSensitiveBusinessHeaders() {
         var properties = new PeachRocketProperties.Producer();
         for (String name : new String[]{"KEYS", "Authorization", "x-access-token", "PEACH_ROCKET_TRANSACTION_KEY"}) {
-            assertThatThrownBy(() -> new com.peach.rocket.context.DefaultMqHeaderResolver()
+            assertThatThrownBy(() -> new DefaultMqHeaderResolver()
                     .resolve(Map.of(name, "test-value"))).isInstanceOf(MqException.class);
         }
         properties.setMaxHeaderBytes(8);
