@@ -13,6 +13,8 @@ import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.core.MqSendResult;
 import com.peach.rocket.core.MqTransactionHandler;
 import com.peach.rocket.exception.MqException;
+import com.peach.rocket.producer.MqProducerAdmission;
+import com.peach.rocket.producer.MqProducerMessageGuard;
 import com.peach.rocket.route.MqRoute;
 import com.peach.rocket.route.MqRouteResolver;
 import com.peach.rocket.support.RocketMqNaming;
@@ -20,7 +22,9 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
 import lombok.extern.slf4j.Slf4j;
+import lombok.Getter;
 import org.apache.rocketmq.client.producer.LocalTransactionState;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
@@ -38,9 +42,9 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * RocketMQMQ事务消息生产者。
+ * RocketMQ 事务消息生产者，负责半消息、本地事务和 Broker 状态回查。
  * <p>该类封装了 RocketMQ 事务消息的发送、本地事务执行和事务状态回查的完整流程。
- * 事务消息保证消息发送与本地事务的原子性，适用于订单支付、库存扣减等需要强一致性的场景。
+ * 事务消息通过 Broker 回查实现最终一致性，不代替业务数据库的本地事务与持久化幂等。
  * <p><b>核心流程：</b>
  * <ol>
  * <li>发送半消息（Half Message）到 Broker</li>
@@ -97,12 +101,18 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
     /**
      * RocketMQ 事务消息生产者实例。
      */
-    private TransactionMQProducer producer;
+    private volatile TransactionMQProducer producer;
 
     /**
      * 生产者运行状态标识。
      */
     private volatile boolean running;
+
+    /** 仅保护启动/停止，发送线程不持有生命周期锁。 */
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
+
+    /** 独立事务 Producer 的本地有界发送预算。 */
+    private final MqProducerAdmission admission;
 
     public RocketMqTransactionMessageProducer(RocketMQProperties rocketMQProperties,
                                               PeachRocketProperties properties,
@@ -110,6 +120,8 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
                                               MqRouteResolver routeResolver,
                                               DefaultMqHeaderResolver headerResolver,
                                               ObjectProvider<MqTransactionHandler<?>> transactionHandlers) {
+        this.admission = new MqProducerAdmission(properties.getProducer().getMaxInflight(),
+                properties.getProducer().getInflightAcquireTimeout());
         this.rocketMQProperties = rocketMQProperties;
         this.properties = properties;
         this.codec = codec;
@@ -144,13 +156,16 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
             throw new MqException("transactionKey must not be blank for transaction message");
         }
 
-        // 检查生产者是否已启动
-        if (!running || producer == null) {
+        // 读取当前客户端快照，停机并发关闭时按 SDK 异常处理，不可能误用下一次启动的实例。
+        TransactionMQProducer current = producer;
+        if (!running || current == null) {
             throw new MqException("RocketMQ transaction producer is not running");
         }
 
-        // 构建发送选项（若无则使用默认值）
-        MqSendOptions actualOptions = options == null ? MqSendOptions.defaults() : options;
+        MqSendOptions actualOptions = MqSendOptions.copyOf(options);
+        if (StringUtils.hasText(actualOptions.getShardingKey()) || actualOptions.getDelay() != null) {
+            throw new MqException("Transaction send does not support shardingKey or delay options");
+        }
 
         // 解析消息路由
         MqRoute route = routeResolver.resolve(payload, actualOptions);
@@ -158,8 +173,12 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         // 构建消息信封
         MqMessageEnvelope<T> envelope = buildEnvelope(payload, actualOptions, route);
 
-        // 构建 RocketMQ 消息对象
-        Message message = new Message(route.topic(), route.tag(), route.key(), codec.encode(envelope));
+        // 对编码后的信封和包括事务 Key 的 Header 统一做预算限制。
+        byte[] body = codec.encode(envelope);
+        Map<String, String> headers = new HashMap<>(envelope.headers());
+        headers.put(PROPERTY_TRANSACTION_KEY, transactionKey);
+        MqProducerMessageGuard.validate(body, headers, route.key(), properties.getProducer());
+        Message message = new Message(route.topic(), route.tag(), route.key(), body);
 
         // 设置事务 Key 到消息用户属性
         message.putUserProperty(PROPERTY_TRANSACTION_KEY, transactionKey);
@@ -173,11 +192,14 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         TransactionArgument argument = new TransactionArgument(transactionKey, route, payload);
 
         try {
-            // 发送事务消息
-            SendResult result = producer.sendMessageInTransaction(message, argument);
+            // 事务半消息发送在 Broker 同步调用返回前占用额度；不记录事务 Key 内容。
+            SendResult result;
+            try (MqProducerAdmission.Permit permit = admission.acquire("transaction")) {
+                result = current.sendMessageInTransaction(message, argument);
+            }
 
-            log.info("[mq-send] mode=transaction topic={} tag={} key={} transactionKey={} messageId={} status={} success={}",
-                    route.topic(), route.tag(), route.key(), transactionKey,
+            log.info("[mq-send] mode=transaction topic={} tag={} messageId={} status={} success={}",
+                    route.topic(), route.tag(),
                     result == null ? null : result.getMsgId(),
                     result == null || result.getSendStatus() == null ? null : result.getSendStatus().name(),
                     isSendOk(result));
@@ -192,42 +214,91 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
                     .build();
 
         } catch (Exception ex) {
+            log.error("[mq-transaction-send-error] topic={} tag={} errorType={}",
+                    route.topic(), route.tag(), ex.getClass().getName(), ex);
+            if (ex instanceof MqException mqException) {
+                throw mqException;
+            }
             throw new MqException("Failed to send RocketMQ transaction message", ex);
         }
     }
 
+    /**
+     * 在生命周期锁中启动事务 Producer，启动失败必须关闭已分配的 SDK 资源。
+     */
     @Override
     public void start() {
-        // 已启动或无处理器时跳过
-        if (running || handlers.isEmpty()) {
-            return;
-        }
-
+        lifecycleLock.lock();
         try {
-            // 创建事务消息生产者
-            producer = new TransactionMQProducer(properties.getTransaction().getProducerGroup());
-            producer.setNamesrvAddr(rocketMQProperties.getNameServer());
-            // 设置事务监听器（委托给 DelegatingTransactionListener）
-            producer.setTransactionListener(new DelegatingTransactionListener());
-            producer.start();
-            running = true;
-
-            log.info("[mq-transaction] producer started. group={} nameServer={} handlerCount={}",
-                    properties.getTransaction().getProducerGroup(),
-                    rocketMQProperties.getNameServer(),
-                    handlers.size());
-
-        } catch (Exception ex) {
-            throw new MqException("Failed to start RocketMQ transaction producer", ex);
+            if (running || handlers.isEmpty()) {
+                return;
+            }
+            TransactionMQProducer candidate = null;
+            try {
+                candidate = createProducer(properties.getTransaction().getProducerGroup());
+                candidate.setNamesrvAddr(rocketMQProperties.getNameServer());
+                candidate.setTransactionListener(new DelegatingTransactionListener());
+                candidate.start();
+                producer = candidate;
+                running = true;
+                log.info("[mq-transaction] producer started. group={} handlers={}",
+                        properties.getTransaction().getProducerGroup(), handlers.size());
+            } catch (Exception ex) {
+                running = false;
+                producer = null;
+                if (candidate != null) {
+                    try {
+                        candidate.shutdown();
+                    } catch (RuntimeException cleanupError) {
+                        ex.addSuppressed(cleanupError);
+                        log.warn("[mq-transaction] startup cleanup failed. group={} errorType={}",
+                                properties.getTransaction().getProducerGroup(), cleanupError.getClass().getName(),
+                                cleanupError);
+                    }
+                }
+                log.error("[mq-transaction] producer start failed. group={} errorType={}",
+                        properties.getTransaction().getProducerGroup(), ex.getClass().getName(), ex);
+                throw new MqException("Failed to start RocketMQ transaction producer", ex);
+            }
+        } finally {
+            lifecycleLock.unlock();
         }
     }
 
+    /**
+     * 创建 SDK Producer；允许在无 Broker 测试中使用模拟实现验证启动故障恢复。
+     *
+     * @param group 事务生产者组
+     * @return 未启动的 SDK 实例
+     */
+    protected TransactionMQProducer createProducer(String group) {
+        return new TransactionMQProducer(group);
+    }
+
+    /**
+     * 关闭客户端时先清理可见状态；单次 shutdown 故障不会保留失效 Producer。
+     */
     @Override
     public void stop() {
-        if (producer != null) {
-            producer.shutdown();
+        lifecycleLock.lock();
+        try {
+            TransactionMQProducer current = producer;
+            producer = null;
+            running = false;
+            if (current == null) {
+                return;
+            }
+            try {
+                current.shutdown();
+                log.info("[mq-transaction] producer stopped. group={}",
+                        properties.getTransaction().getProducerGroup());
+            } catch (RuntimeException ex) {
+                log.error("[mq-transaction] producer shutdown failed. group={} errorType={}",
+                        properties.getTransaction().getProducerGroup(), ex.getClass().getName(), ex);
+            }
+        } finally {
+            lifecycleLock.unlock();
         }
-        running = false;
     }
 
     @Override
@@ -351,17 +422,21 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
          */
         @Override
         public LocalTransactionState executeLocalTransaction(Message message, Object arg) {
-            TransactionArgument argument = (TransactionArgument) arg;
-            TransactionHandlerAdapter adapter = findHandler(argument.route().topic(),
-                    argument.route().tag());
-
-            if (adapter == null) {
-                log.warn("[mq-transaction] no handler found on execute. topic={} tag={}",
-                        argument.route().topic(), argument.route().tag());
+            try {
+                TransactionArgument argument = (TransactionArgument) arg;
+                TransactionHandlerAdapter adapter = findHandler(argument.route().topic(), argument.route().tag());
+                if (adapter == null) {
+                    log.warn("[mq-transaction] local transaction handler missing. topic={} tag={}",
+                            argument.route().topic(), argument.route().tag());
+                    return LocalTransactionState.UNKNOW;
+                }
+                return toRocketState(adapter.execute(argument.payload(), argument.transactionKey()));
+            } catch (RuntimeException ex) {
+                // 不确定的业务结果必须交 Broker 回查，不能擅自判定提交或回滚。
+                log.error("[mq-transaction] local execution failed. topic={} errorType={}",
+                        message.getTopic(), ex.getClass().getName(), ex);
                 return LocalTransactionState.UNKNOW;
             }
-
-            return toRocketState(adapter.execute(argument.payload(), argument.transactionKey()));
         }
 
         /**
@@ -373,23 +448,21 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
          */
         @Override
         public LocalTransactionState checkLocalTransaction(MessageExt message) {
-            // 从消息属性中获取事务 Key
-            String transactionKey = message.getUserProperty(PROPERTY_TRANSACTION_KEY);
-
-            // 查找匹配的处理器
-            TransactionHandlerAdapter adapter = findHandler(message.getTopic(), message.getTags());
-
-            if (adapter == null) {
-                log.warn("[mq-transaction] no handler found on check. topic={} tag={} transactionKey={}",
-                        message.getTopic(), message.getTags(), transactionKey);
+            try {
+                String transactionKey = message.getUserProperty(PROPERTY_TRANSACTION_KEY);
+                TransactionHandlerAdapter adapter = findHandler(message.getTopic(), message.getTags());
+                if (adapter == null) {
+                    log.warn("[mq-transaction] transaction check handler missing. topic={} tag={}",
+                            message.getTopic(), message.getTags());
+                    return LocalTransactionState.UNKNOW;
+                }
+                MqMessageEnvelope<?> envelope = codec.decode(message.getBody(), adapter.getPayloadType());
+                return toRocketState(adapter.check(envelope.payload(), transactionKey));
+            } catch (RuntimeException ex) {
+                log.error("[mq-transaction] transaction check failed. topic={} messageId={} errorType={}",
+                        message.getTopic(), message.getMsgId(), ex.getClass().getName(), ex);
                 return LocalTransactionState.UNKNOW;
             }
-
-            // 解码消息体
-            MqMessageEnvelope<?> envelope = codec.decode(message.getBody(), adapter.getPayloadType());
-
-            // 执行回查
-            return toRocketState(adapter.check(envelope.payload(), transactionKey));
         }
     }
 
@@ -437,6 +510,7 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         private final MqTransactionHandler handler;
 
         /** Payload 类型 */
+        @Getter
         private final Class<?> payloadType;
 
         private TransactionHandlerAdapter(MqTransactionHandler handler, Class<?> payloadType) {
@@ -445,27 +519,26 @@ public class RocketMqTransactionMessageProducer implements SmartLifecycle {
         }
 
         /**
-         * 执行本地事务。
-         * @param payload
-         * @param transactionKey
-         * @return
+         * 执行当前半消息关联的本地事务。
+         *
+         * @param payload 已解码的业务对象
+         * @param transactionKey 事务唯一标识
+         * @return 业务事务状态
          */
         private MqLocalTransactionState execute(Object payload, String transactionKey) {
             return handler.executeLocalTransaction(payload, transactionKey);
         }
 
         /**
-         * 回查本地事务状态。
-         * @param payload
-         * @param transactionKey
-         * @return
+         * Broker 回查期间查询业务事务的最终结果。
+         *
+         * @param payload 已解码的业务对象
+         * @param transactionKey 事务唯一标识
+         * @return 业务事务状态
          */
         private MqLocalTransactionState check(Object payload, String transactionKey) {
             return handler.checkLocalTransaction(payload, transactionKey);
         }
 
-        private Class<?> getPayloadType() {
-            return payloadType;
-        }
-    }
+     }
 }
