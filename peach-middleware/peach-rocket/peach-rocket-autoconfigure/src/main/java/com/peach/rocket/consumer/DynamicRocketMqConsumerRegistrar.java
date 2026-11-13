@@ -9,9 +9,12 @@ import com.peach.rocket.exception.MqException;
 import com.peach.rocket.metrics.MqMetrics;
 import com.peach.rocket.metrics.MqMetricsGuard;
 import com.peach.rocket.support.RocketMqNaming;
+import com.peach.rocket.support.MqClientSecurity;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
@@ -96,7 +99,7 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
             }
             log.info("[mq-consumer] scan dynamic consumers. handlerCount={} registered={} dynamicRegister={}",
                     handlers.size(), registered, properties.getConsumer().isDynamicRegister());
-            java.util.Set<String> groups = new java.util.HashSet<>();
+            Set<String> groups = new HashSet<>();
             for (MqMessageHandler<?> handler : handlers.values()) {
                 MqConsumer declared = AnnotationUtils.findAnnotation(AopUtils.getTargetClass(handler), MqConsumer.class);
                 if (declared == null) { continue; }
@@ -259,8 +262,8 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
     protected DefaultMQPushConsumer createConsumer(String beanName, MqConsumer annotation,
                                                    String topic, String consumerGroup, String tagExpression) throws MQClientException {
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(consumerGroup,
-                com.peach.rocket.support.MqClientSecurity.rpcHook(rocketMQProperties, properties));
-        com.peach.rocket.support.MqClientSecurity.configureClient(consumer, rocketMQProperties, properties);
+                MqClientSecurity.rpcHook(rocketMQProperties, properties));
+        MqClientSecurity.configureClient(consumer, rocketMQProperties, properties);
         consumer.setNamesrvAddr(rocketMQProperties.getNameServer());
         consumer.setInstanceName(properties.getAppName() + "-" + beanName + "-" + System.nanoTime());
         consumer.setConsumeFromWhere("FIRST_OFFSET".equals(properties.getConsumer().getConsumeFromWhere())
