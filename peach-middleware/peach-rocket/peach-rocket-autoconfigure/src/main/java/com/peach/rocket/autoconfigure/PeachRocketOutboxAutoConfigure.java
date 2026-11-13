@@ -20,6 +20,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.ApplicationContext;
+import java.util.concurrent.ExecutorService;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
@@ -75,8 +77,18 @@ public class PeachRocketOutboxAutoConfigure {
     @ConditionalOnBean({MqOutboxStore.class, RocketMQTemplate.class})
     public MqOutboxDispatcher mqOutboxDispatcher(MqOutboxStore outboxStore,
                                                  RocketMQTemplate rocketMQTemplate,
-                                                 PeachRocketProperties properties) {
-        return new MqOutboxDispatcher(outboxStore, rocketMQTemplate, properties);
+                                                 PeachRocketProperties properties,
+                                                 ApplicationContext applicationContext) {
+        ExecutorService executor = null;
+        if (properties.getOutbox().isParallelEnabled()) {
+            String beanName = properties.getOutbox().getExecutorBeanName();
+            Object candidate = applicationContext.getBean(beanName);
+            if (!(candidate instanceof ExecutorService managedExecutor)) {
+                throw new IllegalStateException("Outbox executor bean must implement ExecutorService: " + beanName);
+            }
+            executor = managedExecutor;
+        }
+        return new MqOutboxDispatcher(outboxStore, rocketMQTemplate, properties, executor);
     }
 
     @Bean

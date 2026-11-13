@@ -3,6 +3,12 @@ package com.peach.rocket.outbox;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.core.MqSendOptions;
 import com.peach.rocket.exception.MqException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
@@ -23,19 +29,80 @@ public class MqOutboxDispatcher {
     private final MqOutboxStore outboxStore;
     private final RocketMQTemplate rocketMQTemplate;
     private final PeachRocketProperties properties;
+    private final ExecutorService parallelExecutor;
 
     public MqOutboxDispatcher(MqOutboxStore outboxStore, RocketMQTemplate rocketMQTemplate,
                               PeachRocketProperties properties) {
+        this(outboxStore, rocketMQTemplate, properties, null);
+    }
+
+    /**
+     * 可选复用已经由 peach-virtual-thread 管理的有界业务组执行器。
+     *
+     * @param outboxStore 出站消息存储
+     * @param rocketMQTemplate RocketMQ 客户端
+     * @param properties 发送配置
+     * @param parallelExecutor 可选外部受管执行器；禁止在此创建新线程池
+     */
+    public MqOutboxDispatcher(MqOutboxStore outboxStore, RocketMQTemplate rocketMQTemplate,
+                              PeachRocketProperties properties, ExecutorService parallelExecutor) {
+        if (properties.getOutbox().isParallelEnabled() && parallelExecutor == null) {
+            throw new IllegalStateException("Outbox parallel mode requires a managed virtual-thread executor");
+        }
         this.outboxStore = outboxStore;
         this.rocketMQTemplate = rocketMQTemplate;
         this.properties = properties;
+        this.parallelExecutor = parallelExecutor;
     }
 
     @Scheduled(fixedDelayString = "${peach.rocket.outbox.scan-interval-ms:2000}")
     public void dispatch() {
-        for (MqOutboxClaim claim : outboxStore.claimPending(properties.getOutbox().getBatchSize())) {
-            MqOutboxEvent event = claim.event();
+        List<MqOutboxClaim> claims = outboxStore.claimPending(properties.getOutbox().getBatchSize());
+        if (claims.isEmpty()) {
+            return;
+        }
+        // 顺序分片键/延迟语义在本阶段沿用单线程投递，避免异步任务打乱同键消息。
+        if (parallelExecutor == null || requiresSerialDelivery(claims)) {
+            for (MqOutboxClaim claim : claims) {
+                deliver(claim);
+            }
+            return;
+        }
+        List<Future<?>> pending = new ArrayList<>(claims.size());
+        for (MqOutboxClaim claim : claims) {
             try {
+                pending.add(parallelExecutor.submit(() -> deliver(claim)));
+            } catch (RejectedExecutionException rejected) {
+                // 任务未准入。必须通过 owner token 记录失败，不能丢弃或 ACK。
+                recordSendFailure(claim, rejected);
+            }
+        }
+        // 调度扫描要等待本批任务完结，不能在上一批尚未回写时继续批量认领。
+        for (Future<?> task : pending) {
+            try {
+                task.get();
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                log.warn("[mq-outbox] dispatch interrupted; unfinished claims will recover by lease");
+                return;
+            } catch (ExecutionException failure) {
+                log.error("[mq-outbox] worker failed unexpectedly; claim lease recovery may be required",
+                        failure.getCause());
+            }
+        }
+    }
+
+    private boolean requiresSerialDelivery(List<MqOutboxClaim> claims) {
+        return claims.stream().anyMatch(claim -> {
+            MqSendOptions options = claim.event().options();
+            return options != null && ((options.getShardingKey() != null && !options.getShardingKey().isBlank())
+                    || options.getDelay() != null);
+        });
+    }
+
+    private void deliver(MqOutboxClaim claim) {
+        MqOutboxEvent event = claim.event();
+        try {
                 String destination = event.tag() == null || event.tag().isEmpty()
                         ? event.topic() : event.topic() + ":" + event.tag();
                 MqSendOptions options = event.options();
@@ -50,7 +117,7 @@ public class MqOutboxDispatcher {
                 }
             } catch (RuntimeException sendError) {
                 recordSendFailure(claim, sendError);
-                continue;
+                return;
             }
 
             try {
@@ -63,7 +130,6 @@ public class MqOutboxDispatcher {
                                 + "lease recovery required. messageId={} topic={} exception={}",
                         event.messageId(), event.topic(), ackError.getClass().getName(), ackError);
             }
-        }
     }
 
     private void recordSendFailure(MqOutboxClaim claim, RuntimeException sendError) {

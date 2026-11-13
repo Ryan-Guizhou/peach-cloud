@@ -48,10 +48,34 @@
       "type": "java.lang.Integer"
     },
     {
+      "name": "peach.rocket.consumer.inflight-acquire-timeout",
+      "type": "java.time.Duration",
+      "description": "Consumer 等待业务执行额度的最长时间，超过后返回重试，默认 200ms。",
+      "defaultValue": "200ms"
+    },
+    {
+      "name": "peach.rocket.consumer.max-dynamic-consumers",
+      "type": "java.lang.Integer",
+      "description": "允许注册的最大动态 RocketMQ Consumer 数量，启动前检查，避免客户端线程和连接无限增长。",
+      "defaultValue": 64
+    },
+    {
+      "name": "peach.rocket.consumer.max-inflight",
+      "type": "java.lang.Integer",
+      "description": "本应用实例所有动态 Consumer 正在执行的业务消息总上限，超限消息由 Broker 重试。",
+      "defaultValue": 128
+    },
+    {
       "name": "peach.rocket.consumer.require-durable-idempotency",
       "defaultValue": false,
       "description": "要求跨实例的持久化幂等存储且支持 owner token fencing；不满足则启动失败。",
       "type": "java.lang.Boolean"
+    },
+    {
+      "name": "peach.rocket.consumer.shutdown-drain-timeout",
+      "type": "java.time.Duration",
+      "description": "停止新消息进入后等待已执行消息完成的最长时间，默认 30 秒。",
+      "defaultValue": "30s"
     },
     {
       "name": "peach.rocket.enabled",
@@ -123,6 +147,12 @@
       "defaultValue": false
     },
     {
+      "name": "peach.rocket.outbox.executor-bean-name",
+      "type": "java.lang.String",
+      "description": "并行发送专用已注册 ExecutorService Bean，推荐 peach-virtual-thread 的 rocket-outboxVirtualExecutor。",
+      "defaultValue": "rocket-outboxVirtualExecutor"
+    },
+    {
       "name": "peach.rocket.outbox.in-memory-lease",
       "type": "java.time.Duration",
       "description": "内存 Outbox 消息被认领后持有租约的最长时间（Duration）。",
@@ -145,6 +175,12 @@
       "type": "java.time.Duration",
       "description": "内存 Outbox 消息记录的保留时间（Duration）。",
       "defaultValue": "24h"
+    },
+    {
+      "name": "peach.rocket.outbox.parallel-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否使用外部受管有界虚拟线程执行器并行发送非顺序、非延迟的 Outbox 消息；默认保持串行。",
+      "defaultValue": false
     },
     {
       "name": "peach.rocket.outbox.require-durable",

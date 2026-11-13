@@ -109,6 +109,39 @@ public class OrderCreatedConsumer implements MqMessageHandler<OrderCreatedEvent>
 
 **内存 Outbox 仅限开发环境：** 默认 `InMemoryMqOutboxStore` 保留现有发送接口，但最多缓存 `1024` 条、每条载荷不超过 `65536` 字节，终态保持 `24h`（读写时惰性清理），认领租约 `5m`；配置分别为 `peach.rocket.outbox.in-memory-max-entries`、`in-memory-max-payload-bytes`、`in-memory-retention`、`in-memory-lease`。多 Dispatcher 通过 `claimPending` 原子领取并以令牌完成 ACK/FAIL，失败重试有界且没有后台清理线程。容量耗尽拒绝新消息，绝不删除未发送消息。**内存 Store 重启丢数据**，生产开启 `peach.rocket.outbox.require-durable=true` 并提供 JDBC 等持久化实现，缺失会启动失败；即使持久化仍是 at-least-once。
 
+## 消费并发背压与优雅停机
+
+动态消费者沿用 RocketMQ SDK 自有消费工作线程，不为消息处理额外创建固定线程池或无界队列；所有动态 Consumer 共享进程内执行额度。在 `peach.rocket.consumer.max-inflight` 达到上限或 `inflight-acquire-timeout` 超时后，并发模式返回 `RECONSUME_LATER`，顺序模式返回 `SUSPEND_CURRENT_QUEUE_A_MOMENT`，**不确认未处理的消息**。现有消息幂等逻辑仍需启用，并且 Broker 重投次数、DLQ 策略应根据业务负载配置。
+
+| 配置项（`peach.rocket.consumer.*`） | 默认值 | 含义 |
+| --- | --- | --- |
+| `consume-thread-min` / `consume-thread-max` | `1` / `20` | 单个 SDK Consumer 内部工作线程范围 |
+| `max-dynamic-consumers` | `64` | 单 JVM 最多动态注册的消费者数量，超限在启动前失败 |
+| `max-inflight` | `128` | 同一应用实例中所有动态 Consumer 的业务执行总并发上限 |
+| `inflight-acquire-timeout` | `200ms` | 等待执行额度的最长时间；可设为 `0ms` 立即拒绝 |
+| `shutdown-drain-timeout` | `30s` | 停机时禁止新回调并等待已有业务执行的最长时间 |
+
+启动中某个消费者失败，将回滚之前已启动的实例并清理当前失败实例。关闭时尽最大努力释放全部 Consumer；若业务 Handler 超过停机等待时间，系统会记录告警并继续关闭 SDK，**不保证超时的业务执行已完成**，因此必须保留持久化幂等与重试机制。约束为**单 JVM 实例级别**，不能替代 Broker 配额、跨实例全局流控或生产数据库容量治理。此处无须把 RocketMQ SDK 管理的工作线程替换成虚拟线程；其他异步业务应使用项目现有虚拟线程组件。
+
+**可选并行 Outbox I/O：** 默认串行扫描发送，避免在没有容量规划时增加 Broker 与 JDBC 压力。需要并发发送普通消息时，显式设置 `peach.rocket.outbox.parallel-enabled=true`，并让 `executor-bean-name` 指向 `peach-virtual-thread` 预先注册的 **受管有界** `ExecutorService` Bean（默认 `rocket-outboxVirtualExecutor`）。示例：
+
+```yaml
+peach:
+  virtual-thread:
+    groups:
+      rocket-outbox:
+        max-concurrency: 8
+        max-pending: 32
+        backpressure: REJECT
+  rocket:
+    outbox:
+      enabled: true
+      parallel-enabled: true
+      executor-bean-name: rocket-outboxVirtualExecutor
+```
+
+Dispatcher 对已认领消息提交 Future 并等待本批结果；虚拟线程分组拒绝任务时通过 Owner Token 将消息标记为失败、交给正常重试，不会 ACK 或丢弃。含顺序分片键或延迟选项的整批消息强制走串行路径，避免并行引入额外重排。**注意：当前阶段的 Outbox 普通发送尚不能保证对 shardingKey/延迟参数的实际传输支持，该问题归阶段四修复；生产中不要用当前阶段 Outbox 发送顺序或延迟消息。** 分组应根据 Broker、数据库连接池和发送 RTT 调整，禁止设置无界 pending。
+
 ## SPI 覆盖
 
 - 路由：`MqRouteResolver`，默认基于注解解析。

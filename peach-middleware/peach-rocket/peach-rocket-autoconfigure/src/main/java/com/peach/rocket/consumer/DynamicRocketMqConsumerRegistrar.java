@@ -10,6 +10,8 @@ import com.peach.rocket.support.RocketMqNaming;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
+import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
@@ -42,7 +44,9 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
     private final RocketMQProperties rocketMQProperties;
     private final PeachRocketProperties properties;
     private final MqConsumerInvoker invoker;
-    private final List<DefaultMQPushConsumer> consumers = new ArrayList<DefaultMQPushConsumer>();
+    private final List<DefaultMQPushConsumer> consumers = new ArrayList<>();
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
+    private final MqConsumerAdmission admission;
     private ApplicationContext applicationContext;
     private volatile boolean running;
 
@@ -50,6 +54,8 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
         this.rocketMQProperties = rocketMQProperties;
         this.properties = properties;
         this.invoker = invoker;
+        this.admission = new MqConsumerAdmission(properties.getConsumer().getMaxInflight(),
+                properties.getConsumer().getInflightAcquireTimeout());
     }
 
     @Override
@@ -59,26 +65,112 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
 
     @Override
     public void start() {
-        if (running || !properties.getConsumer().isDynamicRegister()) {
-            return;
+        lifecycleLock.lock();
+        try {
+            if (running || !properties.getConsumer().isDynamicRegister()) {
+                return;
+            }
+            validateConsumerConcurrency();
+            Map<String, MqMessageHandler> handlers =
+                    applicationContext.getBeansOfType(MqMessageHandler.class, false, false);
+            long registered = handlers.values().stream()
+                    .filter(handler -> AnnotationUtils.findAnnotation(AopUtils.getTargetClass(handler), MqConsumer.class) != null)
+                    .count();
+            if (registered > properties.getConsumer().getMaxDynamicConsumers()) {
+                throw new MqException("RocketMQ dynamic consumer count exceeds peach.rocket.consumer.max-dynamic-consumers");
+            }
+            log.info("[mq-consumer] scan dynamic consumers. handlerCount={} registered={} dynamicRegister={}",
+                    handlers.size(), registered, properties.getConsumer().isDynamicRegister());
+
+            // 只有全部启动成功才发布消费者集合和运行状态，失败则回滚已启动实例。
+            List<DefaultMQPushConsumer> started = new ArrayList<>();
+            admission.open();
+            try {
+                for (Map.Entry<String, MqMessageHandler> entry : handlers.entrySet()) {
+                    DefaultMQPushConsumer consumer = register(entry.getKey(), entry.getValue());
+                    if (consumer != null) {
+                        started.add(consumer);
+                    }
+                }
+                consumers.addAll(started);
+                running = true;
+                log.info("[mq-consumer] dynamic consumers started. count={}", consumers.size());
+            } catch (RuntimeException ex) {
+                admission.close();
+                awaitInFlight();
+                shutdownConsumers(started, ex);
+                throw ex;
+            }
+        } finally {
+            lifecycleLock.unlock();
         }
-        Map<String, MqMessageHandler> handlers = applicationContext.getBeansOfType(MqMessageHandler.class, false, false);
-        log.info("[mq-consumer] scan dynamic consumers. handlerCount={} dynamicRegister={}", handlers.size(), properties.getConsumer().isDynamicRegister());
-        for (Map.Entry<String, MqMessageHandler> entry : handlers.entrySet()) {
-            register(entry.getKey(), entry.getValue());
+    }
+
+    /**
+     * 在创建客户端之前校验 SDK 的消费线程边界，避免部分 Consumer 已启动后才发现错误配置。
+     */
+    private void validateConsumerConcurrency() {
+        int min = properties.getConsumer().getConsumeThreadMin();
+        int max = properties.getConsumer().getConsumeThreadMax();
+        if (min < 1 || max < min || properties.getConsumer().getMaxDynamicConsumers() < 1) {
+            throw new IllegalArgumentException(
+                    "Invalid RocketMQ consumer thread range or max-dynamic-consumers");
         }
-        running = true;
-        log.info("[mq-consumer] dynamic consumers started. count={}", consumers.size());
     }
 
     @Override
     public void stop() {
-        for (DefaultMQPushConsumer consumer : consumers) {
-            consumer.shutdown();
+        lifecycleLock.lock();
+        try {
+            running = false;
+            admission.close();
+            awaitInFlight();
+            shutdownConsumers(consumers, null);
+            consumers.clear();
+            log.info("[mq-consumer] dynamic consumers stopped");
+        } finally {
+            lifecycleLock.unlock();
         }
-        consumers.clear();
-        running = false;
-        log.info("[mq-consumer] dynamic consumers stopped");
+    }
+
+    /**
+     * 在关闭 SDK 客户端之前等待已经进入业务 Handler 的回调完成。
+     */
+    private void awaitInFlight() {
+        Duration timeout = properties.getConsumer().getShutdownDrainTimeout();
+        if (!admission.awaitDrained(timeout)) {
+            log.warn("[mq-consumer] shutdown drain timed out. active={} timeoutMs={}",
+                    admission.active(), timeout.toMillis());
+        }
+    }
+
+    @Override
+    public void stop(Runnable callback) {
+        try {
+            stop();
+        } finally {
+            callback.run();
+        }
+    }
+
+    /**
+     * 尽最大努力关闭全部消费者，避免单个关闭失败造成其余实例泄漏。
+     *
+     * @param instances 待关闭的消费者
+     * @param cause 启动异常；为空时仅记录关闭失败
+     */
+    private void shutdownConsumers(List<DefaultMQPushConsumer> instances, RuntimeException cause) {
+        for (int i = instances.size() - 1; i >= 0; i--) {
+            try {
+                instances.get(i).shutdown();
+            } catch (RuntimeException shutdownError) {
+                log.warn("[mq-consumer] consumer shutdown failed. type={}",
+                        shutdownError.getClass().getName(), shutdownError);
+                if (cause != null) {
+                    cause.addSuppressed(shutdownError);
+                }
+            }
+        }
     }
 
     @Override
@@ -102,28 +194,38 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
      * @param handler 实现了 MqMessageHandler 接口的 Bean，包含实际的消息处理逻辑
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private void register(final String beanName, final MqMessageHandler handler) {
+    private DefaultMQPushConsumer register(final String beanName, final MqMessageHandler handler) {
         Class<?> targetClass = AopUtils.getTargetClass(handler);
         final MqConsumer annotation = AnnotationUtils.findAnnotation(targetClass, MqConsumer.class);
         if (annotation == null) {
-            return;
+            return null;
         }
         final String topic = RocketMqNaming.normalizeTopic(annotation.topic(), properties);
         final String consumerGroup = RocketMqNaming.normalizeConsumerGroup(annotation.consumerGroup());
         String tagExpression = StringUtils.hasText(annotation.tag()) ? annotation.tag() : "*";
+        DefaultMQPushConsumer consumer = null;
         try {
-            final DefaultMQPushConsumer consumer = createConsumer(beanName, annotation, topic, consumerGroup, tagExpression);
+            consumer = createConsumer(beanName, annotation, topic, consumerGroup, tagExpression);
             registerMessageListener(consumer, beanName, consumerGroup, handler, annotation);
             consumer.start();
-            consumers.add(consumer);
             log.info("[mq-consumer] dynamic consumer registered. bean={} topic={} tag={} group={} mode={} model={}",
                     beanName, topic, tagExpression, consumerGroup, annotation.consumeMode(), annotation.messageModel());
+            return consumer;
         } catch (Exception ex) {
-            throw new MqException("Failed to register RocketMQ dynamic consumer for bean " + beanName, ex);
+            MqException failure = new MqException(
+                    "Failed to register RocketMQ dynamic consumer for bean " + beanName, ex);
+            if (consumer != null) {
+                try {
+                    consumer.shutdown();
+                } catch (RuntimeException shutdownError) {
+                    failure.addSuppressed(shutdownError);
+                }
+            }
+            throw failure;
         }
     }
 
-    private DefaultMQPushConsumer createConsumer(String beanName, MqConsumer annotation,
+    protected DefaultMQPushConsumer createConsumer(String beanName, MqConsumer annotation,
                                                    String topic, String consumerGroup, String tagExpression) throws MQClientException {
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(consumerGroup);
         consumer.setNamesrvAddr(rocketMQProperties.getNameServer());
@@ -156,8 +258,8 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
     private ConsumeOrderlyStatus consumeOrderly(String beanName, String consumerGroup, MqMessageHandler handler,
                                                   MqConsumer annotation, List<MessageExt> messages) {
         try {
-            dispatchMessages(beanName, consumerGroup, handler, annotation, messages);
-            return ConsumeOrderlyStatus.SUCCESS;
+            return dispatchMessages(beanName, consumerGroup, handler, annotation, messages)
+                    ? ConsumeOrderlyStatus.SUCCESS : ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
         } catch (RuntimeException ex) {
             log.error("[mq-consumer-error] consumer={} group={} mode=orderly exception={}", beanName, consumerGroup,
                     ex.getClass().getName(), ex);
@@ -169,8 +271,8 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
     private ConsumeConcurrentlyStatus consumeConcurrently(String beanName, String consumerGroup, MqMessageHandler handler,
                                                             MqConsumer annotation, List<MessageExt> messages) {
         try {
-            dispatchMessages(beanName, consumerGroup, handler, annotation, messages);
-            return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+            return dispatchMessages(beanName, consumerGroup, handler, annotation, messages)
+                    ? ConsumeConcurrentlyStatus.CONSUME_SUCCESS : ConsumeConcurrentlyStatus.RECONSUME_LATER;
         } catch (RuntimeException ex) {
             log.error("[mq-consumer-error] consumer={} group={} mode=concurrently exception={}", beanName, consumerGroup,
                     ex.getClass().getName(), ex);
@@ -179,12 +281,24 @@ public class DynamicRocketMqConsumerRegistrar implements SmartLifecycle, Applica
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private void dispatchMessages(String beanName, String consumerGroup, MqMessageHandler handler, MqConsumer annotation,
-                                  List<MessageExt> messages) {
+    private boolean dispatchMessages(String beanName, String consumerGroup, MqMessageHandler handler,
+                                     MqConsumer annotation, List<MessageExt> messages) {
         for (MessageExt message : messages) {
-            logReceive(beanName, consumerGroup, message);
-            invoker.invoke(handler, beanName, message.getBody(), annotation, message.getMsgId(), message.getReconsumeTimes());
+            // 饱和或停机时交由 Broker 重投，不提交成功 ACK，也不引入无界本地队列。
+            if (!admission.tryEnter()) {
+                log.debug("[mq-consumer-backpressure] consumer={} group={} active={}",
+                        beanName, consumerGroup, admission.active());
+                return false;
+            }
+            try {
+                logReceive(beanName, consumerGroup, message);
+                invoker.invoke(handler, beanName, message.getBody(), annotation,
+                        message.getMsgId(), message.getReconsumeTimes());
+            } finally {
+                admission.leave();
+            }
         }
+        return true;
     }
 
     /**
