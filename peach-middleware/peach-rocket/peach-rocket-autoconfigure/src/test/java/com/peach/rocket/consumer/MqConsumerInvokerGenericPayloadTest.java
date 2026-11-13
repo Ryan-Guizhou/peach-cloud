@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * 消费器对继承关系和嵌套泛型 Payload 的解析回归测试。
@@ -39,7 +40,9 @@ class MqConsumerInvokerGenericPayloadTest {
                 Map.of(), List.of(new Payload("p-1")), LocalDateTime.now());
         PayloadHandler handler = new PayloadHandler();
 
-        invoker.invoke(handler, "handler", codec.encode(envelope), mock(MqConsumer.class), "msg-1", 0);
+        MqConsumer declaration = mock(MqConsumer.class);
+        when(declaration.consumerGroup()).thenReturn("orders-test");
+        invoker.invoke(handler, "handler", codec.encode(envelope), declaration, "msg-1", 0);
 
         assertEquals("p-1", handler.received.get(0).id());
     }

@@ -130,11 +130,13 @@ class MqOutboxDispatcherTest {
         when(store.claimPending(50)).thenReturn(List.of(ordered));
         SendResult sent = mock(SendResult.class);
         when(sent.getSendStatus()).thenReturn(SendStatus.SEND_OK);
-        when(template.syncSend(anyString(), any(Message.class), anyLong())).thenReturn(sent);
+        when(template.syncSendOrderly(anyString(), any(Message.class), eq("order-1"), anyLong()))
+                .thenReturn(sent);
 
         new MqOutboxDispatcher(store, template, properties, executor).dispatch();
 
         verify(executor, never()).submit(any(Runnable.class));
+        verify(template).syncSendOrderly(anyString(), any(Message.class), eq("order-1"), anyLong());
         verify(store).markSent(ordered);
     }
 
