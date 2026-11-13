@@ -1,5 +1,6 @@
 package com.peach.scheduler.rocket.jdbc;
 
+import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.jdbc.JdbcMqOutboxStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Indexed;
@@ -21,9 +22,14 @@ public class SchedulerJdbcMqOutboxStore extends JdbcMqOutboxStore {
         super(jdbcTemplate);
     }
 
-    /** 继承生产事务校验、租约及保留期，保留历史类型名称。 */
+    /**
+     * 使用统一生产校验、领取租约和保留期配置构造 Outbox 存储。
+     *
+     * @param jdbcTemplate JDBC 操作模板
+     * @param properties RocketMQ 统一配置
+     */
     public SchedulerJdbcMqOutboxStore(JdbcTemplate jdbcTemplate,
-            com.peach.rocket.autoconfigure.PeachRocketProperties properties) {
+            PeachRocketProperties properties) {
         super(jdbcTemplate, properties);
     }
 }
