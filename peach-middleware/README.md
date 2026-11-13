@@ -25,6 +25,7 @@ flowchart LR
 | [`peach-redission`](peach-redission/README.md) | Redisson 分布式锁、延迟队列、布隆过滤器、防重复 | 四个独立能力 quickstart |
 | [`peach-mongo`](peach-mongo/README.md) | MongoDB 自动配置和统一操作入口 | `peach-mongo-quickstart` |
 | [`peach-satoken`](peach-satoken/README.md) | Sa-Token Web / Same-Token 接入 | `peach-satoken-quickstart` |
+| [`peach-transaction`](peach-transaction/README.md) | Seata AT 分布式事务 Starter、可扩展事务 SPI、危险组合启动检查 | `peach-transaction-quickstart` |
 | [`peach-openfeign`](peach-openfeign/README.md) | OpenFeign Same-Token、RequestId、超时、重试与 Sentinel | `peach-openfeign-quickstart` |
 
 原 `peach-kafka` 只有占位 POM/README，没有形成真实 Starter 能力，本次从 Maven 聚合中清理；后续只有在实现真实 autoconfigure、starter、quickstart 与文档后再引入。

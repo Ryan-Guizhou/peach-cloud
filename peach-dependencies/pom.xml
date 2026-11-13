@@ -849,6 +849,28 @@
                 <version>${revision}</version>
             </dependency>
 
+            <!-- ==================== peach-transaction ==================== -->
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-transaction-autoconfigure</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-transaction-seata</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-transaction-starter</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-transaction-quickstart</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
             <!-- ==================== peach-scheduled ==================== -->
             <dependency>
                 <groupId>com.peach</groupId>

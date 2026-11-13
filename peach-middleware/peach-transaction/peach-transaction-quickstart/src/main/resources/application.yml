@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: peach-transaction-quickstart
+  main:
+    web-application-type: none
+
+# 本 Quickstart 默认只验证可装配性。启用 AT 前须按 README 准备 TC、Nacos、
+# 两个业务数据源与 undo_log，并显式配置 peach.transaction.enabled。
+peach:
+  transaction:
+    enabled: false
+
+seata:
+  enabled: false

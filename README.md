@@ -70,7 +70,7 @@ auth、fileservice、gateway、generator、message、monitor、setting 的启动
 
 ### 中间件
 
-[`peach-middleware`](peach-middleware/README.md) 维护 RocketMQ、Redis、Redisson、MongoDB、Sa-Token 与 OpenFeign 接入。未形成真实 Starter 实现的占位模块不进入聚合构建。
+[`peach-middleware`](peach-middleware/README.md) 维护 RocketMQ、Redis、Redisson、MongoDB、Sa-Token、OpenFeign 与 Seata AT 分布式事务接入。未形成真实 Starter 实现的占位模块不进入聚合构建。
 
 ## 构建
 

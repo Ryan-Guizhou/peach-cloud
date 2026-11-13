@@ -1,0 +1,35 @@
+{
+  "properties": [
+    {
+      "name": "peach.transaction.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 Peach 分布式事务 Facade（默认关闭；同时应按部署配置控制 Seata SDK）。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.transaction.provider",
+      "type": "java.lang.String",
+      "description": "选用事务 SPI Provider；目前提供 seata。",
+      "defaultValue": "seata"
+    },
+    {
+      "name": "peach.transaction.mode",
+      "type": "com.peach.transaction.api.TransactionMode",
+      "description": "默认事务模式；首批 Seata Provider 只实现 AT。",
+      "defaultValue": "AT"
+    },
+    {
+      "name": "peach.transaction.timeout-millis",
+      "type": "java.lang.Integer",
+      "description": "默认全局事务超时时间（毫秒），1-600000。",
+      "defaultValue": 60000
+    },
+    {
+      "name": "peach.transaction.allow-at-outbox-coexistence",
+      "type": "java.lang.Boolean",
+      "description": "是否允许本服务同时开启 Seata AT 和 Rocket Outbox；仅在已有全局提交屏障时可开启。",
+      "defaultValue": false
+    }
+  ],
+  "hints": []
+}

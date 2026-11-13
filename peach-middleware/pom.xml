@@ -22,5 +22,6 @@
         <module>peach-mongo</module>
         <module>peach-satoken</module>
         <module>peach-openfeign</module>
+        <module>peach-transaction</module>
     </modules>
 </project>

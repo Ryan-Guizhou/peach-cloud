@@ -25,6 +25,7 @@ See [`../docs/starter-architecture.md`](../docs/starter-architecture.md) for the
 | [`peach-redission`](peach-redission/README.en-US.md) | Redisson distributed locks, delay queues, bloom filters and repeat guards | four capability-specific quickstarts |
 | [`peach-mongo`](peach-mongo/README.en-US.md) | MongoDB auto-configuration and unified access | `peach-mongo-quickstart` |
 | [`peach-satoken`](peach-satoken/README.en-US.md) | Sa-Token Web / Same-Token integration | `peach-satoken-quickstart` |
+| [`peach-transaction`](peach-transaction/README.en-US.md) | Seata AT transaction starter, extensible SPI, unsafe-combination startup guard | `peach-transaction-quickstart` |
 | [`peach-openfeign`](peach-openfeign/README.en-US.md) | OpenFeign Same-Token, RequestId, timeouts, retry and Sentinel | `peach-openfeign-quickstart` |
 
 The former `peach-kafka` module contained only placeholder POM/README files and no real starter implementation, so it is removed from the Maven reactor. It should return only after real autoconfigure, starter, quickstart and documentation exist.
