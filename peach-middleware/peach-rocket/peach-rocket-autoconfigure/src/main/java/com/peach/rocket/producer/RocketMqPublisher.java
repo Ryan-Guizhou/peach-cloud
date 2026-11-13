@@ -1,7 +1,5 @@
 package com.peach.rocket.producer;
 
-import java.time.ZoneId;
-
 import com.peach.rocket.annotation.MqEvent;
 import com.peach.rocket.autoconfigure.PeachRocketProperties;
 import com.peach.rocket.codec.MqMessageCodec;
@@ -15,14 +13,16 @@ import com.peach.rocket.core.MqSendResult;
 import com.peach.rocket.exception.MqException;
 import com.peach.rocket.metrics.MqMetrics;
 import com.peach.rocket.metrics.MqMetricsGuard;
-import java.util.Map;
 import com.peach.rocket.route.MqRoute;
 import com.peach.rocket.route.MqRouteResolver;
 import com.peach.rocket.transaction.RocketMqTransactionMessageProducer;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
 import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.client.producer.SendStatus;
@@ -40,7 +40,7 @@ import org.springframework.util.StringUtils;
  * @CreateTime 2026/6/26
  */
 @Slf4j
-public class RocketMqPublisher implements MqPublisher, org.springframework.beans.factory.DisposableBean {
+public class RocketMqPublisher implements MqPublisher, DisposableBean {
 
     private final RocketMQTemplate rocketMQTemplate;
     private final MqMessageCodec codec;
@@ -250,8 +250,8 @@ public class RocketMqPublisher implements MqPublisher, org.springframework.beans
      * @param <T> 业务消息类型
      */
     private <T> Message<byte[]> buildMessage(T payload, MqSendOptions options, MqRoute route) {
-        try (var encoding = encodingAdmission.acquire("encode")) {
-        MqMessageEnvelope<T> envelope = MqMessageEnvelope.create(
+        try (MqProducerAdmission.Permit encoding = encodingAdmission.acquire("encode")) {
+            MqMessageEnvelope<T> envelope = MqMessageEnvelope.create(
                 UUID.randomUUID().toString(),
                 route.topic(),
                 route.tag(),
@@ -273,7 +273,7 @@ public class RocketMqPublisher implements MqPublisher, org.springframework.beans
         if (StringUtils.hasText(route.key())) {
             builder.setHeader(MessageConst.PROPERTY_KEYS, route.key());
         }
-        return builder.build();
+            return builder.build();
         }
     }
 
@@ -359,7 +359,7 @@ public class RocketMqPublisher implements MqPublisher, org.springframework.beans
             try {
                 log.error("[mq-send-error] app={} payloadType={} mode=async topic={} tag={} cost={}ms errorType={}",
                         properties.getAppName(), payload.getClass().getSimpleName(), route.topic(), route.tag(),
-                        System.currentTimeMillis() - start, failure.getClass().getName());
+                        System.currentTimeMillis() - start, failure.getClass().getName(), failure);
                 publisher.metrics.publish("async", "failed", System.nanoTime() - metricStarted);
                 future.completeExceptionally(failure);
             } finally {
