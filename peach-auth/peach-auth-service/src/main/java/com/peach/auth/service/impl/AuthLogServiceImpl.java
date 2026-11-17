@@ -43,6 +43,9 @@ public class AuthLogServiceImpl implements IAuthLogService {
         if (authLogDO == null) {
             return;
         }
+        if (StringUtil.isBlank(authLogDO.getId())) {
+            authLogDO.setId(UniqueIdFacade.nextId());
+        }
         if (StringUtil.isBlank(authLogDO.getLogId())) {
             authLogDO.setLogId(UniqueIdFacade.nextId());
         }

@@ -12,12 +12,12 @@ import com.peach.auth.qo.RouterQO;
 import com.peach.auth.service.IRouterService;
 import com.peach.auth.service.support.CommonValidator;
 import com.peach.auth.vo.RouterVO;
+import com.peach.common.unique.UniqueIdFacade;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,13 +40,7 @@ public class RouterServiceImpl implements IRouterService {
 
     private final CommonValidator commonValidator;
 
-    @PostConstruct
-    public void init() {
-        String id = null;
-        commonValidator.validate(id);
-    }
-
-    @Override
+@Override
     public void delById(String id) {
         boolean valid = commonValidator.isValid(id);
         if (!valid) {
@@ -68,6 +62,7 @@ public class RouterServiceImpl implements IRouterService {
     public void add(RouterDTO routerDTO) {
         RouterDO routerDO = new RouterDO();
         BeanUtils.copyProperties(routerDTO,routerDO);
+        routerDO.setId(UniqueIdFacade.nextId());
         routerDao.insert(routerDO);
     }
 

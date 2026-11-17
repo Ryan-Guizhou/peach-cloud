@@ -27,6 +27,10 @@ public class AuthLogDO  implements Serializable {
     private static final long serialVersionUID = -2722983120034541958L;
 
     @Id
+    @Column(name = "ID")
+    @Schema(description = "物理主键")
+    private String id;
+
     @Column(name = "LOG_ID")
     @Schema(description = "日志ID")
     private String logId;

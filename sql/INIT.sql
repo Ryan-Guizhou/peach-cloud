@@ -105,30 +105,30 @@ VALUES
     (REPLACE(UUID(), '-', ''), '2171717171714171c2c2c2c2c2c2c2c2', '个人中心', 'profile', 1, '/profile', NULL, '20101010101040108080808080808080', '2', '22', NULL, NULL, '001022', 'SELF', '0', 'SYS_PROFILE', @APP_ID, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID, 0, 0, 0, 0, 'Idcard');
 
 INSERT IGNORE INTO PEACH_ROUTER
-    (ROUTER_ID, ROUTER_CODE, ROUTER_NAME, ROUTER_URL, FILE_PATH, IS_AUTH, IS_CACHE, MODULE_CODE, ROUTER_LEVEL, TENANT_ID, APP_ID, CREATED_TIME, CREATOR_ID, MODIFY_TIME, MODIFIER_ID)
+    (ID, ROUTER_ID, ROUTER_CODE, ROUTER_NAME, ROUTER_URL, FILE_PATH, IS_AUTH, IS_CACHE, MODULE_CODE, ROUTER_LEVEL, TENANT_ID, APP_ID, CREATED_TIME, CREATOR_ID, MODIFY_TIME, MODIFIER_ID)
 VALUES
-    ('30101010101040108080808080808080', 'SYS_WORKSPACE', '工作台', '/workspace', 'workspace/overview', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('30202020202040209090909090909090', 'SYS_USER_MGMT', '用户管理', '/user', 'system/user', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3030303030304030a0a0a0a0a0a0a0a0', 'SYS_ROLE_MGMT', '角色管理', '/role', 'system/role', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3040404040404040b0b0b0b0b0b0b0b0', 'SYS_MENU_MGMT', '菜单管理', '/menu', 'system/menu', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3050505050504050c0c0c0c0c0c0c0c0', 'SYS_FUNC_MGMT', '功能管理', '/function', 'system/function', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3060606060604060d0d0d0d0d0d0d0d0', 'SYS_ROUTER_MGMT', '路由管理', '/router', 'system/router', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3070707070704070e0e0e0e0e0e0e0e0', 'SYS_ORG_MGMT', '机构管理', '/organization', 'system/organization', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3080808080804080f0f0f0f0f0f0f0f0', 'SYS_RESOURCE_MGMT', '资源管理', '/resource', 'system/resource', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3090909090904090a0a0a0a0a0a0a0a0', 'SYS_AUTH_MGMT', '角色授权', '/authorization', 'system/authorization', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('30a0a0a0a0a040a0b0b0b0b0b0b0b0b0', 'SYS_NOTICE_MGMT', '公告管理', '/notice', 'setting/notice', 1, 0, 'setting', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('30b0b0b0b0b040b0c0c0c0c0c0c0c0c0', 'SYS_MESSAGE_CENTER', '消息中心', '/message-center', 'message/center', 1, 0, 'message', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('30c0c0c0c0c040c0d0d0d0d0d0d0d0d0', 'SYS_DICT_MGMT', '字典管理', '/dict', 'setting/dict', 1, 0, 'setting', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('30d0d0d0d0d040d0e0e0e0e0e0e0e0e0', 'SYS_VALUE_SET_MGMT', '值集管理', '/value-set', 'setting/value-set', 1, 0, 'setting', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('30e0e0e0e0e040e0f0f0f0f0f0f0f0f0', 'SYS_MULTI_MESSAGE_MGMT', '多语言管理', '/multi-message', 'setting/multi-message', 1, 0, 'setting', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('30f0f0f0f0f040f0a1a1a1a1a1a1a1a1', 'SYS_IP_WHITELIST_MGMT', 'IP 白名单', '/ip-whitelist', 'setting/ip-whitelist', 1, 0, 'setting', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3101010101014010b1b1b1b1b1b1b1b1', 'SYS_FILE_RECORD', '文件管理', '/file-record', 'file/record', 1, 0, 'file', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3111111111114111c1c1c1c1c1c1c1c1', 'SYS_STORAGE_INSTANCE', '存储实例', '/storage-instance', 'file/storage-instance', 1, 0, 'file', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3121212121214121d1d1d1d1d1d1d1d1', 'SYS_OBJECT_BROWSER', '对象浏览', '/object-browser', 'file/object-browser', 1, 0, 'file', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3131313131314131e1e1e1e1e1e1e1e1', 'SYS_RUNTIME_MONITOR', '运行监控', '/runtime-monitor', 'monitor/runtime', 1, 0, 'monitor', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3141414141414141f1f1f1f1f1f1f1f1', 'SYS_AUTH_LOG', '授权日志', '/auth-log', 'log/auth', 1, 0, 'log', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3151515151514151a2a2a2a2a2a2a2a2', 'SYS_OPER_LOG', '操作日志', '/operation-log', 'log/operation', 1, 0, 'log', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
-    ('3161616161614161b2b2b2b2b2b2b2b2', 'SYS_PROFILE', '个人中心', '/profile', 'user/profile', 1, 0, 'user', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID);
+    (REPLACE(UUID(), '-', ''), '30101010101040108080808080808080', 'SYS_WORKSPACE', '工作台', '/workspace', 'workspace/overview', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '30202020202040209090909090909090', 'SYS_USER_MGMT', '用户管理', '/user', 'system/user', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3030303030304030a0a0a0a0a0a0a0a0', 'SYS_ROLE_MGMT', '角色管理', '/role', 'system/role', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3040404040404040b0b0b0b0b0b0b0b0', 'SYS_MENU_MGMT', '菜单管理', '/menu', 'system/menu', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3050505050504050c0c0c0c0c0c0c0c0', 'SYS_FUNC_MGMT', '功能管理', '/function', 'system/function', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3060606060604060d0d0d0d0d0d0d0d0', 'SYS_ROUTER_MGMT', '路由管理', '/router', 'system/router', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3070707070704070e0e0e0e0e0e0e0e0', 'SYS_ORG_MGMT', '机构管理', '/organization', 'system/organization', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3080808080804080f0f0f0f0f0f0f0f0', 'SYS_RESOURCE_MGMT', '资源管理', '/resource', 'system/resource', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3090909090904090a0a0a0a0a0a0a0a0', 'SYS_AUTH_MGMT', '角色授权', '/authorization', 'system/authorization', 1, 0, 'system', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '30a0a0a0a0a040a0b0b0b0b0b0b0b0b0', 'SYS_NOTICE_MGMT', '公告管理', '/notice', 'setting/notice', 1, 0, 'setting', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '30b0b0b0b0b040b0c0c0c0c0c0c0c0c0', 'SYS_MESSAGE_CENTER', '消息中心', '/message-center', 'message/center', 1, 0, 'message', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '30c0c0c0c0c040c0d0d0d0d0d0d0d0d0', 'SYS_DICT_MGMT', '字典管理', '/dict', 'setting/dict', 1, 0, 'setting', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '30d0d0d0d0d040d0e0e0e0e0e0e0e0e0', 'SYS_VALUE_SET_MGMT', '值集管理', '/value-set', 'setting/value-set', 1, 0, 'setting', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '30e0e0e0e0e040e0f0f0f0f0f0f0f0f0', 'SYS_MULTI_MESSAGE_MGMT', '多语言管理', '/multi-message', 'setting/multi-message', 1, 0, 'setting', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '30f0f0f0f0f040f0a1a1a1a1a1a1a1a1', 'SYS_IP_WHITELIST_MGMT', 'IP 白名单', '/ip-whitelist', 'setting/ip-whitelist', 1, 0, 'setting', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3101010101014010b1b1b1b1b1b1b1b1', 'SYS_FILE_RECORD', '文件管理', '/file-record', 'file/record', 1, 0, 'file', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3111111111114111c1c1c1c1c1c1c1c1', 'SYS_STORAGE_INSTANCE', '存储实例', '/storage-instance', 'file/storage-instance', 1, 0, 'file', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3121212121214121d1d1d1d1d1d1d1d1', 'SYS_OBJECT_BROWSER', '对象浏览', '/object-browser', 'file/object-browser', 1, 0, 'file', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3131313131314131e1e1e1e1e1e1e1e1', 'SYS_RUNTIME_MONITOR', '运行监控', '/runtime-monitor', 'monitor/runtime', 1, 0, 'monitor', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3141414141414141f1f1f1f1f1f1f1f1', 'SYS_AUTH_LOG', '授权日志', '/auth-log', 'log/auth', 1, 0, 'log', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3151515151514151a2a2a2a2a2a2a2a2', 'SYS_OPER_LOG', '操作日志', '/operation-log', 'log/operation', 1, 0, 'log', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), '3161616161614161b2b2b2b2b2b2b2b2', 'SYS_PROFILE', '个人中心', '/profile', 'user/profile', 1, 0, 'user', 2, @TENANT_ID, @APP_ID, @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID);
 
 INSERT IGNORE INTO PEACH_RESOURCE
     (ID, RESOURCE_ID, FUNC_CODE, RESOURCE_TYPE, RESOURCE_CODE, RESOURCE_NAME, TENANT_ID, APP_ID, CREATED_TIME, CREATOR_ID, MODIFY_TIME, MODIFIER_ID, IS_DELETE)
