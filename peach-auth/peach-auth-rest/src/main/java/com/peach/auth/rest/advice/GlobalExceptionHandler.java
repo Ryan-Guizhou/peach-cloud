@@ -24,6 +24,10 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 
 /**
  * 认证服务统一异常处理。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/17 18:25
  */
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE)
