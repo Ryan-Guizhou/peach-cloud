@@ -20,8 +20,9 @@ public interface CodeRuleMaintenance {
      * @param prefix 业务编号类型
      * @param enabled 是否启用
      * @param expectedVersion 预期规则配置版本
+     * @param operatorRefId 经服务端权限验证的操作者物理 ID
      */
-    void changeStatus(String namespace, String prefix, boolean enabled, long expectedVersion);
+    void changeStatus(String namespace, String prefix, boolean enabled, long expectedVersion, String operatorRefId);
 
     /**
      * 仅在水位尚为零时变更规则格式。发出首个编号后格式不可修改。
@@ -30,8 +31,9 @@ public interface CodeRuleMaintenance {
      * @param prefix 已存在的编码类型
      * @param format 受控格式，前缀必须与规则编码类型一致
      * @param expectedVersion 预期规则版本
+     * @param operatorRefId 经服务端权限验证的操作者物理 ID
      */
-    void changeFormat(String namespace, String prefix, CodeFormat format, long expectedVersion);
+    void changeFormat(String namespace, String prefix, CodeFormat format, long expectedVersion, String operatorRefId);
 
     /**
      * 为历史数据迁移向前校准水位，绝不允许回退。
@@ -40,6 +42,7 @@ public interface CodeRuleMaintenance {
      * @param prefix 已存在的编码类型
      * @param watermark 最小安全水位，必须大于或等于数据库当前值
      * @param expectedVersion 预期规则版本
+     * @param operatorRefId 经服务端权限验证的操作者物理 ID
      */
-    void advanceWatermark(String namespace, String prefix, long watermark, long expectedVersion);
+    void advanceWatermark(String namespace, String prefix, long watermark, long expectedVersion, String operatorRefId);
 }
