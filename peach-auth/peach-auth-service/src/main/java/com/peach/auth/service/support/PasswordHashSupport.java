@@ -4,6 +4,7 @@ import com.peach.common.util.StringUtil;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
+import java.util.regex.Pattern;
 
 /**
  * 账号密码的安全散列和验证实现。
@@ -20,6 +21,8 @@ import org.springframework.stereotype.Indexed;
 public class PasswordHashSupport {
 
     private static final BCryptPasswordEncoder ENCODER = new BCryptPasswordEncoder(12);
+
+    private static final Pattern BCRYPT_HASH = Pattern.compile("^\\$2[aby]\\$\\d{2}\\$[./A-Za-z0-9]{53}$");
 
     private static final String DUMMY_HASH =
             "$2y$12$flEMqLM4gaYj2oNuTk2xoeFfuC0GrwIPzKpsaDgOrVKXIZ0BJasm2";
@@ -48,7 +51,7 @@ public class PasswordHashSupport {
         if (rawPassword == null) {
             return false;
         }
-        if (StringUtil.isBlank(storedHash)) {
+        if (StringUtil.isBlank(storedHash) || !BCRYPT_HASH.matcher(storedHash).matches()) {
             ENCODER.matches(rawPassword, DUMMY_HASH);
             return false;
         }
