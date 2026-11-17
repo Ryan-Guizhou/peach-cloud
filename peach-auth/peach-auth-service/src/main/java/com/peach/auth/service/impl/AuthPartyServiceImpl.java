@@ -20,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 用户角色绑定服务实现。
@@ -48,6 +50,13 @@ public class AuthPartyServiceImpl implements IAuthPartyService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void saveUserRoles(UserRoleAuthDTO userRoleAuthDTO) {
+        if (userRoleAuthDTO == null
+                || StringUtil.isBlank(userRoleAuthDTO.getTenantId())
+                || StringUtil.isBlank(userRoleAuthDTO.getOrgId())
+                || StringUtil.isBlank(userRoleAuthDTO.getUserCode())
+                || userRoleAuthDTO.getFiscal() == null) {
+            throw new IllegalArgumentException("Invalid user role authorization context");
+        }
         AuthPartyDO deleteQuery = new AuthPartyDO();
         deleteQuery.setTenantId(userRoleAuthDTO.getTenantId());
         deleteQuery.setOrgId(userRoleAuthDTO.getOrgId());
@@ -58,7 +67,13 @@ public class AuthPartyServiceImpl implements IAuthPartyService {
 
         List<AuthPartyDO> bindings = new ArrayList<>();
         if (!CollectionUtils.isEmpty(userRoleAuthDTO.getRoleCodeList())) {
+            Set<String> normalizedRoleCodes = new LinkedHashSet<>();
             for (String roleCode : userRoleAuthDTO.getRoleCodeList()) {
+                if (StringUtil.isNotBlank(roleCode)) {
+                    normalizedRoleCodes.add(roleCode.trim());
+                }
+            }
+            for (String roleCode : normalizedRoleCodes) {
                 if (StringUtil.isBlank(roleCode)) {
                     continue;
                 }
