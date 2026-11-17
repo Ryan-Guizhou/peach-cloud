@@ -29,6 +29,7 @@ class PasswordHashSupportTest {
     void missingOrBlankPasswordMustNotAuthenticate() {
         assertThat(passwordHashSupport.matches("wrong", null)).isFalse();
         assertThat(passwordHashSupport.matches("wrong", "")).isFalse();
+        assertThat(passwordHashSupport.matches("wrong", "MTIzNDU2")).isFalse();
         assertThatThrownBy(() -> passwordHashSupport.encode(" ")).isInstanceOf(IllegalArgumentException.class);
     }
 }
