@@ -6,9 +6,9 @@ import CrudPage from '../../../components/admin/CrudPage.vue'
   <CrudPage
     title="角色管理"
     description="维护角色编码、名称、作用域及授权入口。"
-    row-key="roleId"
+    row-key="id"
     permission-prefix="role"
-    :endpoint="{ pageList: '/auth/role/pageList', add: '/auth/role/add', update: '/auth/role/update', delById: '/auth/role/delById', idField: 'roleId' }"
+    :endpoint="{ pageList: '/auth/role/pageList', add: '/auth/role/add', update: '/auth/role/update', delById: '/auth/role/delById', idField: 'id' }"
     :columns="[
       { title: '角色ID', dataIndex: 'roleId', width: 180 },
       { title: '角色编码', dataIndex: 'roleCode' },
@@ -17,7 +17,7 @@ import CrudPage from '../../../components/admin/CrudPage.vue'
       { title: '机构', dataIndex: 'orgId' },
     ]"
     :fields="[
-      { label: '角色ID', name: 'roleId' },
+
       { label: '角色编码', name: 'roleCode', required: true },
       { label: '角色名称', name: 'roleName', required: true },
       { label: '租户ID', name: 'tenantId' },

@@ -6,9 +6,9 @@ import CrudPage from '../../../components/admin/CrudPage.vue'
   <CrudPage
     title="功能定义字段"
     description="维护功能定义编码，用于菜单、路由和授权关系绑定。"
-    row-key="funcId"
+    row-key="id"
     permission-prefix="function"
-    :endpoint="{ pageList: '/auth/function/pageList', add: '/auth/function/add', update: '/auth/function/update', delById: '/auth/function/delById', idField: 'funcId' }"
+    :endpoint="{ pageList: '/auth/function/pageList', add: '/auth/function/add', update: '/auth/function/update', delById: '/auth/function/delById', idField: 'id' }"
     :columns="[
       { title: '功能ID', dataIndex: 'funcId', width: 180 },
       { title: '功能编码', dataIndex: 'funcCode' },
@@ -19,7 +19,7 @@ import CrudPage from '../../../components/admin/CrudPage.vue'
       { title: '应用ID', dataIndex: 'appId' },
     ]"
     :fields="[
-      { label: '功能ID', name: 'funcId' },
+
       { label: '功能编码', name: 'funcCode', required: true },
       { label: '父功能编码', name: 'parentFuncCode' },
       { label: '功能名称', name: 'funcName', required: true },

@@ -57,10 +57,10 @@ public class RouterServiceImpl implements IRouterService {
 
     @Override
     public void update(RouterDTO routerDTO) {
-        commonValidator.validateProperty(routerDTO,"routerId");
+        commonValidator.validateProperty(routerDTO,"id");
         RouterDO routerDO = new RouterDO();
         BeanUtils.copyProperties(routerDTO,routerDO);
-        routerDao.update(routerDO);
+        routerDao.updateById(routerDO);
     }
 
     @Override
