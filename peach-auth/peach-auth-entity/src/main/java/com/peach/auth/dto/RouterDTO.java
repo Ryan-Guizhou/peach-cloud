@@ -1,6 +1,7 @@
 package com.peach.auth.dto;
 
 import com.peach.common.PeachGroup;
+import jakarta.validation.constraints.NotBlank;
 
 import java.io.Serial;
 
