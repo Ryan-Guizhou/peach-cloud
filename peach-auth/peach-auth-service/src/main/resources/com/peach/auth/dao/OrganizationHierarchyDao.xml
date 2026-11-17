@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.OrganizationHierarchyDao">
+    <select id="lockTenantAndFindBusinessId" resultType="java.lang.String">
+        SELECT TENANT_ID
+        FROM PEACH_TENANT
+        WHERE ID = #{tenantRefId}
+          AND STATUS = 'ENABLE' AND IS_DELETE = 0
+        FOR UPDATE
+    </select>
+
+    <select id="selectInTenant" resultType="com.peach.auth.entity.OrganizationDO">
+        SELECT ID AS id, ORG_ID AS orgId, TENANT_ID AS tenantId,
+               PARENT_ORG_REF_ID AS parentOrgRefId,
+               VERSION AS version, STATUS AS status, IS_DELETE AS isDelete
+        FROM PEACH_ORGANIZATION
+        WHERE ID = #{id}
+          AND TENANT_ID = #{tenantBusinessId}
+          AND IS_DELETE = 0
+    </select>
+
+    <update id="updateParent">
+        UPDATE PEACH_ORGANIZATION
+        SET PARENT_ORG_REF_ID = #{newParentRefId,jdbcType=VARCHAR},
+            VERSION = VERSION + 1,
+            MODIFY_TIME = DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'),
+            MODIFIER_ID = #{modifierRefId}
+        WHERE ID = #{id}
+          AND TENANT_ID = #{tenantBusinessId}
+          AND VERSION = #{version}
+          AND IS_DELETE = 0
+    </update>
+</mapper>
