@@ -123,7 +123,7 @@ public class UserServiceImpl implements IUserService {
         try {
             decryptPassword = RsaPasswordUtil.decrypt(password);
         } catch (Exception e) {
-            log.error("Failed to decrypt password: {}", e.getMessage(), e);
+            log.warn("Password decryption failed");
             return Response.fail("密码解密失败");
         }
         if (StringUtil.isBlank(decryptPassword)) {
@@ -131,9 +131,10 @@ public class UserServiceImpl implements IUserService {
         }
 
         UserVO userVO = userDao.login(username);
-        if (ObjectUtil.isNull(userVO)
-                || !passwordHashSupport.matches(decryptPassword, userVO.getPassword())) {
-            log.warn("Username or password validation failed, username={}", username);
+        String storedHash = userVO == null ? null : userVO.getPassword();
+        boolean passwordValid = passwordHashSupport.matches(decryptPassword, storedHash);
+        if (ObjectUtil.isNull(userVO) || !passwordValid) {
+            log.warn("Username or password validation failed");
             LoginLockStatusVO failureStatus = loginLockService.recordFailure(username);
             if (failureStatus.isLocked()) {
                 return Response.fail(formatLockMessage(failureStatus));
