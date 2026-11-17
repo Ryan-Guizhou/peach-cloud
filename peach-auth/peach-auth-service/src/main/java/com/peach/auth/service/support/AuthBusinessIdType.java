@@ -15,6 +15,7 @@ public enum AuthBusinessIdType {
     ORG,
     ROLE,
     MEMBER,
+    INVITATION,
     FUNC,
     MENU,
     RESOURCE,
