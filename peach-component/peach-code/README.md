@@ -85,3 +85,31 @@ CodeGenerator.next
 示例：对于 `CODE_PREFIX=ORG`、`CODE_SEPARATOR='-'`、`MAX_CODE_WIDTH=5`，下一个序号为 8 时生成 `ORG-00008`。更改现有规则需要与正在发号的实例采用数据库锁和运维审批协调；租户不能修改平台级 `USER_ID` 等系统保留规则。完整管理接口、模板版本审计与前端配置界面仍在本期 IAM 后续任务中实现。
 
 发号器在事务内校验规则 `SCOPE_TYPE` 与命名空间一致（`PLATFORM` 与普通租户严格隔离），并在条件更新中验证非负 `RULE_VERSION`。建表脚本使用 `CHECK` 限制作用域、分隔符、状态、宽度及非负序列。新增 `INVITATION` 平台级业务编号初始规则；此处不表示管理 API、规则变更审计或真实 MySQL 验证已经完成。
+
+
+### 受控规则维护（服务端 Java API）
+
+当前已实现 `CodeRuleMaintenance`，由 `PeachCodeAutoConfiguration` 在存在 JDBC 数据源时自动提供 `JdbcCodeRuleMaintenance` Bean。它只供**已完成管理员鉴权的内部业务服务**调用，不对浏览器开放 REST 接口。平台级规则由平台管理员控制；普通租户不得修改全局 `USER`、`TENANT`、`ORG` 等规则。
+
+| 操作 | 方法 | 不变式 |
+| --- | --- | --- |
+| 启停 | `changeStatus(namespace, prefix, enabled, expectedVersion)` | 保留原水位、按版本递增 |
+| 修改格式 | `changeFormat(namespace, prefix, format, expectedVersion)` | 仅 `CURRENT_VALUE=0` 且前缀不变时允许 |
+| 历史水位校准 | `advanceWatermark(namespace, prefix, watermark, expectedVersion)` | 只能前进、不得超过格式宽度 |
+
+所有修改和发号均在 MySQL 规则行上竞争锁；版本冲突和数据库不可用均拒绝操作。**操作前必须对管理员身份与目标命名空间实施服务端校验**；现阶段尚未开放管理 HTTP API，授权入口留待 IAM 角色能力完成后接入。现有 SQL 对直接使用 DBA 权限篡改计数器不提供防护，生产迁移需限制 DML 权限及审计运维操作。
+
+```mermaid
+sequenceDiagram
+    participant Admin as 已鉴权管理服务
+    participant Rule as CodeRuleMaintenance
+    participant DB as MySQL PEACH_CODE_RULE
+    Admin->>Rule: 修改状态/格式/提高水位 + expectedVersion
+    Rule->>DB: SELECT ... FOR UPDATE
+    DB-->>Rule: 锁定当前规则
+    Rule->>Rule: 校验范围、版本、历史水位
+    Rule->>DB: 条件 UPDATE + RULE_VERSION 递增
+    DB-->>Rule: 提交或冲突拒绝
+```
+
+**剩余验收：** 尚须在真实 MySQL 8.4 环境执行测试、补充管理员授权 HTTP 契约和规则修改独立审计记录，并完成旧序号迁移验证。本节不表示相关测试已执行通过。
