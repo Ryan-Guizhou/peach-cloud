@@ -29,4 +29,15 @@ public interface TenantMembershipPolicy {
      * @throws SecurityException 不具备授权、身份不匹配或跨租户时
      */
     void requireTenantAdministrator(String tenantRefId, String operatorMemberRefId);
+
+    /**
+     * 在服务端 Token 验证后要求操作者具备指定租户级语义权限。
+     *
+     * @param tenantRefId 租户物理主键
+     * @param operatorMemberRefId 操作者成员物理主键
+     * @param permissionCode 固定权限语义码
+     * @throws SecurityException 任一身份、租户、年度或授权范围不匹配时
+     */
+    void requireTenantPermission(String tenantRefId, String operatorMemberRefId,
+                                 String permissionCode);
 }

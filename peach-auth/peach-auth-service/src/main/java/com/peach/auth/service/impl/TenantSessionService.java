@@ -18,7 +18,7 @@ import java.util.Objects;
  * <p>登录密码必须由调用方先验证，再调用 bindAfterAuthentication。
  * 切换租户时不得从请求中相信用户或成员 ID，始终以 Sa-Token 登录主体及数据库成员关系为准。
  * 请求校验每次检查成员 VERSION、租户/用户和应用有效性；成员停用或退出立即使旧上下文失效。
- * 角色授权版本检查仍需要 #206/#208 补齐，暂不将本服务等同于完整业务权限判定。</p>
+ * 授权版本的数据库递增由 #206 写事务落实，请求期网关传播由 #208 补齐，暂不将本服务等同于完整业务权限判定。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -59,11 +59,12 @@ public class TenantSessionService {
             throw new SecurityException("Application is not enabled in the selected tenant");
         }
         Long version = member.getVersion();
-        if (version == null || version < 0) {
-            throw new SecurityException("Membership version is invalid");
+        Long authVersion = member.getAuthVersion();
+        if (version == null || version < 0 || authVersion == null || authVersion < 0) {
+            throw new SecurityException("Membership or authorization version is invalid");
         }
         TenantSessionContext context = new TenantSessionContext(verifiedUserRefId, tenantRefId,
-                member.getId(), appRefId, year, version);
+                member.getId(), appRefId, year, version, authVersion);
         var session = StpUtil.getTokenSession();
         // 写入单个快照，避免并发切租户时混合读取租户、成员和应用。
         session.set(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT, Map.of(
@@ -72,7 +73,8 @@ public class TenantSessionService {
                 "memberRefId", context.memberRefId(),
                 "appRefId", context.appRefId(),
                 "year", String.valueOf(context.year()),
-                "memberVersion", String.valueOf(context.memberVersion())));
+                "memberVersion", String.valueOf(context.memberVersion()),
+                "authVersion", String.valueOf(context.authVersion())));
         return context;
     }
 
@@ -94,24 +96,28 @@ public class TenantSessionService {
                 || !(values.get("memberRefId") instanceof String memberId)
                 || !(values.get("appRefId") instanceof String appId)
                 || !(values.get("year") instanceof String selectedYear)
-                || !(values.get("memberVersion") instanceof String version)) {
+                || !(values.get("memberVersion") instanceof String version)
+                || !(values.get("authVersion") instanceof String grantedVersion)) {
             throw new SecurityException("Tenant token is missing a trusted context");
         }
         long memberVersion;
+        long authVersion;
         int year;
         try {
             memberVersion = Long.parseLong(version);
+            authVersion = Long.parseLong(grantedVersion);
             year = Integer.parseInt(selectedYear);
         } catch (NumberFormatException exception) {
             throw new SecurityException("Tenant token year or member version is invalid");
         }
         TenantSessionContext context = new TenantSessionContext(
-                userId, tenantId, memberId, appId, year, memberVersion);
+                userId, tenantId, memberId, appId, year, memberVersion, authVersion);
         requireLoginUser(context.userRefId());
         TenantMemberDO active = membershipService.resolveActive(context.tenantRefId(), context.userRefId());
         if (active == null || !Objects.equals(active.getId(), context.memberRefId())
                 || !STATUS_ACTIVE.equals(active.getStatus())
                 || !Objects.equals(active.getVersion(), context.memberVersion())
+                || !Objects.equals(active.getAuthVersion(), context.authVersion())
                 || tenantMemberDao.countEnabledApplication(context.tenantRefId(), context.appRefId()) != 1) {
             throw new SecurityException("Tenant membership or application is no longer authorized");
         }

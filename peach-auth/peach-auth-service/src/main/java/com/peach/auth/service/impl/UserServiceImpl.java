@@ -281,6 +281,7 @@ public class UserServiceImpl implements IUserService {
         info.setAppRefId(context.appRefId());
         info.setAppId(selected.getAppId());
         info.setMemberVersion(context.memberVersion());
+        info.setAuthVersion(context.authVersion());
         info.setRequiresTenantSelection(false);
         info.setTenantOptions(targets);
         info.setToken(StpUtil.getTokenValue());

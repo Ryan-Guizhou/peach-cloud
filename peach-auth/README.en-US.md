@@ -151,3 +151,14 @@ flowchart LR
 `ScopedPermissionService.hasTenantPermission` returns true only when **one valid role binding** provides both the requested action and TENANT scope. It never combines an action from one binding with the data scope of another. `listGrantedBindings` returns independent grant evidence for later object-level enforcement, not a completed row/field authorization decision.
 
 **Current implementation is an initial SQL/read-only decision foundation, not completed RBAC.** Transactional grant writes/revocations, `AUTH_VERSION` invalidation, administrator authorization, gateway integration, and real database acceptance are still required in this PR. Platform SYSTEM permissions need strict server-side protection; tenant-owned definitions cannot impersonate protected platform codes. Historical `FISCAL/ORG_ID` columns must be retired during cross-module migration #209 and SQL cleanup #211; they must not grant access in the new model.
+
+
+### #206 Transactional role binding and security limits (current development branch)
+
+`ScopedRoleBindingService.grant/revoke` provides server-side transactions for separate member role bindings. The implementation verifies the Sa-Token principal's physical member, tenant, app, and natural year against the `TENANT.ROLE.MANAGE` permission, serializes administration writes with a tenant-row lock, then locks the target member to read its prior `AUTH_VERSION`. The binding write, version increment, and append-only `PEACH_IAM_AUTH_AUDIT` record are committed atomically. Version conflicts, audit errors, or unauthorized requests roll back. Revoked bindings are logically deleted and retained for history.
+
+A tenant administrator may only delegate permissions that are simultaneously delegable and already held by the administrator at full TENANT scope in the selected app and year. Cross-tenant roles, wrong years, disabled users, foreign organization scopes, and unheld permissions are rejected. Self-assignment/revocation is currently prohibited to avoid escalation and lockout. Organization hierarchy changes require their own `TENANT.ORG.MANAGE` grant. Tenant-owned permission definitions may not impersonate reserved `TENANT.*` or `SYSTEM.*` codes.
+
+Development `sql/INIT.sql` bootstraps three protected semantic permission codes and a single TENANT-scope administrator role for year 2026 only. This is a development seed, **not** verified production administrator onboarding.
+
+**Outstanding #206 acceptance:** authenticated role-permission mutation, full app/year grant administration, real MySQL/Redis revocation integration, and transactional version invalidation for bulk role permission changes. Gateway/Feign and frontend security enforcement remain separately tracked in #208/#209/#210, with final acceptance in #211.

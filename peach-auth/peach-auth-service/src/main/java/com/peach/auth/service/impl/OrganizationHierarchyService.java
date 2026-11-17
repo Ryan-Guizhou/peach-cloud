@@ -3,6 +3,7 @@ package com.peach.auth.service.impl;
 import com.peach.auth.dao.OrganizationHierarchyDao;
 import com.peach.auth.entity.OrganizationDO;
 import com.peach.auth.service.TenantMembershipPolicy;
+import com.peach.auth.service.support.IamPermissionCodes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -58,7 +59,8 @@ public class OrganizationHierarchyService {
         if (policy == null) {
             throw new SecurityException("Tenant hierarchy authorization policy is unavailable");
         }
-        policy.requireTenantAdministrator(tenantRefId, operatorMemberRefId);
+        policy.requireTenantPermission(
+                tenantRefId, operatorMemberRefId, IamPermissionCodes.TENANT_ORG_MANAGE);
 
         String tenantBusinessId = hierarchyDao.lockTenantAndFindBusinessId(tenantRefId);
         if (!StringUtils.hasText(tenantBusinessId)) {
