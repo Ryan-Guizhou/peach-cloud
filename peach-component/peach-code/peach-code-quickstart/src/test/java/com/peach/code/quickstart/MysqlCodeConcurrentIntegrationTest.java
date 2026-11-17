@@ -72,6 +72,24 @@ class MysqlCodeConcurrentIntegrationTest {
                 + "PRIMARY KEY (ID),"
                 + "UNIQUE KEY UK_CODE_SCOPE (TENANT_ID,CODE_PREFIX)"
                 + ")");
+        jdbc.execute("CREATE TABLE IF NOT EXISTS PEACH_CODE_RULE_AUDIT ("
+                + "ID VARCHAR(32) NOT NULL,"
+                + "RULE_REF_ID VARCHAR(32) NOT NULL,"
+                + "RULE_VERSION BIGINT NOT NULL,"
+                + "OPERATOR_REF_ID VARCHAR(32) NOT NULL,"
+                + "OPERATION VARCHAR(16) NOT NULL,"
+                + "OLD_STATUS VARCHAR(16) NOT NULL,"
+                + "NEW_STATUS VARCHAR(16) NOT NULL,"
+                + "OLD_SEPARATOR VARCHAR(1) NOT NULL,"
+                + "NEW_SEPARATOR VARCHAR(1) NOT NULL,"
+                + "OLD_WIDTH INT NOT NULL,"
+                + "NEW_WIDTH INT NOT NULL,"
+                + "OLD_WATERMARK BIGINT NOT NULL,"
+                + "NEW_WATERMARK BIGINT NOT NULL,"
+                + "CREATED_AT DATETIME(3) NOT NULL,"
+                + "PRIMARY KEY (ID),"
+                + "UNIQUE KEY UK_CODE_AUDIT_VERSION (RULE_REF_ID,RULE_VERSION))");
+        jdbc.update("DELETE FROM PEACH_CODE_RULE_AUDIT");
         jdbc.execute("DROP TRIGGER IF EXISTS PEACH_CODE_FAIL_UPDATE");
         jdbc.update("DELETE FROM PEACH_CODE_RULE");
         jdbc.update("INSERT INTO PEACH_CODE_RULE(ID,TENANT_ID,CODE_PREFIX,MAX_CODE_WIDTH,CURRENT_VALUE,STATUS)"
@@ -159,6 +177,54 @@ class MysqlCodeConcurrentIntegrationTest {
                 .isInstanceOf(CodeGeneratorException.class)
                 .hasMessageContaining("immutable");
         assertThat(second.next("T001", "MENU")).isEqualTo("MENU_00000002");
+    }
+
+    @Test
+    void shouldAtomicallyAuditRuleMaintenanceAndProtectWatermark() {
+        JdbcCodeRuleMaintenance maintenance =
+                new JdbcCodeRuleMaintenance(jdbc, new DataSourceTransactionManager(dataSource));
+
+        maintenance.changeFormat("T001", "MENU", new CodeFormat("MENU", "-", 8), 0L, "actor-id");
+        maintenance.advanceWatermark("T001", "MENU", 12L, 1L, "actor-id");
+        maintenance.changeStatus("T001", "MENU", false, 2L, "actor-id");
+
+        assertThat(jdbc.queryForObject(
+                "SELECT RULE_VERSION FROM PEACH_CODE_RULE WHERE TENANT_ID = 'T001' "
+                        + "AND CODE_PREFIX = 'MENU'", Long.class)).isEqualTo(3L);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM PEACH_CODE_RULE_AUDIT "
+                        + "WHERE OPERATOR_REF_ID = 'actor-id'", Long.class)).isEqualTo(3L);
+        assertThat(jdbc.queryForObject(
+                "SELECT NEW_WATERMARK FROM PEACH_CODE_RULE_AUDIT "
+                        + "WHERE RULE_VERSION = 2", Long.class)).isEqualTo(12L);
+        assertThatThrownBy(() -> first.next("T001", "MENU"))
+                .isInstanceOf(CodeGeneratorException.class)
+                .hasMessageContaining("disabled");
+    }
+
+    @Test
+    void missingAuditTableShouldRollBackRuleChanges() {
+        JdbcCodeRuleMaintenance maintenance =
+                new JdbcCodeRuleMaintenance(jdbc, new DataSourceTransactionManager(dataSource));
+        jdbc.execute("DROP TABLE PEACH_CODE_RULE_AUDIT");
+        try {
+            assertThatThrownBy(() -> maintenance.changeStatus(
+                    "T001", "MENU", false, 0L, "actor-id"))
+                    .isInstanceOf(RuntimeException.class);
+            assertThat(jdbc.queryForObject(
+                    "SELECT STATUS FROM PEACH_CODE_RULE WHERE TENANT_ID = 'T001'", String.class))
+                    .isEqualTo("ENABLE");
+        } finally {
+            jdbc.execute("CREATE TABLE PEACH_CODE_RULE_AUDIT (ID VARCHAR(32) NOT NULL,"
+                    + "RULE_REF_ID VARCHAR(32) NOT NULL, RULE_VERSION BIGINT NOT NULL,"
+                    + "OPERATOR_REF_ID VARCHAR(32) NOT NULL, OPERATION VARCHAR(16) NOT NULL,"
+                    + "OLD_STATUS VARCHAR(16) NOT NULL, NEW_STATUS VARCHAR(16) NOT NULL,"
+                    + "OLD_SEPARATOR VARCHAR(1) NOT NULL, NEW_SEPARATOR VARCHAR(1) NOT NULL,"
+                    + "OLD_WIDTH INT NOT NULL, NEW_WIDTH INT NOT NULL,"
+                    + "OLD_WATERMARK BIGINT NOT NULL, NEW_WATERMARK BIGINT NOT NULL,"
+                    + "CREATED_AT DATETIME(3) NOT NULL, PRIMARY KEY (ID),"
+                    + "UNIQUE KEY UK_CODE_AUDIT_VERSION (RULE_REF_ID,RULE_VERSION))");
+        }
     }
 
     @Test
