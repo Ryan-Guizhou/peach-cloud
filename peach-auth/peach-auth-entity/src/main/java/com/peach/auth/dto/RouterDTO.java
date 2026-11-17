@@ -21,6 +21,9 @@ public class RouterDTO implements Serializable {
     @Serial
     private static final long serialVersionUID = 6818572783834885012L;
 
+    @Schema(description = "物理主键，新增由服务端生成")
+    private String id;
+
     @Schema(description = "路由ID")
     private String routerId;
 

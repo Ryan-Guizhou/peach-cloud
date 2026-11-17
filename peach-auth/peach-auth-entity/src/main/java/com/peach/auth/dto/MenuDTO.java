@@ -26,6 +26,9 @@ public class MenuDTO implements Serializable {
     @Serial
     private static final long serialVersionUID = -8288943614511816025L;
 
+    @Schema(description = "物理主键，新增由服务端生成")
+    private String id;
+
     @Schema(description = "菜单ID")
     @NotBlank(message = "菜单ID不能为空", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String menuId;
