@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -12,6 +15,7 @@ import com.peach.auth.qo.FunctionQO;
 import com.peach.auth.service.IFunctionService;
 import com.peach.auth.vo.FunctionVO;
 import com.peach.common.constant.PubCommonConst;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -32,6 +36,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class FunctionServiceImpl implements IFunctionService {
+
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
 
     private final FunctionDao functionDao;
 
@@ -59,6 +65,8 @@ public class FunctionServiceImpl implements IFunctionService {
     public void add(FunctionDTO functionDTO) {
         FunctionDO functionDO = new FunctionDO();
         BeanUtils.copyProperties(functionDTO, functionDO);
+        functionDO.setId(UniqueIdFacade.nextId());
+        functionDO.setFuncId(authBusinessIdGenerator.next(AuthBusinessIdType.FUNC));
         functionDO.fillCreateTime(null);
         if (functionDO.getIsDelete() == null) {
             functionDO.setIsDelete(PubCommonConst.LOGIC_FLASE);

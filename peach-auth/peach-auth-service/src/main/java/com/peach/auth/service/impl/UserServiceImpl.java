@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -26,8 +29,8 @@ import com.peach.auth.service.LoginLockService;
 import com.peach.auth.service.assembler.LoginPermissionAssembler;
 import com.peach.auth.service.support.LoginPermissionCacheRefresher;
 import com.peach.auth.service.support.LoginInitConfigSupport;
-import com.peach.auth.service.support.UserSensitiveFieldSupport;
 import com.peach.auth.service.support.PasswordHashSupport;
+import com.peach.auth.service.support.UserSensitiveFieldSupport;
 import com.peach.auth.vo.LoginInitVO;
 import com.peach.auth.vo.LoginLockStatusVO;
 import com.peach.auth.vo.LoginPermissionSnapshotVO;
@@ -37,6 +40,7 @@ import com.peach.auth.vo.UserVO;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.service.CaptchaService;
 import com.peach.common.constant.PubCommonConst;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.constant.SaTokenConstant;
 import com.peach.common.response.Response;
 import com.peach.common.util.StringUtil;
@@ -61,6 +65,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements IUserService {
+
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
 
     private final UserDao userDao;
 
@@ -379,6 +385,8 @@ public class UserServiceImpl implements IUserService {
     public void add(UserDTO userDTO) {
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
+        userDO.setId(UniqueIdFacade.nextId());
+        userDO.setUserId(authBusinessIdGenerator.next(AuthBusinessIdType.USER));
         if (StringUtil.isBlank(userDO.getPassword())) {
             userDO.setStatus("DISABLED");
         } else {

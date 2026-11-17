@@ -64,6 +64,7 @@ public class AuthFunctionServiceImpl implements IAuthFunctionService {
         deleteQuery.setTenantId(roleFunctionAuthDTO.getTenantId());
         deleteQuery.setOrgId(roleFunctionAuthDTO.getOrgId());
         deleteQuery.setPartyCode(roleFunctionAuthDTO.getPartyCode());
+        deleteQuery.setAppId(roleFunctionAuthDTO.getAppId());
         deleteQuery.setFiscal(roleFunctionAuthDTO.getFiscal());
         authFunctionDao.del(deleteQuery);
 

@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.UserDao">
     <sql id="allColumn">
-        USER_ID,                                          USER_CODE,                                        PASSWORD,                                         USER_NAME,
+        ID, USER_ID,                                          USER_CODE,                                        PASSWORD,                                         USER_NAME,
         IDENTITY_CODE,                                    INVLIDATE,                                        AUTH_MODE,                                        STATUS,
         UNLOCK_TIME,                                      MENU_STYLE,                                       MENU_ROLE,                                        LASTEST_LOGIN,
         ERROR_COUNT,                                      START_DATE,                                       END_DATE,                                         MOBILE_PHONE,
@@ -13,7 +13,7 @@
     </sql>
 
     <sql id="allColumnAlias">
-        USER_ID as userId,                                USER_CODE as userCode,                            PASSWORD as password,                             USER_NAME as userName,
+        ID as id, USER_ID as userId,                                USER_CODE as userCode,                            PASSWORD as password,                             USER_NAME as userName,
         IDENTITY_CODE as identityCode,                    INVLIDATE as invlidate,                           AUTH_MODE as authMode,                            STATUS as status,
         UNLOCK_TIME as unlockTime,                        MENU_STYLE as menuStyle,                          MENU_ROLE as menuRole,                            LASTEST_LOGIN as lastestLogin,
         ERROR_COUNT as errorCount,                        START_DATE as startDate,                          END_DATE as endDate,                              MOBILE_PHONE as mobilePhone,
@@ -24,7 +24,7 @@
     </sql>
 
     <sql id="allColumnValue">
-        #{userId,jdbcType=VARCHAR},                       #{userCode,jdbcType=VARCHAR},                     #{password,jdbcType=VARCHAR},                     #{userName,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR}, #{userId,jdbcType=VARCHAR},                       #{userCode,jdbcType=VARCHAR},                     #{password,jdbcType=VARCHAR},                     #{userName,jdbcType=VARCHAR},
         #{identityCode,jdbcType=VARCHAR},                 #{invlidate,jdbcType=VARCHAR},                    #{authMode,jdbcType=VARCHAR},                     #{status,jdbcType=VARCHAR},
         #{unlockTime,jdbcType=VARCHAR},                   #{menuStyle,jdbcType=VARCHAR},                    #{menuRole,jdbcType=VARCHAR},                     #{lastestLogin,jdbcType=VARCHAR},
         #{errorCount,jdbcType=VARCHAR},                   #{startDate,jdbcType=VARCHAR},                    #{endDate,jdbcType=VARCHAR},                      #{mobilePhone,jdbcType=VARCHAR},
@@ -36,7 +36,7 @@
 
 
     <sql id="itemAllColumnValue">
-        #{item.userId,jdbcType=VARCHAR},                  #{item.userCode,jdbcType=VARCHAR},                #{item.password,jdbcType=VARCHAR},                #{item.userName,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR}, #{item.userId,jdbcType=VARCHAR},                  #{item.userCode,jdbcType=VARCHAR},                #{item.password,jdbcType=VARCHAR},                #{item.userName,jdbcType=VARCHAR},
         #{item.identityCode,jdbcType=VARCHAR},            #{item.invlidate,jdbcType=VARCHAR},               #{item.authMode,jdbcType=VARCHAR},                #{item.status,jdbcType=VARCHAR},
         #{item.unlockTime,jdbcType=VARCHAR},              #{item.menuStyle,jdbcType=VARCHAR},               #{item.menuRole,jdbcType=VARCHAR},                #{item.lastestLogin,jdbcType=VARCHAR},
         #{item.errorCount,jdbcType=VARCHAR},              #{item.startDate,jdbcType=VARCHAR},               #{item.endDate,jdbcType=VARCHAR},                 #{item.mobilePhone,jdbcType=VARCHAR},
@@ -289,6 +289,9 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
+        </if>
         <if test="userId != null and userId != ''">
             AND USER_ID = #{userId,jdbcType=VARCHAR}
         </if>
@@ -389,49 +392,48 @@
     <update id="update" parameterType="com.peach.auth.entity.UserDO">
         UPDATE PEACH_USER SET
             <include refid="allColumnSet" />
-        <where>
-            <include refid="allColumnCond" />
-        </where>
+        WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
     </update>
 
-    <delete id="delById" parameterType="string">
-        DELETE FROM PEACH_USER
-        WHERE USER_ID = #{value,jdbcType=VARCHAR}
-    </delete>
+    <update id="delById" parameterType="string">
+        UPDATE PEACH_USER
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
+    </update>
 
-    <delete id="delByIds" parameterType="java.util.List">
-        DELETE FROM PEACH_USER
-        WHERE USER_ID IN
+    <update id="delByIds" parameterType="java.util.List">
+        UPDATE PEACH_USER
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
-    </delete>
+    </update>
 
-    <delete id="del" parameterType="com.peach.auth.entity.UserDO">
-        DELETE FROM PEACH_USER
-        <where>
-            <include refid="allColumnCond" />
-        </where>
-    </delete>
+    <update id="del" parameterType="com.peach.auth.entity.UserDO">
+        UPDATE PEACH_USER
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE USER_ID = #{userId,jdbcType=VARCHAR} AND IS_DELETE = 0
+    </update>
 
     <update id="updateById" parameterType="com.peach.auth.entity.UserDO">
         UPDATE PEACH_USER SET
             <include refid="allColumnSet" />
-        WHERE USER_ID =  #{userId,jdbcType=VARCHAR}
+        WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
     </update>
 
     <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.UserDO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_USER
-        WHERE USER_ID = #{value,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.UserDO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_USER
-        WHERE USER_ID IN
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
@@ -442,6 +444,7 @@
             <include refid="allColumnAlias" />
         FROM PEACH_USER
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
@@ -450,6 +453,7 @@
         SELECT COUNT(1)
         FROM PEACH_USER
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
@@ -457,7 +461,7 @@
     <select id="login" resultType="com.peach.auth.vo.UserVO">
         SELECT <include refid="allColumnAlias" />
         FROM PEACH_USER
-        WHERE (USER_CODE = #{username,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND (USER_CODE = #{username,jdbcType=VARCHAR}
             OR MOBILE_PHONE = #{username,jdbcType=VARCHAR}
             OR EMAIL = #{username,jdbcType=VARCHAR})
           AND STATUS IN ('ENABLE', '1') AND IS_DELETE = 0
@@ -467,6 +471,7 @@
         SELECT <include refid="allColumnAlias" />
         FROM PEACH_USER
         <where>
+            IS_DELETE = 0
             <if test="userId != null and userId != ''">
                 AND USER_ID = #{userId,jdbcType=VARCHAR}
             </if>

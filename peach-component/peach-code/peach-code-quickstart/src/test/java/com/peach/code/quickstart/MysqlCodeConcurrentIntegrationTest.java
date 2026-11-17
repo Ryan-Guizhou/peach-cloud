@@ -1,13 +1,16 @@
 package com.peach.code.quickstart;
 
 import com.peach.code.CodeGeneratorException;
+import com.peach.code.CodeFormat;
 import com.peach.code.autoconfigure.CodeProperties;
 import com.peach.code.autoconfigure.PeachCodeGenerator;
+import com.peach.code.autoconfigure.JdbcCodeRuleMaintenance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -44,28 +47,53 @@ class MysqlCodeConcurrentIntegrationTest {
             .withUsername("peach")
             .withPassword("peach-test");
 
+    private DataSource dataSource;
     private JdbcTemplate jdbc;
     private PeachCodeGenerator first;
     private PeachCodeGenerator second;
 
     @BeforeEach
     void prepareRule() {
-        DataSource dataSource = new DriverManagerDataSource(
+        dataSource = new DriverManagerDataSource(
                 MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword());
         jdbc = new JdbcTemplate(dataSource);
         jdbc.execute("CREATE TABLE IF NOT EXISTS PEACH_CODE_RULE ("
+                + "ID VARCHAR(32) NOT NULL,"
                 + "TENANT_ID VARCHAR(32) NOT NULL,"
                 + "CODE_PREFIX VARCHAR(32) NOT NULL,"
                 + "MAX_CODE_WIDTH INT NOT NULL,"
                 + "CURRENT_VALUE BIGINT NOT NULL,"
                 + "STATUS VARCHAR(16) NOT NULL,"
+                + "CODE_SEPARATOR VARCHAR(1) NOT NULL DEFAULT '_',"
+                + "SCOPE_TYPE VARCHAR(16) NOT NULL DEFAULT 'TENANT',"
+                + "RULE_VERSION BIGINT NOT NULL DEFAULT 0,"
+                + "IS_DELETE TINYINT(1) NOT NULL DEFAULT 0,"
                 + "MODIFY_TIME VARCHAR(20),"
-                + "PRIMARY KEY (TENANT_ID, CODE_PREFIX)"
-                + ") ENGINE=InnoDB");
+                + "PRIMARY KEY (ID),"
+                + "UNIQUE KEY UK_CODE_SCOPE (TENANT_ID,CODE_PREFIX)"
+                + ")");
+        jdbc.execute("CREATE TABLE IF NOT EXISTS PEACH_CODE_RULE_AUDIT ("
+                + "ID VARCHAR(32) NOT NULL,"
+                + "RULE_REF_ID VARCHAR(32) NOT NULL,"
+                + "RULE_VERSION BIGINT NOT NULL,"
+                + "OPERATOR_REF_ID VARCHAR(32) NOT NULL,"
+                + "OPERATION VARCHAR(16) NOT NULL,"
+                + "OLD_STATUS VARCHAR(16) NOT NULL,"
+                + "NEW_STATUS VARCHAR(16) NOT NULL,"
+                + "OLD_SEPARATOR VARCHAR(1) NOT NULL,"
+                + "NEW_SEPARATOR VARCHAR(1) NOT NULL,"
+                + "OLD_WIDTH INT NOT NULL,"
+                + "NEW_WIDTH INT NOT NULL,"
+                + "OLD_WATERMARK BIGINT NOT NULL,"
+                + "NEW_WATERMARK BIGINT NOT NULL,"
+                + "CREATED_AT DATETIME(3) NOT NULL,"
+                + "PRIMARY KEY (ID),"
+                + "UNIQUE KEY UK_CODE_AUDIT_VERSION (RULE_REF_ID,RULE_VERSION))");
+        jdbc.update("DELETE FROM PEACH_CODE_RULE_AUDIT");
         jdbc.execute("DROP TRIGGER IF EXISTS PEACH_CODE_FAIL_UPDATE");
         jdbc.update("DELETE FROM PEACH_CODE_RULE");
-        jdbc.update("INSERT INTO PEACH_CODE_RULE(TENANT_ID,CODE_PREFIX,MAX_CODE_WIDTH,CURRENT_VALUE,STATUS)"
-                        + " VALUES ('T001','MENU',8,0,'ENABLE')");
+        jdbc.update("INSERT INTO PEACH_CODE_RULE(ID,TENANT_ID,CODE_PREFIX,MAX_CODE_WIDTH,CURRENT_VALUE,STATUS)"
+                        + " VALUES (REPLACE(UUID(), '-', ''),'T001','MENU',8,0,'ENABLE')");
         DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
         first = new PeachCodeGenerator(jdbc, new CodeProperties(), transactionManager);
         second = new PeachCodeGenerator(jdbc, new CodeProperties(), transactionManager);
@@ -97,6 +125,105 @@ class MysqlCodeConcurrentIntegrationTest {
             }
             Long stored = jdbc.queryForObject("SELECT CURRENT_VALUE FROM PEACH_CODE_RULE WHERE TENANT_ID='T001' AND CODE_PREFIX='MENU'", Long.class);
             assertThat(stored).isEqualTo((long) count);
+        }
+    }
+
+    @Test
+    void platformCodeMustUseGlobalSequenceIndependentOfTenant() {
+        jdbc.update("INSERT INTO PEACH_CODE_RULE(ID,TENANT_ID,CODE_PREFIX,MAX_CODE_WIDTH,CURRENT_VALUE,STATUS,SCOPE_TYPE)"
+                + " VALUES (REPLACE(UUID(), '-', ''),'PLATFORM','USER',8,0,'ENABLE','PLATFORM')");
+        jdbc.update("INSERT INTO PEACH_CODE_RULE(ID,TENANT_ID,CODE_PREFIX,MAX_CODE_WIDTH,CURRENT_VALUE,STATUS,SCOPE_TYPE)"
+                + " VALUES (REPLACE(UUID(), '-', ''),'T002','MENU',8,0,'ENABLE','TENANT')");
+        assertThat(first.nextGlobal("USER")).isEqualTo("USER_00000001");
+        assertThat(second.nextGlobal("USER")).isEqualTo("USER_00000002");
+        assertThat(first.next("T001", "MENU")).isEqualTo("MENU_00000001");
+        assertThat(second.next("T002", "MENU")).isEqualTo("MENU_00000001");
+    }
+
+    @Test
+    void allocationShouldSurviveOuterBusinessRollback() {
+        TransactionTemplate businessTransaction =
+                new TransactionTemplate(new DataSourceTransactionManager(dataSource));
+        String code = businessTransaction.execute(status -> {
+            String allocated = first.next("T001", "MENU");
+            status.setRollbackOnly();
+            return allocated;
+        });
+        assertThat(code).isEqualTo("MENU_00000001");
+        assertThat(second.next("T001", "MENU")).isEqualTo("MENU_00000002");
+    }
+
+    @Test
+    void sequenceShouldRemainPersistentAfterGeneratorReplacement() {
+        assertThat(first.next("T001", "MENU")).isEqualTo("MENU_00000001");
+        DataSource replacementDataSource = new DriverManagerDataSource(
+                MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword());
+        PeachCodeGenerator replacement = new PeachCodeGenerator(
+                new JdbcTemplate(replacementDataSource), new CodeProperties(),
+                new DataSourceTransactionManager(replacementDataSource));
+        assertThat(replacement.next("T001", "MENU")).isEqualTo("MENU_00000002");
+    }
+
+    @Test
+    void ruleMaintenanceShouldRejectRollbackAndPostIssueFormatChanges() {
+        assertThat(first.next("T001", "MENU")).isEqualTo("MENU_00000001");
+        JdbcCodeRuleMaintenance maintenance =
+                new JdbcCodeRuleMaintenance(jdbc, new DataSourceTransactionManager(dataSource));
+        assertThatThrownBy(() -> maintenance.advanceWatermark("T001", "MENU", 0L, 0L, "actor-id"))
+                .isInstanceOf(CodeGeneratorException.class)
+                .hasMessageContaining("decrease");
+        assertThatThrownBy(() -> maintenance.changeFormat(
+                "T001", "MENU", new CodeFormat("MENU", "-", 8), 0L, "actor-id"))
+                .isInstanceOf(CodeGeneratorException.class)
+                .hasMessageContaining("immutable");
+        assertThat(second.next("T001", "MENU")).isEqualTo("MENU_00000002");
+    }
+
+    @Test
+    void shouldAtomicallyAuditRuleMaintenanceAndProtectWatermark() {
+        JdbcCodeRuleMaintenance maintenance =
+                new JdbcCodeRuleMaintenance(jdbc, new DataSourceTransactionManager(dataSource));
+
+        maintenance.changeFormat("T001", "MENU", new CodeFormat("MENU", "-", 8), 0L, "actor-id");
+        maintenance.advanceWatermark("T001", "MENU", 12L, 1L, "actor-id");
+        maintenance.changeStatus("T001", "MENU", false, 2L, "actor-id");
+
+        assertThat(jdbc.queryForObject(
+                "SELECT RULE_VERSION FROM PEACH_CODE_RULE WHERE TENANT_ID = 'T001' "
+                        + "AND CODE_PREFIX = 'MENU'", Long.class)).isEqualTo(3L);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM PEACH_CODE_RULE_AUDIT "
+                        + "WHERE OPERATOR_REF_ID = 'actor-id'", Long.class)).isEqualTo(3L);
+        assertThat(jdbc.queryForObject(
+                "SELECT NEW_WATERMARK FROM PEACH_CODE_RULE_AUDIT "
+                        + "WHERE RULE_VERSION = 2", Long.class)).isEqualTo(12L);
+        assertThatThrownBy(() -> first.next("T001", "MENU"))
+                .isInstanceOf(CodeGeneratorException.class)
+                .hasMessageContaining("disabled");
+    }
+
+    @Test
+    void missingAuditTableShouldRollBackRuleChanges() {
+        JdbcCodeRuleMaintenance maintenance =
+                new JdbcCodeRuleMaintenance(jdbc, new DataSourceTransactionManager(dataSource));
+        jdbc.execute("DROP TABLE PEACH_CODE_RULE_AUDIT");
+        try {
+            assertThatThrownBy(() -> maintenance.changeStatus(
+                    "T001", "MENU", false, 0L, "actor-id"))
+                    .isInstanceOf(RuntimeException.class);
+            assertThat(jdbc.queryForObject(
+                    "SELECT STATUS FROM PEACH_CODE_RULE WHERE TENANT_ID = 'T001'", String.class))
+                    .isEqualTo("ENABLE");
+        } finally {
+            jdbc.execute("CREATE TABLE PEACH_CODE_RULE_AUDIT (ID VARCHAR(32) NOT NULL,"
+                    + "RULE_REF_ID VARCHAR(32) NOT NULL, RULE_VERSION BIGINT NOT NULL,"
+                    + "OPERATOR_REF_ID VARCHAR(32) NOT NULL, OPERATION VARCHAR(16) NOT NULL,"
+                    + "OLD_STATUS VARCHAR(16) NOT NULL, NEW_STATUS VARCHAR(16) NOT NULL,"
+                    + "OLD_SEPARATOR VARCHAR(1) NOT NULL, NEW_SEPARATOR VARCHAR(1) NOT NULL,"
+                    + "OLD_WIDTH INT NOT NULL, NEW_WIDTH INT NOT NULL,"
+                    + "OLD_WATERMARK BIGINT NOT NULL, NEW_WATERMARK BIGINT NOT NULL,"
+                    + "CREATED_AT DATETIME(3) NOT NULL, PRIMARY KEY (ID),"
+                    + "UNIQUE KEY UK_CODE_AUDIT_VERSION (RULE_REF_ID,RULE_VERSION))");
         }
     }
 

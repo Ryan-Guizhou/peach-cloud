@@ -31,6 +31,10 @@ public class UserDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = -3354777952204829102L;
 
     @Id
+    @Column(name = "ID")
+    @Schema(description = "物理主键")
+    private String id;
+
     @Column(name = "USER_ID")
     @Schema(description = "用户ID")
     private String userId;
@@ -41,7 +45,7 @@ public class UserDO extends PeachDO implements Serializable {
 
     @JsonIgnore
     @Column(name = "PASSWORD")
-    @Schema(description = "密码哈希（不可序列化）")
+    @Schema(description = "密码哈希（禁止序列化）")
     private String password;
 
     @Column(name = "USER_NAME")
