@@ -4,6 +4,15 @@
 >
 > 范围：`peach-auth` 为主要业务域，必要同步 `peach-code`、`peach-common`、`peach-satoken`、`peach-gateway`、`peach-auth-openfeign-external`、`peach-cloud-front` 以及实际受影响的微服务。该文档只陈述已核对的 Current 和待实施 Proposed，不能以本文代替代码验证。
 
+## 0. 实施状态、主分支与开发协作基线
+
+- 基线分支：`main` 的 2026-11-17 快照；发布集成分支：`release_20261117_v1.0.0`。
+- 研发分支：`feature/saas-iam-<issue>-<topic>`，各需求 PR 的 `base` 统一为 release；一个 Issue 只接受一个 PR。
+- 变更按依赖提交，**未完成或未通过 CI 的 PR 保持 Draft，不合入 release**；禁止在跨模块迁移未完成时把新 DDL 直接当作已上线结构。
+- 已启动：[#202](https://github.com/Ryan-Guizhou/peach-cloud/issues/202) 的 [PR #212](https://github.com/Ryan-Guizhou/peach-cloud/pull/212) 是首个 Draft，当前只涉及 `PEACH_AUTH_PARTY` 主键与逻辑撤销，不表示全域 ID 迁移完成。
+- 代码风格与安全事实优先级：源码和 `AGENTS.md` → `.agents/skills/using-peach-java-engineering/SKILL.md` / `using-peach-front/SKILL.md` → 设计文档。
+- 文档维护：每个功能 PR 同步更新设计的 Current/Proposed/Implemented 标记；验证命令输出和未验证风险进入 PR 描述。
+
 ## 1. 决策冻结（Implementation Contract）
 
 | 主题 | 统一结论 |
