@@ -460,7 +460,7 @@
         WHERE (USER_CODE = #{username,jdbcType=VARCHAR}
             OR MOBILE_PHONE = #{username,jdbcType=VARCHAR}
             OR EMAIL = #{username,jdbcType=VARCHAR})
-          AND (STATUS IS NULL OR STATUS = 'ENABLE' OR STATUS = '1')
+          AND STATUS IN ('ENABLE', '1') AND IS_DELETE = 0
     </select>
 
     <select id="selectByQO" parameterType="com.peach.auth.qo.UserQO" resultType="com.peach.auth.vo.UserVO">
