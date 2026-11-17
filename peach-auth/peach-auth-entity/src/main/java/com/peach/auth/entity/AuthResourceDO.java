@@ -30,6 +30,10 @@ public class AuthResourceDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = 5221534349411914069L;
 
     @Id
+    @Column(name = "ID")
+    @Schema(description = "物理主键")
+    private String id;
+
     @Column(name = "RESOURCE_ID")
     @Schema(description = "逻辑ID")
     private String resourceId;

@@ -75,6 +75,7 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
                     continue;
                 }
                 AuthResourceDO authResourceDO = new AuthResourceDO();
+                authResourceDO.setId(UniqueIdFacade.nextId());
                 authResourceDO.setResourceId(UniqueIdFacade.nextId());
                 authResourceDO.setTenantId(roleResourceAuthDTO.getTenantId());
                 authResourceDO.setOrgId(roleResourceAuthDTO.getOrgId());
