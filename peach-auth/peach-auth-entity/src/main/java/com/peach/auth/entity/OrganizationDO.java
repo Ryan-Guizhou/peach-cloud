@@ -44,6 +44,14 @@ public class OrganizationDO extends PeachDO implements Serializable {
     @Schema(description = "租户ID")
     private String tenantId;
 
+    @Column(name = "PARENT_ORG_REF_ID")
+    @Schema(description = "父机构物理主键，根机构为 null")
+    private String parentOrgRefId;
+
+    @Column(name = "VERSION")
+    @Schema(description = "机构树并发版本")
+    private Long version;
+
     @Column(name = "ORG_CODE")
     @Schema(description = "机构编码")
     private String orgCode;
