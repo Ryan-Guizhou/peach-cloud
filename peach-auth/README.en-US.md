@@ -60,3 +60,23 @@ Within [#202](https://github.com/Ryan-Guizhou/peach-cloud/issues/202) on `releas
 Authentication mappers perform logical deletion by updating `IS_DELETE=1` and recording `DELETED_AT`. Reusable business codes use an active-only `ACTIVE_SLOT` unique constraint; permanent business IDs remain reserved after deletion. Ordinary updates, deletes, and lookups use the physical `ID`; frontend CRUD pages use `id` for row keys and display business IDs separately.
 
 **Not yet implemented end-to-end:** `PEACH_TENANT_MEMBER`, cross-tenant login, `XXX_REF_ID` relationship migration, removal of legacy `FISCAL`, scoped RBAC and row/field rules, complete Gateway/Feign authorization, and migration testing are tracked by [#204–#211](https://github.com/Ryan-Guizhou/peach-cloud/issues/204). This section documents the current release increment, not a production-ready SaaS authorization guarantee.
+
+
+## SaaS tenant membership and invitations (#205 development branch; not merged)
+
+This increment adds `PEACH_TENANT_MEMBER`, `PEACH_TENANT_INVITATION`, their MyBatis mappers, and `TenantMemberLifecycleService`. Permanent `MEMBER_ID/INVITATION_ID` values use platform-level allocation; relationships use physical `*_REF_ID` references. A tenant-user membership has a **permanent unique pair**: accepting a later invitation after leaving restores the original member row rather than allocating a second permanent member ID. The invitation active-slot constraint permits at most one `PENDING` invitation per tenant and user; expired pending invitations are marked `EXPIRED` before issuing a new invitation.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: Create invitation
+    Pending --> Accepted: Self acceptance before expiry
+    Pending --> Cancelled: Admin cancels
+    Pending --> Expired: Expiry cleanup
+    Accepted --> Active: Create/restore membership
+    Active --> Disabled: Admin disables
+    Disabled --> Active: Admin enables
+    Active --> Left: User leaves (logical deletion)
+    Left --> Active: Accept new invitation (restore same ID)
+```
+
+Security boundary: `TenantMembershipPolicy` validates the current server-side Sa-Token user for self-acceptance and departure. Trusted tenant administration RBAC is not available yet: `requireTenantAdministrator` **fails closed** for invitation creation/cancellation and member disable/enable. Do not expose these service methods as unguarded REST endpoints. The member-list lookup is only for server-side use after credential verification and does not require an organization assignment. These service/DAO foundations have been committed to the development branch, but login and tenant switching, token revocation, role-scoped authorization, organization tree, frontend, and actual database acceptance remain outstanding in #204 and #206–#211. This increment is not production-ready.
