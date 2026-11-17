@@ -83,3 +83,5 @@ CodeGenerator.next
 规则表新增 `SCOPE_TYPE`（`PLATFORM` 或 `TENANT`）、`CODE_SEPARATOR`（`_` 或 `-`）与 `RULE_VERSION`。发号器使用 `CODE_PREFIX + CODE_SEPARATOR + 补零流水号` 的安全格式，查询到非法规则立即拒绝并回滚事务，不会消耗数据库序号。全局业务 ID 应使用 `PLATFORM` 命名空间并在目标业务表上保持永久唯一；编码规则的修改不得重置 `CURRENT_VALUE`。
 
 示例：对于 `CODE_PREFIX=ORG`、`CODE_SEPARATOR='-'`、`MAX_CODE_WIDTH=5`，下一个序号为 8 时生成 `ORG-00008`。更改现有规则需要与正在发号的实例采用数据库锁和运维审批协调；租户不能修改平台级 `USER_ID` 等系统保留规则。完整管理接口、模板版本审计与前端配置界面仍在本期 IAM 后续任务中实现。
+
+发号器在事务内校验规则 `SCOPE_TYPE` 与命名空间一致（`PLATFORM` 与普通租户严格隔离），并在条件更新中验证非负 `RULE_VERSION`。建表脚本使用 `CHECK` 限制作用域、分隔符、状态、宽度及非负序列。新增 `INVITATION` 平台级业务编号初始规则；此处不表示管理 API、规则变更审计或真实 MySQL 验证已经完成。
