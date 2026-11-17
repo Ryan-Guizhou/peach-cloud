@@ -12,13 +12,13 @@ import com.peach.auth.qo.MenuQO;
 import com.peach.auth.service.IMenuService;
 import com.peach.auth.vo.MenuVO;
 import com.peach.common.constant.PubCommonConst;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 
 /**
  * 菜单服务实现类。
@@ -55,9 +55,10 @@ public class MenuServiceImpl implements IMenuService {
         MenuDO menuDO = new MenuDO();
         BeanUtils.copyProperties(menuDTO, menuDO);
         menuDO.fillCreateTime(null);
-        menuDO.setAppId("111");
-        menuDO.setTenantId("111");
-        Optional.ofNullable(menuDO.getIsDelete()).ifPresent(menuDO::setIsDelete);
+        menuDO.setId(UniqueIdFacade.nextId());
+        if (StringUtil.isBlank(menuDO.getTenantId()) || StringUtil.isBlank(menuDO.getAppId())) {
+            throw new IllegalArgumentException("Tenant and application context are required");
+        }
         if (menuDO.getIsDelete() == null) {
             menuDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
         }

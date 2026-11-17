@@ -31,6 +31,10 @@ public class ApplicationDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = 1860066138968904427L;
 
     @Id
+    @Column(name = "ID")
+    @Schema(description = "物理主键")
+    private String id;
+
     @Column(name = "APP_ID")
     @Schema(description = "应用ID")
     private String appId;

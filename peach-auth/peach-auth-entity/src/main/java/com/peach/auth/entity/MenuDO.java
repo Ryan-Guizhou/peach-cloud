@@ -30,6 +30,10 @@ public class MenuDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = -8461601607850009256L;
 
     @Id
+    @Column(name = "ID")
+    @Schema(description = "物理主键")
+    private String id;
+
     @Column(name = "MENU_ID")
     @Schema(description = "菜单ID")
     private String menuId;
