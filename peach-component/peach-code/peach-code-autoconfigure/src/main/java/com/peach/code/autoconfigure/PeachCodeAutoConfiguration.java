@@ -1,6 +1,7 @@
 package com.peach.code.autoconfigure;
 
 import com.peach.code.CodeGenerator;
+import com.peach.code.CodeRuleMaintenance;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -12,6 +13,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * Peach代码自动配置。
@@ -41,8 +43,24 @@ public class PeachCodeAutoConfiguration {
     @ConditionalOnBean(JdbcTemplate.class)
     @ConditionalOnMissingBean(CodeGenerator.class)
     public CodeGenerator codeGenerator(JdbcTemplate jdbcTemplate, CodeProperties properties,
-                                       ObjectProvider<org.springframework.transaction.PlatformTransactionManager>
+                                       ObjectProvider<PlatformTransactionManager>
                                                transactionProvider) {
         return new PeachCodeGenerator(jdbcTemplate, properties, transactionProvider.getIfAvailable());
+    }
+    /**
+     * 装配只供可信服务端流程使用的编码规则管理器。
+     *
+     * <p>该 Bean 不开放 HTTP 接口；管理员身份和租户范围由调用服务校验。</p>
+     *
+     * @param jdbcTemplate 发号规则数据库访问
+     * @param transactionProvider MySQL 事务管理器
+     * @return 受控规则维护接口
+     */
+    @Bean
+    @ConditionalOnBean(JdbcTemplate.class)
+    @ConditionalOnMissingBean(CodeRuleMaintenance.class)
+    public CodeRuleMaintenance codeRuleMaintenance(JdbcTemplate jdbcTemplate,
+            ObjectProvider<PlatformTransactionManager> transactionProvider) {
+        return new JdbcCodeRuleMaintenance(jdbcTemplate, transactionProvider.getIfAvailable());
     }
 }
