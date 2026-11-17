@@ -6,7 +6,7 @@
         M.USER_REF_ID AS userRefId, M.STATUS AS status, M.IS_DELETE AS isDelete,
         M.CREATED_TIME AS createdTime, M.CREATOR_ID AS creatorId,
         M.MODIFY_TIME AS modifyTime, M.MODIFIER_ID AS modifierId,
-        M.DELETED_AT AS deletedAt, M.DELETED_BY_REF_ID AS deletedByRefId, M.VERSION AS version
+        M.DELETED_AT AS deletedAt, M.DELETED_BY_REF_ID AS deletedByRefId, M.VERSION AS version, M.AUTH_VERSION AS authVersion
     </sql>
 
     <insert id="insert" parameterType="com.peach.auth.entity.TenantMemberDO">

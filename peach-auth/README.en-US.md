@@ -86,3 +86,22 @@ Security boundary: `TenantMembershipPolicy` validates the current server-side Sa
 `OrganizationHierarchyService.move` takes physical tenant, member, organization and parent IDs. It first invokes the trusted `TenantMembershipPolicy`, then locks the enabled `PEACH_TENANT` row, translates its existing business tenant ID, verifies every ancestor belongs to that tenant, detects cycles and excessive depth, and updates `PARENT_ORG_REF_ID` using the `VERSION` optimistic lock. The current organization table still uses historical `TENANT_ID` business IDs; full conversion to `TENANT_REF_ID` belongs to #209/#211. Existing schema migrations, delete-dependency checks, complete owner bootstrap, REST API contracts, and authorization revocation remain prerequisites for production. Administrators are deliberately denied until tenant RBAC is implemented in #206, and login integration is tracked by #204/#208.
 
 This is a release integration baseline with intentionally restricted capabilities; it is not a completed production SaaS IAM system.
+
+## Independent SaaS RBAC grant source (#206 development branch; not merged)
+
+This increment introduces `PEACH_PERMISSION_DEFINITION`, `PEACH_ROLE_PERMISSION`, `PEACH_MEMBER_ROLE_BINDING` and `PEACH_IAM_AUTH_AUDIT`. The existing `PEACH_ROLE` schema gains physical tenant/app references, natural-year `AUTH_YEAR`, and version fields. Tenant members gain an `AUTH_VERSION` for revoking stale session grants. The new decision path joins **active membership, enabled tenant/app, active roles, active role permissions, and each individual binding**. Legacy `PEACH_AUTH_PARTY` and `PEACH_AUTH_FUNCTION` are not considered sources of new authorizations.
+
+```mermaid
+flowchart LR
+    M[Tenant member MEMBER_REF_ID] --> B[Member role binding]
+    B --> R[Role ROLE_REF_ID]
+    R --> RP[Role permission]
+    RP --> P[Immutable semantic permission code]
+    B --> Y[Natural year AUTH_YEAR]
+    B --> S[Independent TENANT / ORG / ORG_TREE scope]
+    B --> A[Application APP_REF_ID]
+```
+
+`ScopedPermissionService.hasTenantPermission` returns true only when **one valid role binding** provides both the requested action and TENANT scope. It never combines an action from one binding with the data scope of another. `listGrantedBindings` returns independent grant evidence for later object-level enforcement, not a completed row/field authorization decision.
+
+**Current implementation is an initial SQL/read-only decision foundation, not completed RBAC.** Transactional grant writes/revocations, `AUTH_VERSION` invalidation, administrator authorization, gateway integration, and real database acceptance are still required in this PR. Platform SYSTEM permissions need strict server-side protection; tenant-owned definitions cannot impersonate protected platform codes. Historical `FISCAL/ORG_ID` columns must be retired during cross-module migration #209 and SQL cleanup #211; they must not grant access in the new model.

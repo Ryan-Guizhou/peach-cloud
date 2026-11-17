@@ -59,4 +59,8 @@ public class TenantMemberDO extends PeachDO {
 
     @Column(name = "VERSION")
     private Long version;
+
+    @Column(name = "AUTH_VERSION")
+    @Schema(description = "角色及权限授权版本，撤销或修改后只递增")
+    private Long authVersion;
 }

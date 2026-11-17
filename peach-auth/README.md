@@ -143,3 +143,22 @@ stateDiagram-v2
 `OrganizationHierarchyService.move` 采用租户、成员、机构、父机构物理 ID；先验证可信的 `TenantMembershipPolicy`，再通过锁定有效 `PEACH_TENANT` 行序列化同租户移动，根据已存在的业务租户 ID 验证所有祖先归属，并检测循环和过深层级，最后使用 `VERSION` 乐观锁更新 `PARENT_ORG_REF_ID`。当前机构表仍以旧 `TENANT_ID` 业务号保存租户归属，全部转为 `TENANT_REF_ID` 由 #209/#211 接续完成。存量数据库迁移、机构删除依赖检查、完整租户所有者初始化、REST 管理接口和授权撤销仍是生产前置条件。#206 实现管理员租户 RBAC 之前，管理操作有意默认拒绝；登录集成属于 #204/#208。
 
 本段是受限的 release 集成基础，并不意味着生产级 SaaS IAM 已完成。
+
+## SaaS RBAC 独立授权事实源（#206 开发分支，尚未合并）
+
+本阶段新增 `PEACH_PERMISSION_DEFINITION`、`PEACH_ROLE_PERMISSION`、`PEACH_MEMBER_ROLE_BINDING` 和 `PEACH_IAM_AUTH_AUDIT`。角色在现有 `PEACH_ROLE` 中增加租户/应用物理关联、`AUTH_YEAR` 和版本字段；成员新增 `AUTH_VERSION`，用于角色变更后的旧凭证失效。新授权决策只查询**有效成员、已启用租户/应用、有效角色、有效角色权限和单条绑定**，不会把旧 `PEACH_AUTH_PARTY`、`PEACH_AUTH_FUNCTION` 等表作为新授权事实源。
+
+```mermaid
+flowchart LR
+    M[租户成员 MEMBER_REF_ID] --> B[成员角色绑定]
+    B --> R[角色 ROLE_REF_ID]
+    R --> RP[角色权限]
+    RP --> P[权限定义稳定语义码]
+    B --> Y[自然年度 AUTH_YEAR]
+    B --> S[独立授权范围 TENANT / ORG / ORG_TREE]
+    B --> A[应用 APP_REF_ID]
+```
+
+`ScopedPermissionService.hasTenantPermission` 仅在**同一条有效角色绑定**同时包含目标权限和完整 TENANT 作用域时允许，否则默认拒绝。不同机构的两个角色不能将 A 角色的操作权限与 B 角色的数据范围交叉合成新权限。`listGrantedBindings` 返回供后续对象级授权校验的独立证据，不能直接把它们当作已完成行/字段授权。
+
+当前开发进度为**数据库与只读校验基础**，并非最终可用 RBAC：旧角色增删改界面、授权管理写事务、角色权限撤销时的 `AUTH_VERSION` 原子失效、租户管理员权限、请求期网关验证与真实 SQL 集成仍待本 PR 继续实现。平台 SYSTEM 权限必须由服务端保护，租户自定义权限不可冒充平台代码。存量旧 `FISCAL/ORG_ID` 角色列需要在跨模块适配 #209 与 SQL 收敛 #211 中清理，不得作为新模型的授予依据。
