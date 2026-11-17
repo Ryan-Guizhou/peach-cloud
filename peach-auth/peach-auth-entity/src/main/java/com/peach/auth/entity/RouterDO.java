@@ -30,6 +30,10 @@ public class RouterDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = 2607858385743331267L;
 
     @Id
+    @Column(name = "ID")
+    @Schema(description = "物理主键")
+    private String id;
+
     @Column(name = "ROUTER_ID")
     @Schema(description = "主键")
     private String routerId;

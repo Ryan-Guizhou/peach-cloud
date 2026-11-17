@@ -26,8 +26,11 @@ public class UserDTO implements Serializable {
     @Serial
     private static final long serialVersionUID = 6145123868518262742L;
 
+    @Schema(description = "物理主键，新增由服务端生成")
+    @NotBlank(message = "物理ID不能为空", groups = {PeachGroup.UpdateGroup.class})
+    private String id;
+
     @Schema(description = "用户ID")
-    @NotBlank(message = "用户ID不能为空", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String userId;
 
     @Schema(description = "用户账号")

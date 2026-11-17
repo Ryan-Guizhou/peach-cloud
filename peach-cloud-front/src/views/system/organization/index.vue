@@ -6,9 +6,9 @@ import CrudPage from '../../../components/admin/CrudPage.vue'
   <CrudPage
     title="机构管理"
     description="维护租户下机构数据，支撑多机构上下文切换。"
-    row-key="orgId"
+    row-key="id"
     permission-prefix="organization"
-    :endpoint="{ pageList: '/auth/organization/pageList', add: '/auth/organization/add', update: '/auth/organization/update', delById: '/auth/organization/delById', idField: 'orgId' }"
+    :endpoint="{ pageList: '/auth/organization/pageList', add: '/auth/organization/add', update: '/auth/organization/update', delById: '/auth/organization/delById', idField: 'id' }"
     :columns="[
       { title: '机构ID', dataIndex: 'orgId', width: 180 },
       { title: '租户ID', dataIndex: 'tenantId' },
@@ -18,7 +18,7 @@ import CrudPage from '../../../components/admin/CrudPage.vue'
       { title: '排序', dataIndex: 'sortNum' },
     ]"
     :fields="[
-      { label: '机构ID', name: 'orgId' },
+
       { label: '租户ID', name: 'tenantId', required: true },
       { label: '机构编码', name: 'orgCode', required: true },
       { label: '机构名称', name: 'orgName', required: true },

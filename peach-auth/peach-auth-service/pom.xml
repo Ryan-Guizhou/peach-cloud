@@ -56,6 +56,10 @@
             <groupId>com.peach</groupId>
             <artifactId>peach-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-code-starter</artifactId>
+        </dependency>
 
 
         <dependency>

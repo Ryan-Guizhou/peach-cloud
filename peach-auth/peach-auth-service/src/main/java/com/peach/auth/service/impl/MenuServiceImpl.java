@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -12,13 +15,13 @@ import com.peach.auth.qo.MenuQO;
 import com.peach.auth.service.IMenuService;
 import com.peach.auth.vo.MenuVO;
 import com.peach.common.constant.PubCommonConst;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 
 /**
  * 菜单服务实现类。
@@ -32,6 +35,8 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class MenuServiceImpl implements IMenuService {
+
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
 
     private final MenuDao menuDao;
 
@@ -55,9 +60,11 @@ public class MenuServiceImpl implements IMenuService {
         MenuDO menuDO = new MenuDO();
         BeanUtils.copyProperties(menuDTO, menuDO);
         menuDO.fillCreateTime(null);
-        menuDO.setAppId("111");
-        menuDO.setTenantId("111");
-        Optional.ofNullable(menuDO.getIsDelete()).ifPresent(menuDO::setIsDelete);
+        menuDO.setId(UniqueIdFacade.nextId());
+        menuDO.setMenuId(authBusinessIdGenerator.next(AuthBusinessIdType.MENU));
+        if (StringUtil.isBlank(menuDO.getTenantId()) || StringUtil.isBlank(menuDO.getAppId())) {
+            throw new IllegalArgumentException("Tenant and application context are required");
+        }
         if (menuDO.getIsDelete() == null) {
             menuDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
         }

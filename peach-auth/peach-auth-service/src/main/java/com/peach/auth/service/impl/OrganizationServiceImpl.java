@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -12,6 +15,7 @@ import com.peach.auth.qo.OrganizationQO;
 import com.peach.auth.service.IOrganizationService;
 import com.peach.auth.vo.OrganizationVO;
 import com.peach.common.constant.PubCommonConst;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -33,6 +37,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class OrganizationServiceImpl implements IOrganizationService {
+
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
 
     private final OrganizationDao organizationDao;
 
@@ -60,6 +66,8 @@ public class OrganizationServiceImpl implements IOrganizationService {
     public void add(OrganizationDTO organizationDTO) {
         OrganizationDO organizationDO = new OrganizationDO();
         BeanUtils.copyProperties(organizationDTO, organizationDO);
+        organizationDO.setId(UniqueIdFacade.nextId());
+        organizationDO.setOrgId(authBusinessIdGenerator.next(AuthBusinessIdType.ORG));
         organizationDO.fillCreateTime(null);
         if (organizationDO.getIsDelete() == null) {
             organizationDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
