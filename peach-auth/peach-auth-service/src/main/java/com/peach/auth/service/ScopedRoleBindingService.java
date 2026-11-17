@@ -126,8 +126,8 @@ public class ScopedRoleBindingService {
         if (operatorMemberRefId.equals(binding.getMemberRefId())) {
             throw new SecurityException("Administrators cannot revoke their own role bindings");
         }
+        // 撤销是减少权限，不可要求角色的权限当前仍可委派，否则权限收回会被意外阻断。
         TenantMemberDO target = lockMember(tenantRefId, binding.getMemberRefId());
-        assertRoleDelegationAllowed(current, tenantRefId, binding.getRoleRefId());
         if (binding.getVersion() == null || binding.getVersion() < 0
                 || bindingDao.revoke(tenantRefId, bindingRefId, binding.getVersion()) != 1) {
             throw new IllegalStateException("Role binding revoke conflicted");
