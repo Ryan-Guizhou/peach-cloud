@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.auth.common.RsaPasswordUtil;
+import com.peach.auth.LoginInfo;
 import com.peach.auth.dto.RegisterDTO;
 import com.peach.auth.dto.SwitchContextDTO;
 import com.peach.auth.service.IUserService;
@@ -52,7 +53,12 @@ public class LoginController {
     public Response login(@RequestBody @Validated(LoginGroup.Login.class) LoginDTO loginDTO) {
         Response response = userService.login(loginDTO);
         if (response.isSuccess()) {
-            response.setMsg("登录成功");
+            if (response.getData() instanceof LoginInfo info
+                    && Boolean.TRUE.equals(info.getRequiresTenantSelection())) {
+                response.setMsg("请选择租户和应用后重新提交登录");
+            } else {
+                response.setMsg("登录成功");
+            }
         }
         return response;
     }
@@ -70,18 +76,14 @@ public class LoginController {
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "用户登出")
+    @Operation(summary = "登出当前设备 Token")
     public Response logout() {
-        Object userId = StpUtil.getLoginId();
-        if (StringUtil.isNotBlank(userId)) {
-            StpUtil.logout(userId);
-            log.info("logout successed, userId is {}",userId);
-        }else {
-            log.info("logout skipped, no active session");
+        if (StpUtil.isLogin()) {
+            // 不使用 logout(userId)，避免误删同一账号其他设备和租户的令牌。
+            StpUtil.logout();
+            log.info("Current token logged out");
         }
-        Response success = Response.success();
-        success.setMsg("登出成功");
-        return success;
+        return Response.success().setMsg("登出成功");
     }
 
     @PostMapping("/register")
@@ -93,31 +95,31 @@ public class LoginController {
     @PostMapping("/forget")
     @Operation(summary = "用户忘记密码")
     public Response forget() {
-        return Response.success();
+        return Response.fail("密码找回流程尚未开放");
     }
 
     @PostMapping("/reset")
     @Operation(summary = "用户重置密码")
     public Response reset() {
-        return Response.success();
+        return Response.fail("密码重置流程尚未开放");
     }
 
     @PostMapping("/changePassword")
     @Operation(summary = "用户修改密码")
     public Response changePassword() {
-        return Response.success();
+        return Response.fail("密码修改接口尚未开放");
     }
 
     @PostMapping("/changeInfo")
     @Operation(summary = "用户修改信息")
     public Response changeInfo() {
-        return Response.success();
+        return Response.fail("请使用个人资料专用接口");
     }
 
     @PostMapping("/changeAvatar")
     @Operation(summary = "用户修改头像")
     public Response changeAvatar() {
-        return Response.success();
+        return Response.fail("请使用个人头像专用接口");
     }
 
     @PostMapping("/init")

@@ -144,6 +144,52 @@ stateDiagram-v2
 
 本段是受限的 release 集成基础，并不意味着生产级 SaaS IAM 已完成。
 
+## 全局账号密码散列安全基础（#204 仍在开发）
+
+登录保留客户端 RSA 传输保护，服务端解密后使用 BCrypt(12) 比对随机盐密码散列。数据库不再以 Base64 明文等效值做 SQL 匹配，`PEACH_USER.PASSWORD` 改为 `VARCHAR(255)`。用户创建/修改密码后仅持久化散列；新增未设置密码的账号默认停用。密码哈希被 `@JsonIgnore` 排除 JSON 序列化；未知账号和旧 Base64 格式均执行占位 BCrypt 计算后拒绝，避免静默降级到旧弱口令。
+
+**迁移与安全边界：** 旧 Base64 密码不会自动转换为 BCrypt，也不能在不验证原始密码时安全反向恢复。必须提前提供经验证的重置凭证流程；开发样例口令仅用于测试，禁止生产使用。此阶段仍存在旧组织/年度登录和切换逻辑；多租户成员认证、无机构租户登录、租户撤权等必须由 #204、#206、#208 和 #211 完成后才能投入使用。
+
+
+### 成员版本绑定的 Sa-Token 会话基础（#204 开发中）
+
+新增 `TenantSessionContext` 与 `TenantSessionService`，在后端完成用户名/密码验证后，将物理 `userRefId/tenantRefId/memberRefId/appRefId` 及成员乐观版本绑定到 **Token Session（不是账号全局共享 Session）**。调用 `bindAfterAuthentication` 前必须先完成可信用户认证；服务通过 Sa-Token 的不可由客户端修改的登录 ID 与数据库 `USER_ID → ID` 关系确认身份，确保已启用租户、ACTIVE 成员和已启用应用。后续每次调用 `requireCurrent` 都重新校验成员状态与版本，停用/退出/恢复后旧上下文拒绝；`switchTenant` 必须基于同一个真实登录用户重新校验目标成员，不要求机构关系。
+
+本服务是 **SaaS 会话校验基础**，当前仍未取代旧 FISCAL 登录控制器与旧网关缓存。#206 的角色资源授权版本、#208 的网关 Fail-Closed 校验和 #209/#210 的 Feign/前端契约完成前，不能仅凭此服务认定全链路登录权限已安全。旧 Token 需要部署迁移时清理。
+
+## #204 全局用户与租户成员登录（开发分支：已实现基本路径，尚未验收）
+
+登录不再从 `USER_ORG` 或 `FISCAL` 推断可用租户。后端先校验 RSA 传输的口令密文、BCrypt 哈希、验证码及账号锁定状态，再通过 `TenantMemberDao.selectLoginTargets` 读取启用租户下的 `ACTIVE` 成员和已启用应用。无可用目标拒绝登录，只有一个目标可自动选择，多个目标返回 `requiresTenantSelection=true` 和 `tenantOptions`，**不会返回 Token**。客户端选择 `tenantRefId` + `appRefId` 后须重新提交凭据，服务端重新认证并校验目标资格，避免在选择阶段建立不受租户限制的临时凭证。
+
+```mermaid
+sequenceDiagram
+    participant Client as 前端
+    participant Auth as UserServiceImpl
+    participant Member as PEACH_TENANT_MEMBER
+    participant Session as Sa-Token TokenSession
+    Client->>Auth: 账号、RSA口令、验证码、可选租户应用物理ID
+    Auth->>Auth: BCrypt验证与锁定检查
+    Auth->>Member: 查询有效成员、租户、应用候选
+    alt 多目标且未选择
+        Auth-->>Client: requiresTenantSelection + options（无Token）
+    else 合法目标
+        Auth->>Session: 登录用户永久业务ID
+        Auth->>Member: 校验物理USER/TENANT/MEMBER/APP及版本
+        Auth->>Session: 原子写入单个 SaaS 上下文Map
+        Auth-->>Client: token + memberRefId + tenantRefId + appRefId
+    end
+```
+
+`switchContext` 仅接收目标租户和应用的**物理 ID**，先基于当前已认证用户复查旧上下文，再验证目标成员与应用，不能凭前端提交的 `USER_ID` 切换身份。`logout` 仅退出当前 Token，避免误退同账号的其他设备。用户没有任何机构关系时仍可作为租户成员登录；`orgRefId` 不是此阶段登录必要条件。示例初始化数据已补充默认账号的 `PEACH_TENANT_MEMBER` 记录。
+
+**权限边界：** 新成员会话暂不复用旧 `ROLE_CODE+ORG_ID+FISCAL` 的授权结果，而是返回**空菜单、空按钮、空 API 权限**，避免越权。新 RBAC (#206)、网关的请求期强制成员/版本校验 (#208)、跨服务契约 (#209) 和前端适配 (#210) 必须一起完成后才能生产启用。旧网关尚未统一，因此不能将通过的 Maven/Redis CI 解释为端到端鉴权通过。
+
+**尚待验证：** 多终端、真实 MySQL/Redis 选择与注销集成、遗留用户密码重置、密码修改权限、角色与资源撤权后的 `authVersion` 校验、存量 Token 清理。禁止将未实现的重置、注册接口返回伪成功。
+
+### 年度选择与权限隔离说明
+
+历史 `FISCAL` 字段被移除，但**自然年度**仍然属于已确认的 SaaS 授权维度。新接口通过 `year`（例如 2026）显式选择年度，`TenantSessionContext` 将 `year` 与租户、成员、应用、版本放在同一个 Token 快照中。不同年度的角色和资源权限必须由 #206 绑定到独立的授权记录，尚未实现前一律为空权限；不得把不同年度的授权合并。当前接口未提供历史年度授权迁移，属于 #211 数据验收内容。
+
 ## SaaS RBAC 独立授权事实源（#206 开发分支，尚未合并）
 
 本阶段新增 `PEACH_PERMISSION_DEFINITION`、`PEACH_ROLE_PERMISSION`、`PEACH_MEMBER_ROLE_BINDING` 和 `PEACH_IAM_AUTH_AUDIT`。角色在现有 `PEACH_ROLE` 中增加租户/应用物理关联、`AUTH_YEAR` 和版本字段；成员新增 `AUTH_VERSION`，用于角色变更后的旧凭证失效。新授权决策只查询**有效成员、已启用租户/应用、有效角色、有效角色权限和单条绑定**，不会把旧 `PEACH_AUTH_PARTY`、`PEACH_AUTH_FUNCTION` 等表作为新授权事实源。

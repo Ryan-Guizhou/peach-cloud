@@ -23,15 +23,15 @@ public class SwitchContextDTO implements Serializable {
     @Serial
     private static final long serialVersionUID = -4932451809499849490L;
 
-    @Schema(description = "年度")
+    @Schema(description = "目标自然年度")
     @NotNull(message = "年度不能为空")
-    private Integer fiscal;
+    private Integer year;
 
-    @Schema(description = "租户ID")
-    @NotBlank(message = "租户ID不能为空")
-    private String tenantId;
+    @Schema(description = "目标租户物理 ID")
+    @NotBlank(message = "租户物理 ID 不能为空")
+    private String tenantRefId;
 
-    @Schema(description = "机构ID")
-    @NotBlank(message = "机构ID不能为空")
-    private String orgId;
+    @Schema(description = "目标应用物理 ID")
+    @NotBlank(message = "应用物理 ID 不能为空")
+    private String appRefId;
 }
