@@ -3,7 +3,6 @@ package com.peach.code.autoconfigure;
 import com.peach.code.CodeFormat;
 import com.peach.code.CodeGeneratorException;
 import com.peach.code.CodeRuleMaintenance;
-import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -13,6 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.function.Function;
 
 /**
  * 使用规则行锁及乐观版本控制业务编码规则的安全修改。
@@ -112,7 +112,7 @@ public class JdbcCodeRuleMaintenance implements CodeRuleMaintenance {
     }
 
     private void withinRule(String namespace, String prefix, long expectedVersion,
-                            java.util.function.Function<Rule, Void> action) {
+                            Function<Rule, Void> action) {
         if (expectedVersion < 0) {
             throw new CodeGeneratorException("Invalid expected rule version");
         }
