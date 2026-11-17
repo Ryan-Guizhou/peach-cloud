@@ -13,7 +13,7 @@ import org.springframework.util.StringUtils;
  * @CreateTime 2026/11/17 17:35
  */
 public record TenantSessionContext(String userRefId, String tenantRefId, String memberRefId,
-                                   String appRefId, long memberVersion) {
+                                   String appRefId, int year, long memberVersion) {
 
     /**
      * 检查构造参数是否具备安全的物理关联语义。
@@ -22,12 +22,13 @@ public record TenantSessionContext(String userRefId, String tenantRefId, String 
      * @param tenantRefId 租户物理主键
      * @param memberRefId 成员物理主键
      * @param appRefId 应用物理主键
+     * @param year 登录选择的自然年度，各年度授权相互隔离
      * @param memberVersion 成员版本
      */
     public TenantSessionContext {
         if (!StringUtils.hasText(userRefId) || !StringUtils.hasText(tenantRefId)
                 || !StringUtils.hasText(memberRefId) || !StringUtils.hasText(appRefId)
-                || memberVersion < 0) {
+                || year < 1 || year > 9999 || memberVersion < 0) {
             throw new SecurityException("Invalid tenant session context");
         }
     }

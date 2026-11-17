@@ -40,11 +40,12 @@ public class TenantSessionService {
      * @param verifiedUserRefId 已验证的用户物理 ID
      * @param tenantRefId 请求选择的租户物理 ID
      * @param appRefId 请求选择的应用物理 ID
+     * @param year 登录选择的自然年度
      * @return 经服务端验证的上下文
      */
     @Transactional(readOnly = true)
     public TenantSessionContext bindAfterAuthentication(String verifiedUserRefId,
-                                                         String tenantRefId, String appRefId) {
+                                                         String tenantRefId, String appRefId, int year) {
         requireIdentity(verifiedUserRefId);
         requireIdentity(tenantRefId);
         requireIdentity(appRefId);
@@ -62,7 +63,7 @@ public class TenantSessionService {
             throw new SecurityException("Membership version is invalid");
         }
         TenantSessionContext context = new TenantSessionContext(verifiedUserRefId, tenantRefId,
-                member.getId(), appRefId, version);
+                member.getId(), appRefId, year, version);
         var session = StpUtil.getTokenSession();
         // 写入单个快照，避免并发切租户时混合读取租户、成员和应用。
         session.set(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT, Map.of(
@@ -70,6 +71,7 @@ public class TenantSessionService {
                 "tenantRefId", context.tenantRefId(),
                 "memberRefId", context.memberRefId(),
                 "appRefId", context.appRefId(),
+                "year", String.valueOf(context.year()),
                 "memberVersion", String.valueOf(context.memberVersion())));
         return context;
     }
@@ -91,17 +93,20 @@ public class TenantSessionService {
                 || !(values.get("tenantRefId") instanceof String tenantId)
                 || !(values.get("memberRefId") instanceof String memberId)
                 || !(values.get("appRefId") instanceof String appId)
+                || !(values.get("year") instanceof String selectedYear)
                 || !(values.get("memberVersion") instanceof String version)) {
             throw new SecurityException("Tenant token is missing a trusted context");
         }
         long memberVersion;
+        int year;
         try {
             memberVersion = Long.parseLong(version);
+            year = Integer.parseInt(selectedYear);
         } catch (NumberFormatException exception) {
-            throw new SecurityException("Tenant token member version is invalid");
+            throw new SecurityException("Tenant token year or member version is invalid");
         }
         TenantSessionContext context = new TenantSessionContext(
-                userId, tenantId, memberId, appId, memberVersion);
+                userId, tenantId, memberId, appId, year, memberVersion);
         requireLoginUser(context.userRefId());
         TenantMemberDO active = membershipService.resolveActive(context.tenantRefId(), context.userRefId());
         if (active == null || !Objects.equals(active.getId(), context.memberRefId())
@@ -118,12 +123,13 @@ public class TenantSessionService {
      *
      * @param tenantRefId 目标租户物理 ID
      * @param appRefId 目标应用物理 ID
+     * @param year 目标自然年度
      * @return 新租户成员上下文
      */
     @Transactional(readOnly = true)
-    public TenantSessionContext switchTenant(String tenantRefId, String appRefId) {
+    public TenantSessionContext switchTenant(String tenantRefId, String appRefId, int year) {
         TenantSessionContext current = requireCurrent();
-        return bindAfterAuthentication(current.userRefId(), tenantRefId, appRefId);
+        return bindAfterAuthentication(current.userRefId(), tenantRefId, appRefId, year);
     }
 
     private void requireLoginUser(String userRefId) {

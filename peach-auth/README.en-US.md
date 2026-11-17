@@ -128,3 +128,7 @@ sequenceDiagram
 **Authorization boundary:** The new member login does **not reuse** legacy `ROLE_CODE+ORG_ID+FISCAL` permissions. Until the scoped RBAC (#206), gateway enforcement (#208), cross-service contracts (#209), and frontend (#210) are complete, it returns **empty menu, button and API authorization results**. The legacy gateway is not yet migrated; passing Maven/Redis CI is not proof of end-to-end authorization.
 
 **Outstanding acceptance:** Multi-device behavior, real MySQL/Redis tenant selection and logout, legacy credential reset, protected password changes, role `authVersion` revocation, and old-token cleanup. Registration/reset stubs must not falsely report success.
+
+### Natural-year authorization isolation
+
+The legacy `FISCAL` field is removed, but the **natural calendar year** remains an explicit SaaS authorization dimension. The new APIs select `year` (for example 2026), and `TenantSessionContext` stores it atomically with tenant, member, app, and membership version. #206 must bind role/resource assignments separately to each year; until that is implemented the effective permissions are empty. Permissions from different years must never be merged. Historic year-grant migration remains subject to #211 database acceptance.
