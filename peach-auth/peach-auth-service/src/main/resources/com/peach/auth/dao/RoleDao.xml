@@ -280,14 +280,14 @@
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROLE
-        WHERE ID = #{value,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.RoleDO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROLE
-        WHERE ID IN
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
@@ -298,6 +298,7 @@
             <include refid="allColumnAlias" />
         FROM PEACH_ROLE
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
@@ -306,6 +307,7 @@
         SELECT COUNT(1)
         FROM PEACH_ROLE
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
@@ -348,6 +350,7 @@
         <include refid="allColumnAlias" />
         FROM PEACH_ROLE
         <where>
+            IS_DELETE = 0
             <if test="tenantId != null and tenantId != ''">
                 AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
             </if>
@@ -368,6 +371,10 @@
                     SELECT ROLE_CODE
                     FROM PEACH_AUTH_PARTY
                     WHERE PARTY_CODE = #{userCode,jdbcType=VARCHAR}
+                      AND TENANT_ID = PEACH_ROLE.TENANT_ID
+                      AND ORG_ID = PEACH_ROLE.ORG_ID
+                      AND FISCAL = PEACH_ROLE.FISCAL
+                      AND IS_DELETE = 0
                 )
             </if>
         </where>

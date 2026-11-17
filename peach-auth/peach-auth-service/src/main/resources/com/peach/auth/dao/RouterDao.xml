@@ -274,14 +274,14 @@
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
-        WHERE ID = #{value,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.RouterVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
-        WHERE ID IN
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
@@ -292,6 +292,7 @@
             <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
@@ -300,6 +301,7 @@
         SELECT COUNT(1)
         FROM PEACH_ROUTER
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
@@ -309,6 +311,7 @@
         <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
         <where>
+            IS_DELETE = 0
             <if test="routerCode != null and routerCode != ''">
                 AND ROUTER_CODE = #{routerCode,jdbcType=VARCHAR}
             </if>
@@ -324,14 +327,14 @@
 
     <select id="countByRouterCode" resultType="java.lang.Integer">
         SELECT COUNT(1) FROM PEACH_ROUTER
-        WHERE ROUTER_CODE = #{routerCode,jdbcType=VARCHAR} AND ROUTER_ID != #{routerId,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND ROUTER_CODE = #{routerCode,jdbcType=VARCHAR} AND ROUTER_ID != #{routerId,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByFuncCodes" resultType="com.peach.auth.vo.RouterVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
-        WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
           AND APP_ID = #{appId,jdbcType=VARCHAR}
           AND FUNC_CODE IN
         <foreach collection="funcCodes" item="item" open="(" separator="," close=")">
@@ -343,7 +346,7 @@
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
-        WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
           AND APP_ID = #{appId,jdbcType=VARCHAR}
           AND IS_AUTH = 0
     </select>

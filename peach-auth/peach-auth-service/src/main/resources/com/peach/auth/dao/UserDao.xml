@@ -428,14 +428,14 @@
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_USER
-        WHERE ID = #{value,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.UserDO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_USER
-        WHERE ID IN
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
@@ -446,6 +446,7 @@
             <include refid="allColumnAlias" />
         FROM PEACH_USER
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
@@ -454,6 +455,7 @@
         SELECT COUNT(1)
         FROM PEACH_USER
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
@@ -461,7 +463,7 @@
     <select id="login" resultType="com.peach.auth.vo.UserVO">
         SELECT <include refid="allColumnAlias" />
         FROM PEACH_USER
-        WHERE (USER_CODE = #{username,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND (USER_CODE = #{username,jdbcType=VARCHAR}
             OR MOBILE_PHONE = #{username,jdbcType=VARCHAR}
             OR EMAIL = #{username,jdbcType=VARCHAR})
           AND PASSWORD = #{password,jdbcType=VARCHAR}
@@ -472,6 +474,7 @@
         SELECT <include refid="allColumnAlias" />
         FROM PEACH_USER
         <where>
+            IS_DELETE = 0
             <if test="userId != null and userId != ''">
                 AND USER_ID = #{userId,jdbcType=VARCHAR}
             </if>
