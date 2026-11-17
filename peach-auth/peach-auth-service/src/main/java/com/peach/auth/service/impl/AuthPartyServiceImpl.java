@@ -26,6 +26,10 @@ import java.util.Set;
 
 /**
  * 用户角色绑定服务实现。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/17 14:20
  */
 @Slf4j
 @Indexed
