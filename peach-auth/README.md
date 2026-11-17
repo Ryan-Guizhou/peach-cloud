@@ -149,3 +149,10 @@ stateDiagram-v2
 登录保留客户端 RSA 传输保护，服务端解密后使用 BCrypt(12) 比对随机盐密码散列。数据库不再以 Base64 明文等效值做 SQL 匹配，`PEACH_USER.PASSWORD` 改为 `VARCHAR(255)`。用户创建/修改密码后仅持久化散列；新增未设置密码的账号默认停用。密码哈希被 `@JsonIgnore` 排除 JSON 序列化；未知账号和旧 Base64 格式均执行占位 BCrypt 计算后拒绝，避免静默降级到旧弱口令。
 
 **迁移与安全边界：** 旧 Base64 密码不会自动转换为 BCrypt，也不能在不验证原始密码时安全反向恢复。必须提前提供经验证的重置凭证流程；开发样例口令仅用于测试，禁止生产使用。此阶段仍存在旧组织/年度登录和切换逻辑；多租户成员认证、无机构租户登录、租户撤权等必须由 #204、#206、#208 和 #211 完成后才能投入使用。
+
+
+### 成员版本绑定的 Sa-Token 会话基础（#204 开发中）
+
+新增 `TenantSessionContext` 与 `TenantSessionService`，在后端完成用户名/密码验证后，将物理 `userRefId/tenantRefId/memberRefId/appRefId` 及成员乐观版本绑定到 **Token Session（不是账号全局共享 Session）**。调用 `bindAfterAuthentication` 前必须先完成可信用户认证；服务通过 Sa-Token 的不可由客户端修改的登录 ID 与数据库 `USER_ID → ID` 关系确认身份，确保已启用租户、ACTIVE 成员和已启用应用。后续每次调用 `requireCurrent` 都重新校验成员状态与版本，停用/退出/恢复后旧上下文拒绝；`switchTenant` 必须基于同一个真实登录用户重新校验目标成员，不要求机构关系。
+
+本服务是 **SaaS 会话校验基础**，当前仍未取代旧 FISCAL 登录控制器与旧网关缓存。#206 的角色资源授权版本、#208 的网关 Fail-Closed 校验和 #209/#210 的 Feign/前端契约完成前，不能仅凭此服务认定全链路登录权限已安全。旧 Token 需要部署迁移时清理。
