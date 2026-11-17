@@ -24,6 +24,21 @@
          #{createdTime}, #{creatorId}, 0)
     </insert>
 
+    <update id="expirePendingForUser">
+        UPDATE PEACH_TENANT_INVITATION
+        SET STATUS = 'EXPIRED', VERSION = VERSION + 1
+        WHERE TENANT_REF_ID = #{tenantRefId}
+          AND INVITEE_USER_REF_ID = #{userRefId}
+          AND STATUS = 'PENDING' AND IS_DELETE = 0
+          AND EXPIRES_AT <![CDATA[ <= ]]> CURRENT_TIMESTAMP(3)
+    </update>
+
+    <select id="selectByIdInTenant" resultType="com.peach.auth.entity.TenantInvitationDO">
+        SELECT <include refid="invitationColumns" />
+        FROM PEACH_TENANT_INVITATION
+        WHERE ID = #{id} AND TENANT_REF_ID = #{tenantRefId}
+    </select>
+
     <select id="selectPending" resultType="com.peach.auth.entity.TenantInvitationDO">
         SELECT <include refid="invitationColumns" />
         FROM PEACH_TENANT_INVITATION
