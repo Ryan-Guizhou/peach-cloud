@@ -54,6 +54,7 @@ class MysqlCodeConcurrentIntegrationTest {
                 MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword());
         jdbc = new JdbcTemplate(dataSource);
         jdbc.execute("CREATE TABLE IF NOT EXISTS PEACH_CODE_RULE ("
+                + "ID VARCHAR(32) NOT NULL,"
                 + "TENANT_ID VARCHAR(32) NOT NULL,"
                 + "CODE_PREFIX VARCHAR(32) NOT NULL,"
                 + "MAX_CODE_WIDTH INT NOT NULL,"
@@ -62,13 +63,15 @@ class MysqlCodeConcurrentIntegrationTest {
                 + "CODE_SEPARATOR VARCHAR(1) NOT NULL DEFAULT '_',"
                 + "SCOPE_TYPE VARCHAR(16) NOT NULL DEFAULT 'TENANT',"
                 + "RULE_VERSION BIGINT NOT NULL DEFAULT 0,"
+                + "IS_DELETE TINYINT(1) NOT NULL DEFAULT 0,"
                 + "MODIFY_TIME VARCHAR(20),"
-                + "PRIMARY KEY (TENANT_ID, CODE_PREFIX)"
-                + ") ENGINE=InnoDB");
+                + "PRIMARY KEY (ID),"
+                + "UNIQUE KEY UK_CODE_SCOPE (TENANT_ID,CODE_PREFIX)"
+                + ")");
         jdbc.execute("DROP TRIGGER IF EXISTS PEACH_CODE_FAIL_UPDATE");
         jdbc.update("DELETE FROM PEACH_CODE_RULE");
-        jdbc.update("INSERT INTO PEACH_CODE_RULE(TENANT_ID,CODE_PREFIX,MAX_CODE_WIDTH,CURRENT_VALUE,STATUS)"
-                        + " VALUES ('T001','MENU',8,0,'ENABLE')");
+        jdbc.update("INSERT INTO PEACH_CODE_RULE(ID,TENANT_ID,CODE_PREFIX,MAX_CODE_WIDTH,CURRENT_VALUE,STATUS)"
+                        + " VALUES (REPLACE(UUID(), '-', ''),'T001','MENU',8,0,'ENABLE')");
         DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
         first = new PeachCodeGenerator(jdbc, new CodeProperties(), transactionManager);
         second = new PeachCodeGenerator(jdbc, new CodeProperties(), transactionManager);

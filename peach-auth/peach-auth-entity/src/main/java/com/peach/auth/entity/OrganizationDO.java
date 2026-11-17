@@ -32,6 +32,10 @@ public class OrganizationDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = -3347676039473972911L;
 
     @Id
+    @Column(name = "ID")
+    @Schema(description = "物理主键")
+    private String id;
+
     @Column(name = "ORG_ID")
     @Schema(description = "机构ID")
     private String orgId;

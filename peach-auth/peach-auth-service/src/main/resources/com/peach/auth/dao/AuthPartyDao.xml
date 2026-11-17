@@ -217,49 +217,54 @@
     <update id="update" parameterType="com.peach.auth.entity.AuthPartyDO">
         UPDATE PEACH_AUTH_PARTY SET
             <include refid="allColumnSet" />
-        <where>
-            <include refid="allColumnCond" />
-        </where>
+        WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
     </update>
 
-    <delete id="delById" parameterType="string">
-        DELETE FROM PEACH_AUTH_PARTY
-        WHERE ID = #{value,jdbcType=VARCHAR}
-    </delete>
+    <update id="delById" parameterType="string">
+        UPDATE PEACH_AUTH_PARTY
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE ID = #{value,jdbcType=VARCHAR} AND IS_DELETE = 0
+    </update>
 
-    <delete id="delByIds" parameterType="java.util.List">
-        DELETE FROM PEACH_AUTH_PARTY
-        WHERE ID IN
+    <update id="delByIds" parameterType="java.util.List">
+        UPDATE PEACH_AUTH_PARTY
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE IS_DELETE = 0
+          AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
-    </delete>
+    </update>
 
-    <delete id="del" parameterType="com.peach.auth.entity.AuthPartyDO">
-        DELETE FROM PEACH_AUTH_PARTY
-        <where>
-            <include refid="allColumnCond" />
-        </where>
-    </delete>
+    <update id="del" parameterType="com.peach.auth.entity.AuthPartyDO">
+        UPDATE PEACH_AUTH_PARTY
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+          AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+          AND PARTY_CODE = #{partyCode,jdbcType=VARCHAR}
+          AND PARTY_TYPE = #{partyType,jdbcType=VARCHAR}
+          AND FISCAL = #{fiscal,jdbcType=INTEGER}
+          AND IS_DELETE = 0
+    </update>
 
     <update id="updateById" parameterType="com.peach.auth.entity.AuthPartyDO">
         UPDATE PEACH_AUTH_PARTY SET
             <include refid="allColumnSet" />
-        WHERE ID =  #{id,jdbcType=VARCHAR}
+        WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
     </update>
 
     <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.AuthPartyDO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_PARTY
-        WHERE ID = #{value,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.AuthPartyDO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_PARTY
-        WHERE ID IN
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
@@ -270,6 +275,7 @@
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_PARTY
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
@@ -278,6 +284,7 @@
         SELECT COUNT(1)
         FROM PEACH_AUTH_PARTY
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>

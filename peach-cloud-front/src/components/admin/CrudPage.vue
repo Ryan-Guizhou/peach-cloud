@@ -151,6 +151,12 @@ async function saveRecord() {
   saving.value = true
   try {
     const payload: DataRecord = { ...formState }
+    if (authStore.session?.tenantId) {
+      payload.tenantId = authStore.session.tenantId
+    }
+    if (authStore.session?.orgId) {
+      payload.orgId = authStore.session.orgId
+    }
     if (editingId.value) {
       payload[props.rowKey] = editingId.value
     }

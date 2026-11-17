@@ -30,6 +30,10 @@ public class ResourceDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = -1744245491018843771L;
 
     @Id
+    @Column(name = "ID")
+    @Schema(description = "物理主键")
+    private String id;
+
     @Column(name = "RESOURCE_ID")
     @Schema(description = "资源ID")
     private String resourceId;

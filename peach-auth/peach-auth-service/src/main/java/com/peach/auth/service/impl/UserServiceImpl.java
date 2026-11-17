@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import java.nio.charset.StandardCharsets;
 import com.github.pagehelper.page.PageMethod;
 
@@ -37,6 +40,7 @@ import com.peach.auth.vo.UserVO;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.service.CaptchaService;
 import com.peach.common.constant.PubCommonConst;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.constant.SaTokenConstant;
 import com.peach.common.response.Response;
 import com.peach.common.util.StringUtil;
@@ -62,6 +66,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements IUserService {
+
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
 
     private final UserDao userDao;
 
@@ -378,6 +384,8 @@ public class UserServiceImpl implements IUserService {
     public void add(UserDTO userDTO) {
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
+        userDO.setId(UniqueIdFacade.nextId());
+        userDO.setUserId(authBusinessIdGenerator.next(AuthBusinessIdType.USER));
         UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillCreateTime(null);
         if (userDO.getIsDelete() == null) {

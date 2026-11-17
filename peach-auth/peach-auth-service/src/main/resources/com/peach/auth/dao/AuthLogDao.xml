@@ -2,26 +2,26 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.AuthLogDao">
     <sql id="allColumn">
-        LOG_ID,                                           TENANT_ID,                                        ORG_ID,                                           OPERATOR_USER_ID,
+        ID, LOG_ID,                                           TENANT_ID,                                        ORG_ID,                                           OPERATOR_USER_ID,
         OPERATOR_CODE,                                    OPERATOR_NAME,                                    USER_ID,                                          USER_CODE,
         USER_NAME,                                        AUTH_DESCRIBE,                                    OPERAT_TIME
     </sql>
 
     <sql id="allColumnAlias">
-        LOG_ID as logId,                                  TENANT_ID as tenantId,                            ORG_ID as orgId,                                  OPERATOR_USER_ID as operatorUserId,
+        ID as id, LOG_ID as logId,                                  TENANT_ID as tenantId,                            ORG_ID as orgId,                                  OPERATOR_USER_ID as operatorUserId,
         OPERATOR_CODE as operatorCode,                    OPERATOR_NAME as operatorName,                    USER_ID as userId,                                USER_CODE as userCode,
         USER_NAME as userName,                            AUTH_DESCRIBE as authDescribe,                    OPERAT_TIME as operatTime
     </sql>
 
     <sql id="allColumnValue">
-        #{logId,jdbcType=VARCHAR},                        #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                        #{operatorUserId,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR}, #{logId,jdbcType=VARCHAR},                        #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                        #{operatorUserId,jdbcType=VARCHAR},
         #{operatorCode,jdbcType=VARCHAR},                 #{operatorName,jdbcType=VARCHAR},                 #{userId,jdbcType=VARCHAR},                       #{userCode,jdbcType=VARCHAR},
         #{userName,jdbcType=VARCHAR},                     #{authDescribe,jdbcType=VARCHAR},                 #{operatTime,jdbcType=VARCHAR}
     </sql>
 
 
     <sql id="itemAllColumnValue">
-        #{item.logId,jdbcType=VARCHAR},                   #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                   #{item.operatorUserId,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR}, #{item.logId,jdbcType=VARCHAR},                   #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                   #{item.operatorUserId,jdbcType=VARCHAR},
         #{item.operatorCode,jdbcType=VARCHAR},            #{item.operatorName,jdbcType=VARCHAR},            #{item.userId,jdbcType=VARCHAR},                  #{item.userCode,jdbcType=VARCHAR},
         #{item.userName,jdbcType=VARCHAR},                #{item.authDescribe,jdbcType=VARCHAR},            #{item.operatTime,jdbcType=VARCHAR}
     </sql>
@@ -134,6 +134,9 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
+        </if>
         <if test="logId != null and logId != ''">
             AND LOG_ID = #{logId,jdbcType=VARCHAR}
         </if>
@@ -189,49 +192,48 @@
     <update id="update" parameterType="com.peach.auth.entity.AuthLogDO">
         UPDATE PEACH_AUTH_LOG SET
             <include refid="allColumnSet" />
-        <where>
-            <include refid="allColumnCond" />
-        </where>
+        WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
     </update>
 
-    <delete id="delById" parameterType="string">
-        DELETE FROM PEACH_AUTH_LOG
-        WHERE LOG_ID = #{value,jdbcType=VARCHAR}
-    </delete>
+    <update id="delById" parameterType="string">
+        UPDATE PEACH_AUTH_LOG
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
+    </update>
 
-    <delete id="delByIds" parameterType="java.util.List">
-        DELETE FROM PEACH_AUTH_LOG
-        WHERE LOG_ID IN
+    <update id="delByIds" parameterType="java.util.List">
+        UPDATE PEACH_AUTH_LOG
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
-    </delete>
+    </update>
 
-    <delete id="del" parameterType="com.peach.auth.entity.AuthLogDO">
-        DELETE FROM PEACH_AUTH_LOG
-        <where>
-            <include refid="allColumnCond" />
-        </where>
-    </delete>
+    <update id="del" parameterType="com.peach.auth.entity.AuthLogDO">
+        UPDATE PEACH_AUTH_LOG
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE LOG_ID = #{logId,jdbcType=VARCHAR} AND IS_DELETE = 0
+    </update>
 
     <update id="updateById" parameterType="com.peach.auth.entity.AuthLogDO">
         UPDATE PEACH_AUTH_LOG SET
             <include refid="allColumnSet" />
-        WHERE LOG_ID =  #{logId,jdbcType=VARCHAR}
+        WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
     </update>
 
     <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.AuthLogDO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_LOG
-        WHERE LOG_ID = #{value,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.AuthLogDO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_LOG
-        WHERE LOG_ID IN
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
@@ -242,6 +244,7 @@
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_LOG
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
@@ -250,6 +253,7 @@
         SELECT COUNT(1)
         FROM PEACH_AUTH_LOG
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>

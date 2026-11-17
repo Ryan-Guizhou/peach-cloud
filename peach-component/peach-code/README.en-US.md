@@ -76,7 +76,7 @@ Project baseline: Java 21, Spring Boot 3.5.4, Spring Cloud 2025.0.0, Spring Clou
 
 `CodeGenerator.nextGlobal("ORG")` delegates to `next("PLATFORM", "ORG")`. Types such as `USER`, `TENANT`, `ORG`, and `ROLE` must have a preconfigured platform rule. Platform-wide IDs use a different namespace from tenant-level display codes; business tables must enforce permanent uniqueness even for logically deleted records.
 
-`CodeFormat` validates a controlled prefix, separator (`_` or `-`), and sequence width between 1 and 18 digits. For example, `new CodeFormat("org", "_", 6).preview(12)` returns `ORG_000012`. Preview never allocates a database sequence. **The current MySQL allocator still uses the default underscore format; custom separators are not yet connected to database allocation.**
+`CodeFormat` validates a controlled prefix, separator (`_` or `-`), and sequence width between 1 and 18 digits. For example, `new CodeFormat("org", "_", 6).preview(12)` returns `ORG_000012`. Preview never allocates a database sequence. The MySQL allocator now honors the rule's separator while preview stays side-effect free.
 
 ### Database-configured business code format
 
