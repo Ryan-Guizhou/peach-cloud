@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -34,6 +37,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ResouceServceImpl implements IResouceService {
 
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
+
     private final ResourceDao resourceDao;
 
     @Override
@@ -61,6 +66,7 @@ public class ResouceServceImpl implements IResouceService {
         ResourceDO resourceDO = new ResourceDO();
         BeanUtils.copyProperties(resourceDTO, resourceDO);
         resourceDO.setId(UniqueIdFacade.nextId());
+        resourceDO.setResourceId(authBusinessIdGenerator.next(AuthBusinessIdType.RESOURCE));
         resourceDO.fillCreateTime(null);
         if (resourceDO.getIsDelete() == null) {
             resourceDO.setIsDelete(PubCommonConst.LOGIC_FLASE);

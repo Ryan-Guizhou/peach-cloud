@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrganizationServiceImpl implements IOrganizationService {
 
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
+
     private final OrganizationDao organizationDao;
 
     @Override
@@ -62,6 +67,7 @@ public class OrganizationServiceImpl implements IOrganizationService {
         OrganizationDO organizationDO = new OrganizationDO();
         BeanUtils.copyProperties(organizationDTO, organizationDO);
         organizationDO.setId(UniqueIdFacade.nextId());
+        organizationDO.setOrgId(authBusinessIdGenerator.next(AuthBusinessIdType.ORG));
         organizationDO.fillCreateTime(null);
         if (organizationDO.getIsDelete() == null) {
             organizationDO.setIsDelete(PubCommonConst.LOGIC_FLASE);

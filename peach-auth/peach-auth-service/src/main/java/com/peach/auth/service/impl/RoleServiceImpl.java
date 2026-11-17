@@ -35,6 +35,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RoleServiceImpl implements IRoleService {
 
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
+
         private final RoleDao roleDao;
 
     @Override
@@ -62,6 +64,7 @@ public class RoleServiceImpl implements IRoleService {
         RoleDO roleDO = new RoleDO();
         BeanUtils.copyProperties(roleDTO, roleDO);
         roleDO.setId(UniqueIdFacade.nextId());
+        roleDO.setRoleId(authBusinessIdGenerator.next(AuthBusinessIdType.ROLE));
         roleDO.fillCreateTime(null);
         if (roleDO.getIsDelete() == null) {
             roleDO.setIsDelete(PubCommonConst.LOGIC_FLASE);

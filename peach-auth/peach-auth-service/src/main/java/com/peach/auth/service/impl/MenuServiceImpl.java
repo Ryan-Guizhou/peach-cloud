@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -33,6 +36,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MenuServiceImpl implements IMenuService {
 
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
+
     private final MenuDao menuDao;
 
     @Override
@@ -56,6 +61,7 @@ public class MenuServiceImpl implements IMenuService {
         BeanUtils.copyProperties(menuDTO, menuDO);
         menuDO.fillCreateTime(null);
         menuDO.setId(UniqueIdFacade.nextId());
+        menuDO.setMenuId(authBusinessIdGenerator.next(AuthBusinessIdType.MENU));
         if (StringUtil.isBlank(menuDO.getTenantId()) || StringUtil.isBlank(menuDO.getAppId())) {
             throw new IllegalArgumentException("Tenant and application context are required");
         }

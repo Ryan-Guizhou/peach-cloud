@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -34,6 +37,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FunctionServiceImpl implements IFunctionService {
 
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
+
     private final FunctionDao functionDao;
 
     @Override
@@ -61,6 +66,7 @@ public class FunctionServiceImpl implements IFunctionService {
         FunctionDO functionDO = new FunctionDO();
         BeanUtils.copyProperties(functionDTO, functionDO);
         functionDO.setId(UniqueIdFacade.nextId());
+        functionDO.setFuncId(authBusinessIdGenerator.next(AuthBusinessIdType.FUNC));
         functionDO.fillCreateTime(null);
         if (functionDO.getIsDelete() == null) {
             functionDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
