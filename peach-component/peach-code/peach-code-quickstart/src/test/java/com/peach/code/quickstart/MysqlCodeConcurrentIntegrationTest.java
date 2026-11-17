@@ -59,6 +59,9 @@ class MysqlCodeConcurrentIntegrationTest {
                 + "MAX_CODE_WIDTH INT NOT NULL,"
                 + "CURRENT_VALUE BIGINT NOT NULL,"
                 + "STATUS VARCHAR(16) NOT NULL,"
+                + "CODE_SEPARATOR VARCHAR(1) NOT NULL DEFAULT '_',"
+                + "SCOPE_TYPE VARCHAR(16) NOT NULL DEFAULT 'TENANT',"
+                + "RULE_VERSION BIGINT NOT NULL DEFAULT 0,"
                 + "MODIFY_TIME VARCHAR(20),"
                 + "PRIMARY KEY (TENANT_ID, CODE_PREFIX)"
                 + ") ENGINE=InnoDB");

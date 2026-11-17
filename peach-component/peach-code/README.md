@@ -77,3 +77,9 @@ CodeGenerator.next
 调用 `CodeGenerator.nextGlobal("ORG")` 等价于 `next("PLATFORM", "ORG")`，业务类型如 `USER`、`TENANT`、`ORG` 和 `ROLE` 必须预先配置平台规则。平台级编号与租户业务编码是不同的命名空间，业务表仍必须建立包含已删除记录的永久唯一索引。
 
 `CodeFormat` 支持安全的前缀、分隔符（`_` / `-`）和 1–18 位序列号预览，例如 `new CodeFormat("org", "_", 6).preview(12)` 返回 `ORG_000012`。预览不会消耗数据库编号；当前 MySQL 发号器仍使用默认下划线和规则表中的宽度。**该预览功能不代表数据库自定义分隔符已接入正式发号。**
+
+### 数据库可配置规则格式
+
+规则表新增 `SCOPE_TYPE`（`PLATFORM` 或 `TENANT`）、`CODE_SEPARATOR`（`_` 或 `-`）与 `RULE_VERSION`。发号器使用 `CODE_PREFIX + CODE_SEPARATOR + 补零流水号` 的安全格式，查询到非法规则立即拒绝并回滚事务，不会消耗数据库序号。全局业务 ID 应使用 `PLATFORM` 命名空间并在目标业务表上保持永久唯一；编码规则的修改不得重置 `CURRENT_VALUE`。
+
+示例：对于 `CODE_PREFIX=ORG`、`CODE_SEPARATOR='-'`、`MAX_CODE_WIDTH=5`，下一个序号为 8 时生成 `ORG-00008`。更改现有规则需要与正在发号的实例采用数据库锁和运维审批协调；租户不能修改平台级 `USER_ID` 等系统保留规则。完整管理接口、模板版本审计与前端配置界面仍在本期 IAM 后续任务中实现。

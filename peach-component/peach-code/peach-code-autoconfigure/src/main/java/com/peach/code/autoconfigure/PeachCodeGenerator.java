@@ -2,6 +2,7 @@ package com.peach.code.autoconfigure;
 
 import com.peach.code.CodeGenerator;
 import com.peach.code.CodeGeneratorException;
+import com.peach.code.CodeFormat;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -26,7 +27,7 @@ import java.util.regex.Pattern;
 public class PeachCodeGenerator implements CodeGenerator {
 
     private static final Pattern SAFE_PART = Pattern.compile("[A-Za-z0-9][A-Za-z0-9-]{0,31}");
-    private static final String RULE_SELECT_SQL = "SELECT MAX_CODE_WIDTH, CURRENT_VALUE, STATUS "
+    private static final String RULE_SELECT_SQL = "SELECT MAX_CODE_WIDTH, CURRENT_VALUE, STATUS, CODE_SEPARATOR "
             + "FROM PEACH_CODE_RULE WHERE TENANT_ID = ? AND CODE_PREFIX = ? FOR UPDATE";
     private static final String RULE_UPDATE_SQL = "UPDATE PEACH_CODE_RULE SET CURRENT_VALUE = ?, "
             + "MODIFY_TIME = DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s') "
@@ -101,12 +102,16 @@ public class PeachCodeGenerator implements CodeGenerator {
         if (current >= maximum) {
             throw new CodeGeneratorException("Code sequence exceeds MAX_CODE_WIDTH: " + prefix);
         }
+        Object separatorValue = row.get("CODE_SEPARATOR");
+        String separator = separatorValue == null ? "_" : String.valueOf(separatorValue);
+        CodeFormat format = new CodeFormat(prefix, separator, width);
+
         long next = current + 1;
         int updated = jdbcTemplate.update(RULE_UPDATE_SQL, next, tenantId, prefix, current);
         if (updated != 1) {
             throw new CodeGeneratorException("Code rule changed during allocation: " + prefix);
         }
-        return format(prefix, next, width);
+        return format.preview(next);
     }
 
     private static long maxValue(int width) {
@@ -115,16 +120,6 @@ public class PeachCodeGenerator implements CodeGenerator {
             value *= 10L;
         }
         return value - 1;
-    }
-
-    private static String format(String prefix, long value, int width) {
-        String number = Long.toString(value);
-        StringBuilder result = new StringBuilder(prefix.length() + width + 1);
-        result.append(prefix).append('_');
-        for (int i = number.length(); i < width; i++) {
-            result.append('0');
-        }
-        return result.append(number).toString();
     }
 
     private static void validatePart(String value, String name) {

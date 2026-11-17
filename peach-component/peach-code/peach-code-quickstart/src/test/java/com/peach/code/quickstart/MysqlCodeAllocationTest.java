@@ -54,6 +54,28 @@ class MysqlCodeAllocationTest {
     }
 
     @Test
+    void shouldUseConfiguredSeparatorWithoutASecondAllocationPath() {
+        when(jdbc.queryForMap(anyString(), eq("T001"), eq("ORG")))
+                .thenReturn(Map.of("MAX_CODE_WIDTH", 5, "CURRENT_VALUE", 7L,
+                        "STATUS", "ENABLE", "CODE_SEPARATOR", "-"));
+        when(jdbc.update(anyString(), eq(8L), eq("T001"), eq("ORG"), eq(7L)))
+                .thenReturn(1);
+
+        assertThat(generator.next("T001", "org")).isEqualTo("ORG-00008");
+    }
+
+    @Test
+    void shouldRejectInvalidSeparatorBeforeUpdatingSequence() {
+        when(jdbc.queryForMap(anyString(), eq("T001"), eq("ORG")))
+                .thenReturn(Map.of("MAX_CODE_WIDTH", 5, "CURRENT_VALUE", 7L,
+                        "STATUS", "ENABLE", "CODE_SEPARATOR", "/"));
+        assertThatThrownBy(() -> generator.next("T001", "ORG"))
+                .isInstanceOf(CodeGeneratorException.class)
+                .hasMessageContaining("separator");
+        org.mockito.Mockito.verify(jdbc, org.mockito.Mockito.never()).update(anyString(), any(Object[].class));
+    }
+
+    @Test
     void shouldRejectOverflowWithoutUpdatingSequence() {
         when(jdbc.queryForMap(anyString(), eq("T001"), eq("MENU")))
                 .thenReturn(Map.of("MAX_CODE_WIDTH", 1, "CURRENT_VALUE", 9L, "STATUS", "ENABLE"));
