@@ -25,6 +25,22 @@ public interface TenantMemberDao {
 
     List<TenantMemberDO> selectActiveByUser(@Param("userRefId") String userRefId);
 
+    /**
+     * 服务侧校验指定租户处于启用状态。
+     *
+     * @param tenantRefId 租户物理主键
+     * @return 启用且未删除的租户数量
+     */
+    int countEnabledTenant(@Param("tenantRefId") String tenantRefId);
+
+    /**
+     * 校验全局用户未删除且可用，禁止停用用户接受邀请。
+     *
+     * @param userRefId 用户物理主键
+     * @return 有效用户数量
+     */
+    int countEnabledUser(@Param("userRefId") String userRefId);
+
     int changeStatus(@Param("id") String id,
                      @Param("tenantRefId") String tenantRefId,
                      @Param("status") String status,
