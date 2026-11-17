@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.TenantMemberDao">
+    <sql id="memberColumns">
+        ID as id, MEMBER_ID as memberId, TENANT_REF_ID as tenantRefId,
+        USER_REF_ID as userRefId, STATUS as status, IS_DELETE as isDelete,
+        CREATED_TIME as createdTime, CREATOR_ID as creatorId,
+        MODIFY_TIME as modifyTime, MODIFIER_ID as modifierId,
+        DELETED_AT as deletedAt, DELETED_BY_REF_ID as deletedByRefId, VERSION as version
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.auth.entity.TenantMemberDO">
+        INSERT INTO PEACH_TENANT_MEMBER
+        (ID, MEMBER_ID, TENANT_REF_ID, USER_REF_ID, STATUS, IS_DELETE,
+         CREATED_TIME, CREATOR_ID, MODIFY_TIME, MODIFIER_ID, VERSION)
+        VALUES
+        (#{id}, #{memberId}, #{tenantRefId}, #{userRefId}, #{status}, 0,
+         #{createdTime}, #{creatorId}, #{modifyTime}, #{modifierId}, 0)
+    </insert>
+
+    <select id="selectByUserAndTenant" resultType="com.peach.auth.entity.TenantMemberDO">
+        SELECT <include refid="memberColumns" />
+        FROM PEACH_TENANT_MEMBER
+        WHERE TENANT_REF_ID = #{tenantRefId}
+          AND USER_REF_ID = #{userRefId}
+    </select>
+
+    <select id="selectActiveByUser" resultType="com.peach.auth.entity.TenantMemberDO">
+        SELECT <include refid="memberColumns" />
+        FROM PEACH_TENANT_MEMBER
+        WHERE USER_REF_ID = #{userRefId}
+          AND STATUS = 'ACTIVE'
+          AND IS_DELETE = 0
+    </select>
+
+    <update id="changeStatus">
+        UPDATE PEACH_TENANT_MEMBER
+        SET STATUS = #{status}, MODIFY_TIME = #{modifyTime},
+            MODIFIER_ID = #{modifierId}, VERSION = VERSION + 1
+        WHERE ID = #{id} AND TENANT_REF_ID = #{tenantRefId}
+          AND VERSION = #{version} AND IS_DELETE = 0
+    </update>
+
+    <update id="softDelete">
+        UPDATE PEACH_TENANT_MEMBER
+        SET STATUS = 'LEFT', IS_DELETE = 1,
+            DELETED_AT = CURRENT_TIMESTAMP(3),
+            DELETED_BY_REF_ID = #{operatorRefId},
+            VERSION = VERSION + 1
+        WHERE ID = #{id} AND TENANT_REF_ID = #{tenantRefId}
+          AND VERSION = #{version} AND IS_DELETE = 0
+    </update>
+
+    <update id="restore">
+        UPDATE PEACH_TENANT_MEMBER
+        SET STATUS = 'ACTIVE', IS_DELETE = 0,
+            DELETED_AT = NULL, DELETED_BY_REF_ID = NULL,
+            VERSION = VERSION + 1
+        WHERE ID = #{id} AND TENANT_REF_ID = #{tenantRefId}
+          AND VERSION = #{version} AND IS_DELETE = 1
+    </update>
+</mapper>
