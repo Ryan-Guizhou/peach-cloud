@@ -13,6 +13,7 @@ import com.peach.auth.qo.RoleQO;
 import com.peach.auth.service.IRoleService;
 import com.peach.auth.vo.RoleVO;
 import com.peach.common.constant.PubCommonConst;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -60,6 +61,7 @@ public class RoleServiceImpl implements IRoleService {
     public void add(RoleDTO roleDTO) {
         RoleDO roleDO = new RoleDO();
         BeanUtils.copyProperties(roleDTO, roleDO);
+        roleDO.setId(UniqueIdFacade.nextId());
         roleDO.fillCreateTime(null);
         if (roleDO.getIsDelete() == null) {
             roleDO.setIsDelete(PubCommonConst.LOGIC_FLASE);

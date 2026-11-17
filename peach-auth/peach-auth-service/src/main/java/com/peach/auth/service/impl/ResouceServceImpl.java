@@ -12,6 +12,7 @@ import com.peach.auth.qo.ResourceQO;
 import com.peach.auth.service.IResouceService;
 import com.peach.auth.vo.ResourceVO;
 import com.peach.common.constant.PubCommonConst;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -59,6 +60,7 @@ public class ResouceServceImpl implements IResouceService {
     public void add(ResourceDTO resourceDTO) {
         ResourceDO resourceDO = new ResourceDO();
         BeanUtils.copyProperties(resourceDTO, resourceDO);
+        resourceDO.setId(UniqueIdFacade.nextId());
         resourceDO.fillCreateTime(null);
         if (resourceDO.getIsDelete() == null) {
             resourceDO.setIsDelete(PubCommonConst.LOGIC_FLASE);

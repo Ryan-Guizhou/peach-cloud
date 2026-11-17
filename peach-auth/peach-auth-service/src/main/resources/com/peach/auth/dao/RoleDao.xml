@@ -2,21 +2,21 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.RoleDao">
     <sql id="allColumn">
-        ROLE_ID,                                          TENANT_ID,                                        ORG_ID,                                           ROLE_CODE,
+        ID, ROLE_ID,                                          TENANT_ID,                                        ORG_ID,                                           ROLE_CODE,
         FISCAL,                                           ROLE_NAME,                                        ROLE_DESC,                                        ROLE_SCOPE,
         ROLE_TYPE,                                        IS_DELETE,                                        SKIP_URL,                                         CREATED_TIME,
         CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        ROLE_ID as roleId,                                TENANT_ID as tenantId,                            ORG_ID as orgId,                                  ROLE_CODE as roleCode,
+        ID as id, ROLE_ID as roleId,                                TENANT_ID as tenantId,                            ORG_ID as orgId,                                  ROLE_CODE as roleCode,
         FISCAL as fiscal,                                 ROLE_NAME as roleName,                            ROLE_DESC as roleDesc,                            ROLE_SCOPE as roleScope,
         ROLE_TYPE as roleType,                            IS_DELETE as isDelete,                            SKIP_URL as skipUrl,                              CREATED_TIME as createdTime,
         CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{roleId,jdbcType=VARCHAR},                       #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                        #{roleCode,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR}, #{roleId,jdbcType=VARCHAR},                       #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                        #{roleCode,jdbcType=VARCHAR},
         #{fiscal,jdbcType=INTEGER},                       #{roleName,jdbcType=VARCHAR},                     #{roleDesc,jdbcType=VARCHAR},                     #{roleScope,jdbcType=VARCHAR},
         #{roleType,jdbcType=VARCHAR},                     #{isDelete,jdbcType=INTEGER},                     #{skipUrl,jdbcType=VARCHAR},                      #{createdTime,jdbcType=VARCHAR},
         #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
@@ -24,7 +24,7 @@
 
 
     <sql id="itemAllColumnValue">
-        #{item.roleId,jdbcType=VARCHAR},                  #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                   #{item.roleCode,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR}, #{item.roleId,jdbcType=VARCHAR},                  #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                   #{item.roleCode,jdbcType=VARCHAR},
         #{item.fiscal,jdbcType=INTEGER},                  #{item.roleName,jdbcType=VARCHAR},                #{item.roleDesc,jdbcType=VARCHAR},                #{item.roleScope,jdbcType=VARCHAR},
         #{item.roleType,jdbcType=VARCHAR},                #{item.isDelete,jdbcType=INTEGER},                #{item.skipUrl,jdbcType=VARCHAR},                 #{item.createdTime,jdbcType=VARCHAR},
         #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
@@ -174,6 +174,9 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
+        </if>
         <if test="roleId != null and roleId != ''">
             AND ROLE_ID = #{roleId,jdbcType=VARCHAR}
         </if>
@@ -249,13 +252,13 @@
     <update id="delById" parameterType="string">
         UPDATE PEACH_ROLE
         SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
-        WHERE IS_DELETE = 0 AND ROLE_ID = #{value,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
     </update>
 
     <update id="delByIds" parameterType="java.util.List">
         UPDATE PEACH_ROLE
         SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
-        WHERE IS_DELETE = 0 AND ROLE_ID IN
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
@@ -270,21 +273,21 @@
     <update id="updateById" parameterType="com.peach.auth.entity.RoleDO">
         UPDATE PEACH_ROLE SET
             <include refid="allColumnSet" />
-        WHERE ROLE_ID =  #{roleId,jdbcType=VARCHAR}
+        WHERE ID =  #{roleId,jdbcType=VARCHAR}
     </update>
 
     <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.RoleDO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROLE
-        WHERE ROLE_ID = #{value,jdbcType=VARCHAR}
+        WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.RoleDO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROLE
-        WHERE ROLE_ID IN
+        WHERE ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>

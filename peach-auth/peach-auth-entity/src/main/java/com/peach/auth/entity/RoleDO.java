@@ -30,6 +30,10 @@ public class RoleDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = 8302878478265634970L;
 
     @Id
+    @Column(name = "ID")
+    @Schema(description = "物理主键")
+    private String id;
+
     @Column(name = "ROLE_ID")
     @Schema(description = "角色ID")
     private String roleId;
