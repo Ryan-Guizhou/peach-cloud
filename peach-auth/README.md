@@ -117,3 +117,9 @@ mvn -pl peach-auth/peach-auth-launch -am -Dspring-boot.run.profiles=dev spring-b
 本阶段的 Mapper 删除操作改为 `IS_DELETE=1` 的更新，并在 `DELETED_AT` 记录删除时间；可重用的机构、角色等业务编码使用 `ACTIVE_SLOT` 有效记录唯一索引，用户等永久业务编号不因逻辑删除而释放。普通更新、删除、查询均按物理 `ID` 定位；前端 CRUD 用 `id` 作为行键，业务 ID 只用于展示。
 
 **未完成的 SaaS 全链路能力：** `PEACH_TENANT_MEMBER`、跨租户全局登录、`XXX_REF_ID` 关联转换、移除旧 `FISCAL`、新的角色作用域和行/字段权限、全链路网关/Feign 权限及真实数据库迁移，分别由 [#204–#211](https://github.com/Ryan-Guizhou/peach-cloud/issues/204) 后续 Issue 实现。此处只说明当前 release 的增量行为，不表示已达到生产可用的 SaaS 授权安全级别。
+
+## 全局账号密码散列安全基础（#204 仍在开发）
+
+登录保留客户端 RSA 传输保护，服务端解密后使用 BCrypt(12) 比对随机盐密码散列。数据库不再以 Base64 明文等效值做 SQL 匹配，`PEACH_USER.PASSWORD` 改为 `VARCHAR(255)`。用户创建/修改密码后仅持久化散列；新增未设置密码的账号默认停用。密码哈希被 `@JsonIgnore` 排除 JSON 序列化；未知账号和旧 Base64 格式均执行占位 BCrypt 计算后拒绝，避免静默降级到旧弱口令。
+
+**迁移与安全边界：** 旧 Base64 密码不会自动转换为 BCrypt，也不能在不验证原始密码时安全反向恢复。必须提前提供经验证的重置凭证流程；开发样例口令仅用于测试，禁止生产使用。此阶段仍存在旧组织/年度登录和切换逻辑；多租户成员认证、无机构租户登录、租户撤权等必须由 #204、#206、#208 和 #211 完成后才能投入使用。
