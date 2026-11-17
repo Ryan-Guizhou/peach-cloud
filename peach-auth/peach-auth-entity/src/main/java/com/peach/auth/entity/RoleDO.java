@@ -70,6 +70,26 @@ public class RoleDO extends PeachDO implements Serializable {
     @Schema(description = "角色类型")
     private String roleType;
 
+    @Column(name = "TENANT_REF_ID")
+    @Schema(description = "新授权租户物理主键")
+    private String tenantRefId;
+
+    @Column(name = "APP_REF_ID")
+    @Schema(description = "新授权应用物理主键")
+    private String appRefId;
+
+    @Column(name = "AUTH_YEAR")
+    @Schema(description = "独立授权自然年度")
+    private Integer authYear;
+
+    @Column(name = "ROLE_STATUS")
+    @Schema(description = "独立角色状态")
+    private String roleStatus;
+
+    @Column(name = "VERSION")
+    @Schema(description = "角色并发版本")
+    private Long version;
+
     @Column(name = "IS_DELETE")
     @Schema(description = "是否删除")
     private Integer isDelete;

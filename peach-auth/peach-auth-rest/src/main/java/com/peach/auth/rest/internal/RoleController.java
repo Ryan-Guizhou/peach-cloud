@@ -1,20 +1,13 @@
 package com.peach.auth.rest.internal;
 
-import com.peach.common.PeachGroup;
-
-import lombok.RequiredArgsConstructor;
-
-import com.github.pagehelper.PageInfo;
-import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.dto.RoleDTO;
-import com.peach.auth.enums.UserLogEnum;
 import com.peach.auth.qo.RoleQO;
-import com.peach.auth.service.IRoleService;
-import com.peach.auth.vo.RoleVO;
 import com.peach.common.response.Response;
+import com.peach.common.response.StatusEnum;
+import com.peach.common.PeachGroup;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.stereotype.Indexed;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,65 +17,54 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.constraints.NotBlank;
-
 /**
- * 角色管理。
- * <p>提供角色列表查询、单条查询以及基础增删改入口。</p>
+ * 旧机构与 FISCAL 角色 REST 入口，明确拒绝并等待前端迁移。
+ *
+ * <p>禁止基于浏览器参数读写跨租户角色；新角色 CRUD 必须经
+ * SaasRoleController 的可信成员上下文和独立年度授权执行。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2026/2/1 15:07
+ * @CreateTime 2026/11/17 18:25
  */
-@Slf4j
 @Indexed
 @Validated
 @RestController
 @RequestMapping("/auth/role")
-@Tag(name = "RoleController", description = "角色管理")
-@RequiredArgsConstructor
+@Tag(name = "RoleController", description = "已停用的旧角色接口")
 public class RoleController {
 
-    private final IRoleService roleService;
-
     @PostMapping("/pageList")
-    @Operation(summary = "分页查询角色")
-    public Response pageList(@RequestBody RoleQO roleQO) {
-        PageInfo<RoleVO> pageInfo = roleService.pageList(roleQO);
-        return Response.success(pageInfo);
+    @Operation(summary = "旧角色分页接口已停用")
+    public Response pageList(@RequestBody RoleQO query) {
+        return denied();
     }
 
     @GetMapping("/selectById")
-    @Operation(summary = "根据角色ID查询角色")
-    public Response selectById(@NotBlank(message = "角色ID不能为空") String roleId) {
-        RoleVO roleVO = roleService.selectById(roleId);
-        return Response.success(roleVO);
+    @Operation(summary = "旧角色详情接口已停用")
+    public Response selectById(@NotBlank String roleId) {
+        return denied();
     }
 
     @PostMapping("/add")
-    @Operation(summary = "新增角色")
-    @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
-            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增角色信息,角色信息:['+#p0+']'")
-    public Response add(@Validated({PeachGroup.InsertGroup.class}) @RequestBody RoleDTO roleDTO) {
-        roleService.add(roleDTO);
-        return Response.success();
+    @Operation(summary = "旧角色新增接口已停用")
+    public Response add(@Validated(PeachGroup.InsertGroup.class) @RequestBody RoleDTO dto) {
+        return denied();
     }
 
     @DeleteMapping("/delById")
-    @Operation(summary = "根据角色ID删除角色")
-    @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.DELETE,
-            optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除角色信息,角色ID:['+#p0+']'")
-    public Response delById(@NotBlank(message = "角色ID不能为空") String roleId) {
-        roleService.delById(roleId);
-        return Response.success();
+    @Operation(summary = "旧角色删除接口已停用")
+    public Response delById(@NotBlank String roleId) {
+        return denied();
     }
 
     @PostMapping("/update")
-    @Operation(summary = "更新角色")
-    @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
-            optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'更新角色信息,角色信息:['+#p0+']'")
-    public Response update(@Validated({PeachGroup.UpdateGroup.class}) @RequestBody RoleDTO roleDTO) {
-        roleService.update(roleDTO);
-        return Response.success();
+    @Operation(summary = "旧角色更新接口已停用")
+    public Response update(@Validated(PeachGroup.UpdateGroup.class) @RequestBody RoleDTO dto) {
+        return denied();
+    }
+
+    private static Response denied() {
+        return Response.fail(StatusEnum.FORBIDDEN).setMsg("旧角色接口已停用，请使用 SaaS 年度角色接口");
     }
 }

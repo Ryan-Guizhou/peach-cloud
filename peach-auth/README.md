@@ -218,4 +218,20 @@ flowchart LR
 
 开发用 `sql/INIT.sql` 初始化三个系统保护语义权限、2026 年管理员角色及单个 TENANT 作用域绑定；这是示例环境引导数据，不代表生产部署已建立可信初始管理员。
 
-**尚待 #206 闭环：** 角色权限管理的受控写入口、不同应用/年度的完整授权维护、真实 MySQL/Redis 权限失效集成测试、角色权限批量更新后的授权版本原子失效。**跨微服务 Gateway/Feign 安全边界及前端仍分别由 #208/#209/#210 和最终 #211 验收。**
+**后续验收：** 真实 MySQL/Redis 授权失效集成测试、平台租户创建/管理员初始化权限保护、旧表与网关升级。**跨微服务 Gateway/Feign 安全边界及前端仍分别由 #208/#209/#210 和最终 #211 验收。**
+
+
+### #206 受控角色管理 API（当前开发分支）
+
+当前新增 `SaasRoleController`，所有请求必须携带已绑定成员、应用、自然年度和授权版本的有效 Token；服务端从 Token 取 `tenantRefId/memberRefId/appRefId/year`，**不接受前端提交操作者或租户身份**。服务层再次检查 `TENANT.ROLE.MANAGE`：
+
+| API | 功能 | 请求 |
+| --- | --- | --- |
+| `POST /auth/saas/roles` | 在当前应用和年度创建租户角色 | `{"roleCode":"ROLE_EDITOR","roleName":"编辑员"}` |
+| `PUT /auth/saas/roles/{roleRefId}/permissions` | 角色权限完整集合差量同步 | `{"permissionRefIds":["<physical-permission-id>"]}` |
+| `POST /auth/saas/roles/bindings` | 授予成员一条独立角色/机构作用域绑定 | `{"targetMemberRefId":"<physical-member-id>","roleRefId":"<physical-role-id>","scopeType":"TENANT"}` |
+| `DELETE /auth/saas/roles/bindings/{bindingRefId}` | 逻辑撤销单条授权 | 无正文 |
+
+角色创建时使用全局 `ROLE_ID` 发号器；新角色必须指定独立租户、应用与年度。角色权限修改只允许租户自建的 TENANT 角色；SYSTEM 角色和非委派权限拒绝修改。修改使用租户/角色行锁、版本 CAS、全租户成员 `AUTH_VERSION` 递增及审计，失败整体回滚。原 `/auth/role`、`/auth/authParty`、`/auth/authFunction`、`/auth/authResource` 的旧机构与年度角色读写入口已改为明确拒绝，避免继续绕过新事实源。
+
+**仍需生产验收：** 实际 MySQL 8.4 数据库并发/审计/DDL/初始化验证、平台首次管理员初始化授权保护、权限资源与行/字段级执行 #207、网关 #208、跨服务与前端 #209/#210、历史表清理与升级回滚 #211。此阶段不等于端到端安全 SaaS。

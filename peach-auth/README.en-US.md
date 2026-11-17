@@ -161,4 +161,20 @@ A tenant administrator may only delegate permissions that are simultaneously del
 
 Development `sql/INIT.sql` bootstraps three protected semantic permission codes and a single TENANT-scope administrator role for year 2026 only. This is a development seed, **not** verified production administrator onboarding.
 
-**Outstanding #206 acceptance:** authenticated role-permission mutation, full app/year grant administration, real MySQL/Redis revocation integration, and transactional version invalidation for bulk role permission changes. Gateway/Feign and frontend security enforcement remain separately tracked in #208/#209/#210, with final acceptance in #211.
+**Outstanding acceptance:** Real MySQL/Redis role revocation integration, protected administrator bootstrap, and legacy schema/gateway migration. Gateway/Feign and frontend security enforcement remain separately tracked in #208/#209/#210, with final acceptance in #211.
+
+
+### #206 Guarded role-management APIs (current development branch)
+
+`SaasRoleController` requires a valid Token bound to a physical member, app, natural year, and authorization version. The server always derives `tenantRefId/memberRefId/appRefId/year` from the Token rather than trusting client identity fields. Domain services recheck `TENANT.ROLE.MANAGE`:
+
+| API | Purpose | Body |
+| --- | --- | --- |
+| `POST /auth/saas/roles` | Create a tenant role for the current app and year | `{"roleCode":"ROLE_EDITOR","roleName":"Editor"}` |
+| `PUT /auth/saas/roles/{roleRefId}/permissions` | Diff-sync all active role permissions | `{"permissionRefIds":["<physical-permission-id>"]}` |
+| `POST /auth/saas/roles/bindings` | Grant a single member role and scope | `{"targetMemberRefId":"<physical-member-id>","roleRefId":"<physical-role-id>","scopeType":"TENANT"}` |
+| `DELETE /auth/saas/roles/bindings/{bindingRefId}` | Soft-revoke an individual binding | No body |
+
+New roles receive a permanent global `ROLE_ID` and are bound to a physical tenant, app, and natural year. Only tenant-created TENANT roles may be edited; SYSTEM roles and non-delegable permissions are protected. Edits use tenant/role locks, version CAS, tenant-wide member `AUTH_VERSION` increments, and audit records in one transaction. Legacy `/auth/role`, `/auth/authParty`, `/auth/authFunction`, and `/auth/authResource` interfaces now reject access rather than bypassing the new authorization source.
+
+**Remaining production acceptance:** Real MySQL 8.4 concurrency/audit/DDL/seed verification, protected platform administrator bootstrap, permission resource and row/field enforcement (#207), gateway (#208), cross-service/front-end (#209/#210), and schema migration/rollback (#211). This increment is not an end-to-end secured SaaS product.

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.ScopedRoleManagementDao">
+    <insert id="insertRole" parameterType="com.peach.auth.entity.RoleDO">
+        INSERT INTO PEACH_ROLE
+        (ID, ROLE_ID, TENANT_ID, ORG_ID, ROLE_CODE, FISCAL,
+         ROLE_NAME, ROLE_DESC, ROLE_SCOPE, ROLE_TYPE,
+         TENANT_REF_ID, APP_REF_ID, AUTH_YEAR, ROLE_STATUS,
+         VERSION, CREATED_TIME, CREATOR_ID, IS_DELETE)
+        VALUES
+        (#{id}, #{roleId}, #{tenantId}, 'TENANT',
+         #{roleCode}, #{authYear}, #{roleName}, #{roleDesc},
+         'TENANT', 'TENANT', #{tenantRefId}, #{appRefId},
+         #{authYear}, 'ACTIVE', 0, #{createdTime}, #{creatorId}, 0)
+    </insert>
+
+    <select id="lockScopedRole" resultType="com.peach.auth.entity.RoleDO">
+        SELECT R.ID AS id, R.TENANT_REF_ID AS tenantRefId,
+               R.APP_REF_ID AS appRefId, R.AUTH_YEAR AS authYear,
+               R.ROLE_CODE AS roleCode, R.ROLE_TYPE AS roleType,
+               R.ROLE_STATUS AS roleStatus,
+               R.VERSION AS version, R.IS_DELETE AS isDelete
+        FROM PEACH_ROLE R
+        INNER JOIN PEACH_TENANT T ON T.ID = R.TENANT_REF_ID
+            AND T.IS_DELETE = 0 AND T.STATUS = 'ENABLE'
+        INNER JOIN PEACH_APPLICATION A ON A.ID = R.APP_REF_ID
+            AND A.TENANT_ID = T.TENANT_ID AND A.IS_DELETE = 0 AND A.IS_OPEN = 1
+        WHERE R.ID = #{roleRefId} AND R.TENANT_REF_ID = #{tenantRefId}
+            AND R.APP_REF_ID = #{appRefId} AND R.AUTH_YEAR = #{year}
+            AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+        FOR UPDATE
+    </select>
+
+    <select id="selectActivePermissionRefs" resultType="java.lang.String">
+        SELECT PERMISSION_REF_ID
+        FROM PEACH_ROLE_PERMISSION
+        WHERE TENANT_REF_ID = #{tenantRefId} AND ROLE_REF_ID = #{roleRefId}
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+    </select>
+
+    <select id="selectDelegablePermissions" resultType="com.peach.auth.vo.RolePermissionGrantVO">
+        SELECT P.ID AS permissionRefId, P.PERMISSION_CODE AS permissionCode
+        FROM PEACH_PERMISSION_DEFINITION P
+        WHERE P.ID IN
+        <foreach collection="permissionRefIds" item="permissionRefId"
+                 open="(" separator="," close=")">
+            #{permissionRefId}
+        </foreach>
+          AND P.STATUS = 'ACTIVE' AND P.IS_DELETE = 0
+          AND P.DELEGABLE = 1
+          AND (P.APP_REF_ID IS NULL OR P.APP_REF_ID = #{appRefId})
+          AND ((P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL)
+               OR (P.OWNER_TYPE = 'TENANT' AND P.TENANT_REF_ID = #{tenantRefId}))
+    </select>
+
+    <insert id="insertRolePermission">
+        INSERT INTO PEACH_ROLE_PERMISSION
+        (ID, TENANT_REF_ID, ROLE_REF_ID, PERMISSION_REF_ID,
+         STATUS, IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+        VALUES (#{id}, #{tenantRefId}, #{roleRefId}, #{permissionRefId},
+                'ACTIVE', 0, 0,
+                DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), #{operatorRefId})
+    </insert>
+
+    <update id="revokeRolePermission">
+        UPDATE PEACH_ROLE_PERMISSION
+        SET STATUS = 'DISABLED', IS_DELETE = 1,
+            DELETED_AT = CURRENT_TIMESTAMP(3), VERSION = VERSION + 1
+        WHERE TENANT_REF_ID = #{tenantRefId} AND ROLE_REF_ID = #{roleRefId}
+          AND PERMISSION_REF_ID = #{permissionRefId}
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+    </update>
+
+    <update id="incrementRoleVersion">
+        UPDATE PEACH_ROLE
+        SET VERSION = VERSION + 1,
+            MODIFY_TIME = DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'),
+            MODIFIER_ID = #{operatorRefId}
+        WHERE TENANT_REF_ID = #{tenantRefId} AND APP_REF_ID = #{appRefId}
+          AND AUTH_YEAR = #{year} AND ID = #{roleRefId}
+          AND VERSION = #{version} AND IS_DELETE = 0
+          AND ROLE_STATUS = 'ACTIVE'
+    </update>
+</mapper>

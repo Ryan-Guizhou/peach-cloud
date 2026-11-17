@@ -82,6 +82,18 @@ public class GlobalExceptionHandler {
         return Response.paramError(message);
     }
 
+    /**
+     * 租户、成员或授权上下文异常统一以拒绝访问处理，禁止暴露内部角色和版本细节。
+     *
+     * @param exception 服务层拒绝的安全操作
+     * @return 无授权响应
+     */
+    @ExceptionHandler(SecurityException.class)
+    public Response handleSecurityException(SecurityException exception) {
+        log.warn("Auth operation denied due to invalid identity or permission");
+        return Response.fail(StatusEnum.FORBIDDEN).setMsg("无权限或当前会话已失效");
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public Response handleIllegalArgumentException(IllegalArgumentException exception) {
         String message = resolveMessage(exception.getMessage(), "参数错误");

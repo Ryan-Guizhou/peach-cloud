@@ -120,7 +120,7 @@ class ScopedRoleBindingServiceTest {
         when(bindingDao.lockActiveMember("tenant", "target")).thenReturn(member());
         assertThatThrownBy(() -> service.grant("tenant", "admin", "target", "role", "TENANT", null))
                 .isInstanceOf(SecurityException.class)
-                .hasMessageContaining("role");
+                .hasMessageContaining("Role is not active");
         verify(bindingDao, never()).insert(any());
     }
 
