@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.TenantInvitationDao">
+    <sql id="invitationColumns">
+        ID as id, INVITATION_ID as invitationId,
+        TENANT_REF_ID as tenantRefId,
+        INVITER_MEMBER_REF_ID as inviterMemberRefId,
+        INVITEE_USER_REF_ID as inviteeUserRefId,
+        STATUS as status, EXPIRES_AT as expiresAt,
+        IS_DELETE as isDelete, CREATED_TIME as createdTime,
+        CREATOR_ID as creatorId, MODIFY_TIME as modifyTime,
+        MODIFIER_ID as modifierId, DELETED_AT as deletedAt,
+        DELETED_BY_REF_ID as deletedByRefId, VERSION as version
+    </sql>
+
+    <insert id="insert" parameterType="com.peach.auth.entity.TenantInvitationDO">
+        INSERT INTO PEACH_TENANT_INVITATION
+        (ID, INVITATION_ID, TENANT_REF_ID, INVITER_MEMBER_REF_ID,
+         INVITEE_USER_REF_ID, STATUS, EXPIRES_AT, IS_DELETE,
+         CREATED_TIME, CREATOR_ID, VERSION)
+        VALUES
+        (#{id}, #{invitationId}, #{tenantRefId}, #{inviterMemberRefId},
+         #{inviteeUserRefId}, 'PENDING', #{expiresAt}, 0,
+         #{createdTime}, #{creatorId}, 0)
+    </insert>
+
+    <update id="expirePendingForUser">
+        UPDATE PEACH_TENANT_INVITATION
+        SET STATUS = 'EXPIRED', VERSION = VERSION + 1
+        WHERE TENANT_REF_ID = #{tenantRefId}
+          AND INVITEE_USER_REF_ID = #{userRefId}
+          AND STATUS = 'PENDING' AND IS_DELETE = 0
+          AND EXPIRES_AT <![CDATA[ <= ]]> CURRENT_TIMESTAMP(3)
+    </update>
+
+    <select id="selectByIdInTenant" resultType="com.peach.auth.entity.TenantInvitationDO">
+        SELECT <include refid="invitationColumns" />
+        FROM PEACH_TENANT_INVITATION
+        WHERE ID = #{id} AND TENANT_REF_ID = #{tenantRefId}
+    </select>
+
+    <select id="selectPending" resultType="com.peach.auth.entity.TenantInvitationDO">
+        SELECT <include refid="invitationColumns" />
+        FROM PEACH_TENANT_INVITATION
+        WHERE ID = #{id} AND TENANT_REF_ID = #{tenantRefId}
+          AND STATUS = 'PENDING' AND IS_DELETE = 0
+          AND EXPIRES_AT > CURRENT_TIMESTAMP(3)
+    </select>
+
+    <update id="accept">
+        UPDATE PEACH_TENANT_INVITATION
+        SET STATUS = 'ACCEPTED', VERSION = VERSION + 1
+        WHERE ID = #{id} AND TENANT_REF_ID = #{tenantRefId}
+          AND INVITEE_USER_REF_ID = #{userRefId}
+          AND VERSION = #{version} AND STATUS = 'PENDING'
+          AND IS_DELETE = 0 AND EXPIRES_AT > CURRENT_TIMESTAMP(3)
+    </update>
+
+    <update id="cancel">
+        UPDATE PEACH_TENANT_INVITATION
+        SET STATUS = 'CANCELLED', IS_DELETE = 1,
+            DELETED_AT = CURRENT_TIMESTAMP(3),
+            DELETED_BY_REF_ID = #{operatorRefId},
+            VERSION = VERSION + 1
+        WHERE ID = #{id} AND TENANT_REF_ID = #{tenantRefId}
+          AND VERSION = #{version} AND STATUS = 'PENDING'
+          AND IS_DELETE = 0
+    </update>
+</mapper>

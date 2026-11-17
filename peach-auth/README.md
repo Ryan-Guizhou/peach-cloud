@@ -118,6 +118,32 @@ mvn -pl peach-auth/peach-auth-launch -am -Dspring-boot.run.profiles=dev spring-b
 
 **未完成的 SaaS 全链路能力：** `PEACH_TENANT_MEMBER`、跨租户全局登录、`XXX_REF_ID` 关联转换、移除旧 `FISCAL`、新的角色作用域和行/字段权限、全链路网关/Feign 权限及真实数据库迁移，分别由 [#204–#211](https://github.com/Ryan-Guizhou/peach-cloud/issues/204) 后续 Issue 实现。此处只说明当前 release 的增量行为，不表示已达到生产可用的 SaaS 授权安全级别。
 
+
+## SaaS 租户成员、邀请与机构树（#205 集成基础）
+
+本阶段新增 `PEACH_TENANT_MEMBER`、`PEACH_TENANT_INVITATION`、MyBatis Mapper 和 `TenantMemberLifecycleService`。永久 `MEMBER_ID/INVITATION_ID` 由平台命名空间发号，物理关联统一使用 `*_REF_ID`。成员（租户、用户）组合具有永久唯一约束，退出后再次接受邀请是**恢复原成员记录**，不会分配第二个永久成员编号。邀请活动槽位限制同一租户对同一用户同时最多一条 `PENDING` 邀请；已过期邀请在重新邀请前标记为 `EXPIRED`。
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: 创建邀请
+    Pending --> Accepted: 本人接受且未过期
+    Pending --> Cancelled: 管理员取消
+    Pending --> Expired: 过期清理
+    Accepted --> Active: 新建或恢复租户成员
+    Active --> Disabled: 管理员停用
+    Disabled --> Active: 管理员启用
+    Active --> Left: 本人退出（逻辑删除）
+    Left --> Active: 再次接受新邀请（恢复原 ID）
+```
+
+安全边界：`TenantMembershipPolicy` 强制校验当前 Sa-Token 用户身份，令邀请接受和主动退出仅能操作本人；平台尚未实现可信的租户管理员 RBAC，`requireTenantAdministrator` **默认拒绝**邀请创建、取消与成员停用/启用，不能把这些服务方法直接暴露为无保护 REST 接口。登录流程的成员查询只允许在服务器完成密码校验后调用，不要求用户属于某个机构。仅服务和 DAO 的基础闭环已写入开发分支，登录/切租户、Token 版本失效、角色授权、机构树、前端和真实数据库集成仍待 #204、#206–#211 完成，当前不能用于生产。
+
+### 机构树与集成边界
+
+`OrganizationHierarchyService.move` 采用租户、成员、机构、父机构物理 ID；先验证可信的 `TenantMembershipPolicy`，再通过锁定有效 `PEACH_TENANT` 行序列化同租户移动，根据已存在的业务租户 ID 验证所有祖先归属，并检测循环和过深层级，最后使用 `VERSION` 乐观锁更新 `PARENT_ORG_REF_ID`。当前机构表仍以旧 `TENANT_ID` 业务号保存租户归属，全部转为 `TENANT_REF_ID` 由 #209/#211 接续完成。存量数据库迁移、机构删除依赖检查、完整租户所有者初始化、REST 管理接口和授权撤销仍是生产前置条件。#206 实现管理员租户 RBAC 之前，管理操作有意默认拒绝；登录集成属于 #204/#208。
+
+本段是受限的 release 集成基础，并不意味着生产级 SaaS IAM 已完成。
+
 ## 全局账号密码散列安全基础（#204 仍在开发）
 
 登录保留客户端 RSA 传输保护，服务端解密后使用 BCrypt(12) 比对随机盐密码散列。数据库不再以 Base64 明文等效值做 SQL 匹配，`PEACH_USER.PASSWORD` 改为 `VARCHAR(255)`。用户创建/修改密码后仅持久化散列；新增未设置密码的账号默认停用。密码哈希被 `@JsonIgnore` 排除 JSON 序列化；未知账号和旧 Base64 格式均执行占位 BCrypt 计算后拒绝，避免静默降级到旧弱口令。
