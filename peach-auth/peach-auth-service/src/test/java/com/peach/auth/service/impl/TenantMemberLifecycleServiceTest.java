@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -77,7 +78,7 @@ class TenantMemberLifecycleServiceTest {
                 .isInstanceOf(SecurityException.class)
                 .hasMessageContaining("does not belong");
         verifyNoInteractions(businessIdGenerator);
-        verify(memberDao, never()).insert(org.mockito.ArgumentMatchers.any());
+        verify(memberDao, never()).insert(any());
     }
 
     @Test
