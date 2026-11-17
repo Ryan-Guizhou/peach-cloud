@@ -26,6 +26,16 @@ public interface TenantMemberDao {
     List<TenantMemberDO> selectActiveByUser(@Param("userRefId") String userRefId);
 
     /**
+     * 根据成员物理主键及租户范围查询，供管理操作校验归属。
+     *
+     * @param id 成员物理主键
+     * @param tenantRefId 租户物理主键
+     * @return 成员记录或 null
+     */
+    TenantMemberDO selectByIdInTenant(@Param("id") String id,
+                                      @Param("tenantRefId") String tenantRefId);
+
+    /**
      * 服务侧校验指定租户处于启用状态。
      *
      * @param tenantRefId 租户物理主键
