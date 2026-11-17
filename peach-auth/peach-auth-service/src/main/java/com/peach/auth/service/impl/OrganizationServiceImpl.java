@@ -12,6 +12,7 @@ import com.peach.auth.qo.OrganizationQO;
 import com.peach.auth.service.IOrganizationService;
 import com.peach.auth.vo.OrganizationVO;
 import com.peach.common.constant.PubCommonConst;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -60,6 +61,7 @@ public class OrganizationServiceImpl implements IOrganizationService {
     public void add(OrganizationDTO organizationDTO) {
         OrganizationDO organizationDO = new OrganizationDO();
         BeanUtils.copyProperties(organizationDTO, organizationDO);
+        organizationDO.setId(UniqueIdFacade.nextId());
         organizationDO.fillCreateTime(null);
         if (organizationDO.getIsDelete() == null) {
             organizationDO.setIsDelete(PubCommonConst.LOGIC_FLASE);

@@ -12,6 +12,7 @@ import com.peach.auth.qo.FunctionQO;
 import com.peach.auth.service.IFunctionService;
 import com.peach.auth.vo.FunctionVO;
 import com.peach.common.constant.PubCommonConst;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -59,6 +60,7 @@ public class FunctionServiceImpl implements IFunctionService {
     public void add(FunctionDTO functionDTO) {
         FunctionDO functionDO = new FunctionDO();
         BeanUtils.copyProperties(functionDTO, functionDO);
+        functionDO.setId(UniqueIdFacade.nextId());
         functionDO.fillCreateTime(null);
         if (functionDO.getIsDelete() == null) {
             functionDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
