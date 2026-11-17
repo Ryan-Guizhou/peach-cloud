@@ -26,10 +26,10 @@ public class OrganizationDTO implements Serializable {
     private static final long serialVersionUID = -8686817700851458692L;
 
     @Schema(description = "物理主键，新增由服务端生成")
+    @NotBlank(message = "物理ID不能为空", groups = {PeachGroup.UpdateGroup.class})
     private String id;
 
     @Schema(description = "机构ID")
-    @NotBlank(message = "机构ID不能为空", groups = {PeachGroup.UpdateGroup.class})
     private String orgId;
 
     @Schema(description = "租户ID")

@@ -1,5 +1,7 @@
 package com.peach.auth.dto;
 
+import com.peach.common.PeachGroup;
+
 import java.io.Serial;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,6 +24,7 @@ public class RouterDTO implements Serializable {
     private static final long serialVersionUID = 6818572783834885012L;
 
     @Schema(description = "物理主键，新增由服务端生成")
+    @NotBlank(message = "物理ID不能为空", groups = {PeachGroup.UpdateGroup.class})
     private String id;
 
     @Schema(description = "路由ID")

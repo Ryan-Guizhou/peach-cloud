@@ -28,10 +28,10 @@ public class ResourceDTO implements Serializable {
     private static final long serialVersionUID = 5940398568041986270L;
 
     @Schema(description = "物理主键，新增由服务端生成")
+    @NotBlank(message = "物理ID不能为空", groups = {PeachGroup.UpdateGroup.class})
     private String id;
 
     @Schema(description = "资源ID")
-    @NotBlank(message = "资源ID不能为空", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String resourceId;
 
     @Schema(description = "功能编码")

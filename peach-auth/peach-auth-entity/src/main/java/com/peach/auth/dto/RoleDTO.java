@@ -27,10 +27,10 @@ public class RoleDTO implements Serializable {
     private static final long serialVersionUID = 7399713680052821739L;
 
     @Schema(description = "物理主键，新增由服务端生成")
+    @NotBlank(message = "物理ID不能为空", groups = {PeachGroup.UpdateGroup.class})
     private String id;
 
     @Schema(description = "角色ID")
-    @NotBlank(message = "角色ID不能为空", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String roleId;
 
     @Schema(description = "租户ID")
