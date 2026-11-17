@@ -99,3 +99,32 @@ The backend retains RSA protection for transport, decrypts on the server, and ve
 `TenantSessionContext` and `TenantSessionService` bind physical `userRefId/tenantRefId/memberRefId/appRefId` and membership version to the **per-token session (not a globally shared account session)** only after a trusted credential login. The server verifies that the Sa-Token principal maps from permanent business `USER_ID` to the expected physical user, that the tenant and app are enabled, and that the membership is ACTIVE. `requireCurrent` rechecks these constraints and the member version on every invocation, so a disabled/left member cannot reuse an old context. `switchTenant` validates the destination membership for the same authenticated user and requires no organization assignment.
 
 This is a **SaaS session guard foundation** and does not yet replace the legacy FISCAL login controllers or gateway caches. Role/permission versioning (#206), fail-closed gateway verification (#208), Feign/frontend contract migration (#209/#210), and revoking legacy tokens remain prerequisites before production use.
+
+## #204 Global account and tenant-member login (development branch; basic path, not accepted yet)
+
+Login no longer derives tenant membership from `USER_ORG` or `FISCAL`. The server checks RSA-protected credentials, BCrypt, CAPTCHA and account lockout first, then loads enabled tenants, `ACTIVE` members and enabled apps via `TenantMemberDao.selectLoginTargets`. No available options means denial. A unique option may be auto-selected. Multiple options return `requiresTenantSelection=true` and `tenantOptions` **without any Token**; the client must resubmit valid credentials with `tenantRefId` and `appRefId`. The server reauthenticates and validates the requested pair, avoiding unscoped temporary sessions.
+
+```mermaid
+sequenceDiagram
+    participant Client as Client
+    participant Auth as UserServiceImpl
+    participant Member as PEACH_TENANT_MEMBER
+    participant Session as Sa-Token TokenSession
+    Client->>Auth: User, RSA password, CAPTCHA, optional physical tenant/app IDs
+    Auth->>Auth: Verify BCrypt and lockout
+    Auth->>Member: Load valid member/tenant/app choices
+    alt Multiple options without selection
+        Auth-->>Client: requiresTenantSelection + options (no Token)
+    else Validated target
+        Auth->>Session: Login with permanent business USER_ID
+        Auth->>Member: Revalidate physical USER/TENANT/MEMBER/APP and member version
+        Auth->>Session: Atomically write a single SaaS context Map
+        Auth-->>Client: token + memberRefId + tenantRefId + appRefId
+    end
+```
+
+`switchContext` accepts only destination **physical tenant and application IDs**, checks the current authenticated user context, and validates destination membership and app availability; the client cannot supply a different user identity. `logout` revokes only the current Token rather than every device session for the account. Users without any organization can still log into a tenant; `orgRefId` is not required. The development seed now initializes a tenant member for the default demo account.
+
+**Authorization boundary:** The new member login does **not reuse** legacy `ROLE_CODE+ORG_ID+FISCAL` permissions. Until the scoped RBAC (#206), gateway enforcement (#208), cross-service contracts (#209), and frontend (#210) are complete, it returns **empty menu, button and API authorization results**. The legacy gateway is not yet migrated; passing Maven/Redis CI is not proof of end-to-end authorization.
+
+**Outstanding acceptance:** Multi-device behavior, real MySQL/Redis tenant selection and logout, legacy credential reset, protected password changes, role `authVersion` revocation, and old-token cleanup. Registration/reset stubs must not falsely report success.

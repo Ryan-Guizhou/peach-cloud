@@ -6,6 +6,8 @@ import com.peach.common.PeachGroup;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.ToString;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -38,7 +40,9 @@ public class UserDTO implements Serializable {
     @Size(min = 4, max = 50, message = "用户账号长度为4-50", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String userCode;
 
-    @Schema(description = "用户密码")
+    @Schema(description = "密码：仅允许写入，禁止响应与日志输出")
+    @ToString.Exclude
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotBlank(message = "用户密码不能为空", groups = {PeachGroup.InsertGroup.class})
     @Size(min = 6, max = 64, message = "用户密码长度为6-64", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String password;

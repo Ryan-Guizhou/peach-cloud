@@ -9,39 +9,33 @@ import lombok.RequiredArgsConstructor;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.stp.parameter.SaLoginParameter;
-import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.PageInfo;
 import com.peach.auth.LoginInfo;
 import com.peach.auth.common.RsaPasswordUtil;
 import com.peach.auth.common.SensitiveFieldCipher;
 import com.peach.auth.dao.UserDao;
-import com.peach.auth.dao.UserOrgDao;
+import com.peach.auth.dao.TenantMemberDao;
 import com.peach.auth.dto.LoginDTO;
 import com.peach.auth.dto.RegisterDTO;
 import com.peach.auth.dto.SwitchContextDTO;
 import com.peach.auth.dto.UserDTO;
 import com.peach.auth.entity.UserDO;
-import com.peach.auth.qo.RoleQO;
 import com.peach.auth.qo.UserQO;
-import com.peach.auth.service.IRoleService;
 import com.peach.auth.service.IUserService;
 import com.peach.auth.service.LoginLockService;
-import com.peach.auth.service.assembler.LoginPermissionAssembler;
-import com.peach.auth.service.support.LoginPermissionCacheRefresher;
 import com.peach.auth.service.support.LoginInitConfigSupport;
 import com.peach.auth.service.support.PasswordHashSupport;
+import com.peach.auth.service.support.LoginTargetSelector;
 import com.peach.auth.service.support.UserSensitiveFieldSupport;
 import com.peach.auth.vo.LoginInitVO;
+import com.peach.auth.vo.LoginTargetVO;
 import com.peach.auth.vo.LoginLockStatusVO;
 import com.peach.auth.vo.LoginPermissionSnapshotVO;
-import com.peach.auth.vo.RoleVO;
-import com.peach.auth.vo.UserOrgVO;
 import com.peach.auth.vo.UserVO;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.service.CaptchaService;
 import com.peach.common.constant.PubCommonConst;
 import com.peach.common.unique.UniqueIdFacade;
-import com.peach.common.constant.SaTokenConstant;
 import com.peach.common.response.Response;
 import com.peach.common.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -70,19 +64,15 @@ public class UserServiceImpl implements IUserService {
 
     private final UserDao userDao;
 
-    private final UserOrgDao userOrgDao;
+    private final TenantMemberDao tenantMemberDao;
 
-    private final IRoleService iRoleService;
+    private final TenantSessionService tenantSessionService;
 
     private final CaptchaService captchaService;
 
     private final LoginLockService loginLockService;
 
     private final LoginInitConfigSupport loginInitConfigSupport;
-
-    private final LoginPermissionAssembler loginPermissionAssembler;
-
-    private final LoginPermissionCacheRefresher loginPermissionCacheRefresher;
 
     private final PasswordHashSupport passwordHashSupport;
 
@@ -113,7 +103,8 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public Response login(LoginDTO loginDTO) {
-        Response captchaResponse = verifyLoginCaptcha(loginDTO.getCaptchaVerification(), loginDTO.getClientUid());
+        Response captchaResponse = verifyLoginCaptcha(
+                loginDTO.getCaptchaVerification(), loginDTO.getClientUid());
         if (!captchaResponse.isSuccess()) {
             return captchaResponse;
         }
@@ -124,103 +115,92 @@ public class UserServiceImpl implements IUserService {
             return Response.fail(formatLockMessage(lockStatus));
         }
 
-        String password = loginDTO.getPassword();
-        String decryptPassword;
+        String decryptedPassword;
         try {
-            decryptPassword = RsaPasswordUtil.decrypt(password);
-        } catch (Exception e) {
+            decryptedPassword = RsaPasswordUtil.decrypt(loginDTO.getPassword());
+        } catch (RuntimeException exception) {
             log.warn("Password decryption failed");
-            return Response.fail("密码解密失败");
-        }
-        if (StringUtil.isBlank(decryptPassword)) {
-            return Response.fail("密码解密失败");
-        }
-
-        UserVO userVO = userDao.login(username);
-        String storedHash = userVO == null ? null : userVO.getPassword();
-        boolean passwordValid = passwordHashSupport.matches(decryptPassword, storedHash);
-        if (ObjectUtil.isNull(userVO) || !passwordValid) {
-            log.warn("Username or password validation failed");
-            LoginLockStatusVO failureStatus = loginLockService.recordFailure(username);
-            if (failureStatus.isLocked()) {
-                return Response.fail(formatLockMessage(failureStatus));
-            }
+            return Response.fail("用户名或密码错误");
+        } catch (Exception exception) {
+            log.warn("Password decryption failed");
             return Response.fail("用户名或密码错误");
         }
+        if (StringUtil.isBlank(decryptedPassword)) {
+            return Response.fail("用户名或密码错误");
+        }
+
+        UserVO user = userDao.login(username);
+        boolean passwordMatches = passwordHashSupport.matches(
+                decryptedPassword, user == null ? null : user.getPassword());
+        if (user == null || !passwordMatches || StringUtil.isBlank(user.getId())) {
+            log.warn("Global account authentication failed");
+            LoginLockStatusVO failedStatus = loginLockService.recordFailure(username);
+            return failedStatus.isLocked()
+                    ? Response.fail(formatLockMessage(failedStatus))
+                    : Response.fail("用户名或密码错误");
+        }
         loginLockService.clearOnSuccess(username);
-        UserSensitiveFieldSupport.decryptUserFields(userVO);
+        UserSensitiveFieldSupport.decryptUserFields(user);
 
-        String userId = userVO.getUserId();
-        List<UserOrgVO> userOrgList = userOrgDao.selectByUserId(userId);
-        if (CollectionUtils.isEmpty(userOrgList)) {
-            return Response.fail("当前用户未绑定租户或机构");
+        // 先完成账号认证，再查询数据库有效租户成员与已开放应用。
+        List<LoginTargetVO> targets = tenantMemberDao.selectLoginTargets(user.getId());
+        LoginTargetVO selected;
+        try {
+            selected = LoginTargetSelector.select(
+                    targets, loginDTO.getTenantRefId(), loginDTO.getAppRefId());
+        } catch (SecurityException exception) {
+            log.warn("Login tenant application selection rejected");
+            return Response.fail("租户或应用不可用");
+        }
+        if (selected == null) {
+            LoginInfo choices = new LoginInfo();
+            choices.setUserId(user.getUserId());
+            choices.setUserName(user.getUserName());
+            choices.setRequiresTenantSelection(true);
+            choices.setTenantOptions(targets);
+            return Response.success(choices).setMsg("请选择租户和应用后重新提交登录");
         }
 
-        UserOrgVO currentUserOrg = resolveUserOrg(loginDTO, userVO, userOrgList);
-        if (currentUserOrg == null) {
-            return Response.fail("未找到匹配的租户或机构");
+        StpUtil.login(user.getUserId(), new SaLoginParameter().setIsConcurrent(true).setIsShare(false));
+        try {
+            TenantSessionContext context = tenantSessionService.bindAfterAuthentication(
+                    user.getId(), selected.getTenantRefId(), selected.getAppRefId());
+            LoginInfo loginInfo = buildMemberLoginInfo(user, context, selected, targets);
+            log.info("Tenant member login succeeded, memberRefId={}, tenantRefId={}",
+                    context.memberRefId(), context.tenantRefId());
+            return Response.success(loginInfo);
+        } catch (RuntimeException exception) {
+            // 对新建 Token 的绑定失败必须注销此凭证，不得留下无成员上下文的登录态。
+            StpUtil.logout();
+            log.warn("Tenant member login context rejected");
+            return Response.fail("租户登录上下文验证失败");
         }
-
-        StpUtil.login(userId, new SaLoginParameter().setIsConcurrent(true).setIsShare(false));
-        refreshTokenSessionContext(currentUserOrg, loginDTO.getFiscal());
-        String token = StpUtil.getTokenValue();
-        log.info("User login succeeded, userId={}, tenantId={}, orgId={}", userId,
-                currentUserOrg.getTenantId(), currentUserOrg.getOrgId());
-
-        RoleQO roleQO = new RoleQO();
-        roleQO.setFiscal(loginDTO.getFiscal());
-        roleQO.setUserCode(userVO.getUserCode());
-        roleQO.setTenantId(currentUserOrg.getTenantId());
-        roleQO.setOrgId(currentUserOrg.getOrgId());
-        List<RoleVO> roleList = iRoleService.selectByUserCode(roleQO);
-        LoginPermissionSnapshotVO snapshot = loginPermissionAssembler.assemble(
-                currentUserOrg, loginDTO.getFiscal(), roleList);
-        refreshLoginPermissionCache(userVO, currentUserOrg, loginDTO.getFiscal(), snapshot);
-
-        LoginInfo loginInfo = buildLoginInfo(userVO, currentUserOrg, loginDTO.getFiscal(), token, userOrgList, snapshot);
-        return Response.success(loginInfo);
     }
 
     @Override
     public Response switchContext(SwitchContextDTO switchContextDTO) {
-        String userId = StpUtil.getLoginIdAsString();
-        UserVO userVO = userDao.selectById(userId);
-        if (ObjectUtil.isNull(userVO)) {
-            return Response.fail("当前用户不存在");
-        }
-        UserSensitiveFieldSupport.decryptUserFields(userVO);
-        List<UserOrgVO> userOrgList = userOrgDao.selectByUserIdAndTenantId(userId, switchContextDTO.getTenantId());
-        if (CollectionUtils.isEmpty(userOrgList)) {
-            return Response.fail("当前用户未绑定目标租户");
-        }
-        UserOrgVO currentUserOrg = null;
-        for (UserOrgVO userOrgVO : userOrgList) {
-            if (userOrgVO != null && switchContextDTO.getOrgId().equals(userOrgVO.getOrgId())) {
-                currentUserOrg = userOrgVO;
-                break;
+        try {
+            TenantSessionContext context = tenantSessionService.switchTenant(
+                    switchContextDTO.getTenantRefId(), switchContextDTO.getAppRefId());
+            UserVO user = userDao.selectById(context.userRefId());
+            if (user == null || !context.userRefId().equals(user.getId())) {
+                return Response.fail("当前全局用户不可用");
             }
+            List<LoginTargetVO> targets = tenantMemberDao.selectLoginTargets(context.userRefId());
+            LoginTargetVO selected = LoginTargetSelector.select(
+                    targets, context.tenantRefId(), context.appRefId());
+            if (selected == null) {
+                return Response.fail("目标租户或应用不可用");
+            }
+            UserSensitiveFieldSupport.decryptUserFields(user);
+            LoginInfo loginInfo = buildMemberLoginInfo(user, context, selected, targets);
+            log.info("Tenant context switched, memberRefId={}, tenantRefId={}",
+                    context.memberRefId(), context.tenantRefId());
+            return Response.success(loginInfo);
+        } catch (SecurityException | IllegalStateException exception) {
+            log.warn("Tenant context switch rejected");
+            return Response.fail("租户切换失败或当前会话已失效");
         }
-        if (currentUserOrg == null) {
-            return Response.fail("当前用户未绑定目标机构");
-        }
-
-        RoleQO roleQO = new RoleQO();
-        roleQO.setFiscal(switchContextDTO.getFiscal());
-        roleQO.setUserCode(userVO.getUserCode());
-        roleQO.setTenantId(currentUserOrg.getTenantId());
-        roleQO.setOrgId(currentUserOrg.getOrgId());
-        List<RoleVO> roleList = iRoleService.selectByUserCode(roleQO);
-        LoginPermissionSnapshotVO snapshot = loginPermissionAssembler.assemble(
-                currentUserOrg, switchContextDTO.getFiscal(), roleList);
-        refreshLoginPermissionCache(userVO, currentUserOrg, switchContextDTO.getFiscal(), snapshot);
-        refreshTokenSessionContext(currentUserOrg, switchContextDTO.getFiscal());
-
-        log.info("User context switched, userId={}, tenantId={}, orgId={}, fiscal={}",
-                userId, currentUserOrg.getTenantId(), currentUserOrg.getOrgId(), switchContextDTO.getFiscal());
-
-        LoginInfo loginInfo = buildLoginInfo(userVO, currentUserOrg, switchContextDTO.getFiscal(),
-                StpUtil.getTokenValue(), userOrgDao.selectByUserId(userId), snapshot);
-        return Response.success(loginInfo);
     }
 
     @Override
@@ -257,56 +237,58 @@ public class UserServiceImpl implements IUserService {
     }
 
     /**
-     * 将当前登录上下文和 BUTTON/API 资源授权写入网关共享读模型。
-     * <p>数据库授权关系仍是事实源；缓存仅用于请求期快速判断。</p>
+     * 当前角色目录与成员绑定的安全授权模型未完成前，只返回空权限。
+     * 绝不使用旧机构年度的 ROLE_CODE 并集作为新租户成员的权限。
+     *
+     * @return 空的可序列化授权快照
      */
-    private void refreshLoginPermissionCache(UserVO userVO, UserOrgVO currentUserOrg,
-                                             Integer fiscal, LoginPermissionSnapshotVO snapshot) {
-        loginPermissionCacheRefresher.writeCache(userVO, currentUserOrg, fiscal, snapshot);
+    private LoginPermissionSnapshotVO emptyPermissionSnapshot() {
+        LoginPermissionSnapshotVO snapshot = new LoginPermissionSnapshotVO();
+        snapshot.setRoleList(List.of());
+        snapshot.setMenuList(List.of());
+        snapshot.setRouterList(List.of());
+        snapshot.setResourceList(List.of());
+        snapshot.setPermissionList(List.of());
+        snapshot.setApiResourceCodes(List.of());
+        snapshot.setButtonResourceCodes(List.of());
+        return snapshot;
     }
 
     /**
-     * 将当前租户、机构和会计期间写入当前 Token 专属 Session。
+     * 基于已验证的成员物理关联生成登录视图；业务编号仅供展示。
      *
-     * <p>Token Session 按登录凭证隔离，避免同一用户在不同设备切换租户时相互覆盖。</p>
-     *
-     * @param currentUserOrg 当前租户机构
-     * @param fiscal 当前会计期间
+     * @param user 已认证全局用户
+     * @param context 已验证的 Token 租户上下文
+     * @param selected 已经校验的租户应用选项
+     * @param targets 当前可访问的候选范围
+     * @return 无过度授权的租户成员登录视图
      */
-    private void refreshTokenSessionContext(UserOrgVO currentUserOrg, Integer fiscal) {
-        var tokenSession = StpUtil.getTokenSession();
-        tokenSession.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, currentUserOrg.getTenantId());
-        tokenSession.set(SaTokenConstant.TOKEN_SESSION_ORG_ID, currentUserOrg.getOrgId());
-        tokenSession.set(SaTokenConstant.TOKEN_SESSION_FISCAL, fiscal == null ? "" : String.valueOf(fiscal));
-        tokenSession.set(SaTokenConstant.TOKEN_SESSION_CONTEXT_VERSION, System.currentTimeMillis());
-    }
-
-    private LoginInfo buildLoginInfo(UserVO userVO,
-                                     UserOrgVO currentUserOrg,
-                                     Integer fiscal,
-                                     String token,
-                                     List<UserOrgVO> userOrgList,
-                                     LoginPermissionSnapshotVO snapshot) {
-        LoginInfo loginInfo = new LoginInfo();
-        loginInfo.setUserId(userVO.getUserId());
-        loginInfo.setUserName(userVO.getUserName());
-        loginInfo.setFiscal(String.valueOf(fiscal));
-        loginInfo.setTenantId(currentUserOrg.getTenantId());
-        loginInfo.setTenantCode(currentUserOrg.getTenantCode());
-        loginInfo.setTenantName(currentUserOrg.getTenantName());
-        loginInfo.setOrgId(currentUserOrg.getOrgId());
-        loginInfo.setOrgCode(currentUserOrg.getOrgCode());
-        loginInfo.setOrgName(currentUserOrg.getOrgName());
-        loginInfo.setIsDefaultPwd(resolveIsDefaultPwd(userVO.getIsModify()));
-        loginInfo.setUserOrgList(userOrgList);
-        loginInfo.setRoleList(snapshot.getRoleList());
-        loginInfo.setMenuList(snapshot.getMenuList());
-        loginInfo.setRouterList(snapshot.getRouterList());
-        loginInfo.setResourceList(snapshot.getResourceList());
-        loginInfo.setPermissionList(snapshot.getPermissionList());
-        loginInfo.setPermissionSnapshot(snapshot);
-        loginInfo.setToken(token);
-        return loginInfo;
+    private LoginInfo buildMemberLoginInfo(UserVO user, TenantSessionContext context,
+                                           LoginTargetVO selected, List<LoginTargetVO> targets) {
+        LoginPermissionSnapshotVO snapshot = emptyPermissionSnapshot();
+        LoginInfo info = new LoginInfo();
+        info.setUserId(user.getUserId());
+        info.setUserRefId(context.userRefId());
+        info.setUserName(user.getUserName());
+        info.setTenantId(selected.getTenantId());
+        info.setTenantRefId(context.tenantRefId());
+        info.setTenantName(selected.getTenantName());
+        info.setMemberRefId(context.memberRefId());
+        info.setAppRefId(context.appRefId());
+        info.setAppId(selected.getAppId());
+        info.setMemberVersion(context.memberVersion());
+        info.setRequiresTenantSelection(false);
+        info.setTenantOptions(targets);
+        info.setToken(StpUtil.getTokenValue());
+        info.setIsDefaultPwd(resolveIsDefaultPwd(user.getIsModify()));
+        info.setUserOrgList(List.of());
+        info.setRoleList(snapshot.getRoleList());
+        info.setMenuList(snapshot.getMenuList());
+        info.setRouterList(snapshot.getRouterList());
+        info.setResourceList(snapshot.getResourceList());
+        info.setPermissionList(snapshot.getPermissionList());
+        info.setPermissionSnapshot(snapshot);
+        return info;
     }
 
     private Integer resolveIsDefaultPwd(Integer isModify) {
@@ -316,62 +298,9 @@ public class UserServiceImpl implements IUserService {
         return isModify == 0 ? 1 : 0;
     }
 
-    private UserOrgVO resolveUserOrg(LoginDTO loginDTO, UserVO userVO, List<UserOrgVO> userOrgList) {
-        UserOrgVO matched = matchUserOrgByLoginSelection(loginDTO, userOrgList);
-        if (matched != null) {
-            return matched;
-        }
-        matched = matchUserOrgByDefaultOrgId(userVO, userOrgList);
-        if (matched != null) {
-            return matched;
-        }
-        matched = matchDefaultUserOrg(userOrgList);
-        if (matched != null) {
-            return matched;
-        }
-        return userOrgList.get(0);
-    }
-
-    private UserOrgVO matchUserOrgByLoginSelection(LoginDTO loginDTO, List<UserOrgVO> userOrgList) {
-        if (StringUtil.isBlank(loginDTO.getTenantId()) && StringUtil.isBlank(loginDTO.getOrgId())) {
-            return null;
-        }
-        for (UserOrgVO userOrgVO : userOrgList) {
-            boolean tenantMatch = StringUtil.isBlank(loginDTO.getTenantId())
-                    || loginDTO.getTenantId().equals(userOrgVO.getTenantId());
-            boolean orgMatch = StringUtil.isBlank(loginDTO.getOrgId())
-                    || loginDTO.getOrgId().equals(userOrgVO.getOrgId());
-            if (tenantMatch && orgMatch) {
-                return userOrgVO;
-            }
-        }
-        return null;
-    }
-
-    private UserOrgVO matchUserOrgByDefaultOrgId(UserVO userVO, List<UserOrgVO> userOrgList) {
-        if (StringUtil.isBlank(userVO.getDefaultOrgId())) {
-            return null;
-        }
-        for (UserOrgVO userOrgVO : userOrgList) {
-            if (userVO.getDefaultOrgId().equals(userOrgVO.getOrgId())) {
-                return userOrgVO;
-            }
-        }
-        return null;
-    }
-
-    private UserOrgVO matchDefaultUserOrg(List<UserOrgVO> userOrgList) {
-        for (UserOrgVO userOrgVO : userOrgList) {
-            if (userOrgVO.getIsDefault() != null && userOrgVO.getIsDefault() == 1) {
-                return userOrgVO;
-            }
-        }
-        return null;
-    }
-
     @Override
     public Response register(RegisterDTO registerDTO) {
-        return Response.success();
+        return Response.fail("账号注册尚未开放");
     }
 
     @Override

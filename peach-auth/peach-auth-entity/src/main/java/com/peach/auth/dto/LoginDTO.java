@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 
@@ -35,15 +34,13 @@ public class LoginDTO implements Serializable {
     @Size(max = 1024, message = "密码密文长度不能超过1024个字符", groups = {LoginGroup.Login.class})
     private String password;
 
-    @Schema(description = "年度")
-    @NotNull(message = "年度不能为空", groups = {LoginGroup.Login.class})
-    private Integer fiscal;
+    @Schema(description = "目标租户物理 ID，多选项时必填")
+    @Size(max = 32, message = "租户物理 ID 长度不能超过32")
+    private String tenantRefId;
 
-    @Schema(description = "租户ID")
-    private String tenantId;
-
-    @Schema(description = "机构ID")
-    private String orgId;
+    @Schema(description = "目标应用物理 ID，多选项时必填")
+    @Size(max = 32, message = "应用物理 ID 长度不能超过32")
+    private String appRefId;
 
     @Schema(description = "滑块验证码二次校验凭证，启用验证码时须先通过 /auth/checkCaptcha 获取")
     @Size(max = 2048, message = "验证码凭证长度不能超过2048个字符", groups = {LoginGroup.Login.class})

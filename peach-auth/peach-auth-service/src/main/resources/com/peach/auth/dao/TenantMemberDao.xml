@@ -67,6 +67,20 @@
         WHERE A.ID = #{appRefId} AND A.IS_OPEN = 1 AND A.IS_DELETE = 0
     </select>
 
+    <select id="selectLoginTargets" resultType="com.peach.auth.vo.LoginTargetVO">
+        SELECT T.ID AS tenantRefId, T.TENANT_ID AS tenantId, T.TENANT_NAME AS tenantName,
+               A.ID AS appRefId, A.APP_ID AS appId, A.APP_NAME AS appName
+        FROM PEACH_TENANT_MEMBER M
+        INNER JOIN PEACH_TENANT T
+            ON T.ID = M.TENANT_REF_ID AND T.STATUS = 'ENABLE' AND T.IS_DELETE = 0
+        INNER JOIN PEACH_USER U
+            ON U.ID = M.USER_REF_ID AND U.STATUS IN ('1', 'ENABLE') AND U.IS_DELETE = 0
+        INNER JOIN PEACH_APPLICATION A
+            ON A.TENANT_ID = T.TENANT_ID AND A.IS_OPEN = 1 AND A.IS_DELETE = 0
+        WHERE M.USER_REF_ID = #{userRefId} AND M.STATUS = 'ACTIVE' AND M.IS_DELETE = 0
+        ORDER BY T.TENANT_NAME, A.APP_NAME, T.ID, A.ID
+    </select>
+
     <update id="changeStatus">
         UPDATE PEACH_TENANT_MEMBER
         SET STATUS = #{status}, MODIFY_TIME = #{modifyTime},

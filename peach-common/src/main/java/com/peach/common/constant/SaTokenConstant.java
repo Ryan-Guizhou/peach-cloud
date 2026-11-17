@@ -23,6 +23,9 @@ public final class SaTokenConstant {
      */
     public static final String TOKEN_NOT_INCLUDE_USER = "{0}-{1}";
 
+    /** 当前 Token Session 的不可拆分 SaaS 身份快照。 */
+    public static final String TOKEN_SESSION_SAAS_CONTEXT = "peach:context:saas";
+
     /** Saas 用户物理主键，服务端确认身份后写入。 */
     public static final String TOKEN_SESSION_USER_REF_ID = "peach:context:userRefId";
 

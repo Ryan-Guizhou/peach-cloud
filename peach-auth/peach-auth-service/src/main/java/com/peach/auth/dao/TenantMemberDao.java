@@ -1,6 +1,7 @@
 package com.peach.auth.dao;
 
 import com.peach.auth.entity.TenantMemberDO;
+import com.peach.auth.vo.LoginTargetVO;
 import com.peach.common.annoation.MybatisDao;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Indexed;
@@ -70,6 +71,14 @@ public interface TenantMemberDao {
      */
     int countEnabledApplication(@Param("tenantRefId") String tenantRefId,
                                  @Param("appRefId") String appRefId);
+
+    /**
+     * 密码校验成功后查询用户仍可进入的租户应用，不依赖机构归属。
+     *
+     * @param userRefId 可信用户物理 ID
+     * @return 已启用应用和有效租户成员组合
+     */
+    List<LoginTargetVO> selectLoginTargets(@Param("userRefId") String userRefId);
 
     int changeStatus(@Param("id") String id,
                      @Param("tenantRefId") String tenantRefId,

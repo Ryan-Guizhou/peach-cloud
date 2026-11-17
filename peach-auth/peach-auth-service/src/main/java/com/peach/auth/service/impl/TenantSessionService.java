@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -63,11 +64,13 @@ public class TenantSessionService {
         TenantSessionContext context = new TenantSessionContext(verifiedUserRefId, tenantRefId,
                 member.getId(), appRefId, version);
         var session = StpUtil.getTokenSession();
-        session.set(SaTokenConstant.TOKEN_SESSION_USER_REF_ID, context.userRefId());
-        session.set(SaTokenConstant.TOKEN_SESSION_TENANT_REF_ID, context.tenantRefId());
-        session.set(SaTokenConstant.TOKEN_SESSION_MEMBER_REF_ID, context.memberRefId());
-        session.set(SaTokenConstant.TOKEN_SESSION_APP_REF_ID, context.appRefId());
-        session.set(SaTokenConstant.TOKEN_SESSION_MEMBER_VERSION, context.memberVersion());
+        // 写入单个快照，避免并发切租户时混合读取租户、成员和应用。
+        session.set(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT, Map.of(
+                "userRefId", context.userRefId(),
+                "tenantRefId", context.tenantRefId(),
+                "memberRefId", context.memberRefId(),
+                "appRefId", context.appRefId(),
+                "memberVersion", String.valueOf(context.memberVersion())));
         return context;
     }
 
@@ -82,18 +85,23 @@ public class TenantSessionService {
             throw new SecurityException("Authenticated tenant session is required");
         }
         var session = StpUtil.getTokenSession();
-        Object user = session.get(SaTokenConstant.TOKEN_SESSION_USER_REF_ID);
-        Object tenant = session.get(SaTokenConstant.TOKEN_SESSION_TENANT_REF_ID);
-        Object memberRef = session.get(SaTokenConstant.TOKEN_SESSION_MEMBER_REF_ID);
-        Object app = session.get(SaTokenConstant.TOKEN_SESSION_APP_REF_ID);
-        Object version = session.get(SaTokenConstant.TOKEN_SESSION_MEMBER_VERSION);
-        if (!(user instanceof String userId) || !(tenant instanceof String tenantId)
-                || !(memberRef instanceof String memberId) || !(app instanceof String appId)
-                || !(version instanceof Number versionValue)) {
+        Object stored = session.get(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT);
+        if (!(stored instanceof Map<?, ?> values)
+                || !(values.get("userRefId") instanceof String userId)
+                || !(values.get("tenantRefId") instanceof String tenantId)
+                || !(values.get("memberRefId") instanceof String memberId)
+                || !(values.get("appRefId") instanceof String appId)
+                || !(values.get("memberVersion") instanceof String version)) {
             throw new SecurityException("Tenant token is missing a trusted context");
         }
+        long memberVersion;
+        try {
+            memberVersion = Long.parseLong(version);
+        } catch (NumberFormatException exception) {
+            throw new SecurityException("Tenant token member version is invalid");
+        }
         TenantSessionContext context = new TenantSessionContext(
-                userId, tenantId, memberId, appId, versionValue.longValue());
+                userId, tenantId, memberId, appId, memberVersion);
         requireLoginUser(context.userRefId());
         TenantMemberDO active = membershipService.resolveActive(context.tenantRefId(), context.userRefId());
         if (active == null || !Objects.equals(active.getId(), context.memberRefId())
