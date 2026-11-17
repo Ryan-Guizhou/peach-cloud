@@ -28,6 +28,14 @@ public interface OrganizationHierarchyDao {
     String lockTenantAndFindBusinessId(@Param("tenantRefId") String tenantRefId);
 
     /**
+     * 只读查询当前已启用租户的业务 ID，不获取写锁。
+     *
+     * @param tenantRefId 服务端可信租户物理 ID
+     * @return 已启用租户业务编号或 null
+     */
+    String findEnabledTenantBusinessId(@Param("tenantRefId") String tenantRefId);
+
+    /**
      * 查询某租户下未删除的机构及其父节点物理 ID。
      *
      * @param id 机构物理 ID

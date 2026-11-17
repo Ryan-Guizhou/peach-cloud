@@ -185,3 +185,30 @@ New roles receive a permanent global `ROLE_ID` and are bound to a physical tenan
 When a member leaves, is disabled/re-enabled, or rejoins by accepting a new invitation while retaining the original member ID, `TenantMemberLifecycleService` atomically soft-revokes **all** previously active `PEACH_MEMBER_ROLE_BINDING` entries, increments the member's `AUTH_VERSION`, and appends authorization audit evidence. Rejoining never resurrects prior role privileges: a tenant administrator must explicitly grant new bindings. Any failure rolls back the member status change and invalidation together.
 
 After a successful organization-tree move, `OrganizationHierarchyService` increments authorization versions for all tenant members in the same transaction. This prevents stale `ORG_TREE` scope caches from staying valid. #208 must still enforce membership status and version on every protected gateway request; the current implementation guards its own domain services but does not secure every cross-service entry point.
+
+
+## #207 Row and field authorization (development branch, not accepted)
+
+The incremental backend introduces `PEACH_ROLE_DATA_POLICY`, `PEACH_FIELD_DEFINITION`, `PEACH_ROLE_FIELD_POLICY` and `ScopedDataAuthorizationService`. It currently supports decisions for **one authenticated database object** and field projection, not SQL-safe list pagination or integration across all services. **It is not approved for production business-data exposure.**
+
+```mermaid
+flowchart LR
+  Token["Sa-Token member/tenant/app/year/version"] --> Valid["Validate current Token Session"]
+  Valid --> Grants["Same role binding + action + data policy"]
+  Object["Server-side database object ownership"] --> Intersection["Binding scope ∩ data policy ∩ object"]
+  Grants --> Intersection
+  Intersection -->|At least one intact grant| Fields["Registered field catalog and matching grant rules"]
+  Fields --> Read["Read: DENY > MASK > ALLOW"]
+  Fields --> Write["Write: every field requires explicit ALLOW"]
+  Intersection -->|No match| Deny["Deny"]
+```
+
+| Capability | Current implementation | Safety limitation |
+| --- | --- | --- |
+| Row scopes | Independently intersect `SELF/ORG/ORG_TREE/TENANT_ALL` data policies with `TENANT/ORG/ORG_TREE` role binding scopes, then union intact grants | Object tenant, app, year and owner must come from real database rows, never client-supplied claims |
+| Organization trees | `DatabaseOrganizationScopeMatcher` traverses active ancestors within the verified tenant with cycle/depth rejection | Per-object only; lists and pagination need database predicates and indexes |
+| Field reads | `ALLOW/MASK/DENY`, exclude unregistered fields, FULL/PHONE/EMAIL masks | Explicit DENY overrides ALLOW; do not mix field rules from distinct grants |
+| Field writes | `requireWritableFields` rejects the entire update when any submitted field lacks explicit write permission | Business code must lock the real row and perform checks in the same transaction before UPDATE |
+| File and other objects | `requireObjectAction` validates actions without field projection | Cross-service Feign, storage objects, background tasks remain under #209 |
+
+**Security contract:** Callers provide server-defined actions and trusted row ownership. Never apply post-page filtering as a substitute for SQL-level security; it leaks counts and breaks pagination. Each grant must independently contain the action, role, year, binding scope, and data scope. A second grant cannot contribute missing pieces. Policy administration, field catalog bootstrapping, complete downstream integration, and real multi-tenant MySQL acceptance remain outstanding in #207.

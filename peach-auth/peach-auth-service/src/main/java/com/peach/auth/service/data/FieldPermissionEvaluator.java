@@ -93,9 +93,12 @@ public final class FieldPermissionEvaluator {
         if (!StringUtils.hasText(field) || CollectionUtils.isEmpty(rules)) {
             return new Decision(DENY, DENY, FULL);
         }
-        Set<String> approvedBindings = new HashSet<>();
+        Set<GrantKey> approvedBindings = new HashSet<>();
         for (RoleDataGrantVO grant : grants) {
-            approvedBindings.add(grant.getBindingRefId());
+            if (grant != null) {
+                approvedBindings.add(new GrantKey(
+                        grant.getBindingRefId(), grant.getRoleRefId(), grant.getPermissionRefId()));
+            }
         }
         boolean readAllow = false;
         boolean readMask = false;
@@ -105,7 +108,8 @@ public final class FieldPermissionEvaluator {
         String maskStrategy = null;
         for (ScopedFieldRuleVO rule : rules) {
             if (rule == null || !field.equals(rule.getFieldCode())
-                    || !approvedBindings.contains(rule.getBindingRefId())) {
+                    || !approvedBindings.contains(new GrantKey(
+                    rule.getBindingRefId(), rule.getRoleRefId(), rule.getPermissionRefId()))) {
                 continue;
             }
             switch (rule.getReadEffect() == null ? DENY : rule.getReadEffect()) {
@@ -146,6 +150,9 @@ public final class FieldPermissionEvaluator {
             }
         }
         return "****";
+    }
+
+    private record GrantKey(String bindingRefId, String roleRefId, String permissionRefId) {
     }
 
     private record Decision(String readEffect, String writeEffect, String maskStrategy) {

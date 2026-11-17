@@ -9,6 +9,12 @@
         FOR UPDATE
     </select>
 
+    <select id="findEnabledTenantBusinessId" resultType="java.lang.String">
+        SELECT TENANT_ID FROM PEACH_TENANT
+        WHERE ID = #{tenantRefId}
+          AND STATUS = 'ENABLE' AND IS_DELETE = 0
+    </select>
+
     <select id="selectInTenant" resultType="com.peach.auth.entity.OrganizationDO">
         SELECT ID AS id, ORG_ID AS orgId, TENANT_ID AS tenantId,
                PARENT_ORG_REF_ID AS parentOrgRefId,
