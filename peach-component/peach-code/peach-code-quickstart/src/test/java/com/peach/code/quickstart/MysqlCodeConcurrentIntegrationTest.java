@@ -151,11 +151,11 @@ class MysqlCodeConcurrentIntegrationTest {
         assertThat(first.next("T001", "MENU")).isEqualTo("MENU_00000001");
         JdbcCodeRuleMaintenance maintenance =
                 new JdbcCodeRuleMaintenance(jdbc, new DataSourceTransactionManager(dataSource));
-        assertThatThrownBy(() -> maintenance.advanceWatermark("T001", "MENU", 0L, 0L))
+        assertThatThrownBy(() -> maintenance.advanceWatermark("T001", "MENU", 0L, 0L, "actor-id"))
                 .isInstanceOf(CodeGeneratorException.class)
                 .hasMessageContaining("decrease");
         assertThatThrownBy(() -> maintenance.changeFormat(
-                "T001", "MENU", new CodeFormat("MENU", "-", 8), 0L))
+                "T001", "MENU", new CodeFormat("MENU", "-", 8), 0L, "actor-id"))
                 .isInstanceOf(CodeGeneratorException.class)
                 .hasMessageContaining("immutable");
         assertThat(second.next("T001", "MENU")).isEqualTo("MENU_00000002");
