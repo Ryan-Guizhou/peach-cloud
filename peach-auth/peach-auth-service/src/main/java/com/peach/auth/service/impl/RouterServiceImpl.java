@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class RouterServiceImpl implements IRouterService {
 
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
+
     private final RouterDao routerDao;
 
     private final CommonValidator commonValidator;
@@ -63,6 +68,7 @@ public class RouterServiceImpl implements IRouterService {
         RouterDO routerDO = new RouterDO();
         BeanUtils.copyProperties(routerDTO,routerDO);
         routerDO.setId(UniqueIdFacade.nextId());
+        routerDO.setRouterId(authBusinessIdGenerator.next(AuthBusinessIdType.ROUTER));
         routerDao.insert(routerDO);
     }
 

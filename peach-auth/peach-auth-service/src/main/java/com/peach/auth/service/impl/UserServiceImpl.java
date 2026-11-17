@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import java.nio.charset.StandardCharsets;
 import com.github.pagehelper.page.PageMethod;
 
@@ -63,6 +66,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements IUserService {
+
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
 
     private final UserDao userDao;
 
@@ -380,6 +385,7 @@ public class UserServiceImpl implements IUserService {
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
         userDO.setId(UniqueIdFacade.nextId());
+        userDO.setUserId(authBusinessIdGenerator.next(AuthBusinessIdType.USER));
         UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillCreateTime(null);
         if (userDO.getIsDelete() == null) {

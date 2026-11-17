@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -39,6 +42,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthResourceServiceImpl implements IAuthResourceService {
 
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
+
     private final AuthResourceDao authResourceDao;
 
     private final AuthLogSupport authLogSupport;
@@ -76,7 +81,7 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
                 }
                 AuthResourceDO authResourceDO = new AuthResourceDO();
                 authResourceDO.setId(UniqueIdFacade.nextId());
-                authResourceDO.setResourceId(UniqueIdFacade.nextId());
+                authResourceDO.setResourceId(authBusinessIdGenerator.next(AuthBusinessIdType.AUTHRES));
                 authResourceDO.setTenantId(roleResourceAuthDTO.getTenantId());
                 authResourceDO.setOrgId(roleResourceAuthDTO.getOrgId());
                 authResourceDO.setPartyCode(roleResourceAuthDTO.getPartyCode());

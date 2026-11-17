@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.peach.satoken.context.SecurityContextHolder;
 import jakarta.annotation.Nullable;
 
@@ -52,6 +55,8 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class UserProfileServiceImpl implements IUserProfileService {
+
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
 
     private static final long MAX_AVATAR_SIZE = 5L * 1024L * 1024L;
     private static final int MAX_AVATAR_HISTORY = 10;
@@ -139,7 +144,7 @@ public class UserProfileServiceImpl implements IUserProfileService {
 
                 UserAvatarHistoryDO historyDO = new UserAvatarHistoryDO();
                 historyDO.setId(UniqueIdFacade.nextId());
-                historyDO.setAvatarHistoryId(UniqueIdFacade.nextId());
+                historyDO.setAvatarHistoryId(authBusinessIdGenerator.next(AuthBusinessIdType.AVATAR));
                 historyDO.setUserId(userId);
                 historyDO.setFileId(uploaded.getFileId());
                 historyDO.setSortNo(1);
