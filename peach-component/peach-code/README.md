@@ -93,9 +93,9 @@ CodeGenerator.next
 
 | 操作 | 方法 | 不变式 |
 | --- | --- | --- |
-| 启停 | `changeStatus(namespace, prefix, enabled, expectedVersion)` | 保留原水位、按版本递增 |
-| 修改格式 | `changeFormat(namespace, prefix, format, expectedVersion)` | 仅 `CURRENT_VALUE=0` 且前缀不变时允许 |
-| 历史水位校准 | `advanceWatermark(namespace, prefix, watermark, expectedVersion)` | 只能前进、不得超过格式宽度 |
+| 启停 | `changeStatus(namespace, prefix, enabled, expectedVersion, operatorRefId)` | 保留原水位、按版本递增 |
+| 修改格式 | `changeFormat(namespace, prefix, format, expectedVersion, operatorRefId)` | 仅 `CURRENT_VALUE=0` 且前缀不变时允许 |
+| 历史水位校准 | `advanceWatermark(namespace, prefix, watermark, expectedVersion, operatorRefId)` | 只能前进、不得超过格式宽度 |
 
 所有修改和发号均在 MySQL 规则行上竞争锁；版本冲突和数据库不可用均拒绝操作。**操作前必须对管理员身份与目标命名空间实施服务端校验**；现阶段尚未开放管理 HTTP API，授权入口留待 IAM 角色能力完成后接入。现有 SQL 对直接使用 DBA 权限篡改计数器不提供防护，生产迁移需限制 DML 权限及审计运维操作。
 
@@ -112,4 +112,6 @@ sequenceDiagram
     DB-->>Rule: 提交或冲突拒绝
 ```
 
-**剩余验收：** 尚须在真实 MySQL 8.4 环境执行测试、补充管理员授权 HTTP 契约和规则修改独立审计记录，并完成旧序号迁移验证。本节不表示相关测试已执行通过。
+**审计落地：** 所有实际改变的启停、格式和水位操作，都在同一事务插入 `PEACH_CODE_RULE_AUDIT`，使用 `operatorRefId` 关联可信操作者，保留前后值和版本；审计插入失败导致规则变更回滚。需要在部署前执行 `sql/PEACH_CODE_RULE_AUDIT.sql`（或聚合建表脚本），并禁止业务账号直接删改审计数据。
+
+**剩余验收：** 尚须在真实 MySQL 8.4 环境执行测试、补充管理员授权 HTTP 契约和修改审计运行验证，并完成旧序号迁移验证。本节不表示相关测试已执行通过。
