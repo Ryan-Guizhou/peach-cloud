@@ -1,6 +1,7 @@
 package com.peach.auth.service.impl;
 
 import com.peach.auth.dao.OrganizationHierarchyDao;
+import com.peach.auth.dao.MemberAuthVersionDao;
 import com.peach.auth.entity.OrganizationDO;
 import com.peach.auth.service.TenantMembershipPolicy;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,7 @@ class OrganizationHierarchyServiceTest {
     private OrganizationHierarchyDao dao;
     private ObjectProvider<TenantMembershipPolicy> provider;
     private OrganizationHierarchyService service;
+    private MemberAuthVersionDao memberAuthVersionDao;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -36,7 +38,9 @@ class OrganizationHierarchyServiceTest {
         provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenReturn(mock(TenantMembershipPolicy.class));
         when(dao.lockTenantAndFindBusinessId("tenant-ref")).thenReturn("TENANT_0001");
-        service = new OrganizationHierarchyService(dao, provider);
+        memberAuthVersionDao = mock(MemberAuthVersionDao.class);
+        when(memberAuthVersionDao.incrementForTenant("tenant-ref")).thenReturn(1);
+        service = new OrganizationHierarchyService(dao, provider, memberAuthVersionDao);
     }
 
     @Test
@@ -47,6 +51,7 @@ class OrganizationHierarchyServiceTest {
                 .thenReturn(1);
         service.move("tenant-ref", "admin-member", "child", "new-parent");
         verify(dao).updateParent("child", "TENANT_0001", "new-parent", 3L, "admin-member");
+        verify(memberAuthVersionDao).incrementForTenant("tenant-ref");
     }
 
     @Test
@@ -83,6 +88,7 @@ class OrganizationHierarchyServiceTest {
         when(dao.updateParent("child", "TENANT_0001", null, 5L, "admin-member")).thenReturn(1);
         service.move("tenant-ref", "admin-member", "child", null);
         verify(dao).updateParent("child", "TENANT_0001", null, 5L, "admin-member");
+        verify(memberAuthVersionDao).incrementForTenant("tenant-ref");
     }
 
     private static OrganizationDO org(String id, String parent, long version) {

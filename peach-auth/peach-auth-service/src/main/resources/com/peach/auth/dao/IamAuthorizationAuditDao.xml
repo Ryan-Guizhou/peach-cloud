@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.IamAuthorizationAuditDao">
+    <insert id="append">
+        INSERT INTO PEACH_IAM_AUTH_AUDIT
+        (ID, TENANT_REF_ID, APP_REF_ID, AUTH_YEAR,
+         OPERATOR_REF_ID, TARGET_REF_ID, OPERATION, OLD_VERSION, NEW_VERSION)
+        VALUES
+        (#{id}, #{tenantRefId}, #{appRefId,jdbcType=VARCHAR}, #{year,jdbcType=SMALLINT},
+         #{operatorRefId}, #{targetRefId}, #{operation},
+         #{oldVersion}, #{newVersion})
+    </insert>
+</mapper>

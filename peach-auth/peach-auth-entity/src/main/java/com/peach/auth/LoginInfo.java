@@ -51,6 +51,9 @@ public class LoginInfo {
     @Schema(description = "成员身份版本")
     private Long memberVersion;
 
+    @Schema(description = "角色资源授权版本")
+    private Long authVersion;
+
     @Schema(description = "是否要求再次选择租户与应用")
     private Boolean requiresTenantSelection;
 

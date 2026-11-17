@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.ScopedRoleBindingDao">
+    <sql id="bindingFields">
+        ID AS id, TENANT_REF_ID AS tenantRefId,
+        MEMBER_REF_ID AS memberRefId, APP_REF_ID AS appRefId,
+        ROLE_REF_ID AS roleRefId, AUTH_YEAR AS authYear,
+        SCOPE_TYPE AS scopeType, SCOPE_REF_ID AS scopeRefId,
+        STATUS AS status, IS_DELETE AS isDelete,
+        VERSION AS version, DELETED_AT AS deletedAt
+    </sql>
+
+    <select id="lockActiveMember" resultType="com.peach.auth.entity.TenantMemberDO">
+        SELECT M.ID AS id, M.TENANT_REF_ID AS tenantRefId, M.USER_REF_ID AS userRefId,
+               M.STATUS AS status, M.IS_DELETE AS isDelete, M.VERSION AS version,
+               M.AUTH_VERSION AS authVersion
+        FROM PEACH_TENANT_MEMBER M
+        INNER JOIN PEACH_USER U ON U.ID = M.USER_REF_ID
+            AND U.IS_DELETE = 0 AND U.STATUS IN ('1','ENABLE')
+        INNER JOIN PEACH_TENANT T ON T.ID = M.TENANT_REF_ID
+            AND T.IS_DELETE = 0 AND T.STATUS = 'ENABLE'
+        WHERE M.ID = #{memberRefId} AND M.TENANT_REF_ID = #{tenantRefId}
+            AND M.STATUS = 'ACTIVE' AND M.IS_DELETE = 0
+        FOR UPDATE
+    </select>
+
+    <select id="countActiveRole" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_ROLE R
+        INNER JOIN PEACH_APPLICATION A ON A.ID = R.APP_REF_ID
+            AND A.IS_OPEN = 1 AND A.IS_DELETE = 0
+        INNER JOIN PEACH_TENANT T ON T.ID = R.TENANT_REF_ID
+            AND T.TENANT_ID = A.TENANT_ID AND T.IS_DELETE = 0 AND T.STATUS = 'ENABLE'
+        WHERE R.ID = #{roleRefId} AND R.TENANT_REF_ID = #{tenantRefId}
+          AND R.APP_REF_ID = #{appRefId} AND R.AUTH_YEAR = #{year}
+          AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+    </select>
+
+    <select id="countActiveRolePermissions" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM PEACH_ROLE_PERMISSION
+        WHERE ROLE_REF_ID = #{roleRefId}
+          AND TENANT_REF_ID = #{tenantRefId}
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+    </select>
+
+    <select id="selectDelegablePermissionCodes" resultType="java.lang.String">
+        SELECT P.PERMISSION_CODE
+        FROM PEACH_ROLE_PERMISSION RP
+        INNER JOIN PEACH_PERMISSION_DEFINITION P ON P.ID = RP.PERMISSION_REF_ID
+            AND P.STATUS = 'ACTIVE' AND P.IS_DELETE = 0
+            AND P.DELEGABLE = 1
+            AND (P.APP_REF_ID IS NULL OR P.APP_REF_ID = #{appRefId})
+            AND ((P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL)
+                OR (P.OWNER_TYPE = 'TENANT' AND P.TENANT_REF_ID = #{tenantRefId}))
+        WHERE RP.ROLE_REF_ID = #{roleRefId}
+          AND RP.TENANT_REF_ID = #{tenantRefId}
+          AND RP.STATUS = 'ACTIVE' AND RP.IS_DELETE = 0
+    </select>
+
+    <select id="selectActiveBinding" resultType="com.peach.auth.entity.MemberRoleBindingDO">
+        SELECT <include refid="bindingFields" />
+        FROM PEACH_MEMBER_ROLE_BINDING
+        WHERE TENANT_REF_ID = #{tenantRefId}
+          AND MEMBER_REF_ID = #{memberRefId} AND APP_REF_ID = #{appRefId}
+          AND ROLE_REF_ID = #{roleRefId} AND AUTH_YEAR = #{year}
+          AND SCOPE_TYPE = #{scopeType}
+          <choose>
+              <when test="scopeRefId == null">
+                  AND SCOPE_REF_ID IS NULL
+              </when>
+              <otherwise>
+                  AND SCOPE_REF_ID = #{scopeRefId}
+              </otherwise>
+          </choose>
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+    </select>
+
+    <select id="selectActiveById" resultType="com.peach.auth.entity.MemberRoleBindingDO">
+        SELECT <include refid="bindingFields" />
+        FROM PEACH_MEMBER_ROLE_BINDING
+        WHERE TENANT_REF_ID = #{tenantRefId} AND ID = #{id}
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+    </select>
+
+    <insert id="insert" parameterType="com.peach.auth.entity.MemberRoleBindingDO">
+        INSERT INTO PEACH_MEMBER_ROLE_BINDING
+        (ID, TENANT_REF_ID, MEMBER_REF_ID, APP_REF_ID, ROLE_REF_ID,
+         AUTH_YEAR, SCOPE_TYPE, SCOPE_REF_ID, STATUS, IS_DELETE,
+         VERSION, CREATED_TIME, CREATOR_ID)
+        VALUES
+        (#{id}, #{tenantRefId}, #{memberRefId}, #{appRefId},
+         #{roleRefId}, #{authYear}, #{scopeType},
+         #{scopeRefId,jdbcType=VARCHAR}, 'ACTIVE', 0, 0,
+         #{createdTime}, #{creatorId})
+    </insert>
+
+    <update id="revoke">
+        UPDATE PEACH_MEMBER_ROLE_BINDING
+        SET STATUS = 'DISABLED', IS_DELETE = 1,
+            DELETED_AT = CURRENT_TIMESTAMP(3), VERSION = VERSION + 1
+        WHERE TENANT_REF_ID = #{tenantRefId}
+          AND ID = #{id} AND VERSION = #{version}
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+    </update>
+    <update id="revokeAllForMember">
+        UPDATE PEACH_MEMBER_ROLE_BINDING
+        SET STATUS = 'DISABLED', IS_DELETE = 1,
+            DELETED_AT = CURRENT_TIMESTAMP(3), VERSION = VERSION + 1
+        WHERE TENANT_REF_ID = #{tenantRefId}
+          AND MEMBER_REF_ID = #{memberRefId}
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+    </update>
+</mapper>
