@@ -65,10 +65,6 @@ public class OrganizationHierarchyService {
             throw new IllegalStateException("Target tenant is not enabled");
         }
         OrganizationDO organization = activeOrganization(organizationRefId, tenantBusinessId);
-        if (Objects.equals(organization.getParentOrgRefId(), newParentOrgRefId)) {
-            return;
-        }
-
         Set<String> visited = new HashSet<>();
         visited.add(organizationRefId);
         String currentParentId = newParentOrgRefId;
@@ -81,6 +77,10 @@ public class OrganizationHierarchyService {
             }
             OrganizationDO parent = activeOrganization(currentParentId, tenantBusinessId);
             currentParentId = parent.getParentOrgRefId();
+        }
+
+        if (Objects.equals(organization.getParentOrgRefId(), newParentOrgRefId)) {
+            return;
         }
 
         Long version = organization.getVersion();
