@@ -138,6 +138,7 @@ public class UserProfileServiceImpl implements IUserProfileService {
                 }
 
                 UserAvatarHistoryDO historyDO = new UserAvatarHistoryDO();
+                historyDO.setId(UniqueIdFacade.nextId());
                 historyDO.setAvatarHistoryId(UniqueIdFacade.nextId());
                 historyDO.setUserId(userId);
                 historyDO.setFileId(uploaded.getFileId());

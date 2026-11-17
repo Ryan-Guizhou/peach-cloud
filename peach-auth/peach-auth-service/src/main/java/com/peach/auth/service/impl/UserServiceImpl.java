@@ -37,6 +37,7 @@ import com.peach.auth.vo.UserVO;
 import com.peach.captcha.model.CaptchaVO;
 import com.peach.captcha.service.CaptchaService;
 import com.peach.common.constant.PubCommonConst;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.constant.SaTokenConstant;
 import com.peach.common.response.Response;
 import com.peach.common.util.StringUtil;
@@ -378,6 +379,7 @@ public class UserServiceImpl implements IUserService {
     public void add(UserDTO userDTO) {
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
+        userDO.setId(UniqueIdFacade.nextId());
         UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillCreateTime(null);
         if (userDO.getIsDelete() == null) {
