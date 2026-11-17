@@ -6,6 +6,7 @@ import com.peach.auth.vo.MenuVO;
 import com.peach.auth.vo.RoleVO;
 import com.peach.auth.vo.RouterVO;
 import com.peach.auth.vo.UserOrgVO;
+import com.peach.auth.vo.LoginTargetVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -29,8 +30,32 @@ public class LoginInfo {
     @Schema(description = "用户名称")
     private String userName;
 
-    @Schema(description = "年度")
-    private String fiscal;
+    @Schema(description = "当前授权自然年度")
+    private Integer year;
+
+    @Schema(description = "已验证用户物理主键")
+    private String userRefId;
+
+    @Schema(description = "当前租户物理主键")
+    private String tenantRefId;
+
+    @Schema(description = "当前成员物理主键")
+    private String memberRefId;
+
+    @Schema(description = "当前应用物理主键")
+    private String appRefId;
+
+    @Schema(description = "应用永久业务编号")
+    private String appId;
+
+    @Schema(description = "成员身份版本")
+    private Long memberVersion;
+
+    @Schema(description = "是否要求再次选择租户与应用")
+    private Boolean requiresTenantSelection;
+
+    @Schema(description = "密码校验成功后可选择的租户与应用")
+    private List<LoginTargetVO> tenantOptions;
 
     @Schema(description = "当前租户ID")
     private String tenantId;

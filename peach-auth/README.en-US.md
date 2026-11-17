@@ -86,3 +86,49 @@ Security boundary: `TenantMembershipPolicy` validates the current server-side Sa
 `OrganizationHierarchyService.move` takes physical tenant, member, organization and parent IDs. It first invokes the trusted `TenantMembershipPolicy`, then locks the enabled `PEACH_TENANT` row, translates its existing business tenant ID, verifies every ancestor belongs to that tenant, detects cycles and excessive depth, and updates `PARENT_ORG_REF_ID` using the `VERSION` optimistic lock. The current organization table still uses historical `TENANT_ID` business IDs; full conversion to `TENANT_REF_ID` belongs to #209/#211. Existing schema migrations, delete-dependency checks, complete owner bootstrap, REST API contracts, and authorization revocation remain prerequisites for production. Administrators are deliberately denied until tenant RBAC is implemented in #206, and login integration is tracked by #204/#208.
 
 This is a release integration baseline with intentionally restricted capabilities; it is not a completed production SaaS IAM system.
+
+## Global account password hashing foundation (#204 in progress)
+
+The backend retains RSA protection for transport, decrypts on the server, and verifies salted BCrypt(12) password hashes. Login does not query Base64-equivalent passwords; `PEACH_USER.PASSWORD` now uses `VARCHAR(255)`. User creation and password updates store hashes only, and newly created accounts without a credential default to disabled. `@JsonIgnore` prevents serializing password hashes. Missing accounts and malformed legacy Base64 values perform dummy BCrypt work and are denied rather than silently falling back to reversible credentials.
+
+**Migration and security boundary:** Legacy Base64 passwords cannot be automatically converted into secure BCrypt hashes. Deploy a verified credential-reset process before migration; sample development credentials must not be used in production. Legacy organization/fiscal login and switching remain and are not production-ready SaaS authorization. Member-scoped authentication, organization-optional tenant login, revocation and security acceptance remain outstanding under #204, #206, #208 and #211.
+
+
+### Member-version scoped Sa-Token session foundation (#204 in progress)
+
+`TenantSessionContext` and `TenantSessionService` bind physical `userRefId/tenantRefId/memberRefId/appRefId` and membership version to the **per-token session (not a globally shared account session)** only after a trusted credential login. The server verifies that the Sa-Token principal maps from permanent business `USER_ID` to the expected physical user, that the tenant and app are enabled, and that the membership is ACTIVE. `requireCurrent` rechecks these constraints and the member version on every invocation, so a disabled/left member cannot reuse an old context. `switchTenant` validates the destination membership for the same authenticated user and requires no organization assignment.
+
+This is a **SaaS session guard foundation** and does not yet replace the legacy FISCAL login controllers or gateway caches. Role/permission versioning (#206), fail-closed gateway verification (#208), Feign/frontend contract migration (#209/#210), and revoking legacy tokens remain prerequisites before production use.
+
+## #204 Global account and tenant-member login (development branch; basic path, not accepted yet)
+
+Login no longer derives tenant membership from `USER_ORG` or `FISCAL`. The server checks RSA-protected credentials, BCrypt, CAPTCHA and account lockout first, then loads enabled tenants, `ACTIVE` members and enabled apps via `TenantMemberDao.selectLoginTargets`. No available options means denial. A unique option may be auto-selected. Multiple options return `requiresTenantSelection=true` and `tenantOptions` **without any Token**; the client must resubmit valid credentials with `tenantRefId` and `appRefId`. The server reauthenticates and validates the requested pair, avoiding unscoped temporary sessions.
+
+```mermaid
+sequenceDiagram
+    participant Client as Client
+    participant Auth as UserServiceImpl
+    participant Member as PEACH_TENANT_MEMBER
+    participant Session as Sa-Token TokenSession
+    Client->>Auth: User, RSA password, CAPTCHA, optional physical tenant/app IDs
+    Auth->>Auth: Verify BCrypt and lockout
+    Auth->>Member: Load valid member/tenant/app choices
+    alt Multiple options without selection
+        Auth-->>Client: requiresTenantSelection + options (no Token)
+    else Validated target
+        Auth->>Session: Login with permanent business USER_ID
+        Auth->>Member: Revalidate physical USER/TENANT/MEMBER/APP and member version
+        Auth->>Session: Atomically write a single SaaS context Map
+        Auth-->>Client: token + memberRefId + tenantRefId + appRefId
+    end
+```
+
+`switchContext` accepts only destination **physical tenant and application IDs**, checks the current authenticated user context, and validates destination membership and app availability; the client cannot supply a different user identity. `logout` revokes only the current Token rather than every device session for the account. Users without any organization can still log into a tenant; `orgRefId` is not required. The development seed now initializes a tenant member for the default demo account.
+
+**Authorization boundary:** The new member login does **not reuse** legacy `ROLE_CODE+ORG_ID+FISCAL` permissions. Until the scoped RBAC (#206), gateway enforcement (#208), cross-service contracts (#209), and frontend (#210) are complete, it returns **empty menu, button and API authorization results**. The legacy gateway is not yet migrated; passing Maven/Redis CI is not proof of end-to-end authorization.
+
+**Outstanding acceptance:** Multi-device behavior, real MySQL/Redis tenant selection and logout, legacy credential reset, protected password changes, role `authVersion` revocation, and old-token cleanup. Registration/reset stubs must not falsely report success.
+
+### Natural-year authorization isolation
+
+The legacy `FISCAL` field is removed, but the **natural calendar year** remains an explicit SaaS authorization dimension. The new APIs select `year` (for example 2026), and `TenantSessionContext` stores it atomically with tenant, member, app, and membership version. #206 must bind role/resource assignments separately to each year; until that is implemented the effective permissions are empty. Permissions from different years must never be merged. Historic year-grant migration remains subject to #211 database acceptance.

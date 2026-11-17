@@ -62,7 +62,7 @@ public class UserController {
     @Operation(summary = "新增用户")
     @PostMapping("/add")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
-            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增用户信息,用户信息:['+#p0+']'")
+            optLevel = UserLogEnum.LogLevel.INFO, optContent = "'Create global user'")
     public Response add(@Validated({PeachGroup.InsertGroup.class}) @RequestBody UserDTO userDTO) {
         userService.add(userDTO);
         return Response.success();
@@ -80,7 +80,7 @@ public class UserController {
     @Operation(summary = "更新用户")
     @PostMapping("/update")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
-            optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'更新用户信息,用户信息:['+#p0+']'")
+            optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'Update global user'")
     public Response update(@Validated({PeachGroup.UpdateGroup.class}) @RequestBody UserDTO userDTO) {
         userService.update(userDTO);
         return Response.success();

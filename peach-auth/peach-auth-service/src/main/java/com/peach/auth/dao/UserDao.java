@@ -22,7 +22,7 @@ import java.util.List;
 @MybatisDao
 public interface UserDao extends PeachDao<UserDO, UserVO> {
 
-    UserVO login(@Param("username") String username, @Param("password") String password);
+    UserVO login(@Param("username") String username);
 
     List<UserVO> selectByQO(UserQO userQO);
 
