@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,22 +46,66 @@ class MysqlCodeAllocationTest {
     @Test
     void shouldAllocateOnlyUsingMysqlRowLockAndConditionalUpdate() {
         when(jdbc.queryForMap(anyString(), eq("T001"), eq("MENU")))
-                .thenReturn(Map.of("MAX_CODE_WIDTH", 8, "CURRENT_VALUE", 41L, "STATUS", "ENABLE"));
-        when(jdbc.update(anyString(), eq(42L), eq("T001"), eq("MENU"), eq(41L)))
+                .thenReturn(Map.of("MAX_CODE_WIDTH", 8, "CURRENT_VALUE", 41L, "STATUS", "ENABLE", "SCOPE_TYPE", "TENANT", "RULE_VERSION", 0L));
+        when(jdbc.update(anyString(), eq(42L), eq("T001"), eq("MENU"), eq(41L), eq(0L), eq("TENANT")))
                 .thenReturn(1);
 
         assertThat(generator.next("T001", "menu")).isEqualTo("MENU_00000042");
-        verify(jdbc).update(anyString(), eq(42L), eq("T001"), eq("MENU"), eq(41L));
+        verify(jdbc).update(anyString(), eq(42L), eq("T001"), eq("MENU"), eq(41L), eq(0L), eq("TENANT"));
+    }
+
+    @Test
+    void shouldUseConfiguredSeparatorWithoutASecondAllocationPath() {
+        when(jdbc.queryForMap(anyString(), eq("T001"), eq("ORG")))
+                .thenReturn(Map.of("MAX_CODE_WIDTH", 5, "CURRENT_VALUE", 7L,
+                        "STATUS", "ENABLE", "CODE_SEPARATOR", "-", "SCOPE_TYPE", "TENANT", "RULE_VERSION", 0L));
+        when(jdbc.update(anyString(), eq(8L), eq("T001"), eq("ORG"), eq(7L), eq(0L), eq("TENANT")))
+                .thenReturn(1);
+
+        assertThat(generator.next("T001", "org")).isEqualTo("ORG-00008");
+    }
+
+    @Test
+    void shouldRejectInvalidSeparatorBeforeUpdatingSequence() {
+        when(jdbc.queryForMap(anyString(), eq("T001"), eq("ORG")))
+                .thenReturn(Map.of("MAX_CODE_WIDTH", 5, "CURRENT_VALUE", 7L,
+                        "STATUS", "ENABLE", "CODE_SEPARATOR", "/", "SCOPE_TYPE", "TENANT", "RULE_VERSION", 0L));
+        assertThatThrownBy(() -> generator.next("T001", "ORG"))
+                .isInstanceOf(CodeGeneratorException.class)
+                .hasMessageContaining("separator");
+        verify(jdbc, never()).update(anyString(), any(Object[].class));
+    }
+
+    @Test
+    void shouldRejectScopeMismatchBeforeAllocation() {
+        when(jdbc.queryForMap(anyString(), eq("PLATFORM"), eq("USER")))
+                .thenReturn(Map.of("MAX_CODE_WIDTH", 8, "CURRENT_VALUE", 0L,
+                        "STATUS", "ENABLE", "SCOPE_TYPE", "TENANT", "RULE_VERSION", 0L));
+        assertThatThrownBy(() -> generator.nextGlobal("USER"))
+                .isInstanceOf(CodeGeneratorException.class)
+                .hasMessageContaining("scope");
+        verify(jdbc, never()).update(anyString(), any(Object[].class));
+    }
+
+    @Test
+    void shouldRejectInvalidRuleVersionBeforeAllocation() {
+        when(jdbc.queryForMap(anyString(), eq("T001"), eq("ORG")))
+                .thenReturn(Map.of("MAX_CODE_WIDTH", 8, "CURRENT_VALUE", 0L,
+                        "STATUS", "ENABLE", "SCOPE_TYPE", "TENANT", "RULE_VERSION", -1L));
+        assertThatThrownBy(() -> generator.next("T001", "ORG"))
+                .isInstanceOf(CodeGeneratorException.class)
+                .hasMessageContaining("version");
+        verify(jdbc, never()).update(anyString(), any(Object[].class));
     }
 
     @Test
     void shouldRejectOverflowWithoutUpdatingSequence() {
         when(jdbc.queryForMap(anyString(), eq("T001"), eq("MENU")))
-                .thenReturn(Map.of("MAX_CODE_WIDTH", 1, "CURRENT_VALUE", 9L, "STATUS", "ENABLE"));
+                .thenReturn(Map.of("MAX_CODE_WIDTH", 1, "CURRENT_VALUE", 9L, "STATUS", "ENABLE", "SCOPE_TYPE", "TENANT", "RULE_VERSION", 0L));
 
         assertThatThrownBy(() -> generator.next("T001", "MENU"))
                 .isInstanceOf(CodeGeneratorException.class)
                 .hasMessageContaining("MAX_CODE_WIDTH");
-        org.mockito.Mockito.verify(jdbc, org.mockito.Mockito.never()).update(anyString(), any(Object[].class));
+        verify(jdbc, never()).update(anyString(), any(Object[].class));
     }
 }
