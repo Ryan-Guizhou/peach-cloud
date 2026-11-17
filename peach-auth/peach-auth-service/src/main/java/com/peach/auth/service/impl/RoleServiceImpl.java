@@ -11,6 +11,8 @@ import com.peach.auth.dto.RoleDTO;
 import com.peach.auth.entity.RoleDO;
 import com.peach.auth.qo.RoleQO;
 import com.peach.auth.service.IRoleService;
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
 import com.peach.auth.vo.RoleVO;
 import com.peach.common.constant.PubCommonConst;
 import com.peach.common.unique.UniqueIdFacade;
@@ -37,7 +39,7 @@ public class RoleServiceImpl implements IRoleService {
 
     private final AuthBusinessIdGenerator authBusinessIdGenerator;
 
-        private final RoleDao roleDao;
+    private final RoleDao roleDao;
 
     @Override
     public PageInfo<RoleVO> pageList(RoleQO roleQO) {
