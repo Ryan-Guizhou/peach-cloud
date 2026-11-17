@@ -21,4 +21,17 @@ public interface CodeGenerator {
      * @throws CodeGeneratorException 参数非法、规则缺失或停用、序号溢出、数据库分配失败时抛出
      */
     String next(String tenantId, String prefix);
+
+    /**
+     * 在平台级单一命名空间中分配全局业务编号。
+     *
+     * <p>此方法只统一发号范围，不替代业务表的永久唯一约束。
+     * 相关类型的规则必须事先在 PLATFORM 命名空间配置且不可重置水位。</p>
+     *
+     * @param codeType 稳定的业务编码类型，如 USER、TENANT、ORG、ROLE
+     * @return 平台级业务编号
+     */
+    default String nextGlobal(String codeType) {
+        return next("PLATFORM", codeType);
+    }
 }

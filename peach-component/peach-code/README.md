@@ -71,3 +71,9 @@ CodeGenerator.next
 - 业务表租户约束、唯一索引和多组织规则清理由业务迁移负责；不要依赖本组件自动修改业务表。
 
 遵循项目 Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0 与 Spring Cloud Alibaba 2025.0.0.0 基线；中文 Javadoc、英文日志、UTF-8 无 BOM。
+
+## SaaS 平台级业务编号（建设中）
+
+调用 `CodeGenerator.nextGlobal("ORG")` 等价于 `next("PLATFORM", "ORG")`，业务类型如 `USER`、`TENANT`、`ORG` 和 `ROLE` 必须预先配置平台规则。平台级编号与租户业务编码是不同的命名空间，业务表仍必须建立包含已删除记录的永久唯一索引。
+
+`CodeFormat` 支持安全的前缀、分隔符（`_` / `-`）和 1–18 位序列号预览，例如 `new CodeFormat("org", "_", 6).preview(12)` 返回 `ORG_000012`。预览不会消耗数据库编号；当前 MySQL 发号器仍使用默认下划线和规则表中的宽度。**该预览功能不代表数据库自定义分隔符已接入正式发号。**
