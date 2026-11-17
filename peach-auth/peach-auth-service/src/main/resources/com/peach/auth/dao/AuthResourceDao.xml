@@ -285,14 +285,14 @@
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_RESOURCE
-        WHERE ID = #{value,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.AuthResourceVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_RESOURCE
-        WHERE ID IN
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
@@ -303,6 +303,7 @@
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_RESOURCE
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
@@ -311,6 +312,7 @@
         SELECT COUNT(1)
         FROM PEACH_AUTH_RESOURCE
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
