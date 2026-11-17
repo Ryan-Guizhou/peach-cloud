@@ -107,6 +107,18 @@ class MysqlCodeConcurrentIntegrationTest {
     }
 
     @Test
+    void platformCodeMustUseGlobalSequenceIndependentOfTenant() {
+        jdbc.update("INSERT INTO PEACH_CODE_RULE(ID,TENANT_ID,CODE_PREFIX,MAX_CODE_WIDTH,CURRENT_VALUE,STATUS,SCOPE_TYPE)"
+                + " VALUES (REPLACE(UUID(), '-', ''),'PLATFORM','USER',8,0,'ENABLE','PLATFORM')");
+        jdbc.update("INSERT INTO PEACH_CODE_RULE(ID,TENANT_ID,CODE_PREFIX,MAX_CODE_WIDTH,CURRENT_VALUE,STATUS,SCOPE_TYPE)"
+                + " VALUES (REPLACE(UUID(), '-', ''),'T002','MENU',8,0,'ENABLE','TENANT')");
+        assertThat(first.nextGlobal("USER")).isEqualTo("USER_00000001");
+        assertThat(second.nextGlobal("USER")).isEqualTo("USER_00000002");
+        assertThat(first.next("T001", "MENU")).isEqualTo("MENU_00000001");
+        assertThat(second.next("T002", "MENU")).isEqualTo("MENU_00000001");
+    }
+
+    @Test
     void injectedDatabaseUpdateFailureMustNotReturnASequenceOrFallbackToRedis() {
         assertThat(first.next("T001", "MENU")).isEqualTo("MENU_00000001");
         jdbc.execute("CREATE TRIGGER PEACH_CODE_FAIL_UPDATE BEFORE UPDATE ON PEACH_CODE_RULE "
