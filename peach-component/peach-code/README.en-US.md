@@ -85,3 +85,31 @@ The rule table now includes `SCOPE_TYPE` (`PLATFORM` or `TENANT`), `CODE_SEPARAT
 For example, a rule with `CODE_PREFIX=ORG`, `CODE_SEPARATOR='-'`, and `MAX_CODE_WIDTH=5` returns `ORG-00008` for sequence 8. Changing a live rule must be coordinated with MySQL row locking and operator approval. Tenants cannot modify system-reserved rules for permanent user IDs. Management APIs, rule-change audit, and the frontend configuration UI remain part of later IAM tasks.
 
 The allocation transaction validates `SCOPE_TYPE` against its namespace (`PLATFORM` versus tenant), checks non-negative `RULE_VERSION`, and includes both in the conditional update. The schema adds `CHECK` constraints for scope, separator, status, width, and non-negative counters. `INVITATION` has a platform-level seed rule. Administrative rule APIs, rule-change audit, and real MySQL acceptance are still outstanding.
+
+
+### Controlled rule maintenance (server-side Java API)
+
+`CodeRuleMaintenance` is now registered by `PeachCodeAutoConfiguration` as `JdbcCodeRuleMaintenance` when JDBC is available. It is an **internal API for trusted, authorized administration services only**, not an unprotected browser-facing REST endpoint. Platform administrators own platform-level `USER`, `TENANT`, and `ORG` rules; tenant administrators must not modify them.
+
+| Operation | Method | Invariant |
+| --- | --- | --- |
+| Enable/disable | `changeStatus(namespace, prefix, enabled, expectedVersion)` | Preserve watermark; increment rule version |
+| Change format | `changeFormat(namespace, prefix, format, expectedVersion)` | Allowed only at `CURRENT_VALUE=0` without changing prefix |
+| Calibrate historic watermark | `advanceWatermark(namespace, prefix, watermark, expectedVersion)` | Never decrease; respect numeric width |
+
+Rule maintenance and allocation use the same MySQL rule-row lock. Version conflicts and database failures reject the request; calling services **must authorize the administrator and namespace** before invoking this API. No rule administration HTTP endpoint is exposed yet. Direct privileged DBA edits are not automatically prevented from reducing historical counters: restrict direct database writes and audit operational changes.
+
+```mermaid
+sequenceDiagram
+    participant Admin as Authorized administration service
+    participant Rule as CodeRuleMaintenance
+    participant DB as MySQL PEACH_CODE_RULE
+    Admin->>Rule: Change state/format/watermark + expectedVersion
+    Rule->>DB: SELECT ... FOR UPDATE
+    DB-->>Rule: Locked rule
+    Rule->>Rule: Validate scope, version, historical watermark
+    Rule->>DB: Conditional UPDATE + increment RULE_VERSION
+    DB-->>Rule: Commit or conflict
+```
+
+**Outstanding verification:** Real MySQL 8.4 tests, authorized administration HTTP contracts, dedicated rule-change audit records, and legacy watermark migration still require implementation and verification. This documentation does not claim those checks have passed.
