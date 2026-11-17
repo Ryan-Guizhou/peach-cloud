@@ -1,13 +1,16 @@
 package com.peach.code.quickstart;
 
 import com.peach.code.CodeGeneratorException;
+import com.peach.code.CodeFormat;
 import com.peach.code.autoconfigure.CodeProperties;
 import com.peach.code.autoconfigure.PeachCodeGenerator;
+import com.peach.code.autoconfigure.JdbcCodeRuleMaintenance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -44,13 +47,14 @@ class MysqlCodeConcurrentIntegrationTest {
             .withUsername("peach")
             .withPassword("peach-test");
 
+    private DataSource dataSource;
     private JdbcTemplate jdbc;
     private PeachCodeGenerator first;
     private PeachCodeGenerator second;
 
     @BeforeEach
     void prepareRule() {
-        DataSource dataSource = new DriverManagerDataSource(
+        dataSource = new DriverManagerDataSource(
                 MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword());
         jdbc = new JdbcTemplate(dataSource);
         jdbc.execute("CREATE TABLE IF NOT EXISTS PEACH_CODE_RULE ("
@@ -116,6 +120,45 @@ class MysqlCodeConcurrentIntegrationTest {
         assertThat(second.nextGlobal("USER")).isEqualTo("USER_00000002");
         assertThat(first.next("T001", "MENU")).isEqualTo("MENU_00000001");
         assertThat(second.next("T002", "MENU")).isEqualTo("MENU_00000001");
+    }
+
+    @Test
+    void allocationShouldSurviveOuterBusinessRollback() {
+        TransactionTemplate businessTransaction =
+                new TransactionTemplate(new DataSourceTransactionManager(dataSource));
+        String code = businessTransaction.execute(status -> {
+            String allocated = first.next("T001", "MENU");
+            status.setRollbackOnly();
+            return allocated;
+        });
+        assertThat(code).isEqualTo("MENU_00000001");
+        assertThat(second.next("T001", "MENU")).isEqualTo("MENU_00000002");
+    }
+
+    @Test
+    void sequenceShouldRemainPersistentAfterGeneratorReplacement() {
+        assertThat(first.next("T001", "MENU")).isEqualTo("MENU_00000001");
+        DataSource replacementDataSource = new DriverManagerDataSource(
+                MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword());
+        PeachCodeGenerator replacement = new PeachCodeGenerator(
+                new JdbcTemplate(replacementDataSource), new CodeProperties(),
+                new DataSourceTransactionManager(replacementDataSource));
+        assertThat(replacement.next("T001", "MENU")).isEqualTo("MENU_00000002");
+    }
+
+    @Test
+    void ruleMaintenanceShouldRejectRollbackAndPostIssueFormatChanges() {
+        assertThat(first.next("T001", "MENU")).isEqualTo("MENU_00000001");
+        JdbcCodeRuleMaintenance maintenance =
+                new JdbcCodeRuleMaintenance(jdbc, new DataSourceTransactionManager(dataSource));
+        assertThatThrownBy(() -> maintenance.advanceWatermark("T001", "MENU", 0L, 0L))
+                .isInstanceOf(CodeGeneratorException.class)
+                .hasMessageContaining("decrease");
+        assertThatThrownBy(() -> maintenance.changeFormat(
+                "T001", "MENU", new CodeFormat("MENU", "-", 8), 0L))
+                .isInstanceOf(CodeGeneratorException.class)
+                .hasMessageContaining("immutable");
+        assertThat(second.next("T001", "MENU")).isEqualTo("MENU_00000002");
     }
 
     @Test
