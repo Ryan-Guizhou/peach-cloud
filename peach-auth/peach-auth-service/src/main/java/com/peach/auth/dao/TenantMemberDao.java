@@ -61,6 +61,16 @@ public interface TenantMemberDao {
     int countAuthenticatedUserIdentity(@Param("businessUserId") String businessUserId,
                                        @Param("userRefId") String userRefId);
 
+    /**
+     * 仅允许当前租户下已开放的应用参与 Token 会话。
+     *
+     * @param tenantRefId 租户物理主键
+     * @param appRefId 应用物理主键
+     * @return 有效应用数量
+     */
+    int countEnabledApplication(@Param("tenantRefId") String tenantRefId,
+                                 @Param("appRefId") String appRefId);
+
     int changeStatus(@Param("id") String id,
                      @Param("tenantRefId") String tenantRefId,
                      @Param("status") String status,

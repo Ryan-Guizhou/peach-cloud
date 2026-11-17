@@ -23,6 +23,21 @@ public final class SaTokenConstant {
      */
     public static final String TOKEN_NOT_INCLUDE_USER = "{0}-{1}";
 
+    /** Saas 用户物理主键，服务端确认身份后写入。 */
+    public static final String TOKEN_SESSION_USER_REF_ID = "peach:context:userRefId";
+
+    /** 当前 Saas 租户物理主键。 */
+    public static final String TOKEN_SESSION_TENANT_REF_ID = "peach:context:tenantRefId";
+
+    /** 当前 Saas 成员物理主键。 */
+    public static final String TOKEN_SESSION_MEMBER_REF_ID = "peach:context:memberRefId";
+
+    /** 当前 Saas 应用物理主键。 */
+    public static final String TOKEN_SESSION_APP_REF_ID = "peach:context:appRefId";
+
+    /** 成员身份的乐观版本；成员变更后旧凭证校验失败。 */
+    public static final String TOKEN_SESSION_MEMBER_VERSION = "peach:context:memberVersion";
+
     /** 当前 Token Session 中保存的租户 ID。 */
     public static final String TOKEN_SESSION_TENANT_ID = "peach:context:tenantId";
 

@@ -59,6 +59,14 @@
           AND STATUS IN ('1', 'ENABLE') AND IS_DELETE = 0
     </select>
 
+    <select id="countEnabledApplication" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_APPLICATION A
+        INNER JOIN PEACH_TENANT T ON T.TENANT_ID = A.TENANT_ID
+            AND T.ID = #{tenantRefId} AND T.STATUS = 'ENABLE' AND T.IS_DELETE = 0
+        WHERE A.ID = #{appRefId} AND A.IS_OPEN = 1 AND A.IS_DELETE = 0
+    </select>
+
     <update id="changeStatus">
         UPDATE PEACH_TENANT_MEMBER
         SET STATUS = #{status}, MODIFY_TIME = #{modifyTime},
