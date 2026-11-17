@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.StringUtils;
 
 import java.util.Locale;
 import java.util.Map;
@@ -41,6 +42,11 @@ public class JdbcCodeRuleMaintenance implements CodeRuleMaintenance {
     private static final String UPDATE_WATERMARK = "UPDATE PEACH_CODE_RULE "
             + "SET CURRENT_VALUE = ?, RULE_VERSION = RULE_VERSION + 1 "
             + "WHERE ID = ? AND RULE_VERSION = ? AND CURRENT_VALUE = ? AND IS_DELETE = 0";
+    private static final String INSERT_AUDIT = "INSERT INTO PEACH_CODE_RULE_AUDIT "
+            + "(ID, RULE_REF_ID, RULE_VERSION, OPERATOR_REF_ID, OPERATION, "
+            + "OLD_STATUS, NEW_STATUS, OLD_SEPARATOR, NEW_SEPARATOR, OLD_WIDTH, NEW_WIDTH, "
+            + "OLD_WATERMARK, NEW_WATERMARK, CREATED_AT) VALUES "
+            + "(REPLACE(UUID(), '-', ''), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP(3))";
 
     private final JdbcTemplate jdbcTemplate;
     private final TransactionTemplate transaction;
@@ -62,7 +68,9 @@ public class JdbcCodeRuleMaintenance implements CodeRuleMaintenance {
     }
 
     @Override
-    public void changeStatus(String namespace, String prefix, boolean enabled, long expectedVersion) {
+    public void changeStatus(String namespace, String prefix, boolean enabled, long expectedVersion,
+                             String operatorRefId) {
+        requireActor(operatorRefId);
         withinRule(namespace, prefix, expectedVersion, rule -> {
             String status = enabled ? "ENABLE" : "DISABLE";
             if (status.equals(rule.status())) {
@@ -70,13 +78,16 @@ public class JdbcCodeRuleMaintenance implements CodeRuleMaintenance {
             }
             assertUpdated(jdbcTemplate.update(UPDATE_STATUS,
                     status, rule.id(), rule.version(), rule.current()), "status");
+            appendAudit(rule, operatorRefId, "STATUS", status, rule.separator(), rule.width(), rule.current());
             return null;
         });
     }
 
     @Override
-    public void changeFormat(String namespace, String prefix, CodeFormat format, long expectedVersion) {
+    public void changeFormat(String namespace, String prefix, CodeFormat format, long expectedVersion,
+                             String operatorRefId) {
         Objects.requireNonNull(format, "format");
+        requireActor(operatorRefId);
         withinRule(namespace, prefix, expectedVersion, rule -> {
             if (!rule.prefix().equals(format.prefix())) {
                 throw new CodeGeneratorException("Code format prefix cannot change");
@@ -89,12 +100,16 @@ public class JdbcCodeRuleMaintenance implements CodeRuleMaintenance {
             }
             assertUpdated(jdbcTemplate.update(UPDATE_FORMAT,
                     format.separator(), format.width(), rule.id(), rule.version()), "format");
+            appendAudit(rule, operatorRefId, "FORMAT", rule.status(),
+                    format.separator(), format.width(), rule.current());
             return null;
         });
     }
 
     @Override
-    public void advanceWatermark(String namespace, String prefix, long watermark, long expectedVersion) {
+    public void advanceWatermark(String namespace, String prefix, long watermark, long expectedVersion,
+                                 String operatorRefId) {
+        requireActor(operatorRefId);
         withinRule(namespace, prefix, expectedVersion, rule -> {
             if (watermark < rule.current()) {
                 throw new CodeGeneratorException("Code watermark cannot decrease");
@@ -107,6 +122,8 @@ public class JdbcCodeRuleMaintenance implements CodeRuleMaintenance {
             }
             assertUpdated(jdbcTemplate.update(UPDATE_WATERMARK,
                     watermark, rule.id(), rule.version(), rule.current()), "watermark");
+            appendAudit(rule, operatorRefId, "WATERMARK", rule.status(),
+                    rule.separator(), rule.width(), watermark);
             return null;
         });
     }
@@ -153,6 +170,34 @@ public class JdbcCodeRuleMaintenance implements CodeRuleMaintenance {
         return new Rule(Objects.toString(row.get("ID"), ""),
                 prefix, Objects.toString(row.get("STATUS"), ""),
                 separator, widthNumber, currentNumber, versionNumber);
+    }
+
+    /**
+     * 与规则修改置于相同数据库事务，审计写入失败时拒绝提交管理变更。
+     *
+     * @param rule 加锁后的原规则
+     * @param operatorRefId 可信操作人物理 ID
+     * @param operation 变更类型
+     * @param nextStatus 变更后的状态
+     * @param nextSeparator 变更后的分隔符
+     * @param nextWidth 变更后的数字宽度
+     * @param nextWatermark 变更后的水位
+     */
+    private void appendAudit(Rule rule, String operatorRefId, String operation,
+                             String nextStatus, String nextSeparator, int nextWidth, long nextWatermark) {
+        int inserted = jdbcTemplate.update(INSERT_AUDIT,
+                rule.id(), rule.version() + 1, operatorRefId, operation,
+                rule.status(), nextStatus, rule.separator(), nextSeparator,
+                rule.width(), nextWidth, rule.current(), nextWatermark);
+        if (inserted != 1) {
+            throw new CodeGeneratorException("Failed to persist code rule change audit");
+        }
+    }
+
+    private static void requireActor(String operatorRefId) {
+        if (!StringUtils.hasText(operatorRefId) || operatorRefId.length() > 32) {
+            throw new CodeGeneratorException("Trusted operator reference ID is required");
+        }
     }
 
     private static long maxValue(int width) {
