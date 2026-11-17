@@ -186,9 +186,7 @@
     <update id="update" parameterType="com.peach.auth.entity.UserOrgDO">
         UPDATE PEACH_USER_ORG SET
             <include refid="allColumnSet" />
-        <where>
-            <include refid="allColumnCond" />
-        </where>
+        WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
     </update>
 
     <update id="delById" parameterType="string">
@@ -215,7 +213,7 @@
     <update id="updateById" parameterType="com.peach.auth.entity.UserOrgDO">
         UPDATE PEACH_USER_ORG SET
             <include refid="allColumnSet" />
-        WHERE ID = #{id,jdbcType=VARCHAR}
+        WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
     </update>
 
     <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.UserOrgVO">
