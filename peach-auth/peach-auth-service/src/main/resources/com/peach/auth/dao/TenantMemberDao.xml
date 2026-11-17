@@ -2,11 +2,11 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.TenantMemberDao">
     <sql id="memberColumns">
-        ID as id, MEMBER_ID as memberId, TENANT_REF_ID as tenantRefId,
-        USER_REF_ID as userRefId, STATUS as status, IS_DELETE as isDelete,
-        CREATED_TIME as createdTime, CREATOR_ID as creatorId,
-        MODIFY_TIME as modifyTime, MODIFIER_ID as modifierId,
-        DELETED_AT as deletedAt, DELETED_BY_REF_ID as deletedByRefId, VERSION as version
+        M.ID AS id, M.MEMBER_ID AS memberId, M.TENANT_REF_ID AS tenantRefId,
+        M.USER_REF_ID AS userRefId, M.STATUS AS status, M.IS_DELETE AS isDelete,
+        M.CREATED_TIME AS createdTime, M.CREATOR_ID AS creatorId,
+        M.MODIFY_TIME AS modifyTime, M.MODIFIER_ID AS modifierId,
+        M.DELETED_AT AS deletedAt, M.DELETED_BY_REF_ID AS deletedByRefId, M.VERSION AS version
     </sql>
 
     <insert id="insert" parameterType="com.peach.auth.entity.TenantMemberDO">
@@ -20,17 +20,31 @@
 
     <select id="selectByUserAndTenant" resultType="com.peach.auth.entity.TenantMemberDO">
         SELECT <include refid="memberColumns" />
-        FROM PEACH_TENANT_MEMBER
-        WHERE TENANT_REF_ID = #{tenantRefId}
-          AND USER_REF_ID = #{userRefId}
+        FROM PEACH_TENANT_MEMBER M
+        WHERE M.TENANT_REF_ID = #{tenantRefId}
+          AND M.USER_REF_ID = #{userRefId}
     </select>
 
     <select id="selectActiveByUser" resultType="com.peach.auth.entity.TenantMemberDO">
         SELECT <include refid="memberColumns" />
-        FROM PEACH_TENANT_MEMBER
-        WHERE USER_REF_ID = #{userRefId}
-          AND STATUS = 'ACTIVE'
-          AND IS_DELETE = 0
+        FROM PEACH_TENANT_MEMBER M
+        INNER JOIN PEACH_TENANT T ON T.ID = M.TENANT_REF_ID
+            AND T.STATUS = 'ENABLE' AND T.IS_DELETE = 0
+        INNER JOIN PEACH_USER U ON U.ID = M.USER_REF_ID
+            AND U.STATUS = '1' AND U.IS_DELETE = 0
+        WHERE M.USER_REF_ID = #{userRefId}
+          AND M.STATUS = 'ACTIVE'
+          AND M.IS_DELETE = 0
+    </select>
+
+    <select id="countEnabledTenant" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM PEACH_TENANT
+        WHERE ID = #{tenantRefId} AND STATUS = 'ENABLE' AND IS_DELETE = 0
+    </select>
+
+    <select id="countEnabledUser" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM PEACH_USER
+        WHERE ID = #{userRefId} AND STATUS = '1' AND IS_DELETE = 0
     </select>
 
     <update id="changeStatus">
@@ -49,6 +63,7 @@
             VERSION = VERSION + 1
         WHERE ID = #{id} AND TENANT_REF_ID = #{tenantRefId}
           AND VERSION = #{version} AND IS_DELETE = 0
+          AND STATUS = 'ACTIVE'
     </update>
 
     <update id="restore">
@@ -57,6 +72,6 @@
             DELETED_AT = NULL, DELETED_BY_REF_ID = NULL,
             VERSION = VERSION + 1
         WHERE ID = #{id} AND TENANT_REF_ID = #{tenantRefId}
-          AND VERSION = #{version} AND IS_DELETE = 1
+          AND VERSION = #{version} AND IS_DELETE = 1 AND STATUS = 'LEFT'
     </update>
 </mapper>
