@@ -27,10 +27,10 @@ public class PeachCodeGenerator implements CodeGenerator {
 
     private static final Pattern SAFE_PART = Pattern.compile("[A-Za-z0-9][A-Za-z0-9-]{0,31}");
     private static final String RULE_SELECT_SQL = "SELECT MAX_CODE_WIDTH, CURRENT_VALUE, STATUS "
-            + "FROM PEACH_CODE_RULE WHERE TENANT_ID = ? AND CODE_PREFIX = ? FOR UPDATE";
+            + "FROM PEACH_CODE_RULE WHERE TENANT_ID = ? AND CODE_PREFIX = ? AND IS_DELETE = 0 FOR UPDATE";
     private static final String RULE_UPDATE_SQL = "UPDATE PEACH_CODE_RULE SET CURRENT_VALUE = ?, "
             + "MODIFY_TIME = DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s') "
-            + "WHERE TENANT_ID = ? AND CODE_PREFIX = ? AND STATUS = 'ENABLE' AND CURRENT_VALUE = ?";
+            + "WHERE TENANT_ID = ? AND CODE_PREFIX = ? AND STATUS = 'ENABLE' AND CURRENT_VALUE = ? AND IS_DELETE = 0";
 
     private final JdbcTemplate jdbcTemplate;
     private final TransactionTemplate allocationTransaction;

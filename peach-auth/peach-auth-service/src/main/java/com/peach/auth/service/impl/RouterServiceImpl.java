@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -12,12 +15,12 @@ import com.peach.auth.qo.RouterQO;
 import com.peach.auth.service.IRouterService;
 import com.peach.auth.service.support.CommonValidator;
 import com.peach.auth.vo.RouterVO;
+import com.peach.common.unique.UniqueIdFacade;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,17 +39,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class RouterServiceImpl implements IRouterService {
 
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
+
     private final RouterDao routerDao;
 
     private final CommonValidator commonValidator;
 
-    @PostConstruct
-    public void init() {
-        String id = null;
-        commonValidator.validate(id);
-    }
-
-    @Override
+@Override
     public void delById(String id) {
         boolean valid = commonValidator.isValid(id);
         if (!valid) {
@@ -58,16 +57,18 @@ public class RouterServiceImpl implements IRouterService {
 
     @Override
     public void update(RouterDTO routerDTO) {
-        commonValidator.validateProperty(routerDTO,"routerId");
+        commonValidator.validateProperty(routerDTO,"id");
         RouterDO routerDO = new RouterDO();
         BeanUtils.copyProperties(routerDTO,routerDO);
-        routerDao.update(routerDO);
+        routerDao.updateById(routerDO);
     }
 
     @Override
     public void add(RouterDTO routerDTO) {
         RouterDO routerDO = new RouterDO();
         BeanUtils.copyProperties(routerDTO,routerDO);
+        routerDO.setId(UniqueIdFacade.nextId());
+        routerDO.setRouterId(authBusinessIdGenerator.next(AuthBusinessIdType.ROUTER));
         routerDao.insert(routerDO);
     }
 

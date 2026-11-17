@@ -33,6 +33,10 @@ public class UserAvatarHistoryDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = -1707114200070052073L;
 
     @Id
+    @Column(name = "ID")
+    @Schema(description = "物理主键")
+    private String id;
+
     @Column(name = "AVATAR_HISTORY_ID")
     @Schema(description = "头像历史主键")
     private String avatarHistoryId;

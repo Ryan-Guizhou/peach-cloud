@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.FunctionDao">
     <sql id="allColumn">
-        FUNC_ID,                                          FUNC_CODE,                                        PARENT_FUNC_CODE,                                 FUNC_NAME,
+        ID, FUNC_ID,                                          FUNC_CODE,                                        PARENT_FUNC_CODE,                                 FUNC_NAME,
         FUNC_DESC,                                        FUNC_URL,                                         FUNC_SEQ,                                         FUNC_TYPE,
         IS_MENU,                                          IS_AUTHORIZE,                                     APP_ID,                                           IS_DISABLE,
         IS_DELETE,                                        CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,
@@ -10,7 +10,7 @@
     </sql>
 
     <sql id="allColumnAlias">
-        FUNC_ID as funcId,                                FUNC_CODE as funcCode,                            PARENT_FUNC_CODE as parentFuncCode,               FUNC_NAME as funcName,
+        ID as id, FUNC_ID as funcId,                                FUNC_CODE as funcCode,                            PARENT_FUNC_CODE as parentFuncCode,               FUNC_NAME as funcName,
         FUNC_DESC as funcDesc,                            FUNC_URL as funcUrl,                              FUNC_SEQ as funcSeq,                              FUNC_TYPE as funcType,
         IS_MENU as isMenu,                                IS_AUTHORIZE as isAuthorize,                      APP_ID as appId,                                  IS_DISABLE as isDisable,
         IS_DELETE as isDelete,                            CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,
@@ -18,7 +18,7 @@
     </sql>
 
     <sql id="allColumnValue">
-        #{funcId,jdbcType=VARCHAR},                       #{funcCode,jdbcType=VARCHAR},                     #{parentFuncCode,jdbcType=VARCHAR},               #{funcName,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR}, #{funcId,jdbcType=VARCHAR},                       #{funcCode,jdbcType=VARCHAR},                     #{parentFuncCode,jdbcType=VARCHAR},               #{funcName,jdbcType=VARCHAR},
         #{funcDesc,jdbcType=VARCHAR},                     #{funcUrl,jdbcType=VARCHAR},                      #{funcSeq,jdbcType=VARCHAR},                      #{funcType,jdbcType=VARCHAR},
         #{isMenu,jdbcType=INTEGER},                       #{isAuthorize,jdbcType=INTEGER},                  #{appId,jdbcType=VARCHAR},                        #{isDisable,jdbcType=INTEGER},
         #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},
@@ -27,7 +27,7 @@
 
 
     <sql id="itemAllColumnValue">
-        #{item.funcId,jdbcType=VARCHAR},                  #{item.funcCode,jdbcType=VARCHAR},                #{item.parentFuncCode,jdbcType=VARCHAR},          #{item.funcName,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR}, #{item.funcId,jdbcType=VARCHAR},                  #{item.funcCode,jdbcType=VARCHAR},                #{item.parentFuncCode,jdbcType=VARCHAR},          #{item.funcName,jdbcType=VARCHAR},
         #{item.funcDesc,jdbcType=VARCHAR},                #{item.funcUrl,jdbcType=VARCHAR},                 #{item.funcSeq,jdbcType=VARCHAR},                 #{item.funcType,jdbcType=VARCHAR},
         #{item.isMenu,jdbcType=INTEGER},                  #{item.isAuthorize,jdbcType=INTEGER},             #{item.appId,jdbcType=VARCHAR},                   #{item.isDisable,jdbcType=INTEGER},
         #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},
@@ -196,6 +196,9 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
+        </if>
         <if test="funcId != null and funcId != ''">
             AND FUNC_ID = #{funcId,jdbcType=VARCHAR}
         </if>
@@ -269,49 +272,48 @@
     <update id="update" parameterType="com.peach.auth.entity.FunctionDO">
         UPDATE PEACH_FUNCTION SET
             <include refid="allColumnSet" />
-        <where>
-            <include refid="allColumnCond" />
-        </where>
+        WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
     </update>
 
-    <delete id="delById" parameterType="string">
-        DELETE FROM PEACH_FUNCTION
-        WHERE FUNC_ID = #{value,jdbcType=VARCHAR}
-    </delete>
+    <update id="delById" parameterType="string">
+        UPDATE PEACH_FUNCTION
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
+    </update>
 
-    <delete id="delByIds" parameterType="java.util.List">
-        DELETE FROM PEACH_FUNCTION
-        WHERE FUNC_ID IN
+    <update id="delByIds" parameterType="java.util.List">
+        UPDATE PEACH_FUNCTION
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
-    </delete>
+    </update>
 
-    <delete id="del" parameterType="com.peach.auth.entity.FunctionDO">
-        DELETE FROM PEACH_FUNCTION
-        <where>
-            <include refid="allColumnCond" />
-        </where>
-    </delete>
+    <update id="del" parameterType="com.peach.auth.entity.FunctionDO">
+        UPDATE PEACH_FUNCTION
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE FUNC_ID = #{funcId,jdbcType=VARCHAR} AND IS_DELETE = 0
+    </update>
 
-    <update id="updateById" parameterType="java.lang.String">
+    <update id="updateById" parameterType="com.peach.auth.entity.FunctionDO">
         UPDATE PEACH_FUNCTION SET
             <include refid="allColumnSet" />
-        WHERE FUNC_ID =  #{funcId,jdbcType=VARCHAR}
+        WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
     </update>
 
     <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.FunctionDO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_FUNCTION
-        WHERE FUNC_ID = #{value,jdbcType=VARCHAR}
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.FunctionDO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_FUNCTION
-        WHERE FUNC_ID IN
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
             #{id,jdbcType=VARCHAR}
         </foreach>
@@ -322,6 +324,7 @@
             <include refid="allColumnAlias" />
         FROM PEACH_FUNCTION
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
@@ -330,6 +333,7 @@
         SELECT COUNT(1)
         FROM PEACH_FUNCTION
         <where>
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>

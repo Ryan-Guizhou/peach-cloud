@@ -1,5 +1,8 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.service.support.AuthBusinessIdGenerator;
+import com.peach.auth.service.support.AuthBusinessIdType;
+
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthLogServiceImpl implements IAuthLogService {
 
+    private final AuthBusinessIdGenerator authBusinessIdGenerator;
+
     private final AuthLogDao authLogDao;
 
     @Override
@@ -43,8 +48,11 @@ public class AuthLogServiceImpl implements IAuthLogService {
         if (authLogDO == null) {
             return;
         }
+        if (StringUtil.isBlank(authLogDO.getId())) {
+            authLogDO.setId(UniqueIdFacade.nextId());
+        }
         if (StringUtil.isBlank(authLogDO.getLogId())) {
-            authLogDO.setLogId(UniqueIdFacade.nextId());
+            authLogDO.setLogId(authBusinessIdGenerator.next(AuthBusinessIdType.AUTHLOG));
         }
         if (StringUtil.isBlank(authLogDO.getOperatTime())) {
             authLogDO.setOperatTime(DateUtil.nowTime());

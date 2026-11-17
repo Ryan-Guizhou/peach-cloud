@@ -30,6 +30,10 @@ public class FunctionDO extends PeachDO implements Serializable {
     private static final long serialVersionUID = 7397081470749548788L;
 
     @Id
+    @Column(name = "ID")
+    @Schema(description = "物理主键")
+    private String id;
+
     @Column(name = "FUNC_ID")
     @Schema(description = "功能ID")
     private String funcId;
