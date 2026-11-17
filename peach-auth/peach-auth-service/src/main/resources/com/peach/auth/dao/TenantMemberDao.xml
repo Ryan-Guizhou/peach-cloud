@@ -31,7 +31,7 @@
         INNER JOIN PEACH_TENANT T ON T.ID = M.TENANT_REF_ID
             AND T.STATUS = 'ENABLE' AND T.IS_DELETE = 0
         INNER JOIN PEACH_USER U ON U.ID = M.USER_REF_ID
-            AND U.STATUS = '1' AND U.IS_DELETE = 0
+            AND U.STATUS IN ('1', 'ENABLE') AND U.IS_DELETE = 0
         WHERE M.USER_REF_ID = #{userRefId}
           AND M.STATUS = 'ACTIVE'
           AND M.IS_DELETE = 0
@@ -50,13 +50,13 @@
 
     <select id="countEnabledUser" resultType="java.lang.Integer">
         SELECT COUNT(1) FROM PEACH_USER
-        WHERE ID = #{userRefId} AND STATUS = '1' AND IS_DELETE = 0
+        WHERE ID = #{userRefId} AND STATUS IN ('1', 'ENABLE') AND IS_DELETE = 0
     </select>
 
     <select id="countAuthenticatedUserIdentity" resultType="java.lang.Integer">
         SELECT COUNT(1) FROM PEACH_USER
         WHERE USER_ID = #{businessUserId} AND ID = #{userRefId}
-          AND STATUS = '1' AND IS_DELETE = 0
+          AND STATUS IN ('1', 'ENABLE') AND IS_DELETE = 0
     </select>
 
     <update id="changeStatus">
