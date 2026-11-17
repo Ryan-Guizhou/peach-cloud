@@ -109,3 +109,9 @@ mvn -pl peach-auth/peach-auth-launch -am -Dspring-boot.run.profiles=dev spring-b
 - 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
 - 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
 - README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。
+
+## 密码认证安全改造（进行中）
+
+用户密码由后端安全验证：前端 RSA 传输保护后的密码只在服务端解密，数据库保存使用随机盐的 BCrypt 散列，登录不再把 Base64 值拼入 SQL 条件。新增用户没有密码时默认停用，禁止未设置凭证的账号直接登录。新建库 `PEACH_USER.PASSWORD` 应为 `VARCHAR(255)`，种子账号仅用于开发，部署时必须更改默认凭证。
+
+这属于 [#204](https://github.com/Ryan-Guizhou/peach-cloud/issues/204) 的安全基础增量，完整多租户成员登录、租户选择与旧账号迁移仍须经过单独验收；旧 Base64 密码不能无校验直接当作 BCrypt 散列。

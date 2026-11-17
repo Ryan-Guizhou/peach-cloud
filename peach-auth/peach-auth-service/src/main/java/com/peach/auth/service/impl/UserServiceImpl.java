@@ -1,6 +1,5 @@
 package com.peach.auth.service.impl;
 
-import java.nio.charset.StandardCharsets;
 import com.github.pagehelper.page.PageMethod;
 
 import lombok.RequiredArgsConstructor;
@@ -28,6 +27,7 @@ import com.peach.auth.service.assembler.LoginPermissionAssembler;
 import com.peach.auth.service.support.LoginPermissionCacheRefresher;
 import com.peach.auth.service.support.LoginInitConfigSupport;
 import com.peach.auth.service.support.UserSensitiveFieldSupport;
+import com.peach.auth.service.support.PasswordHashSupport;
 import com.peach.auth.vo.LoginInitVO;
 import com.peach.auth.vo.LoginLockStatusVO;
 import com.peach.auth.vo.LoginPermissionSnapshotVO;
@@ -46,7 +46,6 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Base64;
 import java.util.List;
 
 /**
@@ -78,6 +77,8 @@ public class UserServiceImpl implements IUserService {
     private final LoginPermissionAssembler loginPermissionAssembler;
 
     private final LoginPermissionCacheRefresher loginPermissionCacheRefresher;
+
+    private final PasswordHashSupport passwordHashSupport;
 
 
     @Override
@@ -129,10 +130,9 @@ public class UserServiceImpl implements IUserService {
             return Response.fail("密码解密失败");
         }
 
-        String base64Password = Base64.getEncoder().encodeToString(
-                decryptPassword.getBytes(StandardCharsets.UTF_8));
-        UserVO userVO = userDao.login(username, base64Password);
-        if (ObjectUtil.isNull(userVO)) {
+        UserVO userVO = userDao.login(username);
+        if (ObjectUtil.isNull(userVO)
+                || !passwordHashSupport.matches(decryptPassword, userVO.getPassword())) {
             log.warn("Username or password validation failed, username={}", username);
             LoginLockStatusVO failureStatus = loginLockService.recordFailure(username);
             if (failureStatus.isLocked()) {
@@ -378,6 +378,11 @@ public class UserServiceImpl implements IUserService {
     public void add(UserDTO userDTO) {
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
+        if (StringUtil.isBlank(userDO.getPassword())) {
+            userDO.setStatus("DISABLED");
+        } else {
+            userDO.setPassword(passwordHashSupport.encode(userDO.getPassword()));
+        }
         UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillCreateTime(null);
         if (userDO.getIsDelete() == null) {
@@ -399,6 +404,11 @@ public class UserServiceImpl implements IUserService {
     public void update(UserDTO userDTO) {
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
+        if (StringUtil.isNotBlank(userDO.getPassword())) {
+            userDO.setPassword(passwordHashSupport.encode(userDO.getPassword()));
+        } else {
+            userDO.setPassword(null);
+        }
         UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillModifyTime(null);
         userDao.updateById(userDO);

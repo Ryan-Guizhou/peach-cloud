@@ -52,3 +52,9 @@ mvn -f "peach-auth/pom.xml" -DskipTests package
 - Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
 - Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
 - Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+
+## Password authentication hardening (in progress)
+
+The backend now checks salted BCrypt hashes after decrypting the existing RSA-protected transport payload. Login no longer compares Base64-encoded passwords in SQL. A newly created account with no password is disabled by default. The `PEACH_USER.PASSWORD` column must support up to 255 characters. Seed credentials are for development only and must be changed before deployment.
+
+This is a security increment of [#204](https://github.com/Ryan-Guizhou/peach-cloud/issues/204). The complete multi-tenant member login, tenant selection, and safe migration of existing credentials still require explicit end-to-end verification; legacy Base64 values are not BCrypt hashes.
