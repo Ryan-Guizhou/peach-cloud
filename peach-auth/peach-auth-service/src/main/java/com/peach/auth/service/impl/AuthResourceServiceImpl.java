@@ -63,6 +63,7 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
         deleteQuery.setTenantId(roleResourceAuthDTO.getTenantId());
         deleteQuery.setOrgId(roleResourceAuthDTO.getOrgId());
         deleteQuery.setPartyCode(roleResourceAuthDTO.getPartyCode());
+        deleteQuery.setAppId(roleResourceAuthDTO.getAppId());
         deleteQuery.setFiscal(roleResourceAuthDTO.getFiscal());
         authResourceDao.del(deleteQuery);
 
