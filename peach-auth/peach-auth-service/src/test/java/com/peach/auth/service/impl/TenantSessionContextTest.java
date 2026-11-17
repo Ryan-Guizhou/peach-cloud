@@ -17,24 +17,27 @@ class TenantSessionContextTest {
     @Test
     void shouldRetainIndependentPhysicalIdentifiers() {
         TenantSessionContext context = new TenantSessionContext(
-                "user-ref", "tenant-ref", "member-ref", "app-ref", 2026, 2L);
+                "user-ref", "tenant-ref", "member-ref", "app-ref", 2026, 2L, 3L);
         assertThat(context.userRefId()).isEqualTo("user-ref");
         assertThat(context.tenantRefId()).isEqualTo("tenant-ref");
         assertThat(context.memberRefId()).isEqualTo("member-ref");
         assertThat(context.appRefId()).isEqualTo("app-ref");
         assertThat(context.memberVersion()).isEqualTo(2L);
+        assertThat(context.authVersion()).isEqualTo(3L);
         assertThat(context.year()).isEqualTo(2026);
     }
 
     @Test
     void shouldRejectMissingContextAndStaleInvalidVersion() {
-        assertThatThrownBy(() -> new TenantSessionContext("u", "", "m", "a", 2026, 0))
+        assertThatThrownBy(() -> new TenantSessionContext("u", "", "m", "a", 2026, 0, 0))
                 .isInstanceOf(SecurityException.class);
-        assertThatThrownBy(() -> new TenantSessionContext("u", "t", null, "a", 2026, 0))
+        assertThatThrownBy(() -> new TenantSessionContext("u", "t", null, "a", 2026, 0, 0))
                 .isInstanceOf(SecurityException.class);
-        assertThatThrownBy(() -> new TenantSessionContext("u", "t", "m", "a", 2026, -1))
+        assertThatThrownBy(() -> new TenantSessionContext("u", "t", "m", "a", 2026, -1, 0))
                 .isInstanceOf(SecurityException.class);
-        assertThatThrownBy(() -> new TenantSessionContext("u", "t", "m", "a", 0, 2L))
+        assertThatThrownBy(() -> new TenantSessionContext("u", "t", "m", "a", 0, 2L, 0))
+                .isInstanceOf(SecurityException.class);
+        assertThatThrownBy(() -> new TenantSessionContext("u", "t", "m", "a", 2026, 1L, -1L))
                 .isInstanceOf(SecurityException.class);
     }
 }

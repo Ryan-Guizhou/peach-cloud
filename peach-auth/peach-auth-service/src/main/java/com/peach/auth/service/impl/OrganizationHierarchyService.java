@@ -1,8 +1,10 @@
 package com.peach.auth.service.impl;
 
 import com.peach.auth.dao.OrganizationHierarchyDao;
+import com.peach.auth.dao.MemberAuthVersionDao;
 import com.peach.auth.entity.OrganizationDO;
 import com.peach.auth.service.TenantMembershipPolicy;
+import com.peach.auth.service.support.IamPermissionCodes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,8 @@ public class OrganizationHierarchyService {
     private final OrganizationHierarchyDao hierarchyDao;
     private final ObjectProvider<TenantMembershipPolicy> policyProvider;
 
+    private final MemberAuthVersionDao authVersionDao;
+
     /**
      * 将一个机构移动到新父节点，或移动为根节点。重复移动到同一父节点为幂等操作。
      *
@@ -58,12 +62,15 @@ public class OrganizationHierarchyService {
         if (policy == null) {
             throw new SecurityException("Tenant hierarchy authorization policy is unavailable");
         }
-        policy.requireTenantAdministrator(tenantRefId, operatorMemberRefId);
+        policy.requireTenantPermission(
+                tenantRefId, operatorMemberRefId, IamPermissionCodes.TENANT_ORG_MANAGE);
 
         String tenantBusinessId = hierarchyDao.lockTenantAndFindBusinessId(tenantRefId);
         if (!StringUtils.hasText(tenantBusinessId)) {
             throw new IllegalStateException("Target tenant is not enabled");
         }
+        policy.requireTenantPermission(
+                tenantRefId, operatorMemberRefId, IamPermissionCodes.TENANT_ORG_MANAGE);
         OrganizationDO organization = activeOrganization(organizationRefId, tenantBusinessId);
         Set<String> visited = new HashSet<>();
         visited.add(organizationRefId);
@@ -90,6 +97,10 @@ public class OrganizationHierarchyService {
         if (hierarchyDao.updateParent(organizationRefId, tenantBusinessId,
                 newParentOrgRefId, version, operatorMemberRefId) != 1) {
             throw new IllegalStateException("Concurrent organization hierarchy change");
+        }
+        // 树作用域发生变化必须失效现有成员授权缓存，避免旧祖先范围继续放行。
+        if (authVersionDao.incrementForTenant(tenantRefId) < 1) {
+            throw new IllegalStateException("Organization hierarchy authorization invalidation failed");
         }
     }
 

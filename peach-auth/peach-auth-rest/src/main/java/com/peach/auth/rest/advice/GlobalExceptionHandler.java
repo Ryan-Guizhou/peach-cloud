@@ -24,6 +24,10 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 
 /**
  * 认证服务统一异常处理。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/17 18:25
  */
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -80,6 +84,18 @@ public class GlobalExceptionHandler {
         String message = exception.getParameterName() + " 参数不能为空";
         log.warn("Auth missing request parameter handled, message={}", message);
         return Response.paramError(message);
+    }
+
+    /**
+     * 租户、成员或授权上下文异常统一以拒绝访问处理，禁止暴露内部角色和版本细节。
+     *
+     * @param exception 服务层拒绝的安全操作
+     * @return 无授权响应
+     */
+    @ExceptionHandler(SecurityException.class)
+    public Response handleSecurityException(SecurityException exception) {
+        log.warn("Auth operation denied due to invalid identity or permission");
+        return Response.fail(StatusEnum.FORBIDDEN).setMsg("无权限或当前会话已失效");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

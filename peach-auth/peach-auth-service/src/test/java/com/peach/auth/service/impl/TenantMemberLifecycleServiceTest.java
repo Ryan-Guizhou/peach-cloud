@@ -1,6 +1,9 @@
 package com.peach.auth.service.impl;
 
 import com.peach.auth.dao.TenantInvitationDao;
+import com.peach.auth.dao.ScopedRoleBindingDao;
+import com.peach.auth.dao.MemberAuthVersionDao;
+import com.peach.auth.dao.IamAuthorizationAuditDao;
 import com.peach.auth.dao.TenantMemberDao;
 import com.peach.auth.entity.TenantInvitationDO;
 import com.peach.auth.entity.TenantMemberDO;
@@ -15,6 +18,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -37,6 +43,9 @@ class TenantMemberLifecycleServiceTest {
     private ObjectProvider<TenantMembershipPolicy> provider;
     private TenantMembershipPolicy policy;
     private TenantMemberLifecycleService service;
+    private ScopedRoleBindingDao roleBindingDao;
+    private MemberAuthVersionDao memberAuthVersionDao;
+    private IamAuthorizationAuditDao auditDao;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -47,8 +56,11 @@ class TenantMemberLifecycleServiceTest {
         provider = mock(ObjectProvider.class);
         policy = mock(TenantMembershipPolicy.class);
         when(provider.getIfAvailable()).thenReturn(policy);
+        roleBindingDao = mock(ScopedRoleBindingDao.class);
+        memberAuthVersionDao = mock(MemberAuthVersionDao.class);
+        auditDao = mock(IamAuthorizationAuditDao.class);
         service = new TenantMemberLifecycleService(memberDao, invitationDao,
-                businessIdGenerator, provider);
+                businessIdGenerator, provider, roleBindingDao, memberAuthVersionDao, auditDao);
     }
 
     @Test
@@ -90,9 +102,15 @@ class TenantMemberLifecycleServiceTest {
         when(memberDao.selectByUserAndTenant("tenant", "user"))
                 .thenReturn(member("existing-member", "LEFT", 1, 3L));
         when(memberDao.restore("existing-member", "tenant", 3L)).thenReturn(1);
+        when(memberAuthVersionDao.incrementForMember("tenant", "existing-member")).thenReturn(1);
+        when(auditDao.append(anyString(), eq("tenant"), isNull(), isNull(),
+                eq("existing-member"), eq("existing-member"), eq("MEMBER_REJOIN"),
+                eq(0L), eq(1L))).thenReturn(1);
         when(invitationDao.accept("invitation", "tenant", "user", 1L)).thenReturn(1);
         assertThat(service.accept("tenant", "invitation", "user")).isEqualTo("existing-member");
         verify(memberDao).restore("existing-member", "tenant", 3L);
+        verify(roleBindingDao).revokeAllForMember("tenant", "existing-member");
+        verify(memberAuthVersionDao).incrementForMember("tenant", "existing-member");
         verifyNoInteractions(businessIdGenerator);
     }
 
@@ -109,6 +127,23 @@ class TenantMemberLifecycleServiceTest {
     }
 
     @Test
+    void leavingMustSoftDeleteMembershipAndRevokeAllPriorRoleBindings() {
+        when(memberDao.selectByUserAndTenant("tenant", "user"))
+                .thenReturn(member("member-id", "ACTIVE", 0, 4L));
+        when(memberAuthVersionDao.incrementForMember("tenant", "member-id")).thenReturn(1);
+        when(auditDao.append(anyString(), eq("tenant"), isNull(), isNull(),
+                eq("member-id"), eq("member-id"), eq("MEMBER_LEFT"), eq(0L), eq(1L)))
+                .thenReturn(1);
+        when(memberDao.softDelete("member-id", "tenant", 4L, "user")).thenReturn(1);
+
+        service.leave("tenant", "user");
+
+        verify(roleBindingDao).revokeAllForMember("tenant", "member-id");
+        verify(memberAuthVersionDao).incrementForMember("tenant", "member-id");
+        verify(memberDao).softDelete("member-id", "tenant", 4L, "user");
+    }
+
+    @Test
     void shouldNotPermitAdministratorToDisableOwnMembership() {
         assertThatThrownBy(() -> service.disable("tenant", "same", "same"))
                 .isInstanceOf(IllegalStateException.class)
@@ -122,6 +157,7 @@ class TenantMemberLifecycleServiceTest {
         member.setStatus(status);
         member.setIsDelete(deleted);
         member.setVersion(version);
+        member.setAuthVersion(0L);
         return member;
     }
 

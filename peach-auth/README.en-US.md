@@ -132,3 +132,56 @@ sequenceDiagram
 ### Natural-year authorization isolation
 
 The legacy `FISCAL` field is removed, but the **natural calendar year** remains an explicit SaaS authorization dimension. The new APIs select `year` (for example 2026), and `TenantSessionContext` stores it atomically with tenant, member, app, and membership version. #206 must bind role/resource assignments separately to each year; until that is implemented the effective permissions are empty. Permissions from different years must never be merged. Historic year-grant migration remains subject to #211 database acceptance.
+
+## Independent SaaS RBAC grant source (#206 development branch; not merged)
+
+This increment introduces `PEACH_PERMISSION_DEFINITION`, `PEACH_ROLE_PERMISSION`, `PEACH_MEMBER_ROLE_BINDING` and `PEACH_IAM_AUTH_AUDIT`. The existing `PEACH_ROLE` schema gains physical tenant/app references, natural-year `AUTH_YEAR`, and version fields. Tenant members gain an `AUTH_VERSION` for revoking stale session grants. The new decision path joins **active membership, enabled tenant/app, active roles, active role permissions, and each individual binding**. Legacy `PEACH_AUTH_PARTY` and `PEACH_AUTH_FUNCTION` are not considered sources of new authorizations.
+
+```mermaid
+flowchart LR
+    M[Tenant member MEMBER_REF_ID] --> B[Member role binding]
+    B --> R[Role ROLE_REF_ID]
+    R --> RP[Role permission]
+    RP --> P[Immutable semantic permission code]
+    B --> Y[Natural year AUTH_YEAR]
+    B --> S[Independent TENANT / ORG / ORG_TREE scope]
+    B --> A[Application APP_REF_ID]
+```
+
+`ScopedPermissionService.hasTenantPermission` returns true only when **one valid role binding** provides both the requested action and TENANT scope. It never combines an action from one binding with the data scope of another. `listGrantedBindings` returns independent grant evidence for later object-level enforcement, not a completed row/field authorization decision.
+
+**Current implementation is an initial SQL/read-only decision foundation, not completed RBAC.** Transactional grant writes/revocations, `AUTH_VERSION` invalidation, administrator authorization, gateway integration, and real database acceptance are still required in this PR. Platform SYSTEM permissions need strict server-side protection; tenant-owned definitions cannot impersonate protected platform codes. Historical `FISCAL/ORG_ID` columns must be retired during cross-module migration #209 and SQL cleanup #211; they must not grant access in the new model.
+
+
+### #206 Transactional role binding and security limits (current development branch)
+
+`ScopedRoleBindingService.grant/revoke` provides server-side transactions for separate member role bindings. The implementation verifies the Sa-Token principal's physical member, tenant, app, and natural year against the `TENANT.ROLE.MANAGE` permission, serializes administration writes with a tenant-row lock, then locks the target member to read its prior `AUTH_VERSION`. The binding write, version increment, and append-only `PEACH_IAM_AUTH_AUDIT` record are committed atomically. Version conflicts, audit errors, or unauthorized requests roll back. Revoked bindings are logically deleted and retained for history.
+
+A tenant administrator may only delegate permissions that are simultaneously delegable and already held by the administrator at full TENANT scope in the selected app and year. Cross-tenant roles, wrong years, disabled users, foreign organization scopes, and unheld permissions are rejected. Self-assignment/revocation is currently prohibited to avoid escalation and lockout. Organization hierarchy changes require their own `TENANT.ORG.MANAGE` grant. Tenant-owned permission definitions may not impersonate reserved `TENANT.*` or `SYSTEM.*` codes.
+
+Development `sql/INIT.sql` bootstraps three protected semantic permission codes and a single TENANT-scope administrator role for year 2026 only. This is a development seed, **not** verified production administrator onboarding.
+
+**Outstanding acceptance:** Real MySQL/Redis role revocation integration, protected administrator bootstrap, and legacy schema/gateway migration. Gateway/Feign and frontend security enforcement remain separately tracked in #208/#209/#210, with final acceptance in #211.
+
+
+### #206 Guarded role-management APIs (current development branch)
+
+`SaasRoleController` requires a valid Token bound to a physical member, app, natural year, and authorization version. The server always derives `tenantRefId/memberRefId/appRefId/year` from the Token rather than trusting client identity fields. Domain services recheck `TENANT.ROLE.MANAGE`:
+
+| API | Purpose | Body |
+| --- | --- | --- |
+| `POST /auth/saas/roles` | Create a tenant role for the current app and year | `{"roleCode":"ROLE_EDITOR","roleName":"Editor"}` |
+| `PUT /auth/saas/roles/{roleRefId}/permissions` | Diff-sync all active role permissions | `{"permissionRefIds":["<physical-permission-id>"]}` |
+| `POST /auth/saas/roles/bindings` | Grant a single member role and scope | `{"targetMemberRefId":"<physical-member-id>","roleRefId":"<physical-role-id>","scopeType":"TENANT"}` |
+| `DELETE /auth/saas/roles/bindings/{bindingRefId}` | Soft-revoke an individual binding | No body |
+
+New roles receive a permanent global `ROLE_ID` and are bound to a physical tenant, app, and natural year. Only tenant-created TENANT roles may be edited; SYSTEM roles and non-delegable permissions are protected. Edits use tenant/role locks, version CAS, tenant-wide member `AUTH_VERSION` increments, and audit records in one transaction. Legacy `/auth/role`, `/auth/authParty`, `/auth/authFunction`, and `/auth/authResource` interfaces now reject access rather than bypassing the new authorization source.
+
+**Remaining production acceptance:** Real MySQL 8.4 concurrency/audit/DDL/seed verification, protected platform administrator bootstrap, permission resource and row/field enforcement (#207), gateway (#208), cross-service/front-end (#209/#210), and schema migration/rollback (#211). This increment is not an end-to-end secured SaaS product.
+
+
+### Member lifecycle and organization-tree authorization invalidation
+
+When a member leaves, is disabled/re-enabled, or rejoins by accepting a new invitation while retaining the original member ID, `TenantMemberLifecycleService` atomically soft-revokes **all** previously active `PEACH_MEMBER_ROLE_BINDING` entries, increments the member's `AUTH_VERSION`, and appends authorization audit evidence. Rejoining never resurrects prior role privileges: a tenant administrator must explicitly grant new bindings. Any failure rolls back the member status change and invalidation together.
+
+After a successful organization-tree move, `OrganizationHierarchyService` increments authorization versions for all tenant members in the same transaction. This prevents stale `ORG_TREE` scope caches from staying valid. #208 must still enforce membership status and version on every protected gateway request; the current implementation guards its own domain services but does not secure every cross-service entry point.

@@ -189,3 +189,56 @@ sequenceDiagram
 ### 年度选择与权限隔离说明
 
 历史 `FISCAL` 字段被移除，但**自然年度**仍然属于已确认的 SaaS 授权维度。新接口通过 `year`（例如 2026）显式选择年度，`TenantSessionContext` 将 `year` 与租户、成员、应用、版本放在同一个 Token 快照中。不同年度的角色和资源权限必须由 #206 绑定到独立的授权记录，尚未实现前一律为空权限；不得把不同年度的授权合并。当前接口未提供历史年度授权迁移，属于 #211 数据验收内容。
+
+## SaaS RBAC 独立授权事实源（#206 开发分支，尚未合并）
+
+本阶段新增 `PEACH_PERMISSION_DEFINITION`、`PEACH_ROLE_PERMISSION`、`PEACH_MEMBER_ROLE_BINDING` 和 `PEACH_IAM_AUTH_AUDIT`。角色在现有 `PEACH_ROLE` 中增加租户/应用物理关联、`AUTH_YEAR` 和版本字段；成员新增 `AUTH_VERSION`，用于角色变更后的旧凭证失效。新授权决策只查询**有效成员、已启用租户/应用、有效角色、有效角色权限和单条绑定**，不会把旧 `PEACH_AUTH_PARTY`、`PEACH_AUTH_FUNCTION` 等表作为新授权事实源。
+
+```mermaid
+flowchart LR
+    M[租户成员 MEMBER_REF_ID] --> B[成员角色绑定]
+    B --> R[角色 ROLE_REF_ID]
+    R --> RP[角色权限]
+    RP --> P[权限定义稳定语义码]
+    B --> Y[自然年度 AUTH_YEAR]
+    B --> S[独立授权范围 TENANT / ORG / ORG_TREE]
+    B --> A[应用 APP_REF_ID]
+```
+
+`ScopedPermissionService.hasTenantPermission` 仅在**同一条有效角色绑定**同时包含目标权限和完整 TENANT 作用域时允许，否则默认拒绝。不同机构的两个角色不能将 A 角色的操作权限与 B 角色的数据范围交叉合成新权限。`listGrantedBindings` 返回供后续对象级授权校验的独立证据，不能直接把它们当作已完成行/字段授权。
+
+当前开发进度为**数据库与只读校验基础**，并非最终可用 RBAC：旧角色增删改界面、授权管理写事务、角色权限撤销时的 `AUTH_VERSION` 原子失效、租户管理员权限、请求期网关验证与真实 SQL 集成仍待本 PR 继续实现。平台 SYSTEM 权限必须由服务端保护，租户自定义权限不可冒充平台代码。存量旧 `FISCAL/ORG_ID` 角色列需要在跨模块适配 #209 与 SQL 收敛 #211 中清理，不得作为新模型的授予依据。
+
+
+### #206 事务授权与安全限制（当前开发分支）
+
+`ScopedRoleBindingService.grant/revoke` 是独立成员角色绑定的服务端事务入口。操作时先将 Sa-Token 绑定的物理成员、租户、应用、自然年度与 `TENANT.ROLE.MANAGE` 角色权限匹配，再使用租户行锁序列化管理写入；按目标成员行锁获取旧 `AUTH_VERSION`。所有变更在同一事务内完成关系写入、版本递增和 `PEACH_IAM_AUTH_AUDIT` 追加。出现任何版本冲突、审计写入失败或权限不足时回滚，历史角色绑定以逻辑删除方式保留。
+
+租户管理员只能授予本人在当前年度/应用持有**完整租户范围**的、同时声明为可委派的权限。授予另一租户的角色、无效年度、停用用户、跨租户机构或其他管理员无权持有的权限均拒绝。当前实现拒绝管理员修改自己的角色绑定，以防自提权和误锁定。组织树移动要求单独的 `TENANT.ORG.MANAGE` 权限。权限目录约束租户定义不得使用平台保留的 `TENANT.*`、`SYSTEM.*` 前缀。
+
+开发用 `sql/INIT.sql` 初始化三个系统保护语义权限、2026 年管理员角色及单个 TENANT 作用域绑定；这是示例环境引导数据，不代表生产部署已建立可信初始管理员。
+
+**后续验收：** 真实 MySQL/Redis 授权失效集成测试、平台租户创建/管理员初始化权限保护、旧表与网关升级。**跨微服务 Gateway/Feign 安全边界及前端仍分别由 #208/#209/#210 和最终 #211 验收。**
+
+
+### #206 受控角色管理 API（当前开发分支）
+
+当前新增 `SaasRoleController`，所有请求必须携带已绑定成员、应用、自然年度和授权版本的有效 Token；服务端从 Token 取 `tenantRefId/memberRefId/appRefId/year`，**不接受前端提交操作者或租户身份**。服务层再次检查 `TENANT.ROLE.MANAGE`：
+
+| API | 功能 | 请求 |
+| --- | --- | --- |
+| `POST /auth/saas/roles` | 在当前应用和年度创建租户角色 | `{"roleCode":"ROLE_EDITOR","roleName":"编辑员"}` |
+| `PUT /auth/saas/roles/{roleRefId}/permissions` | 角色权限完整集合差量同步 | `{"permissionRefIds":["<physical-permission-id>"]}` |
+| `POST /auth/saas/roles/bindings` | 授予成员一条独立角色/机构作用域绑定 | `{"targetMemberRefId":"<physical-member-id>","roleRefId":"<physical-role-id>","scopeType":"TENANT"}` |
+| `DELETE /auth/saas/roles/bindings/{bindingRefId}` | 逻辑撤销单条授权 | 无正文 |
+
+角色创建时使用全局 `ROLE_ID` 发号器；新角色必须指定独立租户、应用与年度。角色权限修改只允许租户自建的 TENANT 角色；SYSTEM 角色和非委派权限拒绝修改。修改使用租户/角色行锁、版本 CAS、全租户成员 `AUTH_VERSION` 递增及审计，失败整体回滚。原 `/auth/role`、`/auth/authParty`、`/auth/authFunction`、`/auth/authResource` 的旧机构与年度角色读写入口已改为明确拒绝，避免继续绕过新事实源。
+
+**仍需生产验收：** 实际 MySQL 8.4 数据库并发/审计/DDL/初始化验证、平台首次管理员初始化授权保护、权限资源与行/字段级执行 #207、网关 #208、跨服务与前端 #209/#210、历史表清理与升级回滚 #211。此阶段不等于端到端安全 SaaS。
+
+
+### 成员生命周期与机构树授权失效约束
+
+成员退出、管理员停用、重新启用以及再次接受邀请恢复**原成员 ID**时，`TenantMemberLifecycleService` 在同一事务逻辑撤销该成员的全部旧 `PEACH_MEMBER_ROLE_BINDING` 活动记录，递增 `AUTH_VERSION`，写入成员授权失效审计。重新入租户不会恢复历史角色；需要管理员重新明确授予。任何一步异常均回滚本次成员状态变更，不允许成员恢复后权限自动复活。
+
+机构树移动成功后，`OrganizationHierarchyService` 同事务递增租户内全部成员授权版本，避免旧 `ORG_TREE` 权限范围缓存继续生效。成员状态和角色范围仍需 #208 在所有网关请求期强制校验；本模块对其受控 Service 调用实施 Fail-Closed，不等同于所有跨服务接口已受保护。
