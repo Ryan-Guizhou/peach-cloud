@@ -6,7 +6,7 @@
         (ID, TENANT_REF_ID, APP_REF_ID, AUTH_YEAR,
          OPERATOR_REF_ID, TARGET_REF_ID, OPERATION, OLD_VERSION, NEW_VERSION)
         VALUES
-        (#{id}, #{tenantRefId}, #{appRefId}, #{year},
+        (#{id}, #{tenantRefId}, #{appRefId,jdbcType=VARCHAR}, #{year,jdbcType=SMALLINT},
          #{operatorRefId}, #{targetRefId}, #{operation},
          #{oldVersion}, #{newVersion})
     </insert>

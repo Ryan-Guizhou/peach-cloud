@@ -102,4 +102,12 @@
           AND ID = #{id} AND VERSION = #{version}
           AND STATUS = 'ACTIVE' AND IS_DELETE = 0
     </update>
+    <update id="revokeAllForMember">
+        UPDATE PEACH_MEMBER_ROLE_BINDING
+        SET STATUS = 'DISABLED', IS_DELETE = 1,
+            DELETED_AT = CURRENT_TIMESTAMP(3), VERSION = VERSION + 1
+        WHERE TENANT_REF_ID = #{tenantRefId}
+          AND MEMBER_REF_ID = #{memberRefId}
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+    </update>
 </mapper>

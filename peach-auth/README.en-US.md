@@ -178,3 +178,10 @@ Development `sql/INIT.sql` bootstraps three protected semantic permission codes 
 New roles receive a permanent global `ROLE_ID` and are bound to a physical tenant, app, and natural year. Only tenant-created TENANT roles may be edited; SYSTEM roles and non-delegable permissions are protected. Edits use tenant/role locks, version CAS, tenant-wide member `AUTH_VERSION` increments, and audit records in one transaction. Legacy `/auth/role`, `/auth/authParty`, `/auth/authFunction`, and `/auth/authResource` interfaces now reject access rather than bypassing the new authorization source.
 
 **Remaining production acceptance:** Real MySQL 8.4 concurrency/audit/DDL/seed verification, protected platform administrator bootstrap, permission resource and row/field enforcement (#207), gateway (#208), cross-service/front-end (#209/#210), and schema migration/rollback (#211). This increment is not an end-to-end secured SaaS product.
+
+
+### Member lifecycle and organization-tree authorization invalidation
+
+When a member leaves, is disabled/re-enabled, or rejoins by accepting a new invitation while retaining the original member ID, `TenantMemberLifecycleService` atomically soft-revokes **all** previously active `PEACH_MEMBER_ROLE_BINDING` entries, increments the member's `AUTH_VERSION`, and appends authorization audit evidence. Rejoining never resurrects prior role privileges: a tenant administrator must explicitly grant new bindings. Any failure rolls back the member status change and invalidation together.
+
+After a successful organization-tree move, `OrganizationHierarchyService` increments authorization versions for all tenant members in the same transaction. This prevents stale `ORG_TREE` scope caches from staying valid. #208 must still enforce membership status and version on every protected gateway request; the current implementation guards its own domain services but does not secure every cross-service entry point.

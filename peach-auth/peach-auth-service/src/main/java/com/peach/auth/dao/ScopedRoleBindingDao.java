@@ -89,4 +89,16 @@ public interface ScopedRoleBindingDao {
     int revoke(@Param("tenantRefId") String tenantRefId,
                @Param("id") String id,
                @Param("version") long version);
+
+    /**
+     * 当成员退出或被停用时永久逻辑撤销其全部活动角色绑定。
+     *
+     * <p>重复恢复成员身份不应复活已经失效的角色授权。</p>
+     *
+     * @param tenantRefId 租户物理主键
+     * @param memberRefId 成员物理主键
+     * @return 被逻辑撤销的有效授权条数
+     */
+    int revokeAllForMember(@Param("tenantRefId") String tenantRefId,
+                           @Param("memberRefId") String memberRefId);
 }

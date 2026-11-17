@@ -1,6 +1,9 @@
 package com.peach.auth.service.impl;
 
 import com.peach.auth.dao.TenantInvitationDao;
+import com.peach.auth.dao.ScopedRoleBindingDao;
+import com.peach.auth.dao.MemberAuthVersionDao;
+import com.peach.auth.dao.IamAuthorizationAuditDao;
 import com.peach.auth.dao.TenantMemberDao;
 import com.peach.auth.entity.TenantInvitationDO;
 import com.peach.auth.entity.TenantMemberDO;
@@ -25,7 +28,8 @@ import java.util.List;
  * <p>成员表通过用户与租户物理外键关联，成员退出后恢复原关系而不复用 MEMBER_ID。
  * 所有变更都必须获得可信身份或管理员权限策略授权；缺失策略时默认拒绝。
  * 本服务不暴露 REST 接口，登录流程只允许在验证账号凭据后查询成员列表。
- * 授权版本、旧会话回收与管理 REST 由后续 IAM 任务统一对接。</p>
+ * 成员状态变更必须同事务撤销原角色绑定、递增授权版本并写入审计；
+ * REST 和跨服务网关安全边界由后续 IAM 任务统一对接。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -46,6 +50,12 @@ public class TenantMemberLifecycleService {
     private final TenantInvitationDao tenantInvitationDao;
     private final AuthBusinessIdGenerator businessIdGenerator;
     private final ObjectProvider<TenantMembershipPolicy> policyProvider;
+
+    private final ScopedRoleBindingDao scopedRoleBindingDao;
+
+    private final MemberAuthVersionDao authVersionDao;
+
+    private final IamAuthorizationAuditDao authorizationAuditDao;
 
     /**
      * 供已完成全局账号验证的内部登录流程查询允许选择的租户成员。
@@ -178,6 +188,7 @@ public class TenantMemberLifecycleService {
             if (tenantMemberDao.restore(member.getId(), tenantRefId, requireVersion(member.getVersion())) != 1) {
                 throw new IllegalStateException("Concurrent membership restoration");
             }
+            invalidateMemberAuthorizations(tenantRefId, member, member.getId(), "MEMBER_REJOIN");
             memberRefId = member.getId();
         } else {
             throw new IllegalStateException("Membership is disabled or inconsistent");
@@ -208,9 +219,13 @@ public class TenantMemberLifecycleService {
         if (STATUS_LEFT.equals(member.getStatus()) && Integer.valueOf(1).equals(member.getIsDelete())) {
             return;
         }
-        if (!isActive(member) || tenantMemberDao.softDelete(member.getId(),
-                tenantRefId, requireVersion(member.getVersion()), verifiedUserRefId) != 1) {
+        if (!isActive(member)) {
             throw new IllegalStateException("Unable to leave tenant membership");
+        }
+        invalidateMemberAuthorizations(tenantRefId, member, member.getId(), "MEMBER_LEFT");
+        if (tenantMemberDao.softDelete(member.getId(), tenantRefId,
+                requireVersion(member.getVersion()), verifiedUserRefId) != 1) {
+            throw new IllegalStateException("Concurrent tenant membership departure");
         }
         log.info("Tenant membership left, tenantRefId={}, memberRefId={}", tenantRefId, member.getId());
     }
@@ -284,6 +299,8 @@ public class TenantMemberLifecycleService {
         if (!STATUS_ACTIVE.equals(member.getStatus()) && !STATUS_DISABLED.equals(member.getStatus())) {
             throw new IllegalStateException("Unsupported membership state transition");
         }
+        String operation = STATUS_DISABLED.equals(requestedStatus) ? "MEMBER_DISABLED" : "MEMBER_ENABLED";
+        invalidateMemberAuthorizations(tenantRefId, member, operatorMemberRefId, operation);
         if (tenantMemberDao.changeStatus(targetMemberRefId, tenantRefId, requestedStatus,
                 requireVersion(member.getVersion()), operatorMemberRefId,
                 TenantMemberDO.getCurrentTime()) != 1) {
@@ -291,6 +308,31 @@ public class TenantMemberLifecycleService {
         }
         log.info("Tenant membership status changed, tenantRefId={}, memberRefId={}, status={}",
                 tenantRefId, targetMemberRefId, requestedStatus);
+    }
+
+    /**
+     * 同事务清空旧角色绑定、递增成员授权版本并记审计。
+     * 停用后恢复原成员记录不会复活任一历史角色绑定。
+     *
+     * @param tenantRefId 物理租户主键
+     * @param member 成员的旧状态快照
+     * @param operatorMemberRefId 当前操作人的成员物理主键
+     * @param operation 状态变更语义码
+     */
+    private void invalidateMemberAuthorizations(String tenantRefId, TenantMemberDO member,
+                                                String operatorMemberRefId, String operation) {
+        long priorVersion = requireVersion(member.getAuthVersion());
+        if (priorVersion == Long.MAX_VALUE) {
+            throw new IllegalStateException("Member authorization version exhausted");
+        }
+        scopedRoleBindingDao.revokeAllForMember(tenantRefId, member.getId());
+        if (authVersionDao.incrementForMember(tenantRefId, member.getId()) != 1) {
+            throw new IllegalStateException("Unable to revoke prior member authorization");
+        }
+        if (authorizationAuditDao.append(UniqueIdFacade.nextId(), tenantRefId, null, null,
+                operatorMemberRefId, member.getId(), operation, priorVersion, priorVersion + 1) != 1) {
+            throw new IllegalStateException("Failed to audit member authorization invalidation");
+        }
     }
 
     private void requireActiveTenantAndUser(String tenantRefId, String userRefId) {
