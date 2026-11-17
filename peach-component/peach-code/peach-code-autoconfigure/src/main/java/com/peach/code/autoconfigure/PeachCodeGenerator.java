@@ -27,11 +27,11 @@ import java.util.regex.Pattern;
 public class PeachCodeGenerator implements CodeGenerator {
 
     private static final Pattern SAFE_PART = Pattern.compile("[A-Za-z0-9][A-Za-z0-9-]{0,31}");
-    private static final String RULE_SELECT_SQL = "SELECT MAX_CODE_WIDTH, CURRENT_VALUE, STATUS, CODE_SEPARATOR "
+    private static final String RULE_SELECT_SQL = "SELECT MAX_CODE_WIDTH, CURRENT_VALUE, STATUS, CODE_SEPARATOR, SCOPE_TYPE, RULE_VERSION "
             + "FROM PEACH_CODE_RULE WHERE TENANT_ID = ? AND CODE_PREFIX = ? AND IS_DELETE = 0 FOR UPDATE";
     private static final String RULE_UPDATE_SQL = "UPDATE PEACH_CODE_RULE SET CURRENT_VALUE = ?, "
             + "MODIFY_TIME = DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s') "
-            + "WHERE TENANT_ID = ? AND CODE_PREFIX = ? AND STATUS = 'ENABLE' AND CURRENT_VALUE = ? AND IS_DELETE = 0";
+            + "WHERE TENANT_ID = ? AND CODE_PREFIX = ? AND STATUS = 'ENABLE' AND CURRENT_VALUE = ? AND RULE_VERSION = ? AND SCOPE_TYPE = ? AND IS_DELETE = 0";
 
     private final JdbcTemplate jdbcTemplate;
     private final TransactionTemplate allocationTransaction;
@@ -88,6 +88,16 @@ public class PeachCodeGenerator implements CodeGenerator {
             throw new CodeGeneratorException("Code rule is disabled: " + prefix);
         }
 
+        String expectedScope = "PLATFORM".equals(tenantId) ? "PLATFORM" : "TENANT";
+        if (!expectedScope.equals(row.get("SCOPE_TYPE"))) {
+            throw new CodeGeneratorException("Code rule scope does not match namespace: " + prefix);
+        }
+        Object versionObject = row.get("RULE_VERSION");
+        if (!(versionObject instanceof Number) || ((Number) versionObject).longValue() < 0) {
+            throw new CodeGeneratorException("Invalid code rule version: " + prefix);
+        }
+        long ruleVersion = ((Number) versionObject).longValue();
+
         Object widthObject = row.get("MAX_CODE_WIDTH");
         Object currentObject = row.get("CURRENT_VALUE");
         if (!(widthObject instanceof Number) || !(currentObject instanceof Number)) {
@@ -107,7 +117,7 @@ public class PeachCodeGenerator implements CodeGenerator {
         CodeFormat format = new CodeFormat(prefix, separator, width);
 
         long next = current + 1;
-        int updated = jdbcTemplate.update(RULE_UPDATE_SQL, next, tenantId, prefix, current);
+        int updated = jdbcTemplate.update(RULE_UPDATE_SQL, next, tenantId, prefix, current, ruleVersion, expectedScope);
         if (updated != 1) {
             throw new CodeGeneratorException("Code rule changed during allocation: " + prefix);
         }
