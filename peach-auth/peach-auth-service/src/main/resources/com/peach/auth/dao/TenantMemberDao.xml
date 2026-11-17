@@ -53,6 +53,12 @@
         WHERE ID = #{userRefId} AND STATUS = '1' AND IS_DELETE = 0
     </select>
 
+    <select id="countAuthenticatedUserIdentity" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM PEACH_USER
+        WHERE USER_ID = #{businessUserId} AND ID = #{userRefId}
+          AND STATUS = '1' AND IS_DELETE = 0
+    </select>
+
     <update id="changeStatus">
         UPDATE PEACH_TENANT_MEMBER
         SET STATUS = #{status}, MODIFY_TIME = #{modifyTime},
