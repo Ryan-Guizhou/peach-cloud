@@ -51,6 +51,16 @@ public interface TenantMemberDao {
      */
     int countEnabledUser(@Param("userRefId") String userRefId);
 
+    /**
+     * 校验 Token 中的全局业务用户 ID 对应指定物理用户 ID。
+     *
+     * @param businessUserId 从 Sa-Token 服务端会话获取的永久业务用户 ID
+     * @param userRefId 用户物理主键
+     * @return 未停用且未删除的匹配用户数量
+     */
+    int countAuthenticatedUserIdentity(@Param("businessUserId") String businessUserId,
+                                       @Param("userRefId") String userRefId);
+
     int changeStatus(@Param("id") String id,
                      @Param("tenantRefId") String tenantRefId,
                      @Param("status") String status,
