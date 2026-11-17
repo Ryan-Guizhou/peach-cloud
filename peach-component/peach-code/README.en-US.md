@@ -71,3 +71,47 @@ CodeGenerator.next
 - Business-table tenant constraints and unique keys are outside this module.
 
 Project baseline: Java 21, Spring Boot 3.5.4, Spring Cloud 2025.0.0, Spring Cloud Alibaba 2025.0.0.0. Chinese Javadoc, English logs, UTF-8 without BOM.
+
+## Platform-wide SaaS business IDs (work in progress)
+
+`CodeGenerator.nextGlobal("ORG")` delegates to `next("PLATFORM", "ORG")`. Types such as `USER`, `TENANT`, `ORG`, and `ROLE` must have a preconfigured platform rule. Platform-wide IDs use a different namespace from tenant-level display codes; business tables must enforce permanent uniqueness even for logically deleted records.
+
+`CodeFormat` validates a controlled prefix, separator (`_` or `-`), and sequence width between 1 and 18 digits. For example, `new CodeFormat("org", "_", 6).preview(12)` returns `ORG_000012`. Preview never allocates a database sequence. The MySQL allocator now honors the rule's separator while preview stays side-effect free.
+
+### Database-configured business code format
+
+The rule table now includes `SCOPE_TYPE` (`PLATFORM` or `TENANT`), `CODE_SEPARATOR` (`_` or `-`), and `RULE_VERSION`. The allocator produces `CODE_PREFIX + CODE_SEPARATOR + zero-padded sequence`. Invalid rules fail before the sequence update; there is no fallback allocator. Global business IDs use the `PLATFORM` namespace and remain permanently unique in the target business table; rule changes must never reset `CURRENT_VALUE`.
+
+For example, a rule with `CODE_PREFIX=ORG`, `CODE_SEPARATOR='-'`, and `MAX_CODE_WIDTH=5` returns `ORG-00008` for sequence 8. Changing a live rule must be coordinated with MySQL row locking and operator approval. Tenants cannot modify system-reserved rules for permanent user IDs. Management APIs, rule-change audit, and the frontend configuration UI remain part of later IAM tasks.
+
+The allocation transaction validates `SCOPE_TYPE` against its namespace (`PLATFORM` versus tenant), checks non-negative `RULE_VERSION`, and includes both in the conditional update. The schema adds `CHECK` constraints for scope, separator, status, width, and non-negative counters. `INVITATION` has a platform-level seed rule. Administrative rule APIs, rule-change audit, and real MySQL acceptance are still outstanding.
+
+
+### Controlled rule maintenance (server-side Java API)
+
+`CodeRuleMaintenance` is now registered by `PeachCodeAutoConfiguration` as `JdbcCodeRuleMaintenance` when JDBC is available. It is an **internal API for trusted, authorized administration services only**, not an unprotected browser-facing REST endpoint. Platform administrators own platform-level `USER`, `TENANT`, and `ORG` rules; tenant administrators must not modify them.
+
+| Operation | Method | Invariant |
+| --- | --- | --- |
+| Enable/disable | `changeStatus(namespace, prefix, enabled, expectedVersion, operatorRefId)` | Preserve watermark; increment rule version |
+| Change format | `changeFormat(namespace, prefix, format, expectedVersion, operatorRefId)` | Allowed only at `CURRENT_VALUE=0` without changing prefix |
+| Calibrate historic watermark | `advanceWatermark(namespace, prefix, watermark, expectedVersion, operatorRefId)` | Never decrease; respect numeric width |
+
+Rule maintenance and allocation use the same MySQL rule-row lock. Version conflicts and database failures reject the request; calling services **must authorize the administrator and namespace** before invoking this API. No rule administration HTTP endpoint is exposed yet. Direct privileged DBA edits are not automatically prevented from reducing historical counters: restrict direct database writes and audit operational changes.
+
+```mermaid
+sequenceDiagram
+    participant Admin as Authorized administration service
+    participant Rule as CodeRuleMaintenance
+    participant DB as MySQL PEACH_CODE_RULE
+    Admin->>Rule: Change state/format/watermark + expectedVersion
+    Rule->>DB: SELECT ... FOR UPDATE
+    DB-->>Rule: Locked rule
+    Rule->>Rule: Validate scope, version, historical watermark
+    Rule->>DB: Conditional UPDATE + increment RULE_VERSION
+    DB-->>Rule: Commit or conflict
+```
+
+**Audit implementation:** Every effective status, format, or watermark change atomically inserts into `PEACH_CODE_RULE_AUDIT`, using `operatorRefId` as the trusted actor and recording before/after values and version. An audit failure rolls back the rule change. Deploy `sql/PEACH_CODE_RULE_AUDIT.sql` (or the consolidated DDL) before using this API; restrict direct database edits to audit records.
+
+**Outstanding verification:** Real MySQL 8.4 tests, authorized administration HTTP contracts, runtime verification of rule-change audit, and legacy watermark migration still require implementation and verification. This documentation does not claim those checks have passed.
