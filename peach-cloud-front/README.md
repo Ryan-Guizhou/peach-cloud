@@ -118,3 +118,7 @@ npm run preview
 ### SaaS 角色管理页面（#210，增量）
 
 旧的 `/auth/role/add` 和 `/auth/authFunction/saveRoleFunctions` 等基于 `tenantId/orgId/fiscal`、角色业务码拼接的前端写入接口已经从 `api/admin.ts` 移除。角色页面改为通过 `createTenantRole()` 执行当前 Token 范围内的受控新建，真实租户/应用/年度完全由 Auth 决定；物理 ID 仅作为返回值展示，不允许手工录入。权限授权页面不再允许旧多模型请求提交，需等待安全的后端角色/成员/权限分页目录补齐后再接入新的 `saas-iam.ts` 写接口。**这属于明确的安全收敛，未完成完整管理界面，不得视为 #210 已交付。**
+
+### #227 SaaS 角色授权可操作界面
+
+`src/api/saas-iam.ts` 新增受保护的 `fetchSaasCatalog`、`fetchRolePermissionRefs` 和 `fetchMemberBindings`。年度角色授权页不再是占位信息，已经接入角色/权限/成员/机构分页选择器；支持替换当前租户年度角色的全部权限、对成员按 `TENANT/ORG/ORG_TREE` 独立授权和撤销**指定物理绑定**。可委派权限未加载完或角色仍持有当前管理员不可见的权限时，全量替换被明确禁止，避免误删授权。所有 API 请求依赖当前 Token，页面不能编辑 `tenantRefId/appRefId/year`。此项仍需真实数据库、网关在线 IAM 与旧数据迁移测试；行/字段策略编辑 UI 需要后续受控字段目录支持。

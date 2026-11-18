@@ -179,3 +179,63 @@ export async function replaceFieldPolicies(
   )
   unwrapApiResponse(data, '更新字段权限失败')
 }
+
+
+/** 受信服务按当前 Token 限定租户、应用与年度，分页参数不包含任何浏览器自报身份。 */
+export type CatalogKind = 'roles' | 'permissions' | 'members' | 'organizations'
+
+export interface SaasCatalogEntry {
+  id: string
+  code?: string
+  name?: string
+  resourceType?: string
+  roleRefId?: string
+  scopeType?: ScopeType
+  scopeRefId?: string
+}
+
+export interface SaasCatalogPage {
+  page: number
+  pageSize: number
+  hasMore: boolean
+  items: SaasCatalogEntry[]
+}
+
+export async function fetchSaasCatalog(
+  kind: CatalogKind,
+  page = 1,
+  pageSize = 20,
+  keyword = '',
+): Promise<SaasCatalogPage> {
+  if (!Number.isInteger(page) || page < 1 || page > 1000
+    || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 50
+    || keyword.length > 64) {
+    throw new Error('目录分页或检索条件无效')
+  }
+  const { data } = await http.get<ApiResponse<SaasCatalogPage>>(
+    `/auth/saas/roles/catalog/${kind}`,
+    { params: { page, pageSize, keyword: keyword.trim() } },
+  )
+  return unwrapApiResponse(data, '读取受信目录失败', { requireData: true })
+}
+
+export async function fetchRolePermissionRefs(roleRefId: string): Promise<string[]> {
+  const role = physicalId(roleRefId, '角色ID')
+  const { data } = await http.get<ApiResponse<string[]>>(
+    `/auth/saas/roles/catalog/roles/${role}/permissions`,
+  )
+  return validateUniqueIds(
+    unwrapApiResponse(data, '读取当前角色权限失败', { requireData: true }), '角色权限ID', 200)
+}
+
+export async function fetchMemberBindings(memberRefId: string): Promise<SaasCatalogEntry[]> {
+  const member = physicalId(memberRefId, '成员ID')
+  const { data } = await http.get<ApiResponse<SaasCatalogEntry[]>>(
+    `/auth/saas/roles/catalog/members/${member}/bindings`,
+  )
+  const bindings = unwrapApiResponse(data, '读取成员授权绑定失败', { requireData: true })
+  if (bindings.length > 200 || bindings.some(item => !PHYSICAL_ID.test(item.id))) {
+    throw new Error('成员授权绑定目录不完整')
+  }
+  return bindings
+}

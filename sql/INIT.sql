@@ -78,7 +78,13 @@ VALUES
      'POST:/api/auth/saas/roles/bindings', 'SaaS 授予角色 API', 'API', 'SYSTEM',
      1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
     (REPLACE(UUID(), '-', ''), 'PERM_INIT_API_ROLE_REVOKE', NULL, NULL,
-     'DELETE:/api/auth/saas/roles/bindings/{bindingRefId}', 'SaaS 撤销角色 API', 'API', 'SYSTEM',
+     'DELETE:/api/auth/saas/roles/bindings/{bindingRefId}',
+     'GET:/api/auth/saas/roles/catalog/roles',
+     'GET:/api/auth/saas/roles/catalog/permissions',
+     'GET:/api/auth/saas/roles/catalog/members',
+     'GET:/api/auth/saas/roles/catalog/organizations',
+     'GET:/api/auth/saas/roles/catalog/roles/{roleRefId}/permissions',
+     'GET:/api/auth/saas/roles/catalog/members/{memberRefId}/bindings', 'SaaS 撤销角色 API', 'API', 'SYSTEM',
      1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
     (REPLACE(UUID(), '-', ''), 'PERM_INIT_API_DATA_POLICY', NULL, NULL,
      'PUT:/api/auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/data-policies',
@@ -151,6 +157,33 @@ INSERT IGNORE INTO PEACH_USER_ORG
 VALUES
     ('4e6a8d3c1b9f4e2a8c5d7f0b6a3e9c1d', @ADMIN_USER_ID, @TENANT_ID, @DEFAULT_ORG_ID, 1, 'ENABLE', @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID, 0),
     ('5f7b9e4d2c8a4f1b9d6e3a0c7b5f2d8e', @ADMIN_USER_ID, @TENANT_ID, @BRANCH_ORG_ID, 0, 'ENABLE', @NOW, @ADMIN_USER_ID, @NOW, @ADMIN_USER_ID, 0);
+
+-- #227: 当前租户年度角色目录，所有 GET API 均须同时通过网关 IAM + Auth Same-Token + TENANT.ROLE.MANAGE。
+INSERT IGNORE INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID,
+     PERMISSION_CODE, PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE,
+     DELEGABLE, STATUS, IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_CAT_ROLES', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/roles', '查询年度角色目录', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_CAT_PERMISSIONS', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/permissions', '查询可委派权限目录', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_CAT_MEMBERS', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/members', '查询有效成员目录', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_CAT_ORGS', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/organizations', '查询有效机构目录', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_CAT_ROLE_PERMS', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/roles/{roleRefId}/permissions',
+     '查询角色有效权限', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_CAT_MEMBER_BIND', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/members/{memberRefId}/bindings',
+     '查询成员年度角色绑定', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
 
 INSERT IGNORE INTO PEACH_ROLE
     (ID, ROLE_ID, TENANT_ID, ORG_ID, ROLE_CODE, FISCAL, ROLE_NAME, ROLE_DESC, ROLE_SCOPE, ROLE_TYPE, CREATED_TIME, CREATOR_ID, MODIFY_TIME, MODIFIER_ID, IS_DELETE, SKIP_URL)

@@ -345,3 +345,9 @@ sequenceDiagram
 `POST /auth/switchContext` 现在复用 Auth 专用 `SaasAuthSessionFilter`：先校验服务 Same-Token、真实用户登录态与当前数据库成员/授权版本，再设置只在本请求有效的 `VERIFIED_SAAS_AUTH_REQUEST` 内部属性，跳过旧用户 Profile Redis 缓存。实际目标租户、应用及年度由 `TenantSessionService.switchTenant()` 再次验证。网关 #208 为此提供精确的“已登录自服务”入口，**不是匿名白名单**，不要求每个自然年度业务角色都具有切换上下文权限。注销接口仅针对本人当前 Token。
 
 认证登录初始化响应 `LoginInitVO` 的旧 `fiscal` 字段已改为 `year`（自然年度建议值，仅用于登录页默认显示）；真正的年度由 `LoginDTO.year` 和成员 Token 快照确定。不要再把旧 FISCAL 与年度权限双模型同时下发。
+
+### #227 SaaS 租户角色与可委派权限分页目录
+
+`SaasRoleCatalogController` 提供受保护的 `GET /auth/saas/roles/catalog/{roles,permissions,members,organizations}` 分页接口，以及 `roles/{roleRefId}/permissions` 和 `members/{memberRefId}/bindings` 的当前授权明细。全部位于 Auth `SaasAuthSessionFilter` 保护范围；**先验 Same-Token、当前用户登录态及成员/授权版本，再强制完整 TENANT 范围 `TENANT.ROLE.MANAGE`**。分页最多 50 条、页码最多 1000，角色权限与成员绑定最多 200 条。仅展示成员的物理 ID/永久业务成员 ID，不返回电话、邮箱、证件、密码等敏感字段。可委派权限仅返回当前管理员通过完整租户作用域角色实际持有且 `DELEGABLE=1` 的有效定义，真正的写入仍由领域服务事务化二次校验。
+
+`sql/INIT.sql` 仅为开发管理员注册六个明确 GET API 规则并授予其年度角色，**不加入匿名白名单**。此前 #211 未实现的目录读链路已进入开发；真实 MySQL/Nacos/网关联调仍须单独完成。
