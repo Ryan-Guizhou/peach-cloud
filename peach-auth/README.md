@@ -335,7 +335,7 @@ sequenceDiagram
 
 #### 认证服务 SaaS 角色接口的 Token 验证
 
-新的 SaaS 登录只保存 Token 专属成员快照，不再创建旧版用户级 `USER_PROFILE` Redis Hash；原通用过滤器会在角色管理 Controller 前误拒合法用户。为避免把整个业务服务配置成公开端点，新增 Auth 专用 `SaasAuthSessionFilter`，仅作用于 `/auth/saas/roles` 及其子路径，按顺序先强制服务 Same-Token、Sa-Token 登录态，再通过 `TenantSessionService.requireCurrent()` 数据库校验租户/成员/应用和两个版本。验证成功才设置只能由 Servlet 服务端写入的请求属性，让通用 `UserContextFilter` 对该请求跳过旧 Profile 查询，并在请求完成后清理；其他模块继续原路径，角色/行/字段最终权限依旧由领域服务判断。此处没有新增匿名入口，也不允许仅凭业务编号判断身份。
+新的 SaaS 登录只保存 Token 专属成员快照，不再创建旧版用户级 `USER_PROFILE` Redis Hash；原通用过滤器会在角色管理 Controller 前误拒合法用户。为避免把整个业务服务配置成公开端点，新增 Auth 专用 `SaasAuthSessionFilter`，覆盖 `/auth/saas/roles`、`/auth/saas/tenants`、`/auth/saas/platform` 和现有 `/auth/organization` 入口，按顺序先强制服务 Same-Token、Sa-Token 登录态，再通过 `TenantSessionService.requireCurrent()` 数据库校验租户/成员/应用和两个版本。验证成功才设置只能由 Servlet 服务端写入的请求属性，让通用 `UserContextFilter` 对该请求跳过旧 Profile 查询，并在请求完成后清理；其他模块继续原路径，角色/行/字段最终权限依旧由领域服务判断。此处没有新增匿名入口，也不允许仅凭业务编号判断身份。
 
 补充：Auth 专用过滤器直接拒绝含百分号编码、分号矩阵参数、双斜杠、反斜杠及 `.`/`..` 路径段的角色管理请求；不会因下游 Servlet 规范化将危险路径误作为已验证的 SaaS 角色请求。该安全前置检查同样适用于绕过公共网关而直接访问 Auth 的场景。
 
@@ -362,3 +362,12 @@ sequenceDiagram
 新增受保护的 `SaasPolicyCatalogController` 与 `SaasPolicyCatalogService`，在真实 Token 当前成员、租户、应用、角色管理权限、被管理角色动作的可委派性与当前操作者自身动作授权均有效时，允许读取现存的完整行级策略（最多 32 项）、字段读写策略（最多 128 项）及分页的受信 `PEACH_FIELD_DEFINITION` 字段目录。系统动作还需要当前管理员的同一条 `TENANT + TENANT_ALL` 行授权证据。字段对应的 `RESOURCE_CODE` 必须和当前动作语义前缀一致，不能以其他资源动作授予敏感字段。超过上限、重复、当前字段不可委派或未完成安全授权时一律拒绝，不伪装成空策略。新增三个受保护的 GET API，开发 SQL 初始化明确登记对应网关 API；不加入匿名白名单。
 
 前端 `SaasPolicyEditor.vue` 在完整读取已有规则与受控字段目录后才能全量替换行/字段策略。成功提交事务会递增授权版本，当前用户必须清理旧会话后重新登录。业务 SELECT/COUNT/EXPORT/UPDATE 的真正 SQL 过滤尚属于 #211 的独立接入验收范围，不能把管理 UI 视为业务数据已被过滤。
+
+### #219 SaaS 平台租户开通、受保护所有者与可信成员机构管理
+
+- **部署前置条件**：真实 MySQL 中需由受信管理员独立预置 `TENANT_CODE=PLATFORM` 的控制租户、有效平台成员/应用、不可委派且只能授予 SYSTEM 角色的 `PLATFORM.TENANT.CREATE`。**不能靠普通租户的角色、任意 TENANT_ID 或开发 `INIT.sql` 获得该权限**。生产权限目录迁移见 `sql/PEACH_TENANT_ONBOARDING_PERMISSIONS.sql`；该脚本只创建权限定义，不能代替首次平台管理员的受控初始化。
+- **开通接口**：`POST /auth/saas/platform/tenants` 先经过 Same-Token + 用户 Token + 数据库成员/授权版本校验，再锁定真实平台租户、复核系统不可委派权限。单事务创建 UUID 物理租户 `ID`、全局唯一 `TENANT_ID`、应用、默认根机构、首位所有者成员、SYSTEM 所有者角色、有效可委派 SYSTEM 权限、成员角色绑定和审计；失败回滚，未完成授权目录则拒绝。
+- **成员管理**：`/auth/saas/tenants/members` 提供邀请、取消邀请、本人接受邀请、停用/恢复和退出。首次无租户成员身份的**已有全局账号**可在正常登录页填写可选邀请物理 ID，复用现有密码、滑块验证码及登录锁保护；只有邀请属于已认证账号并可在数据库原子接受时才准入，新登录 Token 必须绑定真实租户与应用。普通成员不能自行更换来源租户，临时全局 Token 永不返回前端。
+- **机构管理**：`/auth/saas/tenants/organizations` 提供创建、更名、删除前依赖检查和移动。原有 `/auth/organization/**` 页面路由保留为**受信 SaaS 代理**，其后端不再使用用户自报的租户 ID。所有机构写入先锁定物理租户、校验 `TENANT.ORG.MANAGE`、机构归属与乐观版本，在同事务递增 `AUTH_VERSION` 并记审计。
+- **所有者与最后管理员保护**：受保护的 `ROLE_TENANT_OWNER` 不可被普通用户授权、撤销、停用或直接退出；最后一名有效完整租户范围管理员不能被停用/退出，也不能撤销其最后一条管理员绑定。迁移中的旧 SYSTEM 角色保持受保护。
+- **安全边界**：全部新增 SaaS 和旧机构管理 HTTP 路由由 `SaasAuthSessionFilter` 在业务服务直连时也强制核验 Same-Token、登录与当前成员版本；网关 API 必须按受控 `OWNER_TYPE=SYSTEM` 权限目录配置，不得以配置白名单跳过。生产需实际验证 MySQL 事务、成员锁、角色权限、API 路由、Nacos、Redis 和跨租户拒绝证据；统一记录在 #211，**不得用单测/CI 代替真实验收**。整个模型不包含授权年度维度。
