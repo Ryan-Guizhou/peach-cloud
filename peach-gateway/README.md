@@ -232,3 +232,10 @@ git diff --check -- peach-gateway
 当前开发分支使用 `SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT` 的单一 Token Session 快照，解析 `userRefId/tenantRefId/memberRefId/appRefId/year/memberVersion/authVersion`；工作机构可空，不再读取历史 `tenantId/orgId/fiscal` 组合。新缓存键支持物理租户、成员、应用、自然年度和两个版本隔离，但**当前网关不会仅凭 Redis 缓存放行受保护 API**：必须注入能核验最新 IAM 权限事实源的 `GatewayIamDecisionVerifier`，没有验证器就默认拒绝；绝不回退读取旧用户级缓存。缺失快照、无 Redis、权限检查关闭或系统配置意外停用时，受保护 API 全部拒绝，不能通过开关进入无授权链路。默认匿名白名单只保留登录、验证码、公钥及 OPTIONS；`/auth/init`、注册/重置等不再默认匿名公开。
 
 **当前限制：** 缓存版本键不是可信版本服务。当前已增加受信决策 SPI，但尚未提供生产实现，因此非公开 API 默认拒绝。认证域尚未把角色/成员版本失效后可靠同步至网关，且新版本缓存集合缺少真实受信的填充及撤销协议。只靠旧 Token 上的 `authVersion` 查缓存不能证明权限仍有效。因此在完成请求期数据库/受信服务鉴权、版本校验和跨服务授权传播（#208/#209）之前，**本分支不能直接投产、不能宣称授权缓存已可用**，CI 构建通过亦不等同于安全验收。
+
+
+### 实时 IAM 受信链路（#208 与 #209 联调中）
+
+当 `peach.gateway.iam.enabled=true` 时，网关的 `GatewayIamHttpDecisionVerifier` 通过 `@LoadBalanced WebClient.Builder` 访问服务发现名称 `peach-auth` 的 `POST /auth/external/iam/check-api`，使用当前最终用户 Sa-Token 与网关从 Sa-Token 获取的 Same-Token 两套独立凭证。认证域执行当前数据库成员版本与权限事实查询，并返回授权结果及**同次核验后的物理成员快照**；网关逐字段比较租户/成员/应用/年度和两个版本，完全一致且动作允许才继续进入业务服务。WebClient 网络过程不阻塞 Netty EventLoop，获取 Sa-Token 的潜在阻塞工作使用 boundedElastic。失败、超时、空响应、401/403/5xx 和 Token 切换均拒绝，没有旧 Redis 缓存兜底。
+
+`peach.gateway.iam.enabled` 默认 `false`，网关受保护 API 因无验证器而**默认拒绝**；`peach.gateway.iam.timeout` 默认 `1500ms`。启用前必须先部署 #209 受信认证接口、配置正确的服务发现与 Same-Token、确保 Auth 数据库中已注册真实精确 METHOD:PATH API 权限定义，并用合法/撤销/跨租户/跨年度/停用成员及故障用例联调。当前仅提供精确 URL 权限，动态路径模板映射及真实业务对象权限接入尚未完成，不应把代码构建成功当作可直接上线。
