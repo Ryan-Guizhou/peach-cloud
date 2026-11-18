@@ -255,3 +255,7 @@ git diff --check -- peach-gateway
 #### 网关到 Auth 的 HTTP 契约回归
 
 新增 `GatewayIamHttpContractTest`，用真实 WebClient 编解码器和模拟的 Auth HTTP 响应验证服务发现目标路径、POST 方法、最终用户 Token、独立 Same-Token、JSON Content-Type，以及数据库版本一致时允许。远端 503、空 200、授权版本不一致、缺少任一凭证或 25ms 测试超时均必须返回拒绝。此测试只验证 HTTP 协议与失败安全策略，不能代替真实 MySQL/Redis/Nacos 联调。
+
+#### Nacos 初始化白名单和 IAM 上线门槛
+
+已同步 `deploy-pipline/init/nacos/config/peach-gateway.yml`：删除旧的 `ANY`、文档/Actuator 通配匿名入口，以及 `/api/auth/register`、`/api/auth/logout`、`/api/auth/forget`、`/api/auth/reset` 等不应默认匿名的旧项。仅保留精确方法的登录、登录只读初始化、公钥、验证码和 `OPTIONS /**`。新增明确配置 `peach.gateway.iam.enabled=false` 与 `timeout=1500ms`；**该开关保持关闭时受保护请求默认拒绝，不能当作允许旧鉴权回退的开关**。先完整部署 #209 的受信 Auth 接口、Redis/MySQL、Nacos 服务发现及必要的 API 资源目录，再将在线 IAM 设置为 `true` 并完成合法/撤销/跨租户/跨年度安全回归。修改 Nacos 模板并不会自动更新已运行的 Nacos 配置实例，部署时需同步核对实际生效配置。

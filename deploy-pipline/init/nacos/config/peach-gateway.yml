@@ -10,117 +10,34 @@ peach:
       inject-same-token: true
       token-strategy-enabled: true
       log-path: true
+      # Nacos 示例配置与 Java 严格匿名白名单保持一致：方法 + 精确路径，禁止 ANY、** 等非预检开放。
       public-endpoints:
         - method: OPTIONS
           path: /**
-        - method: ANY
-          path: /login
-        - method: ANY
-          path: /logout
-        - method: ANY
-          path: /register
-        - method: ANY
-          path: /getCaptcha
-        - method: ANY
-          path: /checkCaptcha
-        - method: ANY
-          path: /init
-        - method: ANY
-          path: /doc.html
-        - method: ANY
-          path: /swagger-resources
-        - method: ANY
-          path: /swagger-resources/**
-        - method: ANY
-          path: /webjars
-        - method: ANY
-          path: /webjars/**
-        - method: ANY
-          path: /v3/api-docs
-        - method: ANY
-          path: /v3/api-docs/**
-        - method: ANY
-          path: /v2/api-docs
-        - method: ANY
-          path: /v2/api-docs/**
-        - method: ANY
-          path: /actuator
-        - method: ANY
-          path: /actuator/**
-        - method: ANY
-          path: /health
-        - method: ANY
-          path: health
-        - method: ANY
-          path: /sse
-        - method: ANY
-          path: /sse/**
-        - method: ANY
-          path: /favicon.ico
+        - method: POST
+          path: /auth/login
+        - method: POST
+          path: /auth/init
+        - method: POST
+          path: /auth/getCaptcha
+        - method: POST
+          path: /auth/checkCaptcha
+        - method: GET
+          path: /auth/rsa-public-key
         - method: POST
           path: /api/auth/login
         - method: POST
-          path: /api/auth/logout
-        - method: POST
-          path: /api/auth/register
-        - method: POST
-          path: /api/auth/forget
-        - method: POST
-          path: /api/auth/reset
+          path: /api/auth/init
         - method: POST
           path: /api/auth/getCaptcha
         - method: POST
           path: /api/auth/checkCaptcha
-        - method: POST
-          path: /api/auth/init
         - method: GET
           path: /api/auth/rsa-public-key
-        - method: ANY
-          path: /api/doc.html
-        - method: ANY
-          path: /api/swagger-resources
-        - method: ANY
-          path: /api/swagger-resources/**
-        - method: ANY
-          path: /api/webjars
-        - method: ANY
-          path: /api/webjars/**
-        - method: ANY
-          path: /api/v3/api-docs
-        - method: ANY
-          path: /api/v3/api-docs/**
-        - method: ANY
-          path: /api/v2/api-docs
-        - method: ANY
-          path: /api/v2/api-docs/**
-        - method: ANY
-          path: /api/actuator
-        - method: ANY
-          path: /api/actuator/**
-        - method: ANY
-          path: /api/health
-        - method: ANY
-          path: /api/sse
-        - method: ANY
-          path: /api/sse/**
-        - method: ANY
-          path: /api/favicon.ico
-        - method: GET
-          path: /api/auth/v3/api-docs
-        - method: GET
-          path: /api/fileservice/v3/api-docs
-        - method: GET
-          path: /api/message/v3/api-docs
-        - method: GET
-          path: /api/setting/v3/api-docs
-        - method: GET
-          path: /api/generator/v3/api-docs
-        - method: GET
-          path: /api/monitor/v3/api-docs
-        - method: GET
-          path: /api/monitor/actuator/**
-        - method: GET
-          path: /api/monitor/health
+      # #209 受信 Auth 服务、资源目录和 Nacos 发现全部就绪并联调后才能启用。
+    iam:
+      enabled: false
+      timeout: 1500ms
     risk-control:
       enabled: true
       max-uri-length: 2048

@@ -256,3 +256,7 @@ Before authorization or routing, `GatewayRequestGlobalFilter` removes client-sup
 #### Gateway-to-Auth HTTP contract regression
 
 `GatewayIamHttpContractTest` uses real WebClient codecs against mocked Auth HTTP responses to verify the discovered service URL, POST method, end-user token, separate service Same-Token, JSON content type, and allow decisions with matching database versions. HTTP 503, empty HTTP 200, a stale authorization version, missing credentials, and a 25ms test deadline all must deny access. This is protocol and failure-safety verification, not a substitute for integration against real MySQL, Redis, and Nacos.
+
+#### Nacos seed allowlist and IAM activation prerequisites
+
+The Nacos seed `deploy-pipline/init/nacos/config/peach-gateway.yml` now removes broad `ANY`/documentation/Actuator anonymous rules and obsolete public registration, logout, forgot-password and reset-password entries. Only explicitly matched login, read-only login bootstrap, RSA public key, CAPTCHA and `OPTIONS /**` remain anonymous. The template explicitly defines `peach.gateway.iam.enabled=false` and `timeout=1500ms`; **while disabled, protected requests remain denied, never authorized by legacy fallback**. Deploy and verify #209's trusted Auth endpoints, Redis/MySQL, Nacos discovery, and a populated API resource catalog before enabling real-time IAM, then run authorized/revoked/cross-tenant/cross-year security checks. Editing the seed does not update a running Nacos configuration automatically; verify the effective deployed values separately.
