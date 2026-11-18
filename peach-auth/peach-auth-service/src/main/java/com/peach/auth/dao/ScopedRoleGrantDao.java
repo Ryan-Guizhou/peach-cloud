@@ -30,9 +30,9 @@ public interface ScopedRoleGrantDao {
      * @return 每行对应独立角色绑定，空列表即无权限
      */
     List<RoleScopeGrantVO> selectGrants(@Param("tenantRefId") String tenantRefId,
-                                       @Param("memberRefId" String memberRefId,
+                                       @Param("memberRefId") String memberRefId,
                                        @Param("appRefId") String appRefId,
-                                       @Param("permissionCode" String permissionCode);
+                                       @Param("permissionCode") String permissionCode);
     /**
      * 读取所有当前租户/应用可见的有效 API 目录规则，包括尚未分配给当前成员的定义。
      *
@@ -59,8 +59,8 @@ public interface ScopedRoleGrantDao {
      * @return 有效且属于同一成员绑定的 API 权限事实
      */
     List<RoleScopeGrantVO> selectApiGrants(@Param("tenantRefId") String tenantRefId,
-                                          @Param("memberRefId" String memberRefId,
+                                          @Param("memberRefId") String memberRefId,
                                           @Param("appRefId") String appRefId,
-                                          @Param("permissionCode" String permissionCode,
+                                          @Param("permissionCode") String permissionCode,
                                           @Param("systemOnly") boolean systemOnly);
 }

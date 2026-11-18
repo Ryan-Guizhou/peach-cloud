@@ -31,7 +31,7 @@ public interface IamAuthorizationAuditDao {
     int append(@Param("id") String id,
                @Param("tenantRefId") String tenantRefId,
                @Param("appRefId") String appRefId,
-               @Param("operatorRefId" String operatorRefId,
+               @Param("operatorRefId") String operatorRefId,
                @Param("targetRefId") String targetRefId,
                @Param("operation") String operation,
                @Param("oldVersion") long oldVersion,

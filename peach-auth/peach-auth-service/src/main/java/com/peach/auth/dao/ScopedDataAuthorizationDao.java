@@ -32,9 +32,9 @@ public interface ScopedDataAuthorizationDao {
      * @return 该权限的行策略证据
      */
     List<RoleDataGrantVO> selectDataGrants(@Param("tenantRefId") String tenantRefId,
-                                           @Param("memberRefId" String memberRefId,
+                                           @Param("memberRefId") String memberRefId,
                                            @Param("appRefId") String appRefId,
-                                           @Param("permissionCode" String permissionCode);
+                                           @Param("permissionCode") String permissionCode);
 
     /**
      * 只查询已匹配行级授权的角色绑定对应的字段策略。
@@ -48,9 +48,9 @@ public interface ScopedDataAuthorizationDao {
      * @return 对应绑定内定义的允许/拒绝/脱敏字段
      */
     List<ScopedFieldRuleVO> selectFieldRules(@Param("tenantRefId") String tenantRefId,
-                                             @Param("memberRefId" String memberRefId,
+                                             @Param("memberRefId") String memberRefId,
                                              @Param("appRefId") String appRefId,
-                                             @Param("permissionCode" String permissionCode,
+                                             @Param("permissionCode") String permissionCode,
                                              @Param("resourceCode") String resourceCode,
                                              @Param("bindingRefIds") List<String> bindingRefIds);
 }

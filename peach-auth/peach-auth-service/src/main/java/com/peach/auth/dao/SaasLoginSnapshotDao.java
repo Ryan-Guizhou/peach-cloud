@@ -34,8 +34,8 @@ public interface SaasLoginSnapshotDao {
      */
     List<SaasLoginGrantRowVO> selectCurrentGrants(@Param("userRefId") String userRefId,
                                                   @Param("tenantRefId") String tenantRefId,
-                                                  @Param("memberRefId" String memberRefId,
+                                                  @Param("memberRefId") String memberRefId,
                                                   @Param("appRefId") String appRefId,
-                                                  @Param("memberVersion" long memberVersion,
+                                                  @Param("memberVersion") long memberVersion,
                                                   @Param("authVersion") long authVersion);
 }

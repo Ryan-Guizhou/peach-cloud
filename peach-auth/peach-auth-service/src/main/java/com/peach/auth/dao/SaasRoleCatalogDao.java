@@ -29,7 +29,7 @@ public interface SaasRoleCatalogDao {
 
     List<SaasCatalogEntryVO> selectDelegablePermissions(@Param("tenantRefId") String tenantRefId,
                                                          @Param("appRefId") String appRefId,
-                                                         @Param("memberRefId" String memberRefId,
+                                                         @Param("memberRefId") String memberRefId,
                                                          @Param("keyword") String keyword,
                                                          @Param("limit") int limit,
                                                          @Param("offset") int offset);
@@ -46,9 +46,9 @@ public interface SaasRoleCatalogDao {
 
     List<String> selectRolePermissionRefs(@Param("tenantRefId") String tenantRefId,
                                           @Param("appRefId") String appRefId,
-                                          @Param("roleRefId" String roleRefId);
+                                          @Param("roleRefId") String roleRefId);
 
     List<SaasCatalogEntryVO> selectMemberBindings(@Param("tenantRefId") String tenantRefId,
                                                    @Param("appRefId") String appRefId,
-                                                   @Param("memberRefId" String memberRefId);
+                                                   @Param("memberRefId") String memberRefId);
 }

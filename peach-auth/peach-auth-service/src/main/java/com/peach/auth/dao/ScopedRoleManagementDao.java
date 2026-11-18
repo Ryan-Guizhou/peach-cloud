@@ -40,13 +40,13 @@ public interface ScopedRoleManagementDao {
      */
     RoleDO lockScopedRole(@Param("tenantRefId") String tenantRefId,
                           @Param("appRefId") String appRefId,
-                          @Param("roleRefId" String roleRefId);
+                          @Param("roleRefId") String roleRefId);
 
     /**
      * 读取某一租户角色的当前有效权限物理主键。
      */
     List<String> selectActivePermissionRefs(@Param("tenantRefId") String tenantRefId,
-                                            @Param("roleRefId" String roleRefId);
+                                            @Param("roleRefId") String roleRefId);
 
     /**
      * 将权限物理 ID 与稳定语义码关联，且只返回允许租户管理员委派的定义。
@@ -61,15 +61,15 @@ public interface ScopedRoleManagementDao {
      */
     int insertRolePermission(@Param("id") String id,
                              @Param("tenantRefId") String tenantRefId,
-                             @Param("roleRefId" String roleRefId,
+                             @Param("roleRefId") String roleRefId,
                              @Param("permissionRefId") String permissionRefId,
-                             @Param("operatorRefId" String operatorRefId);
+                             @Param("operatorRefId") String operatorRefId);
 
     /**
      * 逻辑删除单条角色权限关系，保留原历史记录。
      */
     int revokeRolePermission(@Param("tenantRefId") String tenantRefId,
-                             @Param("roleRefId" String roleRefId,
+                             @Param("roleRefId") String roleRefId,
                              @Param("permissionRefId") String permissionRefId);
 
     /**
@@ -77,7 +77,7 @@ public interface ScopedRoleManagementDao {
      */
     int incrementRoleVersion(@Param("tenantRefId") String tenantRefId,
                              @Param("appRefId") String appRefId,
-                             @Param("roleRefId" String roleRefId,
+                             @Param("roleRefId") String roleRefId,
                              @Param("version") long version,
-                             @Param("operatorRefId" String operatorRefId);
+                             @Param("operatorRefId") String operatorRefId);
 }

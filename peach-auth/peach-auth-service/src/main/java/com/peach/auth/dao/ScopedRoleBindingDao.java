@@ -30,7 +30,7 @@ public interface ScopedRoleBindingDao {
      * @return 成员或 null
      */
     TenantMemberDO lockActiveMember(@Param("tenantRefId") String tenantRefId,
-                                    @Param("memberRefId" String memberRefId);
+                                    @Param("memberRefId") String memberRefId);
 
     /**
      * 验证角色的物理租户、应用和。
@@ -42,13 +42,13 @@ public interface ScopedRoleBindingDao {
      */
     int countActiveRole(@Param("tenantRefId") String tenantRefId,
                         @Param("appRefId") String appRefId,
-                        @Param("roleRefId" String roleRefId);
+                        @Param("roleRefId") String roleRefId);
 
     /**
      * 查询角色全部有效绑定权限的数量，包括不可委派权限。
      */
     int countActiveRolePermissions(@Param("tenantRefId") String tenantRefId,
-                                   @Param("roleRefId" String roleRefId);
+                                   @Param("roleRefId") String roleRefId);
 
     /**
      * 查询当前租户与应用允许委派的角色权限语义码。
@@ -57,15 +57,15 @@ public interface ScopedRoleBindingDao {
      */
     List<String> selectDelegablePermissionCodes(@Param("tenantRefId") String tenantRefId,
                                                 @Param("appRefId") String appRefId,
-                                                @Param("roleRefId" String roleRefId);
+                                                @Param("roleRefId") String roleRefId);
 
     /**
      * 查询完全一致且仍有效的独立授权绑定。
      */
     MemberRoleBindingDO selectActiveBinding(@Param("tenantRefId") String tenantRefId,
-                                            @Param("memberRefId" String memberRefId,
+                                            @Param("memberRefId") String memberRefId,
                                             @Param("appRefId") String appRefId,
-                                            @Param("roleRefId" String roleRefId,
+                                            @Param("roleRefId") String roleRefId,
                                             @Param("scopeType") String scopeType,
                                             @Param("scopeRefId") String scopeRefId);
 
@@ -97,5 +97,5 @@ public interface ScopedRoleBindingDao {
      * @return 被逻辑撤销的有效授权条数
      */
     int revokeAllForMember(@Param("tenantRefId") String tenantRefId,
-                           @Param("memberRefId" String memberRefId);
+                           @Param("memberRefId") String memberRefId);
 }
