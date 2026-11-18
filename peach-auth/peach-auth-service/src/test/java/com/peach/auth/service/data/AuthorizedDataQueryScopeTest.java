@@ -41,7 +41,6 @@ class AuthorizedDataQueryScopeTest {
 
         assertThat(scope.tenantRefId()).isEqualTo("tenant");
         assertThat(scope.appRefId()).isEqualTo("app");
-        assertThat(scope.appRefId()).isEqualTo("app");
         assertThat(scope.clauses()).hasSize(2);
         assertThat(scope.clauses().get(0).allowedOrgRefIds()).containsExactly("left");
         assertThat(scope.clauses().get(0).requiredOwnerUserRefId()).isNull();
