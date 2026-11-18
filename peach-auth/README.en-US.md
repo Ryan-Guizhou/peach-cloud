@@ -230,3 +230,7 @@ The development seed `sql/INIT.sql` now registers four `SaasRoleController` publ
 #### Ownership constraint for platform APIs
 
 Protected platform namespaces include `/api/auth/`, `/api/setting/`, `/api/file/`, `/api/fileservice/`, `/api/message/`, `/api/monitor/`, `/api/generator/`, `/api/scheduled/`, `/api/gateway/` and their matching internal service prefixes. For these requests, Auth SQL must require an API permission definition owned by `SYSTEM`; a tenant cannot create and grant an identically named custom resource to override a platform security boundary. Tenant-defined custom API permissions remain available in non-reserved route namespaces, scoped to the verified tenant/application/year; downstream services must still enforce physical-object authorization.
+
+#### Trusted service-only endpoint configuration boundary
+
+\`peach.satoken.user-context.service-token-only-endpoints\` now accepts **an explicit HTTP method and an exactly equal canonical Servlet URI**. \`ANY\`, Ant \`*\`/\`**\` patterns, URI templates, encoded paths, and traversal segments cannot activate the privileged service-only channel. This setting only bypasses legacy USER_PROFILE cache restoration; it never bypasses Same-Token or Auth's actual end-user token and database member-version validation. Regression tests cover overly broad Nacos route configuration.

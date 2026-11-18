@@ -30,6 +30,35 @@ class UserContextServiceTokenOnlyTest {
     }
 
     @Test
+    void shouldMatchOnlyExplicitServiceMethodsAndCanonicalPaths() {
+        UserContextProperties props = new UserContextProperties();
+        props.setServiceTokenOnlyEndpoints(List.of(
+                SatokenEndpointRule.of("POST", "/auth/external/iam/check-api"),
+                SatokenEndpointRule.of("POST", "/auth/external/iam/context")));
+        UserContextFilter filter = new UserContextFilter(props, mock(UserContextSupport.class));
+
+        assertThat(filter.isServiceTokenOnly("POST", "/auth/external/iam/check-api")).isTrue();
+        assertThat(filter.isServiceTokenOnly("GET", "/auth/external/iam/check-api")).isFalse();
+        assertThat(filter.isServiceTokenOnly("POST", "/auth/external/iam/context")).isTrue();
+        assertThat(filter.isServiceTokenOnly("POST", "/auth/external/iam/check-api/other")).isFalse();
+        assertThat(filter.isServiceTokenOnly("POST", "/auth/external/iam/%63heck-api")).isFalse();
+        assertThat(filter.isServiceTokenOnly("POST", "/auth/external/iam/../check-api")).isFalse();
+    }
+
+    @Test
+    void shouldNeverExpandServiceOnlyBoundaryFromAnyOrWildcardConfiguration() {
+        UserContextProperties props = new UserContextProperties();
+        props.setServiceTokenOnlyEndpoints(List.of(
+                SatokenEndpointRule.any("/**"),
+                SatokenEndpointRule.of("POST", "/auth/external/iam/**"),
+                SatokenEndpointRule.of("POST", "/auth/external/iam/{action}")));
+        UserContextFilter filter = new UserContextFilter(props, mock(UserContextSupport.class));
+
+        assertThat(filter.isServiceTokenOnly("POST", "/auth/external/iam/check-api")).isFalse();
+        assertThat(filter.isServiceTokenOnly("GET", "/api/files/private")).isFalse();
+    }
+
+    @Test
     void shouldRejectUntrustedServiceWithoutLoadingLegacyUserProfile() throws Exception {
         UserContextProperties properties = new UserContextProperties();
         properties.setServiceTokenOnlyEndpoints(List.of(
