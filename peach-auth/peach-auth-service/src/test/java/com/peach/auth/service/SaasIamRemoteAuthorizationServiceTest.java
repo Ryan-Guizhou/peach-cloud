@@ -45,6 +45,8 @@ class SaasIamRemoteAuthorizationServiceTest {
 
     @Test
     void shouldQueryApiPermissionWithinVerifiedTenantMemberApplicationAndYear() {
+        when(grantDao.selectVisibleApiCodes("tenant", "app", "GET"))
+                .thenReturn(List.of("GET:/api/documents"));
         when(grantDao.selectApiGrants("tenant", "member", "app", 2026,
                 "GET:/api/documents")).thenReturn(List.of(new RoleScopeGrantVO()));
         SaasIamPermissionDecisionVO decision =
@@ -58,6 +60,8 @@ class SaasIamRemoteAuthorizationServiceTest {
 
     @Test
     void shouldDenyPermissionNotFoundWithoutLegacyScopeFallback() {
+        when(grantDao.selectVisibleApiCodes("tenant", "app", "DELETE"))
+                .thenReturn(List.of("DELETE:/api/documents"));
         assertThat(service.hasApiPermission("real-user-token", "DELETE:/api/documents")).isFalse();
         verify(grantDao).selectApiGrants("tenant", "member", "app", 2026,
                 "DELETE:/api/documents");
@@ -69,6 +73,7 @@ class SaasIamRemoteAuthorizationServiceTest {
         assertThat(service.hasApiPermission("real-user-token", "GET:/api/../admin")).isFalse();
         assertThat(service.hasApiPermission("real-user-token", "GET:/api/hello?admin=1")).isFalse();
         assertThat(service.hasApiPermission("real-user-token", "GET:/api/**")).isFalse();
+        assertThat(service.hasApiPermission("real-user-token", "GET:/api/%2e%2e/admin")).isFalse();
         assertThat(service.hasApiPermission("real-user-token", "")).isFalse();
         verifyNoInteractions(grantDao);
     }
@@ -79,6 +84,28 @@ class SaasIamRemoteAuthorizationServiceTest {
         assertThatThrownBy(() -> service.hasApiPermission("revoked", "GET:/api/documents"))
                 .isInstanceOf(SecurityException.class);
         verifyNoInteractions(grantDao);
+    }
+
+    @Test
+    void shouldAuthorizeOnlyMostSpecificRegisteredApiTemplate() {
+        when(grantDao.selectVisibleApiCodes("tenant", "app", "GET"))
+                .thenReturn(List.of("GET:/api/users/{id}", "GET:/api/users/secret"));
+        when(grantDao.selectApiGrants("tenant", "member", "app", 2026,
+                "GET:/api/users/{id}")).thenReturn(List.of(new RoleScopeGrantVO()));
+
+        assertThat(service.hasApiPermission("real-user-token", "GET:/api/users/123")).isTrue();
+        assertThat(service.hasApiPermission("real-user-token", "GET:/api/users/secret")).isFalse();
+        verify(grantDao).selectApiGrants("tenant", "member", "app", 2026,
+                "GET:/api/users/secret");
+    }
+
+    @Test
+    void shouldDenyIncompleteOrAmbiguousCatalogWithoutGrantLookup() {
+        when(grantDao.selectVisibleApiCodes("tenant", "app", "GET"))
+                .thenReturn(List.of("GET:/api/{kind}/preview", "GET:/api/files/{id}"));
+        assertThat(service.hasApiPermission("real-user-token", "GET:/api/files/preview")).isFalse();
+        verify(grantDao, never()).selectApiGrants(
+                anyString(), anyString(), anyString(), anyInt(), anyString());
     }
 
     @Test

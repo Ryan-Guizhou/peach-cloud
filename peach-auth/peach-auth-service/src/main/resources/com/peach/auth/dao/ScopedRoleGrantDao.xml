@@ -34,6 +34,19 @@
           AND B.STATUS = 'ACTIVE' AND B.IS_DELETE = 0
           AND P.PERMISSION_CODE = #{permissionCode}
     </select>
+    <select id="selectVisibleApiCodes" resultType="java.lang.String">
+        SELECT DISTINCT P.PERMISSION_CODE
+        FROM PEACH_PERMISSION_DEFINITION P
+        WHERE P.RESOURCE_TYPE = 'API'
+          AND P.STATUS = 'ACTIVE' AND P.IS_DELETE = 0
+          AND (P.APP_REF_ID IS NULL OR P.APP_REF_ID = #{appRefId})
+          AND ((P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL)
+              OR (P.OWNER_TYPE = 'TENANT' AND P.TENANT_REF_ID = #{tenantRefId}))
+          AND P.PERMISSION_CODE LIKE CONCAT(#{method}, ':/%')
+        ORDER BY P.PERMISSION_CODE
+        LIMIT 513
+    </select>
+
     <select id="selectApiGrants" resultType="com.peach.auth.vo.RoleScopeGrantVO">
         SELECT B.ID AS bindingRefId, B.ROLE_REF_ID AS roleRefId,
                B.SCOPE_TYPE AS scopeType, B.SCOPE_REF_ID AS scopeRefId,

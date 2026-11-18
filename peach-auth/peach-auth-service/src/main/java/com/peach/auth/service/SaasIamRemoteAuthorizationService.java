@@ -9,13 +9,8 @@ import com.peach.auth.vo.SaasIamContextVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * 受信服务间 SaaS 权限事实查询：先重新验证 Token 与成员版本，再查当前动作。
@@ -31,9 +26,6 @@ import java.util.regex.Pattern;
 @Service
 @RequiredArgsConstructor
 public class SaasIamRemoteAuthorizationService {
-
-    private static final Set<String> METHODS = Set.of("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD");
-    private static final Pattern PATH = Pattern.compile("^/[A-Za-z0-9_./{}-]+$");
 
     private final TenantSessionService sessionService;
 
@@ -67,7 +59,14 @@ public class SaasIamRemoteAuthorizationService {
     @Transactional(readOnly = true)
     public SaasIamPermissionDecisionVO decideApiPermission(String subjectToken, String permissionCode) {
         TenantSessionContext context = sessionService.requireForToken(subjectToken);
-        String code = normalizedCode(permissionCode);
+        String requestCode = ApiPermissionRouteMatcher.normalizeRequestCode(permissionCode);
+        if (requestCode == null) {
+            return new SaasIamPermissionDecisionVO(false);
+        }
+        String method = requestCode.substring(0, requestCode.indexOf(':'));
+        List<String> catalog = grantDao.selectVisibleApiCodes(
+                context.tenantRefId(), context.appRefId(), method);
+        String code = ApiPermissionRouteMatcher.resolve(requestCode, catalog);
         if (code == null) {
             return new SaasIamPermissionDecisionVO(false);
         }
@@ -97,21 +96,4 @@ public class SaasIamRemoteAuthorizationService {
                 context.memberVersion(), context.authVersion());
     }
 
-    private String normalizedCode(String permissionCode) {
-        if (!StringUtils.hasText(permissionCode) || permissionCode.length() > 128) {
-            return null;
-        }
-        int colon = permissionCode.indexOf(':');
-        if (colon < 1 || colon == permissionCode.length() - 1) {
-            return null;
-        }
-        String method = permissionCode.substring(0, colon).toUpperCase(Locale.ROOT);
-        String path = permissionCode.substring(colon + 1);
-        if (!METHODS.contains(method) || !PATH.matcher(path).matches()
-                || path.contains("//") || path.contains("/../") || path.endsWith("/..")
-                || path.contains("/./") || path.endsWith("/.")) {
-            return null;
-        }
-        return method + ":" + path;
-    }
 }

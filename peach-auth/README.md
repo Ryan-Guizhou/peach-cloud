@@ -275,3 +275,7 @@ sequenceDiagram
 #### 内部目录最小批量查询（#209）
 
 新增 `POST /auth/external/iam/directory/members` 与 `POST /auth/external/iam/directory/organizations`，请求只包含物理主键数组 `{"ids":["<物理主键>"]}`（最多 100 条、禁止重复）。调用仍强制 Same-Token 与当前真实用户 Token，并分别要求成员完整租户管理权限 `TENANT.MEMBER.MANAGE`、机构完整租户管理权限 `TENANT.ORG.MANAGE`。MyBatis 直接按已验证 `tenantRefId` 查询并联结有效租户/用户或有效租户/机构，跨租户及删除/停用对象不返回；结果仅包含成员 `id/memberId/userRefId`、机构 `id/orgId/parentOrgRefId`，无姓名、邮箱、密码摘要。Feign 依赖失败时抛出安全异常，不把服务异常伪装成“结果为空”。调用者不应将结果用于代替 #207 行级授权。
+
+### API 路由资源目录解析（#209 增量）
+
+认证服务现在先从**当前租户和应用的完整有效 API 权限目录**读取最多 513 条匹配当前 HTTP 方法的资源码（超过 512 条立即拒绝），再解析唯一最具体的 `METHOD:/path` 资源，最后才核验角色绑定；不会先过滤成当前角色权限再匹配模板。支持精确路径与整段变量 `{id}`（例如 `GET:/api/users/{id}`），精确路径优先；同等具体度的多个模板产生歧义时拒绝。拒绝 `*`、`**`、内联正则、编码路径、双斜杠及遍历路径，且不允许跨 HTTP 方法或跨路径段匹配。所有目录均受物理租户、应用、系统/租户归属、`ACTIVE` 与逻辑删除条件约束。该路由解析只解决粗粒度 API 动作，不等价于业务对象行/字段权限，也不自动初始化 API 资源目录；没有注册的路由仍会拒绝。
