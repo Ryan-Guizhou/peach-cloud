@@ -30,8 +30,17 @@ public class GatewaySecurityEndpointMatcher {
         }
         String normalizedMethod = normalizeMethod(method);
         String normalizedPath = normalizePath(path);
+        // 平台初始化和 SaaS 授权管理绝不能因为配置失误成为匿名接口。
+        if (isProtectedIamEndpoint(normalizedPath)) {
+            return false;
+        }
         for (GatewaySecurityEndpointRule rule : rules) {
             if (rule == null || isBlank(rule.getPath())) {
+                continue;
+            }
+            // 禁止用非 OPTIONS 的 /** 全局匿名规则关闭网关防线。
+            if ("/**".equals(normalizePath(rule.getPath()))
+                    && !"OPTIONS".equals(normalizeMethod(rule.getMethod()))) {
                 continue;
             }
             if (methodMatches(rule.getMethod(), normalizedMethod)
@@ -40,6 +49,17 @@ public class GatewaySecurityEndpointMatcher {
             }
         }
         return false;
+    }
+
+    /**
+     * 即使远程配置出现宽泛白名单，IAM 管理入口也不能匿名放行。
+     */
+    private boolean isProtectedIamEndpoint(String path) {
+        return "/auth/init".equals(path) || "/api/auth/init".equals(path)
+                || path.startsWith("/auth/saas/")
+                || "/auth/saas".equals(path)
+                || path.startsWith("/api/auth/saas/")
+                || "/api/auth/saas".equals(path);
     }
 
     /**
