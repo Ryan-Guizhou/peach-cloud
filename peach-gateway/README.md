@@ -247,3 +247,7 @@ git diff --check -- peach-gateway
 #### 登录初始化与平台初始化的语义区分
 
 经核实 `LoginController.init()` 实际只调用 `IUserService.initLogin()` 读取登录页配置与 RSA 公钥，**不会创建租户或管理员**；它是未登录用户完成登录的前置能力。因此仅将 `POST /auth/init`、`POST /api/auth/init` 作为明确方法和精确路径的匿名入口恢复。所有 `/auth/saas/**` 和 `/auth/external/iam/**` 管理或内部受信接口仍不可匿名，`GET /auth/init` 也不放行。此修正只恢复登录所需的公开读取，不等于允许任意设置项对外泄露；登录配置内容白名单和生产值集检查仍须在 #220/#211 联调确认。
+
+#### 外部内部凭证头隔离（#208）
+
+`GatewayRequestGlobalFilter` 在其他授权与路由处理前移除客户端提供的 `SaSameUtil.SAME_TOKEN` 和 `X-Peach-Subject-Token`，同时重建可信请求 ID；不剥离真实用户的 `Authorization`。只有通过认证、授权的受保护请求才可由 `GatewaySameTokenGlobalFilter` 按当前服务配置注入 Same-Token；网关自行调用 Auth 的 IAM 验证器只在内部专用 HTTP 客户端设置真实最终用户 Token 和服务 Same-Token。即使客户端将这两个内部头送到公开端点，也不会转发到业务服务。生产部署仍须对 Auth 实例进行网络访问控制与 TLS 防护，不能把请求头清理当作唯一隔离机制。

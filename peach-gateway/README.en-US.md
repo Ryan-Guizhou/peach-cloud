@@ -248,3 +248,7 @@ Non-OPTIONS entries in `peach.gateway.satoken.public-endpoints` now require an *
 #### Login bootstrap is not platform provisioning
 
 Source inspection confirms that `LoginController.init()` only calls `IUserService.initLogin()` to read login-page configuration and the RSA public key; it does **not** create tenant or administrator accounts. Anonymous callers must be able to obtain this data before authenticating. Only the exact `POST /auth/init` and `POST /api/auth/init` routes are therefore restored to the public allowlist; `GET /auth/init` is not public, and `/auth/saas/**` and `/auth/external/iam/**` remain protected or internal-only. This restores the verified login-bootstrap contract; review of exposed login value-set keys and production settings remains part of #220/#211 verification.
+
+#### Strip untrusted internal identity headers at ingress (#208)
+
+Before authorization or routing, `GatewayRequestGlobalFilter` removes client-supplied `SaSameUtil.SAME_TOKEN` and `X-Peach-Subject-Token` and regenerates the trusted request ID, while preserving the actual end-user `Authorization` header. Only authenticated, authorized protected calls may obtain a newly generated Same-Token from `GatewaySameTokenGlobalFilter`; the gateway's private IAM HTTP client supplies the real subject token and service credential only to Auth. Both spoofed headers are removed even for public endpoints. Production must still enforce network access controls and TLS for Auth; header sanitization is not a substitute for network isolation.
