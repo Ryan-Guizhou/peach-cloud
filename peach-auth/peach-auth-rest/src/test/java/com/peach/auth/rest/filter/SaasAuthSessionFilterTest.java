@@ -75,7 +75,7 @@ class SaasAuthSessionFilterTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
         when(sessionService.requireCurrent()).thenReturn(
-                new TenantSessionContext("user", "tenant", "member", "app", 2026, 2, 7));
+                new TenantSessionContext("user", "tenant", "member", "app", 2, 7));
 
         try (MockedStatic<SaSameUtil> same = mockStatic(SaSameUtil.class);
              MockedStatic<StpUtil> login = mockStatic(StpUtil.class)) {
@@ -96,7 +96,7 @@ class SaasAuthSessionFilterTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
         when(sessionService.requireCurrent()).thenReturn(
-                new TenantSessionContext("user", "tenant", "member", "app", 2026, 2, 7));
+                new TenantSessionContext("user", "tenant", "member", "app", 2, 7));
 
         try (MockedStatic<SaSameUtil> same = mockStatic(SaSameUtil.class);
              MockedStatic<StpUtil> login = mockStatic(StpUtil.class)) {

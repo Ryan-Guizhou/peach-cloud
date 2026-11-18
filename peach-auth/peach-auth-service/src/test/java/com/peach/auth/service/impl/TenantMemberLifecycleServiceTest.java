@@ -103,7 +103,7 @@ class TenantMemberLifecycleServiceTest {
                 .thenReturn(member("existing-member", "LEFT", 1, 3L));
         when(memberDao.restore("existing-member", "tenant", 3L)).thenReturn(1);
         when(memberAuthVersionDao.incrementForMember("tenant", "existing-member")).thenReturn(1);
-        when(auditDao.append(anyString(), eq("tenant"), isNull(), isNull(),
+        when(auditDao.append(anyString(), eq("tenant"), isNull(),
                 eq("existing-member"), eq("existing-member"), eq("MEMBER_REJOIN"),
                 eq(0L), eq(1L))).thenReturn(1);
         when(invitationDao.accept("invitation", "tenant", "user", 1L)).thenReturn(1);
@@ -131,7 +131,7 @@ class TenantMemberLifecycleServiceTest {
         when(memberDao.selectByUserAndTenant("tenant", "user"))
                 .thenReturn(member("member-id", "ACTIVE", 0, 4L));
         when(memberAuthVersionDao.incrementForMember("tenant", "member-id")).thenReturn(1);
-        when(auditDao.append(anyString(), eq("tenant"), isNull(), isNull(),
+        when(auditDao.append(anyString(), eq("tenant"), isNull(),
                 eq("member-id"), eq("member-id"), eq("MEMBER_LEFT"), eq(0L), eq(1L)))
                 .thenReturn(1);
         when(memberDao.softDelete("member-id", "tenant", 4L, "user")).thenReturn(1);
