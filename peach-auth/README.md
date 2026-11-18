@@ -351,3 +351,9 @@ sequenceDiagram
 `SaasLoginSnapshotService` 在登录和切换租户后再次验证当前 Token 专属 `userRefId/tenantRefId/memberRefId/appRefId/year/memberVersion/authVersion`，再由 `SaasLoginSnapshotDao` **一次有界查询（最大 1024 条，超出拒绝）**取得相同成员角色绑定的有效角色和权限事实。仅显式授权的 MENU 权限、并且 `PEACH_SAAS_UI_RESOURCE.PERMISSION_REF_ID` 指向对应有效 MENU 权限物理 ID 时，才下发 `menuList/routerList`；不再返回固定空快照，也不借用旧 FISCAL 角色与旧缓存。API/BUTTON 编码分别下发用于前端展示；**后端 API、行级和字段级实际授权仍须每个请求重新验证**，不能把浏览器快照当成访问凭证。
 
 受信 UI 目录要求准确路径、组件标识与物理权限一一对应，同一个前端路径指向不同权限定义时全部拒绝；无权限则返回空列表，前端仍进入 `/no-access`。开发用 `sql/INIT.sql` 注册工作台/角色/授权三项 MENU，不代表自动为生产库授权。部署必须同步执行单表 `sql/PEACH_SAAS_UI_RESOURCE.sql` 和聚合 `ALL_TABLE_CREATE.sql` 对应 DDL，并完成数据库与网关联调，真实环境验收仍跟踪 #211。
+
+### #227 SaaS 租户角色与可委派权限分页目录
+
+`SaasRoleCatalogController` 提供受保护的 `GET /auth/saas/roles/catalog/{roles,permissions,members,organizations}` 分页接口，以及 `roles/{roleRefId}/permissions` 和 `members/{memberRefId}/bindings` 的当前授权明细。全部位于 Auth `SaasAuthSessionFilter` 保护范围；**先验 Same-Token、当前用户登录态及成员/授权版本，再强制完整 TENANT 范围 `TENANT.ROLE.MANAGE`**。分页最多 50 条、页码最多 1000，角色权限与成员绑定最多 200 条。仅展示成员的物理 ID/永久业务成员 ID，不返回电话、邮箱、证件、密码等敏感字段。可委派权限仅返回当前管理员通过完整租户作用域角色实际持有且 `DELEGABLE=1` 的有效定义，真正的写入仍由领域服务事务化二次校验。
+
+`sql/INIT.sql` 仅为开发管理员注册六个明确 GET API 规则并授予其年度角色，**不加入匿名白名单**。此前 #211 未实现的目录读链路已进入开发；真实 MySQL/Nacos/网关联调仍须单独完成。

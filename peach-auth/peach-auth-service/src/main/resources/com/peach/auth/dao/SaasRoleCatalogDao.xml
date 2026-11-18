@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.SaasRoleCatalogDao">
+
+    <select id="selectRoles" resultType="com.peach.auth.vo.SaasCatalogEntryVO">
+        SELECT R.ID AS id, R.ROLE_CODE AS code, R.ROLE_NAME AS name
+        FROM PEACH_ROLE R
+        WHERE R.TENANT_REF_ID = #{tenantRefId}
+          AND R.APP_REF_ID = #{appRefId} AND R.AUTH_YEAR = #{year}
+          AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+          AND (#{keyword} = '' OR R.ROLE_CODE LIKE CONCAT('%', #{keyword}, '%')
+              OR R.ROLE_NAME LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY R.ROLE_CODE, R.ID
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectDelegablePermissions" resultType="com.peach.auth.vo.SaasCatalogEntryVO">
+        SELECT P.ID AS id, P.PERMISSION_CODE AS code,
+               P.PERMISSION_NAME AS name, P.RESOURCE_TYPE AS resourceType
+        FROM PEACH_PERMISSION_DEFINITION P
+        WHERE P.DELEGABLE = 1 AND P.STATUS = 'ACTIVE' AND P.IS_DELETE = 0
+          AND (P.APP_REF_ID IS NULL OR P.APP_REF_ID = #{appRefId})
+          AND ((P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL)
+              OR (P.OWNER_TYPE = 'TENANT' AND P.TENANT_REF_ID = #{tenantRefId}))
+          AND (#{keyword} = '' OR P.PERMISSION_CODE LIKE CONCAT('%', #{keyword}, '%')
+              OR P.PERMISSION_NAME LIKE CONCAT('%', #{keyword}, '%'))
+          AND EXISTS (
+              SELECT 1
+              FROM PEACH_MEMBER_ROLE_BINDING B
+              INNER JOIN PEACH_ROLE R ON R.ID = B.ROLE_REF_ID
+                  AND R.TENANT_REF_ID = B.TENANT_REF_ID
+                  AND R.APP_REF_ID = B.APP_REF_ID AND R.AUTH_YEAR = B.AUTH_YEAR
+                  AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+              INNER JOIN PEACH_ROLE_PERMISSION RP ON RP.ROLE_REF_ID = R.ID
+                  AND RP.PERMISSION_REF_ID = P.ID
+                  AND RP.TENANT_REF_ID = B.TENANT_REF_ID
+                  AND RP.STATUS = 'ACTIVE' AND RP.IS_DELETE = 0
+              WHERE B.MEMBER_REF_ID = #{memberRefId}
+                AND B.TENANT_REF_ID = #{tenantRefId}
+                AND B.APP_REF_ID = #{appRefId} AND B.AUTH_YEAR = #{year}
+                AND B.SCOPE_TYPE = 'TENANT' AND B.SCOPE_REF_ID IS NULL
+                AND B.STATUS = 'ACTIVE' AND B.IS_DELETE = 0
+          )
+        ORDER BY P.PERMISSION_CODE, P.ID
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectMembers" resultType="com.peach.auth.vo.SaasCatalogEntryVO">
+        SELECT M.ID AS id, M.MEMBER_ID AS code
+        FROM PEACH_TENANT_MEMBER M
+        WHERE M.TENANT_REF_ID = #{tenantRefId}
+          AND M.STATUS = 'ACTIVE' AND M.IS_DELETE = 0
+          AND (#{keyword} = '' OR M.MEMBER_ID LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY M.MEMBER_ID, M.ID
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectOrganizations" resultType="com.peach.auth.vo.SaasCatalogEntryVO">
+        SELECT O.ID AS id, O.ORG_CODE AS code, O.ORG_NAME AS name
+        FROM PEACH_ORGANIZATION O
+        INNER JOIN PEACH_TENANT T ON T.TENANT_ID = O.TENANT_ID
+            AND T.ID = #{tenantRefId}
+            AND T.STATUS = 'ENABLE' AND T.IS_DELETE = 0
+        WHERE O.STATUS = 'ENABLE' AND O.IS_DELETE = 0
+          AND (#{keyword} = '' OR O.ORG_CODE LIKE CONCAT('%', #{keyword}, '%')
+              OR O.ORG_NAME LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY O.ORG_CODE, O.ID
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectRolePermissionRefs" resultType="java.lang.String">
+        SELECT RP.PERMISSION_REF_ID
+        FROM PEACH_ROLE R
+        INNER JOIN PEACH_ROLE_PERMISSION RP ON RP.ROLE_REF_ID = R.ID
+            AND RP.TENANT_REF_ID = R.TENANT_REF_ID
+            AND RP.STATUS = 'ACTIVE' AND RP.IS_DELETE = 0
+        INNER JOIN PEACH_PERMISSION_DEFINITION P ON P.ID = RP.PERMISSION_REF_ID
+            AND P.STATUS = 'ACTIVE' AND P.IS_DELETE = 0
+            AND (P.APP_REF_ID IS NULL OR P.APP_REF_ID = R.APP_REF_ID)
+            AND ((P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL)
+                OR (P.OWNER_TYPE = 'TENANT' AND P.TENANT_REF_ID = R.TENANT_REF_ID))
+        WHERE R.ID = #{roleRefId}
+          AND R.TENANT_REF_ID = #{tenantRefId}
+          AND R.APP_REF_ID = #{appRefId} AND R.AUTH_YEAR = #{year}
+          AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+          AND R.ROLE_TYPE = 'TENANT'
+        ORDER BY RP.PERMISSION_REF_ID
+        LIMIT 201
+    </select>
+
+    <select id="selectMemberBindings" resultType="com.peach.auth.vo.SaasCatalogEntryVO">
+        SELECT B.ID AS id, R.ID AS roleRefId, R.ROLE_NAME AS name,
+               B.SCOPE_TYPE AS scopeType, B.SCOPE_REF_ID AS scopeRefId
+        FROM PEACH_MEMBER_ROLE_BINDING B
+        INNER JOIN PEACH_TENANT_MEMBER M ON M.ID = B.MEMBER_REF_ID
+            AND M.TENANT_REF_ID = B.TENANT_REF_ID
+            AND M.STATUS = 'ACTIVE' AND M.IS_DELETE = 0
+        INNER JOIN PEACH_ROLE R ON R.ID = B.ROLE_REF_ID
+            AND R.TENANT_REF_ID = B.TENANT_REF_ID
+            AND R.APP_REF_ID = B.APP_REF_ID AND R.AUTH_YEAR = B.AUTH_YEAR
+            AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+        WHERE B.TENANT_REF_ID = #{tenantRefId}
+          AND B.APP_REF_ID = #{appRefId} AND B.AUTH_YEAR = #{year}
+          AND B.MEMBER_REF_ID = #{memberRefId}
+          AND B.STATUS = 'ACTIVE' AND B.IS_DELETE = 0
+        ORDER BY B.ID
+        LIMIT 201
+    </select>
+</mapper>
