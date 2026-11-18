@@ -47,13 +47,10 @@ public final class SaTokenConstant {
     /** 当前 Token Session 中保存的机构 ID。 */
     public static final String TOKEN_SESSION_ORG_ID = "peach:context:orgId";
 
-    /** 当前 Token Session 中保存的会计期间。 */
-    public static final String TOKEN_SESSION_FISCAL = "peach:context:fiscal";
-
     /** 当前 Token Session 的上下文版本。 */
     public static final String TOKEN_SESSION_CONTEXT_VERSION = "peach:context:version";
 
-    /** SaaS 成员独立应用/年度/权限版本的 API 授权 Redis Set key 前缀。 */
+    /** SaaS 成员独立应用和权限版本的 API 授权 Redis Set key 前缀。 */
     public static final String MEMBER_API_RESOURCE_CACHE_PREFIX = "peach:security:member:api-resources:";
 
     /**
@@ -65,20 +62,18 @@ public final class SaTokenConstant {
      * @param tenantRefId 当前租户物理主键
      * @param memberRefId 当前成员物理主键
      * @param appRefId 当前应用物理主键
-     * @param year 自然年度
      * @param memberVersion 当前成员生命周期版本
      * @param authVersion 当前成员授权版本
      * @return 命名空间隔离的 Redis 授权缓存键
      */
     public static String memberApiResourceCacheKey(String tenantRefId, String memberRefId,
-                                                   String appRefId, int year,
-                                                   long memberVersion, long authVersion) {
+                                                   String appRefId, long memberVersion, long authVersion) {
         if (blank(tenantRefId) || blank(memberRefId) || blank(appRefId)
-                || year < 1 || year > 9999 || memberVersion < 0 || authVersion < 0) {
+                || memberVersion < 0 || authVersion < 0) {
             throw new IllegalArgumentException("Verified member authorization context is required");
         }
         return MEMBER_API_RESOURCE_CACHE_PREFIX + tenantRefId + ":" + memberRefId + ":"
-                + appRefId + ":" + year + ":" + memberVersion + ":" + authVersion;
+                + appRefId + ":" + memberVersion + ":" + authVersion;
     }
 
     private static boolean blank(String value) {
@@ -89,16 +84,15 @@ public final class SaTokenConstant {
     public static final String USER_API_RESOURCE_CACHE_PREFIX = "peach:security:user:api-resources:";
 
     /**
-     * 构建按用户、租户、机构和会计期间隔离的 API 资源缓存 Key。
+     * 构建按用户、租户和机构隔离的 API 资源缓存 Key。
      *
      * @param userId 用户 ID
      * @param tenantId 租户 ID
      * @param orgId 机构 ID
-     * @param fiscal 会计期间
      * @return API 资源缓存 Key
      */
-    public static String userApiResourceCacheKey(String userId, String tenantId, String orgId, String fiscal) {
+    public static String userApiResourceCacheKey(String userId, String tenantId, String orgId) {
         return USER_API_RESOURCE_CACHE_PREFIX + userId + ":" + tenantId + ":" + orgId + ":"
-                + (fiscal == null ? "" : fiscal);
+                + "v2";
     }
 }

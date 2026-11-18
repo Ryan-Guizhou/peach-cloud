@@ -101,8 +101,7 @@ public class LoginPermissionCacheRefresher {
         String userId = userVO.getUserId();
         String profileKey = SatokenConstant.USER_PROFILE_CACHE_PREFIX + userId;
         String apiKey = SaTokenConstant.userApiResourceCacheKey(
-                userId, currentUserOrg.getTenantId(), currentUserOrg.getOrgId(),
-                "");
+                userId, currentUserOrg.getTenantId(), currentUserOrg.getOrgId());
         String legacyApiKey = SaTokenConstant.USER_API_RESOURCE_CACHE_PREFIX + userId;
         String buttonKey = "peach:security:user:button-resources:" + userId;
         stringRedisTemplate.delete(profileKey);

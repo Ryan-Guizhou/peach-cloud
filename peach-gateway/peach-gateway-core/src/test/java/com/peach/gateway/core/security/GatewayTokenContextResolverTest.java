@@ -25,7 +25,7 @@ class GatewayTokenContextResolverTest {
         SaSession session = new SaSession("legacy");
         session.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, "TENANT_BIZ");
         session.set(SaTokenConstant.TOKEN_SESSION_ORG_ID, "ORG_BIZ");
-        session.set(SaTokenConstant.TOKEN_SESSION_FISCAL, "2026");
+        session.set("peach:context:fiscal", "obsolete");
         assertThat(resolver.toContext(session).blockOptional()).isEmpty();
     }
 
@@ -75,11 +75,11 @@ class GatewayTokenContextResolverTest {
     @Test
     void shouldUseVersionedMemberCacheKeyWithoutReusingFiscalKeys() {
         String key = SaTokenConstant.memberApiResourceCacheKey(
-                "tenant", "member", "app", 2026, 3, 7);
-        assertThat(key).contains("tenant:member:app:2026:3:7")
+                "tenant", "member", "app", 3, 7);
+        assertThat(key).contains("tenant:member:app:3:7")
                 .doesNotContain("fiscal");
         assertThat(SaTokenConstant.memberApiResourceCacheKey(
-                "tenant", "member", "app", 2026, 3, 8)).isNotEqualTo(key);
+                "tenant", "member", "app", 3, 8)).isNotEqualTo(key);
     }
 
     private static Map<String, String> validContext() {
