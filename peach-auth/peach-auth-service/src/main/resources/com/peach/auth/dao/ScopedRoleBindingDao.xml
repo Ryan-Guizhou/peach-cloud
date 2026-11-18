@@ -34,6 +34,7 @@
         WHERE R.ID = #{roleRefId} AND R.TENANT_REF_ID = #{tenantRefId}
           AND R.APP_REF_ID = #{appRefId}
           AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+          AND R.ROLE_TYPE = 'TENANT'
     </select>
 
     <select id="countActiveRolePermissions" resultType="java.lang.Integer">
@@ -102,6 +103,32 @@
           AND ID = #{id} AND VERSION = #{version}
           AND STATUS = 'ACTIVE' AND IS_DELETE = 0
     </update>
+    <!-- 只有受保护的 SYSTEM 所有者角色参与本校验。 -->
+    <select id="countProtectedOwnerMember" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_MEMBER_ROLE_BINDING B
+        INNER JOIN PEACH_ROLE R ON R.ID = B.ROLE_REF_ID
+            AND R.TENANT_REF_ID = B.TENANT_REF_ID
+            AND R.APP_REF_ID = B.APP_REF_ID
+            AND R.ROLE_CODE = 'ROLE_TENANT_OWNER' AND R.ROLE_TYPE = 'SYSTEM'
+            AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+        WHERE B.TENANT_REF_ID = #{tenantRefId}
+          AND B.MEMBER_REF_ID = #{memberRefId}
+          AND B.STATUS = 'ACTIVE' AND B.IS_DELETE = 0
+    </select>
+
+    <select id="countProtectedOwnerBinding" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_MEMBER_ROLE_BINDING B
+        INNER JOIN PEACH_ROLE R ON R.ID = B.ROLE_REF_ID
+            AND R.TENANT_REF_ID = B.TENANT_REF_ID
+            AND R.APP_REF_ID = B.APP_REF_ID
+            AND R.ROLE_CODE = 'ROLE_TENANT_OWNER' AND R.ROLE_TYPE = 'SYSTEM'
+            AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+        WHERE B.TENANT_REF_ID = #{tenantRefId} AND B.ID = #{bindingRefId}
+          AND B.STATUS = 'ACTIVE' AND B.IS_DELETE = 0
+    </select>
+
     <update id="revokeAllForMember">
         UPDATE PEACH_MEMBER_ROLE_BINDING
         SET STATUS = 'DISABLED', IS_DELETE = 1,

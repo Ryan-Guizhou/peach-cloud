@@ -1,5 +1,6 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.dao.OrganizationHierarchyDao;
 import com.peach.auth.dao.TenantInvitationDao;
 import com.peach.auth.dao.ScopedRoleBindingDao;
 import com.peach.auth.dao.MemberAuthVersionDao;
@@ -46,6 +47,7 @@ class TenantMemberLifecycleServiceTest {
     private ScopedRoleBindingDao roleBindingDao;
     private MemberAuthVersionDao memberAuthVersionDao;
     private IamAuthorizationAuditDao auditDao;
+    private OrganizationHierarchyDao hierarchyDao;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -59,8 +61,11 @@ class TenantMemberLifecycleServiceTest {
         roleBindingDao = mock(ScopedRoleBindingDao.class);
         memberAuthVersionDao = mock(MemberAuthVersionDao.class);
         auditDao = mock(IamAuthorizationAuditDao.class);
+        hierarchyDao = mock(OrganizationHierarchyDao.class);
+        when(hierarchyDao.lockTenantAndFindBusinessId("tenant")).thenReturn("tenant-business");
         service = new TenantMemberLifecycleService(memberDao, invitationDao,
-                businessIdGenerator, provider, roleBindingDao, memberAuthVersionDao, auditDao);
+                businessIdGenerator, provider, roleBindingDao, memberAuthVersionDao, auditDao,
+                hierarchyDao);
     }
 
     @Test

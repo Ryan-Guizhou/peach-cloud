@@ -38,6 +38,12 @@ public interface TenantInvitationDao {
     TenantInvitationDO selectByIdInTenant(@Param("id") String id,
                                           @Param("tenantRefId") String tenantRefId);
 
+    /**
+     * 按受信账号反查其待接受邀请的目标租户，禁止自报 tenantRefId。
+     */
+    String findTenantForVerifiedInvitee(@Param("id") String id,
+                                        @Param("userRefId") String userRefId);
+
     TenantInvitationDO selectPending(@Param("id") String id,
                                       @Param("tenantRefId") String tenantRefId);
 

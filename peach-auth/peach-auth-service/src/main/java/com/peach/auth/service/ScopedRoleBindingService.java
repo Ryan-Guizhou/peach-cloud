@@ -120,6 +120,9 @@ public class ScopedRoleBindingService {
         if (binding == null || !current.appRefId().equals(binding.getAppRefId())) {
             throw new SecurityException("Role binding is outside current session scope");
         }
+        if (bindingDao.countProtectedOwnerBinding(tenantRefId, bindingRefId) > 0) {
+            throw new SecurityException("Tenant owner role cannot be revoked by member administrators");
+        }
         if (operatorMemberRefId.equals(binding.getMemberRefId())) {
             throw new SecurityException("Administrators cannot revoke their own role bindings");
         }

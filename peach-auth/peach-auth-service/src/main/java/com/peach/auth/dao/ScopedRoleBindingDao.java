@@ -96,6 +96,12 @@ public interface ScopedRoleBindingDao {
      * @param memberRefId 成员物理主键
      * @return 被逻辑撤销的有效授权条数
      */
+    int countProtectedOwnerMember(@Param("tenantRefId") String tenantRefId,
+                                   @Param("memberRefId") String memberRefId);
+
+    int countProtectedOwnerBinding(@Param("tenantRefId") String tenantRefId,
+                                    @Param("bindingRefId") String bindingRefId);
+
     int revokeAllForMember(@Param("tenantRefId") String tenantRefId,
                            @Param("memberRefId") String memberRefId);
 }
