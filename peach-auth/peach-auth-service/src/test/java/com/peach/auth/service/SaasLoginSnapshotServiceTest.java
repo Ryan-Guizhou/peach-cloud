@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 class SaasLoginSnapshotServiceTest {
 
     private final TenantSessionContext current =
-            new TenantSessionContext("user-ref", "tenant-ref", "member-ref", "app-ref", 2026, 2, 7);
+            new TenantSessionContext("user-ref", "tenant-ref", "member-ref", "app-ref", 2, 7);
 
     private TenantSessionService sessionService;
     private SaasLoginSnapshotDao dao;

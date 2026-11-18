@@ -55,7 +55,7 @@ class ScopedRoleBindingServiceTest {
         service = new ScopedRoleBindingService(policy, sessionService, permissionService,
                 bindingDao, hierarchyDao, versionDao, auditDao);
         when(sessionService.requireCurrent()).thenReturn(
-                new TenantSessionContext("user", "tenant", "admin", "app", 2026, 0L, 1L));
+                new TenantSessionContext("user", "tenant", "admin", "app", 0L, 1L));
         when(hierarchyDao.lockTenantAndFindBusinessId("tenant")).thenReturn("TENANT_BIZ");
     }
 
@@ -64,7 +64,7 @@ class ScopedRoleBindingServiceTest {
         prepareDelegableRole();
         when(bindingDao.insert(any())).thenReturn(1);
         when(versionDao.incrementForMember("tenant", "target")).thenReturn(1);
-        when(auditDao.append(anyString(), eq("tenant"), eq("app"), eq(2026),
+        when(auditDao.append(anyString(), eq("tenant"), eq("app"),
                 eq("admin"), anyString(), eq("ROLE_GRANT"), eq(7L), eq(8L)))
                 .thenReturn(1);
 
@@ -73,7 +73,7 @@ class ScopedRoleBindingServiceTest {
         verify(policy, times(2)).requireTenantPermission("tenant", "admin", IamPermissionCodes.TENANT_ROLE_MANAGE);
         verify(bindingDao).insert(any());
         verify(versionDao).incrementForMember("tenant", "target");
-        verify(auditDao).append(anyString(), eq("tenant"), eq("app"), eq(2026),
+        verify(auditDao).append(anyString(), eq("tenant"), eq("app"),
                 eq("admin"), eq(bindingRefId), eq("ROLE_GRANT"), eq(7L), eq(8L));
     }
 
@@ -129,7 +129,6 @@ class ScopedRoleBindingServiceTest {
         MemberRoleBindingDO binding = new MemberRoleBindingDO();
         binding.setId("binding-id");
         binding.setAppRefId("app");
-        binding.setAuthYear(2026);
         binding.setMemberRefId("target");
         binding.setRoleRefId("role");
         binding.setVersion(2L);
@@ -137,7 +136,7 @@ class ScopedRoleBindingServiceTest {
         prepareDelegableRole();
         when(bindingDao.revoke("tenant", "binding-id", 2L)).thenReturn(1);
         when(versionDao.incrementForMember("tenant", "target")).thenReturn(1);
-        when(auditDao.append(anyString(), eq("tenant"), eq("app"), eq(2026),
+        when(auditDao.append(anyString(), eq("tenant"), eq("app"),
                 eq("admin"), eq("binding-id"), eq("ROLE_REVOKE"), eq(7L), eq(8L)))
                 .thenReturn(1);
 
@@ -145,17 +144,17 @@ class ScopedRoleBindingServiceTest {
 
         verify(bindingDao).revoke("tenant", "binding-id", 2L);
         verify(versionDao).incrementForMember("tenant", "target");
-        verify(auditDao).append(anyString(), eq("tenant"), eq("app"), eq(2026),
+        verify(auditDao).append(anyString(), eq("tenant"), eq("app"),
                 eq("admin"), eq("binding-id"), eq("ROLE_REVOKE"), eq(7L), eq(8L));
     }
 
     private void prepareDelegableRole() {
         when(bindingDao.lockActiveMember("tenant", "target")).thenReturn(member());
-        when(bindingDao.countActiveRole("tenant", "app", 2026, "role")).thenReturn(1);
+        when(bindingDao.countActiveRole("tenant", "app", "role")).thenReturn(1);
         when(bindingDao.countActiveRolePermissions("tenant", "role")).thenReturn(1);
         when(bindingDao.selectDelegablePermissionCodes("tenant", "app", "role"))
                 .thenReturn(List.of("RESOURCE.VIEW"));
-        when(permissionService.hasTenantPermission("tenant", "admin", "app", 2026, "RESOURCE.VIEW"))
+        when(permissionService.hasTenantPermission("tenant", "admin", "app", "RESOURCE.VIEW"))
                 .thenReturn(true);
     }
 

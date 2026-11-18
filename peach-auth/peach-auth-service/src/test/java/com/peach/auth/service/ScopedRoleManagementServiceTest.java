@@ -55,45 +55,45 @@ class ScopedRoleManagementServiceTest {
         businessIdGenerator = mock(AuthBusinessIdGenerator.class);
         OrganizationHierarchyDao hierarchyDao = mock(OrganizationHierarchyDao.class);
         when(sessionService.requireCurrent()).thenReturn(
-                new TenantSessionContext("user", "tenant", "admin", "app", 2026, 1L, 2L));
+                new TenantSessionContext("user", "tenant", "admin", "app", 1L, 2L));
         when(hierarchyDao.lockTenantAndFindBusinessId("tenant")).thenReturn("TENANT_BIZ");
         service = new ScopedRoleManagementService(policy, sessionService, roleDao,
                 dataPolicyManagementDao, hierarchyDao, permissionService, versionDao, auditDao, businessIdGenerator);
     }
 
     @Test
-    void shouldCreateTenantRoleWithinCurrentAppAndYear() {
+    void shouldCreateTenantRoleWithinCurrentApp() {
         when(businessIdGenerator.next(AuthBusinessIdType.ROLE)).thenReturn("ROLE_00000001");
         when(roleDao.insertRole(any())).thenReturn(1);
-        when(auditDao.append(anyString(), eq("tenant"), eq("app"), eq(2026),
+        when(auditDao.append(anyString(), eq("tenant"), eq("app"),
                 eq("admin"), anyString(), eq("ROLE_CREATE"), eq(0L), eq(0L))).thenReturn(1);
 
         String id = service.createRole("tenant", "admin", "ROLE_EDITOR", "Editor");
 
         assertThat(id).isNotBlank();
         verify(roleDao).insertRole(any());
-        verify(auditDao).append(anyString(), eq("tenant"), eq("app"), eq(2026),
+        verify(auditDao).append(anyString(), eq("tenant"), eq("app"),
                 eq("admin"), eq(id), eq("ROLE_CREATE"), eq(0L), eq(0L));
     }
 
     @Test
     void shouldApplyPermissionDiffAndInvalidateAllOldTenantGrants() {
         RoleDO role = role("TENANT");
-        when(roleDao.lockScopedRole("tenant", "app", 2026, "role")).thenReturn(role);
+        when(roleDao.lockScopedRole("tenant", "app", "role")).thenReturn(role);
         when(roleDao.selectActivePermissionRefs("tenant", "role")).thenReturn(List.of("permission-1"));
         when(roleDao.selectDelegablePermissions(eq("tenant"), eq("app"), any()))
                 .thenReturn(List.of(permission("permission-1", "DOC.VIEW"),
                         permission("permission-2", "DOC.WRITE")));
-        when(permissionService.hasTenantPermission("tenant", "admin", "app", 2026,
+        when(permissionService.hasTenantPermission("tenant", "admin", "app",
                 "DOC.VIEW")).thenReturn(true);
-        when(permissionService.hasTenantPermission("tenant", "admin", "app", 2026,
+        when(permissionService.hasTenantPermission("tenant", "admin", "app",
                 "DOC.WRITE")).thenReturn(true);
         when(roleDao.insertRolePermission(anyString(), eq("tenant"), eq("role"),
                 eq("permission-2"), eq("admin"))).thenReturn(1);
-        when(roleDao.incrementRoleVersion("tenant", "app", 2026, "role", 3L, "admin"))
+        when(roleDao.incrementRoleVersion("tenant", "app", "role", 3L, "admin"))
                 .thenReturn(1);
         when(versionDao.incrementForTenant("tenant")).thenReturn(2);
-        when(auditDao.append(anyString(), eq("tenant"), eq("app"), eq(2026),
+        when(auditDao.append(anyString(), eq("tenant"), eq("app"),
                 eq("admin"), eq("role"), eq("ROLE_PERMISSION_SYNC"), eq(3L), eq(4L)))
                 .thenReturn(1);
 
@@ -102,13 +102,13 @@ class ScopedRoleManagementServiceTest {
         verify(roleDao).insertRolePermission(anyString(), eq("tenant"), eq("role"),
                 eq("permission-2"), eq("admin"));
         verify(versionDao).incrementForTenant("tenant");
-        verify(auditDao).append(anyString(), eq("tenant"), eq("app"), eq(2026),
+        verify(auditDao).append(anyString(), eq("tenant"), eq("app"),
                 eq("admin"), eq("role"), eq("ROLE_PERMISSION_SYNC"), eq(3L), eq(4L));
     }
 
     @Test
     void shouldNeverAllowTenantAdminToMutateSystemRole() {
-        when(roleDao.lockScopedRole("tenant", "app", 2026, "role"))
+        when(roleDao.lockScopedRole("tenant", "app", "role"))
                 .thenReturn(role("SYSTEM"));
         assertThatThrownBy(() -> service.replacePermissions(
                 "tenant", "admin", "role", List.of("permission-1")))
@@ -120,7 +120,7 @@ class ScopedRoleManagementServiceTest {
 
     @Test
     void shouldRejectNonDelegablePermission() {
-        when(roleDao.lockScopedRole("tenant", "app", 2026, "role"))
+        when(roleDao.lockScopedRole("tenant", "app", "role"))
                 .thenReturn(role("TENANT"));
         when(roleDao.selectActivePermissionRefs("tenant", "role")).thenReturn(List.of());
         when(roleDao.selectDelegablePermissions("tenant", "app", List.of("nondelegable")))
@@ -133,26 +133,26 @@ class ScopedRoleManagementServiceTest {
 
     @Test
     void shouldNotAcceptDuplicateIdsOrCrossYearRoles() {
-        when(roleDao.lockScopedRole("tenant", "app", 2026, "role"))
+        when(roleDao.lockScopedRole("tenant", "app", "role"))
                 .thenReturn(role("TENANT"));
         assertThatThrownBy(() -> service.replacePermissions(
                 "tenant", "admin", "role", List.of("same", "same")))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> service.replacePermissions(
-                "tenant", "admin", "another-year-role", List.of("permission")))
+                "tenant", "admin", "another-role", List.of("permission")))
                 .isInstanceOf(SecurityException.class);
     }
 
     @Test
     void shouldRetirePriorFieldAndDataPoliciesOnPermissionRevoke() {
-        when(roleDao.lockScopedRole("tenant", "app", 2026, "role"))
+        when(roleDao.lockScopedRole("tenant", "app", "role"))
                 .thenReturn(role("TENANT"));
         when(roleDao.selectActivePermissionRefs("tenant", "role")).thenReturn(List.of("old"));
         when(roleDao.revokeRolePermission("tenant", "role", "old")).thenReturn(1);
-        when(roleDao.incrementRoleVersion("tenant", "app", 2026, "role", 3L, "admin"))
+        when(roleDao.incrementRoleVersion("tenant", "app", "role", 3L, "admin"))
                 .thenReturn(1);
         when(versionDao.incrementForTenant("tenant")).thenReturn(1);
-        when(auditDao.append(anyString(), eq("tenant"), eq("app"), eq(2026),
+        when(auditDao.append(anyString(), eq("tenant"), eq("app"),
                 eq("admin"), eq("role"), eq("ROLE_PERMISSION_SYNC"), eq(3L), eq(4L)))
                 .thenReturn(1);
         service.replacePermissions("tenant", "admin", "role", List.of());

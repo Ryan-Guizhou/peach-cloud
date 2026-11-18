@@ -41,21 +41,21 @@ class SaasIamRemoteAuthorizationServiceTest {
         grantDao = mock(ScopedRoleGrantDao.class);
         service = new SaasIamRemoteAuthorizationService(sessionService, grantDao);
         when(sessionService.requireForToken("real-user-token")).thenReturn(
-                new TenantSessionContext("user", "tenant", "member", "app", 2026, 2L, 7L));
+                new TenantSessionContext("user", "tenant", "member", "app", 2L, 7L));
     }
 
     @Test
-    void shouldQueryApiPermissionWithinVerifiedTenantMemberApplicationAndYear() {
+    void shouldQueryApiPermissionWithinVerifiedTenantMemberApplication() {
         when(grantDao.selectVisibleApiCodes("tenant", "app", "GET"))
                 .thenReturn(List.of("GET:/api/documents"));
-        when(grantDao.selectApiGrants("tenant", "member", "app", 2026,
+        when(grantDao.selectApiGrants("tenant", "member", "app",
                 "GET:/api/documents", false)).thenReturn(List.of(new RoleScopeGrantVO()));
         SaasIamPermissionDecisionVO decision =
                 service.decideApiPermission("real-user-token", "GET:/api/documents");
         assertThat(decision.isAllowed()).isTrue();
         assertThat(decision.getContext().getMemberRefId()).isEqualTo("member");
         assertThat(decision.getContext().getAuthVersion()).isEqualTo(7L);
-        verify(grantDao).selectApiGrants("tenant", "member", "app", 2026,
+        verify(grantDao).selectApiGrants("tenant", "member", "app",
                 "GET:/api/documents", false);
     }
 
@@ -64,7 +64,7 @@ class SaasIamRemoteAuthorizationServiceTest {
         when(grantDao.selectVisibleApiCodes("tenant", "app", "DELETE"))
                 .thenReturn(List.of("DELETE:/api/documents"));
         assertThat(service.hasApiPermission("real-user-token", "DELETE:/api/documents")).isFalse();
-        verify(grantDao).selectApiGrants("tenant", "member", "app", 2026,
+        verify(grantDao).selectApiGrants("tenant", "member", "app",
                 "DELETE:/api/documents", false);
     }
 
@@ -91,12 +91,12 @@ class SaasIamRemoteAuthorizationServiceTest {
     void shouldAuthorizeOnlyMostSpecificRegisteredApiTemplate() {
         when(grantDao.selectVisibleApiCodes("tenant", "app", "GET"))
                 .thenReturn(List.of("GET:/api/users/{id}", "GET:/api/users/secret"));
-        when(grantDao.selectApiGrants("tenant", "member", "app", 2026,
+        when(grantDao.selectApiGrants("tenant", "member", "app",
                 "GET:/api/users/{id}", false)).thenReturn(List.of(new RoleScopeGrantVO()));
 
         assertThat(service.hasApiPermission("real-user-token", "GET:/api/users/123")).isTrue();
         assertThat(service.hasApiPermission("real-user-token", "GET:/api/users/secret")).isFalse();
-        verify(grantDao).selectApiGrants("tenant", "member", "app", 2026,
+        verify(grantDao).selectApiGrants("tenant", "member", "app",
                 "GET:/api/users/secret", false);
     }
 
@@ -106,7 +106,7 @@ class SaasIamRemoteAuthorizationServiceTest {
                 .thenReturn(List.of("GET:/api/{kind}/preview", "GET:/api/files/{id}"));
         assertThat(service.hasApiPermission("real-user-token", "GET:/api/files/preview")).isFalse();
         verify(grantDao, never()).selectApiGrants(
-                anyString(), anyString(), anyString(), anyInt(), anyString(),
+                anyString(), anyString(), anyString(), anyString(),
                 anyBoolean());
     }
 
@@ -114,12 +114,12 @@ class SaasIamRemoteAuthorizationServiceTest {
     void shouldRequireSystemOwnedPermissionForProtectedAuthRoutes() {
         when(grantDao.selectVisibleApiCodes("tenant", "app", "POST"))
                 .thenReturn(List.of("POST:/api/auth/saas/roles"));
-        when(grantDao.selectApiGrants("tenant", "member", "app", 2026,
+        when(grantDao.selectApiGrants("tenant", "member", "app",
                 "POST:/api/auth/saas/roles", true)).thenReturn(List.of(new RoleScopeGrantVO()));
 
         assertThat(service.hasApiPermission("real-user-token",
                 "POST:/api/auth/saas/roles")).isTrue();
-        verify(grantDao).selectApiGrants("tenant", "member", "app", 2026,
+        verify(grantDao).selectApiGrants("tenant", "member", "app",
                 "POST:/api/auth/saas/roles", true);
     }
 
@@ -129,7 +129,7 @@ class SaasIamRemoteAuthorizationServiceTest {
                 .thenReturn(List.of("POST:/api/auth/saas/roles"));
         assertThat(service.hasApiPermission("real-user-token",
                 "POST:/api/auth/saas/roles")).isFalse();
-        verify(grantDao).selectApiGrants("tenant", "member", "app", 2026,
+        verify(grantDao).selectApiGrants("tenant", "member", "app",
                 "POST:/api/auth/saas/roles", true);
     }
 
@@ -140,10 +140,9 @@ class SaasIamRemoteAuthorizationServiceTest {
         assertThat(result.getTenantRefId()).isEqualTo("tenant");
         assertThat(result.getMemberRefId()).isEqualTo("member");
         assertThat(result.getAppRefId()).isEqualTo("app");
-        assertThat(result.getYear()).isEqualTo(2026);
         assertThat(result.getMemberVersion()).isEqualTo(2L);
         assertThat(result.getAuthVersion()).isEqualTo(7L);
         verify(grantDao, never()).selectApiGrants(
-                anyString(), anyString(), anyString(), anyInt(), anyString(), anyBoolean());
+                anyString(), anyString(), anyString(), anyString(), anyBoolean());
     }
 }

@@ -19,7 +19,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * 只允许真实当前年度的租户管理成员查询最小可委派目录。
+ * 只允许真实当前的租户管理成员查询最小可委派目录。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -30,7 +30,7 @@ class SaasRoleCatalogServiceTest {
     private static final String ROLE_ID = "1234567890abcdef1234567890abcdef";
 
     private final TenantSessionContext context =
-            new TenantSessionContext("user", "tenant", "member", "app", 2026, 2, 7);
+            new TenantSessionContext("user", "tenant", "member", "app", 2, 7);
 
     private TenantSessionService sessionService;
     private ScopedPermissionService permissionService;
@@ -54,12 +54,12 @@ class SaasRoleCatalogServiceTest {
     }
 
     @Test
-    void shouldBoundRolePagesAndUseOnlyCurrentTenantAppYear() {
+    void shouldBoundRolePagesAndUseOnlyCurrentTenantApp() {
         allowManage();
         SaasCatalogEntryVO one = entry("one");
         SaasCatalogEntryVO two = entry("two");
         SaasCatalogEntryVO sentinel = entry("three");
-        when(dao.selectRoles("tenant", "app", 2026, "", 3, 0))
+        when(dao.selectRoles("tenant", "app", "", 3, 0))
                 .thenReturn(List.of(one, two, sentinel));
 
         SaasCatalogPageVO page = catalog.roles(1, 2, null);
@@ -67,19 +67,19 @@ class SaasRoleCatalogServiceTest {
         assertThat(page.getItems()).containsExactly(one, two);
         assertThat(page.isHasMore()).isTrue();
         assertThat(page.getPage()).isEqualTo(1);
-        verify(dao).selectRoles("tenant", "app", 2026, "", 3, 0);
+        verify(dao).selectRoles("tenant", "app", "", 3, 0);
     }
 
     @Test
     void shouldQueryOnlyAdministratorHeldDelegablePermissions() {
         allowManage();
-        when(dao.selectDelegablePermissions("tenant", "app", 2026, "member", "ROLE", 21, 0))
+        when(dao.selectDelegablePermissions("tenant", "app", "member", "ROLE", 21, 0))
                 .thenReturn(List.of(entry("permission")));
 
         SaasCatalogPageVO page = catalog.permissions(1, 20, "ROLE");
 
         assertThat(page.getItems()).hasSize(1);
-        verify(dao).selectDelegablePermissions("tenant", "app", 2026, "member", "ROLE", 21, 0);
+        verify(dao).selectDelegablePermissions("tenant", "app", "member", "ROLE", 21, 0);
     }
 
     @Test
@@ -97,7 +97,7 @@ class SaasRoleCatalogServiceTest {
     @Test
     void shouldFailClosedOnTruncatedRolePermissionList() {
         allowManage();
-        when(dao.selectRolePermissionRefs("tenant", "app", 2026, ROLE_ID))
+        when(dao.selectRolePermissionRefs("tenant", "app", ROLE_ID))
                 .thenReturn(Collections.nCopies(201, ROLE_ID));
 
         assertThatThrownBy(() -> catalog.rolePermissionRefs(ROLE_ID))
@@ -113,8 +113,7 @@ class SaasRoleCatalogServiceTest {
     }
 
     private void allowManage() {
-        when(permissionService.hasTenantPermission("tenant", "member", "app",
-                2026, "TENANT.ROLE.MANAGE")).thenReturn(true);
+        when(permissionService.hasTenantPermission("tenant", "member", "app", "TENANT.ROLE.MANAGE")).thenReturn(true);
     }
 
     private SaasCatalogEntryVO entry(String id) {
