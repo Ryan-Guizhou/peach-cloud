@@ -33,3 +33,5 @@ npm run build
 ### SaaS IAM frontend safety baseline (#210, incremental)
 
 Business routes are built **only from the Auth-provided routerList**; an empty permission/router response no longer activates locally predefined administrator routes. Only server-authorized menu items are displayed. When none are available, a protected `/no-access` page is shown instead of inventing admin access. The default login redirect lands there if no `/workspace` route was granted. Both workspace and admin-layout logout attempt `POST /auth/logout` before always clearing local tokens, dynamic routes and WebSocket connections in `finally`, even if the network fails. This increment does not yet complete the new `year/tenantRefId/memberRefId/appRefId` login contract or tenant selection UI. Keep the PR in Draft until the full #210 scope is implemented.
+
+A server-provided menu without a matching authorized router entry is not displayed through a local component fallback. The current member's `routerList` is the only source of navigable business routes. `fallbackAdminRoutes` is solely a build-time component mapping for an already authorized route, never an independent permission grant.

@@ -108,3 +108,5 @@ npm run preview
 ### SaaS IAM 前端安全基线（#210，增量）
 
 动态业务路由**只来自 Auth 返回的 routerList**：不再因授权路由为空而退回本地预定义管理路由。菜单只有后端返回并匹配的项目，无授权时显示独立的受保护 `/no-access` 页面，不会虚构管理员权限。默认登录跳转在没有 `/workspace` 授权路由时落到该页面。工作台与管理布局的登出都会先尝试 `POST /auth/logout`，即使网络故障也在 `finally` 中清理所有本地 Token、旧动态路由和 WebSocket 会话。该增量尚未完成新的 `year/tenantRefId/memberRefId/appRefId` 登录契约及租户选择 UI，暂保持 Draft，不应作为全部 #210 验收依据。
+
+服务端有菜单但缺少对应授权路由时，前端也不再根据本地组件候选路由推断出可点击的管理菜单；路由的访问事实只来自当前用户的 `routerList`，原 `fallbackAdminRoutes` 仅用于将已授权的路由映射到构建期本地组件，不代表授予资源权限。

@@ -141,7 +141,8 @@ export function buildAdminRoutes(loginInfo: LoginInfo | null): RouteRecordRaw[] 
         meta: {
           title: routerInfo.routerName || fallback?.meta.title || path,
           menuCode: routerInfo.routerCode || fallback?.meta.menuCode || path,
-          permissionCode: fallback?.meta.permissionCode,
+          // 路由是否授权以当前成员服务端下发的 routerList 为准，不从本地菜单规则推断权限。
+          permissionCode: undefined,
         },
       }
     })
@@ -206,7 +207,9 @@ export function buildMenuItems(loginInfo: LoginInfo | null): AdminRouteConfig[] 
       }
     })
     .filter((item): item is AdminRouteConfig => item !== null)
-  return items
+  // 服务器给了菜单但没有给当前成员对应路由时，不能从本地路径猜测出可访问页面。
+  const authorizedPaths = new Set(buildAdminRoutes(loginInfo).map(route => route.path))
+  return items.filter(item => authorizedPaths.has(item.path))
 }
 
 export function buildMenuGroups(loginInfo: LoginInfo | null): AdminMenuGroup[] {
