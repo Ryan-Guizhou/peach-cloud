@@ -104,3 +104,17 @@ npm run preview
 - 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
 - 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
 - README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。
+
+### SaaS IAM 前端安全基线（#210，增量）
+
+动态业务路由**只来自 Auth 返回的 routerList**：不再因授权路由为空而退回本地预定义管理路由。菜单只有后端返回并匹配的项目，无授权时显示独立的受保护 `/no-access` 页面，不会虚构管理员权限。默认登录跳转在没有 `/workspace` 授权路由时落到该页面。工作台与管理布局的登出都会先尝试 `POST /auth/logout`，即使网络故障也在 `finally` 中清理所有本地 Token、旧动态路由和 WebSocket 会话。已对齐新的 `year/tenantRefId/memberRefId/appRefId` 登录契约，支持密码认证后选择租户与应用、用户自主选择自然年度、无机构成员登录及二次提交。会话存储拒绝旧 `fiscal` 和缺失物理身份的数据。头部支持已登录切换租户/应用/年度，切换成功后清除旧路由和 WebSocket 订阅；若服务端已切换而前端状态更新失败，则强制清理会话并要求重新登录，避免跨租户保留旧界面。**仍未完成机构、成员、角色以及行/字段授权管理页面的全部业务迁移，且后端当前可能返回空权限快照，因此保持 Draft；不能仅凭 Vue build 认定 #210 已验收。**
+
+服务端有菜单但缺少对应授权路由时，前端也不再根据本地组件候选路由推断出可点击的管理菜单；路由的访问事实只来自当前用户的 `routerList`，原 `fallbackAdminRoutes` 仅用于将已授权的路由映射到构建期本地组件，不代表授予资源权限。
+
+### SaaS IAM 角色写入契约（#210，增量）
+
+新增 `src/api/saas-iam.ts`，基于实际 `SaasRoleController` 与 `SaasPolicyController` 的受保护接口提供类型化方法：创建当前年度租户角色、替换角色权限、成员独立角色范围绑定/撤销、替换行级与字段读写策略。只接受后端目录选择得到的 32 位物理 UUID 和操作字段，拒绝旧 `tenantId/orgId/fiscal/ROLE_CODE` 拼接关联；作用域组合、角色业务码、资源码及批量上限均提前校验，但**最终管理权限、租户和年度必须由 Auth 服务再次按 Token 验证**。目前缺少安全的角色/成员/权限目录分页查询接口，因此前端授权管理表单尚未全面切换到这些写 API；不要让管理员手动猜测或输入物理外键。保留此任务 Draft，等目录查询和业务 UI 接入后验收。
+
+### SaaS 角色管理页面（#210，增量）
+
+旧的 `/auth/role/add` 和 `/auth/authFunction/saveRoleFunctions` 等基于 `tenantId/orgId/fiscal`、角色业务码拼接的前端写入接口已经从 `api/admin.ts` 移除。角色页面改为通过 `createTenantRole()` 执行当前 Token 范围内的受控新建，真实租户/应用/年度完全由 Auth 决定；物理 ID 仅作为返回值展示，不允许手工录入。权限授权页面不再允许旧多模型请求提交，需等待安全的后端角色/成员/权限分页目录补齐后再接入新的 `saas-iam.ts` 写接口。**这属于明确的安全收敛，未完成完整管理界面，不得视为 #210 已交付。**

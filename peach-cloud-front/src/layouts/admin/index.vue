@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 
 import { switchContext } from '../../api/admin'
+import { submitLogout } from '../../api/auth'
 import WebSocketNotifier from '../../components/admin/WebSocketNotifier.vue'
 import { buildMenuGroups } from '../../router/dynamic'
 import { clearDynamicRoutes, syncDynamicRoutes } from '../../router'
@@ -16,15 +17,18 @@ const router = useRouter()
 const authStore = useAuthStore()
 const webSocketStore = useWebSocketStore()
 const isSwitching = ref(false)
-const selectedOrgKey = ref(`${authStore.session?.tenantId ?? ''}:${authStore.session?.orgId ?? ''}`)
+const selectedTenantKey = ref(`${authStore.session?.tenantRefId ?? ''}:${authStore.session?.appRefId ?? ''}`)
+const selectedYear = ref(authStore.session?.year ?? new Date().getFullYear())
 
 const menuGroups = computed(() => buildMenuGroups(authStore.loginInfo))
-const userOrgOptions = computed(() => (authStore.loginInfo?.userOrgList ?? []).map(item => ({
-  label: `${item.tenantName ?? item.tenantCode ?? '租户'} / ${item.orgName ?? item.orgCode ?? '机构'}`,
-  value: `${item.tenantId ?? ''}:${item.orgId ?? ''}`,
-  tenantId: item.tenantId ?? '',
-  orgId: item.orgId ?? '',
-})))
+const tenantOptions = computed(() => (authStore.loginInfo?.tenantOptions ?? [])
+  .filter(item => Boolean(item.tenantRefId && item.appRefId))
+  .map(item => ({
+    label: `${item.tenantName || item.tenantId} / ${item.appName || item.appId}`,
+    value: `${item.tenantRefId}:${item.appRefId}`,
+    tenantRefId: item.tenantRefId,
+    appRefId: item.appRefId,
+  })))
 
 const title = computed(() => String(route.meta.title ?? 'Peach Cloud'))
 const activePath = computed(() => route.path)
@@ -39,36 +43,70 @@ async function handleMenuClick(path: string) {
   await router.push(path)
 }
 
-async function handleSwitchContext(value: unknown) {
-  const orgKey = String(value ?? '')
-  const option = userOrgOptions.value.find(item => item.value === orgKey)
-  if (!option || !authStore.session) {
+async function handleSwitchContext() {
+  if (isSwitching.value) {
+    return
+  }
+  const option = tenantOptions.value.find(item => item.value === selectedTenantKey.value)
+  if (!option || !authStore.session || !Number.isInteger(selectedYear.value)
+    || selectedYear.value < 1 || selectedYear.value > 9999) {
+    message.warning('请选择有效租户、应用和自然年度')
     return
   }
   isSwitching.value = true
+  let remoteSwitchCommitted = false
   try {
     const loginInfo = await switchContext({
-      tenantId: option.tenantId,
-      orgId: option.orgId,
-      fiscal: Number(authStore.session.fiscal),
+      tenantRefId: option.tenantRefId,
+      appRefId: option.appRefId,
+      year: selectedYear.value,
     })
+    remoteSwitchCommitted = true
+    webSocketStore.disconnect()
+    clearDynamicRoutes()
     authStore.replaceLoginInfo(loginInfo)
     syncDynamicRoutes()
-    message.success('已切换当前机构上下文')
-    await router.replace('/workspace')
+    webSocketStore.connect(authStore.session)
+    selectedTenantKey.value = `${authStore.session?.tenantRefId ?? ''}:${authStore.session?.appRefId ?? ''}`
+    selectedYear.value = authStore.session?.year ?? selectedYear.value
+    message.success('已切换租户、应用及年度上下文')
+    await router.replace(router.hasRoute('workspace-overview') ? '/workspace' : '/no-access')
   } catch (error: unknown) {
-    message.error(error instanceof Error ? error.message : '切换机构失败')
-    selectedOrgKey.value = `${authStore.session.tenantId}:${authStore.session.orgId}`
+    if (remoteSwitchCommitted) {
+      // Auth 已切换 Token 上下文，但前端应用状态更新不完整；禁止继续使用旧租户视图。
+      webSocketStore.disconnect()
+      authStore.clearSession()
+      clearDynamicRoutes()
+      message.error('后端切换已提交，但页面状态未能同步，请重新登录')
+      await router.replace('/login')
+      return
+    }
+    message.error(error instanceof Error ? error.message : '切换上下文失败')
+    const session = authStore.session
+    if (session) {
+      selectedTenantKey.value = `${session.tenantRefId}:${session.appRefId}`
+      selectedYear.value = session.year
+    }
   } finally {
     isSwitching.value = false
   }
 }
 
 async function logout() {
-  webSocketStore.disconnect()
-  authStore.clearSession()
-  clearDynamicRoutes()
-  await router.replace('/login')
+  if (isSwitching.value) {
+    return
+  }
+  try {
+    // 先让服务端撤销当前 Token，再清理本地会话；网络异常时也不得继续持有本地 Token。
+    await submitLogout()
+  } catch {
+    message.warning('服务器未确认退出，但本地登录信息已清除')
+  } finally {
+    webSocketStore.disconnect()
+    authStore.clearSession()
+    clearDynamicRoutes()
+    await router.replace('/login')
+  }
 }
 
 function handleOpenManual() {
@@ -134,13 +172,29 @@ function handleOpenManual() {
           用户手册
         </button>
         <a-select
-          v-model:value="selectedOrgKey"
+          v-model:value="selectedTenantKey"
           class="context-select"
           :loading="isSwitching"
-          :options="userOrgOptions"
-          placeholder="选择机构上下文"
-          @change="handleSwitchContext"
+          :options="tenantOptions"
+          :disabled="isSwitching || tenantOptions.length === 0"
+          placeholder="选择租户与应用"
         />
+        <a-input-number
+          v-model:value="selectedYear"
+          :min="1"
+          :max="9999"
+          :disabled="isSwitching"
+          aria-label="授权自然年度"
+          style="width: 100px"
+        />
+        <button
+          type="button"
+          class="console-manual"
+          :disabled="isSwitching || tenantOptions.length === 0"
+          @click="handleSwitchContext"
+        >
+          {{ isSwitching ? '切换中' : '切换' }}
+        </button>
         <button type="button" class="console-user" @click="router.push('/profile')">
           <span class="console-user__avatar">{{ avatarText }}</span>
           <span class="console-user__meta">

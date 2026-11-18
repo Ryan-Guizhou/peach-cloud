@@ -7,7 +7,7 @@ import AuthShell from '../../../components/auth/AuthShell.vue'
 import BlockPuzzleCaptcha from '../../../components/auth/BlockPuzzleCaptcha.vue'
 import { syncDynamicRoutes } from '../../../router'
 import { useAuthStore } from '../../../stores/auth'
-import type { LoginInitInfo } from '../../../types/auth'
+import type { LoginInitInfo, LoginTargetInfo } from '../../../types/auth'
 import { encryptLoginPassword } from '../../../utils/rsa'
 
 const router = useRouter()
@@ -24,12 +24,22 @@ const initInfo = ref<LoginInitInfo | null>(null)
 const formError = ref('')
 const captchaVerification = ref('')
 const captchaPassed = ref(false)
+const captchaAttempt = ref(0)
+const selectedYear = ref(new Date().getFullYear())
+const selectedTenantKey = ref('')
+const selectableTargets = ref<LoginTargetInfo[]>([])
+const requiresTenantSelection = computed(() => selectableTargets.value.length > 0)
+const selectedTarget = computed(() => selectableTargets.value.find(target =>
+  `${target.tenantRefId}:${target.appRefId}` === selectedTenantKey.value))
 
 const passwordLength = computed(() => loginPassword.value.length)
 const captchaRequired = computed(() => initInfo.value?.captchaRequired !== false)
 const captchaType = computed(() => initInfo.value?.captchaType ?? 'BLOCKPUZZLE')
 const canSubmit = computed(() => {
   if (!initInfo.value || isInitializing.value || isSubmitting.value) {
+    return false
+  }
+  if (requiresTenantSelection.value && !selectedTarget.value) {
     return false
   }
   if (captchaRequired.value && !captchaPassed.value) {
@@ -45,6 +55,9 @@ const initializeLogin = async () => {
   captchaPassed.value = false
   try {
     initInfo.value = await initLogin()
+    if (typeof initInfo.value.year === 'number' && Number.isInteger(initInfo.value.year)) {
+      selectedYear.value = initInfo.value.year
+    }
     if (initInfo.value.captchaRequired === false) {
       captchaPassed.value = true
     }
@@ -80,16 +93,45 @@ const handleSubmit = async () => {
     return
   }
 
+  if (!Number.isInteger(selectedYear.value) || selectedYear.value < 1
+    || selectedYear.value > 9999) {
+    formError.value = '请选择有效的自然年度'
+    return
+  }
+  if (requiresTenantSelection.value && !selectedTarget.value) {
+    formError.value = '请选择要进入的租户及应用'
+    return
+  }
+
   isSubmitting.value = true
   formError.value = ''
   try {
     const encryptedPassword = await encryptLoginPassword(loginPassword.value, initInfo.value.publicKey)
+    const selected = selectedTarget.value
     const loginInfo = await submitLogin({
       username: loginUsername.value.trim(),
       password: encryptedPassword,
-      fiscal: initInfo.value.fiscal,
+      year: selectedYear.value,
+      tenantRefId: selected?.tenantRefId,
+      appRefId: selected?.appRefId,
       captchaVerification: captchaRequired.value ? captchaVerification.value : undefined,
     })
+    if (loginInfo.requiresTenantSelection) {
+      const targets = (loginInfo.tenantOptions ?? []).filter(target =>
+        Boolean(target.tenantRefId && target.appRefId))
+      if (targets.length === 0) {
+        throw new Error('当前账号尚无可进入的租户与应用')
+      }
+      selectableTargets.value = targets
+      selectedTenantKey.value = ''
+      captchaVerification.value = ''
+      captchaPassed.value = !captchaRequired.value
+      captchaAttempt.value += 1
+      return
+    }
+    if (!loginInfo.token) {
+      throw new Error('认证未返回有效 Token')
+    }
     authStore.establishSession(loginInfo, remember.value)
     syncDynamicRoutes()
     const redirect = typeof route.query.redirect === 'string'
@@ -97,14 +139,20 @@ const handleSubmit = async () => {
       && !route.query.redirect.startsWith('//')
       ? route.query.redirect
       : '/workspace'
-    await router.replace(redirect)
+    const safeRedirect = redirect === '/workspace' && !router.hasRoute('workspace-overview')
+      ? '/no-access' : redirect
+    await router.replace(safeRedirect)
+    loginPassword.value = ''
   } catch (error: unknown) {
     formError.value = error instanceof Error ? error.message : '登录失败，请稍后重试'
     captchaVerification.value = ''
     captchaPassed.value = !captchaRequired.value
+    captchaAttempt.value += 1
+    if (!requiresTenantSelection.value) {
+      loginPassword.value = ''
+    }
   } finally {
     isSubmitting.value = false
-    loginPassword.value = ''
   }
 }
 
@@ -169,7 +217,39 @@ onMounted(initializeLogin)
         </div>
       </label>
 
+      <label class="field">
+        <span>授权自然年度</span>
+        <div class="field__control">
+          <input
+            v-model.number="selectedYear"
+            type="number"
+            min="1"
+            max="9999"
+            inputmode="numeric"
+            :disabled="isSubmitting"
+          />
+        </div>
+      </label>
+
+      <label v-if="requiresTenantSelection" class="field">
+        <span>选择租户与应用</span>
+        <div class="field__control">
+          <select v-model="selectedTenantKey" :disabled="isSubmitting" aria-label="选择登录租户及应用">
+            <option value="" disabled>请选择要进入的租户及应用</option>
+            <option
+              v-for="target in selectableTargets"
+              :key="`${target.tenantRefId}:${target.appRefId}`"
+              :value="`${target.tenantRefId}:${target.appRefId}`"
+            >
+              {{ target.tenantName || target.tenantId }} / {{ target.appName || target.appId }}
+            </option>
+          </select>
+        </div>
+        <small>选择后请重新完成验证码；密码只暂存于本页，不会保存到本地会话。</small>
+      </label>
+
       <BlockPuzzleCaptcha
+        :key="captchaAttempt"
         v-if="initInfo && captchaRequired"
         :captcha-type="captchaType"
         :disabled="isInitializing || isSubmitting"
@@ -205,7 +285,7 @@ onMounted(initializeLogin)
         :aria-busy="isSubmitting"
       >
         <span v-if="isSubmitting" class="button-spinner" aria-hidden="true" />
-        {{ isSubmitting ? '正在验证数据身份' : '安全登录' }}
+        {{ isSubmitting ? '正在验证数据身份' : requiresTenantSelection ? '确认租户并登录' : '安全登录' }}
       </button>
     </form>
   </AuthShell>

@@ -14,6 +14,29 @@ import {
 const REMEMBER_DURATION = 7 * 24 * 60 * 60 * 1000
 const TAB_DURATION = 12 * 60 * 60 * 1000
 
+function toAuthenticatedSession(loginInfo: LoginInfo, expiresAt: number): AuthSession {
+  const { token, userRefId, tenantRefId, memberRefId, appRefId, year } = loginInfo
+  if (loginInfo.requiresTenantSelection || !token || !userRefId || !tenantRefId
+    || !memberRefId || !appRefId || !Number.isInteger(year) || year < 1 || year > 9999) {
+    throw new Error('登录尚未完成有效的租户与应用选择')
+  }
+  return {
+    token,
+    userId: loginInfo.userId,
+    userRefId,
+    userName: loginInfo.userName,
+    tenantRefId,
+    memberRefId,
+    appRefId,
+    tenantId: loginInfo.tenantId,
+    tenantName: loginInfo.tenantName,
+    orgId: loginInfo.orgId,
+    orgName: loginInfo.orgName,
+    year,
+    expiresAt,
+  }
+}
+
 interface AuthState {
   session: AuthSession | null
   loginInfo: LoginInfo | null
@@ -37,25 +60,18 @@ export const useAuthStore = defineStore('auth', {
         clearAuthSession()
         return false
       }
-      this.session = session
       const loginInfo = readAuthLoginInfo()
-      if (loginInfo?.token === session.token) {
-        this.loginInfo = loginInfo
+      if (!loginInfo || loginInfo.token !== session.token) {
+        this.clearSession()
+        return false
       }
+      this.session = session
+      this.loginInfo = loginInfo
       return true
     },
     establishSession(loginInfo: LoginInfo, remember: boolean) {
-      const session: AuthSession = {
-        token: loginInfo.token,
-        userId: loginInfo.userId,
-        userName: loginInfo.userName,
-        tenantId: loginInfo.tenantId,
-        tenantName: loginInfo.tenantName,
-        orgId: loginInfo.orgId,
-        orgName: loginInfo.orgName,
-        fiscal: loginInfo.fiscal,
-        expiresAt: Date.now() + (remember ? REMEMBER_DURATION : TAB_DURATION),
-      }
+      const session = toAuthenticatedSession(loginInfo,
+        Date.now() + (remember ? REMEMBER_DURATION : TAB_DURATION))
       this.session = session
       this.loginInfo = loginInfo
       writeAuthSession(session, remember)
@@ -63,17 +79,7 @@ export const useAuthStore = defineStore('auth', {
     },
     replaceLoginInfo(loginInfo: LoginInfo) {
       const expiresAt = this.session?.expiresAt ?? Date.now() + TAB_DURATION
-      const session: AuthSession = {
-        token: loginInfo.token,
-        userId: loginInfo.userId,
-        userName: loginInfo.userName,
-        tenantId: loginInfo.tenantId,
-        tenantName: loginInfo.tenantName,
-        orgId: loginInfo.orgId,
-        orgName: loginInfo.orgName,
-        fiscal: loginInfo.fiscal,
-        expiresAt,
-      }
+      const session = toAuthenticatedSession(loginInfo, expiresAt)
       this.session = session
       this.loginInfo = loginInfo
       updateAuthSession(session)
