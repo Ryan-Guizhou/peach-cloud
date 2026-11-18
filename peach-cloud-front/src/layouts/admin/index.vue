@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 
 import { switchContext } from '../../api/admin'
+import { submitLogout } from '../../api/auth'
 import WebSocketNotifier from '../../components/admin/WebSocketNotifier.vue'
 import { buildMenuGroups } from '../../router/dynamic'
 import { clearDynamicRoutes, syncDynamicRoutes } from '../../router'
@@ -65,10 +66,20 @@ async function handleSwitchContext(value: unknown) {
 }
 
 async function logout() {
-  webSocketStore.disconnect()
-  authStore.clearSession()
-  clearDynamicRoutes()
-  await router.replace('/login')
+  if (isSwitching.value) {
+    return
+  }
+  try {
+    // 先让服务端撤销当前 Token，再清理本地会话；网络异常时也不得继续持有本地 Token。
+    await submitLogout()
+  } catch {
+    message.warning('服务器未确认退出，但本地登录信息已清除')
+  } finally {
+    webSocketStore.disconnect()
+    authStore.clearSession()
+    clearDynamicRoutes()
+    await router.replace('/login')
+  }
 }
 
 function handleOpenManual() {

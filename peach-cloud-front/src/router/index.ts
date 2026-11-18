@@ -38,6 +38,12 @@ const staticRoutes: RouteRecordRaw[] = [
     component: () => import('../views/auth/forgot-password/index.vue'),
   },
   {
+    path: '/no-access',
+    name: 'no-access',
+    component: () => import('../views/error/no-access/index.vue'),
+    meta: { requiresAuth: true, title: '暂无访问权限' },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('../views/error/not-found/index.vue'),
@@ -77,7 +83,7 @@ function workspaceLocation(): { name: string } | { path: string } | null {
   if (router.getRoutes().some(route => route.path === '/workspace')) {
     return { path: '/workspace' }
   }
-  return null
+  return { name: 'no-access' }
 }
 
 router.beforeEach((to) => {

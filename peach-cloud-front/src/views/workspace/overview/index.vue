@@ -41,6 +41,8 @@ const handleLogout = async () => {
   isLoggingOut.value = true
   try {
     await submitLogout()
+  } catch {
+    // 即使服务端不可用，也必须清除本地登录状态。
   } finally {
     authStore.clearSession()
     clearDynamicRoutes()

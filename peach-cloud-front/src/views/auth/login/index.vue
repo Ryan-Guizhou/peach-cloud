@@ -97,7 +97,11 @@ const handleSubmit = async () => {
       && !route.query.redirect.startsWith('//')
       ? route.query.redirect
       : '/workspace'
-    await router.replace(redirect)
+    await router.replace(
+      redirect === '/workspace' && !router.hasRoute('workspace-overview')
+        ? '/no-access'
+        : redirect,
+    )
   } catch (error: unknown) {
     formError.value = error instanceof Error ? error.message : '登录失败，请稍后重试'
     captchaVerification.value = ''

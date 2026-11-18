@@ -29,3 +29,7 @@ npm run build
 - Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
 - Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
 - Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+
+### SaaS IAM frontend safety baseline (#210, incremental)
+
+Business routes are built **only from the Auth-provided routerList**; an empty permission/router response no longer activates locally predefined administrator routes. Only server-authorized menu items are displayed. When none are available, a protected `/no-access` page is shown instead of inventing admin access. The default login redirect lands there if no `/workspace` route was granted. Both workspace and admin-layout logout attempt `POST /auth/logout` before always clearing local tokens, dynamic routes and WebSocket connections in `finally`, even if the network fails. This increment does not yet complete the new `year/tenantRefId/memberRefId/appRefId` login contract or tenant selection UI. Keep the PR in Draft until the full #210 scope is implemented.

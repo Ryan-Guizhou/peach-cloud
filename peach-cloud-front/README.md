@@ -104,3 +104,7 @@ npm run preview
 - 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
 - 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
 - README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。
+
+### SaaS IAM 前端安全基线（#210，增量）
+
+动态业务路由**只来自 Auth 返回的 routerList**：不再因授权路由为空而退回本地预定义管理路由。菜单只有后端返回并匹配的项目，无授权时显示独立的受保护 `/no-access` 页面，不会虚构管理员权限。默认登录跳转在没有 `/workspace` 授权路由时落到该页面。工作台与管理布局的登出都会先尝试 `POST /auth/logout`，即使网络故障也在 `finally` 中清理所有本地 Token、旧动态路由和 WebSocket 会话。该增量尚未完成新的 `year/tenantRefId/memberRefId/appRefId` 登录契约及租户选择 UI，暂保持 Draft，不应作为全部 #210 验收依据。

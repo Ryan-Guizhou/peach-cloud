@@ -148,9 +148,7 @@ export function buildAdminRoutes(loginInfo: LoginInfo | null): RouteRecordRaw[] 
     .filter((route): route is AdminRouteConfig => route !== null)
 
   const routeByPath = new Map<string, AdminRouteConfig>()
-  const candidateRoutes = dynamicRoutes.length > 0
-    ? dynamicRoutes
-    : fallbackAdminRoutes
+  const candidateRoutes = dynamicRoutes
   candidateRoutes.forEach((route) => {
     if (!routeByPath.has(route.path)) {
       routeByPath.set(route.path, route)
@@ -175,7 +173,7 @@ export function buildAdminRoutes(loginInfo: LoginInfo | null): RouteRecordRaw[] 
 export function buildMenuItems(loginInfo: LoginInfo | null): AdminRouteConfig[] {
   const menuList = loginInfo?.menuList ?? []
   if (menuList.length === 0) {
-    return fallbackAdminRoutes
+    return []
   }
   const routerMaps = buildRouterMaps(loginInfo?.routerList ?? [])
   const routeMap = new Map(fallbackAdminRoutes.map(route => [route.meta.menuCode, route]))
@@ -208,7 +206,7 @@ export function buildMenuItems(loginInfo: LoginInfo | null): AdminRouteConfig[] 
       }
     })
     .filter((item): item is AdminRouteConfig => item !== null)
-  return items.length > 0 ? items : fallbackAdminRoutes
+  return items
 }
 
 export function buildMenuGroups(loginInfo: LoginInfo | null): AdminMenuGroup[] {
@@ -231,5 +229,5 @@ export function buildMenuGroups(loginInfo: LoginInfo | null): AdminMenuGroup[] {
   if (others.length > 0) {
     groups.push({ title: '其他', items: others })
   }
-  return groups.length > 0 ? groups : [{ title: '导航', items }]
+  return groups
 }
