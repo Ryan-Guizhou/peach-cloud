@@ -6,7 +6,6 @@
         PARTY_TYPE, FUNC_CODE, STATE,
         APP_ID, IS_DELETE, CREATED_TIME, CREATOR_ID,
         MODIFY_TIME, MODIFIER_ID
-
     </sql>
 
     <sql id="allColumnAlias">
@@ -14,7 +13,6 @@
         PARTY_TYPE as partyType, FUNC_CODE as funcCode, STATE as state,
         APP_ID as appId, IS_DELETE as isDelete, CREATED_TIME as createdTime, CREATOR_ID as creatorId,
         MODIFY_TIME as modifyTime, MODIFIER_ID as modifierId
-
     </sql>
 
     <sql id="allColumnValue">
@@ -22,7 +20,6 @@
         #{partyType,jdbcType=VARCHAR}, #{funcCode,jdbcType=VARCHAR}, #{state,jdbcType=VARCHAR},
         #{appId,jdbcType=VARCHAR}, #{isDelete,jdbcType=INTEGER}, #{createdTime,jdbcType=VARCHAR}, #{creatorId,jdbcType=VARCHAR},
         #{modifyTime,jdbcType=VARCHAR}, #{modifierId,jdbcType=VARCHAR}
-
     </sql>
 
     <sql id="itemAllColumnValue">
@@ -30,7 +27,6 @@
         #{item.partyType,jdbcType=VARCHAR}, #{item.funcCode,jdbcType=VARCHAR}, #{item.state,jdbcType=VARCHAR},
         #{item.appId,jdbcType=VARCHAR}, #{item.isDelete,jdbcType=INTEGER}, #{item.createdTime,jdbcType=VARCHAR}, #{item.creatorId,jdbcType=VARCHAR},
         #{item.modifyTime,jdbcType=VARCHAR}, #{item.modifierId,jdbcType=VARCHAR}
-
     </sql>
 
     <sql id="allColumnSet">

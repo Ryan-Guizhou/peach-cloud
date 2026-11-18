@@ -23,7 +23,7 @@ import java.util.List;
 public interface ScopedRoleManagementDao {
 
     /**
-     * 创建与单个租户、应用和绑定的租户级角色。
+     * 创建绑定到当前物理租户和应用的租户级角色。
      *
      * @param role 已经服务端校验的角色
      * @return 插入条数

@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  *
  * <p>权限身份只由当前 Sa-Token Session 经过数据库实时验证获取。
  * 所有目录查询必须具备当前租户独立 TENANT 范围的角色管理权限，
- * 并且 SELECT 查询已限定物理租户、应用和。
+ * 并且 SELECT 查询已限定物理租户和当前应用。
  * 不返回用户敏感字段，不接受客户端自报身份 ID。</p>
  *
  * @Author Mr Shu

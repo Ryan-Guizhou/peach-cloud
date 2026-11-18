@@ -12,7 +12,7 @@ import java.util.List;
  * 成员角色授权的受控事务持久层。
  *
  * <p>所有读写同时限定租户物理 ID；成员行锁序列化同成员授权变更，
- * 角色与权限定义必须在当前应用和内保持完整关系。</p>
+ * 角色与权限定义必须在当前租户和应用范围内保持完整关系。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -33,7 +33,7 @@ public interface ScopedRoleBindingDao {
                                     @Param("memberRefId") String memberRefId);
 
     /**
-     * 验证角色的物理租户、应用和。
+     * 验证角色的物理租户、应用归属与有效状态。
      *
      * @param tenantRefId 租户物理主键
      * @param appRefId 应用物理主键

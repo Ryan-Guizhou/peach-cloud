@@ -92,7 +92,6 @@ public final class SaTokenConstant {
      * @return API 资源缓存 Key
      */
     public static String userApiResourceCacheKey(String userId, String tenantId, String orgId) {
-        return USER_API_RESOURCE_CACHE_PREFIX + userId + ":" + tenantId + ":" + orgId + ":"
-                + "v2";
+        return USER_API_RESOURCE_CACHE_PREFIX + userId + ":" + tenantId + ":" + orgId;
     }
 }

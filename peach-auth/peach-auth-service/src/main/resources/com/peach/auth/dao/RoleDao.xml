@@ -8,20 +8,25 @@
     </sql>
 
     <sql id="allColumnAlias">
-        ID as id, ROLE_ID as roleId, TENANT_ID as tenantId, ORG_ID as orgId, ROLE_CODE as roleCode, ROLE_NAME as roleName, ROLE_DESC as roleDesc, ROLE_SCOPE as roleScope,
+        ID as id, ROLE_ID as roleId, TENANT_ID as tenantId, ORG_ID as orgId,
+        ROLE_CODE as roleCode, ROLE_NAME as roleName, ROLE_DESC as roleDesc, ROLE_SCOPE as roleScope,
         ROLE_TYPE as roleType, IS_DELETE as isDelete, SKIP_URL as skipUrl, CREATED_TIME as createdTime,
         CREATOR_ID as creatorId, MODIFY_TIME as modifyTime, MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR}, #{roleId,jdbcType=VARCHAR}, #{tenantId,jdbcType=VARCHAR}, #{orgId,jdbcType=VARCHAR}, #{roleCode,jdbcType=VARCHAR}, #{roleName,jdbcType=VARCHAR}, #{roleDesc,jdbcType=VARCHAR}, #{roleScope,jdbcType=VARCHAR},
-        #{roleType,jdbcType=VARCHAR}, #{isDelete,jdbcType=INTEGER}, #{skipUrl,jdbcType=VARCHAR}, #{createdTime,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR}, #{roleId,jdbcType=VARCHAR}, #{tenantId,jdbcType=VARCHAR},
+        #{orgId,jdbcType=VARCHAR}, #{roleCode,jdbcType=VARCHAR}, #{roleName,jdbcType=VARCHAR},
+        #{roleDesc,jdbcType=VARCHAR}, #{roleScope,jdbcType=VARCHAR}, #{roleType,jdbcType=VARCHAR},
+        #{isDelete,jdbcType=INTEGER}, #{skipUrl,jdbcType=VARCHAR}, #{createdTime,jdbcType=VARCHAR},
         #{creatorId,jdbcType=VARCHAR}, #{modifyTime,jdbcType=VARCHAR}, #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR}, #{item.roleId,jdbcType=VARCHAR}, #{item.tenantId,jdbcType=VARCHAR}, #{item.orgId,jdbcType=VARCHAR}, #{item.roleCode,jdbcType=VARCHAR}, #{item.roleName,jdbcType=VARCHAR}, #{item.roleDesc,jdbcType=VARCHAR}, #{item.roleScope,jdbcType=VARCHAR},
-        #{item.roleType,jdbcType=VARCHAR}, #{item.isDelete,jdbcType=INTEGER}, #{item.skipUrl,jdbcType=VARCHAR}, #{item.createdTime,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR}, #{item.roleId,jdbcType=VARCHAR}, #{item.tenantId,jdbcType=VARCHAR},
+        #{item.orgId,jdbcType=VARCHAR}, #{item.roleCode,jdbcType=VARCHAR}, #{item.roleName,jdbcType=VARCHAR},
+        #{item.roleDesc,jdbcType=VARCHAR}, #{item.roleScope,jdbcType=VARCHAR}, #{item.roleType,jdbcType=VARCHAR},
+        #{item.isDelete,jdbcType=INTEGER}, #{item.skipUrl,jdbcType=VARCHAR}, #{item.createdTime,jdbcType=VARCHAR},
         #{item.creatorId,jdbcType=VARCHAR}, #{item.modifyTime,jdbcType=VARCHAR}, #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
@@ -338,12 +343,12 @@
             </if>
             <if test="userCode != null and userCode != ''">
                 AND ROLE_CODE IN (
-                SELECT ROLE_CODE
-                FROM PEACH_AUTH_PARTY
-                WHERE PARTY_CODE = #{userCode,jdbcType=VARCHAR}
-                AND TENANT_ID = PEACH_ROLE.TENANT_ID
-                AND ORG_ID = PEACH_ROLE.ORG_ID
-                AND IS_DELETE = 0
+                    SELECT ROLE_CODE
+                    FROM PEACH_AUTH_PARTY
+                    WHERE PARTY_CODE = #{userCode,jdbcType=VARCHAR}
+                    AND TENANT_ID = PEACH_ROLE.TENANT_ID
+                    AND ORG_ID = PEACH_ROLE.ORG_ID
+                    AND IS_DELETE = 0
                 )
             </if>
         </where>

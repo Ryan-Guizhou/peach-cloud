@@ -45,7 +45,7 @@ public class ScopedDataAuthorizationService {
      *
      * @param permissionCode 服务端定义的动作权限码
      * @param target 由业务数据访问层构造的真实权属描述
-     * @throws SecurityException 未通过成员、、对象行或角色绑定时
+     * @throws SecurityException 未通过成员身份、对象行或角色绑定校验时
      */
     @Transactional(readOnly = true)
     public void requireObjectAction(String permissionCode, DataObjectDescriptor target) {
