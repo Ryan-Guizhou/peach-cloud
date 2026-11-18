@@ -233,4 +233,4 @@ Protected platform namespaces include `/api/auth/`, `/api/setting/`, `/api/file/
 
 #### Trusted service-only endpoint configuration boundary
 
-\`peach.satoken.user-context.service-token-only-endpoints\` now accepts **an explicit HTTP method and an exactly equal canonical Servlet URI**. \`ANY\`, Ant \`*\`/\`**\` patterns, URI templates, encoded paths, and traversal segments cannot activate the privileged service-only channel. This setting only bypasses legacy USER_PROFILE cache restoration; it never bypasses Same-Token or Auth's actual end-user token and database member-version validation. Regression tests cover overly broad Nacos route configuration.
+`peach.satoken.user-context.service-token-only-endpoints` now accepts **an explicit HTTP method and an exactly equal canonical Servlet URI**. `ANY`, Ant `*`/`**` patterns, URI templates, encoded paths, and traversal segments cannot activate the privileged service-only channel. This setting only bypasses legacy USER_PROFILE cache restoration; it never bypasses Same-Token or Auth's actual end-user token and database member-version validation. Regression tests cover overly broad Nacos route configuration.

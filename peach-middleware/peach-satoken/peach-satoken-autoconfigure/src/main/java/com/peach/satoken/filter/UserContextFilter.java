@@ -157,7 +157,7 @@ public class UserContextFilter extends OncePerRequestFilter {
 
     private boolean unsafeServicePath(String path) {
         if (path == null || !path.startsWith("/") || path.indexOf('%') >= 0
-                || path.indexOf(';') >= 0 || path.indexOf('\\\\') >= 0
+                || path.indexOf(';') >= 0 || path.indexOf('\\') >= 0
                 || path.contains("//") || path.endsWith("/.") || path.endsWith("/..")) {
             return true;
         }

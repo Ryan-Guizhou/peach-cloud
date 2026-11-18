@@ -290,4 +290,4 @@ sequenceDiagram
 
 #### 受信服务通道配置安全边界
 
-\`peach.satoken.user-context.service-token-only-endpoints\` 现在只接受**明确 HTTP 方法与完全相同的规范 Servlet URI**；\`ANY\`、Ant 风格 \`*\`/\`**\`、路径模板、编码路径和遍历片段均不会触发该通道。该配置只能跳过历史 USER_PROFILE 缓存恢复，绝不跳过 Same-Token 或 Auth 的真实最终用户 Token + 数据库成员版本验证。对应回归测试覆盖意外的 Nacos 宽泛路径配置。
+`peach.satoken.user-context.service-token-only-endpoints` 现在只接受**明确 HTTP 方法与完全相同的规范 Servlet URI**；`ANY`、Ant 风格 `*`/`**`、路径模板、编码路径和遍历片段均不会触发该通道。该配置只能跳过历史 USER_PROFILE 缓存恢复，绝不跳过 Same-Token 或 Auth 的真实最终用户 Token + 数据库成员版本验证。对应回归测试覆盖意外的 Nacos 宽泛路径配置。
