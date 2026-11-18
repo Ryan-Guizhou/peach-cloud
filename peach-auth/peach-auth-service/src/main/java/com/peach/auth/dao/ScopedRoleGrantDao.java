@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * 从角色权限和成员角色绑定关联查询有效的单条授权证据。
  *
- * <p>所有过滤条件都使用数据库物理 ID、自然年度以及同一条绑定，禁止拼接不同绑定的权限。</p>
+ * <p>所有过滤条件都使用数据库物理 ID、以及同一条绑定，禁止拼接不同绑定的权限。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -26,15 +26,13 @@ public interface ScopedRoleGrantDao {
      * @param tenantRefId 租户物理 ID
      * @param memberRefId 成员物理 ID
      * @param appRefId 应用物理 ID
-     * @param year 自然年度
      * @param permissionCode 稳定权限语义码
      * @return 每行对应独立角色绑定，空列表即无权限
      */
     List<RoleScopeGrantVO> selectGrants(@Param("tenantRefId") String tenantRefId,
-                                       @Param("memberRefId") String memberRefId,
+                                       @Param("memberRefId" String memberRefId,
                                        @Param("appRefId") String appRefId,
-                                       @Param("year") int year,
-                                       @Param("permissionCode") String permissionCode);
+                                       @Param("permissionCode" String permissionCode);
     /**
      * 读取所有当前租户/应用可见的有效 API 目录规则，包括尚未分配给当前成员的定义。
      *
@@ -56,15 +54,13 @@ public interface ScopedRoleGrantDao {
      * @param tenantRefId 已核验的租户物理主键
      * @param memberRefId 已核验的成员物理主键
      * @param appRefId 已核验的应用物理主键
-     * @param year 当前自然年度
      * @param permissionCode 服务端归一化的精确 METHOD:PATH
      * @param systemOnly 平台服务命名空间必须仅接受 SYSTEM 权限定义
      * @return 有效且属于同一成员绑定的 API 权限事实
      */
     List<RoleScopeGrantVO> selectApiGrants(@Param("tenantRefId") String tenantRefId,
-                                          @Param("memberRefId") String memberRefId,
+                                          @Param("memberRefId" String memberRefId,
                                           @Param("appRefId") String appRefId,
-                                          @Param("year") int year,
-                                          @Param("permissionCode") String permissionCode,
+                                          @Param("permissionCode" String permissionCode,
                                           @Param("systemOnly") boolean systemOnly);
 }

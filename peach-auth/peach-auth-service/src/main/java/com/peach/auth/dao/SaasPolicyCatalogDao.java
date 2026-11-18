@@ -21,8 +21,7 @@ public interface SaasPolicyCatalogDao {
 
     RolePermissionGrantVO selectScopedRoleAction(@Param("tenantRefId") String tenantRefId,
                                                  @Param("appRefId") String appRefId,
-                                                 @Param("year") int year,
-                                                 @Param("roleRefId") String roleRefId,
+                                                 @Param("roleRefId" String roleRefId,
                                                  @Param("permissionRefId") String permissionRefId);
 
     List<SaasCatalogEntryVO> selectDelegableFields(@Param("tenantRefId") String tenantRefId,

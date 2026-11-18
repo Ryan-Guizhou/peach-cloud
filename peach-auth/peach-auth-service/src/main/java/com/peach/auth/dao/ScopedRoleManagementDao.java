@@ -9,7 +9,7 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
- * 租户年度角色与权限的受控持久层。
+ * 租户角色与权限的受控持久层。
  *
  * <p>角色行锁串行化所有角色权限写入；SQL 中所有关联都使用物理主键，
  * 不采用 ROLE_CODE 和机构业务号拼接权限事实。</p>
@@ -23,7 +23,7 @@ import java.util.List;
 public interface ScopedRoleManagementDao {
 
     /**
-     * 创建与单个租户、应用和自然年度绑定的租户级角色。
+     * 创建与单个租户、应用和绑定的租户级角色。
      *
      * @param role 已经服务端校验的角色
      * @return 插入条数
@@ -35,20 +35,18 @@ public interface ScopedRoleManagementDao {
      *
      * @param tenantRefId 租户物理主键
      * @param appRefId 应用物理主键
-     * @param year 自然年度
      * @param roleRefId 角色物理主键
      * @return 角色实体或 null
      */
     RoleDO lockScopedRole(@Param("tenantRefId") String tenantRefId,
                           @Param("appRefId") String appRefId,
-                          @Param("year") int year,
-                          @Param("roleRefId") String roleRefId);
+                          @Param("roleRefId" String roleRefId);
 
     /**
      * 读取某一租户角色的当前有效权限物理主键。
      */
     List<String> selectActivePermissionRefs(@Param("tenantRefId") String tenantRefId,
-                                            @Param("roleRefId") String roleRefId);
+                                            @Param("roleRefId" String roleRefId);
 
     /**
      * 将权限物理 ID 与稳定语义码关联，且只返回允许租户管理员委派的定义。
@@ -63,15 +61,15 @@ public interface ScopedRoleManagementDao {
      */
     int insertRolePermission(@Param("id") String id,
                              @Param("tenantRefId") String tenantRefId,
-                             @Param("roleRefId") String roleRefId,
+                             @Param("roleRefId" String roleRefId,
                              @Param("permissionRefId") String permissionRefId,
-                             @Param("operatorRefId") String operatorRefId);
+                             @Param("operatorRefId" String operatorRefId);
 
     /**
      * 逻辑删除单条角色权限关系，保留原历史记录。
      */
     int revokeRolePermission(@Param("tenantRefId") String tenantRefId,
-                             @Param("roleRefId") String roleRefId,
+                             @Param("roleRefId" String roleRefId,
                              @Param("permissionRefId") String permissionRefId);
 
     /**
@@ -79,8 +77,7 @@ public interface ScopedRoleManagementDao {
      */
     int incrementRoleVersion(@Param("tenantRefId") String tenantRefId,
                              @Param("appRefId") String appRefId,
-                             @Param("year") int year,
-                             @Param("roleRefId") String roleRefId,
+                             @Param("roleRefId" String roleRefId,
                              @Param("version") long version,
-                             @Param("operatorRefId") String operatorRefId);
+                             @Param("operatorRefId" String operatorRefId);
 }
