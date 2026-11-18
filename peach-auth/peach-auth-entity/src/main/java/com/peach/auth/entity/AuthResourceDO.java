@@ -74,8 +74,4 @@ public class AuthResourceDO extends PeachDO implements Serializable {
     @Schema(description = "是否删除")
     private Integer isDelete;
 
-    @Column(name = "FISCAL")
-    @Schema(description = "年度")
-    private Integer fiscal;
-
 }

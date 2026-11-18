@@ -38,9 +38,6 @@ public class AuthFunctionQO extends PeachEntity implements Serializable {
     @Schema(description = "功能代码")
     private String funcCode;
 
-    @Schema(description = "年度")
-    private Integer fiscal;
-
     @Schema(description = "功能状态")
     private String state;
 

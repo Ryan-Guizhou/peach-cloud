@@ -7,7 +7,6 @@ import lombok.Data;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.List;
 
@@ -36,10 +35,6 @@ public class RoleResourceAuthDTO implements Serializable {
     @Schema(description = "角色编码")
     @NotBlank(message = "角色编码不能为空")
     private String partyCode;
-
-    @Schema(description = "年度")
-    @NotNull(message = "年度不能为空")
-    private Integer fiscal;
 
     @Schema(description = "应用ID")
     private String appId;
