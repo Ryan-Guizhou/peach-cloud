@@ -259,3 +259,7 @@ git diff --check -- peach-gateway
 #### Nacos 初始化白名单和 IAM 上线门槛
 
 已同步 `deploy-pipline/init/nacos/config/peach-gateway.yml`：删除旧的 `ANY`、文档/Actuator 通配匿名入口，以及 `/api/auth/register`、`/api/auth/logout`、`/api/auth/forget`、`/api/auth/reset` 等不应默认匿名的旧项。仅保留精确方法的登录、登录只读初始化、公钥、验证码和 `OPTIONS /**`。新增明确配置 `peach.gateway.iam.enabled=false` 与 `timeout=1500ms`；**该开关保持关闭时受保护请求默认拒绝，不能当作允许旧鉴权回退的开关**。先完整部署 #209 的受信 Auth 接口、Redis/MySQL、Nacos 服务发现及必要的 API 资源目录，再将在线 IAM 设置为 `true` 并完成合法/撤销/跨租户/跨年度安全回归。修改 Nacos 模板并不会自动更新已运行的 Nacos 配置实例，部署时需同步核对实际生效配置。
+
+#### 登录态自服务操作（不依赖年度业务角色）
+
+仅针对精确的 `POST /api/auth/logout` 与 `POST /api/auth/switchContext`（及对应非 `/api` 前缀），网关在 `StpUtil.checkLogin()` 成功后允许进入下游，而**不要求给每个年度角色额外配置登出/切换动作权限**。这不是匿名白名单：没有真实用户登录态仍返回 401，网关认证关闭仍 Fail-Closed。登出仅注销当前 Token；切换租户与年度由 Auth 重新验证现有成员与目标租户/应用有效性，并由 Auth 专用过滤器校验 Same-Token/数据库版本。任何 SaaS 角色管理或其他业务 API 仍必须通过在线 IAM。

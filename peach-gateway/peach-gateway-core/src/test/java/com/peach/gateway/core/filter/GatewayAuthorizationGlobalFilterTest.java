@@ -64,6 +64,40 @@ class GatewayAuthorizationGlobalFilterTest {
     }
 
     @Test
+    void authenticatedOnlyEndpointsMustNotRequireRoleGrantButMustBeExact() {
+        GatewayAuthorizationGlobalFilter filter = filter(new GatewaySaTokenProperties());
+
+        assertThat(filter.isAuthenticatedSelfServiceEndpoint(
+                "POST", "/api/auth/logout")).isTrue();
+        assertThat(filter.isAuthenticatedSelfServiceEndpoint(
+                "POST", "/api/auth/switchContext")).isTrue();
+        assertThat(filter.isAuthenticatedSelfServiceEndpoint(
+                "GET", "/api/auth/logout")).isFalse();
+        assertThat(filter.isAuthenticatedSelfServiceEndpoint(
+                "POST", "/api/auth/logout/other")).isFalse();
+        assertThat(filter.isAuthenticatedSelfServiceEndpoint(
+                "POST", "/api/auth/saas/roles")).isFalse();
+        assertThat(filter.isAuthenticatedSelfServiceEndpoint(
+                "POST", "/api/auth/external/iam/check-api")).isFalse();
+    }
+
+    @Test
+    void disabledAuthenticationStillRejectsAuthenticatedOnlyEndpoints() {
+        GatewaySaTokenProperties props = new GatewaySaTokenProperties();
+        props.setEnabled(false);
+        GatewayAuthorizationGlobalFilter filter = filter(props);
+        GatewayFilterChain chain = mock(GatewayFilterChain.class);
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/api/auth/switchContext").build());
+
+        filter.filter(exchange, chain).block();
+
+        assertThat(exchange.getResponse().getStatusCode())
+                .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        verify(chain, never()).filter(any());
+    }
+
+    @Test
     void shouldRejectInternalIamPathEvenWhenPublicRuleIsAdded() {
         GatewaySaTokenProperties props = new GatewaySaTokenProperties();
         var rules = new ArrayList<>(props.getPublicEndpoints());

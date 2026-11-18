@@ -95,10 +95,31 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
                 .subscribeOn(Schedulers.boundedElastic())
                 .onErrorResume(exception -> handleAuthenticationError(exchange, method, path, exception)
                         .then(Mono.empty()))
-                .flatMap(loginId -> checkApiPermission(loginId, method, path, exchange)
-                        .flatMap(allowed -> Boolean.TRUE.equals(allowed)
-                                ? chain.filter(exchange)
-                                : handlePermissionError(exchange, method, path)));
+                .flatMap(loginId -> isAuthenticatedSelfServiceEndpoint(method, path)
+                        ? chain.filter(exchange)
+                        : checkApiPermission(loginId, method, path, exchange)
+                                .flatMap(allowed -> Boolean.TRUE.equals(allowed)
+                                        ? chain.filter(exchange)
+                                        : handlePermissionError(exchange, method, path)));
+    }
+
+    /**
+     * 登录态专用动作，不要求持有租户角色的 API 权限。
+     *
+     * <p>仅在上游 StpUtil.checkLogin 成功后调用。登出只能撤销当前 Token，
+     * 切换上下文由 Auth 在服务端重新检查当前用户、成员与目标租户/应用。
+     * 非匹配路径仍须完整走在线 IAM，绝不将 /auth/saas/** 管理接口放入此列表。</p>
+     *
+     * @param method 实际 HTTP 方法
+     * @param path 网关未重写的完整路径
+     * @return 是否为必须登录但不需要业务角色的自服务端点
+     */
+    boolean isAuthenticatedSelfServiceEndpoint(String method, String path) {
+        if (!"POST".equals(method)) {
+            return false;
+        }
+        return "/api/auth/logout".equals(path) || "/auth/logout".equals(path)
+                || "/api/auth/switchContext".equals(path) || "/auth/switchContext".equals(path);
     }
 
     /**
