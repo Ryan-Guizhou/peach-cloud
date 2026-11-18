@@ -65,6 +65,13 @@ public class SaasRoleTokenContextFilter extends OncePerRequestFilter {
             return;
         }
 
+        request.setAttribute(UserContextFilter.VERIFIED_SAAS_ROLE_REQUEST, Boolean.TRUE);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            request.removeAttribute(UserContextFilter.VERIFIED_SAAS_ROLE_REQUEST);
+        }
+    }
     /**
      * 在认证服务直接访问场景下也拒绝编码路径和 Servlet 路径规范化歧义。
      */
@@ -79,11 +86,4 @@ public class SaasRoleTokenContextFilter extends OncePerRequestFilter {
         return true;
     }
 
-        request.setAttribute(UserContextFilter.VERIFIED_SAAS_ROLE_REQUEST, Boolean.TRUE);
-        try {
-            filterChain.doFilter(request, response);
-        } finally {
-            request.removeAttribute(UserContextFilter.VERIFIED_SAAS_ROLE_REQUEST);
-        }
-    }
 }
