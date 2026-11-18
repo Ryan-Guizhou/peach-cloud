@@ -61,6 +61,18 @@ class GatewaySecurityEndpointMatcherTest {
     }
 
     @Test
+    void shouldAllowOnlyExplicitReadOnlyLoginInitializationMethod() {
+        List<GatewaySecurityEndpointRule> rules = List.of(
+                GatewaySecurityEndpointRule.of("POST", "/auth/init"),
+                GatewaySecurityEndpointRule.of("POST", "/api/auth/init"));
+        assertThat(matcher.matches(rules, "POST", "/auth/init")).isTrue();
+        assertThat(matcher.matches(rules, "POST", "/api/auth/init")).isTrue();
+        assertThat(matcher.matches(rules, "GET", "/api/auth/init")).isFalse();
+        assertThat(matcher.matches(rules, "POST", "/api/auth/saas/roles")).isFalse();
+        assertThat(matcher.matches(rules, "POST", "/api/auth/external/iam/check-api")).isFalse();
+    }
+
+    @Test
     void shouldRejectIamEvenWhenSpecificWildcardConfigured() {
         List<GatewaySecurityEndpointRule> rules =
                 List.of(GatewaySecurityEndpointRule.any("/api/auth/**"));

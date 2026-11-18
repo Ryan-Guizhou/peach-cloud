@@ -243,3 +243,7 @@ git diff --check -- peach-gateway
 #### 匿名白名单严格匹配（#208）
 
 网关 `peach.gateway.satoken.public-endpoints` 的非 OPTIONS 配置现在只接受**明确 HTTP 方法 + 完全相等的公开路径**；`ANY`、`*`、`**`、`{id}` 不可用于匿名放行。仅允许精确的 `OPTIONS /**` 预检规则，其余携带编码字符、分号、双斜杠或路径遍历片段的可疑 URI 不会命中公开白名单，受保护路径仍需进入 IAM 并安全拒绝。不依赖 Nacos 传入的宽泛配置关闭系统权限防线。注意新增公开接口需要逐项登记精确方法和路径，不能用通配放行代替资源授权。
+
+#### 登录初始化与平台初始化的语义区分
+
+经核实 `LoginController.init()` 实际只调用 `IUserService.initLogin()` 读取登录页配置与 RSA 公钥，**不会创建租户或管理员**；它是未登录用户完成登录的前置能力。因此仅将 `POST /auth/init`、`POST /api/auth/init` 作为明确方法和精确路径的匿名入口恢复。所有 `/auth/saas/**` 和 `/auth/external/iam/**` 管理或内部受信接口仍不可匿名，`GET /auth/init` 也不放行。此修正只恢复登录所需的公开读取，不等于允许任意设置项对外泄露；登录配置内容白名单和生产值集检查仍须在 #220/#211 联调确认。

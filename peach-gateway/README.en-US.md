@@ -244,3 +244,7 @@ When `peach.gateway.iam.enabled=true`, `GatewayIamHttpDecisionVerifier` uses an 
 #### Strict anonymous allowlist matching (#208)
 
 Non-OPTIONS entries in `peach.gateway.satoken.public-endpoints` now require an **explicit HTTP method and exact public route**. The `ANY`, `*`, `**`, and `{id}` syntaxes cannot anonymously open API paths. Only explicit `OPTIONS /**` can match all CORS preflights. Encoded paths, semicolon parameters, duplicate separators and traversal segments never match the anonymous allowlist; protected requests still reach IAM and fail closed when invalid. Broad Nacos configuration rules cannot disable the platform authorization boundary. Register new public endpoints with their exact method and path, never with a wildcard in place of resource authorization.
+
+#### Login bootstrap is not platform provisioning
+
+Source inspection confirms that `LoginController.init()` only calls `IUserService.initLogin()` to read login-page configuration and the RSA public key; it does **not** create tenant or administrator accounts. Anonymous callers must be able to obtain this data before authenticating. Only the exact `POST /auth/init` and `POST /api/auth/init` routes are therefore restored to the public allowlist; `GET /auth/init` is not public, and `/auth/saas/**` and `/auth/external/iam/**` remain protected or internal-only. This restores the verified login-bootstrap contract; review of exposed login value-set keys and production settings remains part of #220/#211 verification.

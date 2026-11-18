@@ -49,10 +49,13 @@ public class GatewaySaTokenProperties {
     private List<GatewaySecurityEndpointRule> publicEndpoints = Arrays.asList(
             GatewaySecurityEndpointRule.of("OPTIONS", "/**"),
             GatewaySecurityEndpointRule.of("POST", "/auth/login"),
+            // 登录初始化仅返回公开登录配置与 RSA 公钥，不执行系统管理员引导。
+            GatewaySecurityEndpointRule.of("POST", "/auth/init"),
             GatewaySecurityEndpointRule.of("POST", "/auth/getCaptcha"),
             GatewaySecurityEndpointRule.of("POST", "/auth/checkCaptcha"),
             GatewaySecurityEndpointRule.of("GET", "/auth/rsa-public-key"),
             GatewaySecurityEndpointRule.of("POST", "/api/auth/login"),
+            GatewaySecurityEndpointRule.of("POST", "/api/auth/init"),
             GatewaySecurityEndpointRule.of("POST", "/api/auth/getCaptcha"),
             GatewaySecurityEndpointRule.of("POST", "/api/auth/checkCaptcha"),
             GatewaySecurityEndpointRule.of("GET", "/api/auth/rsa-public-key")

@@ -60,8 +60,7 @@ public class GatewaySecurityEndpointMatcher {
      * 即使远程配置出现宽泛白名单，IAM 管理入口也不能匿名放行。
      */
     private boolean isProtectedIamEndpoint(String path) {
-        return "/auth/init".equals(path) || "/api/auth/init".equals(path)
-                || path.startsWith("/auth/external/iam/")
+        return path.startsWith("/auth/external/iam/")
                 || "/auth/external/iam".equals(path)
                 || path.startsWith("/api/auth/external/iam/")
                 || "/api/auth/external/iam".equals(path)
