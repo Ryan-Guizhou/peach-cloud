@@ -158,7 +158,6 @@ public class UserServiceImpl implements IUserService {
         if (selected == null) {
             LoginInfo choices = new LoginInfo();
             choices.setUserId(user.getUserId());
-            choices.setYear(loginDTO.getYear());
             choices.setUserName(user.getUserName());
             choices.setRequiresTenantSelection(true);
             choices.setTenantOptions(targets);
@@ -168,8 +167,7 @@ public class UserServiceImpl implements IUserService {
         StpUtil.login(user.getUserId(), new SaLoginParameter().setIsConcurrent(true).setIsShare(false));
         try {
             TenantSessionContext context = tenantSessionService.bindAfterAuthentication(
-                    user.getId(), selected.getTenantRefId(), selected.getAppRefId(),
-                    loginDTO.getYear());
+                    user.getId(), selected.getTenantRefId(), selected.getAppRefId());
             LoginInfo loginInfo = buildMemberLoginInfo(user, context, selected, targets);
             log.info("Tenant member login succeeded, memberRefId={}, tenantRefId={}",
                     context.memberRefId(), context.tenantRefId());
@@ -186,8 +184,7 @@ public class UserServiceImpl implements IUserService {
     public Response switchContext(SwitchContextDTO switchContextDTO) {
         try {
             TenantSessionContext context = tenantSessionService.switchTenant(
-                    switchContextDTO.getTenantRefId(), switchContextDTO.getAppRefId(),
-                    switchContextDTO.getYear());
+                    switchContextDTO.getTenantRefId(), switchContextDTO.getAppRefId());
             UserVO user = userDao.selectById(context.userRefId());
             if (user == null || !context.userRefId().equals(user.getId())) {
                 return Response.fail("当前全局用户不可用");

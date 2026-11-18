@@ -69,7 +69,6 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
         deleteQuery.setOrgId(roleResourceAuthDTO.getOrgId());
         deleteQuery.setPartyCode(roleResourceAuthDTO.getPartyCode());
         deleteQuery.setAppId(roleResourceAuthDTO.getAppId());
-        deleteQuery.setFiscal(roleResourceAuthDTO.getFiscal());
         authResourceDao.del(deleteQuery);
 
         List<AuthResourceDO> resourceList = new ArrayList<>();
@@ -90,7 +89,6 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
                 authResourceDO.setResourceCode(itemDTO.getResourceCode());
                 authResourceDO.setResourceName(itemDTO.getResourceName());
                 authResourceDO.setAppId(roleResourceAuthDTO.getAppId());
-                authResourceDO.setFiscal(roleResourceAuthDTO.getFiscal());
                 authResourceDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
                 authResourceDO.fillCreateTime(currentOperator());
                 resourceList.add(authResourceDO);
@@ -110,8 +108,7 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
         loginPermissionCacheRefresher.refreshUsersByRole(
                 roleResourceAuthDTO.getTenantId(),
                 roleResourceAuthDTO.getOrgId(),
-                roleResourceAuthDTO.getPartyCode(),
-                roleResourceAuthDTO.getFiscal());
+                roleResourceAuthDTO.getPartyCode());
     }
 
     private AuthResourceDO buildQuery(AuthResourceQO authResourceQO) {
@@ -126,7 +123,6 @@ public class AuthResourceServiceImpl implements IAuthResourceService {
         authResourceDO.setOpType(authResourceQO.getOpType());
         authResourceDO.setResourceCode(authResourceQO.getResourceCode());
         authResourceDO.setAppId(authResourceQO.getAppId());
-        authResourceDO.setFiscal(authResourceQO.getFiscal());
         authResourceDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
         return authResourceDO;
     }
