@@ -39,7 +39,7 @@
     </select>
 
     <select id="selectDelegablePermissions" resultType="com.peach.auth.vo.RolePermissionGrantVO">
-        SELECT P.ID AS permissionRefId, P.PERMISSION_CODE AS permissionCode
+        SELECT P.ID AS permissionRefId, P.PERMISSION_CODE AS permissionCode, P.OWNER_TYPE AS ownerType
         FROM PEACH_PERMISSION_DEFINITION P
         WHERE P.ID IN
         <foreach collection="permissionRefIds" item="permissionRefId"

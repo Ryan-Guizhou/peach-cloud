@@ -25,4 +25,6 @@ public class RolePermissionGrantVO implements Serializable {
     private String permissionRefId;
 
     private String permissionCode;
+
+    private String ownerType;
 }

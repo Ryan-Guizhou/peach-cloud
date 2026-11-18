@@ -1,20 +1,16 @@
 package com.peach.gateway.core.security;
 
-import org.springframework.util.AntPathMatcher;
-
 import java.util.List;
 import java.util.Locale;
 
 /**
- * GatewaySecurityEndpointMatcher相关类。
+ * 网关严格匿名端点匹配器；仅 OPTIONS /** 允许跨路径预检，其他规则必须方法和路径完全相等。
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/8/11 14:45
  */
 public class GatewaySecurityEndpointMatcher {
-
-    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     /**
      * 判断当前请求是否命中公开端点规则。
@@ -30,12 +26,68 @@ public class GatewaySecurityEndpointMatcher {
         }
         String normalizedMethod = normalizeMethod(method);
         String normalizedPath = normalizePath(path);
+        // 对原始 URI 做严格检查，禁止 Gateway / Servlet 对编码和路径分隔符产生不同解释。
+        if (hasUnsafePath(normalizedPath)) {
+            return false;
+        }
+        // 平台初始化和 SaaS 授权管理绝不能因为配置失误成为匿名接口。
+        if (!"OPTIONS".equals(normalizedMethod) && isProtectedIamEndpoint(normalizedPath)) {
+            return false;
+        }
         for (GatewaySecurityEndpointRule rule : rules) {
             if (rule == null || isBlank(rule.getPath())) {
                 continue;
             }
-            if (methodMatches(rule.getMethod(), normalizedMethod)
-                    && pathMatcher.match(normalizePath(rule.getPath()), normalizedPath)) {
+            String rulePath = normalizePath(rule.getPath());
+            String ruleMethod = normalizeMethod(rule.getMethod());
+            // 仅允许显式 OPTIONS /** 的预检规则；其他匿名规则必须绑定 HTTP 方法和精确路径。
+            if ("OPTIONS".equals(normalizedMethod) && "OPTIONS".equals(ruleMethod)
+                    && "/**".equals(rulePath)) {
+                return true;
+            }
+            if (GatewaySecurityEndpointRule.ANY_METHOD.equals(ruleMethod)
+                    || hasUnsafePath(rulePath) || hasPatternSyntax(rulePath)) {
+                continue;
+            }
+            if (methodMatches(ruleMethod, normalizedMethod) && rulePath.equals(normalizedPath)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 即使远程配置出现宽泛白名单，IAM 管理入口也不能匿名放行。
+     */
+    private boolean isProtectedIamEndpoint(String path) {
+        return path.startsWith("/auth/external/iam/")
+                || "/auth/external/iam".equals(path)
+                || path.startsWith("/api/auth/external/iam/")
+                || "/api/auth/external/iam".equals(path)
+                || path.startsWith("/auth/saas/")
+                || "/auth/saas".equals(path)
+                || path.startsWith("/api/auth/saas/")
+                || "/api/auth/saas".equals(path);
+    }
+
+    /**
+     * 所有非 OPTIONS 的匿名路径均不能使用 Ant 通配或模板匹配。
+     */
+    private boolean hasPatternSyntax(String path) {
+        return path.contains("*") || path.contains("?")
+                || path.contains("{") || path.contains("}");
+    }
+
+    /**
+     * 防止网关与下游 Servlet 对 URI 规范化方式不同而导致绕过。
+     */
+    private boolean hasUnsafePath(String path) {
+        if (path.indexOf('%') >= 0 || path.indexOf('\\') >= 0
+                || path.indexOf(';') >= 0 || path.contains("//")) {
+            return true;
+        }
+        for (String part : path.split("/")) {
+            if (".".equals(part) || "..".equals(part)) {
                 return true;
             }
         }
@@ -69,7 +121,7 @@ public class GatewaySecurityEndpointMatcher {
     }
 
     /**
-     * 标准化请求路径，确保 Ant 匹配时带有前导斜杠。
+     * 标准化请求路径，确保严格匹配时带有前导斜杠。
      *
      * @param path 原始路径
      * @return 标准化后的路径

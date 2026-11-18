@@ -5,6 +5,8 @@ import com.peach.common.annoation.MybatisDao;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Indexed;
 
+import java.util.List;
+
 /**
  * 组织树物理引用与租户序列化移动的专用 DAO。
  *
@@ -28,6 +30,14 @@ public interface OrganizationHierarchyDao {
     String lockTenantAndFindBusinessId(@Param("tenantRefId") String tenantRefId);
 
     /**
+     * 只读查询当前已启用租户的业务 ID，不获取写锁。
+     *
+     * @param tenantRefId 服务端可信租户物理 ID
+     * @return 已启用租户业务编号或 null
+     */
+    String findEnabledTenantBusinessId(@Param("tenantRefId") String tenantRefId);
+
+    /**
      * 查询某租户下未删除的机构及其父节点物理 ID。
      *
      * @param id 机构物理 ID
@@ -36,6 +46,20 @@ public interface OrganizationHierarchyDao {
      */
     OrganizationDO selectInTenant(@Param("id") String id,
                                   @Param("tenantBusinessId") String tenantBusinessId);
+
+    /**
+     * 从真实机构表取有界的有效子孙节点，用于在 SQL 查询前预先计算机构限制。
+     *
+     * @param tenantBusinessId 经物理租户记录查出的永久租户业务编号
+     * @param ancestorOrgRefId 有效机构物理主键
+     * @param maxDepth 最大递归层数
+     * @param limit 最大返回条数，额外一条用于检测截断
+     * @return 有效机构主键（含祖先）；重复项表示机构树存在循环
+     */
+    List<String> selectActiveDescendantIds(@Param("tenantBusinessId") String tenantBusinessId,
+                                                      @Param("ancestorOrgRefId") String ancestorOrgRefId,
+                                                      @Param("maxDepth") int maxDepth,
+                                                      @Param("limit") int limit);
 
     /**
      * 通过乐观版本控制修改父机构，要求操作者在调用前已完成管理授权。

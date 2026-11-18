@@ -1,0 +1,16 @@
+{
+  "properties": [
+    {
+      "name": "peach.gateway.iam.enabled",
+      "type": "java.lang.Boolean",
+      "description": "启用 Auth 受信 API 实时权限核验；认证服务未联调前保持关闭且网关保护 API 默认拒绝。",
+      "defaultValue": false
+    },
+    {
+      "name": "peach.gateway.iam.timeout",
+      "type": "java.time.Duration",
+      "description": "网关 IAM 远程核验的完整请求超时；故障和超时拒绝而不是回退旧授权缓存。",
+      "defaultValue": "1500ms"
+    }
+  ]
+}
