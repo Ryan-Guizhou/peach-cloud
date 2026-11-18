@@ -122,3 +122,5 @@ npm run preview
 ### #227 SaaS 角色授权可操作界面
 
 `src/api/saas-iam.ts` 新增受保护的 `fetchSaasCatalog`、`fetchRolePermissionRefs` 和 `fetchMemberBindings`。年度角色授权页不再是占位信息，已经接入角色/权限/成员/机构分页选择器；支持替换当前租户年度角色的全部权限、对成员按 `TENANT/ORG/ORG_TREE` 独立授权和撤销**指定物理绑定**。可委派权限未加载完或角色仍持有当前管理员不可见的权限时，全量替换被明确禁止，避免误删授权。所有 API 请求依赖当前 Token，页面不能编辑 `tenantRefId/appRefId/year`。此项仍需真实数据库、网关在线 IAM 与旧数据迁移测试；行/字段策略编辑 UI 需要后续受控字段目录支持。
+
+**授权版本一致性补充：** 角色权限全量替换会让当前租户所有成员的 `AUTH_VERSION` 失效，包含执行该操作的管理员。因此后端写入成功后，管理页面立即断开旧 WebSocket、清除浏览器 Token 与动态路由并引导重新登录，不能继续用旧 Token 查询目录后误判成功写入为失败。切换租户/应用/年度时也会清除旧目录选择及缓存，防止跨租户显示之前的角色和成员。

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
+import { useRouter } from 'vue-router'
 
 import {
   fetchSaasCatalog,
@@ -12,9 +13,13 @@ import {
 } from '../../../api/saas-iam'
 import type { CatalogKind, SaasCatalogEntry, ScopeType } from '../../../api/saas-iam'
 import AdminLayout from '../../../layouts/admin/index.vue'
+import { clearDynamicRoutes } from '../../../router'
+import { useWebSocketStore } from '../../../stores/websocket'
 import { useAuthStore } from '../../../stores/auth'
 
 const authStore = useAuthStore()
+const router = useRouter()
+const websocketStore = useWebSocketStore()
 const canManage = computed(() => authStore.isAuthenticated
   && authStore.permissions.has('TENANT.ROLE.MANAGE'))
 
@@ -170,6 +175,32 @@ watch(selectedMemberId, async (id) => {
   }
 })
 
+const scopeKey = computed(() => [
+  authStore.session?.token,
+  authStore.session?.tenantRefId,
+  authStore.session?.appRefId,
+  authStore.session?.year,
+].join(':'))
+
+watch(scopeKey, () => {
+  roleVersion += 1
+  memberVersion += 1
+  selectedRoleId.value = ''
+  selectedMemberId.value = ''
+  selectedPermissionRefs.value = []
+  existingPermissionRefs.value = []
+  bindings.value = []
+  selectedBindingId.value = ''
+  kinds.forEach(kind => {
+    catalog[kind] = []
+    pages[kind] = 0
+    hasMore[kind] = false
+  })
+  if (canManage.value) {
+    void loadDirectories()
+  }
+})
+
 watch(canManage, (allowed) => {
   if (allowed) {
     void loadDirectories()
@@ -200,9 +231,13 @@ async function saveRolePermissions() {
   saving.value = true
   try {
     await replaceTenantRolePermissions(selectedRoleId.value, selectedPermissionRefs.value)
-    existingPermissionRefs.value = await fetchRolePermissionRefs(selectedRoleId.value)
-    selectedPermissionRefs.value = [...existingPermissionRefs.value]
-    message.success('当前年度角色权限已同步')
+    // 服务端对整个租户递增 AUTH_VERSION（包括当前操作者）。
+    // 不得继续用旧 Token 拉取授权快照，否则会误报写入失败并保留过期的页面状态。
+    message.success('角色权限已提交，旧授权会话已失效，请重新登录')
+    websocketStore.disconnect()
+    authStore.clearSession()
+    clearDynamicRoutes()
+    await router.replace('/login')
   } catch (error: unknown) {
     message.error(error instanceof Error ? error.message : '角色权限同步失败')
   } finally {
