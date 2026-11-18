@@ -285,3 +285,63 @@ flowchart LR
 两个端点均不接受操作人、租户、应用或年度参数；使用当前 Token 且要求当前租户年度的完整管理权限、可委派动作和操作者已持有该动作。对 SYSTEM 动作还要求操作者拥有 `TENANT + TENANT_ALL` 的完整行级证据；没有已受信引导的授权就保持拒绝。事务中锁定租户和租户角色，差量判断后逻辑撤销旧策略、插入新策略、递增角色版本及租户成员 `AUTH_VERSION` 并追加审计；任何失败整体回滚。**当角色撤销动作权限时同步逻辑撤销相应数据和字段策略，防止以后重新授予该权限时历史策略复活。**
 
 这只是权限策略配置闭环，后续仍须完成字段目录的安全引导/创建、真实 MySQL 并发验收及业务 SQL 侧 `COUNT/SELECT/EXPORT/UPDATE` 调用方改造，不能把本服务视作所有业务入口已经受保护。
+
+## #209 跨微服务受信 IAM 契约（开发中）
+
+新增 `SaasIamFeignClient`（`peach-auth-openfeign-external`），与旧路由/角色查询客户端保留不同 `contextId`。只允许带**两个独立凭证**的内部调用：一是由既有 Feign 拦截器提供的 Sa-Token Same-Token 服务凭证，二是从合法业务请求取得并经 `X-Peach-Subject-Token` 私有头传给 Auth 的最终用户 Token。认证服务接口 `POST /auth/external/iam/check-api` 和 `POST /auth/external/iam/context` 自身再次强制 Same-Token 校验，不能仅依赖外层可关闭的默认拦截器。不得通过浏览器提供的 `tenantRefId/memberRefId/year` 绕过令牌、成员版本和数据库状态校验。
+
+权限查询请求为 `{"permissionCode":"GET:/api/documents"}`；Auth 使用 Token 专属原子上下文与当前数据库校验成员状态、`VERSION/AUTH_VERSION`、用户、租户、应用、年度，然后只查有效、同绑定、`RESOURCE_TYPE=API` 的动作权限。**当前仅支持资源目录中精确的 METHOD:PATH 匹配**，动态 URL 模板/自动路由归一化尚未接入，缺失资源定义时默认拒绝。`SaasIamPermissionDecisionVO.allowed=true` 仅允许**API 动作**，不是文档、文件、业务对象或字段的授权。下游服务必须继续按实际物理对象权属在 SQL 前置检查行/字段级权限。Feign 故障、超时、熔断返回 `allowed=false`；上下文调用降级抛出安全异常，禁止返回伪造租户身份。
+
+```mermaid
+sequenceDiagram
+    participant Consumer as 业务服务 / Gateway
+    participant Auth as peach-auth 受信 API
+    participant Session as Sa-Token / Redis
+    participant DB as 认证数据库
+    Consumer->>Auth: Same-Token + 最终用户 Token + API 权限码
+    Auth->>Auth: 校验服务 Same-Token
+    Auth->>Session: 校验用户 Token 和专属租户快照
+    Auth->>DB: 校验用户/租户/成员/应用及授权版本
+    Auth->>DB: 查询当前年度的有效 API 角色绑定
+    Auth-->>Consumer: allowed 或拒绝（无数据对象授权）
+```
+
+使用前提：调用方引入 `peach-auth-openfeign-external`，持有真实用户 Sa-Token，启用 Same-Token 和 Feign 自动配置，且 Auth、Redis、MySQL 可访问。此接口不是匿名 API；部署应确保内部网络/TLS 与网关禁止将此路径对外暴露。仍待 #208 把网关的 `GatewayIamDecisionVerifier` 与此契约接通，#207/#211 完成实际对象 SQL 权限及端到端验证。
+
+
+#### Sa-Token 过滤器适配
+
+认证服务 `application.yml` 仅将上述四个 POST 内部 IAM 端点注册在 `peach.satoken.user-context.service-token-only-endpoints`，默认空。匹配路径不再尝试读取旧 `USER_PROFILE` 的 `userId/tenantId/orgId/fiscal`，而是先在 Servlet Filter 中**强制校验 Same-Token**，再由 Controller 二次检查 Same-Token 并以独立用户 Token 查询数据库。该配置不是公开白名单，不允许没有可信服务令牌的请求直达 Controller。其他普通路由仍沿用既有用户上下文机制，必须在后续迁移中持续替换旧租户字段，不能把这一专用通道泛化为跳过认证。
+
+
+#### 内部目录最小批量查询（#209）
+
+新增 `POST /auth/external/iam/directory/members` 与 `POST /auth/external/iam/directory/organizations`，请求只包含物理主键数组 `{"ids":["<物理主键>"]}`（最多 100 条、禁止重复）。调用仍强制 Same-Token 与当前真实用户 Token，并分别要求成员完整租户管理权限 `TENANT.MEMBER.MANAGE`、机构完整租户管理权限 `TENANT.ORG.MANAGE`。MyBatis 直接按已验证 `tenantRefId` 查询并联结有效租户/用户或有效租户/机构，跨租户及删除/停用对象不返回；结果仅包含成员 `id/memberId/userRefId`、机构 `id/orgId/parentOrgRefId`，无姓名、邮箱、密码摘要。Feign 依赖失败时抛出安全异常，不把服务异常伪装成“结果为空”。调用者不应将结果用于代替 #207 行级授权。
+
+### API 路由资源目录解析（#209 增量）
+
+认证服务现在先从**当前租户和应用的完整有效 API 权限目录**读取最多 513 条匹配当前 HTTP 方法的资源码（超过 512 条立即拒绝），再解析唯一最具体的 `METHOD:/path` 资源，最后才核验角色绑定；不会先过滤成当前角色权限再匹配模板。支持精确路径与整段变量 `{id}`（例如 `GET:/api/users/{id}`），精确路径优先；同等具体度的多个模板产生歧义时拒绝。拒绝 `*`、`**`、内联正则、编码路径、双斜杠及遍历路径，且不允许跨 HTTP 方法或跨路径段匹配。所有目录均受物理租户、应用、系统/租户归属、`ACTIVE` 与逻辑删除条件约束。该路由解析只解决粗粒度 API 动作，不等价于业务对象行/字段权限，也不自动初始化 API 资源目录；没有注册的路由仍会拒绝。
+
+#### 开发环境角色管理 API 资源初始化
+
+`sql/INIT.sql` 的开发种子数据现在显式注册 `SaasRoleController` 六项 `/api/auth/saas/roles` 路由（创建、修改权限、授权绑定、撤销绑定，以及 #207 的行级/字段级策略替换），并给示例租户 2026 年管理员角色授予对应动作；精确路径与 `{roleRefId}/{bindingRefId}` 段变量都由服务器端可信目录匹配。**只适用于初始化开发数据库**，不自动填充生产目录，不给内部 `/auth/external/iam/**` 注册公网权限。若 Nacos 网关实际路由前缀与 `/api/auth` 不同，必须在受信目录登记相应的精确外部路径，不得使用 `**` 通配授权兜底。
+
+#### 系统 API 权限归属约束
+
+`/api/auth/`、`/api/setting/`、`/api/file/`、`/api/fileservice/`、`/api/message/`、`/api/monitor/`、`/api/generator/`、`/api/scheduled/`、`/api/gateway/` 以及对应服务内部前缀，均属于平台受保护路由。网关收到这些 API 请求后，Auth 最终授权 SQL 必须命中 `OWNER_TYPE=SYSTEM` 的 API 资源定义，租户无法创建同名自定义资源并将其赋权来绕过系统保护。租户自定义的业务 API 权限仍可在非平台保留的路由空间内按成员、应用及年度独立判定；外部服务仍必须执行真实业务对象权限。
+
+#### 受信服务通道配置安全边界
+
+`peach.satoken.user-context.service-token-only-endpoints` 现在只接受**明确 HTTP 方法与完全相同的规范 Servlet URI**；`ANY`、Ant 风格 `*`/`**`、路径模板、编码路径和遍历片段均不会触发该通道。该配置只能跳过历史 USER_PROFILE 缓存恢复，绝不跳过 Same-Token 或 Auth 的真实最终用户 Token + 数据库成员版本验证。对应回归测试覆盖意外的 Nacos 宽泛路径配置。
+
+#### 认证服务 SaaS 角色接口的 Token 验证
+
+新的 SaaS 登录只保存 Token 专属成员快照，不再创建旧版用户级 `USER_PROFILE` Redis Hash；原通用过滤器会在角色管理 Controller 前误拒合法用户。为避免把整个业务服务配置成公开端点，新增 Auth 专用 `SaasAuthSessionFilter`，仅作用于 `/auth/saas/roles` 及其子路径，按顺序先强制服务 Same-Token、Sa-Token 登录态，再通过 `TenantSessionService.requireCurrent()` 数据库校验租户/成员/应用和两个版本。验证成功才设置只能由 Servlet 服务端写入的请求属性，让通用 `UserContextFilter` 对该请求跳过旧 Profile 查询，并在请求完成后清理；其他模块继续原路径，角色/行/字段最终权限依旧由领域服务判断。此处没有新增匿名入口，也不允许仅凭业务编号判断身份。
+
+补充：Auth 专用过滤器直接拒绝含百分号编码、分号矩阵参数、双斜杠、反斜杠及 `.`/`..` 路径段的角色管理请求；不会因下游 Servlet 规范化将危险路径误作为已验证的 SaaS 角色请求。该安全前置检查同样适用于绕过公共网关而直接访问 Auth 的场景。
+
+#### 登录后切换租户与年度
+
+`POST /auth/switchContext` 现在复用 Auth 专用 `SaasAuthSessionFilter`：先校验服务 Same-Token、真实用户登录态与当前数据库成员/授权版本，再设置只在本请求有效的 `VERIFIED_SAAS_AUTH_REQUEST` 内部属性，跳过旧用户 Profile Redis 缓存。实际目标租户、应用及年度由 `TenantSessionService.switchTenant()` 再次验证。网关 #208 为此提供精确的“已登录自服务”入口，**不是匿名白名单**，不要求每个自然年度业务角色都具有切换上下文权限。注销接口仅针对本人当前 Token。
+
+认证登录初始化响应 `LoginInitVO` 的旧 `fiscal` 字段已改为 `year`（自然年度建议值，仅用于登录页默认显示）；真正的年度由 `LoginDTO.year` 和成员 Token 快照确定。不要再把旧 FISCAL 与年度权限双模型同时下发。

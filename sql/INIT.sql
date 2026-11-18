@@ -60,6 +60,35 @@ VALUES
      'TENANT.ROLE.MANAGE', '租户角色管理', 'API', 'SYSTEM',
      1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
 
+-- #209: 仅用于开发环境启动/验证的最小 SaaS 角色管理 API 资源目录。
+-- 网关使用 /api/auth 前缀；内部 /auth/external/iam/** 不对公网授权。
+-- 请求先匹配最具体的系统目录资源，再验证当前年度角色；本段不代替生产权限初始化。
+INSERT IGNORE INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID,
+     PERMISSION_CODE, PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE,
+     DELEGABLE, STATUS, IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_API_ROLE_CREATE', NULL, NULL,
+     'POST:/api/auth/saas/roles', 'SaaS 创建角色 API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_API_ROLE_PERMISSIONS', NULL, NULL,
+     'PUT:/api/auth/saas/roles/{roleRefId}/permissions', 'SaaS 修改角色权限 API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_API_ROLE_BINDINGS', NULL, NULL,
+     'POST:/api/auth/saas/roles/bindings', 'SaaS 授予角色 API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_API_ROLE_REVOKE', NULL, NULL,
+     'DELETE:/api/auth/saas/roles/bindings/{bindingRefId}', 'SaaS 撤销角色 API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_API_DATA_POLICY', NULL, NULL,
+     'PUT:/api/auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/data-policies',
+     'SaaS 更新行级策略 API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_API_FIELD_POLICY', NULL, NULL,
+     'PUT:/api/auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/field-policies',
+     'SaaS 更新字段策略 API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
+
 INSERT IGNORE INTO PEACH_ROLE
     (ID, ROLE_ID, TENANT_ID, ORG_ID, ROLE_CODE, FISCAL,
      ROLE_NAME, ROLE_DESC, ROLE_SCOPE, ROLE_TYPE,
@@ -81,7 +110,13 @@ SELECT REPLACE(UUID(), '-', ''), R.TENANT_REF_ID, R.ID, P.ID,
        'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID
 FROM PEACH_ROLE R
 INNER JOIN PEACH_PERMISSION_DEFINITION P ON P.PERMISSION_CODE IN
-    ('TENANT.MEMBER.MANAGE', 'TENANT.ORG.MANAGE', 'TENANT.ROLE.MANAGE')
+    ('TENANT.MEMBER.MANAGE', 'TENANT.ORG.MANAGE', 'TENANT.ROLE.MANAGE',
+     'POST:/api/auth/saas/roles',
+     'PUT:/api/auth/saas/roles/{roleRefId}/permissions',
+     'POST:/api/auth/saas/roles/bindings',
+     'DELETE:/api/auth/saas/roles/bindings/{bindingRefId}',
+     'PUT:/api/auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/data-policies',
+     'PUT:/api/auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/field-policies')
     AND P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL
 WHERE R.ROLE_ID = 'ROLE_INIT_TENANTADMIN' AND R.IS_DELETE = 0;
 

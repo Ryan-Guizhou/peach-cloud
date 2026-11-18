@@ -23,6 +23,10 @@ import java.util.Map;
 
 /**
  * 登录初始化配置解析，从 setting 值集加载并合并本地默认值。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/18 14:15
  */
 @Slf4j
 @Indexed
@@ -48,7 +52,7 @@ public class LoginInitConfigSupport {
         initVO.setSystemName(config.getOrDefault(AuthLoginValueSetConst.SYSTEM_NAME, DEFAULT_SYSTEM_NAME));
         initVO.setSystemDescription(config.getOrDefault(AuthLoginValueSetConst.SYSTEM_DESCRIPTION, DEFAULT_SYSTEM_DESCRIPTION));
         initVO.setAppId(config.getOrDefault(AuthLoginValueSetConst.APP_ID, DEFAULT_APP_ID));
-        initVO.setFiscal(LocalDate.now(ZoneId.systemDefault()).getYear());
+        initVO.setYear(LocalDate.now(ZoneId.systemDefault()).getYear());
         initVO.setPublicKey(publicKey);
         initVO.setEncryptionAlgorithm(config.getOrDefault(AuthLoginValueSetConst.ENCRYPTION_ALGORITHM, DEFAULT_ENCRYPTION_ALGORITHM));
         initVO.setCaptchaType(config.getOrDefault(AuthLoginValueSetConst.CAPTCHA_TYPE,

@@ -10,12 +10,12 @@ import java.util.Map;
 
 /**
  * 登录页初始化信息。
- * /
+ *
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/3/20 16:58
-  */
+ */
 @Data
 @Schema(description = "登录页初始化信息")
 public class LoginInitVO implements Serializable {
@@ -32,8 +32,8 @@ public class LoginInitVO implements Serializable {
     @Schema(description = "初始应用ID")
     private String appId;
 
-    @Schema(description = "当前年度")
-    private Integer fiscal;
+    @Schema(description = "建议选择的自然年度，身份和授权以实际登录请求 year 为准")
+    private Integer year;
 
     @Schema(description = "RSA公钥，Base64编码的X.509格式")
     private String publicKey;

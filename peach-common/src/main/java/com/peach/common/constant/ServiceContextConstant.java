@@ -16,6 +16,9 @@ public final class ServiceContextConstant {
 
     public static final String AUTH_SERVICE_CONTEXT = "authFeignClient";
 
+    /** SaaS IAM 受信鉴权客户端独立 Feign 上下文。 */
+    public static final String SAAS_IAM_SERVICE_CONTEXT = "saasIamFeignClient";
+
     public static final String MONITOR_SERVICE_CONTEXT = "monitorFeignClient";
 
     public static final String FILE_SERVICE_CONTEXT = "fileFeignClient";

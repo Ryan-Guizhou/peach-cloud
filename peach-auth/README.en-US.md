@@ -228,3 +228,63 @@ Business MyBatis mappers **must** bind `tenantRefId`, `appRefId`, `year`, `IS_DE
 Neither endpoint accepts a browser-supplied operator, tenant, application or year. The current Token must hold tenant-wide administration, the target action must be delegable and held by the operator; SYSTEM actions additionally require an effective `TENANT + TENANT_ALL` row grant for the operator. Without trusted bootstrap evidence access is denied. The transaction locks tenant and role, compares the policy set, retires old rows, creates new rows, increments role and tenant member `AUTH_VERSION` and appends an audit record; all steps roll back together on failure. **Revoking an action from a role also retires its data and field policies, preventing stale privilege resurrection when that action is later reassigned.**
 
 This completes the protected policy-configuration path, not the downstream access-control rollout. Field directory bootstrapping/creation, real MySQL concurrency validation and business SQL `COUNT/SELECT/EXPORT/UPDATE` integration are still required before declaring every business endpoint safe.
+
+## #209 Trusted cross-service IAM contract (in progress)
+
+`SaasIamFeignClient` in `peach-auth-openfeign-external` has a separate `contextId` from the legacy router/role client. Internal calls require **two independent credentials**: a Sa-Token Same-Token service credential added by the existing Feign interceptor and the actual end-user token obtained from the authenticated request, passed only in the `X-Peach-Subject-Token` private header. The Auth endpoints `POST /auth/external/iam/check-api` and `POST /auth/external/iam/context` explicitly enforce Same-Token again even if the global interceptor is misconfigured. Browser-supplied tenant/member/year values can never replace revalidation.
+
+The permission query uses `{"permissionCode":"GET:/api/documents"}`. Auth revalidates the token-specific SaaS context and current user, tenant, member, application and annual authorization versions from its database, then queries only active binding-level permissions of `RESOURCE_TYPE=API`. **Only exact METHOD:PATH codes are currently supported**; dynamic URI templates and automatic route normalization remain pending and missing definitions fail closed. `SaasIamPermissionDecisionVO.allowed=true` means the **API action** is permitted, never that a document, file, business row or field can be accessed. Downstream services must independently enforce physical-object row and field constraints in SQL. Feign failures/timeouts/circuit breakers yield `allowed=false`; a failed context query throws rather than fabricating a tenant identity.
+
+```mermaid
+sequenceDiagram
+    participant Consumer as Business service / Gateway
+    participant Auth as peach-auth trusted endpoint
+    participant Session as Sa-Token / Redis
+    participant DB as Auth database
+    Consumer->>Auth: Same-Token + end-user Token + API permission code
+    Auth->>Auth: Validate service Same-Token
+    Auth->>Session: Validate subject Token and scoped session
+    Auth->>DB: Validate user/tenant/member/app and auth versions
+    Auth->>DB: Read active same-binding API permissions for year
+    Auth-->>Consumer: allowed or denied (not object authorization)
+```
+
+Prerequisites: the consumer depends on `peach-auth-openfeign-external`, has a real authenticated user token and enables Feign and Same-Token; Auth, Redis and MySQL must be available. The endpoints are internal only; deployment must enforce private networking/TLS and keep them off public gateway routes. #208 must still connect `GatewayIamDecisionVerifier` to the contract, while #207/#211 must complete physical-object SQL authorization and end-to-end verification.
+
+
+#### Sa-Token filter adapter
+
+The Auth service `application.yml` explicitly registers only the four internal IAM POST endpoints under `peach.satoken.user-context.service-token-only-endpoints` (empty by default). These endpoints do not load legacy `USER_PROFILE` data using `userId/tenantId/orgId/fiscal`. Instead, the Servlet filter **requires Same-Token** before reaching the controller, where Same-Token is checked again and the end-user token is revalidated against the database. This is not a public allowlist: missing or invalid trusted service credentials are rejected. Other application routes continue their existing user-context flow until migrated and must not use this narrowly scoped mechanism as a general authentication bypass.
+
+
+#### Minimal trusted directory batch lookups (#209)
+
+Two internal APIs, `POST /auth/external/iam/directory/members` and `POST /auth/external/iam/directory/organizations`, accept only `{"ids":["<physical ID>"]}` (at most 100 non-duplicate IDs). Each enforces both Same-Token service authentication and a valid end-user token, plus full-tenant `TENANT.MEMBER.MANAGE` or `TENANT.ORG.MANAGE` permission respectively. MyBatis queries are scoped to the verified physical `tenantRefId`, active tenant/user/member or tenant/organization records, and return no disabled, deleted or cross-tenant records. The response exposes only `id/memberId/userRefId` for members and `id/orgId/parentOrgRefId` for organizations, without names, contacts or password hashes. Feign fallback throws on directory failures, never turning service unavailability into a seemingly valid empty directory. These results do not replace #207 row-level authorization.
+
+### API route catalog resolution (#209 incremental)
+
+Auth now loads the **complete active API permission catalog visible to the verified tenant and application** for the request method (up to 513 rows; more than 512 fails closed), selects one uniquely most-specific `METHOD:/path` route, and only then checks the member's effective role grant. It never filters to the member's grants before choosing the route, which would let a broad template mask an ungranted exact resource. Supports exact paths and full-segment placeholders such as `GET:/api/users/{id}`; exact matches take precedence. Equal-specificity overlapping templates are denied, as are `*`, `**`, embedded regular expressions, encoded paths, duplicate slashes, traversal, and cross-method matches. Catalog queries scope physical tenant/application, owner, active status, and soft deletion. This only grants coarse API actions, not access to underlying business rows or fields, and does not register the API catalog automatically; unregistered routes stay denied.
+
+#### Development API catalog for SaaS role management
+
+The development seed `sql/INIT.sql` now registers six SaaS role-management public-gateway route actions under `/api/auth/saas/roles` (create, update permission assignment, grant binding, revoke binding, and #207 data/field policy replacement), and grants them to the sample 2026 tenant administrator. Exact routes and `{roleRefId}/{bindingRefId}` placeholders use the server-side trusted catalog matcher. **This is for development database initialization only**, not production provisioning. No internal `/auth/external/iam/**` endpoint receives a public-gateway permission. If the Nacos route uses a different public prefix from `/api/auth`, register the exact effective public paths in the trusted catalog instead of granting `**` wildcards.
+
+#### Ownership constraint for platform APIs
+
+Protected platform namespaces include `/api/auth/`, `/api/setting/`, `/api/file/`, `/api/fileservice/`, `/api/message/`, `/api/monitor/`, `/api/generator/`, `/api/scheduled/`, `/api/gateway/` and their matching internal service prefixes. For these requests, Auth SQL must require an API permission definition owned by `SYSTEM`; a tenant cannot create and grant an identically named custom resource to override a platform security boundary. Tenant-defined custom API permissions remain available in non-reserved route namespaces, scoped to the verified tenant/application/year; downstream services must still enforce physical-object authorization.
+
+#### Trusted service-only endpoint configuration boundary
+
+`peach.satoken.user-context.service-token-only-endpoints` now accepts **an explicit HTTP method and an exactly equal canonical Servlet URI**. `ANY`, Ant `*`/`**` patterns, URI templates, encoded paths, and traversal segments cannot activate the privileged service-only channel. This setting only bypasses legacy USER_PROFILE cache restoration; it never bypasses Same-Token or Auth's actual end-user token and database member-version validation. Regression tests cover overly broad Nacos route configuration.
+
+#### Verified token handling for protected Auth SaaS role endpoints
+
+The new SaaS login stores the token-specific membership snapshot and no longer creates the old user-level Redis `USER_PROFILE` Hash. Previously the shared filter could reject legitimate role-management requests before they reached their controllers. The Auth-only `SaasAuthSessionFilter` now applies to `/auth/saas/roles` and child paths, and first enforces the service Same-Token, the real end-user Sa-Token login, and `TenantSessionService.requireCurrent()` database checks for tenant, member, application, and both authorization versions. Only successful verification sets a server-side Servlet request attribute to bypass legacy Profile loading for that request; the attribute is cleared after completion. Other services retain the original path, and domain services still enforce operation-specific role, row, and field permissions. No endpoint is made anonymous and business IDs are never substituted for verified physical identity.
+
+The Auth-only filter also explicitly rejects percent-encoded paths, semicolon matrix parameters, duplicate separators, backslashes, and `.`/`..` segments in SaaS role requests. Servlet path normalization therefore cannot reinterpret a dangerous URI as an already verified role request, including on direct-to-Auth calls that bypass the public gateway.
+
+#### Authenticated tenant/year switching
+
+`POST /auth/switchContext` now shares Auth's dedicated `SaasAuthSessionFilter`: service Same-Token, actual end-user login, and fresh database member/authorization versions are required before a server-only per-request `VERIFIED_SAAS_AUTH_REQUEST` attribute permits skipping legacy user-level Redis Profile loading. `TenantSessionService.switchTenant()` independently verifies the selected target tenant, application and year. Gateway #208 exposes an exact **authenticated-only self-service** action, never an anonymous allowlist entry, so each yearly business role need not be assigned switching permission. Logout revokes only the caller's current token.
+
+The login-bootstrap response `LoginInitVO` now exposes `year` instead of legacy `fiscal`. This is only a suggested calendar-year default for the login form; the authoritative year is supplied by `LoginDTO.year` and stored in the verified tenant-member token snapshot. The legacy FISCAL model is no longer exposed by this login-bootstrap contract.

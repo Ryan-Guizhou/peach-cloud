@@ -1,6 +1,7 @@
 package com.peach.auth.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.session.SaSession;
 import com.peach.auth.dao.TenantMemberDao;
 import com.peach.auth.entity.TenantMemberDO;
 import com.peach.common.constant.SaTokenConstant;
@@ -88,7 +89,36 @@ public class TenantSessionService {
         if (!StpUtil.isLogin()) {
             throw new SecurityException("Authenticated tenant session is required");
         }
-        var session = StpUtil.getTokenSession();
+        return verifyTokenSnapshot(StpUtil.getTokenSession(), StpUtil.getLoginIdAsString());
+    }
+
+    /**
+     * 服务间受信调用使用明确转交的最终用户 Token 校验 SaaS 身份。
+     *
+     * <p>本方法不能由公网入口直接以客户端提供的租户/成员参数调用；调用方必须独立
+     * 校验 Same-Token 或其他服务身份。不会复用当前服务自己的登录 Session。
+     * Token 缺失、无效、登出、版本变更、成员/用户/租户停用、应用关闭均拒绝。</p>
+     *
+     * @param tokenValue 当前最终用户原始 Sa-Token，不允许写入日志
+     * @return 数据库核验后的当前 Token SaaS 物理身份
+     */
+    @Transactional(readOnly = true)
+    public TenantSessionContext requireForToken(String tokenValue) {
+        if (!StringUtils.hasText(tokenValue) || tokenValue.length() > 1024) {
+            throw new SecurityException("Valid subject token is required");
+        }
+        Object loginId = StpUtil.getLoginIdByToken(tokenValue);
+        if (loginId == null || !StringUtils.hasText(String.valueOf(loginId))) {
+            throw new SecurityException("Subject token is invalid");
+        }
+        SaSession session = StpUtil.getStpLogic().getTokenSessionByToken(tokenValue, false);
+        return verifyTokenSnapshot(session, String.valueOf(loginId));
+    }
+
+    private TenantSessionContext verifyTokenSnapshot(SaSession session, String trustedLoginId) {
+        if (session == null || !StringUtils.hasText(trustedLoginId)) {
+            throw new SecurityException("Trusted token session is required");
+        }
         Object stored = session.get(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT);
         if (!(stored instanceof Map<?, ?> values)
                 || !(values.get("userRefId") instanceof String userId)
@@ -112,7 +142,9 @@ public class TenantSessionService {
         }
         TenantSessionContext context = new TenantSessionContext(
                 userId, tenantId, memberId, appId, year, memberVersion, authVersion);
-        requireLoginUser(context.userRefId());
+        if (tenantMemberDao.countAuthenticatedUserIdentity(trustedLoginId, context.userRefId()) != 1) {
+            throw new SecurityException("Subject token principal does not match global user");
+        }
         TenantMemberDO active = membershipService.resolveActive(context.tenantRefId(), context.userRefId());
         if (active == null || !Objects.equals(active.getId(), context.memberRefId())
                 || !STATUS_ACTIVE.equals(active.getStatus())

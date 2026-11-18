@@ -26,6 +26,14 @@ public class UserContextProperties {
     private boolean enabled = true;
 
     /**
+     * 服务间双凭证专用入口，不依赖旧的 Redis 用户资料缓存。
+     *
+     * <p>默认不配置任何路径；必须同时由过滤器校验 Same-Token，
+     * 并由具体 Controller 从最终用户原始 Token 验证数据库身份。</p>
+     */
+    private List<SatokenEndpointRule> serviceTokenOnlyEndpoints = List.of();
+
+    /**
      * 业务服务侧公开端点列表。
      *
      * <p>命中该列表的请求允许未登录访问，并跳过 Same-Token 校验。网关路径被
