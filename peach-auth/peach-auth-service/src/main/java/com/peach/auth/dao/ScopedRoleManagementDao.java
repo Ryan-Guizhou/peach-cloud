@@ -9,7 +9,7 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
- * 租户年度角色与权限的受控持久层。
+ * 租户角色与权限的受控持久层。
  *
  * <p>角色行锁串行化所有角色权限写入；SQL 中所有关联都使用物理主键，
  * 不采用 ROLE_CODE 和机构业务号拼接权限事实。</p>
@@ -23,7 +23,7 @@ import java.util.List;
 public interface ScopedRoleManagementDao {
 
     /**
-     * 创建与单个租户、应用和自然年度绑定的租户级角色。
+     * 创建绑定到当前物理租户和应用的租户级角色。
      *
      * @param role 已经服务端校验的角色
      * @return 插入条数
@@ -35,13 +35,11 @@ public interface ScopedRoleManagementDao {
      *
      * @param tenantRefId 租户物理主键
      * @param appRefId 应用物理主键
-     * @param year 自然年度
      * @param roleRefId 角色物理主键
      * @return 角色实体或 null
      */
     RoleDO lockScopedRole(@Param("tenantRefId") String tenantRefId,
                           @Param("appRefId") String appRefId,
-                          @Param("year") int year,
                           @Param("roleRefId") String roleRefId);
 
     /**
@@ -79,7 +77,6 @@ public interface ScopedRoleManagementDao {
      */
     int incrementRoleVersion(@Param("tenantRefId") String tenantRefId,
                              @Param("appRefId") String appRefId,
-                             @Param("year") int year,
                              @Param("roleRefId") String roleRefId,
                              @Param("version") long version,
                              @Param("operatorRefId") String operatorRefId);

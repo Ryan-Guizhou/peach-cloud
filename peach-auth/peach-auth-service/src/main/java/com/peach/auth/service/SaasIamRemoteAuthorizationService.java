@@ -87,14 +87,13 @@ public class SaasIamRemoteAuthorizationService {
         boolean systemOnly = isProtectedPlatformRoute(requestCode);
         List<RoleScopeGrantVO> grants = grantDao.selectApiGrants(
                 context.tenantRefId(), context.memberRefId(), context.appRefId(),
-                context.year(), code, systemOnly);
+                code, systemOnly);
         if (CollectionUtils.isEmpty(grants)) {
             return new SaasIamPermissionDecisionVO(false);
         }
         return new SaasIamPermissionDecisionVO(true,
                 new SaasIamContextVO(context.userRefId(), context.tenantRefId(),
-                        context.memberRefId(), context.appRefId(), context.year(),
-                        context.memberVersion(), context.authVersion()));
+                        context.memberRefId(), context.appRefId(), context.memberVersion(), context.authVersion()));
     }
 
     private boolean isProtectedPlatformRoute(String requestCode) {
@@ -117,8 +116,7 @@ public class SaasIamRemoteAuthorizationService {
     public SaasIamContextVO requireContext(String subjectToken) {
         TenantSessionContext context = sessionService.requireForToken(subjectToken);
         return new SaasIamContextVO(context.userRefId(), context.tenantRefId(),
-                context.memberRefId(), context.appRefId(), context.year(),
-                context.memberVersion(), context.authVersion());
+                context.memberRefId(), context.appRefId(), context.memberVersion(), context.authVersion());
     }
 
 }

@@ -8,8 +8,6 @@ export interface LoginInitInfo {
   systemName: string
   systemDescription: string
   appId: string
-  /** 登录年份由用户选择，不能从旧 FISCAL 权限字段推导。 */
-  year?: number
   publicKey: string
   encryptionAlgorithm: string
   captchaType?: string
@@ -41,7 +39,6 @@ export interface CaptchaCheckResult {
 export interface LoginRequest {
   username: string
   password: string
-  year: number
   tenantRefId?: string
   appRefId?: string
   captchaVerification?: string
@@ -117,7 +114,6 @@ export interface LoginPermissionSnapshot {
 export interface LoginInfo {
   userId: string
   userName: string
-  year: number
   userRefId?: string
   tenantRefId?: string
   memberRefId?: string
@@ -156,6 +152,5 @@ export interface AuthSession {
   tenantName?: string
   orgId?: string
   orgName?: string
-  year: number
   expiresAt: number
 }

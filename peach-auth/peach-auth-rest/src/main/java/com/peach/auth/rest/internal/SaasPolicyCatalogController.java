@@ -40,14 +40,14 @@ public class SaasPolicyCatalogController {
     }
 
     @GetMapping("/roles/{roleRefId}/permissions/{permissionRefId}/data-policies")
-    @Operation(summary = "读取当前年度角色动作的完整行级范围策略")
+    @Operation(summary = "读取当前角色动作的完整行级范围策略")
     public Response dataPolicies(@NotBlank @PathVariable String roleRefId,
                                  @NotBlank @PathVariable String permissionRefId) {
         return Response.success(policyCatalogService.dataPolicies(roleRefId, permissionRefId));
     }
 
     @GetMapping("/roles/{roleRefId}/permissions/{permissionRefId}/field-policies")
-    @Operation(summary = "读取当前年度角色动作在受控资源下的字段读写策略")
+    @Operation(summary = "读取当前角色动作在受控资源下的字段读写策略")
     public Response fieldPolicies(@NotBlank @PathVariable String roleRefId,
                                   @NotBlank @PathVariable String permissionRefId,
                                   @NotBlank @RequestParam String resourceCode) {

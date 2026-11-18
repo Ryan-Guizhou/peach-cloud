@@ -30,9 +30,6 @@ public class LoginInfo {
     @Schema(description = "用户名称")
     private String userName;
 
-    @Schema(description = "当前授权自然年度")
-    private Integer year;
-
     @Schema(description = "已验证用户物理主键")
     private String userRefId;
 

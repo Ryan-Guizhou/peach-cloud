@@ -13,7 +13,7 @@ import java.io.Serial;
 import java.time.LocalDateTime;
 
 /**
- * 成员针对单个应用与自然年度的独立角色绑定。
+ * 成员针对单个应用与的独立角色绑定。
  *
  * <p>租户范围不带 SCOPE_REF_ID；机构及机构树范围必须指向已启用机构物理 ID。</p>
  *
@@ -46,9 +46,6 @@ public class MemberRoleBindingDO extends PeachDO {
 
     @Column(name = "ROLE_REF_ID")
     private String roleRefId;
-
-    @Column(name = "AUTH_YEAR")
-    private Integer authYear;
 
     @Column(name = "SCOPE_TYPE")
     private String scopeType;

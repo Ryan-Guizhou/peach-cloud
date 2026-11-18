@@ -2,7 +2,7 @@ import http, { unwrapApiResponse } from './http'
 import type { ApiResponse } from '../types/auth'
 
 /**
- * SaaS 受保护管理 API：身份、租户、应用与自然年度统一由 Auth 的 Token 决定。
+ * SaaS 受保护管理 API：身份、租户、应用统一由 Auth 的 Token 决定。
  * 这里的参数仅承载目标物理主键和操作内容，不接受浏览器自报的授权身份。
  */
 const PHYSICAL_ID = /^[a-fA-F0-9]{32}$/
@@ -87,7 +87,7 @@ export async function replaceTenantRolePermissions(
   unwrapApiResponse(data, '更新角色权限失败')
 }
 
-/** 每次仅建立一个成员、应用、年度下的独立范围绑定。 */
+/** 每次仅建立一个成员、应用下的独立范围绑定。 */
 export async function grantMemberRole(request: GrantMemberRoleRequest): Promise<string> {
   const targetMemberRefId = physicalId(request.targetMemberRefId, '成员ID')
   const roleRefId = physicalId(request.roleRefId, '角色ID')

@@ -17,8 +17,6 @@ public final class GatewayRateLimitConstants {
 
     public static final String TOKEN_SESSION_ORG_ID = SaTokenConstant.TOKEN_SESSION_ORG_ID;
 
-    public static final String TOKEN_SESSION_FISCAL = SaTokenConstant.TOKEN_SESSION_FISCAL;
-
     public static final String TENANT_CONTEXT_ATTRIBUTE = "peach.gateway.rate-limit.tenant-id";
 
     public static final String RATE_LIMIT_LIMIT_HEADER = "RateLimit-Limit";

@@ -42,7 +42,7 @@ class ScopedDataAuthorizationServiceTest {
         service = new ScopedDataAuthorizationService(tenantSessionService, dao, matcher);
 
         when(tenantSessionService.requireCurrent()).thenReturn(
-                new TenantSessionContext("user", "tenant", "member", "app", 2026, 1L, 2L));
+                new TenantSessionContext("user", "tenant", "member", "app", 1L, 2L));
         grant = new RoleDataGrantVO();
         grant.setBindingRefId("binding");
         grant.setRoleRefId("role");
@@ -55,25 +55,24 @@ class ScopedDataAuthorizationServiceTest {
     void shouldDenyObjectWithoutConfiguredRowScope() {
         assertThatThrownBy(() -> service.requireObjectAction("DOC.READ", data("tenant")))
                 .isInstanceOf(SecurityException.class);
-        verify(dao).selectDataGrants("tenant", "member", "app", 2026, "DOC.READ");
+        verify(dao).selectDataGrants("tenant", "member", "app", "DOC.READ");
     }
 
     @Test
     void shouldDenyCrossTenantObjectsBeforeLookingUpFields() {
-        when(dao.selectDataGrants("tenant", "member", "app", 2026, "DOC.READ"))
+        when(dao.selectDataGrants("tenant", "member", "app", "DOC.READ"))
                 .thenReturn(List.of(grant));
         assertThatThrownBy(() -> service.readAuthorizedFields("DOC.READ", "DOC",
                 data("foreign-tenant"), Map.of("secret", "sensitive")))
                 .isInstanceOf(SecurityException.class);
-        verify(dao, never()).selectFieldRules(eq("tenant"), eq("member"), eq("app"),
-                eq(2026), eq("DOC.READ"), eq("DOC"), anyList());
+        verify(dao, never()).selectFieldRules(eq("tenant"), eq("member"), eq("app"), eq("DOC.READ"), eq("DOC"), anyList());
     }
 
     @Test
     void shouldOnlyReturnFieldsAllowedByTheMatchingRoleBinding() {
-        when(dao.selectDataGrants("tenant", "member", "app", 2026, "DOC.READ"))
+        when(dao.selectDataGrants("tenant", "member", "app", "DOC.READ"))
                 .thenReturn(List.of(grant));
-        when(dao.selectFieldRules(eq("tenant"), eq("member"), eq("app"), eq(2026),
+        when(dao.selectFieldRules(eq("tenant"), eq("member"), eq("app"),
                 eq("DOC.READ"), eq("DOC"), anyList()))
                 .thenReturn(List.of(field("name", "ALLOW", "DENY"),
                         field("secret", "DENY", "DENY")));
@@ -88,9 +87,9 @@ class ScopedDataAuthorizationServiceTest {
 
     @Test
     void shouldRefuseUnknownFieldOnWrite() {
-        when(dao.selectDataGrants("tenant", "member", "app", 2026, "DOC.EDIT"))
+        when(dao.selectDataGrants("tenant", "member", "app", "DOC.EDIT"))
                 .thenReturn(List.of(grant));
-        when(dao.selectFieldRules(eq("tenant"), eq("member"), eq("app"), eq(2026),
+        when(dao.selectFieldRules(eq("tenant"), eq("member"), eq("app"),
                 eq("DOC.EDIT"), eq("DOC"), anyList()))
                 .thenReturn(List.of(field("title", "ALLOW", "ALLOW")));
 
@@ -104,7 +103,7 @@ class ScopedDataAuthorizationServiceTest {
     }
 
     private static DataObjectDescriptor data(String tenant) {
-        return new DataObjectDescriptor(tenant, "app", 2026, "object", "user", null, false);
+        return new DataObjectDescriptor(tenant, "app", "object", "user", null, false);
     }
 
     private static ScopedFieldRuleVO field(String code, String readEffect, String writeEffect) {

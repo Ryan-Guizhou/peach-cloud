@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * 从当前有效成员、角色及权限定义中查询受信的登录权限事实。
  *
- * <p>查询在 SQL 层对物理 ID、自然年度、成员版本与授权版本做完全限定，
+ * <p>查询在 SQL 层对物理租户、成员、应用与成员/授权版本做完全限定，
  * 最多读取 1025 行，调用方对超过 1024 行的结果必须安全拒绝。</p>
  *
  * @Author Mr Shu
@@ -28,7 +28,6 @@ public interface SaasLoginSnapshotDao {
      * @param tenantRefId 当前租户物理主键
      * @param memberRefId 当前成员物理主键
      * @param appRefId 当前应用物理主键
-     * @param year 当前授权自然年度
      * @param memberVersion 成员版本
      * @param authVersion 当前角色授权版本
      * @return 单绑定授权事实，超过 1024 行应视为不完整快照并拒绝
@@ -37,7 +36,6 @@ public interface SaasLoginSnapshotDao {
                                                   @Param("tenantRefId") String tenantRefId,
                                                   @Param("memberRefId") String memberRefId,
                                                   @Param("appRefId") String appRefId,
-                                                  @Param("year") int year,
                                                   @Param("memberVersion") long memberVersion,
                                                   @Param("authVersion") long authVersion);
 }

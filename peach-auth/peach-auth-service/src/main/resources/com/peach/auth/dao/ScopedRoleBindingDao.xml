@@ -4,7 +4,7 @@
     <sql id="bindingFields">
         ID AS id, TENANT_REF_ID AS tenantRefId,
         MEMBER_REF_ID AS memberRefId, APP_REF_ID AS appRefId,
-        ROLE_REF_ID AS roleRefId, AUTH_YEAR AS authYear,
+        ROLE_REF_ID AS roleRefId,
         SCOPE_TYPE AS scopeType, SCOPE_REF_ID AS scopeRefId,
         STATUS AS status, IS_DELETE AS isDelete,
         VERSION AS version, DELETED_AT AS deletedAt
@@ -32,7 +32,7 @@
         INNER JOIN PEACH_TENANT T ON T.ID = R.TENANT_REF_ID
             AND T.TENANT_ID = A.TENANT_ID AND T.IS_DELETE = 0 AND T.STATUS = 'ENABLE'
         WHERE R.ID = #{roleRefId} AND R.TENANT_REF_ID = #{tenantRefId}
-          AND R.APP_REF_ID = #{appRefId} AND R.AUTH_YEAR = #{year}
+          AND R.APP_REF_ID = #{appRefId}
           AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
     </select>
 
@@ -62,7 +62,7 @@
         FROM PEACH_MEMBER_ROLE_BINDING
         WHERE TENANT_REF_ID = #{tenantRefId}
           AND MEMBER_REF_ID = #{memberRefId} AND APP_REF_ID = #{appRefId}
-          AND ROLE_REF_ID = #{roleRefId} AND AUTH_YEAR = #{year}
+          AND ROLE_REF_ID = #{roleRefId}
           AND SCOPE_TYPE = #{scopeType}
           <choose>
               <when test="scopeRefId == null">
@@ -85,11 +85,11 @@
     <insert id="insert" parameterType="com.peach.auth.entity.MemberRoleBindingDO">
         INSERT INTO PEACH_MEMBER_ROLE_BINDING
         (ID, TENANT_REF_ID, MEMBER_REF_ID, APP_REF_ID, ROLE_REF_ID,
-         AUTH_YEAR, SCOPE_TYPE, SCOPE_REF_ID, STATUS, IS_DELETE,
+         SCOPE_TYPE, SCOPE_REF_ID, STATUS, IS_DELETE,
          VERSION, CREATED_TIME, CREATOR_ID)
         VALUES
         (#{id}, #{tenantRefId}, #{memberRefId}, #{appRefId},
-         #{roleRefId}, #{authYear}, #{scopeType},
+         #{roleRefId}, #{scopeType},
          #{scopeRefId,jdbcType=VARCHAR}, 'ACTIVE', 0, 0,
          #{createdTime}, #{creatorId})
     </insert>

@@ -39,7 +39,7 @@ class SaasIamRemoteDirectoryServiceTest {
         directoryDao = mock(SaasIamDirectoryDao.class);
         service = new SaasIamRemoteDirectoryService(sessions, permissionService, directoryDao);
         when(sessions.requireForToken("user-token")).thenReturn(
-                new TenantSessionContext("user", "tenant", "member", "app", 2026, 2, 8));
+                new TenantSessionContext("user", "tenant", "member", "app", 2, 8));
     }
 
     @Test
@@ -53,7 +53,7 @@ class SaasIamRemoteDirectoryServiceTest {
 
     @Test
     void shouldOnlyQueryCurrentTenantForAuthorizedMemberLookup() {
-        when(permissionService.hasTenantPermission("tenant", "member", "app", 2026,
+        when(permissionService.hasTenantPermission("tenant", "member", "app",
                 IamPermissionCodes.TENANT_MEMBER_MANAGE)).thenReturn(true);
         SaasIamMemberBriefVO result = new SaasIamMemberBriefVO();
         result.setId("target");
@@ -67,7 +67,7 @@ class SaasIamRemoteDirectoryServiceTest {
 
     @Test
     void shouldRejectDuplicateOrOversizedBatchAndNeverIssueUnboundedQueries() {
-        when(permissionService.hasTenantPermission("tenant", "member", "app", 2026,
+        when(permissionService.hasTenantPermission("tenant", "member", "app",
                 IamPermissionCodes.TENANT_MEMBER_MANAGE)).thenReturn(true);
         assertThatThrownBy(() -> service.members("user-token", List.of("target", "target")))
                 .isInstanceOf(IllegalArgumentException.class);

@@ -10,7 +10,6 @@ package com.peach.gateway.core.security;
  * @param tenantRefId 当前租户物理主键
  * @param memberRefId 当前租户成员物理主键
  * @param appRefId 当前应用物理主键
- * @param year 自然年度
  * @param memberVersion 成员生命周期版本
  * @param authVersion 成员授权版本
  * @param orgRefId 可选的机构物理主键
@@ -19,6 +18,6 @@ package com.peach.gateway.core.security;
  * @CreateTime 2026/11/18 11:40
  */
 public record GatewayTokenContext(String userRefId, String tenantRefId, String memberRefId,
-                                  String appRefId, int year, long memberVersion,
+                                  String appRefId, long memberVersion,
                                   long authVersion, String orgRefId) {
 }

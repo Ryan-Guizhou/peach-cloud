@@ -6,11 +6,13 @@ import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
  * 用户角色绑定参数。
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/18 17:00
  */
 @Data
 @Schema(description = "用户角色绑定参数")
@@ -30,10 +32,6 @@ public class UserRoleAuthDTO implements Serializable {
     @Schema(description = "用户账号")
     @NotBlank(message = "用户账号不能为空")
     private String userCode;
-
-    @Schema(description = "年度")
-    @NotNull(message = "年度不能为空")
-    private Integer fiscal;
 
     @Schema(description = "角色编码列表")
     private List<String> roleCodeList;

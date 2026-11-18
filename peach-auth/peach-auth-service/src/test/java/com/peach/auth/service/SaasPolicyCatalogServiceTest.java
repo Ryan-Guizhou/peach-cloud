@@ -34,7 +34,7 @@ class SaasPolicyCatalogServiceTest {
     private static final String PERMISSION = "22222222222222222222222222222222";
 
     private final TenantSessionContext context =
-            new TenantSessionContext("user", "tenant", "member", "app", 2026, 2, 7);
+            new TenantSessionContext("user", "tenant", "member", "app", 2, 7);
     private TenantSessionService session;
     private ScopedPermissionService permissionService;
     private ScopedDataAuthorizationDao authorizationDao;
@@ -103,7 +103,7 @@ class SaasPolicyCatalogServiceTest {
         RoleDataGrantVO row = new RoleDataGrantVO();
         row.setBindingScopeType("TENANT");
         row.setDataScope("TENANT_ALL");
-        when(authorizationDao.selectDataGrants("tenant", "member", "app", 2026, "DOC.VIEW"))
+        when(authorizationDao.selectDataGrants("tenant", "member", "app", "DOC.VIEW"))
                 .thenReturn(List.of(row));
         RoleDataPolicyVO policy = new RoleDataPolicyVO();
         policy.setDataScope("SELF");
@@ -158,12 +158,12 @@ class SaasPolicyCatalogServiceTest {
     }
 
     private void allowManage() {
-        when(permissionService.hasTenantPermission("tenant", "member", "app", 2026,
+        when(permissionService.hasTenantPermission("tenant", "member", "app",
                 "TENANT.ROLE.MANAGE")).thenReturn(true);
     }
 
     private void allowAction() {
-        when(permissionService.hasTenantPermission("tenant", "member", "app", 2026,
+        when(permissionService.hasTenantPermission("tenant", "member", "app",
                 "DOC.VIEW")).thenReturn(true);
     }
 
@@ -172,6 +172,6 @@ class SaasPolicyCatalogServiceTest {
         row.setPermissionRefId(PERMISSION);
         row.setPermissionCode("DOC.VIEW");
         row.setOwnerType(owner);
-        when(dao.selectScopedRoleAction("tenant", "app", 2026, ROLE, PERMISSION)).thenReturn(row);
+        when(dao.selectScopedRoleAction("tenant", "app", ROLE, PERMISSION)).thenReturn(row);
     }
 }

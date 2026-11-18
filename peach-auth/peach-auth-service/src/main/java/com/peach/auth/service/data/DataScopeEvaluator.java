@@ -48,7 +48,6 @@ public final class DataScopeEvaluator {
                 || !StringUtils.hasText(object.objectRefId())
                 || !Objects.equals(context.tenantRefId(), object.tenantRefId())
                 || !Objects.equals(context.appRefId(), object.appRefId())
-                || context.year() != object.year()
                 || CollectionUtils.isEmpty(candidates)) {
             return List.of();
         }

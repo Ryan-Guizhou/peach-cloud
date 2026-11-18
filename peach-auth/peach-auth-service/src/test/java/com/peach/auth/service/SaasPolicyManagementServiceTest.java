@@ -59,17 +59,17 @@ class SaasPolicyManagementServiceTest {
                 permissionService, hierarchy, versionDao, auditDao);
 
         when(session.requireCurrent()).thenReturn(
-                new TenantSessionContext("user", "tenant", "admin", "app", 2026, 3L, 2L));
+                new TenantSessionContext("user", "tenant", "admin", "app", 3L, 2L));
         when(hierarchy.lockTenantAndFindBusinessId("tenant")).thenReturn("TENANT_BIZ");
         RoleDO role = new RoleDO();
         role.setId("role");
         role.setRoleType("TENANT");
         role.setVersion(5L);
-        when(roleDao.lockScopedRole("tenant", "app", 2026, "role")).thenReturn(role);
+        when(roleDao.lockScopedRole("tenant", "app", "role")).thenReturn(role);
         when(roleDao.selectActivePermissionRefs("tenant", "role")).thenReturn(List.of("permission"));
         when(roleDao.selectDelegablePermissions("tenant", "app", List.of("permission")))
                 .thenReturn(List.of(permission("TENANT")));
-        when(permissionService.hasTenantPermission("tenant", "admin", "app", 2026,
+        when(permissionService.hasTenantPermission("tenant", "admin", "app",
                 "DOC.READ")).thenReturn(true);
     }
 
@@ -85,7 +85,7 @@ class SaasPolicyManagementServiceTest {
         verify(policyDao).insertDataPolicy(anyString(), eq("tenant"), eq("app"),
                 eq("role"), eq("permission"), eq("SELF"), eq(null), eq("admin"));
         verify(versionDao).incrementForTenant("tenant");
-        verify(auditDao).append(anyString(), eq("tenant"), eq("app"), eq(2026),
+        verify(auditDao).append(anyString(), eq("tenant"), eq("app"),
                 eq("admin"), eq("role"), eq("DATA_POLICY_REPLACE"), eq(5L), eq(6L));
     }
 
@@ -105,7 +105,7 @@ class SaasPolicyManagementServiceTest {
         broad.setPermissionRefId("permission");
         broad.setBindingScopeType("TENANT");
         broad.setDataScope("TENANT_ALL");
-        when(dataAuthorizationDao.selectDataGrants("tenant", "admin", "app", 2026, "DOC.READ"))
+        when(dataAuthorizationDao.selectDataGrants("tenant", "admin", "app", "DOC.READ"))
                 .thenReturn(List.of(broad));
         when(policyDao.retireDataPolicies("tenant", "app", "role", "permission")).thenReturn(0);
         when(policyDao.insertDataPolicy(anyString(), eq("tenant"), eq("app"), eq("role"),
@@ -157,7 +157,7 @@ class SaasPolicyManagementServiceTest {
         RoleDO systemRole = new RoleDO();
         systemRole.setRoleType("SYSTEM");
         systemRole.setVersion(3L);
-        when(roleDao.lockScopedRole("tenant", "app", 2026, "role")).thenReturn(systemRole);
+        when(roleDao.lockScopedRole("tenant", "app", "role")).thenReturn(systemRole);
         assertThatThrownBy(() -> service.replaceDataPolicies(
                 "role", "permission", List.of(dataRule("SELF", null))))
                 .isInstanceOf(SecurityException.class);
@@ -166,10 +166,10 @@ class SaasPolicyManagementServiceTest {
     }
 
     private void allowVersionAndAudit(String operation) {
-        when(roleDao.incrementRoleVersion("tenant", "app", 2026, "role", 5L, "admin"))
+        when(roleDao.incrementRoleVersion("tenant", "app", "role", 5L, "admin"))
                 .thenReturn(1);
         when(versionDao.incrementForTenant("tenant")).thenReturn(1);
-        when(auditDao.append(anyString(), eq("tenant"), eq("app"), eq(2026),
+        when(auditDao.append(anyString(), eq("tenant"), eq("app"),
                 eq("admin"), eq("role"), eq(operation), eq(5L), eq(6L)))
                 .thenReturn(1);
     }

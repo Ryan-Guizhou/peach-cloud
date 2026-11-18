@@ -24,6 +24,5 @@ public interface AuthFunctionDao extends PeachDao<AuthFunctionDO, AuthFunctionVO
     List<AuthFunctionVO> selectByPartyCodes(@Param("tenantId") String tenantId,
                                             @Param("orgId") String orgId,
                                             @Param("appId") String appId,
-                                            @Param("fiscal") Integer fiscal,
                                             @Param("partyCodes") Collection<String> partyCodes);
 }

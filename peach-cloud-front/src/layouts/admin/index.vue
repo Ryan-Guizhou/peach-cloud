@@ -18,7 +18,6 @@ const authStore = useAuthStore()
 const webSocketStore = useWebSocketStore()
 const isSwitching = ref(false)
 const selectedTenantKey = ref(`${authStore.session?.tenantRefId ?? ''}:${authStore.session?.appRefId ?? ''}`)
-const selectedYear = ref(authStore.session?.year ?? new Date().getFullYear())
 
 const menuGroups = computed(() => buildMenuGroups(authStore.loginInfo))
 const tenantOptions = computed(() => (authStore.loginInfo?.tenantOptions ?? [])
@@ -48,9 +47,8 @@ async function handleSwitchContext() {
     return
   }
   const option = tenantOptions.value.find(item => item.value === selectedTenantKey.value)
-  if (!option || !authStore.session || !Number.isInteger(selectedYear.value)
-    || selectedYear.value < 1 || selectedYear.value > 9999) {
-    message.warning('请选择有效租户、应用和自然年度')
+  if (!option || !authStore.session) {
+    message.warning('请选择有效租户和应用')
     return
   }
   isSwitching.value = true
@@ -59,7 +57,6 @@ async function handleSwitchContext() {
     const loginInfo = await switchContext({
       tenantRefId: option.tenantRefId,
       appRefId: option.appRefId,
-      year: selectedYear.value,
     })
     remoteSwitchCommitted = true
     webSocketStore.disconnect()
@@ -68,8 +65,7 @@ async function handleSwitchContext() {
     syncDynamicRoutes()
     webSocketStore.connect(authStore.session)
     selectedTenantKey.value = `${authStore.session?.tenantRefId ?? ''}:${authStore.session?.appRefId ?? ''}`
-    selectedYear.value = authStore.session?.year ?? selectedYear.value
-    message.success('已切换租户、应用及年度上下文')
+    message.success('已切换租户及应用上下文')
     await router.replace(router.hasRoute('workspace-overview') ? '/workspace' : '/no-access')
   } catch (error: unknown) {
     if (remoteSwitchCommitted) {
@@ -85,7 +81,6 @@ async function handleSwitchContext() {
     const session = authStore.session
     if (session) {
       selectedTenantKey.value = `${session.tenantRefId}:${session.appRefId}`
-      selectedYear.value = session.year
     }
   } finally {
     isSwitching.value = false
@@ -178,14 +173,6 @@ function handleOpenManual() {
           :options="tenantOptions"
           :disabled="isSwitching || tenantOptions.length === 0"
           placeholder="选择租户与应用"
-        />
-        <a-input-number
-          v-model:value="selectedYear"
-          :min="1"
-          :max="9999"
-          :disabled="isSwitching"
-          aria-label="授权自然年度"
-          style="width: 100px"
         />
         <button
           type="button"

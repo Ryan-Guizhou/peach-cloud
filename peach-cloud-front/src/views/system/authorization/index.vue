@@ -180,7 +180,6 @@ const scopeKey = computed(() => [
   authStore.session?.token,
   authStore.session?.tenantRefId,
   authStore.session?.appRefId,
-  authStore.session?.year,
 ].join(':'))
 
 watch(scopeKey, () => {
@@ -269,7 +268,7 @@ async function grant() {
       scopeRefId: selectedScope.value === 'TENANT' ? undefined : selectedOrgId.value,
     })
     bindings.value = await fetchMemberBindings(selectedMemberId.value)
-    message.success('当前年度成员角色授权成功')
+    message.success('当前成员角色授权成功')
   } catch (error: unknown) {
     message.error(error instanceof Error ? error.message : '角色授权失败')
   } finally {
@@ -301,8 +300,8 @@ async function revoke() {
       <template #title>
         <div class="page-heading">
           <div>
-            <h2>SaaS 年度角色授权</h2>
-            <p>角色、成员、机构和权限都来自当前租户、应用和自然年度的受信目录。</p>
+            <h2>SaaS 角色授权</h2>
+            <p>角色、成员、机构和权限都来自当前租户、应用的受信目录。</p>
           </div>
         </div>
       </template>
@@ -319,7 +318,6 @@ async function revoke() {
           <a-descriptions-item label="租户">
             {{ authStore.session?.tenantName || authStore.session?.tenantId || '-' }}
           </a-descriptions-item>
-          <a-descriptions-item label="自然年度">{{ authStore.session?.year }}</a-descriptions-item>
           <a-descriptions-item label="当前应用">{{ authStore.session?.appRefId }}</a-descriptions-item>
         </a-descriptions>
 
@@ -332,7 +330,7 @@ async function revoke() {
               v-model:value="selectedRoleId"
               :options="roleOptions"
               :loading="loadingCatalog"
-              placeholder="请选择当前年度角色"
+              placeholder="请选择当前应用角色"
               show-search
               option-filter-prop="label"
             />
@@ -396,7 +394,7 @@ async function revoke() {
             <a-select
               v-model:value="selectedRoleId"
               :options="roleOptions"
-              placeholder="使用上方选中的年度角色"
+              placeholder="使用上方选中的角色"
               show-search
               option-filter-prop="label"
             />

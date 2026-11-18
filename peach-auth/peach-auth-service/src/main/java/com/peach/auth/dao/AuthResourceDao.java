@@ -23,6 +23,5 @@ public interface AuthResourceDao extends PeachDao<AuthResourceDO, AuthResourceVO
 
     List<AuthResourceVO> selectByPartyCodes(@Param("tenantId") String tenantId,
                                             @Param("orgId") String orgId,
-                                            @Param("fiscal") Integer fiscal,
                                             @Param("partyCodes") Collection<String> partyCodes);
 }

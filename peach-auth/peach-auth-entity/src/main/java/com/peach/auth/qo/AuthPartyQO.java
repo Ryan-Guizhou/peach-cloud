@@ -39,6 +39,4 @@ public class AuthPartyQO extends PeachEntity implements Serializable {
     @Schema(description = "角色编码")
     private String roleCode;
 
-    @Schema(description = "年度")
-    private Integer fiscal;
 }

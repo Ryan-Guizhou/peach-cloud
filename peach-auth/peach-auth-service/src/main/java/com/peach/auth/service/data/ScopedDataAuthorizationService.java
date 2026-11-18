@@ -19,7 +19,7 @@ import java.util.Map;
  * 业务服务内部的行级和字段级权限受控入口。
  *
  * <p>调用方必须先根据目标对象物理 ID 从可信数据库得到所属租户、应用、
- * 自然年度、所有者、机构和软删除状态，绝不从浏览器请求声明直接构造可信权属。
+ * 、所有者、机构和软删除状态，绝不从浏览器请求声明直接构造可信权属。
  * 本服务先核验最新成员 Token，再按相同绑定求行策略交集，最后处理字段效果。
  *
  * <p>列表/分页必须在 SQL 层先限制可见行；本服务的单对象判断不能在分页后
@@ -45,7 +45,7 @@ public class ScopedDataAuthorizationService {
      *
      * @param permissionCode 服务端定义的动作权限码
      * @param target 由业务数据访问层构造的真实权属描述
-     * @throws SecurityException 未通过成员、年度、对象行或角色绑定时
+     * @throws SecurityException 未通过成员身份、对象行或角色绑定校验时
      */
     @Transactional(readOnly = true)
     public void requireObjectAction(String permissionCode, DataObjectDescriptor target) {
@@ -95,7 +95,7 @@ public class ScopedDataAuthorizationService {
         TenantSessionContext context = tenantSessionService.requireCurrent();
         List<RoleDataGrantVO> candidates = authorizationDao.selectDataGrants(
                 context.tenantRefId(), context.memberRefId(), context.appRefId(),
-                context.year(), permissionCode);
+                permissionCode);
         List<RoleDataGrantVO> grants = DataScopeEvaluator.matching(
                 context, target, candidates, organizationScopeMatcher);
         if (grants.isEmpty()) {
@@ -118,7 +118,7 @@ public class ScopedDataAuthorizationService {
         TenantSessionContext context = snapshot.context();
         List<ScopedFieldRuleVO> rules = authorizationDao.selectFieldRules(
                 context.tenantRefId(), context.memberRefId(), context.appRefId(),
-                context.year(), permissionCode, resourceCode, bindingRefIds);
+                permissionCode, resourceCode, bindingRefIds);
         return CollectionUtils.isEmpty(rules) ? List.of() : rules;
     }
 

@@ -55,10 +55,6 @@ public class AuthFunctionDO extends PeachDO implements Serializable {
     @Schema(description = "功能代码")
     private String funcCode;
 
-    @Column(name = "FISCAL")
-    @Schema(description = "年度")
-    private Integer fiscal;
-
     @Column(name = "STATE")
     @Schema(description = "功能状态")
     private String state;

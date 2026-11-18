@@ -64,7 +64,7 @@ public class SaasIamRemoteDirectoryService {
     private TenantSessionContext requireManagementScope(String token, String permissionCode) {
         TenantSessionContext context = tenantSessionService.requireForToken(token);
         if (!permissionService.hasTenantPermission(context.tenantRefId(),
-                context.memberRefId(), context.appRefId(), context.year(), permissionCode)) {
+                context.memberRefId(), context.appRefId(), permissionCode)) {
             throw new SecurityException("Tenant directory management access is denied");
         }
         return context;

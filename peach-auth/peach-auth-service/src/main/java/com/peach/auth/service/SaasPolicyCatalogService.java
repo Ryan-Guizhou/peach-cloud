@@ -129,13 +129,11 @@ public class SaasPolicyCatalogService {
         requirePhysicalId(roleRefId);
         requirePhysicalId(permissionRefId);
         RolePermissionGrantVO action = catalogDao.selectScopedRoleAction(
-                context.tenantRefId(), context.appRefId(), context.year(),
-                roleRefId, permissionRefId);
+                context.tenantRefId(), context.appRefId(), roleRefId, permissionRefId);
         if (action == null || !permissionRefId.equals(action.getPermissionRefId())
                 || !StringUtils.hasText(action.getPermissionCode())
                 || !permissionService.hasTenantPermission(context.tenantRefId(),
-                context.memberRefId(), context.appRefId(), context.year(),
-                action.getPermissionCode())) {
+                context.memberRefId(), context.appRefId(), action.getPermissionCode())) {
             throw new SecurityException("Current role action is not delegable to this administrator");
         }
         if ("SYSTEM".equals(action.getOwnerType()) && !hasCompleteSystemGrant(context,
@@ -151,7 +149,7 @@ public class SaasPolicyCatalogService {
     private boolean hasCompleteSystemGrant(TenantSessionContext context, String code) {
         List<RoleDataGrantVO> grants = authorizationDao.selectDataGrants(
                 context.tenantRefId(), context.memberRefId(), context.appRefId(),
-                context.year(), code);
+                code);
         if (CollectionUtils.isEmpty(grants)) {
             return false;
         }
@@ -170,7 +168,7 @@ public class SaasPolicyCatalogService {
         TenantSessionContext context = sessionService.requireCurrent();
         if (context == null || !permissionService.hasTenantPermission(
                 context.tenantRefId(), context.memberRefId(), context.appRefId(),
-                context.year(), ROLE_MANAGE)) {
+                ROLE_MANAGE)) {
             throw new SecurityException("Tenant-wide role management permission is required");
         }
         return context;
