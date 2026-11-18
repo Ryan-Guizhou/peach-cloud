@@ -65,7 +65,24 @@ class UserContextServiceTokenOnlyTest {
         UserContextFilter filter = new UserContextFilter(properties, support);
         MockHttpServletRequest request = new MockHttpServletRequest("PUT",
                 "/auth/saas/roles/1234567890abcdef1234567890abcdef/permissions");
-        request.setAttribute(UserContextFilter.VERIFIED_SAAS_ROLE_REQUEST, Boolean.TRUE);
+        request.setAttribute(UserContextFilter.VERIFIED_SAAS_AUTH_REQUEST, Boolean.TRUE);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(chain.getRequest()).isNotNull();
+        verifyNoInteractions(support);
+    }
+
+    @Test
+    void shouldSkipObsoleteCacheForVerifiedTenantSwitchOnly() throws Exception {
+        UserContextProperties properties = new UserContextProperties();
+        UserContextSupport support = mock(UserContextSupport.class);
+        UserContextFilter filter = new UserContextFilter(properties, support);
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/switchContext");
+        request.setAttribute(UserContextFilter.VERIFIED_SAAS_AUTH_REQUEST, Boolean.TRUE);
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 

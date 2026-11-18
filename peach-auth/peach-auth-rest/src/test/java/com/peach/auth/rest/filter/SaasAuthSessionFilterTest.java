@@ -26,20 +26,21 @@ import static org.mockito.Mockito.when;
  * @Version 1.0.0
  * @CreateTime 2026/11/18 13:30
  */
-class SaasRoleTokenContextFilterTest {
+class SaasAuthSessionFilterTest {
 
     private TenantSessionService sessionService;
-    private SaasRoleTokenContextFilter filter;
+    private SaasAuthSessionFilter filter;
 
     @BeforeEach
     void setUp() {
         sessionService = mock(TenantSessionService.class);
-        filter = new SaasRoleTokenContextFilter(sessionService);
+        filter = new SaasAuthSessionFilter(sessionService);
     }
 
     @Test
     void shouldApplyOnlyToAuthRoleManagementPaths() {
         assertThat(filter.shouldNotFilter(request("POST", "/auth/saas/roles"))).isFalse();
+        assertThat(filter.shouldNotFilter(request("POST", "/auth/switchContext"))).isFalse();
         assertThat(filter.shouldNotFilter(request("PUT",
                 "/auth/saas/roles/1234567890abcdef1234567890abcdef/permissions"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/login"))).isTrue();
@@ -49,11 +50,13 @@ class SaasRoleTokenContextFilterTest {
 
     @Test
     void shouldDenyEncodedOrTraversingRoleRoutesBeforeReadingAnyToken() throws Exception {
-        assertThat(filter.isCanonicalRolePath("/auth/saas/roles")).isTrue();
-        assertThat(filter.isCanonicalRolePath("/auth/saas/roles/%2e%2e/users")).isFalse();
-        assertThat(filter.isCanonicalRolePath("/auth/saas/roles/../users")).isFalse();
-        assertThat(filter.isCanonicalRolePath("/auth/saas/roles//bindings")).isFalse();
-        assertThat(filter.isCanonicalRolePath("/auth/saas/roles;admin=true")).isFalse();
+        assertThat(filter.isCanonicalSessionPath("/auth/saas/roles")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/switchContext")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/switchContext/%2e%2e")).isFalse();
+        assertThat(filter.isCanonicalSessionPath("/auth/saas/roles/%2e%2e/users")).isFalse();
+        assertThat(filter.isCanonicalSessionPath("/auth/saas/roles/../users")).isFalse();
+        assertThat(filter.isCanonicalSessionPath("/auth/saas/roles//bindings")).isFalse();
+        assertThat(filter.isCanonicalSessionPath("/auth/saas/roles;admin=true")).isFalse();
 
         MockHttpServletRequest request = request("POST", "/auth/saas/roles/%2e%2e/users");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -84,7 +87,28 @@ class SaasRoleTokenContextFilterTest {
         assertThat(response.getStatus()).isEqualTo(200);
         assertThat(chain.getRequest()).isNotNull();
         verify(sessionService).requireCurrent();
-        assertThat(request.getAttribute(UserContextFilter.VERIFIED_SAAS_ROLE_REQUEST)).isNull();
+        assertThat(request.getAttribute(UserContextFilter.VERIFIED_SAAS_AUTH_REQUEST)).isNull();
+    }
+
+    @Test
+    void shouldAuthenticateTenantSwitchWithoutLegacyUserProfile() throws Exception {
+        MockHttpServletRequest request = request("POST", "/auth/switchContext");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+        when(sessionService.requireCurrent()).thenReturn(
+                new TenantSessionContext("user", "tenant", "member", "app", 2026, 2, 7));
+
+        try (MockedStatic<SaSameUtil> same = mockStatic(SaSameUtil.class);
+             MockedStatic<StpUtil> login = mockStatic(StpUtil.class)) {
+            filter.doFilter(request, response, chain);
+            same.verify(SaSameUtil::checkCurrentRequestToken);
+            login.verify(StpUtil::checkLogin);
+        }
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(chain.getRequest()).isNotNull();
+        verify(sessionService).requireCurrent();
+        assertThat(request.getAttribute(UserContextFilter.VERIFIED_SAAS_AUTH_REQUEST)).isNull();
     }
 
     @Test
@@ -102,7 +126,7 @@ class SaasRoleTokenContextFilterTest {
 
         assertThat(response.getStatus()).isEqualTo(403);
         assertThat(chain.getRequest()).isNull();
-        assertThat(request.getAttribute(UserContextFilter.VERIFIED_SAAS_ROLE_REQUEST)).isNull();
+        assertThat(request.getAttribute(UserContextFilter.VERIFIED_SAAS_AUTH_REQUEST)).isNull();
     }
 
     @Test

@@ -36,8 +36,8 @@ import java.util.List;
 public class UserContextFilter extends OncePerRequestFilter {
 
     /** 仅由认证服务前置校验器成功核验数据库成员版本后设置的服务器端请求属性。 */
-    public static final String VERIFIED_SAAS_ROLE_REQUEST =
-            UserContextFilter.class.getName() + ".verifiedSaasRoleRequest";
+    public static final String VERIFIED_SAAS_AUTH_REQUEST =
+            UserContextFilter.class.getName() + ".verifiedSaasAuthRequest";
 
     private final UserContextProperties properties;
 
@@ -64,10 +64,11 @@ public class UserContextFilter extends OncePerRequestFilter {
 
         SecurityContextHolder.clear();
 
-        // SaaS 角色管理请求已由 Auth 前置过滤器完成 Same-Token 和数据库成员版本核验。
+        // SaaS 角色管理或切换上下文请求已由 Auth 前置过滤器完成 Same-Token 和数据库成员版本核验。
         // 仅允许该请求的服务端内部属性绕开旧 USER_PROFILE Hash；不能从 HTTP 头传入。
-        if (Boolean.TRUE.equals(request.getAttribute(VERIFIED_SAAS_ROLE_REQUEST))
-                && ("/auth/saas/roles".equals(path) || path.startsWith("/auth/saas/roles/"))) {
+        if (Boolean.TRUE.equals(request.getAttribute(VERIFIED_SAAS_AUTH_REQUEST))
+                && ("/auth/switchContext".equals(path) || "/auth/saas/roles".equals(path)
+                        || path.startsWith("/auth/saas/roles/"))) {
             try {
                 filterChain.doFilter(request, response);
             } finally {
