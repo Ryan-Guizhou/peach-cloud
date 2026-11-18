@@ -33,8 +33,6 @@ public class SaasIamContextVO implements Serializable {
 
     private String appRefId;
 
-    private int year;
-
     private long memberVersion;
 
     private long authVersion;

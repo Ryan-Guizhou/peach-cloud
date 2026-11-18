@@ -32,9 +32,6 @@ public class LoginInitVO implements Serializable {
     @Schema(description = "初始应用ID")
     private String appId;
 
-    @Schema(description = "建议选择的自然年度，身份和授权以实际登录请求 year 为准")
-    private Integer year;
-
     @Schema(description = "RSA公钥，Base64编码的X.509格式")
     private String publicKey;
 
