@@ -290,7 +290,9 @@
 
     <select id="selectDetailByFileId" resultType="com.peach.fileservice.vo.FileRecordVO">
         SELECT
-            r.FILE_ID as fileId, r.OBJECT_ID as objectId, r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
+            r.FILE_ID as fileId, r.OBJECT_ID as objectId,
+            r.TENANT_ID as tenantId, r.ORG_ID as orgId,
+            r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
             r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
             r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
             r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete, r.CREATED_TIME as createdTime,
@@ -334,7 +336,9 @@
 
     <select id="selectExpiredDeletedRecords" resultType="com.peach.fileservice.vo.FileRecordVO">
         SELECT
-            r.FILE_ID as fileId, r.OBJECT_ID as objectId, r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
+            r.FILE_ID as fileId, r.OBJECT_ID as objectId,
+            r.TENANT_ID as tenantId, r.ORG_ID as orgId,
+            r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
             r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
             r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
             r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete, r.CREATED_TIME as createdTime,
