@@ -60,6 +60,23 @@ class GatewayAuthorizationGlobalFilterTest {
                 .isNotEqualTo(HttpStatus.FORBIDDEN);
     }
 
+    @Test
+    void shouldRejectInternalIamPathEvenWhenPublicRuleIsAdded() {
+        GatewaySaTokenProperties props = new GatewaySaTokenProperties();
+        props.getPublicEndpoints().add(
+                com.peach.gateway.core.security.GatewaySecurityEndpointRule.any(
+                        "/api/auth/external/iam/**"));
+        GatewayAuthorizationGlobalFilter filter = filter(props);
+        GatewayFilterChain chain = mock(GatewayFilterChain.class);
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/api/auth/external/iam/check-api").build());
+
+        filter.filter(exchange, chain).block();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        verify(chain, never()).filter(any());
+    }
+
     @SuppressWarnings("unchecked")
     private static GatewayAuthorizationGlobalFilter filter(GatewaySaTokenProperties properties) {
         ObjectProvider<GatewayIamDecisionVerifier> verifiers =

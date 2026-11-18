@@ -66,6 +66,11 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getRawPath();
         String method = exchange.getRequest().getMethod().name();
+        // 内部 Same-Token IAM 接口不得经公共网关暴露为任意浏览器的受信服务调用。
+        if (isInternalIamPath(path)) {
+            return GatewayFilterSupport.writeError(exchange, HttpStatus.FORBIDDEN,
+                    "Internal IAM endpoint is not public");
+        }
         if (endpointMatcher.matches(properties.getPublicEndpoints(), method, path)) {
             if (properties.isLogPath()) {
                 log.info("Gateway authorization skipped, method={}, path={}", method, path);
@@ -141,6 +146,13 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
             normalizedPath = PATH_SEPARATOR + normalizedPath;
         }
         return method.trim().toUpperCase(Locale.ENGLISH) + ":" + normalizedPath;
+    }
+
+    private boolean isInternalIamPath(String path) {
+        return "/auth/external/iam".equals(path)
+                || path.startsWith("/auth/external/iam/")
+                || "/api/auth/external/iam".equals(path)
+                || path.startsWith("/api/auth/external/iam/");
     }
 
     /**

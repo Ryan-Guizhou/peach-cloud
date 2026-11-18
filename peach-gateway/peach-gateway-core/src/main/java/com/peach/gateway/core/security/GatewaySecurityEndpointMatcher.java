@@ -56,6 +56,10 @@ public class GatewaySecurityEndpointMatcher {
      */
     private boolean isProtectedIamEndpoint(String path) {
         return "/auth/init".equals(path) || "/api/auth/init".equals(path)
+                || path.startsWith("/auth/external/iam/")
+                || "/auth/external/iam".equals(path)
+                || path.startsWith("/api/auth/external/iam/")
+                || "/api/auth/external/iam".equals(path)
                 || path.startsWith("/auth/saas/")
                 || "/auth/saas".equals(path)
                 || path.startsWith("/api/auth/saas/")
