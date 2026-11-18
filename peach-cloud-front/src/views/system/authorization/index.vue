@@ -13,6 +13,7 @@ import {
 } from '../../../api/saas-iam'
 import type { CatalogKind, SaasCatalogEntry, ScopeType } from '../../../api/saas-iam'
 import AdminLayout from '../../../layouts/admin/index.vue'
+import SaasPolicyEditor from './SaasPolicyEditor.vue'
 import { clearDynamicRoutes } from '../../../router'
 import { useWebSocketStore } from '../../../stores/websocket'
 import { useAuthStore } from '../../../stores/auth'
@@ -245,6 +246,14 @@ async function saveRolePermissions() {
   }
 }
 
+async function handlePolicyCommitted() {
+  // 策略写入递增租户 AUTH_VERSION，当前 Token 已失效。
+  websocketStore.disconnect()
+  authStore.clearSession()
+  clearDynamicRoutes()
+  await router.replace('/login')
+}
+
 async function grant() {
   if (!canManage.value || !selectedRoleId.value || !selectedMemberId.value
     || (selectedScope.value !== 'TENANT' && !selectedOrgId.value) || saving.value) {
@@ -424,6 +433,18 @@ async function revoke() {
           >授予独立角色绑定</a-button>
         </a-form>
 
+        <a-divider orientation="left">行级数据与字段权限策略</a-divider>
+        <SaasPolicyEditor
+          :role-ref-id="selectedRoleId"
+          :permission-refs="existingPermissionRefs"
+          :permission-catalog="catalog.permissions"
+          :organization-catalog="catalog.organizations"
+          :permissions-complete="!hasMore.permissions"
+          :organizations-complete="!hasMore.organizations"
+          :disabled="!canManage || loadingCatalog || loadingRole || saving"
+          @committed="handlePolicyCommitted"
+        />
+
         <a-divider orientation="left">撤销当前成员的指定绑定</a-divider>
         <a-select
           v-model:value="selectedBindingId"
@@ -442,8 +463,8 @@ async function revoke() {
           style="margin-top: 20px"
           type="info"
           show-icon
-          message="行级与字段策略编辑需要字段定义目录"
-          description="当前已实现可验证的年度角色权限与成员范围授权；复杂行级、字段级策略仍需后端受信字段目录和完整历史策略读取，不能直接输入物理字段ID绕过管理约束。"
+          message="业务对象行级 SQL 强制过滤仍待集成验收"
+          description="本页只配置和管理权限策略，实际 SELECT/COUNT/EXPORT/PATCH 权限需要各业务服务在数据库查询和写入前强制检查。"
         />
       </template>
     </a-card>

@@ -357,3 +357,9 @@ sequenceDiagram
 `SaasRoleCatalogController` 提供受保护的 `GET /auth/saas/roles/catalog/{roles,permissions,members,organizations}` 分页接口，以及 `roles/{roleRefId}/permissions` 和 `members/{memberRefId}/bindings` 的当前授权明细。全部位于 Auth `SaasAuthSessionFilter` 保护范围；**先验 Same-Token、当前用户登录态及成员/授权版本，再强制完整 TENANT 范围 `TENANT.ROLE.MANAGE`**。分页最多 50 条、页码最多 1000，角色权限与成员绑定最多 200 条。仅展示成员的物理 ID/永久业务成员 ID，不返回电话、邮箱、证件、密码等敏感字段。可委派权限仅返回当前管理员通过完整租户作用域角色实际持有且 `DELEGABLE=1` 的有效定义，真正的写入仍由领域服务事务化二次校验。
 
 `sql/INIT.sql` 仅为开发管理员注册六个明确 GET API 规则并授予其年度角色，**不加入匿名白名单**。此前 #211 未实现的目录读链路已进入开发；真实 MySQL/Nacos/网关联调仍须单独完成。
+
+### #229 行级/字段策略可信读取与可委派字段目录
+
+新增受保护的 `SaasPolicyCatalogController` 与 `SaasPolicyCatalogService`，在真实 Token 当前成员、租户、应用、自然年度、角色管理权限、被管理角色动作的可委派性与当前操作者自身动作授权均有效时，允许读取现存的完整行级策略（最多 32 项）、字段读写策略（最多 128 项）及分页的受信 `PEACH_FIELD_DEFINITION` 字段目录。系统动作还需要当前管理员的同一条 `TENANT + TENANT_ALL` 行授权证据。字段对应的 `RESOURCE_CODE` 必须和当前动作语义前缀一致，不能以其他资源动作授予敏感字段。超过上限、重复、当前字段不可委派或未完成安全授权时一律拒绝，不伪装成空策略。新增三个受保护的 GET API，开发 SQL 初始化明确登记对应网关 API；不加入匿名白名单。
+
+前端 `SaasPolicyEditor.vue` 在完整读取已有规则与受控字段目录后才能全量替换行/字段策略。成功提交事务会递增授权版本，当前用户必须清理旧会话后重新登录。业务 SELECT/COUNT/EXPORT/UPDATE 的真正 SQL 过滤尚属于 #211 的独立接入验收范围，不能把管理 UI 视为业务数据已被过滤。

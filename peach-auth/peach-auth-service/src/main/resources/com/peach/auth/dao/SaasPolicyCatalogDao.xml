@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.SaasPolicyCatalogDao">
+    <select id="selectScopedRoleAction" resultType="com.peach.auth.vo.RolePermissionGrantVO">
+        SELECT P.ID AS permissionRefId,
+               P.PERMISSION_CODE AS permissionCode, P.OWNER_TYPE AS ownerType
+        FROM PEACH_ROLE R
+        INNER JOIN PEACH_ROLE_PERMISSION RP ON RP.ROLE_REF_ID = R.ID
+            AND RP.TENANT_REF_ID = R.TENANT_REF_ID
+            AND RP.STATUS = 'ACTIVE' AND RP.IS_DELETE = 0
+        INNER JOIN PEACH_PERMISSION_DEFINITION P ON P.ID = RP.PERMISSION_REF_ID
+            AND P.STATUS = 'ACTIVE' AND P.IS_DELETE = 0 AND P.DELEGABLE = 1
+            AND (P.APP_REF_ID IS NULL OR P.APP_REF_ID = R.APP_REF_ID)
+            AND ((P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL)
+                OR (P.OWNER_TYPE = 'TENANT' AND P.TENANT_REF_ID = R.TENANT_REF_ID))
+        WHERE R.ID = #{roleRefId}
+          AND R.TENANT_REF_ID = #{tenantRefId}
+          AND R.APP_REF_ID = #{appRefId} AND R.AUTH_YEAR = #{year}
+          AND R.ROLE_TYPE = 'TENANT'
+          AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+          AND P.ID = #{permissionRefId}
+        LIMIT 2
+    </select>
+
+    <select id="selectDelegableFields" resultType="com.peach.auth.vo.SaasCatalogEntryVO">
+        SELECT F.ID AS id, F.FIELD_CODE AS code, F.RESOURCE_CODE AS name,
+               F.MASK_STRATEGY AS resourceType
+        FROM PEACH_FIELD_DEFINITION F
+        WHERE F.RESOURCE_CODE = #{resourceCode}
+          AND F.STATUS = 'ACTIVE' AND F.IS_DELETE = 0
+          AND (F.APP_REF_ID IS NULL OR F.APP_REF_ID = #{appRefId})
+          AND ((F.OWNER_TYPE = 'TENANT' AND F.TENANT_REF_ID = #{tenantRefId})
+              OR (F.OWNER_TYPE = 'SYSTEM' AND F.TENANT_REF_ID IS NULL AND F.DELEGABLE = 1))
+        ORDER BY F.FIELD_CODE, F.ID
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+</mapper>
