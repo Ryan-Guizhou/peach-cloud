@@ -116,6 +116,15 @@ INNER JOIN PEACH_PERMISSION_DEFINITION P ON P.PERMISSION_CODE IN
      'PUT:/api/auth/saas/roles/{roleRefId}/permissions',
      'POST:/api/auth/saas/roles/bindings',
      'DELETE:/api/auth/saas/roles/bindings/{bindingRefId}',
+     'GET:/api/auth/saas/roles/catalog/roles',
+     'GET:/api/auth/saas/roles/catalog/permissions',
+     'GET:/api/auth/saas/roles/catalog/members',
+     'GET:/api/auth/saas/roles/catalog/organizations',
+     'GET:/api/auth/saas/roles/catalog/roles/{roleRefId}/permissions',
+     'GET:/api/auth/saas/roles/catalog/members/{memberRefId}/bindings',
+     'GET:/api/auth/saas/roles/catalog/fields',
+     'GET:/api/auth/saas/roles/catalog/roles/{roleRefId}/permissions/{permissionRefId}/data-policies',
+     'GET:/api/auth/saas/roles/catalog/roles/{roleRefId}/permissions/{permissionRefId}/field-policies',
      'PUT:/api/auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/data-policies',
      'PUT:/api/auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/field-policies')
     AND P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL
@@ -203,6 +212,51 @@ FROM PEACH_PERMISSION_DEFINITION P
 WHERE P.PERMISSION_ID = 'PERM_INIT_MENU_AUTHORIZATION'
   AND P.RESOURCE_TYPE = 'MENU' AND P.OWNER_TYPE = 'SYSTEM'
   AND P.STATUS = 'ACTIVE' AND P.IS_DELETE = 0;
+
+-- #227: 当前租户年度角色目录，所有 GET API 均须同时通过网关 IAM + Auth Same-Token + TENANT.ROLE.MANAGE。
+INSERT IGNORE INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID,
+     PERMISSION_CODE, PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE,
+     DELEGABLE, STATUS, IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_CAT_ROLES', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/roles', '查询年度角色目录', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_CAT_PERMISSIONS', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/permissions', '查询可委派权限目录', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_CAT_MEMBERS', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/members', '查询有效成员目录', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_CAT_ORGS', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/organizations', '查询有效机构目录', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_CAT_ROLE_PERMS', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/roles/{roleRefId}/permissions',
+     '查询角色有效权限', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_CAT_MEMBER_BIND', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/members/{memberRefId}/bindings',
+     '查询成员年度角色绑定', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
+
+-- #229: 受信行与字段策略只读目录，不允许经匿名白名单放行。
+INSERT IGNORE INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID,
+     PERMISSION_CODE, PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE,
+     DELEGABLE, STATUS, IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_POLICY_FIELDS', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/fields', '受信可委派字段目录', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_POLICY_DATA_READ', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/roles/{roleRefId}/permissions/{permissionRefId}/data-policies',
+     '读取当前角色行级授权策略', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_POLICY_FIELD_READ', NULL, NULL,
+     'GET:/api/auth/saas/roles/catalog/roles/{roleRefId}/permissions/{permissionRefId}/field-policies',
+     '读取当前角色字段授权策略', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
 
 INSERT IGNORE INTO PEACH_ROLE
     (ID, ROLE_ID, TENANT_ID, ORG_ID, ROLE_CODE, FISCAL, ROLE_NAME, ROLE_DESC, ROLE_SCOPE, ROLE_TYPE, CREATED_TIME, CREATOR_ID, MODIFY_TIME, MODIFIER_ID, IS_DELETE, SKIP_URL)
