@@ -28,6 +28,9 @@ import java.util.stream.Collectors;
 
 /**
  * 登录权限快照装配器，统一编译角色、功能、菜单、路由与资源授权结果。
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/18 17:00
  */
 @Indexed
 @Service

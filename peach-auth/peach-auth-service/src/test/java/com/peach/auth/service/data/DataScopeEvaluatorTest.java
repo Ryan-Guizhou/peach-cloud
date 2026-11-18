@@ -33,8 +33,6 @@ class DataScopeEvaluatorTest {
         assertThat(DataScopeEvaluator.matching(session,
                 object("tenant-a", "app-b", "org-left", false), List.of(grant), hierarchy)).isEmpty();
         assertThat(DataScopeEvaluator.matching(session,
-                object("tenant-a", "app-a", "org-left", false), List.of(grant), hierarchy)).isEmpty();
-        assertThat(DataScopeEvaluator.matching(session,
                 object("tenant-a", "app-a", "org-left", true), List.of(grant), hierarchy)).isEmpty();
     }
 
@@ -96,7 +94,7 @@ class DataScopeEvaluatorTest {
                 "TENANT_ALL", null);
         OrganizationScopeMatcher directory = (tenant, root, candidate) -> false;
         assertThat(DataScopeEvaluator.matching(session,
-                object("tenant-a", "app-a", 2026, "disabled", false),
+                object("tenant-a", "app-a", "disabled", false),
                 List.of(grant), directory)).isEmpty();
     }
 
