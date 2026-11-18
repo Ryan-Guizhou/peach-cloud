@@ -60,7 +60,7 @@ public class GatewayTokenContextResolver {
     /**
      * 只接受一次性写入的新版可信 SaaS Token Session 快照，旧 FISCAL/ORG 单字段一律拒绝。
      *
-     * <p>不存在机构也可合法登录。无法解析年度、成员或授权版本时返回空授权上下文。</p>
+     * <p>不存在机构也可合法登录。无法解析成员或授权版本时返回空授权上下文。</p>
      *
      * @param session 已关联当前 Token 的 Sa-Token Session
      * @return SaaS 物理身份快照；非法或缺失时为空信号
@@ -77,24 +77,21 @@ public class GatewayTokenContextResolver {
         String tenant = requiredString(values.get("tenantRefId"));
         String member = requiredString(values.get("memberRefId"));
         String app = requiredString(values.get("appRefId"));
-        String yearText = requiredString(values.get("year"));
         String versionText = requiredString(values.get("memberVersion"));
         String authText = requiredString(values.get("authVersion"));
         if (user == null || tenant == null || member == null || app == null
-                || yearText == null || versionText == null || authText == null) {
+                || versionText == null || authText == null) {
             return Mono.empty();
         }
-        int year;
         long version;
         long authVersion;
         try {
-            year = Integer.parseInt(yearText);
             version = Long.parseLong(versionText);
             authVersion = Long.parseLong(authText);
         } catch (NumberFormatException exception) {
             return Mono.empty();
         }
-        if (year < 1 || year > 9999 || version < 0 || authVersion < 0) {
+        if (version < 0 || authVersion < 0) {
             return Mono.empty();
         }
         Object orgValue = values.get("orgRefId");
@@ -103,7 +100,7 @@ public class GatewayTokenContextResolver {
             return Mono.empty();
         }
         return Mono.just(new GatewayTokenContext(
-                user, tenant, member, app, year, version, authVersion, org));
+                user, tenant, member, app, version, authVersion, org));
     }
 
     private String requiredString(Object value) {

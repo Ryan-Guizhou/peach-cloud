@@ -1,7 +1,7 @@
 import type { AuthSession, LoginInfo } from '../types/auth'
 
-const SESSION_KEY = 'peach.auth.session.v1'
-const LOGIN_INFO_KEY = 'peach.auth.loginInfo.v1'
+const SESSION_KEY = 'peach.auth.session.v2'
+const LOGIN_INFO_KEY = 'peach.auth.loginInfo.v2'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -53,9 +53,7 @@ function parseSession(raw: string | null): AuthSession | null {
   try {
     const value: unknown = JSON.parse(raw)
     if (!isRecord(value) || typeof value.expiresAt !== 'number'
-      || value.expiresAt <= Date.now() || typeof value.year !== 'number'
-      || !Number.isInteger(value.year)
-      || value.year < 1 || value.year > 9999) {
+      || value.expiresAt <= Date.now()) {
       return null
     }
     const token = normalizeRequiredString(value.token)
@@ -81,7 +79,6 @@ function parseSession(raw: string | null): AuthSession | null {
       tenantName: normalizeOptionalString(value.tenantName),
       orgId: normalizeOptionalString(value.orgId),
       orgName: normalizeOptionalString(value.orgName),
-      year: value.year,
       expiresAt: value.expiresAt,
     }
   } catch {
@@ -122,7 +119,6 @@ export function readAuthLoginInfo(): LoginInfo | null {
       || value.tenantRefId !== session.tenantRefId
       || value.memberRefId !== session.memberRefId
       || value.appRefId !== session.appRefId
-      || value.year !== session.year
       || !isRequiredString(value.userId) || !isRequiredString(value.userName)) {
       return null
     }
@@ -133,7 +129,6 @@ export function readAuthLoginInfo(): LoginInfo | null {
       tenantRefId: session.tenantRefId,
       memberRefId: session.memberRefId,
       appRefId: session.appRefId,
-      year: session.year,
       tenantId: normalizeOptionalString(value.tenantId),
       tenantName: normalizeOptionalString(value.tenantName),
       orgId: normalizeOptionalString(value.orgId),
