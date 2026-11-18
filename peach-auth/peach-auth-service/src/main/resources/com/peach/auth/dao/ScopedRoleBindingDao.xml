@@ -103,6 +103,55 @@
           AND ID = #{id} AND VERSION = #{version}
           AND STATUS = 'ACTIVE' AND IS_DELETE = 0
     </update>
+    <!-- 每名管理员需有当前真实成员、有效角色和同一角色绑定的租户级管理动作。 -->
+    <sql id="tenantAdministratorEvidence">
+        FROM PEACH_MEMBER_ROLE_BINDING B
+        INNER JOIN PEACH_TENANT_MEMBER M ON M.ID = B.MEMBER_REF_ID
+            AND M.TENANT_REF_ID = B.TENANT_REF_ID
+            AND M.STATUS = 'ACTIVE' AND M.IS_DELETE = 0
+        INNER JOIN PEACH_TENANT T ON T.ID = B.TENANT_REF_ID
+            AND T.STATUS = 'ENABLE' AND T.IS_DELETE = 0
+        INNER JOIN PEACH_APPLICATION A ON A.ID = B.APP_REF_ID
+            AND A.TENANT_ID = T.TENANT_ID
+            AND A.IS_OPEN = 1 AND A.IS_DELETE = 0
+        INNER JOIN PEACH_ROLE R ON R.ID = B.ROLE_REF_ID
+            AND R.TENANT_REF_ID = B.TENANT_REF_ID
+            AND R.APP_REF_ID = B.APP_REF_ID
+            AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+        INNER JOIN PEACH_ROLE_PERMISSION RP ON RP.ROLE_REF_ID = R.ID
+            AND RP.TENANT_REF_ID = B.TENANT_REF_ID
+            AND RP.STATUS = 'ACTIVE' AND RP.IS_DELETE = 0
+        INNER JOIN PEACH_PERMISSION_DEFINITION P ON P.ID = RP.PERMISSION_REF_ID
+            AND P.PERMISSION_CODE = 'TENANT.MEMBER.MANAGE'
+            AND P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL
+            AND P.STATUS = 'ACTIVE' AND P.IS_DELETE = 0
+        WHERE B.STATUS = 'ACTIVE' AND B.IS_DELETE = 0
+          AND B.SCOPE_TYPE = 'TENANT' AND B.SCOPE_REF_ID IS NULL
+          AND B.TENANT_REF_ID = #{tenantRefId}
+    </sql>
+
+    <select id="countActiveTenantAdministrators" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT B.MEMBER_REF_ID)
+        <include refid="tenantAdministratorEvidence" />
+    </select>
+
+    <select id="countActiveTenantAdministratorBindings" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT B.ID)
+        <include refid="tenantAdministratorEvidence" />
+    </select>
+
+    <select id="countAdministratorMember" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        <include refid="tenantAdministratorEvidence" />
+          AND B.MEMBER_REF_ID = #{memberRefId}
+    </select>
+
+    <select id="countAdministratorBinding" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        <include refid="tenantAdministratorEvidence" />
+          AND B.ID = #{bindingRefId}
+    </select>
+
     <!-- 只有受保护的 SYSTEM 所有者角色参与本校验。 -->
     <select id="countProtectedOwnerMember" resultType="java.lang.Integer">
         SELECT COUNT(1)

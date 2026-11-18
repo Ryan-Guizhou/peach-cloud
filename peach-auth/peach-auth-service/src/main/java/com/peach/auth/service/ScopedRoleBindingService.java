@@ -123,6 +123,10 @@ public class ScopedRoleBindingService {
         if (bindingDao.countProtectedOwnerBinding(tenantRefId, bindingRefId) > 0) {
             throw new SecurityException("Tenant owner role cannot be revoked by member administrators");
         }
+        if (bindingDao.countAdministratorBinding(tenantRefId, bindingRefId) > 0
+                && bindingDao.countActiveTenantAdministratorBindings(tenantRefId) <= 1) {
+            throw new SecurityException("Last tenant administrator binding cannot be revoked");
+        }
         if (operatorMemberRefId.equals(binding.getMemberRefId())) {
             throw new SecurityException("Administrators cannot revoke their own role bindings");
         }

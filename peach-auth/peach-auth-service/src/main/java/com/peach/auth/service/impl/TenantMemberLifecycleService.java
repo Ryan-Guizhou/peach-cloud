@@ -342,6 +342,10 @@ public class TenantMemberLifecycleService {
         if (scopedRoleBindingDao.countProtectedOwnerMember(tenantRefId, memberRefId) > 0) {
             throw new SecurityException("Tenant owner cannot be disabled or leave without protected transfer");
         }
+        if (scopedRoleBindingDao.countAdministratorMember(tenantRefId, memberRefId) > 0
+                && scopedRoleBindingDao.countActiveTenantAdministrators(tenantRefId) <= 1) {
+            throw new SecurityException("Last tenant administrator cannot leave or be disabled");
+        }
     }
 
     private void invalidateMemberAuthorizations(String tenantRefId, TenantMemberDO member,
