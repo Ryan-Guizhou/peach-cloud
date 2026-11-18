@@ -15,7 +15,7 @@
                 OR (P.OWNER_TYPE = 'TENANT' AND P.TENANT_REF_ID = R.TENANT_REF_ID))
         WHERE R.ID = #{roleRefId}
           AND R.TENANT_REF_ID = #{tenantRefId}
-          AND R.APP_REF_ID = #{appRefId} AND R.AUTH_YEAR = #{year}
+          AND R.APP_REF_ID = #{appRefId}
           AND R.ROLE_TYPE = 'TENANT'
           AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
           AND P.ID = #{permissionRefId}
