@@ -244,3 +244,5 @@ The Auth-only filter also explicitly rejects percent-encoded paths, semicolon ma
 #### Authenticated tenant/year switching
 
 `POST /auth/switchContext` now shares Auth's dedicated `SaasAuthSessionFilter`: service Same-Token, actual end-user login, and fresh database member/authorization versions are required before a server-only per-request `VERIFIED_SAAS_AUTH_REQUEST` attribute permits skipping legacy user-level Redis Profile loading. `TenantSessionService.switchTenant()` independently verifies the selected target tenant, application and year. Gateway #208 exposes an exact **authenticated-only self-service** action, never an anonymous allowlist entry, so each yearly business role need not be assigned switching permission. Logout revokes only the caller's current token.
+
+The login-bootstrap response `LoginInitVO` now exposes `year` instead of legacy `fiscal`. This is only a suggested calendar-year default for the login form; the authoritative year is supplied by `LoginDTO.year` and stored in the verified tenant-member token snapshot. The legacy FISCAL model is no longer exposed by this login-bootstrap contract.

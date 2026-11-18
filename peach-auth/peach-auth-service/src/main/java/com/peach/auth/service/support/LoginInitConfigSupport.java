@@ -48,7 +48,7 @@ public class LoginInitConfigSupport {
         initVO.setSystemName(config.getOrDefault(AuthLoginValueSetConst.SYSTEM_NAME, DEFAULT_SYSTEM_NAME));
         initVO.setSystemDescription(config.getOrDefault(AuthLoginValueSetConst.SYSTEM_DESCRIPTION, DEFAULT_SYSTEM_DESCRIPTION));
         initVO.setAppId(config.getOrDefault(AuthLoginValueSetConst.APP_ID, DEFAULT_APP_ID));
-        initVO.setFiscal(LocalDate.now(ZoneId.systemDefault()).getYear());
+        initVO.setYear(LocalDate.now(ZoneId.systemDefault()).getYear());
         initVO.setPublicKey(publicKey);
         initVO.setEncryptionAlgorithm(config.getOrDefault(AuthLoginValueSetConst.ENCRYPTION_ALGORITHM, DEFAULT_ENCRYPTION_ALGORITHM));
         initVO.setCaptchaType(config.getOrDefault(AuthLoginValueSetConst.CAPTCHA_TYPE,

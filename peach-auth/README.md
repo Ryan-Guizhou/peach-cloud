@@ -301,3 +301,5 @@ sequenceDiagram
 #### 登录后切换租户与年度
 
 `POST /auth/switchContext` 现在复用 Auth 专用 `SaasAuthSessionFilter`：先校验服务 Same-Token、真实用户登录态与当前数据库成员/授权版本，再设置只在本请求有效的 `VERIFIED_SAAS_AUTH_REQUEST` 内部属性，跳过旧用户 Profile Redis 缓存。实际目标租户、应用及年度由 `TenantSessionService.switchTenant()` 再次验证。网关 #208 为此提供精确的“已登录自服务”入口，**不是匿名白名单**，不要求每个自然年度业务角色都具有切换上下文权限。注销接口仅针对本人当前 Token。
+
+认证登录初始化响应 `LoginInitVO` 的旧 `fiscal` 字段已改为 `year`（自然年度建议值，仅用于登录页默认显示）；真正的年度由 `LoginDTO.year` 和成员 Token 快照确定。不要再把旧 FISCAL 与年度权限双模型同时下发。
