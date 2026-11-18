@@ -39,9 +39,12 @@
             INNER JOIN ORG_DESC P ON CHILD.PARENT_ORG_REF_ID = P.ID
             WHERE CHILD.TENANT_ID = #{tenantBusinessId}
               AND CHILD.STATUS = 'ENABLE' AND CHILD.IS_DELETE = 0
-              AND P.DEPTH &lt; #{maxDepth}
+              AND P.DEPTH &lt; (#{maxDepth} + 1)
         )
-        SELECT ID FROM ORG_DESC LIMIT #{limit}
+        <!-- Look one level past the configured depth and return NULL to fail closed on truncation. -->
+        SELECT CASE WHEN EXISTS (SELECT 1 FROM ORG_DESC WHERE DEPTH > #{maxDepth})
+                    THEN NULL ELSE ID END
+        FROM ORG_DESC LIMIT #{limit}
     </select>
 
     <update id="updateParent">
