@@ -269,7 +269,7 @@ sequenceDiagram
 
 #### Sa-Token 过滤器适配
 
-认证服务 `application.yml` 仅将上述两个 POST 内部 IAM 端点注册在 `peach.satoken.user-context.service-token-only-endpoints`，默认空。匹配路径不再尝试读取旧 `USER_PROFILE` 的 `userId/tenantId/orgId/fiscal`，而是先在 Servlet Filter 中**强制校验 Same-Token**，再由 Controller 二次检查 Same-Token 并以独立用户 Token 查询数据库。该配置不是公开白名单，不允许没有可信服务令牌的请求直达 Controller。其他普通路由仍沿用既有用户上下文机制，必须在后续迁移中持续替换旧租户字段，不能把这一专用通道泛化为跳过认证。
+认证服务 `application.yml` 仅将上述四个 POST 内部 IAM 端点注册在 `peach.satoken.user-context.service-token-only-endpoints`，默认空。匹配路径不再尝试读取旧 `USER_PROFILE` 的 `userId/tenantId/orgId/fiscal`，而是先在 Servlet Filter 中**强制校验 Same-Token**，再由 Controller 二次检查 Same-Token 并以独立用户 Token 查询数据库。该配置不是公开白名单，不允许没有可信服务令牌的请求直达 Controller。其他普通路由仍沿用既有用户上下文机制，必须在后续迁移中持续替换旧租户字段，不能把这一专用通道泛化为跳过认证。
 
 
 #### 内部目录最小批量查询（#209）

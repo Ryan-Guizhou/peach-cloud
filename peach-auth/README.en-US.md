@@ -212,7 +212,7 @@ Prerequisites: the consumer depends on `peach-auth-openfeign-external`, has a re
 
 #### Sa-Token filter adapter
 
-The Auth service `application.yml` explicitly registers only the two internal IAM POST endpoints under `peach.satoken.user-context.service-token-only-endpoints` (empty by default). These endpoints do not load legacy `USER_PROFILE` data using `userId/tenantId/orgId/fiscal`. Instead, the Servlet filter **requires Same-Token** before reaching the controller, where Same-Token is checked again and the end-user token is revalidated against the database. This is not a public allowlist: missing or invalid trusted service credentials are rejected. Other application routes continue their existing user-context flow until migrated and must not use this narrowly scoped mechanism as a general authentication bypass.
+The Auth service `application.yml` explicitly registers only the four internal IAM POST endpoints under `peach.satoken.user-context.service-token-only-endpoints` (empty by default). These endpoints do not load legacy `USER_PROFILE` data using `userId/tenantId/orgId/fiscal`. Instead, the Servlet filter **requires Same-Token** before reaching the controller, where Same-Token is checked again and the end-user token is revalidated against the database. This is not a public allowlist: missing or invalid trusted service credentials are rejected. Other application routes continue their existing user-context flow until migrated and must not use this narrowly scoped mechanism as a general authentication bypass.
 
 
 #### Minimal trusted directory batch lookups (#209)

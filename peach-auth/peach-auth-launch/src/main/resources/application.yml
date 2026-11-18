@@ -22,6 +22,10 @@ peach:
           path: /auth/external/iam/check-api
         - method: POST
           path: /auth/external/iam/context
+        - method: POST
+          path: /auth/external/iam/directory/members
+        - method: POST
+          path: /auth/external/iam/directory/organizations
   captcha:
     cache-type: REDIS
     service-type: BLOCKPUZZLE

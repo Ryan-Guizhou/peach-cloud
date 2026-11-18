@@ -8,6 +8,7 @@ import com.peach.auth.vo.SaasIamMemberBriefVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,7 +72,7 @@ class SaasIamRemoteDirectoryServiceTest {
         assertThatThrownBy(() -> service.members("user-token", List.of("target", "target")))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> service.members("user-token",
-                java.util.Collections.nCopies(101, "target")))
+                Collections.nCopies(101, "target")))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(service.members("user-token", List.of())).isEmpty();
         verifyNoInteractions(directoryDao);
