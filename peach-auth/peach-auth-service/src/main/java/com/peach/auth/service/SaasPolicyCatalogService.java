@@ -62,7 +62,10 @@ public class SaasPolicyCatalogService {
         List<SaasCatalogEntryVO> rows = catalogDao.selectDelegableFields(
                 context.tenantRefId(), context.appRefId(), resourceCode,
                 pageSize + 1, (page - 1) * pageSize);
-        if (CollectionUtils.isEmpty(rows)) {
+        if (rows == null) {
+            throw new SecurityException("Delegable field catalog is unavailable");
+        }
+        if (rows.isEmpty()) {
             return new SaasCatalogPageVO(page, pageSize, false, List.of());
         }
         if (rows.size() > pageSize + 1) {
@@ -78,7 +81,7 @@ public class SaasPolicyCatalogService {
         List<RoleDataPolicyVO> rows = policyDao.selectDataPolicies(
                 context.tenantRefId(), context.appRefId(), roleRefId, permissionRefId);
         if (rows == null) {
-            return List.of();
+            throw new SecurityException("Policy directory is unavailable");
         }
         if (rows.size() > MAX_DATA || rows.stream().anyMatch(row -> row == null)) {
             throw new SecurityException("Incomplete data policy snapshot");
@@ -98,7 +101,7 @@ public class SaasPolicyCatalogService {
         List<RoleFieldPolicyVO> rows = policyDao.selectFieldPolicies(
                 context.tenantRefId(), context.appRefId(), roleRefId, permissionRefId);
         if (rows == null) {
-            return List.of();
+            throw new SecurityException("Policy directory is unavailable");
         }
         if (rows.size() > MAX_FIELDS || rows.stream().anyMatch(row -> row == null)) {
             throw new SecurityException("Incomplete field policy snapshot");

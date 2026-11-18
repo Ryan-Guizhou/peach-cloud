@@ -136,6 +136,18 @@ class SaasPolicyCatalogServiceTest {
     }
 
     @Test
+    void shouldRejectMissingPolicyDaoResponseInsteadOfTreatingItAsNoRules() {
+        allowManage();
+        trustedAction("TENANT");
+        allowAction();
+        when(policyDao.selectDataPolicies("tenant", "app", ROLE, PERMISSION)).thenReturn(null);
+
+        assertThatThrownBy(() -> service.dataPolicies(ROLE, PERMISSION))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("unavailable");
+    }
+
+    @Test
     void shouldDenyUntrustedFieldResourceCode() {
         allowManage();
         trustedAction("TENANT");
