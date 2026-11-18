@@ -22,6 +22,7 @@ import com.peach.auth.dto.UserDTO;
 import com.peach.auth.entity.UserDO;
 import com.peach.auth.qo.UserQO;
 import com.peach.auth.service.IUserService;
+import com.peach.auth.service.SaasLoginSnapshotService;
 import com.peach.auth.service.LoginLockService;
 import com.peach.auth.service.support.LoginInitConfigSupport;
 import com.peach.auth.service.support.PasswordHashSupport;
@@ -67,6 +68,8 @@ public class UserServiceImpl implements IUserService {
     private final TenantMemberDao tenantMemberDao;
 
     private final TenantSessionService tenantSessionService;
+
+    private final SaasLoginSnapshotService saasLoginSnapshotService;
 
     private final CaptchaService captchaService;
 
@@ -240,24 +243,6 @@ public class UserServiceImpl implements IUserService {
     }
 
     /**
-     * 当前角色目录与成员绑定的安全授权模型未完成前，只返回空权限。
-     * 绝不使用旧机构年度的 ROLE_CODE 并集作为新租户成员的权限。
-     *
-     * @return 空的可序列化授权快照
-     */
-    private LoginPermissionSnapshotVO emptyPermissionSnapshot() {
-        LoginPermissionSnapshotVO snapshot = new LoginPermissionSnapshotVO();
-        snapshot.setRoleList(List.of());
-        snapshot.setMenuList(List.of());
-        snapshot.setRouterList(List.of());
-        snapshot.setResourceList(List.of());
-        snapshot.setPermissionList(List.of());
-        snapshot.setApiResourceCodes(List.of());
-        snapshot.setButtonResourceCodes(List.of());
-        return snapshot;
-    }
-
-    /**
      * 基于已验证的成员物理关联生成登录视图；业务编号仅供展示。
      *
      * @param user 已认证全局用户
@@ -268,7 +253,7 @@ public class UserServiceImpl implements IUserService {
      */
     private LoginInfo buildMemberLoginInfo(UserVO user, TenantSessionContext context,
                                            LoginTargetVO selected, List<LoginTargetVO> targets) {
-        LoginPermissionSnapshotVO snapshot = emptyPermissionSnapshot();
+        LoginPermissionSnapshotVO snapshot = saasLoginSnapshotService.requireSnapshot(context);
         LoginInfo info = new LoginInfo();
         info.setUserId(user.getUserId());
         info.setYear(context.year());
