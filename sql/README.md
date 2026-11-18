@@ -221,3 +221,9 @@ foreach ($name in $order) {
 - 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
 - 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
 - README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。
+
+### SaaS 权限 UI 资源映射（#225）
+
+- `PEACH_SAAS_UI_RESOURCE.sql`：仅使用 `PEACH_PERMISSION_DEFINITION.ID` 物理外键 `PERMISSION_REF_ID` 映射 MENU 的菜单/路由显示元数据。无权限绑定或无该映射时不会下发 UI 页面。
+- `ALL_TABLE_CREATE.sql` 已包含该单表脚本。部署新库必须先执行建表脚本/聚合 DDL，之后执行 `INIT.sql` 种子数据；既有库须单独执行经过审查的数据结构迁移，绝不由应用自动更改生产表。
+- `INIT.sql` 仅给开发环境 2026 年初始管理员授予工作台、角色管理、角色授权三项 MENU 权限，且只注册三条对应受控组件路线；不能把旧 `PEACH_MENU/PEACH_ROUTER` 的业务 ID join 到新角色来隐式授权。

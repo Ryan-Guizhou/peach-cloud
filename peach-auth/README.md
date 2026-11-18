@@ -345,3 +345,9 @@ sequenceDiagram
 `POST /auth/switchContext` 现在复用 Auth 专用 `SaasAuthSessionFilter`：先校验服务 Same-Token、真实用户登录态与当前数据库成员/授权版本，再设置只在本请求有效的 `VERIFIED_SAAS_AUTH_REQUEST` 内部属性，跳过旧用户 Profile Redis 缓存。实际目标租户、应用及年度由 `TenantSessionService.switchTenant()` 再次验证。网关 #208 为此提供精确的“已登录自服务”入口，**不是匿名白名单**，不要求每个自然年度业务角色都具有切换上下文权限。注销接口仅针对本人当前 Token。
 
 认证登录初始化响应 `LoginInitVO` 的旧 `fiscal` 字段已改为 `year`（自然年度建议值，仅用于登录页默认显示）；真正的年度由 `LoginDTO.year` 和成员 Token 快照确定。不要再把旧 FISCAL 与年度权限双模型同时下发。
+
+### #225 当前成员的受信登录菜单与权限快照
+
+`SaasLoginSnapshotService` 在登录和切换租户后再次验证当前 Token 专属 `userRefId/tenantRefId/memberRefId/appRefId/year/memberVersion/authVersion`，再由 `SaasLoginSnapshotDao` **一次有界查询（最大 1024 条，超出拒绝）**取得相同成员角色绑定的有效角色和权限事实。仅显式授权的 MENU 权限、并且 `PEACH_SAAS_UI_RESOURCE.PERMISSION_REF_ID` 指向对应有效 MENU 权限物理 ID 时，才下发 `menuList/routerList`；不再返回固定空快照，也不借用旧 FISCAL 角色与旧缓存。API/BUTTON 编码分别下发用于前端展示；**后端 API、行级和字段级实际授权仍须每个请求重新验证**，不能把浏览器快照当成访问凭证。
+
+受信 UI 目录要求准确路径、组件标识与物理权限一一对应，同一个前端路径指向不同权限定义时全部拒绝；无权限则返回空列表，前端仍进入 `/no-access`。开发用 `sql/INIT.sql` 注册工作台/角色/授权三项 MENU，不代表自动为生产库授权。部署必须同步执行单表 `sql/PEACH_SAAS_UI_RESOURCE.sql` 和聚合 `ALL_TABLE_CREATE.sql` 对应 DDL，并完成数据库与网关联调，真实环境验收仍跟踪 #211。

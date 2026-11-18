@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.SaasLoginSnapshotDao">
+    <select id="selectCurrentGrants" resultType="com.peach.auth.vo.SaasLoginGrantRowVO">
+        SELECT B.ID AS bindingRefId,
+               R.ID AS roleRefId, R.ROLE_ID AS roleId, R.ROLE_CODE AS roleCode,
+               R.ROLE_NAME AS roleName, B.SCOPE_TYPE AS scopeType,
+               P.ID AS permissionRefId, P.PERMISSION_ID AS permissionId,
+               P.PERMISSION_CODE AS permissionCode, P.RESOURCE_TYPE AS resourceType,
+               UI.ID AS uiRefId, UI.MENU_CODE AS menuCode, UI.MENU_NAME AS menuName,
+               UI.MENU_ICON AS menuIcon, UI.ROUTER_CODE AS routerCode,
+               UI.ROUTER_URL AS routerUrl, UI.FILE_PATH AS filePath
+        FROM PEACH_MEMBER_ROLE_BINDING B
+        INNER JOIN PEACH_TENANT_MEMBER M ON M.ID = B.MEMBER_REF_ID
+            AND M.TENANT_REF_ID = B.TENANT_REF_ID
+            AND M.USER_REF_ID = #{userRefId}
+            AND M.VERSION = #{memberVersion} AND M.AUTH_VERSION = #{authVersion}
+            AND M.STATUS = 'ACTIVE' AND M.IS_DELETE = 0
+        INNER JOIN PEACH_TENANT T ON T.ID = B.TENANT_REF_ID
+            AND T.STATUS = 'ENABLE' AND T.IS_DELETE = 0
+        INNER JOIN PEACH_APPLICATION A ON A.ID = B.APP_REF_ID
+            AND A.TENANT_ID = T.TENANT_ID
+            AND A.IS_OPEN = 1 AND A.IS_DELETE = 0
+        INNER JOIN PEACH_ROLE R ON R.ID = B.ROLE_REF_ID
+            AND R.TENANT_REF_ID = B.TENANT_REF_ID
+            AND R.APP_REF_ID = B.APP_REF_ID AND R.AUTH_YEAR = B.AUTH_YEAR
+            AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+        INNER JOIN PEACH_ROLE_PERMISSION RP ON RP.ROLE_REF_ID = R.ID
+            AND RP.TENANT_REF_ID = B.TENANT_REF_ID
+            AND RP.STATUS = 'ACTIVE' AND RP.IS_DELETE = 0
+        INNER JOIN PEACH_PERMISSION_DEFINITION P ON P.ID = RP.PERMISSION_REF_ID
+            AND P.STATUS = 'ACTIVE' AND P.IS_DELETE = 0
+            AND (P.APP_REF_ID IS NULL OR P.APP_REF_ID = B.APP_REF_ID)
+            AND ((P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL)
+                OR (P.OWNER_TYPE = 'TENANT' AND P.TENANT_REF_ID = B.TENANT_REF_ID))
+        LEFT JOIN PEACH_SAAS_UI_RESOURCE UI ON UI.PERMISSION_REF_ID = P.ID
+            AND P.RESOURCE_TYPE = 'MENU'
+            AND UI.STATUS = 'ACTIVE' AND UI.IS_DELETE = 0
+        WHERE B.TENANT_REF_ID = #{tenantRefId}
+          AND B.MEMBER_REF_ID = #{memberRefId}
+          AND B.APP_REF_ID = #{appRefId}
+          AND B.AUTH_YEAR = #{year}
+          AND B.STATUS = 'ACTIVE' AND B.IS_DELETE = 0
+        ORDER BY R.ID, P.ID, B.ID
+        LIMIT 1025
+    </select>
+</mapper>
