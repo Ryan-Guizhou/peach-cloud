@@ -80,7 +80,7 @@ public class SaasPolicyCatalogService {
         if (rows == null) {
             return List.of();
         }
-        if (rows.size() > MAX_DATA || rows.contains(null)) {
+        if (rows.size() > MAX_DATA || rows.stream().anyMatch(row -> row == null)) {
             throw new SecurityException("Incomplete data policy snapshot");
         }
         return List.copyOf(rows);
@@ -100,7 +100,7 @@ public class SaasPolicyCatalogService {
         if (rows == null) {
             return List.of();
         }
-        if (rows.size() > MAX_FIELDS || rows.contains(null)) {
+        if (rows.size() > MAX_FIELDS || rows.stream().anyMatch(row -> row == null)) {
             throw new SecurityException("Incomplete field policy snapshot");
         }
         Set<String> fields = new HashSet<>();
