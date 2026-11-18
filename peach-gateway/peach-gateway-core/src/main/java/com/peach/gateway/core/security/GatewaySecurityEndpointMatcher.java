@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * GatewaySecurityEndpointMatcher相关类。
+ * 网关严格匿名端点匹配器；仅 OPTIONS /** 允许跨路径预检，其他规则必须方法和路径完全相等。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -83,7 +83,7 @@ public class GatewaySecurityEndpointMatcher {
      * 防止网关与下游 Servlet 对 URI 规范化方式不同而导致绕过。
      */
     private boolean hasUnsafePath(String path) {
-        if (path.indexOf('%') >= 0 || path.indexOf('\\\\') >= 0
+        if (path.indexOf('%') >= 0 || path.indexOf('\\') >= 0
                 || path.indexOf(';') >= 0 || path.contains("//")) {
             return true;
         }
@@ -122,7 +122,7 @@ public class GatewaySecurityEndpointMatcher {
     }
 
     /**
-     * 标准化请求路径，确保 Ant 匹配时带有前导斜杠。
+     * 标准化请求路径，确保严格匹配时带有前导斜杠。
      *
      * @param path 原始路径
      * @return 标准化后的路径

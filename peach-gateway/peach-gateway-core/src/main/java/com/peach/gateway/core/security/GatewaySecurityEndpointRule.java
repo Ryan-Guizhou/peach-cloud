@@ -34,14 +34,14 @@ public class GatewaySecurityEndpointRule implements Serializable {
     private String method;
 
     /**
-     * Ant 风格请求路径表达式。
+     * 匿名端点精确路径；仅 OPTIONS 允许 /** 用于 CORS 预检。
      */
     private String path;
 
     /**
      * 创建匹配任意请求方法的端点规则。
      *
-     * @param path Ant 风格请求路径表达式
+     * @param path 精确公开路径（OPTIONS 预检可使用 /**）
      * @return 端点规则
      */
     public static GatewaySecurityEndpointRule any(String path) {
