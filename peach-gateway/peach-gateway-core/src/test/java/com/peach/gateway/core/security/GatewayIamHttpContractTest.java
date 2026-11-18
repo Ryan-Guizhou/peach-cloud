@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -89,7 +90,7 @@ class GatewayIamHttpContractTest {
     }
 
     private GatewayIamHttpDecisionVerifier verifier(
-            org.springframework.web.reactive.function.client.ExchangeFunction exchange,
+            ExchangeFunction exchange,
             Duration timeout) {
         GatewayIamProperties properties = new GatewayIamProperties();
         properties.setTimeout(timeout);
