@@ -35,7 +35,7 @@ class GatewayTokenContextResolverTest {
         session.set(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT, validContext());
         assertThat(resolver.toContext(session).block())
                 .isEqualTo(new GatewayTokenContext(
-                        "user", "tenant", "member", "app", 2026, 3L, 7L, null));
+                        "user", "tenant", "member", "app", 3L, 7L, null));
     }
 
     @Test
@@ -65,9 +65,9 @@ class GatewayTokenContextResolverTest {
         value.put("authVersion", "not-a-version");
         assertThat(resolver.toContext(session).blockOptional()).isEmpty();
         value.put("authVersion", "7");
-        value.put("year", "0");
-        assertThat(resolver.toContext(session).blockOptional()).isEmpty();
         value.put("year", "2026");
+        assertThat(resolver.toContext(session).blockOptional()).isEmpty();
+        value.remove("year");
         value.put("memberRefId", " ");
         assertThat(resolver.toContext(session).blockOptional()).isEmpty();
     }
@@ -88,7 +88,6 @@ class GatewayTokenContextResolverTest {
         context.put("tenantRefId", "tenant");
         context.put("memberRefId", "member");
         context.put("appRefId", "app");
-        context.put("year", "2026");
         context.put("memberVersion", "3");
         context.put("authVersion", "7");
         return context;
