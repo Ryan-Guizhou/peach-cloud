@@ -291,3 +291,7 @@ sequenceDiagram
 #### 受信服务通道配置安全边界
 
 `peach.satoken.user-context.service-token-only-endpoints` 现在只接受**明确 HTTP 方法与完全相同的规范 Servlet URI**；`ANY`、Ant 风格 `*`/`**`、路径模板、编码路径和遍历片段均不会触发该通道。该配置只能跳过历史 USER_PROFILE 缓存恢复，绝不跳过 Same-Token 或 Auth 的真实最终用户 Token + 数据库成员版本验证。对应回归测试覆盖意外的 Nacos 宽泛路径配置。
+
+#### 认证服务 SaaS 角色接口的 Token 验证
+
+新的 SaaS 登录只保存 Token 专属成员快照，不再创建旧版用户级 `USER_PROFILE` Redis Hash；原通用过滤器会在角色管理 Controller 前误拒合法用户。为避免把整个业务服务配置成公开端点，新增 Auth 专用 `SaasRoleTokenContextFilter`，仅作用于 `/auth/saas/roles` 及其子路径，按顺序先强制服务 Same-Token、Sa-Token 登录态，再通过 `TenantSessionService.requireCurrent()` 数据库校验租户/成员/应用和两个版本。验证成功才设置只能由 Servlet 服务端写入的请求属性，让通用 `UserContextFilter` 对该请求跳过旧 Profile 查询，并在请求完成后清理；其他模块继续原路径，角色/行/字段最终权限依旧由领域服务判断。此处没有新增匿名入口，也不允许仅凭业务编号判断身份。
