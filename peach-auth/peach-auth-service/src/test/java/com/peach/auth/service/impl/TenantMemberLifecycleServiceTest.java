@@ -112,6 +112,9 @@ class TenantMemberLifecycleServiceTest {
                 eq("existing-member"), eq("existing-member"), eq("MEMBER_REJOIN"),
                 eq(0L), eq(1L))).thenReturn(1);
         when(invitationDao.accept("invitation", "tenant", "user", 1L)).thenReturn(1);
+        when(auditDao.append(anyString(), eq("tenant"), isNull(),
+                eq("existing-member"), eq("existing-member"), eq("MEMBER_JOIN"),
+                eq(0L), eq(0L))).thenReturn(1);
         assertThat(service.accept("tenant", "invitation", "user")).isEqualTo("existing-member");
         verify(memberDao).restore("existing-member", "tenant", 3L);
         verify(roleBindingDao).revokeAllForMember("tenant", "existing-member");

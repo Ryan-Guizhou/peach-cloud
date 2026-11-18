@@ -153,9 +153,11 @@ public class UserServiceImpl implements IUserService {
         // 只能在账号密码及验证码验证成功后消费本人邀请。
         // 临时全局登录令牌不返回给调用方，也绝不作为未授权的 SaaS 会话使用。
         if (StringUtil.isNotBlank(loginDTO.getInvitationRefId())) {
+            boolean temporaryTokenCreated = false;
             try {
                 StpUtil.login(user.getUserId(),
                         new SaLoginParameter().setIsConcurrent(true).setIsShare(false));
+                temporaryTokenCreated = true;
                 String tenantRefId = tenantInvitationDao.findTenantForVerifiedInvitee(
                         loginDTO.getInvitationRefId(), user.getId());
                 if (StringUtil.isBlank(tenantRefId)) {
@@ -166,7 +168,7 @@ public class UserServiceImpl implements IUserService {
                 log.warn("Authenticated invitation acceptance rejected");
                 return Response.fail("邀请无效、已过期或不可接受");
             } finally {
-                if (StpUtil.isLogin()) {
+                if (temporaryTokenCreated) {
                     StpUtil.logout();
                 }
             }

@@ -41,6 +41,7 @@ export interface LoginRequest {
   password: string
   tenantRefId?: string
   appRefId?: string
+  invitationRefId?: string
   captchaVerification?: string
   clientUid?: string
 }
