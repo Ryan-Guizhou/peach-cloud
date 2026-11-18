@@ -116,7 +116,7 @@ class ScopedRoleBindingServiceTest {
     }
 
     @Test
-    void shouldNotGrantAcrossNaturalYearsOrApplications() {
+    void shouldNotGrantAcrossApplications() {
         when(bindingDao.lockActiveMember("tenant", "target")).thenReturn(member());
         assertThatThrownBy(() -> service.grant("tenant", "admin", "target", "role", "TENANT", null))
                 .isInstanceOf(SecurityException.class)
@@ -146,6 +146,39 @@ class ScopedRoleBindingServiceTest {
         verify(versionDao).incrementForMember("tenant", "target");
         verify(auditDao).append(anyString(), eq("tenant"), eq("app"),
                 eq("admin"), eq("binding-id"), eq("ROLE_REVOKE"), eq(7L), eq(8L));
+    }
+
+    @Test
+    void shouldNeverRevokeProtectedOwnerBinding() {
+        MemberRoleBindingDO binding = new MemberRoleBindingDO();
+        binding.setId("binding-id");
+        binding.setAppRefId("app");
+        binding.setMemberRefId("target");
+        binding.setVersion(2L);
+        when(bindingDao.selectActiveById("tenant", "binding-id")).thenReturn(binding);
+        when(bindingDao.countProtectedOwnerBinding("tenant", "binding-id")).thenReturn(1);
+
+        assertThatThrownBy(() -> service.revoke("tenant", "admin", "binding-id"))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("owner");
+        verify(bindingDao, never()).revoke("tenant", "binding-id", 2L);
+    }
+
+    @Test
+    void shouldDenyRevokingLastTenantAdministratorBinding() {
+        MemberRoleBindingDO binding = new MemberRoleBindingDO();
+        binding.setId("binding-id");
+        binding.setAppRefId("app");
+        binding.setMemberRefId("target");
+        binding.setVersion(2L);
+        when(bindingDao.selectActiveById("tenant", "binding-id")).thenReturn(binding);
+        when(bindingDao.countAdministratorBinding("tenant", "binding-id")).thenReturn(1);
+        when(bindingDao.countActiveTenantAdministratorBindings("tenant")).thenReturn(1);
+
+        assertThatThrownBy(() -> service.revoke("tenant", "admin", "binding-id"))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("Last tenant administrator");
+        verify(bindingDao, never()).revoke("tenant", "binding-id", 2L);
     }
 
     private void prepareDelegableRole() {
