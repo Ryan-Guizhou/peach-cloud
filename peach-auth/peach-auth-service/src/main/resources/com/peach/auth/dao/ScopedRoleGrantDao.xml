@@ -80,5 +80,6 @@
           AND B.STATUS = 'ACTIVE' AND B.IS_DELETE = 0
           AND P.PERMISSION_CODE = #{permissionCode}
           AND P.RESOURCE_TYPE = 'API'
+          AND (#{systemOnly} = FALSE OR P.OWNER_TYPE = 'SYSTEM')
     </select>
 </mapper>

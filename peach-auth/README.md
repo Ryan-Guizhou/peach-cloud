@@ -283,3 +283,7 @@ sequenceDiagram
 #### 开发环境角色管理 API 资源初始化
 
 `sql/INIT.sql` 的开发种子数据现在显式注册 `SaasRoleController` 四项 `/api/auth/saas/roles` 路由（创建、修改权限、授权绑定、撤销绑定），并给示例租户 2026 年管理员角色授予对应动作；精确路径与 `{roleRefId}/{bindingRefId}` 段变量都由服务器端可信目录匹配。**只适用于初始化开发数据库**，不自动填充生产目录，不给内部 `/auth/external/iam/**` 注册公网权限。若 Nacos 网关实际路由前缀与 `/api/auth` 不同，必须在受信目录登记相应的精确外部路径，不得使用 `**` 通配授权兜底。
+
+#### 系统 API 权限归属约束
+
+`/api/auth/`、`/api/setting/`、`/api/file/`、`/api/fileservice/`、`/api/message/`、`/api/monitor/`、`/api/generator/`、`/api/scheduled/`、`/api/gateway/` 以及对应服务内部前缀，均属于平台受保护路由。网关收到这些 API 请求后，Auth 最终授权 SQL 必须命中 `OWNER_TYPE=SYSTEM` 的 API 资源定义，租户无法创建同名自定义资源并将其赋权来绕过系统保护。租户自定义的业务 API 权限仍可在非平台保留的路由空间内按成员、应用及年度独立判定；外部服务仍必须执行真实业务对象权限。

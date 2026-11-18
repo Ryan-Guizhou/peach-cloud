@@ -29,6 +29,18 @@ public class SaasIamRemoteAuthorizationService {
 
     private final TenantSessionService sessionService;
 
+    /**
+     * 平台内建服务路由必须由 SYSTEM API 目录授权。
+     * TENANT 权限目录不能使用同名 CODE 重写内建服务的系统安全边界。
+     */
+    private static final List<String> SYSTEM_ROUTE_PREFIXES = List.of(
+            "/api/auth/", "/api/setting/", "/api/file/", "/api/fileservice/",
+            "/api/message/", "/api/monitor/", "/api/generator/",
+            "/api/scheduled/", "/api/gateway/",
+            "/auth/", "/setting/", "/fileservice/", "/message/",
+            "/monitor/", "/generator/", "/scheduled/"
+    );
+
     private final ScopedRoleGrantDao grantDao;
 
     /**
@@ -70,9 +82,11 @@ public class SaasIamRemoteAuthorizationService {
         if (code == null) {
             return new SaasIamPermissionDecisionVO(false);
         }
+        // 平台服务命名空间绝不接受租户定义的同名资源冒充 SYSTEM API。
+        boolean systemOnly = isProtectedPlatformRoute(requestCode);
         List<RoleScopeGrantVO> grants = grantDao.selectApiGrants(
                 context.tenantRefId(), context.memberRefId(), context.appRefId(),
-                context.year(), code);
+                context.year(), code, systemOnly);
         if (CollectionUtils.isEmpty(grants)) {
             return new SaasIamPermissionDecisionVO(false);
         }
@@ -80,6 +94,16 @@ public class SaasIamRemoteAuthorizationService {
                 new SaasIamContextVO(context.userRefId(), context.tenantRefId(),
                         context.memberRefId(), context.appRefId(), context.year(),
                         context.memberVersion(), context.authVersion()));
+    }
+
+    private boolean isProtectedPlatformRoute(String requestCode) {
+        String path = requestCode.substring(requestCode.indexOf(':') + 1);
+        for (String prefix : SYSTEM_ROUTE_PREFIXES) {
+            if (path.startsWith(prefix) || path.equals(prefix.substring(0, prefix.length() - 1))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

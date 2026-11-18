@@ -58,11 +58,13 @@ public interface ScopedRoleGrantDao {
      * @param appRefId 已核验的应用物理主键
      * @param year 当前自然年度
      * @param permissionCode 服务端归一化的精确 METHOD:PATH
+     * @param systemOnly 平台服务命名空间必须仅接受 SYSTEM 权限定义
      * @return 有效且属于同一成员绑定的 API 权限事实
      */
     List<RoleScopeGrantVO> selectApiGrants(@Param("tenantRefId") String tenantRefId,
                                           @Param("memberRefId") String memberRefId,
                                           @Param("appRefId") String appRefId,
                                           @Param("year") int year,
-                                          @Param("permissionCode") String permissionCode);
+                                          @Param("permissionCode") String permissionCode,
+                                          @Param("systemOnly") boolean systemOnly);
 }
