@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * SaaS 租户角色及成员角色绑定的受保护 REST 入口。
  *
- * <p>客户端仅提交业务操作参数，不接受操作者、租户、应用或年度身份声明。
+ * <p>客户端仅提交业务操作参数，不接受操作者、租户、应用身份声明。
  * 所有操作从当前 Token Session 重新验证物理成员，领域服务还需逐项
  * 检查完整的租户权限与可委派权限，并使用事务处理版本失效和审计。</p>
  *
@@ -38,7 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/auth/saas/roles")
-@Tag(name = "SaasRoleController", description = "SaaS年度角色及成员授权")
+@Tag(name = "SaasRoleController", description = "SaaS角色及成员授权")
 @RequiredArgsConstructor
 public class SaasRoleController {
 
@@ -49,7 +49,7 @@ public class SaasRoleController {
     private final ScopedRoleBindingService roleBindingService;
 
     @PostMapping
-    @Operation(summary = "创建当前租户、应用和年度的自定义角色")
+    @Operation(summary = "创建当前租户、应用和的自定义角色")
     public Response createRole(@Valid @RequestBody SaasRoleCreateDTO request) {
         TenantSessionContext context = tenantSessionService.requireCurrent();
         return Response.success(roleManagementService.createRole(
@@ -58,7 +58,7 @@ public class SaasRoleController {
     }
 
     @PutMapping("/{roleRefId}/permissions")
-    @Operation(summary = "差量同步当前年度角色的全部权限")
+    @Operation(summary = "差量同步当前角色的全部权限")
     public Response replacePermissions(@NotBlank @PathVariable String roleRefId,
                                        @Valid @RequestBody SaasRolePermissionUpdateDTO request) {
         TenantSessionContext context = tenantSessionService.requireCurrent();

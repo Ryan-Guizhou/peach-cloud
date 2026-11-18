@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 租户年度角色数据范围和字段权限的受保护管理入口。
+ * 租户角色数据范围和字段权限的受保护管理入口。
  *
- * <p>仅收策略内容和目标物理 ID，操作者身份、租户、应用和年度由 Service
+ * <p>仅收策略内容和目标物理 ID，操作者身份、租户、应用和由 Service
  * 从当前 Token 强制获取并重新校验；数据库行锁、版本失效与审计必须同事务。</p>
  *
  * @Author Mr Shu

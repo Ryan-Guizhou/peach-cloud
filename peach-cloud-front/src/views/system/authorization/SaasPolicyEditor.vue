@@ -262,7 +262,7 @@ async function saveFields() {
 <template>
   <section>
     <a-form layout="vertical">
-      <a-form-item label="当前年度角色的目标动作权限">
+      <a-form-item label="当前角色的目标动作权限">
         <a-select
           v-model:value="selectedPermissionId"
           :options="actionOptions"
