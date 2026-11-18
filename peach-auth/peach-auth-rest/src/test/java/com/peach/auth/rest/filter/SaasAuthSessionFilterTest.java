@@ -43,6 +43,7 @@ class SaasAuthSessionFilterTest {
         assertThat(filter.shouldNotFilter(request("POST", "/auth/switchContext"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/saas/platform/tenants"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/saas/tenants/members/invitations"))).isFalse();
+        assertThat(filter.shouldNotFilter(request("POST", "/auth/organization/pageList"))).isFalse();
         assertThat(filter.shouldNotFilter(request("PUT",
                 "/auth/saas/roles/1234567890abcdef1234567890abcdef/permissions"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/login"))).isTrue();

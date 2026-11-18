@@ -37,6 +37,7 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
 
     private static final String ROLE_ROOT = "/auth/saas/roles";
     private static final String TENANT_ROOT = "/auth/saas/tenants";
+    private static final String LEGACY_ORGANIZATION_ROOT = "/auth/organization";
     private static final String PLATFORM_ROOT = "/auth/saas/platform";
     private static final String SWITCH_CONTEXT_PATH = "/auth/switchContext";
 
@@ -83,6 +84,8 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
         return SWITCH_CONTEXT_PATH.equals(path)
                 || ROLE_ROOT.equals(path) || path.startsWith(ROLE_ROOT + "/")
                 || TENANT_ROOT.equals(path) || path.startsWith(TENANT_ROOT + "/")
+                || LEGACY_ORGANIZATION_ROOT.equals(path)
+                || path.startsWith(LEGACY_ORGANIZATION_ROOT + "/")
                 || PLATFORM_ROOT.equals(path) || path.startsWith(PLATFORM_ROOT + "/");
     }
 

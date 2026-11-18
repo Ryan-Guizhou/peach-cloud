@@ -1,11 +1,14 @@
 package com.peach.auth.service;
 
+import com.github.pagehelper.PageInfo;
+import com.github.pagehelper.page.PageMethod;
 import com.peach.auth.dao.IamAuthorizationAuditDao;
 import com.peach.auth.dao.MemberAuthVersionDao;
 import com.peach.auth.dao.OrganizationHierarchyDao;
 import com.peach.auth.dao.SaasOrganizationManagementDao;
 import com.peach.auth.dto.SaasOrganizationCreateDTO;
 import com.peach.auth.entity.OrganizationDO;
+import com.peach.auth.vo.OrganizationVO;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
 import com.peach.auth.service.support.AuthBusinessIdGenerator;
@@ -40,6 +43,8 @@ public class SaasOrganizationManagementService {
 
     private static final Pattern ORG_CODE = Pattern.compile("[A-Z][A-Z0-9_-]{1,63}");
     private static final String ENABLED = "ENABLE";
+    private static final int MAX_PAGE = 1000;
+    private static final int MAX_SIZE = 50;
     private static final String ROOT_CODE = "DEFAULT";
 
     private final TenantSessionService sessionService;
@@ -49,6 +54,41 @@ public class SaasOrganizationManagementService {
     private final MemberAuthVersionDao authVersionDao;
     private final IamAuthorizationAuditDao auditDao;
     private final AuthBusinessIdGenerator businessIdGenerator;
+
+    /**
+     * 使用受信当前租户范围查询有界机构列表。
+     */
+    @Transactional(readOnly = true)
+    public PageInfo<OrganizationVO> pageList(int page, int pageSize) {
+        if (page < 1 || page > MAX_PAGE || pageSize < 1 || pageSize > MAX_SIZE) {
+            throw new IllegalArgumentException("Organization page is out of bounds");
+        }
+        TenantSessionContext actor = requireAdmin();
+        String tenantBusinessId = hierarchyDao.findEnabledTenantBusinessId(actor.tenantRefId());
+        if (!StringUtils.hasText(tenantBusinessId)) {
+            throw new SecurityException("Tenant is unavailable");
+        }
+        return PageMethod.startPage(page, pageSize)
+                .doSelectPageInfo(() -> managementDao.selectActiveInTenant(tenantBusinessId));
+    }
+
+    /**
+     * 只允许读取当前受信租户内的物理机构 ID。
+     */
+    @Transactional(readOnly = true)
+    public OrganizationVO selectById(String orgRefId) {
+        requireId(orgRefId);
+        TenantSessionContext actor = requireAdmin();
+        String tenantBusinessId = hierarchyDao.findEnabledTenantBusinessId(actor.tenantRefId());
+        if (!StringUtils.hasText(tenantBusinessId)) {
+            throw new SecurityException("Tenant is unavailable");
+        }
+        OrganizationVO organization = managementDao.selectByIdInTenant(orgRefId, tenantBusinessId);
+        if (organization == null) {
+            throw new SecurityException("Organization is outside current tenant scope");
+        }
+        return organization;
+    }
 
     /**
      * 创建机构，父节点只允许使用同租户的真实物理 ID。

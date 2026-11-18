@@ -1,6 +1,9 @@
 package com.peach.auth.dao;
 
 import com.peach.auth.entity.OrganizationDO;
+import com.peach.auth.vo.OrganizationVO;
+
+import java.util.List;
 import com.peach.common.annoation.MybatisDao;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Indexed;
@@ -20,6 +23,11 @@ import org.springframework.stereotype.Indexed;
 public interface SaasOrganizationManagementDao {
 
     int insert(OrganizationDO organization);
+
+    List<OrganizationVO> selectActiveInTenant(@Param("tenantBusinessId") String tenantBusinessId);
+
+    OrganizationVO selectByIdInTenant(@Param("id") String id,
+                                      @Param("tenantBusinessId") String tenantBusinessId);
 
     int updateName(@Param("id") String id,
                    @Param("tenantBusinessId") String tenantBusinessId,
