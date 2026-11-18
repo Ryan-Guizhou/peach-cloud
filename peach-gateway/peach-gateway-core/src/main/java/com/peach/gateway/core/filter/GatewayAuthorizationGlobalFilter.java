@@ -30,8 +30,10 @@ import reactor.core.scheduler.Schedulers;
 import java.util.Locale;
 
 /**
- * 网关AuthorizationGlobal过滤器。
- * <p>请求进入下游服务前校验 Sa-Token 登录态，公开端点按配置跳过。</p>
+ * 网关可信 SaaS API 资源授权过滤器。
+ * <p>公开端点以最小白名单放行；受保护请求先校验登录态，
+ * 再以当前 Token 专属 SaaS 快照调用可信 IAM 决策。
+ * 决策器缺失、异常或返回空均拒绝，不读取旧用户级缓存兜底。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -141,14 +143,6 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
         return method.trim().toUpperCase(Locale.ENGLISH) + ":" + normalizedPath;
     }
 
-    /**
-     * 判断已授权 API 资源编码是否匹配当前请求。
-     *
-     * @param resourceCode 已授权 API 资源编码
-     * @param method 当前请求方法
-     * @param path 当前请求路径
-     * @return 匹配时返回 {@code true}
-     */
     /**
      * 处理 API 权限不足响应。
      *
