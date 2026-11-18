@@ -14,7 +14,6 @@ import com.peach.auth.LoginInfo;
 import com.peach.auth.common.RsaPasswordUtil;
 import com.peach.auth.common.SensitiveFieldCipher;
 import com.peach.auth.dao.UserDao;
-import com.peach.auth.dao.TenantInvitationDao;
 import com.peach.auth.dao.TenantMemberDao;
 import com.peach.auth.dto.LoginDTO;
 import com.peach.auth.dto.RegisterDTO;
@@ -68,9 +67,7 @@ public class UserServiceImpl implements IUserService {
 
     private final TenantMemberDao tenantMemberDao;
 
-    private final TenantInvitationDao tenantInvitationDao;
-
-    private final TenantMemberLifecycleService membershipService;
+    private final AuthenticatedInvitationService invitationService;
 
     private final TenantSessionService tenantSessionService;
 
@@ -153,24 +150,12 @@ public class UserServiceImpl implements IUserService {
         // 只能在账号密码及验证码验证成功后消费本人邀请。
         // 临时全局登录令牌不返回给调用方，也绝不作为未授权的 SaaS 会话使用。
         if (StringUtil.isNotBlank(loginDTO.getInvitationRefId())) {
-            boolean temporaryTokenCreated = false;
             try {
-                StpUtil.login(user.getUserId(),
-                        new SaLoginParameter().setIsConcurrent(true).setIsShare(false));
-                temporaryTokenCreated = true;
-                String tenantRefId = tenantInvitationDao.findTenantForVerifiedInvitee(
-                        loginDTO.getInvitationRefId(), user.getId());
-                if (StringUtil.isBlank(tenantRefId)) {
-                    throw new SecurityException("Invitation does not belong to authenticated user");
-                }
-                membershipService.accept(tenantRefId, loginDTO.getInvitationRefId(), user.getId());
+                invitationService.acceptAfterAuthentication(
+                        user.getUserId(), user.getId(), loginDTO.getInvitationRefId());
             } catch (RuntimeException exception) {
                 log.warn("Authenticated invitation acceptance rejected");
                 return Response.fail("邀请无效、已过期或不可接受");
-            } finally {
-                if (temporaryTokenCreated) {
-                    StpUtil.logout();
-                }
             }
         }
 
