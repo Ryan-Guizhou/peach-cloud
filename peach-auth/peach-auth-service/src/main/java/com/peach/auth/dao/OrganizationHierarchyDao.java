@@ -5,6 +5,8 @@ import com.peach.common.annoation.MybatisDao;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Indexed;
 
+import java.util.List;
+
 /**
  * 组织树物理引用与租户序列化移动的专用 DAO。
  *
@@ -54,7 +56,7 @@ public interface OrganizationHierarchyDao {
      * @param limit 最大返回条数，额外一条用于检测截断
      * @return 有效机构主键（含祖先）；重复项表示机构树存在循环
      */
-    java.util.List<String> selectActiveDescendantIds(@Param("tenantBusinessId") String tenantBusinessId,
+    List<String> selectActiveDescendantIds(@Param("tenantBusinessId") String tenantBusinessId,
                                                       @Param("ancestorOrgRefId") String ancestorOrgRefId,
                                                       @Param("maxDepth") int maxDepth,
                                                       @Param("limit") int limit);
