@@ -25,7 +25,6 @@ const formError = ref('')
 const captchaVerification = ref('')
 const captchaPassed = ref(false)
 const captchaAttempt = ref(0)
-const selectedYear = ref(new Date().getFullYear())
 const selectedTenantKey = ref('')
 const selectableTargets = ref<LoginTargetInfo[]>([])
 const requiresTenantSelection = computed(() => selectableTargets.value.length > 0)
@@ -55,9 +54,6 @@ const initializeLogin = async () => {
   captchaPassed.value = false
   try {
     initInfo.value = await initLogin()
-    if (typeof initInfo.value.year === 'number' && Number.isInteger(initInfo.value.year)) {
-      selectedYear.value = initInfo.value.year
-    }
     if (initInfo.value.captchaRequired === false) {
       captchaPassed.value = true
     }
@@ -93,11 +89,6 @@ const handleSubmit = async () => {
     return
   }
 
-  if (!Number.isInteger(selectedYear.value) || selectedYear.value < 1
-    || selectedYear.value > 9999) {
-    formError.value = '请选择有效的自然年度'
-    return
-  }
   if (requiresTenantSelection.value && !selectedTarget.value) {
     formError.value = '请选择要进入的租户及应用'
     return
@@ -111,7 +102,6 @@ const handleSubmit = async () => {
     const loginInfo = await submitLogin({
       username: loginUsername.value.trim(),
       password: encryptedPassword,
-      year: selectedYear.value,
       tenantRefId: selected?.tenantRefId,
       appRefId: selected?.appRefId,
       captchaVerification: captchaRequired.value ? captchaVerification.value : undefined,
@@ -214,20 +204,6 @@ onMounted(initializeLogin)
           >
             {{ showPassword ? '隐藏' : '显示' }}
           </button>
-        </div>
-      </label>
-
-      <label class="field">
-        <span>授权自然年度</span>
-        <div class="field__control">
-          <input
-            v-model.number="selectedYear"
-            type="number"
-            min="1"
-            max="9999"
-            inputmode="numeric"
-            :disabled="isSubmitting"
-          />
         </div>
       </label>
 

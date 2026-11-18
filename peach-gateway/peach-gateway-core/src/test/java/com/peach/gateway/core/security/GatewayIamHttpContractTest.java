@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class GatewayIamHttpContractTest {
 
     private final GatewayTokenContext context =
-            new GatewayTokenContext("user", "tenant", "member", "app", 2026, 2, 7, null);
+            new GatewayTokenContext("user", "tenant", "member", "app", 2, 7, null);
 
     @Test
     void shouldSendBothTrustedCredentialsToAuthAndMatchDatabaseVersion() {
@@ -108,7 +108,7 @@ class GatewayIamHttpContractTest {
     private String validDecision() {
         return "{\"allowed\":true,\"context\":{\"userRefId\":\"user\","
                 + "\"tenantRefId\":\"tenant\",\"memberRefId\":\"member\","
-                + "\"appRefId\":\"app\",\"year\":2026,"
+                + "\"appRefId\":\"app\","
                 + "\"memberVersion\":2,\"authVersion\":7}}";
     }
 }

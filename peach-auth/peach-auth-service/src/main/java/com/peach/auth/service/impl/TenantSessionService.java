@@ -41,12 +41,11 @@ public class TenantSessionService {
      * @param verifiedUserRefId 已验证的用户物理 ID
      * @param tenantRefId 请求选择的租户物理 ID
      * @param appRefId 请求选择的应用物理 ID
-     * @param year 登录选择的自然年度
      * @return 经服务端验证的上下文
      */
     @Transactional(readOnly = true)
     public TenantSessionContext bindAfterAuthentication(String verifiedUserRefId,
-                                                         String tenantRefId, String appRefId, int year) {
+                                                         String tenantRefId, String appRefId) {
         requireIdentity(verifiedUserRefId);
         requireIdentity(tenantRefId);
         requireIdentity(appRefId);
@@ -65,7 +64,7 @@ public class TenantSessionService {
             throw new SecurityException("Membership or authorization version is invalid");
         }
         TenantSessionContext context = new TenantSessionContext(verifiedUserRefId, tenantRefId,
-                member.getId(), appRefId, year, version, authVersion);
+                member.getId(), appRefId, version, authVersion);
         var session = StpUtil.getTokenSession();
         // 写入单个快照，避免并发切租户时混合读取租户、成员和应用。
         session.set(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT, Map.of(
@@ -73,7 +72,6 @@ public class TenantSessionService {
                 "tenantRefId", context.tenantRefId(),
                 "memberRefId", context.memberRefId(),
                 "appRefId", context.appRefId(),
-                "year", String.valueOf(context.year()),
                 "memberVersion", String.valueOf(context.memberVersion()),
                 "authVersion", String.valueOf(context.authVersion())));
         return context;
@@ -121,27 +119,25 @@ public class TenantSessionService {
         }
         Object stored = session.get(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT);
         if (!(stored instanceof Map<?, ?> values)
+                || values.containsKey("year") || values.containsKey("fiscal")
                 || !(values.get("userRefId") instanceof String userId)
                 || !(values.get("tenantRefId") instanceof String tenantId)
                 || !(values.get("memberRefId") instanceof String memberId)
                 || !(values.get("appRefId") instanceof String appId)
-                || !(values.get("year") instanceof String selectedYear)
                 || !(values.get("memberVersion") instanceof String version)
                 || !(values.get("authVersion") instanceof String grantedVersion)) {
             throw new SecurityException("Tenant token is missing a trusted context");
         }
         long memberVersion;
         long authVersion;
-        int year;
         try {
             memberVersion = Long.parseLong(version);
             authVersion = Long.parseLong(grantedVersion);
-            year = Integer.parseInt(selectedYear);
         } catch (NumberFormatException exception) {
-            throw new SecurityException("Tenant token year or member version is invalid");
+            throw new SecurityException("Tenant token member or authorization version is invalid");
         }
         TenantSessionContext context = new TenantSessionContext(
-                userId, tenantId, memberId, appId, year, memberVersion, authVersion);
+                userId, tenantId, memberId, appId, memberVersion, authVersion);
         if (tenantMemberDao.countAuthenticatedUserIdentity(trustedLoginId, context.userRefId()) != 1) {
             throw new SecurityException("Subject token principal does not match global user");
         }
@@ -161,13 +157,12 @@ public class TenantSessionService {
      *
      * @param tenantRefId 目标租户物理 ID
      * @param appRefId 目标应用物理 ID
-     * @param year 目标自然年度
      * @return 新租户成员上下文
      */
     @Transactional(readOnly = true)
-    public TenantSessionContext switchTenant(String tenantRefId, String appRefId, int year) {
+    public TenantSessionContext switchTenant(String tenantRefId, String appRefId) {
         TenantSessionContext current = requireCurrent();
-        return bindAfterAuthentication(current.userRefId(), tenantRefId, appRefId, year);
+        return bindAfterAuthentication(current.userRefId(), tenantRefId, appRefId);
     }
 
     private void requireLoginUser(String userRefId) {

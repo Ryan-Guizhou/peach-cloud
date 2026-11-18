@@ -21,7 +21,7 @@ const validForm = computed(() => /^ROLE_[A-Z0-9_]{1,15}$/.test(normalizedRoleCod
 
 async function handleCreate() {
   if (!canCreate.value) {
-    message.warning('当前年度没有创建租户角色的权限')
+    message.warning('当前没有创建租户角色的权限')
     return
   }
   if (!validForm.value || isSaving.value) {
@@ -52,8 +52,8 @@ async function handleCreate() {
       <template #title>
         <div class="page-heading">
           <div>
-            <h2>租户年度角色</h2>
-            <p>角色创建只使用当前已验证的租户、应用和自然年度，身份不由表单指定。</p>
+            <h2>租户角色</h2>
+            <p>角色创建只使用当前已验证的租户、应用，身份不由表单指定。</p>
           </div>
         </div>
       </template>
@@ -63,7 +63,6 @@ async function handleCreate() {
           {{ activeContext?.tenantName || activeContext?.tenantId || '未选择' }}
         </a-descriptions-item>
         <a-descriptions-item label="应用">{{ activeContext?.appRefId || '未选择' }}</a-descriptions-item>
-        <a-descriptions-item label="自然年度">{{ activeContext?.year ?? '-' }}</a-descriptions-item>
       </a-descriptions>
 
       <a-alert
@@ -72,7 +71,7 @@ async function handleCreate() {
         show-icon
         style="margin-top: 20px"
         message="当前身份未获得租户角色管理权限"
-        description="请使用拥有 TENANT.ROLE.MANAGE 权限的有效年度成员身份；页面显示不代表后端授权。"
+        description="请使用拥有 TENANT.ROLE.MANAGE 权限的有效成员身份；页面显示不代表后端授权。"
       />
 
       <a-form layout="vertical" style="margin-top: 24px">
@@ -94,7 +93,7 @@ async function handleCreate() {
           :disabled="!canCreate || !validForm"
           @click="handleCreate"
         >
-          创建当前年度角色
+          创建当前角色
         </a-button>
       </a-form>
 
@@ -114,7 +113,7 @@ async function handleCreate() {
         show-icon
         style="margin-top: 20px"
         message="角色目录和授权列表待接入"
-        description="当前已支持受控创建；查看角色、选择成员和权限、设置行级/字段权限必须使用后端分页目录和物理主键选择器。旧版按 tenantId/orgId/fiscal 拼接的管理操作已停止使用。"
+        description="当前已支持受控创建；查看角色、选择成员和权限、设置行级/字段权限必须使用后端分页目录和物理主键选择器。旧版按 tenantId/orgId 拼接的管理操作已停止使用。"
       />
     </a-card>
   </AdminLayout>

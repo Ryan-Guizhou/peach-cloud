@@ -2,7 +2,7 @@ import http, { unwrapApiResponse } from './http'
 import type { ApiResponse } from '../types/auth'
 
 /**
- * SaaS 受保护管理 API：身份、租户、应用与自然年度统一由 Auth 的 Token 决定。
+ * SaaS 受保护管理 API：身份、租户、应用统一由 Auth 的 Token 决定。
  * 这里的参数仅承载目标物理主键和操作内容，不接受浏览器自报的授权身份。
  */
 const PHYSICAL_ID = /^[a-fA-F0-9]{32}$/
@@ -87,7 +87,7 @@ export async function replaceTenantRolePermissions(
   unwrapApiResponse(data, '更新角色权限失败')
 }
 
-/** 每次仅建立一个成员、应用、年度下的独立范围绑定。 */
+/** 每次仅建立一个成员、应用下的独立范围绑定。 */
 export async function grantMemberRole(request: GrantMemberRoleRequest): Promise<string> {
   const targetMemberRefId = physicalId(request.targetMemberRefId, '成员ID')
   const roleRefId = physicalId(request.roleRefId, '角色ID')
@@ -238,4 +238,59 @@ export async function fetchMemberBindings(memberRefId: string): Promise<SaasCata
     throw new Error('成员授权绑定目录不完整')
   }
   return bindings
+}
+
+
+/** 当前动作的持久化行级策略；读取失败不得用空数组替代原状态。 */
+export async function fetchCurrentDataPolicies(
+  roleRefId: string,
+  permissionRefId: string,
+): Promise<DataScopeRule[]> {
+  const role = physicalId(roleRefId, '角色ID')
+  const permission = physicalId(permissionRefId, '权限ID')
+  const { data } = await http.get<ApiResponse<DataScopeRule[]>>(
+    `/auth/saas/roles/catalog/roles/${role}/permissions/${permission}/data-policies`,
+  )
+  const rows = unwrapApiResponse(data, '读取当前行级权限失败', { requireData: true })
+  if (!Array.isArray(rows) || rows.length > 32) {
+    throw new Error('行级策略目录不完整')
+  }
+  return rows
+}
+
+/** 当前字段策略及受信字段目录仅允许服务器已登记的物理字段。 */
+export async function fetchCurrentFieldPolicies(
+  roleRefId: string,
+  permissionRefId: string,
+  resourceCode: string,
+): Promise<FieldPolicyRule[]> {
+  const role = physicalId(roleRefId, '角色ID')
+  const permission = physicalId(permissionRefId, '权限ID')
+  const code = requireResourceCode(resourceCode)
+  const { data } = await http.get<ApiResponse<FieldPolicyRule[]>>(
+    `/auth/saas/roles/catalog/roles/${role}/permissions/${permission}/field-policies`,
+    { params: { resourceCode: code } },
+  )
+  const rows = unwrapApiResponse(data, '读取当前字段策略失败', { requireData: true })
+  if (!Array.isArray(rows) || rows.length > 128) {
+    throw new Error('字段策略目录不完整')
+  }
+  return rows
+}
+
+export async function fetchDelegableFieldCatalog(
+  resourceCode: string,
+  page = 1,
+  pageSize = 50,
+): Promise<SaasCatalogPage> {
+  const code = requireResourceCode(resourceCode)
+  if (!Number.isInteger(page) || page < 1 || page > 1000
+    || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 50) {
+    throw new Error('字段目录分页参数非法')
+  }
+  const { data } = await http.get<ApiResponse<SaasCatalogPage>>(
+    '/auth/saas/roles/catalog/fields',
+    { params: { resourceCode: code, page, pageSize } },
+  )
+  return unwrapApiResponse(data, '读取可委派字段目录失败', { requireData: true })
 }

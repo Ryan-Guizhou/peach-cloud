@@ -2,38 +2,32 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.AuthFunctionDao">
     <sql id="allColumn">
-        ID,                                               TENANT_ID,                                        ORG_ID,                                           PARTY_CODE,
-        PARTY_TYPE,                                       FUNC_CODE,                                        FISCAL,                                           STATE,
-        APP_ID,                                           IS_DELETE,                                        CREATED_TIME,                                     CREATOR_ID,
-        MODIFY_TIME,                                      MODIFIER_ID
-
+        ID, TENANT_ID, ORG_ID, PARTY_CODE,
+        PARTY_TYPE, FUNC_CODE, STATE,
+        APP_ID, IS_DELETE, CREATED_TIME, CREATOR_ID,
+        MODIFY_TIME, MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        ID as id,                                         TENANT_ID as tenantId,                            ORG_ID as orgId,                                  PARTY_CODE as partyCode,
-        PARTY_TYPE as partyType,                          FUNC_CODE as funcCode,                            FISCAL as fiscal,                                 STATE as state,
-        APP_ID as appId,                                  IS_DELETE as isDelete,                            CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,
-        MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
-
+        ID as id, TENANT_ID as tenantId, ORG_ID as orgId, PARTY_CODE as partyCode,
+        PARTY_TYPE as partyType, FUNC_CODE as funcCode, STATE as state,
+        APP_ID as appId, IS_DELETE as isDelete, CREATED_TIME as createdTime, CREATOR_ID as creatorId,
+        MODIFY_TIME as modifyTime, MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{id,jdbcType=VARCHAR},                           #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                        #{partyCode,jdbcType=VARCHAR},
-        #{partyType,jdbcType=VARCHAR},                    #{funcCode,jdbcType=VARCHAR},                     #{fiscal,jdbcType=INTEGER},                       #{state,jdbcType=VARCHAR},
-        #{appId,jdbcType=VARCHAR},                        #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},
-        #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
-
+        #{id,jdbcType=VARCHAR}, #{tenantId,jdbcType=VARCHAR}, #{orgId,jdbcType=VARCHAR}, #{partyCode,jdbcType=VARCHAR},
+        #{partyType,jdbcType=VARCHAR}, #{funcCode,jdbcType=VARCHAR}, #{state,jdbcType=VARCHAR},
+        #{appId,jdbcType=VARCHAR}, #{isDelete,jdbcType=INTEGER}, #{createdTime,jdbcType=VARCHAR}, #{creatorId,jdbcType=VARCHAR},
+        #{modifyTime,jdbcType=VARCHAR}, #{modifierId,jdbcType=VARCHAR}
     </sql>
-
 
     <sql id="itemAllColumnValue">
-        #{item.id,jdbcType=VARCHAR},                      #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                  #{item.partyCode,jdbcType=VARCHAR},
-        #{item.partyType,jdbcType=VARCHAR},               #{item.funcCode,jdbcType=VARCHAR},                #{item.fiscal,jdbcType=INTEGER},                  #{item.state,jdbcType=VARCHAR},
-        #{item.appId,jdbcType=VARCHAR},                   #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},
-        #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
-
+        #{item.id,jdbcType=VARCHAR}, #{item.tenantId,jdbcType=VARCHAR}, #{item.orgId,jdbcType=VARCHAR}, #{item.partyCode,jdbcType=VARCHAR},
+        #{item.partyType,jdbcType=VARCHAR}, #{item.funcCode,jdbcType=VARCHAR}, #{item.state,jdbcType=VARCHAR},
+        #{item.appId,jdbcType=VARCHAR}, #{item.isDelete,jdbcType=INTEGER}, #{item.createdTime,jdbcType=VARCHAR}, #{item.creatorId,jdbcType=VARCHAR},
+        #{item.modifyTime,jdbcType=VARCHAR}, #{item.modifierId,jdbcType=VARCHAR}
     </sql>
-
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
@@ -51,9 +45,6 @@
             </if>
             <if test="funcCode != null and funcCode != ''">
                 FUNC_CODE = #{funcCode,jdbcType=VARCHAR},
-            </if>
-            <if test="fiscal != null">
-                FISCAL = #{fiscal,jdbcType=INTEGER},
             </if>
             <if test="state != null and state != ''">
                 STATE = #{state,jdbcType=VARCHAR},
@@ -96,9 +87,6 @@
             <if test="funcCode != null and funcCode != ''">
                 FUNC_CODE,
             </if>
-            <if test="fiscal != null">
-                FISCAL,
-            </if>
             <if test="state != null and state != ''">
                 STATE,
             </if>
@@ -139,9 +127,6 @@
             </if>
             <if test="funcCode != null and funcCode != ''">
                 #{funcCode,jdbcType=VARCHAR},
-            </if>
-            <if test="fiscal != null">
-                #{fiscal,jdbcType=INTEGER},
             </if>
             <if test="state != null and state != ''">
                 #{state,jdbcType=VARCHAR},
@@ -185,9 +170,6 @@
         </if>
         <if test="funcCode != null and funcCode != ''">
             AND FUNC_CODE = #{funcCode,jdbcType=VARCHAR}
-        </if>
-        <if test="fiscal != null">
-            AND FISCAL = #{fiscal,jdbcType=INTEGER}
         </if>
         <if test="state != null and state != ''">
             AND STATE = #{state,jdbcType=VARCHAR}
@@ -254,11 +236,10 @@
         UPDATE PEACH_AUTH_FUNCTION
         SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
         WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
-          AND ORG_ID = #{orgId,jdbcType=VARCHAR}
-          AND APP_ID = #{appId,jdbcType=VARCHAR}
-          AND PARTY_CODE = #{partyCode,jdbcType=VARCHAR}
-          AND FISCAL = #{fiscal,jdbcType=INTEGER}
-          AND IS_DELETE = 0
+        AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        AND APP_ID = #{appId,jdbcType=VARCHAR}
+        AND PARTY_CODE = #{partyCode,jdbcType=VARCHAR}
+        AND IS_DELETE = 0
     </update>
 
     <update id="updateById" parameterType="com.peach.auth.entity.AuthFunctionDO">
@@ -308,11 +289,10 @@
             <include refid="allColumnAlias" />
         FROM PEACH_AUTH_FUNCTION
         WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
-          AND ORG_ID = #{orgId,jdbcType=VARCHAR}
-          AND APP_ID = #{appId,jdbcType=VARCHAR}
-          AND FISCAL = #{fiscal,jdbcType=INTEGER}
-          AND IS_DELETE = 0
-          AND PARTY_CODE IN
+        AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        AND APP_ID = #{appId,jdbcType=VARCHAR}
+        AND IS_DELETE = 0
+        AND PARTY_CODE IN
         <foreach collection="partyCodes" item="item" open="(" separator="," close=")">
             #{item,jdbcType=VARCHAR}
         </foreach>

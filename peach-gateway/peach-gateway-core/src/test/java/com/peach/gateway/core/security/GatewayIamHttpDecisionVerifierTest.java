@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 网关不得将来自其他租户、应用、年度或旧版本的远程许可误当成当前许可。
+ * 网关不得将来自其他租户、应用或旧版本的远程许可误当成当前许可。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -14,22 +14,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 class GatewayIamHttpDecisionVerifierTest {
 
     private final GatewayTokenContext snapshot =
-            new GatewayTokenContext("user", "tenant", "member", "app", 2026, 2, 7, null);
+            new GatewayTokenContext("user", "tenant", "member", "app", 2, 7, null);
 
     @Test
     void shouldAllowOnlyExactVerifiedPrincipalAndVersions() {
         assertThat(GatewayIamHttpDecisionVerifier.isMatchingDecision(snapshot,
-                decision("tenant", "app", 2026, 2, 7, true))).isTrue();
+                decision("tenant", "app", 2, 7, true))).isTrue();
         assertThat(GatewayIamHttpDecisionVerifier.isMatchingDecision(snapshot,
-                decision("different-tenant", "app", 2026, 2, 7, true))).isFalse();
+                decision("different-tenant", "app", 2, 7, true))).isFalse();
         assertThat(GatewayIamHttpDecisionVerifier.isMatchingDecision(snapshot,
-                decision("tenant", "other-app", 2026, 2, 7, true))).isFalse();
+                decision("tenant", "other-app", 2, 7, true))).isFalse();
         assertThat(GatewayIamHttpDecisionVerifier.isMatchingDecision(snapshot,
-                decision("tenant", "app", 2027, 2, 7, true))).isFalse();
+                decision("tenant", "app", 2, 8, true))).isFalse();
         assertThat(GatewayIamHttpDecisionVerifier.isMatchingDecision(snapshot,
-                decision("tenant", "app", 2026, 2, 8, true))).isFalse();
-        assertThat(GatewayIamHttpDecisionVerifier.isMatchingDecision(snapshot,
-                decision("tenant", "app", 2026, 3, 7, true))).isFalse();
+                decision("tenant", "app", 3, 7, true))).isFalse();
     }
 
     @Test
@@ -38,15 +36,15 @@ class GatewayIamHttpDecisionVerifierTest {
         assertThat(GatewayIamHttpDecisionVerifier.isMatchingDecision(snapshot,
                 new GatewayIamHttpDecisionVerifier.IamApiDecision(true, null))).isFalse();
         assertThat(GatewayIamHttpDecisionVerifier.isMatchingDecision(snapshot,
-                decision("tenant", "app", 2026, 2, 7, false))).isFalse();
+                decision("tenant", "app", 2, 7, false))).isFalse();
     }
 
     private static GatewayIamHttpDecisionVerifier.IamApiDecision decision(
-            String tenant, String app, int year, long memberVersion, long authVersion,
+            String tenant, String app, long memberVersion, long authVersion,
             boolean allowed) {
         GatewayIamHttpDecisionVerifier.IamVerifiedContext context =
                 new GatewayIamHttpDecisionVerifier.IamVerifiedContext(
-                        "user", tenant, "member", app, year, memberVersion, authVersion);
+                        "user", tenant, "member", app, memberVersion, authVersion);
         return new GatewayIamHttpDecisionVerifier.IamApiDecision(allowed, context);
     }
 }

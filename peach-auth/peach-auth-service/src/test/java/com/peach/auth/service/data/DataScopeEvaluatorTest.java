@@ -9,7 +9,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 对租户、年度、双层角色组织范围及跨绑定权限交叉越权进行回归测试。
+ * 对租户、双层角色组织范围及跨绑定权限交叉越权进行回归测试。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DataScopeEvaluatorTest {
 
     private final TenantSessionContext session =
-            new TenantSessionContext("user-a", "tenant-a", "member-a", "app-a", 2026, 2L, 5L);
+            new TenantSessionContext("user-a", "tenant-a", "member-a", "app-a", 2L, 5L);
 
     private final OrganizationScopeMatcher hierarchy = (tenant, root, candidate) ->
             "tenant-a".equals(tenant) && (
@@ -26,16 +26,14 @@ class DataScopeEvaluatorTest {
                     ("org-root".equals(root) && ("org-left".equals(candidate) || "org-right".equals(candidate))));
 
     @Test
-    void shouldKeepTenantAppYearAndLogicalDeleteIndependent() {
+    void shouldKeepTenantAppAndLogicalDeleteIndependent() {
         RoleDataGrantVO grant = grant("b", "r", "p", "TENANT", null, "TENANT_ALL", null);
         assertThat(DataScopeEvaluator.matching(session,
-                object("tenant-b", "app-a", 2026, "org-left", false), List.of(grant), hierarchy)).isEmpty();
+                object("tenant-b", "app-a", "org-left", false), List.of(grant), hierarchy)).isEmpty();
         assertThat(DataScopeEvaluator.matching(session,
-                object("tenant-a", "app-b", 2026, "org-left", false), List.of(grant), hierarchy)).isEmpty();
+                object("tenant-a", "app-b", "org-left", false), List.of(grant), hierarchy)).isEmpty();
         assertThat(DataScopeEvaluator.matching(session,
-                object("tenant-a", "app-a", 2027, "org-left", false), List.of(grant), hierarchy)).isEmpty();
-        assertThat(DataScopeEvaluator.matching(session,
-                object("tenant-a", "app-a", 2026, "org-left", true), List.of(grant), hierarchy)).isEmpty();
+                object("tenant-a", "app-a", "org-left", true), List.of(grant), hierarchy)).isEmpty();
     }
 
     @Test
@@ -45,11 +43,11 @@ class DataScopeEvaluatorTest {
         RoleDataGrantVO right = grant("binding-right", "role-a", "permission-a",
                 "ORG", "org-right", "TENANT_ALL", null);
 
-        assertThat(DataScopeEvaluator.matching(session, object("tenant-a", "app-a", 2026, "org-left", false),
+        assertThat(DataScopeEvaluator.matching(session, object("tenant-a", "app-a", "org-left", false),
                 List.of(left, right), hierarchy)).containsExactly(left);
-        assertThat(DataScopeEvaluator.matching(session, object("tenant-a", "app-a", 2026, "org-right", false),
+        assertThat(DataScopeEvaluator.matching(session, object("tenant-a", "app-a", "org-right", false),
                 List.of(left, right), hierarchy)).containsExactly(right);
-        assertThat(DataScopeEvaluator.matching(session, object("tenant-a", "app-a", 2026, "org-third", false),
+        assertThat(DataScopeEvaluator.matching(session, object("tenant-a", "app-a", "org-third", false),
                 List.of(left, right), hierarchy)).isEmpty();
     }
 
@@ -60,10 +58,10 @@ class DataScopeEvaluatorTest {
         RoleDataGrantVO narrowBindingBroadPolicy = grant("binding-b", "role-b", "permission-b",
                 "ORG", "org-right", "TENANT_ALL", null);
         assertThat(DataScopeEvaluator.matching(session,
-                object("tenant-a", "app-a", 2026, "org-third", false),
+                object("tenant-a", "app-a", "org-third", false),
                 List.of(broadBindingNarrowPolicy, narrowBindingBroadPolicy), hierarchy)).isEmpty();
         assertThat(DataScopeEvaluator.matching(session,
-                object("tenant-a", "app-a", 2026, "org-left", false),
+                object("tenant-a", "app-a", "org-left", false),
                 List.of(broadBindingNarrowPolicy, narrowBindingBroadPolicy), hierarchy))
                 .containsExactly(broadBindingNarrowPolicy);
     }
@@ -73,9 +71,9 @@ class DataScopeEvaluatorTest {
         RoleDataGrantVO grant = grant("binding", "role", "permission",
                 "TENANT", null, "SELF", null);
         DataObjectDescriptor own = new DataObjectDescriptor(
-                "tenant-a", "app-a", 2026, "object", "user-a", null, false);
+                "tenant-a", "app-a", "object", "user-a", null, false);
         DataObjectDescriptor other = new DataObjectDescriptor(
-                "tenant-a", "app-a", 2026, "object", "other-user", null, false);
+                "tenant-a", "app-a", "object", "other-user", null, false);
         assertThat(DataScopeEvaluator.matching(session, own, List.of(grant), hierarchy))
                 .containsExactly(grant);
         assertThat(DataScopeEvaluator.matching(session, other, List.of(grant), hierarchy)).isEmpty();
@@ -86,7 +84,7 @@ class DataScopeEvaluatorTest {
         RoleDataGrantVO grant = grant("binding", "role", "permission",
                 "ORG_TREE", "org-root", "TENANT_ALL", null);
         assertThat(DataScopeEvaluator.matching(session,
-                object("tenant-a", "app-a", 2026, "org-left", false),
+                object("tenant-a", "app-a", "org-left", false),
                 List.of(grant), null)).isEmpty();
     }
 
@@ -96,13 +94,13 @@ class DataScopeEvaluatorTest {
                 "TENANT_ALL", null);
         OrganizationScopeMatcher directory = (tenant, root, candidate) -> false;
         assertThat(DataScopeEvaluator.matching(session,
-                object("tenant-a", "app-a", 2026, "disabled", false),
+                object("tenant-a", "app-a", "disabled", false),
                 List.of(grant), directory)).isEmpty();
     }
 
-    private static DataObjectDescriptor object(String tenant, String app, int year,
+    private static DataObjectDescriptor object(String tenant, String app,
                                                String org, boolean deleted) {
-        return new DataObjectDescriptor(tenant, app, year, "object-id", "other-user", org, deleted);
+        return new DataObjectDescriptor(tenant, app, "object-id", "other-user", org, deleted);
     }
 
     private static RoleDataGrantVO grant(String bindingId, String roleId, String permissionId,

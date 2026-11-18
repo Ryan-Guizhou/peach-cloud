@@ -13,6 +13,7 @@ import {
 } from '../../../api/saas-iam'
 import type { CatalogKind, SaasCatalogEntry, ScopeType } from '../../../api/saas-iam'
 import AdminLayout from '../../../layouts/admin/index.vue'
+import SaasPolicyEditor from './SaasPolicyEditor.vue'
 import { clearDynamicRoutes } from '../../../router'
 import { useWebSocketStore } from '../../../stores/websocket'
 import { useAuthStore } from '../../../stores/auth'
@@ -179,7 +180,6 @@ const scopeKey = computed(() => [
   authStore.session?.token,
   authStore.session?.tenantRefId,
   authStore.session?.appRefId,
-  authStore.session?.year,
 ].join(':'))
 
 watch(scopeKey, () => {
@@ -245,6 +245,14 @@ async function saveRolePermissions() {
   }
 }
 
+async function handlePolicyCommitted() {
+  // 策略写入递增租户 AUTH_VERSION，当前 Token 已失效。
+  websocketStore.disconnect()
+  authStore.clearSession()
+  clearDynamicRoutes()
+  await router.replace('/login')
+}
+
 async function grant() {
   if (!canManage.value || !selectedRoleId.value || !selectedMemberId.value
     || (selectedScope.value !== 'TENANT' && !selectedOrgId.value) || saving.value) {
@@ -260,7 +268,7 @@ async function grant() {
       scopeRefId: selectedScope.value === 'TENANT' ? undefined : selectedOrgId.value,
     })
     bindings.value = await fetchMemberBindings(selectedMemberId.value)
-    message.success('当前年度成员角色授权成功')
+    message.success('当前成员角色授权成功')
   } catch (error: unknown) {
     message.error(error instanceof Error ? error.message : '角色授权失败')
   } finally {
@@ -292,8 +300,8 @@ async function revoke() {
       <template #title>
         <div class="page-heading">
           <div>
-            <h2>SaaS 年度角色授权</h2>
-            <p>角色、成员、机构和权限都来自当前租户、应用和自然年度的受信目录。</p>
+            <h2>SaaS 角色授权</h2>
+            <p>角色、成员、机构和权限都来自当前租户、应用的受信目录。</p>
           </div>
         </div>
       </template>
@@ -310,7 +318,6 @@ async function revoke() {
           <a-descriptions-item label="租户">
             {{ authStore.session?.tenantName || authStore.session?.tenantId || '-' }}
           </a-descriptions-item>
-          <a-descriptions-item label="自然年度">{{ authStore.session?.year }}</a-descriptions-item>
           <a-descriptions-item label="当前应用">{{ authStore.session?.appRefId }}</a-descriptions-item>
         </a-descriptions>
 
@@ -323,7 +330,7 @@ async function revoke() {
               v-model:value="selectedRoleId"
               :options="roleOptions"
               :loading="loadingCatalog"
-              placeholder="请选择当前年度角色"
+              placeholder="请选择当前应用角色"
               show-search
               option-filter-prop="label"
             />
@@ -387,7 +394,7 @@ async function revoke() {
             <a-select
               v-model:value="selectedRoleId"
               :options="roleOptions"
-              placeholder="使用上方选中的年度角色"
+              placeholder="使用上方选中的角色"
               show-search
               option-filter-prop="label"
             />
@@ -424,6 +431,18 @@ async function revoke() {
           >授予独立角色绑定</a-button>
         </a-form>
 
+        <a-divider orientation="left">行级数据与字段权限策略</a-divider>
+        <SaasPolicyEditor
+          :role-ref-id="selectedRoleId"
+          :permission-refs="existingPermissionRefs"
+          :permission-catalog="catalog.permissions"
+          :organization-catalog="catalog.organizations"
+          :permissions-complete="!hasMore.permissions"
+          :organizations-complete="!hasMore.organizations"
+          :disabled="!canManage || loadingCatalog || loadingRole || saving"
+          @committed="handlePolicyCommitted"
+        />
+
         <a-divider orientation="left">撤销当前成员的指定绑定</a-divider>
         <a-select
           v-model:value="selectedBindingId"
@@ -442,8 +461,8 @@ async function revoke() {
           style="margin-top: 20px"
           type="info"
           show-icon
-          message="行级与字段策略编辑需要字段定义目录"
-          description="当前已实现可验证的年度角色权限与成员范围授权；复杂行级、字段级策略仍需后端受信字段目录和完整历史策略读取，不能直接输入物理字段ID绕过管理约束。"
+          message="业务对象行级 SQL 强制过滤仍待集成验收"
+          description="本页只配置和管理权限策略，实际 SELECT/COUNT/EXPORT/PATCH 权限需要各业务服务在数据库查询和写入前强制检查。"
         />
       </template>
     </a-card>

@@ -14,7 +14,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * 租户管理员权限必须与同一 Token 的成员、租户、应用和年度严格绑定。
+ * 租户管理员权限必须与同一 Token 的成员、租户、应用严格绑定。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -33,18 +33,18 @@ class SaTokenTenantMembershipPolicyTest {
         policy = new SaTokenTenantMembershipPolicy(
                 mock(TenantMemberDao.class), sessionService, permissionService);
         when(sessionService.requireCurrent()).thenReturn(
-                new TenantSessionContext("user", "tenant", "member", "app", 2026, 1L, 3L));
+                new TenantSessionContext("user", "tenant", "member", "app", 1L, 3L));
     }
 
     @Test
     void shouldAllowOnlyTheExactTenantScopedAction() {
         when(permissionService.hasTenantPermission(
-                "tenant", "member", "app", 2026, IamPermissionCodes.TENANT_MEMBER_MANAGE))
+                "tenant", "member", "app", IamPermissionCodes.TENANT_MEMBER_MANAGE))
                 .thenReturn(true);
         assertThatCode(() -> policy.requireTenantAdministrator("tenant", "member"))
                 .doesNotThrowAnyException();
         verify(permissionService).hasTenantPermission(
-                "tenant", "member", "app", 2026, IamPermissionCodes.TENANT_MEMBER_MANAGE);
+                "tenant", "member", "app", IamPermissionCodes.TENANT_MEMBER_MANAGE);
     }
 
     @Test

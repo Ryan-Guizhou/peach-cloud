@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 class SaasLoginSnapshotServiceTest {
 
     private final TenantSessionContext current =
-            new TenantSessionContext("user-ref", "tenant-ref", "member-ref", "app-ref", 2026, 2, 7);
+            new TenantSessionContext("user-ref", "tenant-ref", "member-ref", "app-ref", 2, 7);
 
     private TenantSessionService sessionService;
     private SaasLoginSnapshotDao dao;
@@ -60,7 +60,6 @@ class SaasLoginSnapshotServiceTest {
 
         assertThat(result.getRoleList()).hasSize(1);
         assertThat(result.getRoleList().get(0).getId()).isEqualTo("role-ref");
-        assertThat(result.getRoleList().get(0).getAuthYear()).isEqualTo(2026);
         assertThat(result.getMenuList()).hasSize(1);
         assertThat(result.getMenuList().get(0).getMenuCode()).isEqualTo("workspace");
         assertThat(result.getRouterList()).hasSize(1);
@@ -71,17 +70,17 @@ class SaasLoginSnapshotServiceTest {
         assertThat(result.getButtonResourceCodes()).containsExactly("TENANT.ROLE.MANAGE");
         assertThat(result.getResourceList()).isEmpty();
         verify(dao).selectCurrentGrants("user-ref", "tenant-ref", "member-ref",
-                "app-ref", 2026, 2, 7);
+                "app-ref", 2, 7);
     }
 
     @Test
-    void shouldDenyChangedTenantOrYearBeforeReadingAnyGrants() {
+    void shouldDenyChangedTenantBeforeReadingAnyGrants() {
         TenantSessionContext mismatched =
-                new TenantSessionContext("user-ref", "tenant-other", "member-ref", "app-ref", 2027, 2, 7);
+                new TenantSessionContext("user-ref", "tenant-other", "member-ref", "app-ref", 2, 7);
         assertThatThrownBy(() -> service.requireSnapshot(mismatched))
                 .isInstanceOf(SecurityException.class);
         verify(dao, never()).selectCurrentGrants(
-                "user-ref", "tenant-other", "member-ref", "app-ref", 2027, 2, 7);
+                "user-ref", "tenant-other", "member-ref", "app-ref", 2, 7);
     }
 
     @Test
@@ -140,7 +139,7 @@ class SaasLoginSnapshotServiceTest {
 
     private void whenCurrentGrants(List<SaasLoginGrantRowVO> rows) {
         when(dao.selectCurrentGrants("user-ref", "tenant-ref", "member-ref",
-                "app-ref", 2026, 2, 7)).thenReturn(rows);
+                "app-ref", 2, 7)).thenReturn(rows);
     }
 
     private SaasLoginGrantRowVO granted(String code, String type, String permissionRefId) {

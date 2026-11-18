@@ -23,7 +23,7 @@
             AND A.IS_OPEN = 1 AND A.IS_DELETE = 0
         INNER JOIN PEACH_ROLE R ON R.ID = B.ROLE_REF_ID
             AND R.TENANT_REF_ID = B.TENANT_REF_ID
-            AND R.APP_REF_ID = B.APP_REF_ID AND R.AUTH_YEAR = B.AUTH_YEAR
+            AND R.APP_REF_ID = B.APP_REF_ID
             AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
         INNER JOIN PEACH_ROLE_PERMISSION RP ON RP.ROLE_REF_ID = R.ID
             AND RP.TENANT_REF_ID = B.TENANT_REF_ID
@@ -39,7 +39,6 @@
         WHERE B.TENANT_REF_ID = #{tenantRefId}
           AND B.MEMBER_REF_ID = #{memberRefId}
           AND B.APP_REF_ID = #{appRefId}
-          AND B.AUTH_YEAR = #{year}
           AND B.STATUS = 'ACTIVE' AND B.IS_DELETE = 0
         ORDER BY R.ID, P.ID, B.ID
         LIMIT 1025

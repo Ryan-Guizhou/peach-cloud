@@ -28,6 +28,9 @@ import java.util.stream.Collectors;
 
 /**
  * 登录权限快照装配器，统一编译角色、功能、菜单、路由与资源授权结果。
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/18 17:00
  */
 @Indexed
 @Service
@@ -42,7 +45,6 @@ public class LoginPermissionAssembler {
     private final RouterDao routerDao;
 
     public LoginPermissionSnapshotVO assemble(UserOrgVO currentUserOrg,
-                                              Integer fiscal,
                                               List<RoleVO> roleList) {
         LoginPermissionSnapshotVO snapshot = new LoginPermissionSnapshotVO();
         snapshot.setRoleList(roleList == null ? List.of() : roleList);
@@ -61,8 +63,8 @@ public class LoginPermissionAssembler {
 
         String tenantId = currentUserOrg.getTenantId();
         String orgId = currentUserOrg.getOrgId();
-        Set<String> funcCodes = loadAuthorizedFunctionCodes(tenantId, orgId, fiscal, roleCodes);
-        List<AuthResourceVO> resources = loadAuthorizedResources(tenantId, orgId, fiscal, roleCodes);
+        Set<String> funcCodes = loadAuthorizedFunctionCodes(tenantId, orgId, roleCodes);
+        List<AuthResourceVO> resources = loadAuthorizedResources(tenantId, orgId, roleCodes);
         List<MenuVO> menus = loadMenus(tenantId, funcCodes);
         List<RouterVO> routers = loadRouters(tenantId, funcCodes);
 
@@ -87,13 +89,12 @@ public class LoginPermissionAssembler {
 
     private Set<String> loadAuthorizedFunctionCodes(String tenantId,
                                                     String orgId,
-                                                    Integer fiscal,
                                                     Set<String> roleCodes) {
         if (roleCodes.isEmpty()) {
             return Set.of();
         }
         List<AuthFunctionVO> authFunctions = authFunctionDao.selectByPartyCodes(
-                tenantId, orgId, INIT_APP_ID, fiscal, roleCodes);
+                tenantId, orgId, INIT_APP_ID, roleCodes);
         if (CollectionUtils.isEmpty(authFunctions)) {
             return Set.of();
         }
@@ -105,13 +106,12 @@ public class LoginPermissionAssembler {
 
     private List<AuthResourceVO> loadAuthorizedResources(String tenantId,
                                                          String orgId,
-                                                         Integer fiscal,
                                                          Set<String> roleCodes) {
         if (roleCodes.isEmpty()) {
             return List.of();
         }
         List<AuthResourceVO> resources = authResourceDao.selectByPartyCodes(
-                tenantId, orgId, fiscal, roleCodes);
+                tenantId, orgId, roleCodes);
         if (CollectionUtils.isEmpty(resources)) {
             return List.of();
         }

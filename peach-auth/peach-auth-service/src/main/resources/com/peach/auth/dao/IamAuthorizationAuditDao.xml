@@ -3,10 +3,10 @@
 <mapper namespace="com.peach.auth.dao.IamAuthorizationAuditDao">
     <insert id="append">
         INSERT INTO PEACH_IAM_AUTH_AUDIT
-        (ID, TENANT_REF_ID, APP_REF_ID, AUTH_YEAR,
+        (ID, TENANT_REF_ID, APP_REF_ID,
          OPERATOR_REF_ID, TARGET_REF_ID, OPERATION, OLD_VERSION, NEW_VERSION)
         VALUES
-        (#{id}, #{tenantRefId}, #{appRefId,jdbcType=VARCHAR}, #{year,jdbcType=SMALLINT},
+        (#{id}, #{tenantRefId}, #{appRefId,jdbcType=VARCHAR},
          #{operatorRefId}, #{targetRefId}, #{operation},
          #{oldVersion}, #{newVersion})
     </insert>

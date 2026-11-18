@@ -12,7 +12,7 @@ import java.util.List;
  * 成员角色授权的受控事务持久层。
  *
  * <p>所有读写同时限定租户物理 ID；成员行锁序列化同成员授权变更，
- * 角色与权限定义必须在当前应用和自然年度内保持完整关系。</p>
+ * 角色与权限定义必须在当前租户和应用范围内保持完整关系。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -33,17 +33,15 @@ public interface ScopedRoleBindingDao {
                                     @Param("memberRefId") String memberRefId);
 
     /**
-     * 验证角色的物理租户、应用和独立年度。
+     * 验证角色的物理租户、应用归属与有效状态。
      *
      * @param tenantRefId 租户物理主键
      * @param appRefId 应用物理主键
-     * @param year 自然年度
      * @param roleRefId 角色物理主键
      * @return 合法且有效的角色数
      */
     int countActiveRole(@Param("tenantRefId") String tenantRefId,
                         @Param("appRefId") String appRefId,
-                        @Param("year") int year,
                         @Param("roleRefId") String roleRefId);
 
     /**
@@ -67,7 +65,6 @@ public interface ScopedRoleBindingDao {
     MemberRoleBindingDO selectActiveBinding(@Param("tenantRefId") String tenantRefId,
                                             @Param("memberRefId") String memberRefId,
                                             @Param("appRefId") String appRefId,
-                                            @Param("year") int year,
                                             @Param("roleRefId") String roleRefId,
                                             @Param("scopeType") String scopeType,
                                             @Param("scopeRefId") String scopeRefId);

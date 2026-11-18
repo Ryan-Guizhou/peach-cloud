@@ -57,8 +57,7 @@ public class AuthPartyServiceImpl implements IAuthPartyService {
         if (userRoleAuthDTO == null
                 || StringUtil.isBlank(userRoleAuthDTO.getTenantId())
                 || StringUtil.isBlank(userRoleAuthDTO.getOrgId())
-                || StringUtil.isBlank(userRoleAuthDTO.getUserCode())
-                || userRoleAuthDTO.getFiscal() == null) {
+                || StringUtil.isBlank(userRoleAuthDTO.getUserCode())) {
             throw new IllegalArgumentException("Invalid user role authorization context");
         }
         AuthPartyDO deleteQuery = new AuthPartyDO();
@@ -66,7 +65,6 @@ public class AuthPartyServiceImpl implements IAuthPartyService {
         deleteQuery.setOrgId(userRoleAuthDTO.getOrgId());
         deleteQuery.setPartyCode(userRoleAuthDTO.getUserCode());
         deleteQuery.setPartyType("USER");
-        deleteQuery.setFiscal(userRoleAuthDTO.getFiscal());
         authPartyDao.del(deleteQuery);
 
         List<AuthPartyDO> bindings = new ArrayList<>();
@@ -87,7 +85,6 @@ public class AuthPartyServiceImpl implements IAuthPartyService {
                 authPartyDO.setOrgId(userRoleAuthDTO.getOrgId());
                 authPartyDO.setRoleCode(roleCode.trim());
                 authPartyDO.setRoleType("CUSTOM");
-                authPartyDO.setFiscal(userRoleAuthDTO.getFiscal());
                 authPartyDO.setPartyCode(userRoleAuthDTO.getUserCode().trim());
                 authPartyDO.setPartyType("USER");
                 authPartyDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
@@ -109,8 +106,7 @@ public class AuthPartyServiceImpl implements IAuthPartyService {
         loginPermissionCacheRefresher.refreshUserByCode(
                 userRoleAuthDTO.getTenantId(),
                 userRoleAuthDTO.getOrgId(),
-                userRoleAuthDTO.getUserCode(),
-                userRoleAuthDTO.getFiscal());
+                userRoleAuthDTO.getUserCode());
     }
 
     private AuthPartyDO buildQuery(AuthPartyQO authPartyQO) {
@@ -123,7 +119,6 @@ public class AuthPartyServiceImpl implements IAuthPartyService {
         authPartyDO.setPartyCode(authPartyQO.getPartyCode());
         authPartyDO.setPartyType(authPartyQO.getPartyType());
         authPartyDO.setRoleCode(authPartyQO.getRoleCode());
-        authPartyDO.setFiscal(authPartyQO.getFiscal());
         authPartyDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
         return authPartyDO;
     }

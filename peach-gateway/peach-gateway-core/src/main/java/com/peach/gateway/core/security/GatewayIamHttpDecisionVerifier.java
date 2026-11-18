@@ -132,7 +132,6 @@ public class GatewayIamHttpDecisionVerifier implements GatewayIamDecisionVerifie
                 && Objects.equals(snapshot.tenantRefId(), actual.tenantRefId())
                 && Objects.equals(snapshot.memberRefId(), actual.memberRefId())
                 && Objects.equals(snapshot.appRefId(), actual.appRefId())
-                && snapshot.year() == actual.year()
                 && snapshot.memberVersion() == actual.memberVersion()
                 && snapshot.authVersion() == actual.authVersion();
     }
@@ -150,6 +149,6 @@ public class GatewayIamHttpDecisionVerifier implements GatewayIamDecisionVerifie
      * Auth 已重新核验的最小成员身份和授权版本。
      */
     public record IamVerifiedContext(String userRefId, String tenantRefId, String memberRefId,
-                                     String appRefId, int year, long memberVersion, long authVersion) {
+                                     String appRefId, long memberVersion, long authVersion) {
     }
 }

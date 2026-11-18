@@ -58,7 +58,6 @@ export async function deleteById(
 export async function switchContext(request: {
   tenantRefId: string
   appRefId: string
-  year: number
 }): Promise<LoginInfo> {
   const { data } = await http.post<ApiResponse<LoginInfo>>('/auth/switchContext', request)
   return unwrapApiResponse(data, '切换机构失败', { requireData: true })

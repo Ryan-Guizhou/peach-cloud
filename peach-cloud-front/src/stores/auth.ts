@@ -15,9 +15,9 @@ const REMEMBER_DURATION = 7 * 24 * 60 * 60 * 1000
 const TAB_DURATION = 12 * 60 * 60 * 1000
 
 function toAuthenticatedSession(loginInfo: LoginInfo, expiresAt: number): AuthSession {
-  const { token, userRefId, tenantRefId, memberRefId, appRefId, year } = loginInfo
+  const { token, userRefId, tenantRefId, memberRefId, appRefId } = loginInfo
   if (loginInfo.requiresTenantSelection || !token || !userRefId || !tenantRefId
-    || !memberRefId || !appRefId || !Number.isInteger(year) || year < 1 || year > 9999) {
+    || !memberRefId || !appRefId) {
     throw new Error('登录尚未完成有效的租户与应用选择')
   }
   return {
@@ -32,7 +32,6 @@ function toAuthenticatedSession(loginInfo: LoginInfo, expiresAt: number): AuthSe
     tenantName: loginInfo.tenantName,
     orgId: loginInfo.orgId,
     orgName: loginInfo.orgName,
-    year,
     expiresAt,
   }
 }

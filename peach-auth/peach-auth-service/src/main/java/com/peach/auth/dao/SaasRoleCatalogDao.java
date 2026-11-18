@@ -8,9 +8,9 @@ import org.springframework.stereotype.Indexed;
 import java.util.List;
 
 /**
- * SaaS 当前租户/应用/年度的角色、成员、机构及可委派权限只读目录。
+ * SaaS 当前租户/应用/的角色、成员、机构及可委派权限只读目录。
  *
- * <p>每一项查询都在 SQL WHERE 中强制限定物理租户以及所需当前应用和自然年度；
+ * <p>每一项查询都在 SQL WHERE 中强制限定物理租户与当前应用；
  * 仅受信领域服务可以调用，控制器不接受请求者自报租户/成员 ID。</p>
  *
  * @Author Mr Shu
@@ -23,14 +23,12 @@ public interface SaasRoleCatalogDao {
 
     List<SaasCatalogEntryVO> selectRoles(@Param("tenantRefId") String tenantRefId,
                                          @Param("appRefId") String appRefId,
-                                         @Param("year") int year,
                                          @Param("keyword") String keyword,
                                          @Param("limit") int limit,
                                          @Param("offset") int offset);
 
     List<SaasCatalogEntryVO> selectDelegablePermissions(@Param("tenantRefId") String tenantRefId,
                                                          @Param("appRefId") String appRefId,
-                                                         @Param("year") int year,
                                                          @Param("memberRefId") String memberRefId,
                                                          @Param("keyword") String keyword,
                                                          @Param("limit") int limit,
@@ -48,11 +46,9 @@ public interface SaasRoleCatalogDao {
 
     List<String> selectRolePermissionRefs(@Param("tenantRefId") String tenantRefId,
                                           @Param("appRefId") String appRefId,
-                                          @Param("year") int year,
                                           @Param("roleRefId") String roleRefId);
 
     List<SaasCatalogEntryVO> selectMemberBindings(@Param("tenantRefId") String tenantRefId,
                                                    @Param("appRefId") String appRefId,
-                                                   @Param("year") int year,
                                                    @Param("memberRefId") String memberRefId);
 }

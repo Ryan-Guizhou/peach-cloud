@@ -23,19 +23,17 @@ import java.util.List;
 public interface ScopedDataAuthorizationDao {
 
     /**
-     * 获得当前成员/应用/年度中某一动作的独立绑定与数据策略证据。
+     * 获得当前成员/应用/中某一动作的独立绑定与数据策略证据。
      *
      * @param tenantRefId 物理租户主键
      * @param memberRefId 物理成员主键
      * @param appRefId 物理应用主键
-     * @param year 自然年度
      * @param permissionCode 业务动作的稳定语义码
      * @return 该权限的行策略证据
      */
     List<RoleDataGrantVO> selectDataGrants(@Param("tenantRefId") String tenantRefId,
                                            @Param("memberRefId") String memberRefId,
                                            @Param("appRefId") String appRefId,
-                                           @Param("year") int year,
                                            @Param("permissionCode") String permissionCode);
 
     /**
@@ -44,7 +42,6 @@ public interface ScopedDataAuthorizationDao {
      * @param tenantRefId 物理租户主键
      * @param memberRefId 物理成员主键
      * @param appRefId 物理应用主键
-     * @param year 自然年度
      * @param permissionCode 业务动作权限码
      * @param resourceCode 后端受控稳定资源类型
      * @param bindingRefIds 已经行级授权的物理绑定 ID
@@ -53,7 +50,6 @@ public interface ScopedDataAuthorizationDao {
     List<ScopedFieldRuleVO> selectFieldRules(@Param("tenantRefId") String tenantRefId,
                                              @Param("memberRefId") String memberRefId,
                                              @Param("appRefId") String appRefId,
-                                             @Param("year") int year,
                                              @Param("permissionCode") String permissionCode,
                                              @Param("resourceCode") String resourceCode,
                                              @Param("bindingRefIds") List<String> bindingRefIds);

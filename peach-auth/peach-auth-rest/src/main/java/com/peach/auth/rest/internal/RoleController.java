@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 旧机构与 FISCAL 角色 REST 入口，明确拒绝并等待前端迁移。
  *
  * <p>禁止基于浏览器参数读写跨租户角色；新角色 CRUD 必须经
- * SaasRoleController 的可信成员上下文和独立年度授权执行。</p>
+ * SaasRoleController 的可信成员上下文和独立授权执行。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -65,6 +65,6 @@ public class RoleController {
     }
 
     private static Response denied() {
-        return Response.fail(StatusEnum.FORBIDDEN).setMsg("旧角色接口已停用，请使用 SaaS 年度角色接口");
+        return Response.fail(StatusEnum.FORBIDDEN).setMsg("旧角色接口已停用，请使用 SaaS 角色接口");
     }
 }

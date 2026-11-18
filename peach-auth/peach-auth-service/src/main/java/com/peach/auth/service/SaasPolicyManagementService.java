@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  * <p>操作人仅从当前 Sa-Token 获取，使用租户锁及角色行锁串行化写入。
  * 必须拥有完整租户角色管理权限、待授权动作的完整租户权限；
  * SYSTEM 动作还要求已经持有该动作的有效 TENANT + TENANT_ALL 行级证据。
- * 数据库有效目录和可委派性检查均失败即拒绝，不允许自报租户/年度或越权
+ * 数据库有效目录和可委派性检查均失败即拒绝，不允许自报租户身份或越权
  * 修改平台系统角色。策略变化、旧 Token 失效和审计处于同一事务。</p>
  *
  * @Author Mr Shu
@@ -72,7 +72,7 @@ public class SaasPolicyManagementService {
      *
      * <p>删除全部规则是明确撤销，不能通过 null 请求绕过。</p>
      *
-     * @param roleRefId 租户年度角色物理主键
+     * @param roleRefId 租户角色物理主键
      * @param permissionRefId 已授予该角色的权限物理主键
      * @param proposed 新的完整策略列表
      */
@@ -112,7 +112,7 @@ public class SaasPolicyManagementService {
     /**
      * 事务内替换某一受控资源字段的完整读写策略；未列出的字段始终默认拒绝。
      *
-     * @param roleRefId 租户年度角色物理主键
+     * @param roleRefId 租户角色物理主键
      * @param permissionRefId 已授予该角色的动作权限物理主键
      * @param resourceCode 受控资源的稳定标识，不参与拼接 SQL
      * @param proposed 新的完整字段策略列表
@@ -126,6 +126,10 @@ public class SaasPolicyManagementService {
             throw new IllegalArgumentException("Invalid resource code");
         }
         Guard guard = lockGuard(roleRefId, permissionRefId);
+        // 字段定义归属的资源必须与角色实际被授权的动作一致。
+        if (!guard.permissionCode.startsWith(resourceCode + ".")) {
+            throw new SecurityException("Field resource does not match the delegated action");
+        }
         Set<FieldRule> next = validateFieldRules(guard, resourceCode, proposed);
         List<RoleFieldPolicyVO> stored = policyDao.selectFieldPolicies(
                 guard.context.tenantRefId(), guard.context.appRefId(), roleRefId, permissionRefId);
@@ -169,7 +173,7 @@ public class SaasPolicyManagementService {
         membershipPolicy.requireTenantPermission(context.tenantRefId(), context.memberRefId(),
                 IamPermissionCodes.TENANT_ROLE_MANAGE);
         RoleDO role = roleDao.lockScopedRole(
-                context.tenantRefId(), context.appRefId(), context.year(), roleRefId);
+                context.tenantRefId(), context.appRefId(), roleRefId);
         if (role == null || !ROLE_TENANT.equals(role.getRoleType())
                 || role.getVersion() == null || role.getVersion() < 0) {
             throw new SecurityException("Role is unavailable or platform-managed");
@@ -186,7 +190,7 @@ public class SaasPolicyManagementService {
                 || !StringUtils.hasText(permitted.get(0).getPermissionCode())
                 || !permissionService.hasTenantPermission(
                         context.tenantRefId(), context.memberRefId(), context.appRefId(),
-                        context.year(), permitted.get(0).getPermissionCode())) {
+                        permitted.get(0).getPermissionCode())) {
             throw new SecurityException("Action is not delegated to the administrator");
         }
         String owner = permitted.get(0).getOwnerType();
@@ -197,13 +201,13 @@ public class SaasPolicyManagementService {
                 permitted.get(0).getPermissionCode())) {
             throw new SecurityException("System action requires full-scope delegation evidence");
         }
-        return new Guard(context, tenantBusinessId, role);
+        return new Guard(context, tenantBusinessId, role, permitted.get(0).getPermissionCode());
     }
 
     private boolean hasCompleteSystemActionGrant(TenantSessionContext context, String permissionCode) {
         List<RoleDataGrantVO> grants = authorizationDao.selectDataGrants(
                 context.tenantRefId(), context.memberRefId(), context.appRefId(),
-                context.year(), permissionCode);
+                permissionCode);
         if (CollectionUtils.isEmpty(grants)) {
             return false;
         }
@@ -278,15 +282,14 @@ public class SaasPolicyManagementService {
     private void invalidateAndAudit(Guard guard, String roleRefId, String operation) {
         long oldVersion = guard.role.getVersion();
         if (oldVersion == Long.MAX_VALUE || roleDao.incrementRoleVersion(
-                guard.context.tenantRefId(), guard.context.appRefId(), guard.context.year(),
-                roleRefId, oldVersion, guard.context.memberRefId()) != 1) {
+                guard.context.tenantRefId(), guard.context.appRefId(), roleRefId, oldVersion, guard.context.memberRefId()) != 1) {
             throw new IllegalStateException("Role policy version conflict");
         }
         if (versionDao.incrementForTenant(guard.context.tenantRefId()) < 1) {
             throw new IllegalStateException("Authorization invalidation failed");
         }
         if (auditDao.append(UniqueIdFacade.nextId(), guard.context.tenantRefId(),
-                guard.context.appRefId(), guard.context.year(), guard.context.memberRefId(),
+                guard.context.appRefId(), guard.context.memberRefId(),
                 roleRefId, operation, oldVersion, oldVersion + 1L) != 1) {
             throw new IllegalStateException("Authorization policy audit append failed");
         }
@@ -304,6 +307,7 @@ public class SaasPolicyManagementService {
     private record FieldRule(String fieldRefId, String readEffect, String writeEffect) {
     }
 
-    private record Guard(TenantSessionContext context, String tenantBusinessId, RoleDO role) {
+    private record Guard(TenantSessionContext context, String tenantBusinessId,
+                         RoleDO role, String permissionCode) {
     }
 }
