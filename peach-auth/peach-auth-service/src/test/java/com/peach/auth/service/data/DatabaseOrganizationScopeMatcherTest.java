@@ -5,6 +5,9 @@ import com.peach.auth.entity.OrganizationDO;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.List;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -56,6 +59,29 @@ class DatabaseOrganizationScopeMatcherTest {
         DatabaseOrganizationScopeMatcher matcher = new DatabaseOrganizationScopeMatcher(dao);
 
         assertThat(matcher.contains("tenant", "other", "child")).isFalse();
+    }
+
+    @Test
+    void shouldRejectCycleOrTruncatedDescendantQuery() {
+        OrganizationHierarchyDao dao = mock(OrganizationHierarchyDao.class);
+        when(dao.findEnabledTenantBusinessId("tenant")).thenReturn("TENANT_BIZ");
+        when(dao.selectActiveDescendantIds("TENANT_BIZ", "root", 256, 513))
+                .thenReturn(List.of("root", "child", "root"));
+        DatabaseOrganizationScopeMatcher matcher = new DatabaseOrganizationScopeMatcher(dao);
+        assertThatThrownBy(() -> matcher.descendants("tenant", "root"))
+                .isInstanceOf(SecurityException.class);
+    }
+
+    @Test
+    void shouldReadOnlyCurrentTenantActiveDescendants() {
+        OrganizationHierarchyDao dao = mock(OrganizationHierarchyDao.class);
+        when(dao.findEnabledTenantBusinessId("tenant")).thenReturn("TENANT_BIZ");
+        when(dao.selectActiveDescendantIds("TENANT_BIZ", "root", 256, 513))
+                .thenReturn(List.of("root", "child"));
+        DatabaseOrganizationScopeMatcher matcher = new DatabaseOrganizationScopeMatcher(dao);
+        assertThat(matcher.descendants("tenant", "root")).containsExactlyInAnyOrder("root", "child");
+        assertThatThrownBy(() -> matcher.descendants("another-tenant", "root"))
+                .isInstanceOf(SecurityException.class);
     }
 
     private static OrganizationDO org(String id, String parentRefId, boolean enabled) {

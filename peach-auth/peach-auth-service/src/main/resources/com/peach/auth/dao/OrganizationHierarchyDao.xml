@@ -25,6 +25,25 @@
           AND IS_DELETE = 0
     </select>
 
+    <!-- 有界、同租户、只访问有效机构；超限由服务端拒绝整个授权计划。 -->
+    <select id="selectActiveDescendantIds" resultType="java.lang.String">
+        WITH RECURSIVE ORG_DESC (ID, DEPTH) AS (
+            SELECT ID, 1
+            FROM PEACH_ORGANIZATION
+            WHERE ID = #{ancestorOrgRefId}
+              AND TENANT_ID = #{tenantBusinessId}
+              AND STATUS = 'ENABLE' AND IS_DELETE = 0
+            UNION ALL
+            SELECT CHILD.ID, P.DEPTH + 1
+            FROM PEACH_ORGANIZATION CHILD
+            INNER JOIN ORG_DESC P ON CHILD.PARENT_ORG_REF_ID = P.ID
+            WHERE CHILD.TENANT_ID = #{tenantBusinessId}
+              AND CHILD.STATUS = 'ENABLE' AND CHILD.IS_DELETE = 0
+              AND P.DEPTH &lt; #{maxDepth}
+        )
+        SELECT ID FROM ORG_DESC LIMIT #{limit}
+    </select>
+
     <update id="updateParent">
         UPDATE PEACH_ORGANIZATION
         SET PARENT_ORG_REF_ID = #{newParentRefId,jdbcType=VARCHAR},

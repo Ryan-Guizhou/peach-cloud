@@ -269,3 +269,9 @@ flowchart LR
 | 文件等业务对象 | `requireObjectAction` 可校验不含字段的单对象动作 | 具体文件服务、Feign 身份传递、异步任务接入待 #209 完成 |
 
 **安全约束：** 调用方只传服务端可信动作和对象权属；不是把数据库记录读取后在分页结果里过滤。每条有效证据同时持有动作、角色、年度、机构和数据范围，绝不跨两条证据拼接出第三种授权。字段的显式拒绝优先于其他角色的允许。SQL 需要前置行级过滤才能正确处理总数/分页/批量导出，不能以本单对象判断代替。策略管理写入接口、字段目录引导、完整服务接入及实际 MySQL/多租户验收仍在 #207 进行中。
+
+### SQL 级列表预筛选（#207，待跨服务接入）
+
+`ScopedDataQueryScopeService.requireScope(permissionCode)` 已提供受信的 `AuthorizedDataQueryScope`：它以当前 Token 重新验证的物理租户、应用和自然年度为固定条件，逐条计算**同一角色绑定范围 ∩ 对应动作的数据策略范围**。组织树由真实 MySQL 有界递归读取，只保留有效机构；环路、超量（超过 512 个机构）和无授权均拒绝。每个 `RowClause` 中的组织集合与 SELF 所有者条件必须同时满足，再对多条 Clause 求并集。字段目录的有效唯一约束随逻辑删除释放，历史 `FIELD_ID` 仍永久唯一。
+
+业务 Mapper **必须**在 `COUNT/SELECT/EXPORT/UPDATE/DELETE` 的 SQL `WHERE` 中同时绑定 `tenantRefId`、`appRefId`、`year`、`IS_DELETE=0` 和 `clauses`：每条 Clause 内组织 `IN (#{...})` 与所有者 `= #{...}` 为 AND，不同 Clause 为 OR；组织不限仅对当前 Clause 有效。严禁 `\$\{\}` 拼入 SQL、跨绑定拼接 SELF 与机构或在分页后过滤。此契约**尚未被各业务模块统一接入**，端到端联调仍在 #209/#211；当前不能宣称分页/导出已安全开放。

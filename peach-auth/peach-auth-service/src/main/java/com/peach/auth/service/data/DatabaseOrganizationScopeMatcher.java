@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -22,12 +23,43 @@ import java.util.Set;
  */
 @Service
 @RequiredArgsConstructor
-public class DatabaseOrganizationScopeMatcher implements OrganizationScopeMatcher {
+public class DatabaseOrganizationScopeMatcher implements OrganizationScopeDirectory {
 
     private static final int MAX_ANCESTORS = 256;
+    private static final int MAX_QUERY_ORGANIZATIONS = 512;
     private static final String ENABLED = "ENABLE";
 
     private final OrganizationHierarchyDao organizationHierarchyDao;
+
+    /**
+     * 在执行业务 SQL 之前解析有界的有效机构子树。
+     *
+     * <p>任何越界、重复节点、缺失锚点或已停用租户均拒绝整个授权计划，
+     * 不会把空集合当成整个租户可见。</p>
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Set<String> descendants(String tenantRefId, String ancestorOrgRefId) {
+        if (!StringUtils.hasText(tenantRefId) || !StringUtils.hasText(ancestorOrgRefId)) {
+            throw new SecurityException("Active tenant and organization are required");
+        }
+        String tenantBusinessId = organizationHierarchyDao.findEnabledTenantBusinessId(tenantRefId);
+        if (!StringUtils.hasText(tenantBusinessId)) {
+            throw new SecurityException("Tenant is not active");
+        }
+        List<String> ids = organizationHierarchyDao.selectActiveDescendantIds(
+                tenantBusinessId, ancestorOrgRefId, MAX_ANCESTORS, MAX_QUERY_ORGANIZATIONS + 1);
+        if (ids == null || ids.isEmpty() || ids.size() > MAX_QUERY_ORGANIZATIONS
+                || !ancestorOrgRefId.equals(ids.get(0))
+                || ids.stream().anyMatch(id -> !StringUtils.hasText(id))) {
+            throw new SecurityException("Organization subtree cannot be safely enumerated");
+        }
+        Set<String> unique = new HashSet<>(ids);
+        if (unique.size() != ids.size()) {
+            throw new SecurityException("Organization subtree contains a cycle");
+        }
+        return Set.copyOf(unique);
+    }
 
     @Override
     @Transactional(readOnly = true)

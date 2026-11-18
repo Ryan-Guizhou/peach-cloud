@@ -90,6 +90,16 @@ class DataScopeEvaluatorTest {
                 List.of(grant), null)).isEmpty();
     }
 
+    @Test
+    void shouldRejectDisabledDirectOrganizationAnchor() {
+        RoleDataGrantVO grant = grant("b", "r", "p", "ORG", "disabled",
+                "TENANT_ALL", null);
+        OrganizationScopeMatcher directory = (tenant, root, candidate) -> false;
+        assertThat(DataScopeEvaluator.matching(session,
+                object("tenant-a", "app-a", 2026, "disabled", false),
+                List.of(grant), directory)).isEmpty();
+    }
+
     private static DataObjectDescriptor object(String tenant, String app, int year,
                                                String org, boolean deleted) {
         return new DataObjectDescriptor(tenant, app, year, "object-id", "other-user", org, deleted);

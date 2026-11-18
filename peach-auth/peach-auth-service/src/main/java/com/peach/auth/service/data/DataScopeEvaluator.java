@@ -77,7 +77,8 @@ public final class DataScopeEvaluator {
             return false;
         }
         if (ORG.equals(type)) {
-            return anchor.equals(object.orgRefId());
+            return anchor.equals(object.orgRefId()) && hierarchy != null
+                    && hierarchy.contains(object.tenantRefId(), anchor, object.orgRefId());
         }
         return ORG_TREE.equals(type) && hierarchy != null
                 && hierarchy.contains(object.tenantRefId(), anchor, object.orgRefId());
