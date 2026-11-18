@@ -251,3 +251,7 @@ git diff --check -- peach-gateway
 #### 外部内部凭证头隔离（#208）
 
 `GatewayRequestGlobalFilter` 在其他授权与路由处理前移除客户端提供的 `SaSameUtil.SAME_TOKEN` 和 `X-Peach-Subject-Token`，同时重建可信请求 ID；不剥离真实用户的 `Authorization`。只有通过认证、授权的受保护请求才可由 `GatewaySameTokenGlobalFilter` 按当前服务配置注入 Same-Token；网关自行调用 Auth 的 IAM 验证器只在内部专用 HTTP 客户端设置真实最终用户 Token 和服务 Same-Token。即使客户端将这两个内部头送到公开端点，也不会转发到业务服务。生产部署仍须对 Auth 实例进行网络访问控制与 TLS 防护，不能把请求头清理当作唯一隔离机制。
+
+#### 网关到 Auth 的 HTTP 契约回归
+
+新增 `GatewayIamHttpContractTest`，用真实 WebClient 编解码器和模拟的 Auth HTTP 响应验证服务发现目标路径、POST 方法、最终用户 Token、独立 Same-Token、JSON Content-Type，以及数据库版本一致时允许。远端 503、空 200、授权版本不一致、缺少任一凭证或 25ms 测试超时均必须返回拒绝。此测试只验证 HTTP 协议与失败安全策略，不能代替真实 MySQL/Redis/Nacos 联调。

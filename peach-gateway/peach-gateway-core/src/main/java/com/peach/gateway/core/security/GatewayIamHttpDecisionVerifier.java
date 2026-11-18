@@ -75,19 +75,42 @@ public class GatewayIamHttpDecisionVerifier implements GatewayIamDecisionVerifie
                     }
                 })
                 .subscribeOn(Schedulers.boundedElastic())
-                .flatMap(credentials -> client.post()
-                        .uri(IAM_API_PATH)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(SUBJECT_TOKEN_HEADER, credentials.subjectToken())
-                        .header(SaSameUtil.SAME_TOKEN, credentials.sameToken())
-                        .bodyValue(Map.of("permissionCode", apiResourceCode))
-                        .retrieve()
-                        .bodyToMono(IamApiDecision.class)
-                        .map(decision -> isMatchingDecision(context, decision)))
+                .flatMap(credentials -> requestAuthorization(
+                        context, apiResourceCode, credentials.subjectToken(), credentials.sameToken()))
                 .timeout(timeout)
                 .defaultIfEmpty(false)
                 .onErrorResume(error -> {
                     log.warn("Gateway IAM remote decision unavailable, reason={}",
+                            error.getClass().getSimpleName());
+                    return Mono.just(false);
+                });
+    }
+
+    /**
+     * 向真实认证服务发送 Same-Token 和最终用户 Token 双凭证，禁止任何缓存授权兜底。
+     *
+     * <p>独立成方法以便用模拟 HTTP 服务测试完整协议；无凭证、非 2xx、
+     * 空响应、超时及身份/版本不一致均返回拒绝。调用不阻塞 Netty EventLoop。</p>
+     */
+    Mono<Boolean> requestAuthorization(GatewayTokenContext context, String resourceCode,
+                                       String subjectToken, String sameToken) {
+        if (context == null || !StringUtils.hasText(resourceCode)
+                || !StringUtils.hasText(subjectToken) || !StringUtils.hasText(sameToken)) {
+            return Mono.just(false);
+        }
+        return client.post()
+                .uri(IAM_API_PATH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(SUBJECT_TOKEN_HEADER, subjectToken)
+                .header(SaSameUtil.SAME_TOKEN, sameToken)
+                .bodyValue(Map.of("permissionCode", resourceCode))
+                .retrieve()
+                .bodyToMono(IamApiDecision.class)
+                .map(decision -> isMatchingDecision(context, decision))
+                .timeout(timeout)
+                .defaultIfEmpty(false)
+                .onErrorResume(error -> {
+                    log.warn("Gateway IAM HTTP decision denied, reason={}",
                             error.getClass().getSimpleName());
                     return Mono.just(false);
                 });

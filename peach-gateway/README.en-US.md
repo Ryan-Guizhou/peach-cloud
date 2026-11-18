@@ -252,3 +252,7 @@ Source inspection confirms that `LoginController.init()` only calls `IUserServic
 #### Strip untrusted internal identity headers at ingress (#208)
 
 Before authorization or routing, `GatewayRequestGlobalFilter` removes client-supplied `SaSameUtil.SAME_TOKEN` and `X-Peach-Subject-Token` and regenerates the trusted request ID, while preserving the actual end-user `Authorization` header. Only authenticated, authorized protected calls may obtain a newly generated Same-Token from `GatewaySameTokenGlobalFilter`; the gateway's private IAM HTTP client supplies the real subject token and service credential only to Auth. Both spoofed headers are removed even for public endpoints. Production must still enforce network access controls and TLS for Auth; header sanitization is not a substitute for network isolation.
+
+#### Gateway-to-Auth HTTP contract regression
+
+`GatewayIamHttpContractTest` uses real WebClient codecs against mocked Auth HTTP responses to verify the discovered service URL, POST method, end-user token, separate service Same-Token, JSON content type, and allow decisions with matching database versions. HTTP 503, empty HTTP 200, a stale authorization version, missing credentials, and a 25ms test deadline all must deny access. This is protocol and failure-safety verification, not a substitute for integration against real MySQL, Redis, and Nacos.
