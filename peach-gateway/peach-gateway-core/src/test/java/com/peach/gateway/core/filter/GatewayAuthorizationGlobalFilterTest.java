@@ -2,6 +2,7 @@ package com.peach.gateway.core.filter;
 
 import com.peach.gateway.core.config.GatewaySaTokenProperties;
 import com.peach.gateway.core.security.GatewayTokenContextResolver;
+import com.peach.gateway.core.security.GatewaySecurityEndpointRule;
 import com.peach.gateway.core.security.GatewayIamDecisionVerifier;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -66,7 +67,7 @@ class GatewayAuthorizationGlobalFilterTest {
     void shouldRejectInternalIamPathEvenWhenPublicRuleIsAdded() {
         GatewaySaTokenProperties props = new GatewaySaTokenProperties();
         var rules = new ArrayList<>(props.getPublicEndpoints());
-        rules.add(com.peach.gateway.core.security.GatewaySecurityEndpointRule.any(
+        rules.add(GatewaySecurityEndpointRule.any(
                 "/api/auth/external/iam/**"));
         props.setPublicEndpoints(rules);
         GatewayAuthorizationGlobalFilter filter = filter(props);
