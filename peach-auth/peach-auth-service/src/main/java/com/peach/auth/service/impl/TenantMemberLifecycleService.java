@@ -329,7 +329,7 @@ public class TenantMemberLifecycleService {
         if (authVersionDao.incrementForMember(tenantRefId, member.getId()) != 1) {
             throw new IllegalStateException("Unable to revoke prior member authorization");
         }
-        if (authorizationAuditDao.append(UniqueIdFacade.nextId(), tenantRefId, null, null,
+        if (authorizationAuditDao.append(UniqueIdFacade.nextId(), tenantRefId, null,
                 operatorMemberRefId, member.getId(), operation, priorVersion, priorVersion + 1) != 1) {
             throw new IllegalStateException("Failed to audit member authorization invalidation");
         }
