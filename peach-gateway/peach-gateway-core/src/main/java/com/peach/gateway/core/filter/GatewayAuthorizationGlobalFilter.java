@@ -9,24 +9,20 @@ import cn.dev33.satoken.exception.NotSafeException;
 import cn.dev33.satoken.reactor.context.SaReactorSyncHolder;
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.common.constant.SaTokenConstant;
-import com.peach.gateway.core.GatewayRateLimitRedisConfiguration;
 import com.peach.gateway.core.config.GatewaySaTokenProperties;
 import com.peach.gateway.core.constant.GatewayConstant;
 import com.peach.gateway.core.security.GatewaySecurityEndpointMatcher;
-import com.peach.gateway.core.security.GatewayTokenContext;
 import com.peach.gateway.core.security.GatewayTokenContextResolver;
+import com.peach.gateway.core.security.GatewayIamDecisionVerifier;
 import com.peach.gateway.core.support.GatewayFilterSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -50,23 +46,19 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
 
     private final GatewaySaTokenProperties properties;
 
-    private final ReactiveStringRedisTemplate redisTemplate;
+    private final GatewayIamDecisionVerifier decisionVerifier;
 
     private final GatewayTokenContextResolver tokenContextResolver;
-
-    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     private final GatewaySecurityEndpointMatcher endpointMatcher = new GatewaySecurityEndpointMatcher();
 
     public GatewayAuthorizationGlobalFilter(GatewaySaTokenProperties properties,
-                                            @Qualifier(GatewayRateLimitRedisConfiguration.REACTIVE_STRING_REDIS_TEMPLATE_BEAN_NAME)
-                                            ObjectProvider<ReactiveStringRedisTemplate> redisTemplateProvider,
+                                            ObjectProvider<GatewayIamDecisionVerifier> verifierProvider,
                                             GatewayTokenContextResolver tokenContextResolver) {
         this.properties = properties;
-        this.redisTemplate = redisTemplateProvider.getIfAvailable();
+        this.decisionVerifier = verifierProvider.getIfAvailable();
         this.tokenContextResolver = tokenContextResolver;
     }
-
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -112,7 +104,9 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
      */
     private Mono<Boolean> checkApiPermission(String loginId, String method, String path,
                                              ServerWebExchange exchange) {
-        if (!properties.isApiPermissionEnabled() || redisTemplate == null) {
+        // 永远不能以旧 Token 自报的授权版本和 Redis Set 存在来证明权限仍然有效。
+        // 当前无可信 IAM 验证器时拒绝；#209 负责服务端数据库事实源和可信传播。
+        if (!properties.isApiPermissionEnabled() || decisionVerifier == null) {
             return Mono.just(false);
         }
         String resourceCode = buildApiResourceCode(method, path);
@@ -120,39 +114,13 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
             return Mono.just(false);
         }
         return tokenContextResolver.resolve(exchange)
-                .flatMap(context -> checkApiPermissionForContext(context, resourceCode, method, path))
+                .flatMap(context -> decisionVerifier.authorize(exchange, context, resourceCode))
                 .defaultIfEmpty(false)
                 .onErrorResume(exception -> {
-                    log.warn("Gateway API permission check failed, method={}, path={}, reason={}",
+                    log.warn("Gateway IAM decision failed, method={}, path={}, reason={}",
                             method, path, exception.getClass().getSimpleName());
                     return Mono.just(false);
                 });
-    }
-
-    /**
-     * 使用当前 Token Session 对应的业务上下文校验 API 资源权限。
-     *
-     * @param loginId 当前登录 ID
-     * @param context 当前 Token Session 上下文
-     * @param resourceCode 当前请求资源编码
-     * @param method 请求方法
-     * @param path 请求路径
-     * @return 允许访问时返回 {@code true}
-     */
-    private Mono<Boolean> checkApiPermissionForContext(GatewayTokenContext context,
-                                                        String resourceCode, String method, String path) {
-        String key = SaTokenConstant.memberApiResourceCacheKey(
-                context.tenantRefId(), context.memberRefId(), context.appRefId(),
-                context.year(), context.memberVersion(), context.authVersion());
-        return redisTemplate.opsForSet()
-                .isMember(key, resourceCode)
-                .defaultIfEmpty(false)
-                .flatMap(exactMatched -> Boolean.TRUE.equals(exactMatched)
-                        ? Mono.just(true)
-                        : redisTemplate.opsForSet()
-                        .members(key)
-                        .any(candidate -> apiResourceMatches(candidate, method, path))
-                        .defaultIfEmpty(false));
     }
 
     /**
@@ -181,29 +149,6 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
      * @param path 当前请求路径
      * @return 匹配时返回 {@code true}
      */
-    private boolean apiResourceMatches(String resourceCode, String method, String path) {
-        if (isBlank(resourceCode) || isBlank(method) || isBlank(path)) {
-            return false;
-        }
-        int separator = resourceCode.indexOf(':');
-        if (separator <= 0 || separator >= resourceCode.length() - 1) {
-            return false;
-        }
-        String resourceMethod = resourceCode.substring(0, separator).trim().toUpperCase(Locale.ENGLISH);
-        String resourcePath = resourceCode.substring(separator + 1).trim();
-        if (!"ANY".equals(resourceMethod) && !resourceMethod.equals(method.trim().toUpperCase(Locale.ENGLISH))) {
-            return false;
-        }
-        String normalizedPath = path.trim();
-        if (!normalizedPath.startsWith(PATH_SEPARATOR)) {
-            normalizedPath = PATH_SEPARATOR + normalizedPath;
-        }
-        if (!resourcePath.startsWith(PATH_SEPARATOR)) {
-            resourcePath = PATH_SEPARATOR + resourcePath;
-        }
-        return pathMatcher.match(resourcePath, normalizedPath);
-    }
-
     /**
      * 处理 API 权限不足响应。
      *

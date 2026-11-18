@@ -2,10 +2,10 @@ package com.peach.gateway.core.filter;
 
 import com.peach.gateway.core.config.GatewaySaTokenProperties;
 import com.peach.gateway.core.security.GatewayTokenContextResolver;
+import com.peach.gateway.core.security.GatewayIamDecisionVerifier;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
@@ -62,10 +62,10 @@ class GatewayAuthorizationGlobalFilterTest {
 
     @SuppressWarnings("unchecked")
     private static GatewayAuthorizationGlobalFilter filter(GatewaySaTokenProperties properties) {
-        ObjectProvider<ReactiveStringRedisTemplate> redis =
-                (ObjectProvider<ReactiveStringRedisTemplate>) mock(ObjectProvider.class);
-        when(redis.getIfAvailable()).thenReturn(null);
+        ObjectProvider<GatewayIamDecisionVerifier> verifiers =
+                (ObjectProvider<GatewayIamDecisionVerifier>) mock(ObjectProvider.class);
+        when(verifiers.getIfAvailable()).thenReturn(null);
         return new GatewayAuthorizationGlobalFilter(
-                properties, redis, mock(GatewayTokenContextResolver.class));
+                properties, verifiers, mock(GatewayTokenContextResolver.class));
     }
 }

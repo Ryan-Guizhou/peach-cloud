@@ -229,6 +229,6 @@ git diff --check -- peach-gateway
 
 ## SaaS 网关鉴权安全基线（Issue #208，开发中）
 
-当前开发分支使用 `SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT` 的单一 Token Session 快照，解析 `userRefId/tenantRefId/memberRefId/appRefId/year/memberVersion/authVersion`；工作机构可空，不再读取历史 `tenantId/orgId/fiscal` 组合。网关 API 缓存键隔离物理租户、成员、应用、自然年度和两个版本；**绝不回退读取旧用户级缓存**。缺失快照、无 Redis、权限检查关闭或系统配置意外停用时，受保护 API 全部拒绝，不能通过开关进入无授权链路。默认匿名白名单只保留登录、验证码、公钥及 OPTIONS；`/auth/init`、注册/重置等不再默认匿名公开。
+当前开发分支使用 `SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT` 的单一 Token Session 快照，解析 `userRefId/tenantRefId/memberRefId/appRefId/year/memberVersion/authVersion`；工作机构可空，不再读取历史 `tenantId/orgId/fiscal` 组合。新缓存键支持物理租户、成员、应用、自然年度和两个版本隔离，但**当前网关不会仅凭 Redis 缓存放行受保护 API**：必须注入能核验最新 IAM 权限事实源的 `GatewayIamDecisionVerifier`，没有验证器就默认拒绝；绝不回退读取旧用户级缓存。缺失快照、无 Redis、权限检查关闭或系统配置意外停用时，受保护 API 全部拒绝，不能通过开关进入无授权链路。默认匿名白名单只保留登录、验证码、公钥及 OPTIONS；`/auth/init`、注册/重置等不再默认匿名公开。
 
-**当前限制：** 缓存版本键不是可信版本服务。认证域尚未把角色/成员版本失效后可靠同步至网关，且新版本缓存集合缺少真实受信的填充及撤销协议。只靠旧 Token 上的 `authVersion` 查缓存不能证明权限仍有效。因此在完成请求期数据库/受信服务鉴权、版本校验和跨服务授权传播（#208/#209）之前，**本分支不能直接投产、不能宣称授权缓存已可用**，CI 构建通过亦不等同于安全验收。
+**当前限制：** 缓存版本键不是可信版本服务。当前已增加受信决策 SPI，但尚未提供生产实现，因此非公开 API 默认拒绝。认证域尚未把角色/成员版本失效后可靠同步至网关，且新版本缓存集合缺少真实受信的填充及撤销协议。只靠旧 Token 上的 `authVersion` 查缓存不能证明权限仍有效。因此在完成请求期数据库/受信服务鉴权、版本校验和跨服务授权传播（#208/#209）之前，**本分支不能直接投产、不能宣称授权缓存已可用**，CI 构建通过亦不等同于安全验收。
