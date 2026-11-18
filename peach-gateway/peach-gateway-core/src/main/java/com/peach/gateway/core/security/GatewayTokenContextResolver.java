@@ -9,6 +9,8 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.Map;
+
 /**
  * 从当前请求 Token Session 解析可信租户上下文，并在同一请求内复用解析结果。
  *
@@ -56,28 +58,58 @@ public class GatewayTokenContextResolver {
     }
 
     /**
-     * 将 Sa-Token Session 转换为完整业务上下文。
+     * 只接受一次性写入的新版可信 SaaS Token Session 快照，旧 FISCAL/ORG 单字段一律拒绝。
      *
-     * @param session Token Session
-     * @return 完整上下文；租户或机构信息缺失时返回空信号
+     * <p>不存在机构也可合法登录。无法解析年度、成员或授权版本时返回空授权上下文。</p>
+     *
+     * @param session 已关联当前 Token 的 Sa-Token Session
+     * @return SaaS 物理身份快照；非法或缺失时为空信号
      */
     Mono<GatewayTokenContext> toContext(SaSession session) {
-        return Mono.justOrEmpty(session)
-                .flatMap(value -> {
-                    String tenantId = normalize(value.getString(SaTokenConstant.TOKEN_SESSION_TENANT_ID));
-                    String orgId = normalize(value.getString(SaTokenConstant.TOKEN_SESSION_ORG_ID));
-                    String fiscal = normalize(value.getString(SaTokenConstant.TOKEN_SESSION_FISCAL));
-                    if (tenantId == null || orgId == null) {
-                        return Mono.empty();
-                    }
-                    return Mono.just(new GatewayTokenContext(tenantId, orgId, fiscal));
-                });
+        if (session == null) {
+            return Mono.empty();
+        }
+        Object stored = session.get(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT);
+        if (!(stored instanceof Map<?, ?> values)) {
+            return Mono.empty();
+        }
+        String user = requiredString(values.get("userRefId"));
+        String tenant = requiredString(values.get("tenantRefId"));
+        String member = requiredString(values.get("memberRefId"));
+        String app = requiredString(values.get("appRefId"));
+        String yearText = requiredString(values.get("year"));
+        String versionText = requiredString(values.get("memberVersion"));
+        String authText = requiredString(values.get("authVersion"));
+        if (user == null || tenant == null || member == null || app == null
+                || yearText == null || versionText == null || authText == null) {
+            return Mono.empty();
+        }
+        int year;
+        long version;
+        long authVersion;
+        try {
+            year = Integer.parseInt(yearText);
+            version = Long.parseLong(versionText);
+            authVersion = Long.parseLong(authText);
+        } catch (NumberFormatException exception) {
+            return Mono.empty();
+        }
+        if (year < 1 || year > 9999 || version < 0 || authVersion < 0) {
+            return Mono.empty();
+        }
+        Object orgValue = values.get("orgRefId");
+        String org = orgValue == null ? null : requiredString(orgValue);
+        if (orgValue != null && org == null) {
+            return Mono.empty();
+        }
+        return Mono.just(new GatewayTokenContext(
+                user, tenant, member, app, year, version, authVersion, org));
     }
 
-    private String normalize(String value) {
-        if (value == null || value.isBlank()) {
+    private String requiredString(Object value) {
+        if (!(value instanceof String text) || text.isBlank() || text.indexOf(':') >= 0) {
             return null;
         }
-        return value.trim();
+        return text.trim();
     }
 }

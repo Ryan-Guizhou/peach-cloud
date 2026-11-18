@@ -226,3 +226,40 @@ git diff --check -- peach-gateway
 - 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
 - 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
 - README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。
+
+## SaaS 网关鉴权安全基线（Issue #208，开发中）
+
+当前开发分支使用 `SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT` 的单一 Token Session 快照，解析 `userRefId/tenantRefId/memberRefId/appRefId/year/memberVersion/authVersion`；工作机构可空，不再读取历史 `tenantId/orgId/fiscal` 组合。新缓存键支持物理租户、成员、应用、自然年度和两个版本隔离，但**当前网关不会仅凭 Redis 缓存放行受保护 API**：必须注入能核验最新 IAM 权限事实源的 `GatewayIamDecisionVerifier`，没有验证器就默认拒绝；绝不回退读取旧用户级缓存。缺失快照、无 Redis、权限检查关闭或系统配置意外停用时，受保护 API 全部拒绝，不能通过开关进入无授权链路。默认匿名白名单只保留登录、验证码、公钥、只读登录初始化 `POST /auth/init` 以及 OPTIONS；注册、密码重置和 SaaS 管理端点不默认匿名公开。
+
+**当前限制：** 缓存版本键不是可信版本服务。网关已实现 `GatewayIamHttpDecisionVerifier` 请求期在线决策，但默认关闭；启用时要求 Auth 服务端按最新数据库成员/授权版本重新验证，不依赖 Token 自报 `authVersion` 继续命中旧 Redis 权限集合。真实 MySQL/Redis/Nacos 环境中的服务身份、动态资源目录、撤销和故障联调仍未完成。**该分支暂不能投产**，CI 构建通过亦不等同于安全验收。
+
+
+### 实时 IAM 受信链路（#208 与 #209 联调中）
+
+当 `peach.gateway.iam.enabled=true` 时，网关的 `GatewayIamHttpDecisionVerifier` 通过 `@LoadBalanced WebClient.Builder` 访问服务发现名称 `peach-auth` 的 `POST /auth/external/iam/check-api`，使用当前最终用户 Sa-Token 与网关从 Sa-Token 获取的 Same-Token 两套独立凭证。认证域执行当前数据库成员版本与权限事实查询，并返回授权结果及**同次核验后的物理成员快照**；网关逐字段比较租户/成员/应用/年度和两个版本，完全一致且动作允许才继续进入业务服务。WebClient 网络过程不阻塞 Netty EventLoop，获取 Sa-Token 的潜在阻塞工作使用 boundedElastic。失败、超时、空响应、401/403/5xx 和 Token 切换均拒绝，没有旧 Redis 缓存兜底。
+
+`peach.gateway.iam.enabled` 默认 `false`，网关受保护 API 因无验证器而**默认拒绝**；`peach.gateway.iam.timeout` 默认 `1500ms`。启用前必须先部署 #209 受信认证接口、配置正确的服务发现与 Same-Token、确保 Auth 数据库中已注册真实精确 METHOD:PATH API 权限定义，并用合法/撤销/跨租户/跨年度/停用成员及故障用例联调。当前仅提供精确 URL 权限，动态路径模板映射及真实业务对象权限接入尚未完成，不应把代码构建成功当作可直接上线。
+
+#### 匿名白名单严格匹配（#208）
+
+网关 `peach.gateway.satoken.public-endpoints` 的非 OPTIONS 配置现在只接受**明确 HTTP 方法 + 完全相等的公开路径**；`ANY`、`*`、`**`、`{id}` 不可用于匿名放行。仅允许精确的 `OPTIONS /**` 预检规则，其余携带编码字符、分号、双斜杠或路径遍历片段的可疑 URI 不会命中公开白名单，受保护路径仍需进入 IAM 并安全拒绝。不依赖 Nacos 传入的宽泛配置关闭系统权限防线。注意新增公开接口需要逐项登记精确方法和路径，不能用通配放行代替资源授权。
+
+#### 登录初始化与平台初始化的语义区分
+
+经核实 `LoginController.init()` 实际只调用 `IUserService.initLogin()` 读取登录页配置与 RSA 公钥，**不会创建租户或管理员**；它是未登录用户完成登录的前置能力。因此仅将 `POST /auth/init`、`POST /api/auth/init` 作为明确方法和精确路径的匿名入口恢复。所有 `/auth/saas/**` 和 `/auth/external/iam/**` 管理或内部受信接口仍不可匿名，`GET /auth/init` 也不放行。此修正只恢复登录所需的公开读取，不等于允许任意设置项对外泄露；登录配置内容白名单和生产值集检查仍须在 #220/#211 联调确认。
+
+#### 外部内部凭证头隔离（#208）
+
+`GatewayRequestGlobalFilter` 在其他授权与路由处理前移除客户端提供的 `SaSameUtil.SAME_TOKEN` 和 `X-Peach-Subject-Token`，同时重建可信请求 ID；不剥离真实用户的 `Authorization`。只有通过认证、授权的受保护请求才可由 `GatewaySameTokenGlobalFilter` 按当前服务配置注入 Same-Token；网关自行调用 Auth 的 IAM 验证器只在内部专用 HTTP 客户端设置真实最终用户 Token 和服务 Same-Token。即使客户端将这两个内部头送到公开端点，也不会转发到业务服务。生产部署仍须对 Auth 实例进行网络访问控制与 TLS 防护，不能把请求头清理当作唯一隔离机制。
+
+#### 网关到 Auth 的 HTTP 契约回归
+
+新增 `GatewayIamHttpContractTest`，用真实 WebClient 编解码器和模拟的 Auth HTTP 响应验证服务发现目标路径、POST 方法、最终用户 Token、独立 Same-Token、JSON Content-Type，以及数据库版本一致时允许。远端 503、空 200、授权版本不一致、缺少任一凭证或 25ms 测试超时均必须返回拒绝。此测试只验证 HTTP 协议与失败安全策略，不能代替真实 MySQL/Redis/Nacos 联调。
+
+#### Nacos 初始化白名单和 IAM 上线门槛
+
+已同步 `deploy-pipline/init/nacos/config/peach-gateway.yml`：删除旧的 `ANY`、文档/Actuator 通配匿名入口，以及 `/api/auth/register`、`/api/auth/logout`、`/api/auth/forget`、`/api/auth/reset` 等不应默认匿名的旧项。仅保留精确方法的登录、登录只读初始化、公钥、验证码和 `OPTIONS /**`。新增明确配置 `peach.gateway.iam.enabled=false` 与 `timeout=1500ms`；**该开关保持关闭时受保护请求默认拒绝，不能当作允许旧鉴权回退的开关**。先完整部署 #209 的受信 Auth 接口、Redis/MySQL、Nacos 服务发现及必要的 API 资源目录，再将在线 IAM 设置为 `true` 并完成合法/撤销/跨租户/跨年度安全回归。修改 Nacos 模板并不会自动更新已运行的 Nacos 配置实例，部署时需同步核对实际生效配置。
+
+#### 登录态自服务操作（不依赖年度业务角色）
+
+仅针对精确的 `POST /api/auth/logout` 与 `POST /api/auth/switchContext`（及对应非 `/api` 前缀），网关在 `StpUtil.checkLogin()` 成功后允许进入下游，而**不要求给每个年度角色额外配置登出/切换动作权限**。这不是匿名白名单：没有真实用户登录态仍返回 401，网关认证关闭仍 Fail-Closed。登出仅注销当前 Token；切换租户与年度由 Auth 重新验证现有成员与目标租户/应用有效性，并由 Auth 专用过滤器校验 Same-Token/数据库版本。任何 SaaS 角色管理或其他业务 API 仍必须通过在线 IAM。

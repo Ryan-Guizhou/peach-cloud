@@ -9,24 +9,20 @@ import cn.dev33.satoken.exception.NotSafeException;
 import cn.dev33.satoken.reactor.context.SaReactorSyncHolder;
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.common.constant.SaTokenConstant;
-import com.peach.gateway.core.GatewayRateLimitRedisConfiguration;
 import com.peach.gateway.core.config.GatewaySaTokenProperties;
 import com.peach.gateway.core.constant.GatewayConstant;
 import com.peach.gateway.core.security.GatewaySecurityEndpointMatcher;
-import com.peach.gateway.core.security.GatewayTokenContext;
 import com.peach.gateway.core.security.GatewayTokenContextResolver;
+import com.peach.gateway.core.security.GatewayIamDecisionVerifier;
 import com.peach.gateway.core.support.GatewayFilterSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -34,8 +30,10 @@ import reactor.core.scheduler.Schedulers;
 import java.util.Locale;
 
 /**
- * 网关AuthorizationGlobal过滤器。
- * <p>请求进入下游服务前校验 Sa-Token 登录态，公开端点按配置跳过。</p>
+ * 网关可信 SaaS API 资源授权过滤器。
+ * <p>公开端点以最小白名单放行；受保护请求先校验登录态，
+ * 再以当前 Token 专属 SaaS 快照调用可信 IAM 决策。
+ * 决策器缺失、异常或返回空均拒绝，不读取旧用户级缓存兜底。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -50,36 +48,40 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
 
     private final GatewaySaTokenProperties properties;
 
-    private final ReactiveStringRedisTemplate redisTemplate;
+    private final GatewayIamDecisionVerifier decisionVerifier;
 
     private final GatewayTokenContextResolver tokenContextResolver;
-
-    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     private final GatewaySecurityEndpointMatcher endpointMatcher = new GatewaySecurityEndpointMatcher();
 
     public GatewayAuthorizationGlobalFilter(GatewaySaTokenProperties properties,
-                                            @Qualifier(GatewayRateLimitRedisConfiguration.REACTIVE_STRING_REDIS_TEMPLATE_BEAN_NAME)
-                                            ObjectProvider<ReactiveStringRedisTemplate> redisTemplateProvider,
+                                            ObjectProvider<GatewayIamDecisionVerifier> verifierProvider,
                                             GatewayTokenContextResolver tokenContextResolver) {
         this.properties = properties;
-        this.redisTemplate = redisTemplateProvider.getIfAvailable();
+        this.decisionVerifier = verifierProvider.getIfAvailable();
         this.tokenContextResolver = tokenContextResolver;
     }
 
-
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        if (!properties.isEnabled()) {
-            return chain.filter(exchange);
-        }
         String path = exchange.getRequest().getURI().getRawPath();
         String method = exchange.getRequest().getMethod().name();
+        // 内部 Same-Token IAM 接口不得经公共网关暴露为任意浏览器的受信服务调用。
+        if (isInternalIamPath(path)) {
+            return GatewayFilterSupport.writeError(exchange, HttpStatus.FORBIDDEN,
+                    "Internal IAM endpoint is not public");
+        }
         if (endpointMatcher.matches(properties.getPublicEndpoints(), method, path)) {
             if (properties.isLogPath()) {
                 log.info("Gateway authorization skipped, method={}, path={}", method, path);
             }
             return chain.filter(exchange);
+        }
+        if (!properties.isEnabled()) {
+            log.error("Gateway authentication disabled; rejecting protected request, method={}, path={}",
+                    method, path);
+            return GatewayFilterSupport.writeError(exchange, HttpStatus.SERVICE_UNAVAILABLE,
+                    "Authorization service unavailable");
         }
         return Mono.fromCallable(() -> {
                     SaReactorSyncHolder.setContext(exchange);
@@ -93,10 +95,31 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
                 .subscribeOn(Schedulers.boundedElastic())
                 .onErrorResume(exception -> handleAuthenticationError(exchange, method, path, exception)
                         .then(Mono.empty()))
-                .flatMap(loginId -> checkApiPermission(loginId, method, path, exchange)
-                        .flatMap(allowed -> Boolean.TRUE.equals(allowed)
-                                ? chain.filter(exchange)
-                                : handlePermissionError(exchange, method, path)));
+                .flatMap(loginId -> isAuthenticatedSelfServiceEndpoint(method, path)
+                        ? chain.filter(exchange)
+                        : checkApiPermission(loginId, method, path, exchange)
+                                .flatMap(allowed -> Boolean.TRUE.equals(allowed)
+                                        ? chain.filter(exchange)
+                                        : handlePermissionError(exchange, method, path)));
+    }
+
+    /**
+     * 登录态专用动作，不要求持有租户角色的 API 权限。
+     *
+     * <p>仅在上游 StpUtil.checkLogin 成功后调用。登出只能撤销当前 Token，
+     * 切换上下文由 Auth 在服务端重新检查当前用户、成员与目标租户/应用。
+     * 非匹配路径仍须完整走在线 IAM，绝不将 /auth/saas/** 管理接口放入此列表。</p>
+     *
+     * @param method 实际 HTTP 方法
+     * @param path 网关未重写的完整路径
+     * @return 是否为必须登录但不需要业务角色的自服务端点
+     */
+    boolean isAuthenticatedSelfServiceEndpoint(String method, String path) {
+        if (!"POST".equals(method)) {
+            return false;
+        }
+        return "/api/auth/logout".equals(path) || "/auth/logout".equals(path)
+                || "/api/auth/switchContext".equals(path) || "/auth/switchContext".equals(path);
     }
 
     /**
@@ -109,46 +132,23 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
      */
     private Mono<Boolean> checkApiPermission(String loginId, String method, String path,
                                              ServerWebExchange exchange) {
-        if (!properties.isApiPermissionEnabled() || redisTemplate == null) {
-            return Mono.just(true);
+        // 永远不能以旧 Token 自报的授权版本和 Redis Set 存在来证明权限仍然有效。
+        // 当前无可信 IAM 验证器时拒绝；#209 负责服务端数据库事实源和可信传播。
+        if (!properties.isApiPermissionEnabled() || decisionVerifier == null) {
+            return Mono.just(false);
         }
         String resourceCode = buildApiResourceCode(method, path);
         if (isBlank(loginId) || isBlank(resourceCode)) {
             return Mono.just(false);
         }
         return tokenContextResolver.resolve(exchange)
-                .flatMap(context -> checkApiPermissionForContext(loginId, context, resourceCode, method, path))
+                .flatMap(context -> decisionVerifier.authorize(exchange, context, resourceCode))
                 .defaultIfEmpty(false)
                 .onErrorResume(exception -> {
-                    log.warn("Gateway API permission check failed, method={}, path={}, reason={}",
+                    log.warn("Gateway IAM decision failed, method={}, path={}, reason={}",
                             method, path, exception.getClass().getSimpleName());
                     return Mono.just(false);
                 });
-    }
-
-    /**
-     * 使用当前 Token Session 对应的业务上下文校验 API 资源权限。
-     *
-     * @param loginId 当前登录 ID
-     * @param context 当前 Token Session 上下文
-     * @param resourceCode 当前请求资源编码
-     * @param method 请求方法
-     * @param path 请求路径
-     * @return 允许访问时返回 {@code true}
-     */
-    private Mono<Boolean> checkApiPermissionForContext(String loginId, GatewayTokenContext context,
-                                                        String resourceCode, String method, String path) {
-        String key = SaTokenConstant.userApiResourceCacheKey(
-                loginId, context.tenantId(), context.orgId(), context.fiscal());
-        return redisTemplate.opsForSet()
-                .isMember(key, resourceCode)
-                .defaultIfEmpty(false)
-                .flatMap(exactMatched -> Boolean.TRUE.equals(exactMatched)
-                        ? Mono.just(true)
-                        : redisTemplate.opsForSet()
-                        .members(key)
-                        .any(candidate -> apiResourceMatches(candidate, method, path))
-                        .defaultIfEmpty(false));
     }
 
     /**
@@ -169,35 +169,11 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
         return method.trim().toUpperCase(Locale.ENGLISH) + ":" + normalizedPath;
     }
 
-    /**
-     * 判断已授权 API 资源编码是否匹配当前请求。
-     *
-     * @param resourceCode 已授权 API 资源编码
-     * @param method 当前请求方法
-     * @param path 当前请求路径
-     * @return 匹配时返回 {@code true}
-     */
-    private boolean apiResourceMatches(String resourceCode, String method, String path) {
-        if (isBlank(resourceCode) || isBlank(method) || isBlank(path)) {
-            return false;
-        }
-        int separator = resourceCode.indexOf(':');
-        if (separator <= 0 || separator >= resourceCode.length() - 1) {
-            return false;
-        }
-        String resourceMethod = resourceCode.substring(0, separator).trim().toUpperCase(Locale.ENGLISH);
-        String resourcePath = resourceCode.substring(separator + 1).trim();
-        if (!"ANY".equals(resourceMethod) && !resourceMethod.equals(method.trim().toUpperCase(Locale.ENGLISH))) {
-            return false;
-        }
-        String normalizedPath = path.trim();
-        if (!normalizedPath.startsWith(PATH_SEPARATOR)) {
-            normalizedPath = PATH_SEPARATOR + normalizedPath;
-        }
-        if (!resourcePath.startsWith(PATH_SEPARATOR)) {
-            resourcePath = PATH_SEPARATOR + resourcePath;
-        }
-        return pathMatcher.match(resourcePath, normalizedPath);
+    private boolean isInternalIamPath(String path) {
+        return "/auth/external/iam".equals(path)
+                || path.startsWith("/auth/external/iam/")
+                || "/api/auth/external/iam".equals(path)
+                || path.startsWith("/api/auth/external/iam/");
     }
 
     /**

@@ -227,3 +227,40 @@ git diff --check -- peach-gateway
 - Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
 - Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
 - Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+
+## SaaS gateway authorization baseline (Issue #208, in progress)
+
+The development branch reads the single trusted `SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT` snapshot containing `userRefId/tenantRefId/memberRefId/appRefId/year/memberVersion/authVersion`. An organization is optional; legacy `tenantId/orgId/fiscal` combinations are not consulted. The new cache-key helper distinguishes physical tenant, member, application, calendar year and both versions. **The gateway does not authorize from Redis alone**: it requires an injected `GatewayIamDecisionVerifier` that verifies the current authoritative IAM state; without that verifier, protected APIs are denied. The old user-level cache is never a fallback. Protected APIs deny access when the snapshot or Redis is unavailable or when gateway authorization flags are disabled, rather than bypassing authentication. The default anonymous allowlist is limited to login, CAPTCHA, public key, the read-only login bootstrap `POST /auth/init`, and OPTIONS. Registration, password reset and SaaS management remain protected.
+
+**Current limitation:** A versioned cache key is not an authoritative version check. The gateway now implements `GatewayIamHttpDecisionVerifier` for request-time online decisions, disabled by default. When enabled, the Auth service must revalidate the current database member and authorization versions; stale Token-provided `authVersion` and old Redis permission sets never grant access. Production MySQL/Redis/Nacos integration, service identity, dynamic resource registration, revocation and outage testing remain incomplete. **This branch must remain unshipped** until that end-to-end security verification is complete. Passing compilation/CI alone does not constitute authorization acceptance.
+
+
+### Live trusted IAM bridge (#208 and #209 integration in progress)
+
+When `peach.gateway.iam.enabled=true`, `GatewayIamHttpDecisionVerifier` uses an `@LoadBalanced WebClient.Builder` to call `POST /auth/external/iam/check-api` on the discovered `peach-auth` service. It sends two distinct credentials: the authenticated end-user Sa-Token and the gateway's service Same-Token. Auth rechecks database member versions and current API permissions and returns the decision plus the **same-request verified physical principal**. The gateway compares tenant, member, application, calendar year and both versions before allowing the API action. HTTP I/O is nonblocking; any potentially blocking Sa-Token lookup is moved to boundedElastic. Network failures, timeouts, empty bodies, denied responses, stale sessions and context switches fail closed with no legacy cache fallback.
+
+`peach.gateway.iam.enabled` defaults to `false`, so protected APIs **remain denied** until the verifier is installed. `peach.gateway.iam.timeout` defaults to `1500ms`. Before activation, deploy #209's trusted Auth endpoint, configure working service discovery and Same-Token, register exact METHOD:PATH API permissions in the trusted Auth database, and validate authorized/revoked/cross-tenant/cross-year/disabled-member/outage cases. Dynamic URI-template mapping and downstream object authorization remain incomplete; passing CI does not imply production readiness.
+
+#### Strict anonymous allowlist matching (#208)
+
+Non-OPTIONS entries in `peach.gateway.satoken.public-endpoints` now require an **explicit HTTP method and exact public route**. The `ANY`, `*`, `**`, and `{id}` syntaxes cannot anonymously open API paths. Only explicit `OPTIONS /**` can match all CORS preflights. Encoded paths, semicolon parameters, duplicate separators and traversal segments never match the anonymous allowlist; protected requests still reach IAM and fail closed when invalid. Broad Nacos configuration rules cannot disable the platform authorization boundary. Register new public endpoints with their exact method and path, never with a wildcard in place of resource authorization.
+
+#### Login bootstrap is not platform provisioning
+
+Source inspection confirms that `LoginController.init()` only calls `IUserService.initLogin()` to read login-page configuration and the RSA public key; it does **not** create tenant or administrator accounts. Anonymous callers must be able to obtain this data before authenticating. Only the exact `POST /auth/init` and `POST /api/auth/init` routes are therefore restored to the public allowlist; `GET /auth/init` is not public, and `/auth/saas/**` and `/auth/external/iam/**` remain protected or internal-only. This restores the verified login-bootstrap contract; review of exposed login value-set keys and production settings remains part of #220/#211 verification.
+
+#### Strip untrusted internal identity headers at ingress (#208)
+
+Before authorization or routing, `GatewayRequestGlobalFilter` removes client-supplied `SaSameUtil.SAME_TOKEN` and `X-Peach-Subject-Token` and regenerates the trusted request ID, while preserving the actual end-user `Authorization` header. Only authenticated, authorized protected calls may obtain a newly generated Same-Token from `GatewaySameTokenGlobalFilter`; the gateway's private IAM HTTP client supplies the real subject token and service credential only to Auth. Both spoofed headers are removed even for public endpoints. Production must still enforce network access controls and TLS for Auth; header sanitization is not a substitute for network isolation.
+
+#### Gateway-to-Auth HTTP contract regression
+
+`GatewayIamHttpContractTest` uses real WebClient codecs against mocked Auth HTTP responses to verify the discovered service URL, POST method, end-user token, separate service Same-Token, JSON content type, and allow decisions with matching database versions. HTTP 503, empty HTTP 200, a stale authorization version, missing credentials, and a 25ms test deadline all must deny access. This is protocol and failure-safety verification, not a substitute for integration against real MySQL, Redis, and Nacos.
+
+#### Nacos seed allowlist and IAM activation prerequisites
+
+The Nacos seed `deploy-pipline/init/nacos/config/peach-gateway.yml` now removes broad `ANY`/documentation/Actuator anonymous rules and obsolete public registration, logout, forgot-password and reset-password entries. Only explicitly matched login, read-only login bootstrap, RSA public key, CAPTCHA and `OPTIONS /**` remain anonymous. The template explicitly defines `peach.gateway.iam.enabled=false` and `timeout=1500ms`; **while disabled, protected requests remain denied, never authorized by legacy fallback**. Deploy and verify #209's trusted Auth endpoints, Redis/MySQL, Nacos discovery, and a populated API resource catalog before enabling real-time IAM, then run authorized/revoked/cross-tenant/cross-year security checks. Editing the seed does not update a running Nacos configuration automatically; verify the effective deployed values separately.
+
+#### Authenticated-only self-service actions (no yearly role grant)
+
+Only the exact `POST /api/auth/logout` and `POST /api/auth/switchContext` (and matching non-`/api` paths) may pass after `StpUtil.checkLogin()` without separately assigning logout/switch actions to every yearly business role. **These are not anonymous allowlist entries**: missing login is still HTTP 401 and disabling gateway authentication fails closed. Logout revokes only the caller's current token. Switching tenant and year is validated again by Auth against the active member and selected tenant/application with Same-Token and current database versions. SaaS role management and every other business API continue to require live IAM authorization.
