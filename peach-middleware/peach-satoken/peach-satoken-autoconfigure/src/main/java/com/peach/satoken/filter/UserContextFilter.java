@@ -1,6 +1,7 @@
 package com.peach.satoken.filter;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.same.SaSameUtil;
 import com.peach.satoken.config.UserContextProperties;
 import com.peach.satoken.context.SecurityContextHolder;
 import com.peach.satoken.context.UserContext;
@@ -55,6 +56,24 @@ public class UserContextFilter extends OncePerRequestFilter {
 
         SecurityContextHolder.clear();
 
+        if (isServiceTokenOnly(method, path)) {
+            // 仅内部受信服务可跳过旧的 USER_PROFILE Redis Hash。
+            // 在实际访问 Controller 前强制校验 Same-Token，不能用公开白名单替代。
+            try {
+                SaSameUtil.checkCurrentRequestToken();
+            } catch (RuntimeException exception) {
+                log.warn("Trusted service-only context rejected, method={}, path={}", method, path);
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Service authentication required");
+                return;
+            }
+            try {
+                filterChain.doFilter(request, response);
+            } finally {
+                SecurityContextHolder.clear();
+            }
+            return;
+        }
+
         if (isPublic(method, path)) {
             log.debug("User context loading skipped for public endpoint, method={}, path={}", method, path);
             filterChain.doFilter(request, response);
@@ -100,6 +119,17 @@ public class UserContextFilter extends OncePerRequestFilter {
      * @param path   Servlet 请求路径
      * @return 命中公开端点白名单时返回 {@code true}
      */
+    /**
+     * 仅对显式声明的服务专用方法/路径进行受信身份验证。
+     *
+     * @param method 当前 HTTP 方法
+     * @param path Servlet 真实请求路径
+     * @return 需要独立 Same-Token 服务验证的内部请求
+     */
+    private boolean isServiceTokenOnly(String method, String path) {
+        return endpointMatcher.matches(properties.getServiceTokenOnlyEndpoints(), method, path);
+    }
+
     private boolean isPublic(String method, String path) {
         return endpointMatcher.matches(properties.getPublicEndpoints(), method, path);
     }

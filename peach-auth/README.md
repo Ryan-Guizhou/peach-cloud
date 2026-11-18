@@ -265,3 +265,8 @@ sequenceDiagram
 ```
 
 使用前提：调用方引入 `peach-auth-openfeign-external`，持有真实用户 Sa-Token，启用 Same-Token 和 Feign 自动配置，且 Auth、Redis、MySQL 可访问。此接口不是匿名 API；部署应确保内部网络/TLS 与网关禁止将此路径对外暴露。仍待 #208 把网关的 `GatewayIamDecisionVerifier` 与此契约接通，#207/#211 完成实际对象 SQL 权限及端到端验证。
+
+
+#### Sa-Token 过滤器适配
+
+认证服务 `application.yml` 仅将上述两个 POST 内部 IAM 端点注册在 `peach.satoken.user-context.service-token-only-endpoints`，默认空。匹配路径不再尝试读取旧 `USER_PROFILE` 的 `userId/tenantId/orgId/fiscal`，而是先在 Servlet Filter 中**强制校验 Same-Token**，再由 Controller 二次检查 Same-Token 并以独立用户 Token 查询数据库。该配置不是公开白名单，不允许没有可信服务令牌的请求直达 Controller。其他普通路由仍沿用既有用户上下文机制，必须在后续迁移中持续替换旧租户字段，不能把这一专用通道泛化为跳过认证。
