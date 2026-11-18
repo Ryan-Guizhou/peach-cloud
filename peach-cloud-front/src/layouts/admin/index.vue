@@ -54,12 +54,14 @@ async function handleSwitchContext() {
     return
   }
   isSwitching.value = true
+  let remoteSwitchCommitted = false
   try {
     const loginInfo = await switchContext({
       tenantRefId: option.tenantRefId,
       appRefId: option.appRefId,
       year: selectedYear.value,
     })
+    remoteSwitchCommitted = true
     webSocketStore.disconnect()
     clearDynamicRoutes()
     authStore.replaceLoginInfo(loginInfo)
@@ -70,9 +72,21 @@ async function handleSwitchContext() {
     message.success('已切换租户、应用及年度上下文')
     await router.replace(router.hasRoute('workspace-overview') ? '/workspace' : '/no-access')
   } catch (error: unknown) {
+    if (remoteSwitchCommitted) {
+      // Auth 已切换 Token 上下文，但前端应用状态更新不完整；禁止继续使用旧租户视图。
+      webSocketStore.disconnect()
+      authStore.clearSession()
+      clearDynamicRoutes()
+      message.error('后端切换已提交，但页面状态未能同步，请重新登录')
+      await router.replace('/login')
+      return
+    }
     message.error(error instanceof Error ? error.message : '切换上下文失败')
-    selectedTenantKey.value = `${authStore.session.tenantRefId}:${authStore.session.appRefId}`
-    selectedYear.value = authStore.session.year
+    const session = authStore.session
+    if (session) {
+      selectedTenantKey.value = `${session.tenantRefId}:${session.appRefId}`
+      selectedYear.value = session.year
+    }
   } finally {
     isSwitching.value = false
   }
