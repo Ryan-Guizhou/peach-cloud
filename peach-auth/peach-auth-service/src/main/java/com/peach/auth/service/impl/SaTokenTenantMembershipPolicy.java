@@ -13,7 +13,7 @@ import org.springframework.util.StringUtils;
  * 使用服务端 Sa-Token 主体校验全局用户与成员操作身份。
  *
  * <p>当前 Token 登录主键为永久 USER_ID，映射到用户物理 ID 时必须再次查询数据库。
- * 管理行为必须要求当前 Token 的物理成员、租户、应用与年度一致，并从同一角色绑定
+ * 管理行为必须要求当前 Token 的物理成员、租户、应用与一致，并从同一角色绑定
  * 取得完整租户范围的固定权限。没有有效权限定义或绑定时一律拒绝。</p>
  *
  * @Author Mr Shu
@@ -60,7 +60,7 @@ public class SaTokenTenantMembershipPolicy implements TenantMembershipPolicy {
                 || !operatorMemberRefId.equals(context.memberRefId())
                 || !scopedPermissionService.hasTenantPermission(
                         context.tenantRefId(), context.memberRefId(), context.appRefId(),
-                        context.year(), permissionCode)) {
+                        permissionCode)) {
             throw new SecurityException("Tenant action is not authorized");
         }
     }

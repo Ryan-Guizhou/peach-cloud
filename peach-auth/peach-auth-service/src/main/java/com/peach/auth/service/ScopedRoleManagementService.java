@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 /**
  * SaaS 租户角色创建与角色权限差量同步的安全业务入口。
  *
- * <p>新角色属于物理租户、物理应用和单一自然年度。
+ * <p>新角色属于物理租户、物理应用和单一。
  * 权限变更使用租户锁及角色锁串行化，必须与成员授权版本失效、
  * 操作审计同事务提交；禁止租户管理员修改平台 SYSTEM 角色，
  * 也不能授予自身未持有或标记为不可委派的权限。</p>
@@ -60,7 +60,7 @@ public class ScopedRoleManagementService {
     private final AuthBusinessIdGenerator businessIdGenerator;
 
     /**
-     * 创建一条只属于当前应用、年度和租户的新角色。
+     * 创建一条只属于当前应用、和租户的新角色。
      *
      * @param tenantRefId 租户物理主键
      * @param operatorMemberRefId 已认证的管理员成员物理 ID
@@ -87,7 +87,6 @@ public class ScopedRoleManagementService {
         role.setRoleType(TENANT_ROLE_TYPE);
         role.setTenantRefId(tenantRefId);
         role.setAppRefId(context.appRefId());
-        role.setAuthYear(context.year());
         role.setRoleStatus("ACTIVE");
         role.setVersion(0L);
         role.fillCreateTime(operatorMemberRefId);
@@ -117,7 +116,7 @@ public class ScopedRoleManagementService {
         requireId(roleRefId, "roleRefId");
         lockTenantAndReauthorize(tenantRefId, operatorMemberRefId);
         RoleDO role = roleManagementDao.lockScopedRole(
-                tenantRefId, context.appRefId(), context.year(), roleRefId);
+                tenantRefId, context.appRefId(), roleRefId);
         if (role == null || !TENANT_ROLE_TYPE.equals(role.getRoleType())
                 || role.getVersion() == null || role.getVersion() < 0) {
             throw new SecurityException("Role is inactive, outside scope, or platform-protected");
@@ -155,11 +154,11 @@ public class ScopedRoleManagementService {
         }
         long oldVersion = role.getVersion();
         if (oldVersion == Long.MAX_VALUE || roleManagementDao.incrementRoleVersion(
-                tenantRefId, context.appRefId(), context.year(), roleRefId,
+                tenantRefId, context.appRefId(), roleRefId,
                 oldVersion, operatorMemberRefId) != 1) {
             throw new IllegalStateException("Role authorization version conflict");
         }
-        // 角色被多个年度/应用成员引用时，保守撤销租户内所有旧授权快照。
+        // 角色被多个/应用成员引用时，保守撤销租户内所有旧授权快照。
         if (versionDao.incrementForTenant(tenantRefId) < 1) {
             throw new IllegalStateException("Tenant member authorization invalidation failed");
         }
@@ -185,7 +184,7 @@ public class ScopedRoleManagementService {
                     || !StringUtils.hasText(permission.getPermissionCode())
                     || !permissionService.hasTenantPermission(
                     context.tenantRefId(), context.memberRefId(), context.appRefId(),
-                    context.year(), permission.getPermissionCode())) {
+                    permission.getPermissionCode())) {
                 throw new SecurityException("Administrator cannot delegate the requested permission");
             }
         }
@@ -231,7 +230,7 @@ public class ScopedRoleManagementService {
     private void appendAudit(TenantSessionContext context, String operatorRefId,
                              String targetId, String operation, long before, long after) {
         if (auditDao.append(UniqueIdFacade.nextId(), context.tenantRefId(),
-                context.appRefId(), context.year(), operatorRefId, targetId,
+                context.appRefId(), operatorRefId, targetId,
                 operation, before, after) != 1) {
             throw new IllegalStateException("Scoped role audit append failed");
         }

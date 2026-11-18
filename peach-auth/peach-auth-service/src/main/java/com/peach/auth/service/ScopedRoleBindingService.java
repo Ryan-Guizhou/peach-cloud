@@ -53,7 +53,7 @@ public class ScopedRoleBindingService {
     private final IamAuthorizationAuditDao auditDao;
 
     /**
-     * 将指定角色授予一个成员的独立应用/年度/组织范围；相同有效绑定幂等返回。
+     * 将指定角色授予一个成员的独立应用//组织范围；相同有效绑定幂等返回。
      *
      * @param tenantRefId 租户物理 ID
      * @param operatorMemberRefId 操作人成员物理 ID，必须与 Token 一致
@@ -75,14 +75,13 @@ public class ScopedRoleBindingService {
         validateScope(scopeType, scopeRefId, tenantBusinessId);
         TenantMemberDO target = lockMember(tenantRefId, targetMemberRefId);
         if (bindingDao.countActiveRole(tenantRefId, current.appRefId(),
-                current.year(), roleRefId) != 1) {
-            throw new SecurityException("Role is not active in the selected tenant, app and year");
+                roleRefId) != 1) {
+            throw new SecurityException("Role is not active in the selected tenant and app");
         }
         assertRoleDelegationAllowed(current, tenantRefId, roleRefId);
 
         MemberRoleBindingDO existing = bindingDao.selectActiveBinding(
-                tenantRefId, targetMemberRefId, current.appRefId(), current.year(),
-                roleRefId, scopeType, scopeRefId);
+                tenantRefId, targetMemberRefId, current.appRefId(), roleRefId, scopeType, scopeRefId);
         if (existing != null) {
             return existing.getId();
         }
@@ -93,7 +92,6 @@ public class ScopedRoleBindingService {
         binding.setMemberRefId(targetMemberRefId);
         binding.setAppRefId(current.appRefId());
         binding.setRoleRefId(roleRefId);
-        binding.setAuthYear(current.year());
         binding.setScopeType(scopeType);
         binding.setScopeRefId(scopeRefId);
         binding.setStatus("ACTIVE");
@@ -119,8 +117,7 @@ public class ScopedRoleBindingService {
         requireId(bindingRefId, "bindingRefId");
         lockTenantAndReauthorize(tenantRefId, operatorMemberRefId);
         MemberRoleBindingDO binding = bindingDao.selectActiveById(tenantRefId, bindingRefId);
-        if (binding == null || !current.appRefId().equals(binding.getAppRefId())
-                || binding.getAuthYear() == null || current.year() != binding.getAuthYear()) {
+        if (binding == null || !current.appRefId().equals(binding.getAppRefId())) {
             throw new SecurityException("Role binding is outside current session scope");
         }
         if (operatorMemberRefId.equals(binding.getMemberRefId())) {
@@ -200,7 +197,7 @@ public class ScopedRoleBindingService {
         }
         for (String code : distinct) {
             if (!permissionService.hasTenantPermission(
-                    tenantRefId, current.memberRefId(), current.appRefId(), current.year(), code)) {
+                    tenantRefId, current.memberRefId(), current.appRefId(), code)) {
                 throw new SecurityException("Administrator cannot delegate a permission they do not hold");
             }
         }
@@ -216,7 +213,7 @@ public class ScopedRoleBindingService {
             throw new IllegalStateException("Authorization version update failed");
         }
         if (auditDao.append(UniqueIdFacade.nextId(), current.tenantRefId(), current.appRefId(),
-                current.year(), operatorRefId, bindingRefId, operation, original, original + 1L) != 1) {
+                operatorRefId, bindingRefId, operation, original, original + 1L) != 1) {
             throw new IllegalStateException("Authorization audit append failed");
         }
     }

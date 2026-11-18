@@ -58,7 +58,7 @@ public class SaasLoginSnapshotService {
         }
         List<SaasLoginGrantRowVO> rows = snapshotDao.selectCurrentGrants(
                 expected.userRefId(), expected.tenantRefId(), expected.memberRefId(),
-                expected.appRefId(), expected.year(), expected.memberVersion(), expected.authVersion());
+                expected.appRefId(), expected.memberVersion(), expected.authVersion());
         if (rows != null && rows.size() > MAX_GRANT_ROWS) {
             throw new SecurityException("Login permission catalog exceeds safe limit");
         }
@@ -111,7 +111,6 @@ public class SaasLoginSnapshotService {
         role.setRoleScope(row.getScopeType());
         role.setTenantRefId(context.tenantRefId());
         role.setAppRefId(context.appRefId());
-        role.setAuthYear(context.year());
         return role;
     }
 

@@ -14,11 +14,11 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * 当前有效年度成员的可委派角色与最小权限目录查询。
+ * 当前有效成员的可委派角色与最小权限目录查询。
  *
  * <p>权限身份只由当前 Sa-Token Session 经过数据库实时验证获取。
  * 所有目录查询必须具备当前租户独立 TENANT 范围的角色管理权限，
- * 并且 SELECT 查询已限定物理租户、应用和自然年度。
+ * 并且 SELECT 查询已限定物理租户、应用和。
  * 不返回用户敏感字段，不接受客户端自报身份 ID。</p>
  *
  * @Author Mr Shu
@@ -44,7 +44,7 @@ public class SaasRoleCatalogService {
         TenantSessionContext context = requireAdmin();
         Paging paging = validatePaging(page, pageSize, keyword);
         return result(page, pageSize, catalogDao.selectRoles(context.tenantRefId(),
-                context.appRefId(), context.year(), paging.keyword(),
+                context.appRefId(), paging.keyword(),
                 paging.limit(), paging.offset()));
     }
 
@@ -52,7 +52,7 @@ public class SaasRoleCatalogService {
         TenantSessionContext context = requireAdmin();
         Paging paging = validatePaging(page, pageSize, keyword);
         return result(page, pageSize, catalogDao.selectDelegablePermissions(context.tenantRefId(),
-                context.appRefId(), context.year(), context.memberRefId(), paging.keyword(),
+                context.appRefId(), context.memberRefId(), paging.keyword(),
                 paging.limit(), paging.offset()));
     }
 
@@ -74,7 +74,7 @@ public class SaasRoleCatalogService {
         TenantSessionContext context = requireAdmin();
         requirePhysicalId(roleRefId);
         List<String> stored = catalogDao.selectRolePermissionRefs(
-                context.tenantRefId(), context.appRefId(), context.year(), roleRefId);
+                context.tenantRefId(), context.appRefId(), roleRefId);
         if (stored == null) {
             return List.of();
         }
@@ -88,7 +88,7 @@ public class SaasRoleCatalogService {
         TenantSessionContext context = requireAdmin();
         requirePhysicalId(memberRefId);
         List<SaasCatalogEntryVO> bindings = catalogDao.selectMemberBindings(
-                context.tenantRefId(), context.appRefId(), context.year(), memberRefId);
+                context.tenantRefId(), context.appRefId(), memberRefId);
         if (bindings == null) {
             return List.of();
         }
@@ -102,7 +102,7 @@ public class SaasRoleCatalogService {
         TenantSessionContext context = sessionService.requireCurrent();
         if (context == null || !scopedPermissionService.hasTenantPermission(
                 context.tenantRefId(), context.memberRefId(), context.appRefId(),
-                context.year(), MANAGE_PERMISSION)) {
+                MANAGE_PERMISSION)) {
             throw new SecurityException("Current member has no tenant-wide role management grant");
         }
         return context;
