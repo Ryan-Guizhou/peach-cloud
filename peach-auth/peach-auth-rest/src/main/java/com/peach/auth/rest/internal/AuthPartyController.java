@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 旧 ROLE_CODE 用户角色接口默认拒绝，阻断跨租户、跨年度权限扩散。
+ * 旧 ROLE_CODE 用户角色接口默认拒绝，阻断跨租户、跨应用权限扩散。
  *
  * @Author Mr Shu
  * @Version 1.0.0

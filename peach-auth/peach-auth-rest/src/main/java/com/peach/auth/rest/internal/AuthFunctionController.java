@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 旧功能授权入口默认拒绝，禁止再次写入过时的机构年度授权事实源。
+ * 旧功能授权入口默认拒绝，禁止再次写入过时的机构旧版授权事实源。
  *
  * @Author Mr Shu
  * @Version 1.0.0

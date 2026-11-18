@@ -42,8 +42,8 @@ public class OrganizationController {
     @PostMapping("/pageList")
     @Operation(summary = "分页查询当前租户机构")
     public Response pageList(@RequestBody(required = false) OrganizationQO query) {
-        int page = query == null ? 1 : query.getPageNum();
-        int size = query == null ? 10 : query.getPageSize();
+        int page = query == null || query.getPageNum() == null ? 1 : query.getPageNum();
+        int size = query == null || query.getPageSize() == null ? 10 : query.getPageSize();
         return Response.success(managementService.pageList(page, size));
     }
 

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>路径处于 Auth 的 SaaS 会话过滤器保护范围，执行 Same-Token、登录态
  * 与数据库版本核验；所有列表另由 Service 检查 TENANT 范围的角色管理权限。
- * 不接受请求自报 tenant、member、app 或 year。</p>
+ * 不接受请求自报 tenant、member、app 。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -36,7 +36,7 @@ public class SaasRoleCatalogController {
     private final SaasRoleCatalogService catalogService;
 
     @GetMapping("/roles")
-    @Operation(summary = "查询当前租户、应用、的有效角色")
+    @Operation(summary = "查询当前租户和应用的有效角色")
     public Response roles(@RequestParam(defaultValue = "1") int page,
                           @RequestParam(defaultValue = "20") int pageSize,
                           @RequestParam(required = false) String keyword) {
@@ -74,7 +74,7 @@ public class SaasRoleCatalogController {
     }
 
     @GetMapping("/members/{memberRefId}/bindings")
-    @Operation(summary = "读取成员在当前应用、下的有效角色范围绑定")
+    @Operation(summary = "读取成员在当前应用下的有效角色范围绑定")
     public Response memberBindings(@NotBlank @PathVariable String memberRefId) {
         return Response.success(catalogService.memberBindings(memberRefId));
     }
