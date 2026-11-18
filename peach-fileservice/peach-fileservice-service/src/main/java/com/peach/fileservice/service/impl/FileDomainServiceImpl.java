@@ -429,8 +429,11 @@ public class FileDomainServiceImpl implements IFileDomainService {
         }
         String now = DateUtil.nowTime();
         String expireTime = format(LocalDateTime.now(ZoneId.systemDefault()).plusDays(fileDomainProperties.getRetentionDays()));
-        fileRecordDao.logicalDelete(fileId, FileDomainConstant.FileStatus.DELETED, now, expireTime,
-                FileDomainConstant.LogicDelete.YES, now, currentOperator());
+        if (fileRecordDao.logicalDelete(fileId, recordVO.getTenantId(), recordVO.getOrgId(),
+                FileDomainConstant.FileStatus.DELETED, now, expireTime,
+                FileDomainConstant.LogicDelete.YES, now, currentOperator()) != 1) {
+            throw new SecurityException("Scoped file deletion conflicted");
+        }
         fileObjectDao.decreaseRefCount(recordVO.getObjectId(), 1, now, currentOperator());
         if (fileRecordDao.countActiveByObjectId(recordVO.getObjectId()) <= 0) {
             fileObjectDao.updateStorageStatus(recordVO.getObjectId(), FileDomainConstant.StorageStatus.DELETE_PENDING,
@@ -451,8 +454,11 @@ public class FileDomainServiceImpl implements IFileDomainService {
             throw new IllegalArgumentException("file restore expired");
         }
         String now = DateUtil.nowTime();
-        fileRecordDao.restoreByFileId(fileId, FileDomainConstant.FileStatus.ACTIVE,
-                FileDomainConstant.LogicDelete.NO, now, currentOperator());
+        if (fileRecordDao.restoreByFileId(fileId, recordVO.getTenantId(), recordVO.getOrgId(),
+                FileDomainConstant.FileStatus.ACTIVE,
+                FileDomainConstant.LogicDelete.NO, now, currentOperator()) != 1) {
+            throw new SecurityException("Scoped file restore conflicted");
+        }
         fileObjectDao.increaseRefCount(recordVO.getObjectId(), 1, now, currentOperator());
         fileObjectDao.updateStorageStatus(recordVO.getObjectId(), FileDomainConstant.StorageStatus.ACTIVE,
                 FileDomainConstant.LogicDelete.NO, now, currentOperator());

@@ -321,6 +321,9 @@
             MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         WHERE FILE_ID = #{fileId,jdbcType=VARCHAR}
+          AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+          AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+          AND IS_DELETE = 0
     </update>
 
     <update id="restoreByFileId">
@@ -332,6 +335,9 @@
             MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         WHERE FILE_ID = #{fileId,jdbcType=VARCHAR}
+          AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+          AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+          AND IS_DELETE = 1
     </update>
 
     <select id="selectExpiredDeletedRecords" resultType="com.peach.fileservice.vo.FileRecordVO">

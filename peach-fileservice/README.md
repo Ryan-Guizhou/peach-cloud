@@ -187,3 +187,5 @@ Maven 命令只验证编译和打包，不替代真实 provider、分片直传�
 此前文件分页由 `AuditContext.requireTenantId/requireOrgId` 赋予查询范围，但 `FileDomainServiceImpl.selectByFileId`、`requireRecord` 和 `requireSession` 没有统一验证数据库行归属，知道别人的文件 ID/上传会话 ID 时存在跨租户/机构访问风险。现由 `FileRecordScopeGuard` 在**返回详情、生成临时下载 URL、逻辑删除/恢复、读取上传会话**前比较服务端现有可信业务租户及机构与数据库记录的真实 `TENANT_ID/ORG_ID`。文件详情 SQL 补出归属列，任何上下文缺失、记录归属缺失或不同均拒绝。后台清理任务独立于用户会话，不通过模拟用户绕过校验。对应纯函数单测涵盖跨租户、跨机构和空范围。
 
 **限制：** 这里仍是旧业务租户/机构号止血，不能替代新 SaaS 的 `tenantRefId/memberRefId/appRefId/year` 和行级/字段级真实授权，也不表示旧用户级 Redis Profile 已可靠迁移。后续完整物理迁移与所有 SQL/对象存储权限端到端覆盖另见 #232、#211；没有经过真实迁移与验收前不得当作生产隔离已完成。
+
+额外在 `FileRecordDao.logicalDelete` / `restoreByFileId` 的 MyBatis `WHERE` 中绑定已校验记录的 `TENANT_ID` 与 `ORG_ID`，并检查影响行数必须为 1；并发期间归属或逻辑删除状态发生变化时抛错，避免只在 Java 查询时检查、SQL 写入却又退化为仅使用 `FILE_ID`。
