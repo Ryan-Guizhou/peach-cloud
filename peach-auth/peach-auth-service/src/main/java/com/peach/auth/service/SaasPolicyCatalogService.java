@@ -73,7 +73,8 @@ public class SaasPolicyCatalogService {
     }
 
     public List<RoleDataPolicyVO> dataPolicies(String roleRefId, String permissionRefId) {
-        TenantSessionContext context = requireAction(roleRefId, permissionRefId);
+        CheckedAction checked = requireAction(roleRefId, permissionRefId);
+        TenantSessionContext context = checked.context();
         List<RoleDataPolicyVO> rows = policyDao.selectDataPolicies(
                 context.tenantRefId(), context.appRefId(), roleRefId, permissionRefId);
         if (rows == null) {
@@ -87,8 +88,13 @@ public class SaasPolicyCatalogService {
 
     public List<RoleFieldPolicyVO> fieldPolicies(String roleRefId, String permissionRefId,
                                                  String resourceCode) {
-        TenantSessionContext context = requireAction(roleRefId, permissionRefId);
+        CheckedAction checked = requireAction(roleRefId, permissionRefId);
+        TenantSessionContext context = checked.context();
         requireResourceCode(resourceCode);
+        // 字段资源必须与当前角色真正持有的动作语义一致，不能借无关动作跨资源编辑。
+        if (!checked.permissionCode().startsWith(resourceCode + ".")) {
+            throw new SecurityException("Field resource does not match the delegated action");
+        }
         List<RoleFieldPolicyVO> rows = policyDao.selectFieldPolicies(
                 context.tenantRefId(), context.appRefId(), roleRefId, permissionRefId);
         if (rows == null) {
@@ -115,7 +121,7 @@ public class SaasPolicyCatalogService {
         return List.copyOf(rows);
     }
 
-    private TenantSessionContext requireAction(String roleRefId, String permissionRefId) {
+    private CheckedAction requireAction(String roleRefId, String permissionRefId) {
         TenantSessionContext context = requireAdmin();
         requirePhysicalId(roleRefId);
         requirePhysicalId(permissionRefId);
@@ -136,7 +142,7 @@ public class SaasPolicyCatalogService {
         if (!"SYSTEM".equals(action.getOwnerType()) && !"TENANT".equals(action.getOwnerType())) {
             throw new SecurityException("Untrusted action owner");
         }
-        return context;
+        return new CheckedAction(context, action.getPermissionCode());
     }
 
     private boolean hasCompleteSystemGrant(TenantSessionContext context, String code) {
@@ -165,6 +171,9 @@ public class SaasPolicyCatalogService {
             throw new SecurityException("Tenant-wide role management permission is required");
         }
         return context;
+    }
+
+    private record CheckedAction(TenantSessionContext context, String permissionCode) {
     }
 
     private void requirePhysicalId(String id) {

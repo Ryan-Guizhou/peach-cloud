@@ -126,6 +126,16 @@ class SaasPolicyCatalogServiceTest {
     }
 
     @Test
+    void shouldDenyFieldPolicyReadForAnUnrelatedResource() {
+        allowManage();
+        trustedAction("TENANT");
+        allowAction();
+        assertThatThrownBy(() -> service.fieldPolicies(ROLE, PERMISSION, "FILE"))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("does not match");
+    }
+
+    @Test
     void shouldDenyUntrustedFieldResourceCode() {
         allowManage();
         trustedAction("TENANT");

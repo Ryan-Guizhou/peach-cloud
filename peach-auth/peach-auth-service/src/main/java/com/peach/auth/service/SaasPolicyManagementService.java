@@ -126,6 +126,10 @@ public class SaasPolicyManagementService {
             throw new IllegalArgumentException("Invalid resource code");
         }
         Guard guard = lockGuard(roleRefId, permissionRefId);
+        // 字段定义归属的资源必须与角色实际被授权的动作一致。
+        if (!guard.permissionCode.startsWith(resourceCode + ".")) {
+            throw new SecurityException("Field resource does not match the delegated action");
+        }
         Set<FieldRule> next = validateFieldRules(guard, resourceCode, proposed);
         List<RoleFieldPolicyVO> stored = policyDao.selectFieldPolicies(
                 guard.context.tenantRefId(), guard.context.appRefId(), roleRefId, permissionRefId);
@@ -197,7 +201,7 @@ public class SaasPolicyManagementService {
                 permitted.get(0).getPermissionCode())) {
             throw new SecurityException("System action requires full-scope delegation evidence");
         }
-        return new Guard(context, tenantBusinessId, role);
+        return new Guard(context, tenantBusinessId, role, permitted.get(0).getPermissionCode());
     }
 
     private boolean hasCompleteSystemActionGrant(TenantSessionContext context, String permissionCode) {
@@ -304,6 +308,7 @@ public class SaasPolicyManagementService {
     private record FieldRule(String fieldRefId, String readEffect, String writeEffect) {
     }
 
-    private record Guard(TenantSessionContext context, String tenantBusinessId, RoleDO role) {
+    private record Guard(TenantSessionContext context, String tenantBusinessId,
+                         RoleDO role, String permissionCode) {
     }
 }
