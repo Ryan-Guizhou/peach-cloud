@@ -132,14 +132,14 @@ class ScopedRoleManagementServiceTest {
     }
 
     @Test
-    void shouldNotAcceptDuplicateIdsOrCrossYearRoles() {
+    void shouldNotAcceptDuplicateIdsOrCrossAppRoles() {
         when(roleDao.lockScopedRole("tenant", "app", "role"))
                 .thenReturn(role("TENANT"));
         assertThatThrownBy(() -> service.replacePermissions(
                 "tenant", "admin", "role", List.of("same", "same")))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> service.replacePermissions(
-                "tenant", "admin", "another-role", List.of("permission")))
+                "tenant", "admin", "another-app-role", List.of("permission")))
                 .isInstanceOf(SecurityException.class);
     }
 

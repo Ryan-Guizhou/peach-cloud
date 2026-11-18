@@ -9,7 +9,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -60,21 +59,8 @@ class ScopedPermissionServiceTest {
     }
 
     @Test
-    void shouldKeepNaturalYearsIndependent() {
-        when(dao.selectGrants("tenant", "member", "app",
-                "TENANT.MEMBER.MANAGE")).thenReturn(List.of(binding("TENANT", null)));
-        assertThat(service.hasTenantPermission("tenant", "member", "app",
-                "TENANT.MEMBER.MANAGE")).isTrue();
-        assertThat(service.hasTenantPermission("tenant", "member", "app", 2027,
-                "TENANT.MEMBER.MANAGE")).isFalse();
-        verify(dao).selectGrants("tenant", "member", "app", 2027,
-                "TENANT.MEMBER.MANAGE");
-    }
-
-    @Test
-    void shouldRejectMissingIdentityAndInvalidYearBeforeDatabaseAccess() {
-        assertThat(service.hasTenantPermission("tenant", "", "app", 2026, "READ")).isFalse();
-        assertThat(service.hasTenantPermission("tenant", "member", "app", 0, "READ")).isFalse();
+    void shouldRejectMissingIdentityBeforeDatabaseAccess() {
+        assertThat(service.hasTenantPermission("tenant", "", "app", "READ")).isFalse();
         verify(dao, never()).selectGrants(anyString(), anyString(), anyString(), anyString());
     }
 
