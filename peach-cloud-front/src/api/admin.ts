@@ -24,44 +24,6 @@ export interface CrudEndpoint {
   deleteMode?: 'query' | 'body-list'
 }
 
-export interface RoleFunctionAuthRequest {
-  tenantId: string
-  orgId: string
-  partyCode: string
-  fiscal: number
-  appId?: string
-  funcCodeList: string[]
-}
-
-export interface RoleResourceItem {
-  funcCode: string
-  opType: string
-  resourceCode: string
-  resourceName?: string
-}
-
-export interface RoleResourceAuthRequest {
-  tenantId: string
-  orgId: string
-  partyCode: string
-  fiscal: number
-  appId?: string
-  resourceList: RoleResourceItem[]
-}
-
-export interface UserRoleAuthRequest {
-  tenantId: string
-  orgId: string
-  userCode: string
-  fiscal: number
-  roleCodeList: string[]
-}
-
-export interface AuthPartyRecord {
-  roleCode: string
-  partyCode?: string
-}
-
 export async function fetchPage<T extends DataRecord>(
   url: string,
   query: DataRecord,
@@ -100,34 +62,4 @@ export async function switchContext(request: {
 }): Promise<LoginInfo> {
   const { data } = await http.post<ApiResponse<LoginInfo>>('/auth/switchContext', request)
   return unwrapApiResponse(data, '切换机构失败', { requireData: true })
-}
-
-export async function fetchAuthFunctions(query: DataRecord): Promise<DataRecord[]> {
-  const { data } = await http.post<ApiResponse<DataRecord[]>>('/auth/authFunction/list', query)
-  return unwrapApiResponse(data) ?? []
-}
-
-export async function saveRoleFunctions(request: RoleFunctionAuthRequest): Promise<void> {
-  const { data } = await http.post<ApiResponse<void>>('/auth/authFunction/saveRoleFunctions', request)
-  unwrapApiResponse(data)
-}
-
-export async function fetchAuthResources(query: DataRecord): Promise<DataRecord[]> {
-  const { data } = await http.post<ApiResponse<DataRecord[]>>('/auth/authResource/list', query)
-  return unwrapApiResponse(data) ?? []
-}
-
-export async function saveRoleResources(request: RoleResourceAuthRequest): Promise<void> {
-  const { data } = await http.post<ApiResponse<void>>('/auth/authResource/saveRoleResources', request)
-  unwrapApiResponse(data)
-}
-
-export async function fetchUserRoles(query: DataRecord): Promise<AuthPartyRecord[]> {
-  const { data } = await http.post<ApiResponse<AuthPartyRecord[]>>('/auth/authParty/listUserRoles', query)
-  return unwrapApiResponse(data) ?? []
-}
-
-export async function saveUserRoles(request: UserRoleAuthRequest): Promise<void> {
-  const { data } = await http.post<ApiResponse<void>>('/auth/authParty/saveUserRoles', request)
-  unwrapApiResponse(data)
 }

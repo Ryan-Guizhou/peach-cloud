@@ -114,3 +114,7 @@ npm run preview
 ### SaaS IAM 角色写入契约（#210，增量）
 
 新增 `src/api/saas-iam.ts`，基于实际 `SaasRoleController` 与 `SaasPolicyController` 的受保护接口提供类型化方法：创建当前年度租户角色、替换角色权限、成员独立角色范围绑定/撤销、替换行级与字段读写策略。只接受后端目录选择得到的 32 位物理 UUID 和操作字段，拒绝旧 `tenantId/orgId/fiscal/ROLE_CODE` 拼接关联；作用域组合、角色业务码、资源码及批量上限均提前校验，但**最终管理权限、租户和年度必须由 Auth 服务再次按 Token 验证**。目前缺少安全的角色/成员/权限目录分页查询接口，因此前端授权管理表单尚未全面切换到这些写 API；不要让管理员手动猜测或输入物理外键。保留此任务 Draft，等目录查询和业务 UI 接入后验收。
+
+### SaaS 角色管理页面（#210，增量）
+
+旧的 `/auth/role/add` 和 `/auth/authFunction/saveRoleFunctions` 等基于 `tenantId/orgId/fiscal`、角色业务码拼接的前端写入接口已经从 `api/admin.ts` 移除。角色页面改为通过 `createTenantRole()` 执行当前 Token 范围内的受控新建，真实租户/应用/年度完全由 Auth 决定；物理 ID 仅作为返回值展示，不允许手工录入。权限授权页面不再允许旧多模型请求提交，需等待安全的后端角色/成员/权限分页目录补齐后再接入新的 `saas-iam.ts` 写接口。**这属于明确的安全收敛，未完成完整管理界面，不得视为 #210 已交付。**
