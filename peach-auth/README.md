@@ -275,3 +275,13 @@ flowchart LR
 `ScopedDataQueryScopeService.requireScope(permissionCode)` 已提供受信的 `AuthorizedDataQueryScope`：它以当前 Token 重新验证的物理租户、应用和自然年度为固定条件，逐条计算**同一角色绑定范围 ∩ 对应动作的数据策略范围**。组织树由真实 MySQL 有界递归读取，只保留有效机构；环路、超量（超过 512 个机构）和无授权均拒绝。每个 `RowClause` 中的组织集合与 SELF 所有者条件必须同时满足，再对多条 Clause 求并集。字段目录的有效唯一约束随逻辑删除释放，历史 `FIELD_ID` 仍永久唯一。
 
 业务 Mapper **必须**在 `COUNT/SELECT/EXPORT/UPDATE/DELETE` 的 SQL `WHERE` 中同时绑定 `tenantRefId`、`appRefId`、`year`、`IS_DELETE=0` 和 `clauses`：每条 Clause 内组织 `IN (#{...})` 与所有者 `= #{...}` 为 AND，不同 Clause 为 OR；组织不限仅对当前 Clause 有效。严禁 `\$\{\}` 拼入 SQL、跨绑定拼接 SELF 与机构或在分页后过滤。此契约**尚未被各业务模块统一接入**，端到端联调仍在 #209/#211；当前不能宣称分页/导出已安全开放。
+
+### 策略管理 API 与授权撤销安全边界（#207，需联调）
+
+`PUT /auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/data-policies` 使用 `{"policies":[{"dataScope":"SELF","orgRefId":null}]}` 替换该动作下所有行范围。`dataScope` 仅支持 `SELF/ORG/ORG_TREE/TENANT_ALL`，机构范围必须为当前租户有效机构的物理 ID。空数组撤销所有策略，禁止 null。上限 32 条。
+
+`PUT /auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/field-policies` 使用 `{"resourceCode":"DOC","policies":[{"fieldRefId":"<物理ID>","readEffect":"MASK","writeEffect":"DENY"}]}` 替换该动作全部字段策略，上限 128 条。字段必须来自有效且可委派的服务端资源字段目录；系统字段默认不可委派，需在受信迁移中显式配置 `DELEGABLE=1`；脱敏规则仅由目录定义，不能由浏览器指定。
+
+两个端点均不接受操作人、租户、应用或年度参数；使用当前 Token 且要求当前租户年度的完整管理权限、可委派动作和操作者已持有该动作。对 SYSTEM 动作还要求操作者拥有 `TENANT + TENANT_ALL` 的完整行级证据；没有已受信引导的授权就保持拒绝。事务中锁定租户和租户角色，差量判断后逻辑撤销旧策略、插入新策略、递增角色版本及租户成员 `AUTH_VERSION` 并追加审计；任何失败整体回滚。**当角色撤销动作权限时同步逻辑撤销相应数据和字段策略，防止以后重新授予该权限时历史策略复活。**
+
+这只是权限策略配置闭环，后续仍须完成字段目录的安全引导/创建、真实 MySQL 并发验收及业务 SQL 侧 `COUNT/SELECT/EXPORT/UPDATE` 调用方改造，不能把本服务视作所有业务入口已经受保护。
