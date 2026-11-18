@@ -4,7 +4,6 @@ import { message } from 'ant-design-vue'
 
 import { deleteById, fetchPage, postRecord, type CrudEndpoint, type DataRecord } from '../../api/admin'
 import { usePermission } from '../../composables/usePermission'
-import { useAuthStore } from '../../stores/auth'
 import AdminLayout from '../../layouts/admin/index.vue'
 
 export interface CrudColumn {
@@ -32,7 +31,6 @@ const props = defineProps<{
 }>()
 
 const { hasPermission } = usePermission()
-const authStore = useAuthStore()
 const query = reactive<DataRecord>({ pageNum: 1, pageSize: 10 })
 const rows = ref<DataRecord[]>([])
 const total = ref(0)
@@ -69,20 +67,7 @@ const tableColumns = computed(() => {
   ]
 })
 
-function applySessionScope() {
-  if (authStore.session?.tenantId) {
-    query.tenantId = authStore.session.tenantId
-  }
-  if (authStore.session?.orgId) {
-    query.orgId = authStore.session.orgId
-  }
-  if (authStore.session?.fiscal) {
-    query.fiscal = Number(authStore.session.fiscal)
-  }
-}
-
 async function loadData() {
-  applySessionScope()
   loading.value = true
   errorMessage.value = ''
   try {
@@ -151,12 +136,6 @@ async function saveRecord() {
   saving.value = true
   try {
     const payload: DataRecord = { ...formState }
-    if (authStore.session?.tenantId) {
-      payload.tenantId = authStore.session.tenantId
-    }
-    if (authStore.session?.orgId) {
-      payload.orgId = authStore.session.orgId
-    }
     if (editingId.value) {
       payload[props.rowKey] = editingId.value
     }
@@ -197,7 +176,6 @@ function handleTableChange(pagination: { current?: number; pageSize?: number }) 
 }
 
 onMounted(() => {
-  applySessionScope()
   void loadData()
 })
 </script>
