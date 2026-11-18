@@ -169,7 +169,7 @@ Development `sql/INIT.sql` bootstraps three protected semantic permission codes 
 
 | API | Purpose | Body |
 | --- | --- | --- |
-| `POST /auth/saas/roles` | Create a tenant role for the current app and application | `{"roleCode":"ROLE_EDITOR","roleName":"Editor"}` |
+| `POST /auth/saas/roles` | Create a tenant role for the current application | `{"roleCode":"ROLE_EDITOR","roleName":"Editor"}` |
 | `PUT /auth/saas/roles/{roleRefId}/permissions` | Diff-sync all active role permissions | `{"permissionRefIds":["<physical-permission-id>"]}` |
 | `POST /auth/saas/roles/bindings` | Grant a single member role and scope | `{"targetMemberRefId":"<physical-member-id>","roleRefId":"<physical-role-id>","scopeType":"TENANT"}` |
 | `DELETE /auth/saas/roles/bindings/{bindingRefId}` | Soft-revoke an individual binding | No body |
@@ -232,7 +232,7 @@ This completes the protected policy-configuration path, not the downstream acces
 
 `SaasIamFeignClient` in `peach-auth-openfeign-external` has a separate `contextId` from the legacy router/role client. Internal calls require **two independent credentials**: a Sa-Token Same-Token service credential added by the existing Feign interceptor and the actual end-user token obtained from the authenticated request, passed only in the `X-Peach-Subject-Token` private header. The Auth endpoints `POST /auth/external/iam/check-api` and `POST /auth/external/iam/context` explicitly enforce Same-Token again even if the global interceptor is misconfigured. Browser-supplied tenant/member values can never replace revalidation.
 
-The permission query uses `{"permissionCode":"GET:/api/documents"}`. Auth revalidates the token-specific SaaS context and current user, tenant, member, application and annual authorization versions from its database, then queries only active binding-level permissions of `RESOURCE_TYPE=API`. **Only exact METHOD:PATH codes are currently supported**; dynamic URI templates and automatic route normalization remain pending and missing definitions fail closed. `SaasIamPermissionDecisionVO.allowed=true` means the **API action** is permitted, never that a document, file, business row or field can be accessed. Downstream services must independently enforce physical-object row and field constraints in SQL. Feign failures/timeouts/circuit breakers yield `allowed=false`; a failed context query throws rather than fabricating a tenant identity.
+The permission query uses `{"permissionCode":"GET:/api/documents"}`. Auth revalidates the token-specific SaaS context and current user, tenant, member, application and authorization versions from its database, then queries only active binding-level permissions of `RESOURCE_TYPE=API`. **Only exact METHOD:PATH codes are currently supported**; dynamic URI templates and automatic route normalization remain pending and missing definitions fail closed. `SaasIamPermissionDecisionVO.allowed=true` means the **API action** is permitted, never that a document, file, business row or field can be accessed. Downstream services must independently enforce physical-object row and field constraints in SQL. Feign failures/timeouts/circuit breakers yield `allowed=false`; a failed context query throws rather than fabricating a tenant identity.
 
 ```mermaid
 sequenceDiagram

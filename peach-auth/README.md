@@ -261,7 +261,7 @@ flowchart LR
 
 | 能力 | 当前实现 | 限制 |
 | --- | --- | --- |
-| 行级作用域 | `SELF/ORG/ORG_TREE/TENANT_ALL` 与 `TENANT/ORG/ORG_TREE` 绑定逐条求交，再取可用绑定并集 | 数据权属必须从真实数据库取回，不接收前端租户//所有者自报值 |
+| 行级作用域 | `SELF/ORG/ORG_TREE/TENANT_ALL` 与 `TENANT/ORG/ORG_TREE` 绑定逐条求交，再取可用绑定并集 | 数据权属必须从真实数据库取回，不接收前端租户或所有者自报值 |
 | 机构树 | `DatabaseOrganizationScopeMatcher` 使用有效租户内祖先链，检测循环及深度 | 只支持单对象判断；列表分页需 SQL 级谓词和数据库索引 |
 | 字段查看 | `ALLOW/MASK/DENY`，未注册字段不输出；支持 FULL/PHONE/EMAIL 脱敏 | 明确拒绝优先，字段策略不得与其他角色绑定拼接 |
 | 字段更新 | `requireWritableFields` 要求请求中的所有字段可写；任意未授权字段使整体请求失败 | 业务层必须在同一事务锁定对象，随后执行更新，不能仅依赖控制器校验 |
