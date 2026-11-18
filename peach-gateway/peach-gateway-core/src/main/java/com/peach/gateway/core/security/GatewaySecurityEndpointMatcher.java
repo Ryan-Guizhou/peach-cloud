@@ -31,7 +31,7 @@ public class GatewaySecurityEndpointMatcher {
         String normalizedMethod = normalizeMethod(method);
         String normalizedPath = normalizePath(path);
         // 平台初始化和 SaaS 授权管理绝不能因为配置失误成为匿名接口。
-        if (isProtectedIamEndpoint(normalizedPath)) {
+        if (!"OPTIONS".equals(normalizedMethod) && isProtectedIamEndpoint(normalizedPath)) {
             return false;
         }
         for (GatewaySecurityEndpointRule rule : rules) {
