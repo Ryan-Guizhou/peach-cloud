@@ -19,7 +19,7 @@ import java.util.Set;
  * <p>每个 Clause 同时包含同一条角色绑定与同一数据策略的交集；
  * 不同 Clause 仅在业务 SQL 中以 OR 组合。调用方必须在执行 COUNT、
  * SELECT、EXPORT、UPDATE/DELETE 之前，以 MyBatis 参数绑定同时强制
- * tenantRefId、appRefId、year、IS_DELETE 和每条 Clause，不能取数后过滤。
+ * tenantRefId、appRefId、IS_DELETE 和每条 Clause，不能取数后过滤。
  * 当前对象的 org/owner 列必须由业务表提供，不得从请求传入。
  * 无匹配授权时创建失败，不存在隐式租户全量回退。</p>
  *
@@ -43,7 +43,7 @@ public record AuthorizedDataQueryScope(String tenantRefId, String appRefId,
     }
 
     /**
-     * 由已在 DAO 中通过成员、角色、资源、、动作联合校验的证据构造授权计划。
+     * 由已在 DAO 中通过成员、角色、资源和动作联合校验的证据构造授权计划。
      * 仅可在重新验证的当前 Token 上下文中调用；机构展开严格有界。
      *
      * @param context 重新验证的当前成员 Session

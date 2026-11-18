@@ -108,7 +108,7 @@ class GatewayIamHttpContractTest {
     private String validDecision() {
         return "{\"allowed\":true,\"context\":{\"userRefId\":\"user\","
                 + "\"tenantRefId\":\"tenant\",\"memberRefId\":\"member\","
-                + "\"appRefId\":\"app\",
+                + "\"appRefId\":\"app\","
                 + "\"memberVersion\":2,\"authVersion\":7}}";
     }
 }
