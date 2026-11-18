@@ -53,7 +53,7 @@ public class LoginPermissionCacheRefresher {
 
     private final AuthPartyDao authPartyDao;
 
-    public void refreshUsersByRole(String tenantId, String orgId, String roleCode, Integer fiscal) {
+    public void refreshUsersByRole(String tenantId, String orgId, String roleCode) {
         if (StringUtil.isBlank(tenantId) || StringUtil.isBlank(orgId) || StringUtil.isBlank(roleCode)) {
             return;
         }
@@ -61,17 +61,16 @@ public class LoginPermissionCacheRefresher {
         query.setTenantId(tenantId);
         query.setOrgId(orgId);
         query.setRoleCode(roleCode);
-        query.setFiscal(fiscal);
         List<String> userCodes = authPartyDao.selectUserCodesByRole(query);
         if (CollectionUtils.isEmpty(userCodes)) {
             return;
         }
         for (String userCode : userCodes) {
-            refreshUserByCode(tenantId, orgId, userCode, fiscal);
+            refreshUserByCode(tenantId, orgId, userCode);
         }
     }
 
-    public void refreshUserByCode(String tenantId, String orgId, String userCode, Integer fiscal) {
+    public void refreshUserByCode(String tenantId, String orgId, String userCode) {
         if (StringUtil.isBlank(tenantId) || StringUtil.isBlank(orgId) || StringUtil.isBlank(userCode)) {
             return;
         }
@@ -91,11 +90,10 @@ public class LoginPermissionCacheRefresher {
         roleQO.setTenantId(tenantId);
         roleQO.setOrgId(orgId);
         roleQO.setUserCode(userCode.trim());
-        roleQO.setFiscal(fiscal);
         List<RoleVO> roleList = roleService.selectByUserCode(roleQO);
         LoginPermissionSnapshotVO snapshot = loginPermissionAssembler.assemble(
-                currentUserOrg, fiscal, roleList);
-        writeCache(userVO, currentUserOrg, fiscal, snapshot);
+                currentUserOrg, roleList);
+        writeCache(userVO, currentUserOrg, snapshot);
     }
 
     public void writeCache(UserVO userVO, UserOrgVO currentUserOrg, Integer fiscal,
@@ -104,7 +102,7 @@ public class LoginPermissionCacheRefresher {
         String profileKey = SatokenConstant.USER_PROFILE_CACHE_PREFIX + userId;
         String apiKey = SaTokenConstant.userApiResourceCacheKey(
                 userId, currentUserOrg.getTenantId(), currentUserOrg.getOrgId(),
-                fiscal == null ? "" : String.valueOf(fiscal));
+                "");
         String legacyApiKey = SaTokenConstant.USER_API_RESOURCE_CACHE_PREFIX + userId;
         String buttonKey = "peach:security:user:button-resources:" + userId;
         stringRedisTemplate.delete(profileKey);
@@ -121,7 +119,6 @@ public class LoginPermissionCacheRefresher {
         profile.put(SatokenConstant.USER_PROFILE_FIELD_ORG_ID, currentUserOrg.getOrgId());
         profile.put(SatokenConstant.USER_PROFILE_FIELD_ORG_CODE, currentUserOrg.getOrgCode());
         profile.put(SatokenConstant.USER_PROFILE_FIELD_ORG_NAME, currentUserOrg.getOrgName());
-        profile.put(SatokenConstant.USER_PROFILE_FIELD_FISCAL, fiscal == null ? "" : String.valueOf(fiscal));
         profile.put(SatokenConstant.USER_PROFILE_FIELD_CONTEXT_VERSION, "1");
         stringRedisTemplate.opsForHash().putAll(profileKey, profile);
 

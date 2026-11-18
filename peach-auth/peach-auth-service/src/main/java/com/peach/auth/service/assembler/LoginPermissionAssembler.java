@@ -42,7 +42,6 @@ public class LoginPermissionAssembler {
     private final RouterDao routerDao;
 
     public LoginPermissionSnapshotVO assemble(UserOrgVO currentUserOrg,
-                                              Integer fiscal,
                                               List<RoleVO> roleList) {
         LoginPermissionSnapshotVO snapshot = new LoginPermissionSnapshotVO();
         snapshot.setRoleList(roleList == null ? List.of() : roleList);
@@ -61,8 +60,8 @@ public class LoginPermissionAssembler {
 
         String tenantId = currentUserOrg.getTenantId();
         String orgId = currentUserOrg.getOrgId();
-        Set<String> funcCodes = loadAuthorizedFunctionCodes(tenantId, orgId, fiscal, roleCodes);
-        List<AuthResourceVO> resources = loadAuthorizedResources(tenantId, orgId, fiscal, roleCodes);
+        Set<String> funcCodes = loadAuthorizedFunctionCodes(tenantId, orgId, roleCodes);
+        List<AuthResourceVO> resources = loadAuthorizedResources(tenantId, orgId, roleCodes);
         List<MenuVO> menus = loadMenus(tenantId, funcCodes);
         List<RouterVO> routers = loadRouters(tenantId, funcCodes);
 
@@ -87,13 +86,12 @@ public class LoginPermissionAssembler {
 
     private Set<String> loadAuthorizedFunctionCodes(String tenantId,
                                                     String orgId,
-                                                    Integer fiscal,
                                                     Set<String> roleCodes) {
         if (roleCodes.isEmpty()) {
             return Set.of();
         }
         List<AuthFunctionVO> authFunctions = authFunctionDao.selectByPartyCodes(
-                tenantId, orgId, INIT_APP_ID, fiscal, roleCodes);
+                tenantId, orgId, INIT_APP_ID, roleCodes);
         if (CollectionUtils.isEmpty(authFunctions)) {
             return Set.of();
         }
@@ -105,13 +103,12 @@ public class LoginPermissionAssembler {
 
     private List<AuthResourceVO> loadAuthorizedResources(String tenantId,
                                                          String orgId,
-                                                         Integer fiscal,
                                                          Set<String> roleCodes) {
         if (roleCodes.isEmpty()) {
             return List.of();
         }
         List<AuthResourceVO> resources = authResourceDao.selectByPartyCodes(
-                tenantId, orgId, fiscal, roleCodes);
+                tenantId, orgId, roleCodes);
         if (CollectionUtils.isEmpty(resources)) {
             return List.of();
         }

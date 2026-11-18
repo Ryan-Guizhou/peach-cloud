@@ -57,8 +57,7 @@ public class AuthPartyServiceImpl implements IAuthPartyService {
         if (userRoleAuthDTO == null
                 || StringUtil.isBlank(userRoleAuthDTO.getTenantId())
                 || StringUtil.isBlank(userRoleAuthDTO.getOrgId())
-                || StringUtil.isBlank(userRoleAuthDTO.getUserCode())
-                || false) {
+                || StringUtil.isBlank(userRoleAuthDTO.getUserCode())) {
             throw new IllegalArgumentException("Invalid user role authorization context");
         }
         AuthPartyDO deleteQuery = new AuthPartyDO();
