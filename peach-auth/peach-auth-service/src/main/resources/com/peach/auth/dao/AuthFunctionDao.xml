@@ -2,74 +2,74 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.AuthFunctionDao">
     <sql id="allColumn">
- ID, TENANT_ID, ORG_ID, PARTY_CODE,
- PARTY_TYPE, FUNC_CODE, STATE,
- APP_ID, IS_DELETE, CREATED_TIME, CREATOR_ID,
- MODIFY_TIME, MODIFIER_ID
+        ID, TENANT_ID, ORG_ID, PARTY_CODE,
+        PARTY_TYPE, FUNC_CODE, STATE,
+        APP_ID, IS_DELETE, CREATED_TIME, CREATOR_ID,
+        MODIFY_TIME, MODIFIER_ID
 
     </sql>
 
     <sql id="allColumnAlias">
- ID as id, TENANT_ID as tenantId, ORG_ID as orgId, PARTY_CODE as partyCode,
- PARTY_TYPE as partyType, FUNC_CODE as funcCode, STATE as state,
- APP_ID as appId, IS_DELETE as isDelete, CREATED_TIME as createdTime, CREATOR_ID as creatorId,
- MODIFY_TIME as modifyTime, MODIFIER_ID as modifierId
+        ID as id, TENANT_ID as tenantId, ORG_ID as orgId, PARTY_CODE as partyCode,
+        PARTY_TYPE as partyType, FUNC_CODE as funcCode, STATE as state,
+        APP_ID as appId, IS_DELETE as isDelete, CREATED_TIME as createdTime, CREATOR_ID as creatorId,
+        MODIFY_TIME as modifyTime, MODIFIER_ID as modifierId
 
     </sql>
 
     <sql id="allColumnValue">
- #{id,jdbcType=VARCHAR}, #{tenantId,jdbcType=VARCHAR}, #{orgId,jdbcType=VARCHAR}, #{partyCode,jdbcType=VARCHAR},
- #{partyType,jdbcType=VARCHAR}, #{funcCode,jdbcType=VARCHAR}, #{state,jdbcType=VARCHAR},
- #{appId,jdbcType=VARCHAR}, #{isDelete,jdbcType=INTEGER}, #{createdTime,jdbcType=VARCHAR}, #{creatorId,jdbcType=VARCHAR},
- #{modifyTime,jdbcType=VARCHAR}, #{modifierId,jdbcType=VARCHAR}
+        #{id,jdbcType=VARCHAR}, #{tenantId,jdbcType=VARCHAR}, #{orgId,jdbcType=VARCHAR}, #{partyCode,jdbcType=VARCHAR},
+        #{partyType,jdbcType=VARCHAR}, #{funcCode,jdbcType=VARCHAR}, #{state,jdbcType=VARCHAR},
+        #{appId,jdbcType=VARCHAR}, #{isDelete,jdbcType=INTEGER}, #{createdTime,jdbcType=VARCHAR}, #{creatorId,jdbcType=VARCHAR},
+        #{modifyTime,jdbcType=VARCHAR}, #{modifierId,jdbcType=VARCHAR}
 
     </sql>
 
     <sql id="itemAllColumnValue">
- #{item.id,jdbcType=VARCHAR}, #{item.tenantId,jdbcType=VARCHAR}, #{item.orgId,jdbcType=VARCHAR}, #{item.partyCode,jdbcType=VARCHAR},
- #{item.partyType,jdbcType=VARCHAR}, #{item.funcCode,jdbcType=VARCHAR}, #{item.state,jdbcType=VARCHAR},
- #{item.appId,jdbcType=VARCHAR}, #{item.isDelete,jdbcType=INTEGER}, #{item.createdTime,jdbcType=VARCHAR}, #{item.creatorId,jdbcType=VARCHAR},
- #{item.modifyTime,jdbcType=VARCHAR}, #{item.modifierId,jdbcType=VARCHAR}
+        #{item.id,jdbcType=VARCHAR}, #{item.tenantId,jdbcType=VARCHAR}, #{item.orgId,jdbcType=VARCHAR}, #{item.partyCode,jdbcType=VARCHAR},
+        #{item.partyType,jdbcType=VARCHAR}, #{item.funcCode,jdbcType=VARCHAR}, #{item.state,jdbcType=VARCHAR},
+        #{item.appId,jdbcType=VARCHAR}, #{item.isDelete,jdbcType=INTEGER}, #{item.createdTime,jdbcType=VARCHAR}, #{item.creatorId,jdbcType=VARCHAR},
+        #{item.modifyTime,jdbcType=VARCHAR}, #{item.modifierId,jdbcType=VARCHAR}
 
     </sql>
 
     <sql id="allColumnSet">
         <trim suffixOverrides=",">
             <if test="tenantId != null and tenantId != ''">
- TENANT_ID = #{tenantId,jdbcType=VARCHAR},
+                TENANT_ID = #{tenantId,jdbcType=VARCHAR},
             </if>
             <if test="orgId != null and orgId != ''">
- ORG_ID = #{orgId,jdbcType=VARCHAR},
+                ORG_ID = #{orgId,jdbcType=VARCHAR},
             </if>
             <if test="partyCode != null and partyCode != ''">
- PARTY_CODE = #{partyCode,jdbcType=VARCHAR},
+                PARTY_CODE = #{partyCode,jdbcType=VARCHAR},
             </if>
             <if test="partyType != null and partyType != ''">
- PARTY_TYPE = #{partyType,jdbcType=VARCHAR},
+                PARTY_TYPE = #{partyType,jdbcType=VARCHAR},
             </if>
             <if test="funcCode != null and funcCode != ''">
- FUNC_CODE = #{funcCode,jdbcType=VARCHAR},
+                FUNC_CODE = #{funcCode,jdbcType=VARCHAR},
             </if>
             <if test="state != null and state != ''">
- STATE = #{state,jdbcType=VARCHAR},
+                STATE = #{state,jdbcType=VARCHAR},
             </if>
             <if test="appId != null and appId != ''">
- APP_ID = #{appId,jdbcType=VARCHAR},
+                APP_ID = #{appId,jdbcType=VARCHAR},
             </if>
             <if test="isDelete != null">
- IS_DELETE = #{isDelete,jdbcType=INTEGER},
+                IS_DELETE = #{isDelete,jdbcType=INTEGER},
             </if>
             <if test="createdTime != null and createdTime != ''">
- CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
+                CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
             </if>
             <if test="creatorId != null and creatorId != ''">
- CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
+                CREATOR_ID = #{creatorId,jdbcType=VARCHAR},
             </if>
             <if test="modifyTime != null and modifyTime != ''">
- MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+                MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             </if>
             <if test="modifierId != null and modifierId != ''">
- MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
+                MODIFIER_ID = #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -77,40 +77,40 @@
     <sql id="updateSelectiveColumn">
         <trim suffixOverrides=",">
             <if test="tenantId != null and tenantId != ''">
- TENANT_ID,
+                TENANT_ID,
             </if>
             <if test="orgId != null and orgId != ''">
- ORG_ID,
+                ORG_ID,
             </if>
             <if test="partyCode != null and partyCode != ''">
- PARTY_CODE,
+                PARTY_CODE,
             </if>
             <if test="partyType != null and partyType != ''">
- PARTY_TYPE,
+                PARTY_TYPE,
             </if>
             <if test="funcCode != null and funcCode != ''">
- FUNC_CODE,
+                FUNC_CODE,
             </if>
             <if test="state != null and state != ''">
- STATE,
+                STATE,
             </if>
             <if test="appId != null and appId != ''">
- APP_ID,
+                APP_ID,
             </if>
             <if test="isDelete != null">
- IS_DELETE,
+                IS_DELETE,
             </if>
             <if test="createdTime != null and createdTime != ''">
- CREATED_TIME,
+                CREATED_TIME,
             </if>
             <if test="creatorId != null and creatorId != ''">
- CREATOR_ID,
+                CREATOR_ID,
             </if>
             <if test="modifyTime != null and modifyTime != ''">
- MODIFY_TIME,
+                MODIFY_TIME,
             </if>
             <if test="modifierId != null and modifierId != ''">
- MODIFIER_ID,
+                MODIFIER_ID,
             </if>
         </trim>
     </sql>
@@ -118,88 +118,88 @@
     <sql id="updateSelectiveValue">
         <trim suffixOverrides=",">
             <if test="tenantId != null and tenantId != ''">
- #{tenantId,jdbcType=VARCHAR},
+                #{tenantId,jdbcType=VARCHAR},
             </if>
             <if test="orgId != null and orgId != ''">
- #{orgId,jdbcType=VARCHAR},
+                #{orgId,jdbcType=VARCHAR},
             </if>
             <if test="partyCode != null and partyCode != ''">
- #{partyCode,jdbcType=VARCHAR},
+                #{partyCode,jdbcType=VARCHAR},
             </if>
             <if test="partyType != null and partyType != ''">
- #{partyType,jdbcType=VARCHAR},
+                #{partyType,jdbcType=VARCHAR},
             </if>
             <if test="funcCode != null and funcCode != ''">
- #{funcCode,jdbcType=VARCHAR},
+                #{funcCode,jdbcType=VARCHAR},
             </if>
             <if test="state != null and state != ''">
- #{state,jdbcType=VARCHAR},
+                #{state,jdbcType=VARCHAR},
             </if>
             <if test="appId != null and appId != ''">
- #{appId,jdbcType=VARCHAR},
+                #{appId,jdbcType=VARCHAR},
             </if>
             <if test="isDelete != null">
- #{isDelete,jdbcType=INTEGER},
+                #{isDelete,jdbcType=INTEGER},
             </if>
             <if test="createdTime != null and createdTime != ''">
- #{createdTime,jdbcType=VARCHAR},
+                #{createdTime,jdbcType=VARCHAR},
             </if>
             <if test="creatorId != null and creatorId != ''">
- #{creatorId,jdbcType=VARCHAR},
+                #{creatorId,jdbcType=VARCHAR},
             </if>
             <if test="modifyTime != null and modifyTime != ''">
- #{modifyTime,jdbcType=VARCHAR},
+                #{modifyTime,jdbcType=VARCHAR},
             </if>
             <if test="modifierId != null and modifierId != ''">
- #{modifierId,jdbcType=VARCHAR},
+                #{modifierId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
 
     <sql id="allColumnCond">
         <if test="id != null and id != ''">
- AND ID = #{id,jdbcType=VARCHAR}
+            AND ID = #{id,jdbcType=VARCHAR}
         </if>
         <if test="tenantId != null and tenantId != ''">
- AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
         </if>
         <if test="orgId != null and orgId != ''">
- AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
         </if>
         <if test="partyCode != null and partyCode != ''">
- AND PARTY_CODE = #{partyCode,jdbcType=VARCHAR}
+            AND PARTY_CODE = #{partyCode,jdbcType=VARCHAR}
         </if>
         <if test="partyType != null and partyType != ''">
- AND PARTY_TYPE = #{partyType,jdbcType=VARCHAR}
+            AND PARTY_TYPE = #{partyType,jdbcType=VARCHAR}
         </if>
         <if test="funcCode != null and funcCode != ''">
- AND FUNC_CODE = #{funcCode,jdbcType=VARCHAR}
+            AND FUNC_CODE = #{funcCode,jdbcType=VARCHAR}
         </if>
         <if test="state != null and state != ''">
- AND STATE = #{state,jdbcType=VARCHAR}
+            AND STATE = #{state,jdbcType=VARCHAR}
         </if>
         <if test="appId != null and appId != ''">
- AND APP_ID = #{appId,jdbcType=VARCHAR}
+            AND APP_ID = #{appId,jdbcType=VARCHAR}
         </if>
         <if test="isDelete != null">
- AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
+            AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
         </if>
         <if test="createdTime != null and createdTime != ''">
- AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
+            AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
         </if>
         <if test="creatorId != null and creatorId != ''">
- AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
+            AND CREATOR_ID = #{creatorId,jdbcType=VARCHAR}
         </if>
         <if test="modifyTime != null and modifyTime != ''">
- AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
+            AND MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR}
         </if>
         <if test="modifierId != null and modifierId != ''">
- AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
+            AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         </if>
     </sql>
 
     <insert id="insert" parameterType="com.peach.auth.entity.AuthFunctionDO">
- INSERT INTO PEACH_AUTH_FUNCTION (
+        INSERT INTO PEACH_AUTH_FUNCTION (
             <include refid="allColumn" />
         ) VALUES (
             <include refid="allColumnValue" />
@@ -207,7 +207,7 @@
     </insert>
 
     <insert id="batchInsert" parameterType="com.peach.auth.entity.AuthFunctionDO">
- INSERT INTO PEACH_AUTH_FUNCTION (
+        INSERT INTO PEACH_AUTH_FUNCTION (
             <include refid="allColumn" />
         ) VALUES
         <foreach collection="list" index="index" item="item" separator=",">
@@ -216,89 +216,89 @@
     </insert>
 
     <update id="update" parameterType="com.peach.auth.entity.AuthFunctionDO">
- UPDATE PEACH_AUTH_FUNCTION SET
+        UPDATE PEACH_AUTH_FUNCTION SET
             <include refid="allColumnSet" />
- WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
+        WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
     </update>
 
     <update id="delById" parameterType="string">
- UPDATE PEACH_AUTH_FUNCTION
- SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
- WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
+        UPDATE PEACH_AUTH_FUNCTION
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
     </update>
 
     <update id="delByIds" parameterType="java.util.List">
- UPDATE PEACH_AUTH_FUNCTION
- SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
- WHERE IS_DELETE = 0 AND ID IN
+        UPDATE PEACH_AUTH_FUNCTION
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
- #{id,jdbcType=VARCHAR}
+            #{id,jdbcType=VARCHAR}
         </foreach>
     </update>
 
     <update id="del" parameterType="com.peach.auth.entity.AuthFunctionDO">
- UPDATE PEACH_AUTH_FUNCTION
- SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
- WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
- AND ORG_ID = #{orgId,jdbcType=VARCHAR}
- AND APP_ID = #{appId,jdbcType=VARCHAR}
- AND PARTY_CODE = #{partyCode,jdbcType=VARCHAR}
- AND IS_DELETE = 0
+        UPDATE PEACH_AUTH_FUNCTION
+        SET IS_DELETE = 1, DELETED_AT = CURRENT_TIMESTAMP(3)
+        WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        AND APP_ID = #{appId,jdbcType=VARCHAR}
+        AND PARTY_CODE = #{partyCode,jdbcType=VARCHAR}
+        AND IS_DELETE = 0
     </update>
 
     <update id="updateById" parameterType="com.peach.auth.entity.AuthFunctionDO">
- UPDATE PEACH_AUTH_FUNCTION SET
+        UPDATE PEACH_AUTH_FUNCTION SET
             <include refid="allColumnSet" />
- WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
+        WHERE ID = #{id,jdbcType=VARCHAR} AND IS_DELETE = 0
     </update>
 
     <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.AuthFunctionVO">
- SELECT
+        SELECT
             <include refid="allColumnAlias" />
- FROM PEACH_AUTH_FUNCTION
- WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
+        FROM PEACH_AUTH_FUNCTION
+        WHERE IS_DELETE = 0 AND ID = #{value,jdbcType=VARCHAR}
     </select>
 
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.AuthFunctionVO">
- SELECT
+        SELECT
             <include refid="allColumnAlias" />
- FROM PEACH_AUTH_FUNCTION
- WHERE IS_DELETE = 0 AND ID IN
+        FROM PEACH_AUTH_FUNCTION
+        WHERE IS_DELETE = 0 AND ID IN
         <foreach collection="list" index="index" item="id" open="(" separator="," close=")">
- #{id,jdbcType=VARCHAR}
+            #{id,jdbcType=VARCHAR}
         </foreach>
     </select>
 
     <select id="select" parameterType="com.peach.auth.entity.AuthFunctionDO" resultType="com.peach.auth.vo.AuthFunctionVO">
- SELECT
+        SELECT
             <include refid="allColumnAlias" />
- FROM PEACH_AUTH_FUNCTION
+        FROM PEACH_AUTH_FUNCTION
         <where>
- IS_DELETE = 0
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
 
     <select id="count" parameterType="com.peach.auth.entity.AuthFunctionDO" resultType="java.lang.Integer">
- SELECT COUNT(1)
- FROM PEACH_AUTH_FUNCTION
+        SELECT COUNT(1)
+        FROM PEACH_AUTH_FUNCTION
         <where>
- IS_DELETE = 0
+            IS_DELETE = 0
             <include refid="allColumnCond" />
         </where>
     </select>
 
     <select id="selectByPartyCodes" resultType="com.peach.auth.vo.AuthFunctionVO">
- SELECT
+        SELECT
             <include refid="allColumnAlias" />
- FROM PEACH_AUTH_FUNCTION
- WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
- AND ORG_ID = #{orgId,jdbcType=VARCHAR}
- AND APP_ID = #{appId,jdbcType=VARCHAR}
- AND IS_DELETE = 0
- AND PARTY_CODE IN
+        FROM PEACH_AUTH_FUNCTION
+        WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        AND APP_ID = #{appId,jdbcType=VARCHAR}
+        AND IS_DELETE = 0
+        AND PARTY_CODE IN
         <foreach collection="partyCodes" item="item" open="(" separator="," close=")">
- #{item,jdbcType=VARCHAR}
+            #{item,jdbcType=VARCHAR}
         </foreach>
     </select>
 </mapper>
