@@ -226,7 +226,7 @@ flowchart LR
 
 | API | 功能 | 请求 |
 | --- | --- | --- |
-| `POST /auth/saas/roles` | 在当前应用和创建租户角色 | `{"roleCode":"ROLE_EDITOR","roleName":"编辑员"}` |
+| `POST /auth/saas/roles` | 在当前应用创建租户角色 | `{"roleCode":"ROLE_EDITOR","roleName":"编辑员"}` |
 | `PUT /auth/saas/roles/{roleRefId}/permissions` | 角色权限完整集合差量同步 | `{"permissionRefIds":["<physical-permission-id>"]}` |
 | `POST /auth/saas/roles/bindings` | 授予成员一条独立角色/机构作用域绑定 | `{"targetMemberRefId":"<physical-member-id>","roleRefId":"<physical-role-id>","scopeType":"TENANT"}` |
 | `DELETE /auth/saas/roles/bindings/{bindingRefId}` | 逻辑撤销单条授权 | 无正文 |
