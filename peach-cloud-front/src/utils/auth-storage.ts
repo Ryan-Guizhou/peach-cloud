@@ -52,30 +52,35 @@ function parseSession(raw: string | null): AuthSession | null {
   }
   try {
     const value: unknown = JSON.parse(raw)
-    if (!isRecord(value) || typeof value.expiresAt !== 'number') {
+    if (!isRecord(value) || typeof value.expiresAt !== 'number'
+      || value.expiresAt <= Date.now() || !Number.isInteger(value.year)
+      || value.year < 1 || value.year > 9999) {
       return null
     }
     const token = normalizeRequiredString(value.token)
     const userId = normalizeRequiredString(value.userId)
+    const userRefId = normalizeRequiredString(value.userRefId)
     const userName = normalizeRequiredString(value.userName)
-    const tenantId = normalizeRequiredString(value.tenantId)
-    const orgId = normalizeRequiredString(value.orgId)
-    const fiscal = normalizeRequiredString(value.fiscal)
-    if (!token || !userId || !userName || !tenantId || !orgId || !fiscal) {
-      return null
-    }
-    if (value.expiresAt <= Date.now()) {
+    const tenantRefId = normalizeRequiredString(value.tenantRefId)
+    const memberRefId = normalizeRequiredString(value.memberRefId)
+    const appRefId = normalizeRequiredString(value.appRefId)
+    if (!token || !userId || !userRefId || !userName || !tenantRefId
+      || !memberRefId || !appRefId) {
       return null
     }
     return {
       token,
       userId,
+      userRefId,
       userName,
-      tenantId,
+      tenantRefId,
+      memberRefId,
+      appRefId,
+      tenantId: normalizeOptionalString(value.tenantId),
       tenantName: normalizeOptionalString(value.tenantName),
-      orgId,
+      orgId: normalizeOptionalString(value.orgId),
       orgName: normalizeOptionalString(value.orgName),
-      fiscal,
+      year: value.year as number,
       expiresAt: value.expiresAt,
     }
   } catch {
@@ -99,47 +104,56 @@ export function readAuthSession(): AuthSession | null {
 }
 
 export function readAuthLoginInfo(): LoginInfo | null {
-  if (!readAuthSession()) {
+  const session = readAuthSession()
+  if (!session) {
     return null
   }
-  const raw = window.localStorage.getItem(LOGIN_INFO_KEY) ?? window.sessionStorage.getItem(LOGIN_INFO_KEY)
+  const raw = window.localStorage.getItem(LOGIN_INFO_KEY)
+    ?? window.sessionStorage.getItem(LOGIN_INFO_KEY)
   if (!raw) {
     return null
   }
   try {
     const value: unknown = JSON.parse(raw)
-    if (!isRecord(value)
-      || !isRequiredString(value.token)
-      || !isRequiredString(value.userId)
-      || !isRequiredString(value.userName)
-      || !isRequiredString(value.tenantId)
-      || !isRequiredString(value.orgId)) {
-      return null
-    }
-    const fiscal = normalizeRequiredString(value.fiscal)
-    if (!fiscal) {
+    if (!isRecord(value) || value.requiresTenantSelection === true
+      || value.token !== session.token
+      || value.userRefId !== session.userRefId
+      || value.tenantRefId !== session.tenantRefId
+      || value.memberRefId !== session.memberRefId
+      || value.appRefId !== session.appRefId
+      || value.year !== session.year
+      || !isRequiredString(value.userId) || !isRequiredString(value.userName)) {
       return null
     }
     return {
       userId: value.userId,
       userName: value.userName,
-      fiscal,
-      tenantId: value.tenantId,
-      tenantCode: normalizeOptionalString(value.tenantCode),
+      userRefId: session.userRefId,
+      tenantRefId: session.tenantRefId,
+      memberRefId: session.memberRefId,
+      appRefId: session.appRefId,
+      year: session.year,
+      tenantId: normalizeOptionalString(value.tenantId),
       tenantName: normalizeOptionalString(value.tenantName),
-      orgId: value.orgId,
+      orgId: normalizeOptionalString(value.orgId),
       orgCode: normalizeOptionalString(value.orgCode),
       orgName: normalizeOptionalString(value.orgName),
-      token: value.token,
+      appId: normalizeOptionalString(value.appId),
+      memberVersion: typeof value.memberVersion === 'number' ? value.memberVersion : undefined,
+      authVersion: typeof value.authVersion === 'number' ? value.authVersion : undefined,
+      token: session.token,
+      requiresTenantSelection: false,
+      tenantOptions: Array.isArray(value.tenantOptions)
+        ? value.tenantOptions as LoginInfo['tenantOptions'] : [],
       isDefaultPwd: typeof value.isDefaultPwd === 'number' ? value.isDefaultPwd : undefined,
       userOrgList: Array.isArray(value.userOrgList) ? value.userOrgList : [],
       roleList: Array.isArray(value.roleList) ? value.roleList : [],
       menuList: Array.isArray(value.menuList) ? value.menuList : [],
       routerList: Array.isArray(value.routerList) ? value.routerList : [],
-      resourceList: Array.isArray(value.resourceList) ? value.resourceList : undefined,
+      resourceList: Array.isArray(value.resourceList) ? value.resourceList : [],
       permissionList: Array.isArray(value.permissionList)
         ? value.permissionList.filter((item): item is string => typeof item === 'string' && item.length > 0)
-        : undefined,
+        : [],
       permissionSnapshot: parsePermissionSnapshot(value.permissionSnapshot),
     }
   } catch {

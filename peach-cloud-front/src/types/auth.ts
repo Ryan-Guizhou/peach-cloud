@@ -8,7 +8,8 @@ export interface LoginInitInfo {
   systemName: string
   systemDescription: string
   appId: string
-  fiscal: number
+  /** 登录年份由用户选择，不能从旧 FISCAL 权限字段推导。 */
+  year?: number
   publicKey: string
   encryptionAlgorithm: string
   captchaType?: string
@@ -40,11 +41,20 @@ export interface CaptchaCheckResult {
 export interface LoginRequest {
   username: string
   password: string
-  fiscal: number
-  tenantId?: string
-  orgId?: string
+  year: number
+  tenantRefId?: string
+  appRefId?: string
   captchaVerification?: string
   clientUid?: string
+}
+
+export interface LoginTargetInfo {
+  tenantRefId: string
+  tenantId: string
+  tenantName: string
+  appRefId: string
+  appId: string
+  appName: string
 }
 
 export interface UserOrgInfo {
@@ -82,16 +92,6 @@ export interface RouterInfo {
   funcCode?: string
 }
 
-export interface LoginPermissionSnapshot {
-  roleList: RoleInfo[]
-  menuList: MenuInfo[]
-  routerList: RouterInfo[]
-  resourceList: AuthResourceInfo[]
-  permissionList: string[]
-  apiResourceCodes?: string[]
-  buttonResourceCodes?: string[]
-}
-
 export interface AuthResourceInfo {
   resourceId?: string
   tenantId?: string
@@ -102,20 +102,38 @@ export interface AuthResourceInfo {
   resourceCode?: string
   resourceName?: string
   appId?: string
-  fiscal?: number
+}
+
+export interface LoginPermissionSnapshot {
+  roleList: RoleInfo[]
+  menuList: MenuInfo[]
+  routerList: RouterInfo[]
+  resourceList: AuthResourceInfo[]
+  permissionList: string[]
+  apiResourceCodes?: string[]
+  buttonResourceCodes?: string[]
 }
 
 export interface LoginInfo {
   userId: string
   userName: string
-  fiscal: string
-  tenantId: string
-  tenantCode?: string
+  year: number
+  userRefId?: string
+  tenantRefId?: string
+  memberRefId?: string
+  appRefId?: string
+  appId?: string
+  memberVersion?: number
+  authVersion?: number
+  requiresTenantSelection?: boolean
+  tenantOptions?: LoginTargetInfo[]
+  tenantId?: string
   tenantName?: string
-  orgId: string
+  orgId?: string
   orgCode?: string
   orgName?: string
-  token: string
+  /** 无租户选择阶段不会产生 Token，必须在 Store 建立会话前验证。 */
+  token?: string
   isDefaultPwd?: number
   userOrgList: UserOrgInfo[]
   roleList: RoleInfo[]
@@ -129,11 +147,15 @@ export interface LoginInfo {
 export interface AuthSession {
   token: string
   userId: string
+  userRefId: string
   userName: string
-  tenantId: string
+  tenantRefId: string
+  memberRefId: string
+  appRefId: string
+  tenantId?: string
   tenantName?: string
-  orgId: string
+  orgId?: string
   orgName?: string
-  fiscal: string
+  year: number
   expiresAt: number
 }
