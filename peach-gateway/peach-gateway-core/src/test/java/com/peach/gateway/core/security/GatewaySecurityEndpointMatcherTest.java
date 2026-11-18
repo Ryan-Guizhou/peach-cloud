@@ -32,6 +32,7 @@ class GatewaySecurityEndpointMatcherTest {
                 GatewaySecurityEndpointRule.of("OPTIONS", "/**"),
                 GatewaySecurityEndpointRule.of("POST", "/api/auth/login"));
         assertThat(matcher.matches(rules, "OPTIONS", "/api/files/private")).isTrue();
+        assertThat(matcher.matches(rules, "OPTIONS", "/api/auth/saas/roles")).isTrue();
         assertThat(matcher.matches(rules, "POST", "/api/auth/login")).isTrue();
         assertThat(matcher.matches(rules, "GET", "/api/auth/login")).isFalse();
     }
