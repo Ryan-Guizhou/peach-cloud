@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 
 /**
  * 跨服务权限只能从最终用户 Token 的受信物理身份查询，失败默认拒绝。
@@ -50,12 +51,12 @@ class SaasIamRemoteAuthorizationServiceTest {
         when(grantDao.selectApiGrants("tenant", "member", "app", 2026,
                 "GET:/api/documents", false)).thenReturn(List.of(new RoleScopeGrantVO()));
         SaasIamPermissionDecisionVO decision =
-                service.decideApiPermission("real-user-token", "GET:/api/documents", false);
+                service.decideApiPermission("real-user-token", "GET:/api/documents");
         assertThat(decision.isAllowed()).isTrue();
         assertThat(decision.getContext().getMemberRefId()).isEqualTo("member");
         assertThat(decision.getContext().getAuthVersion()).isEqualTo(7L);
         verify(grantDao).selectApiGrants("tenant", "member", "app", 2026,
-                "GET:/api/documents");
+                "GET:/api/documents", false);
     }
 
     @Test
@@ -105,7 +106,8 @@ class SaasIamRemoteAuthorizationServiceTest {
                 .thenReturn(List.of("GET:/api/{kind}/preview", "GET:/api/files/{id}"));
         assertThat(service.hasApiPermission("real-user-token", "GET:/api/files/preview")).isFalse();
         verify(grantDao, never()).selectApiGrants(
-                anyString(), anyString(), anyString(), anyInt(), anyString());
+                anyString(), anyString(), anyString(), anyInt(), anyString(),
+                anyBoolean());
     }
 
     @Test

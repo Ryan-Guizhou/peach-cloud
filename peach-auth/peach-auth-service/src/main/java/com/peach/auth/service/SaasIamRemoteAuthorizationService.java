@@ -9,6 +9,7 @@ import com.peach.auth.vo.SaasIamContextVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 
@@ -27,8 +28,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SaasIamRemoteAuthorizationService {
 
-    private final TenantSessionService sessionService;
-
     /**
      * 平台内建服务路由必须由 SYSTEM API 目录授权。
      * TENANT 权限目录不能使用同名 CODE 重写内建服务的系统安全边界。
@@ -40,6 +39,8 @@ public class SaasIamRemoteAuthorizationService {
             "/auth/", "/setting/", "/fileservice/", "/message/",
             "/monitor/", "/generator/", "/scheduled/"
     );
+
+    private final TenantSessionService sessionService;
 
     private final ScopedRoleGrantDao grantDao;
 
