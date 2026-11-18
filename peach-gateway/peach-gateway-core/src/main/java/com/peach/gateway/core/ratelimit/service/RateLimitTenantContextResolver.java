@@ -26,6 +26,6 @@ public class RateLimitTenantContextResolver {
      * @return 租户 ID；缺失或不完整的 Token Session 返回空信号
      */
     public Mono<String> resolve(ServerWebExchange exchange) {
-        return tokenContextResolver.resolve(exchange).map(context -> context.tenantId());
+        return tokenContextResolver.resolve(exchange).map(context -> context.tenantRefId());
     }
 }

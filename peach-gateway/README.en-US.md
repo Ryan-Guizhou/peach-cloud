@@ -227,3 +227,9 @@ git diff --check -- peach-gateway
 - Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
 - Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
 - Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+
+## SaaS gateway authorization baseline (Issue #208, in progress)
+
+The development branch reads the single trusted `SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT` snapshot containing `userRefId/tenantRefId/memberRefId/appRefId/year/memberVersion/authVersion`. An organization is optional; legacy `tenantId/orgId/fiscal` combinations are not consulted. API cache keys distinguish physical tenant, member, application, calendar year and both versions; **the old user-level cache is never a fallback**. Protected APIs deny access when the snapshot or Redis is unavailable or when gateway authorization flags are disabled, rather than bypassing authentication. The default anonymous allowlist is limited to login, CAPTCHA, public key and OPTIONS; init, registration and reset are no longer anonymous by default.
+
+**Current limitation:** A versioned cache key is not an authoritative version check. The authentication domain does not yet reliably synchronize role/member revocations to the gateway and the new cache has no trusted population or revocation protocol. A version read only from a stale Token cannot establish current authorization. **This branch must remain unshipped** until request-time database/trusted-service verification, version checks and cross-service authorization propagation are completed under #208/#209. Passing compilation/CI alone does not constitute authorization acceptance.

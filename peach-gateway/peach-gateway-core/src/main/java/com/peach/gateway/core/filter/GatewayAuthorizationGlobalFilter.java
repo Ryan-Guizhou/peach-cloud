@@ -70,9 +70,6 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        if (!properties.isEnabled()) {
-            return chain.filter(exchange);
-        }
         String path = exchange.getRequest().getURI().getRawPath();
         String method = exchange.getRequest().getMethod().name();
         if (endpointMatcher.matches(properties.getPublicEndpoints(), method, path)) {
@@ -80,6 +77,12 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
                 log.info("Gateway authorization skipped, method={}, path={}", method, path);
             }
             return chain.filter(exchange);
+        }
+        if (!properties.isEnabled()) {
+            log.error("Gateway authentication disabled; rejecting protected request, method={}, path={}",
+                    method, path);
+            return GatewayFilterSupport.writeError(exchange, HttpStatus.SERVICE_UNAVAILABLE,
+                    "Authorization service unavailable");
         }
         return Mono.fromCallable(() -> {
                     SaReactorSyncHolder.setContext(exchange);
@@ -110,14 +113,14 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
     private Mono<Boolean> checkApiPermission(String loginId, String method, String path,
                                              ServerWebExchange exchange) {
         if (!properties.isApiPermissionEnabled() || redisTemplate == null) {
-            return Mono.just(true);
+            return Mono.just(false);
         }
         String resourceCode = buildApiResourceCode(method, path);
         if (isBlank(loginId) || isBlank(resourceCode)) {
             return Mono.just(false);
         }
         return tokenContextResolver.resolve(exchange)
-                .flatMap(context -> checkApiPermissionForContext(loginId, context, resourceCode, method, path))
+                .flatMap(context -> checkApiPermissionForContext(context, resourceCode, method, path))
                 .defaultIfEmpty(false)
                 .onErrorResume(exception -> {
                     log.warn("Gateway API permission check failed, method={}, path={}, reason={}",
@@ -136,10 +139,11 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
      * @param path 请求路径
      * @return 允许访问时返回 {@code true}
      */
-    private Mono<Boolean> checkApiPermissionForContext(String loginId, GatewayTokenContext context,
+    private Mono<Boolean> checkApiPermissionForContext(GatewayTokenContext context,
                                                         String resourceCode, String method, String path) {
-        String key = SaTokenConstant.userApiResourceCacheKey(
-                loginId, context.tenantId(), context.orgId(), context.fiscal());
+        String key = SaTokenConstant.memberApiResourceCacheKey(
+                context.tenantRefId(), context.memberRefId(), context.appRefId(),
+                context.year(), context.memberVersion(), context.authVersion());
         return redisTemplate.opsForSet()
                 .isMember(key, resourceCode)
                 .defaultIfEmpty(false)
