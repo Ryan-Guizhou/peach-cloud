@@ -48,6 +48,10 @@ public class SaasRoleTokenContextFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        if (!isCanonicalRolePath(request.getRequestURI())) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid SaaS role path");
+            return;
+        }
         try {
             SaSameUtil.checkCurrentRequestToken();
             StpUtil.checkLogin();
@@ -60,6 +64,20 @@ public class SaasRoleTokenContextFilter extends OncePerRequestFilter {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "SaaS authorization required");
             return;
         }
+
+    /**
+     * 在认证服务直接访问场景下也拒绝编码路径和 Servlet 路径规范化歧义。
+     */
+    boolean isCanonicalRolePath(String path) {
+        if (path == null || !(ROLE_ROOT.equals(path) || path.startsWith(ROLE_ROOT + "/"))
+                || path.indexOf('%') >= 0 || path.indexOf(';') >= 0
+                || path.indexOf('\\') >= 0 || path.contains("//")
+                || path.endsWith("/") || path.contains("/./") || path.contains("/../")
+                || path.endsWith("/.") || path.endsWith("/..")) {
+            return false;
+        }
+        return true;
+    }
 
         request.setAttribute(UserContextFilter.VERIFIED_SAAS_ROLE_REQUEST, Boolean.TRUE);
         try {

@@ -295,3 +295,5 @@ sequenceDiagram
 #### 认证服务 SaaS 角色接口的 Token 验证
 
 新的 SaaS 登录只保存 Token 专属成员快照，不再创建旧版用户级 `USER_PROFILE` Redis Hash；原通用过滤器会在角色管理 Controller 前误拒合法用户。为避免把整个业务服务配置成公开端点，新增 Auth 专用 `SaasRoleTokenContextFilter`，仅作用于 `/auth/saas/roles` 及其子路径，按顺序先强制服务 Same-Token、Sa-Token 登录态，再通过 `TenantSessionService.requireCurrent()` 数据库校验租户/成员/应用和两个版本。验证成功才设置只能由 Servlet 服务端写入的请求属性，让通用 `UserContextFilter` 对该请求跳过旧 Profile 查询，并在请求完成后清理；其他模块继续原路径，角色/行/字段最终权限依旧由领域服务判断。此处没有新增匿名入口，也不允许仅凭业务编号判断身份。
+
+补充：Auth 专用过滤器直接拒绝含百分号编码、分号矩阵参数、双斜杠、反斜杠及 `.`/`..` 路径段的角色管理请求；不会因下游 Servlet 规范化将危险路径误作为已验证的 SaaS 角色请求。该安全前置检查同样适用于绕过公共网关而直接访问 Auth 的场景。

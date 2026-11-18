@@ -48,6 +48,25 @@ class SaasRoleTokenContextFilterTest {
     }
 
     @Test
+    void shouldDenyEncodedOrTraversingRoleRoutesBeforeReadingAnyToken() throws Exception {
+        assertThat(filter.isCanonicalRolePath("/auth/saas/roles")).isTrue();
+        assertThat(filter.isCanonicalRolePath("/auth/saas/roles/%2e%2e/users")).isFalse();
+        assertThat(filter.isCanonicalRolePath("/auth/saas/roles/../users")).isFalse();
+        assertThat(filter.isCanonicalRolePath("/auth/saas/roles//bindings")).isFalse();
+        assertThat(filter.isCanonicalRolePath("/auth/saas/roles;admin=true")).isFalse();
+
+        MockHttpServletRequest request = request("POST", "/auth/saas/roles/%2e%2e/users");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(403);
+        assertThat(chain.getRequest()).isNull();
+        verifyNoInteractions(sessionService);
+    }
+
+    @Test
     void shouldCheckFreshDatabaseMembershipAndClearTrustedMarker() throws Exception {
         MockHttpServletRequest request = request("POST", "/auth/saas/roles");
         MockHttpServletResponse response = new MockHttpServletResponse();
