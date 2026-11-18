@@ -42,6 +42,10 @@ public class LoginDTO implements Serializable {
     @Size(max = 32, message = "应用物理 ID 长度不能超过32")
     private String appRefId;
 
+    @Schema(description = "仅供首次加入租户的用户凭密码认证后确认本人邀请")
+    @Size(max = 32, message = "邀请物理ID不能超过32个字符", groups = {LoginGroup.Login.class})
+    private String invitationRefId;
+
     @Schema(description = "滑块验证码二次校验凭证，启用验证码时须先通过 /auth/checkCaptcha 获取")
     @Size(max = 2048, message = "验证码凭证长度不能超过2048个字符", groups = {LoginGroup.Login.class})
     private String captchaVerification;

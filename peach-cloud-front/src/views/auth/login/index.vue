@@ -15,6 +15,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 const loginUsername = ref('')
 const loginPassword = ref('')
+const invitationRefId = ref('')
 const isEmailFocused = ref(false)
 const showPassword = ref(false)
 const remember = ref(true)
@@ -102,6 +103,7 @@ const handleSubmit = async () => {
     const loginInfo = await submitLogin({
       username: loginUsername.value.trim(),
       password: encryptedPassword,
+      invitationRefId: invitationRefId.value.trim() || undefined,
       tenantRefId: selected?.tenantRefId,
       appRefId: selected?.appRefId,
       captchaVerification: captchaRequired.value ? captchaVerification.value : undefined,

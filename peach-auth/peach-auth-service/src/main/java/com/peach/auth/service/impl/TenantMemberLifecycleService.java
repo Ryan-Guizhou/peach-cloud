@@ -200,6 +200,11 @@ public class TenantMemberLifecycleService {
                 verifiedUserRefId, requireVersion(invitation.getVersion())) != 1) {
             throw new IllegalStateException("Invitation was concurrently modified");
         }
+        // 邀请与成员状态在同一事务提交，新增关系保留完整加入审计。
+        if (authorizationAuditDao.append(UniqueIdFacade.nextId(), tenantRefId, null,
+                memberRefId, memberRefId, "MEMBER_JOIN", 0L, 0L) != 1) {
+            throw new IllegalStateException("Membership acceptance audit append failed");
+        }
         log.info("Tenant invitation accepted, tenantRefId={}, memberRefId={}", tenantRefId, memberRefId);
         return memberRefId;
     }
