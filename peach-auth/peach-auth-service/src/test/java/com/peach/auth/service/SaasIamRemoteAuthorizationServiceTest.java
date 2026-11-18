@@ -5,6 +5,7 @@ import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
 import com.peach.auth.vo.RoleScopeGrantVO;
 import com.peach.auth.vo.SaasIamContextVO;
+import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -46,11 +47,11 @@ class SaasIamRemoteAuthorizationServiceTest {
     void shouldQueryApiPermissionWithinVerifiedTenantMemberApplicationAndYear() {
         when(grantDao.selectApiGrants("tenant", "member", "app", 2026,
                 "GET:/api/documents")).thenReturn(List.of(new RoleScopeGrantVO()));
-        assertThat(service.hasApiPermission("real-user-token", "GET:/api/documents")).isTrue();
-        assertThat(service.decideApiPermission("real-user-token", "GET:/api/documents")
-                .getContext().getMemberRefId()).isEqualTo("member");
-        assertThat(service.decideApiPermission("real-user-token", "GET:/api/documents")
-                .getContext().getAuthVersion()).isEqualTo(7L);
+        SaasIamPermissionDecisionVO decision =
+                service.decideApiPermission("real-user-token", "GET:/api/documents");
+        assertThat(decision.isAllowed()).isTrue();
+        assertThat(decision.getContext().getMemberRefId()).isEqualTo("member");
+        assertThat(decision.getContext().getAuthVersion()).isEqualTo(7L);
         verify(grantDao).selectApiGrants("tenant", "member", "app", 2026,
                 "GET:/api/documents");
     }

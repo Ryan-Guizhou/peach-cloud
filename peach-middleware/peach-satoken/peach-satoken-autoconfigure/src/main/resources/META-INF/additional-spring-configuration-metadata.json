@@ -83,6 +83,12 @@
       "name": "peach.satoken.user-context.public-endpoints",
       "type": "java.util.List",
       "description": "无需认证即可访问的公开接口匹配规则列表。"
+    },
+    {
+      "name": "peach.satoken.user-context.service-token-only-endpoints",
+      "type": "java.util.List",
+      "description": "受信服务间接口方法和路径配置；只跳过旧的用户资料缓存，过滤器必须先成功验证 Sa-Token Same-Token。缺省为空，严禁用匿名公开白名单代替。",
+      "defaultValue": []
     }
   ],
   "hints": []
