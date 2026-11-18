@@ -118,3 +118,13 @@ npm run preview
 ### SaaS 角色管理页面（#210，增量）
 
 旧的 `/auth/role/add` 和 `/auth/authFunction/saveRoleFunctions` 等基于 `tenantId/orgId/fiscal`、角色业务码拼接的前端写入接口已经从 `api/admin.ts` 移除。角色页面改为通过 `createTenantRole()` 执行当前 Token 范围内的受控新建，真实租户/应用/年度完全由 Auth 决定；物理 ID 仅作为返回值展示，不允许手工录入。权限授权页面不再允许旧多模型请求提交，需等待安全的后端角色/成员/权限分页目录补齐后再接入新的 `saas-iam.ts` 写接口。**这属于明确的安全收敛，未完成完整管理界面，不得视为 #210 已交付。**
+
+### #227 SaaS 角色授权可操作界面
+
+`src/api/saas-iam.ts` 新增受保护的 `fetchSaasCatalog`、`fetchRolePermissionRefs` 和 `fetchMemberBindings`。年度角色授权页不再是占位信息，已经接入角色/权限/成员/机构分页选择器；支持替换当前租户年度角色的全部权限、对成员按 `TENANT/ORG/ORG_TREE` 独立授权和撤销**指定物理绑定**。可委派权限未加载完或角色仍持有当前管理员不可见的权限时，全量替换被明确禁止，避免误删授权。所有 API 请求依赖当前 Token，页面不能编辑 `tenantRefId/appRefId/year`。此项仍需真实数据库、网关在线 IAM 与旧数据迁移测试；行/字段策略编辑 UI 需要后续受控字段目录支持。
+
+**授权版本一致性补充：** 角色权限全量替换会让当前租户所有成员的 `AUTH_VERSION` 失效，包含执行该操作的管理员。因此后端写入成功后，管理页面立即断开旧 WebSocket、清除浏览器 Token 与动态路由并引导重新登录，不能继续用旧 Token 查询目录后误判成功写入为失败。切换租户/应用/年度时也会清除旧目录选择及缓存，防止跨租户显示之前的角色和成员。
+
+### #229 行级/字段级策略受控编辑
+
+新增 `src/views/system/authorization/SaasPolicyEditor.vue`。页面先从受信当前年度角色权限中选择已绑定动作，再分别读取**完整现存的数据范围策略和字段读写策略**。字段定义只来自当前租户/应用的受控字段目录，支持继续分页加载；目录未加载完、原字段策略不可见、作用域机构未完整加载或检测到重复/非法规则时全部禁用全量替换。数据范围支持 SELF/ORG/ORG_TREE/TENANT_ALL；字段读权限允许 ALLOW/MASK/DENY，写权限 ALLOW/DENY；物理 ID 仅由下拉选择器提供。成功写入后由于租户 AUTH_VERSION 失效，立即清除旧登录态并引导重新登录。该页面仅控制策略配置，业务查询/导出/更新仍必须接入数据库前置行级/字段授权。
