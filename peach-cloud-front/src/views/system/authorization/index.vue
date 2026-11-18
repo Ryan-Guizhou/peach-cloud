@@ -56,7 +56,7 @@ const selectedUserRoleCodes = ref<string[]>([])
 
 const formState = reactive({
   partyCode: '',
-  fiscal: Number(authStore.session?.fiscal ?? new Date().getFullYear()),
+  fiscal: Number(authStore.session?.year ?? new Date().getFullYear()),
   userCode: '',
 })
 

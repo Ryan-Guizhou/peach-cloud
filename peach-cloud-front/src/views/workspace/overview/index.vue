@@ -91,7 +91,7 @@ onMounted(loadProfilePreview)
     <main class="workspace-main" id="overview">
       <header class="workspace-header">
         <div>
-          <span class="workspace-kicker">DATA CONTROL CENTER · {{ session?.fiscal }}</span>
+          <span class="workspace-kicker">DATA CONTROL CENTER · {{ session?.year }}</span>
           <h1>数据运行总览</h1>
           <p>你好，{{ session?.userName }}。你的租户、机构与权限上下文已完成装配。</p>
         </div>
@@ -119,7 +119,7 @@ onMounted(loadProfilePreview)
               </span>
               <span class="profile-menu__meta">
                 <strong>{{ profile?.userName || session?.userName || '当前用户' }}</strong>
-                <small>{{ session?.orgName || session?.orgId || '默认机构' }}</small>
+                <small>{{ session?.orgName || session?.orgId || '未选择机构' || '未选择机构' }}</small>
               </span>
               <span class="profile-menu__chevron" aria-hidden="true" />
             </button>
@@ -170,8 +170,8 @@ onMounted(loadProfilePreview)
           <header><div><span>身份上下文</span><h2>当前作用域</h2></div><i class="context-card__status" /></header>
           <dl>
             <div><dt>租户</dt><dd>{{ session?.tenantName || session?.tenantId }}</dd></div>
-            <div><dt>机构</dt><dd>{{ session?.orgName || session?.orgId }}</dd></div>
-            <div><dt>年度</dt><dd>{{ session?.fiscal }}</dd></div>
+            <div><dt>机构</dt><dd>{{ session?.orgName || session?.orgId || '未选择机构' }}</dd></div>
+            <div><dt>年度</dt><dd>{{ session?.year }}</dd></div>
             <div><dt>会话状态</dt><dd><span class="status-chip">已验证</span></dd></div>
           </dl>
         </article>

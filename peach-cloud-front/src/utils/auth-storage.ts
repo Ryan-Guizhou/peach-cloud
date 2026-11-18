@@ -53,7 +53,8 @@ function parseSession(raw: string | null): AuthSession | null {
   try {
     const value: unknown = JSON.parse(raw)
     if (!isRecord(value) || typeof value.expiresAt !== 'number'
-      || value.expiresAt <= Date.now() || !Number.isInteger(value.year)
+      || value.expiresAt <= Date.now() || typeof value.year !== 'number'
+      || !Number.isInteger(value.year)
       || value.year < 1 || value.year > 9999) {
       return null
     }
@@ -80,7 +81,7 @@ function parseSession(raw: string | null): AuthSession | null {
       tenantName: normalizeOptionalString(value.tenantName),
       orgId: normalizeOptionalString(value.orgId),
       orgName: normalizeOptionalString(value.orgName),
-      year: value.year as number,
+      year: value.year,
       expiresAt: value.expiresAt,
     }
   } catch {
