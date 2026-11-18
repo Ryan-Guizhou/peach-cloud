@@ -38,6 +38,29 @@ class GatewaySecurityEndpointMatcherTest {
     }
 
     @Test
+    void shouldRejectConfiguredWildcardsAndAnyMethodForPublicHttpEndpoints() {
+        List<GatewaySecurityEndpointRule> rules = List.of(
+                GatewaySecurityEndpointRule.of("GET", "/api/files/**"),
+                GatewaySecurityEndpointRule.any("/api/files/private"),
+                GatewaySecurityEndpointRule.of("POST", "/api/auth/login"));
+        assertThat(matcher.matches(rules, "GET", "/api/files/private")).isFalse();
+        assertThat(matcher.matches(rules, "DELETE", "/api/files/private")).isFalse();
+        assertThat(matcher.matches(rules, "POST", "/api/auth/login")).isTrue();
+        assertThat(matcher.matches(rules, "DELETE", "/api/auth/login")).isFalse();
+    }
+
+    @Test
+    void shouldRejectEncodedOrNonCanonicalPublicRequestPaths() {
+        List<GatewaySecurityEndpointRule> rules = List.of(
+                GatewaySecurityEndpointRule.of("GET", "/api/auth/login"),
+                GatewaySecurityEndpointRule.of("GET", "/api/auth/%6Cogin"));
+        assertThat(matcher.matches(rules, "GET", "/api/auth/%6Cogin")).isFalse();
+        assertThat(matcher.matches(rules, "GET", "/api/auth/../login")).isFalse();
+        assertThat(matcher.matches(rules, "GET", "/api/auth//login")).isFalse();
+        assertThat(matcher.matches(rules, "GET", "/api/auth/login")).isTrue();
+    }
+
+    @Test
     void shouldRejectIamEvenWhenSpecificWildcardConfigured() {
         List<GatewaySecurityEndpointRule> rules =
                 List.of(GatewaySecurityEndpointRule.any("/api/auth/**"));

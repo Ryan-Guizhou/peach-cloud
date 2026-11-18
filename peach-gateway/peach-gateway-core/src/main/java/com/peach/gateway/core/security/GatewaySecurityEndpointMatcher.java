@@ -1,7 +1,5 @@
 package com.peach.gateway.core.security;
 
-import org.springframework.util.AntPathMatcher;
-
 import java.util.List;
 import java.util.Locale;
 
@@ -13,8 +11,6 @@ import java.util.Locale;
  * @CreateTime 2026/8/11 14:45
  */
 public class GatewaySecurityEndpointMatcher {
-
-    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     /**
      * 判断当前请求是否命中公开端点规则。
@@ -30,6 +26,10 @@ public class GatewaySecurityEndpointMatcher {
         }
         String normalizedMethod = normalizeMethod(method);
         String normalizedPath = normalizePath(path);
+        // 对原始 URI 做严格检查，禁止 Gateway / Servlet 对编码和路径分隔符产生不同解释。
+        if (hasUnsafePath(normalizedPath)) {
+            return false;
+        }
         // 平台初始化和 SaaS 授权管理绝不能因为配置失误成为匿名接口。
         if (!"OPTIONS".equals(normalizedMethod) && isProtectedIamEndpoint(normalizedPath)) {
             return false;
@@ -38,13 +38,18 @@ public class GatewaySecurityEndpointMatcher {
             if (rule == null || isBlank(rule.getPath())) {
                 continue;
             }
-            // 禁止用非 OPTIONS 的 /** 全局匿名规则关闭网关防线。
-            if ("/**".equals(normalizePath(rule.getPath()))
-                    && !"OPTIONS".equals(normalizeMethod(rule.getMethod()))) {
+            String rulePath = normalizePath(rule.getPath());
+            String ruleMethod = normalizeMethod(rule.getMethod());
+            // 仅允许显式 OPTIONS /** 的预检规则；其他匿名规则必须绑定 HTTP 方法和精确路径。
+            if ("OPTIONS".equals(normalizedMethod) && "OPTIONS".equals(ruleMethod)
+                    && "/**".equals(rulePath)) {
+                return true;
+            }
+            if (GatewaySecurityEndpointRule.ANY_METHOD.equals(ruleMethod)
+                    || hasUnsafePath(rulePath) || hasPatternSyntax(rulePath)) {
                 continue;
             }
-            if (methodMatches(rule.getMethod(), normalizedMethod)
-                    && pathMatcher.match(normalizePath(rule.getPath()), normalizedPath)) {
+            if (methodMatches(ruleMethod, normalizedMethod) && rulePath.equals(normalizedPath)) {
                 return true;
             }
         }
@@ -64,6 +69,30 @@ public class GatewaySecurityEndpointMatcher {
                 || "/auth/saas".equals(path)
                 || path.startsWith("/api/auth/saas/")
                 || "/api/auth/saas".equals(path);
+    }
+
+    /**
+     * 所有非 OPTIONS 的匿名路径均不能使用 Ant 通配或模板匹配。
+     */
+    private boolean hasPatternSyntax(String path) {
+        return path.contains("*") || path.contains("?")
+                || path.contains("{") || path.contains("}");
+    }
+
+    /**
+     * 防止网关与下游 Servlet 对 URI 规范化方式不同而导致绕过。
+     */
+    private boolean hasUnsafePath(String path) {
+        if (path.indexOf('%') >= 0 || path.indexOf('\\\\') >= 0
+                || path.indexOf(';') >= 0 || path.contains("//")) {
+            return true;
+        }
+        for (String part : path.split("/")) {
+            if (".".equals(part) || "..".equals(part)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

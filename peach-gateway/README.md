@@ -239,3 +239,7 @@ git diff --check -- peach-gateway
 当 `peach.gateway.iam.enabled=true` 时，网关的 `GatewayIamHttpDecisionVerifier` 通过 `@LoadBalanced WebClient.Builder` 访问服务发现名称 `peach-auth` 的 `POST /auth/external/iam/check-api`，使用当前最终用户 Sa-Token 与网关从 Sa-Token 获取的 Same-Token 两套独立凭证。认证域执行当前数据库成员版本与权限事实查询，并返回授权结果及**同次核验后的物理成员快照**；网关逐字段比较租户/成员/应用/年度和两个版本，完全一致且动作允许才继续进入业务服务。WebClient 网络过程不阻塞 Netty EventLoop，获取 Sa-Token 的潜在阻塞工作使用 boundedElastic。失败、超时、空响应、401/403/5xx 和 Token 切换均拒绝，没有旧 Redis 缓存兜底。
 
 `peach.gateway.iam.enabled` 默认 `false`，网关受保护 API 因无验证器而**默认拒绝**；`peach.gateway.iam.timeout` 默认 `1500ms`。启用前必须先部署 #209 受信认证接口、配置正确的服务发现与 Same-Token、确保 Auth 数据库中已注册真实精确 METHOD:PATH API 权限定义，并用合法/撤销/跨租户/跨年度/停用成员及故障用例联调。当前仅提供精确 URL 权限，动态路径模板映射及真实业务对象权限接入尚未完成，不应把代码构建成功当作可直接上线。
+
+#### 匿名白名单严格匹配（#208）
+
+网关 `peach.gateway.satoken.public-endpoints` 的非 OPTIONS 配置现在只接受**明确 HTTP 方法 + 完全相等的公开路径**；`ANY`、`*`、`**`、`{id}` 不可用于匿名放行。仅允许精确的 `OPTIONS /**` 预检规则，其余携带编码字符、分号、双斜杠或路径遍历片段的可疑 URI 不会命中公开白名单，受保护路径仍需进入 IAM 并安全拒绝。不依赖 Nacos 传入的宽泛配置关闭系统权限防线。注意新增公开接口需要逐项登记精确方法和路径，不能用通配放行代替资源授权。
