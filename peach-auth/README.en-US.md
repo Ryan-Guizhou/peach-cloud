@@ -185,3 +185,26 @@ New roles receive a permanent global `ROLE_ID` and are bound to a physical tenan
 When a member leaves, is disabled/re-enabled, or rejoins by accepting a new invitation while retaining the original member ID, `TenantMemberLifecycleService` atomically soft-revokes **all** previously active `PEACH_MEMBER_ROLE_BINDING` entries, increments the member's `AUTH_VERSION`, and appends authorization audit evidence. Rejoining never resurrects prior role privileges: a tenant administrator must explicitly grant new bindings. Any failure rolls back the member status change and invalidation together.
 
 After a successful organization-tree move, `OrganizationHierarchyService` increments authorization versions for all tenant members in the same transaction. This prevents stale `ORG_TREE` scope caches from staying valid. #208 must still enforce membership status and version on every protected gateway request; the current implementation guards its own domain services but does not secure every cross-service entry point.
+
+
+## #209 Trusted cross-service IAM contract (in progress)
+
+`SaasIamFeignClient` in `peach-auth-openfeign-external` has a separate `contextId` from the legacy router/role client. Internal calls require **two independent credentials**: a Sa-Token Same-Token service credential added by the existing Feign interceptor and the actual end-user token obtained from the authenticated request, passed only in the `X-Peach-Subject-Token` private header. The Auth endpoints `POST /auth/external/iam/check-api` and `POST /auth/external/iam/context` explicitly enforce Same-Token again even if the global interceptor is misconfigured. Browser-supplied tenant/member/year values can never replace revalidation.
+
+The permission query uses `{"permissionCode":"GET:/api/documents"}`. Auth revalidates the token-specific SaaS context and current user, tenant, member, application and annual authorization versions from its database, then queries only active binding-level permissions of `RESOURCE_TYPE=API`. **Only exact METHOD:PATH codes are currently supported**; dynamic URI templates and automatic route normalization remain pending and missing definitions fail closed. `SaasIamPermissionDecisionVO.allowed=true` means the **API action** is permitted, never that a document, file, business row or field can be accessed. Downstream services must independently enforce physical-object row and field constraints in SQL. Feign failures/timeouts/circuit breakers yield `allowed=false`; a failed context query throws rather than fabricating a tenant identity.
+
+```mermaid
+sequenceDiagram
+    participant Consumer as Business service / Gateway
+    participant Auth as peach-auth trusted endpoint
+    participant Session as Sa-Token / Redis
+    participant DB as Auth database
+    Consumer->>Auth: Same-Token + end-user Token + API permission code
+    Auth->>Auth: Validate service Same-Token
+    Auth->>Session: Validate subject Token and scoped session
+    Auth->>DB: Validate user/tenant/member/app and auth versions
+    Auth->>DB: Read active same-binding API permissions for year
+    Auth-->>Consumer: allowed or denied (not object authorization)
+```
+
+Prerequisites: the consumer depends on `peach-auth-openfeign-external`, has a real authenticated user token and enables Feign and Same-Token; Auth, Redis and MySQL must be available. The endpoints are internal only; deployment must enforce private networking/TLS and keep them off public gateway routes. #208 must still connect `GatewayIamDecisionVerifier` to the contract, while #207/#211 must complete physical-object SQL authorization and end-to-end verification.

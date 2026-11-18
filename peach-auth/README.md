@@ -242,3 +242,26 @@ flowchart LR
 成员退出、管理员停用、重新启用以及再次接受邀请恢复**原成员 ID**时，`TenantMemberLifecycleService` 在同一事务逻辑撤销该成员的全部旧 `PEACH_MEMBER_ROLE_BINDING` 活动记录，递增 `AUTH_VERSION`，写入成员授权失效审计。重新入租户不会恢复历史角色；需要管理员重新明确授予。任何一步异常均回滚本次成员状态变更，不允许成员恢复后权限自动复活。
 
 机构树移动成功后，`OrganizationHierarchyService` 同事务递增租户内全部成员授权版本，避免旧 `ORG_TREE` 权限范围缓存继续生效。成员状态和角色范围仍需 #208 在所有网关请求期强制校验；本模块对其受控 Service 调用实施 Fail-Closed，不等同于所有跨服务接口已受保护。
+
+
+## #209 跨微服务受信 IAM 契约（开发中）
+
+新增 `SaasIamFeignClient`（`peach-auth-openfeign-external`），与旧路由/角色查询客户端保留不同 `contextId`。只允许带**两个独立凭证**的内部调用：一是由既有 Feign 拦截器提供的 Sa-Token Same-Token 服务凭证，二是从合法业务请求取得并经 `X-Peach-Subject-Token` 私有头传给 Auth 的最终用户 Token。认证服务接口 `POST /auth/external/iam/check-api` 和 `POST /auth/external/iam/context` 自身再次强制 Same-Token 校验，不能仅依赖外层可关闭的默认拦截器。不得通过浏览器提供的 `tenantRefId/memberRefId/year` 绕过令牌、成员版本和数据库状态校验。
+
+权限查询请求为 `{"permissionCode":"GET:/api/documents"}`；Auth 使用 Token 专属原子上下文与当前数据库校验成员状态、`VERSION/AUTH_VERSION`、用户、租户、应用、年度，然后只查有效、同绑定、`RESOURCE_TYPE=API` 的动作权限。**当前仅支持资源目录中精确的 METHOD:PATH 匹配**，动态 URL 模板/自动路由归一化尚未接入，缺失资源定义时默认拒绝。`SaasIamPermissionDecisionVO.allowed=true` 仅允许**API 动作**，不是文档、文件、业务对象或字段的授权。下游服务必须继续按实际物理对象权属在 SQL 前置检查行/字段级权限。Feign 故障、超时、熔断返回 `allowed=false`；上下文调用降级抛出安全异常，禁止返回伪造租户身份。
+
+```mermaid
+sequenceDiagram
+    participant Consumer as 业务服务 / Gateway
+    participant Auth as peach-auth 受信 API
+    participant Session as Sa-Token / Redis
+    participant DB as 认证数据库
+    Consumer->>Auth: Same-Token + 最终用户 Token + API 权限码
+    Auth->>Auth: 校验服务 Same-Token
+    Auth->>Session: 校验用户 Token 和专属租户快照
+    Auth->>DB: 校验用户/租户/成员/应用及授权版本
+    Auth->>DB: 查询当前年度的有效 API 角色绑定
+    Auth-->>Consumer: allowed 或拒绝（无数据对象授权）
+```
+
+使用前提：调用方引入 `peach-auth-openfeign-external`，持有真实用户 Sa-Token，启用 Same-Token 和 Feign 自动配置，且 Auth、Redis、MySQL 可访问。此接口不是匿名 API；部署应确保内部网络/TLS 与网关禁止将此路径对外暴露。仍待 #208 把网关的 `GatewayIamDecisionVerifier` 与此契约接通，#207/#211 完成实际对象 SQL 权限及端到端验证。

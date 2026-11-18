@@ -1,7 +1,9 @@
 package com.peach.auth.openfeign.autoconfigure;
 
 import com.peach.auth.openfeign.AuthFeignClient;
+import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.openfeign.fallback.AuthFeignClientFallbackFactory;
+import com.peach.auth.openfeign.fallback.SaasIamFeignClientFallbackFactory;
 import com.peach.openfeign.support.PeachFeignFallbackSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -27,13 +29,24 @@ import jakarta.annotation.PostConstruct;
 @Indexed
 @AutoConfiguration
 @ConditionalOnClass(FeignClient.class)
-@EnableFeignClients(clients = AuthFeignClient.class)
+@EnableFeignClients(clients = {AuthFeignClient.class, SaasIamFeignClient.class})
 public class PeachAuthFeignAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
     public AuthFeignClientFallbackFactory authFeignClientFallbackFactory(PeachFeignFallbackSupport fallbackSupport) {
         return new AuthFeignClientFallbackFactory(fallbackSupport);
+    }
+
+    /**
+     * SaaS IAM 客户端严格失败降级，避免缺失授权服务时误返回允许。
+     *
+     * @return 无状态安全降级工厂
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public SaasIamFeignClientFallbackFactory saasIamFeignClientFallbackFactory() {
+        return new SaasIamFeignClientFallbackFactory();
     }
 
     @PostConstruct
