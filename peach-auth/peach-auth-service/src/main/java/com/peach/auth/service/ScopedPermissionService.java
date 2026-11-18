@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * SaaS 成员授权事实源，默认拒绝且不从旧机构或角色推断权限。
  *
- * <p>权限查询严格由成员、租户、应用和限定。一次授权必须来自同一条角色绑定，
+ * <p>权限查询严格由成员、租户和应用限定。一次授权必须来自同一条角色绑定，
  * 禁止把不同角色绑定的动作与数据作用域分别求并集造成交叉越权。</p>
  *
  * @Author Mr Shu
@@ -67,8 +67,7 @@ public class ScopedPermissionService {
     public List<RoleScopeGrantVO> listGrantedBindings(String tenantRefId, String memberRefId,
                                                       String appRefId, String permissionCode) {
         if (!StringUtils.hasText(tenantRefId) || !StringUtils.hasText(memberRefId)
-                || !StringUtils.hasText(appRefId) || !StringUtils.hasText(permissionCode)
-                ) {
+                || !StringUtils.hasText(appRefId) || !StringUtils.hasText(permissionCode)) {
             return List.of();
         }
         List<RoleScopeGrantVO> results = scopedRoleGrantDao.selectGrants(

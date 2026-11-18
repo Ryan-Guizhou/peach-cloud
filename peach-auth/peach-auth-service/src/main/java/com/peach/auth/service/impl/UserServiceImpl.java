@@ -256,7 +256,6 @@ public class UserServiceImpl implements IUserService {
         LoginPermissionSnapshotVO snapshot = saasLoginSnapshotService.requireSnapshot(context);
         LoginInfo info = new LoginInfo();
         info.setUserId(user.getUserId());
-        info.setYear(context.year());
         info.setUserRefId(context.userRefId());
         info.setUserName(user.getUserName());
         info.setTenantId(selected.getTenantId());

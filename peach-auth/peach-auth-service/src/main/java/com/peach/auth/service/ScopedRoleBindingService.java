@@ -53,7 +53,7 @@ public class ScopedRoleBindingService {
     private final IamAuthorizationAuditDao auditDao;
 
     /**
-     * 将指定角色授予一个成员的独立应用//组织范围；相同有效绑定幂等返回。
+     * 将指定角色授予一个成员的独立应用及组织范围；相同有效绑定幂等返回。
      *
      * @param tenantRefId 租户物理 ID
      * @param operatorMemberRefId 操作人成员物理 ID，必须与 Token 一致

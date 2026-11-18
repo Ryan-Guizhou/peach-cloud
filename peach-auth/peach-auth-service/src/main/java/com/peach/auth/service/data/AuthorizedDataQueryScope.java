@@ -25,27 +25,25 @@ import java.util.Set;
  *
  * @param tenantRefId 可信租户物理主键
  * @param appRefId 可信应用物理主键
- * @param year 自然年度
  * @param clauses 按完整独立角色绑定形成的安全查询限制
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/18 10:20
  */
-public record AuthorizedDataQueryScope(String tenantRefId, String appRefId, int year,
+public record AuthorizedDataQueryScope(String tenantRefId, String appRefId,
                                        List<RowClause> clauses) {
 
     private static final int MAX_GRANTS = 128;
 
     public AuthorizedDataQueryScope {
-        if (!StringUtils.hasText(tenantRefId) || !StringUtils.hasText(appRefId)
-                || year < 1 || year > 9999 || CollectionUtils.isEmpty(clauses)) {
+        if (!StringUtils.hasText(tenantRefId) || !StringUtils.hasText(appRefId) || CollectionUtils.isEmpty(clauses)) {
             throw new SecurityException("Verified tenant query scope is required");
         }
         clauses = List.copyOf(clauses);
     }
 
     /**
-     * 由已在 DAO 中通过成员、角色、资源、年度、动作联合校验的证据构造授权计划。
+     * 由已在 DAO 中通过成员、角色、资源、、动作联合校验的证据构造授权计划。
      * 仅可在重新验证的当前 Token 上下文中调用；机构展开严格有界。
      *
      * @param context 重新验证的当前成员 Session
@@ -88,7 +86,7 @@ public record AuthorizedDataQueryScope(String tenantRefId, String appRefId, int 
                     intersection == null ? List.of() : List.copyOf(intersection), owner,
                     grant.getBindingRefId(), grant.getRoleRefId(), grant.getPermissionRefId()));
         }
-        return new AuthorizedDataQueryScope(context.tenantRefId(), context.appRefId(), context.year(), clauses);
+        return new AuthorizedDataQueryScope(context.tenantRefId(), context.appRefId(), clauses);
     }
 
     private static Set<String> organizations(String type, String anchor, boolean policy,

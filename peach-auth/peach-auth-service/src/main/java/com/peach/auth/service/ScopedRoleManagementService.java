@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 /**
  * SaaS 租户角色创建与角色权限差量同步的安全业务入口。
  *
- * <p>新角色属于物理租户、物理应用和单一。
+ * <p>新角色仅属于当前物理租户和应用。
  * 权限变更使用租户锁及角色锁串行化，必须与成员授权版本失效、
  * 操作审计同事务提交；禁止租户管理员修改平台 SYSTEM 角色，
  * 也不能授予自身未持有或标记为不可委派的权限。</p>
@@ -60,7 +60,7 @@ public class ScopedRoleManagementService {
     private final AuthBusinessIdGenerator businessIdGenerator;
 
     /**
-     * 创建一条只属于当前应用、和租户的新角色。
+     * 创建一条只属于当前应用和租户的新角色。
      *
      * @param tenantRefId 租户物理主键
      * @param operatorMemberRefId 已认证的管理员成员物理 ID
@@ -158,7 +158,7 @@ public class ScopedRoleManagementService {
                 oldVersion, operatorMemberRefId) != 1) {
             throw new IllegalStateException("Role authorization version conflict");
         }
-        // 角色被多个/应用成员引用时，保守撤销租户内所有旧授权快照。
+        // 角色被多个应用的成员引用时，保守撤销租户内所有旧授权快照。
         if (versionDao.incrementForTenant(tenantRefId) < 1) {
             throw new IllegalStateException("Tenant member authorization invalidation failed");
         }
