@@ -65,7 +65,8 @@ public class SaasOrganizationManagementService {
         String name = requireName(request.getOrgName());
         TenantSessionContext actor = requireAdmin();
         String tenantId = lockAndReauthorize(actor);
-        if (StringUtils.hasText(request.getParentOrgRefId())) {
+        if (request.getParentOrgRefId() != null) {
+            requireId(request.getParentOrgRefId());
             requireActiveOrganization(request.getParentOrgRefId(), tenantId);
         }
 

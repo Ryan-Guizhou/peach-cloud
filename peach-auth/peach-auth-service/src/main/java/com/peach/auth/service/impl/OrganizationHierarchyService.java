@@ -1,9 +1,11 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.dao.IamAuthorizationAuditDao;
 import com.peach.auth.dao.OrganizationHierarchyDao;
 import com.peach.auth.dao.MemberAuthVersionDao;
 import com.peach.auth.entity.OrganizationDO;
 import com.peach.auth.service.TenantMembershipPolicy;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.auth.service.support.IamPermissionCodes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
@@ -39,6 +41,8 @@ public class OrganizationHierarchyService {
 
     private final MemberAuthVersionDao authVersionDao;
 
+    private final IamAuthorizationAuditDao auditDao;
+
     /**
      * 将一个机构移动到新父节点，或移动为根节点。重复移动到同一父节点为幂等操作。
      *
@@ -72,6 +76,9 @@ public class OrganizationHierarchyService {
         policy.requireTenantPermission(
                 tenantRefId, operatorMemberRefId, IamPermissionCodes.TENANT_ORG_MANAGE);
         OrganizationDO organization = activeOrganization(organizationRefId, tenantBusinessId);
+        if ("DEFAULT".equals(organization.getOrgCode())) {
+            throw new SecurityException("Default organization root cannot be moved");
+        }
         Set<String> visited = new HashSet<>();
         visited.add(organizationRefId);
         String currentParentId = newParentOrgRefId;
@@ -101,6 +108,10 @@ public class OrganizationHierarchyService {
         // 树作用域发生变化必须失效现有成员授权缓存，避免旧祖先范围继续放行。
         if (authVersionDao.incrementForTenant(tenantRefId) < 1) {
             throw new IllegalStateException("Organization hierarchy authorization invalidation failed");
+        }
+        if (auditDao.append(UniqueIdFacade.nextId(), tenantRefId, null,
+                operatorMemberRefId, organizationRefId, "ORG_MOVE", version, version + 1L) != 1) {
+            throw new IllegalStateException("Organization movement audit append failed");
         }
     }
 

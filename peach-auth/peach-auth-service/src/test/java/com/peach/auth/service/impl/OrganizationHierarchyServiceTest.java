@@ -1,5 +1,6 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.dao.IamAuthorizationAuditDao;
 import com.peach.auth.dao.OrganizationHierarchyDao;
 import com.peach.auth.dao.MemberAuthVersionDao;
 import com.peach.auth.entity.OrganizationDO;
@@ -30,6 +31,7 @@ class OrganizationHierarchyServiceTest {
     private ObjectProvider<TenantMembershipPolicy> provider;
     private OrganizationHierarchyService service;
     private MemberAuthVersionDao memberAuthVersionDao;
+    private IamAuthorizationAuditDao auditDao;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -40,7 +42,10 @@ class OrganizationHierarchyServiceTest {
         when(dao.lockTenantAndFindBusinessId("tenant-ref")).thenReturn("TENANT_0001");
         memberAuthVersionDao = mock(MemberAuthVersionDao.class);
         when(memberAuthVersionDao.incrementForTenant("tenant-ref")).thenReturn(1);
-        service = new OrganizationHierarchyService(dao, provider, memberAuthVersionDao);
+        auditDao = mock(IamAuthorizationAuditDao.class);
+        when(auditDao.append(anyString(), anyString(), any(), anyString(),
+                anyString(), anyString(), anyLong(), anyLong())).thenReturn(1);
+        service = new OrganizationHierarchyService(dao, provider, memberAuthVersionDao, auditDao);
     }
 
     @Test
