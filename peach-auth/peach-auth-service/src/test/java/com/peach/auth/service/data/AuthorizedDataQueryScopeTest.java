@@ -24,10 +24,10 @@ import static org.mockito.Mockito.when;
 class AuthorizedDataQueryScopeTest {
 
     private final TenantSessionContext context =
-            new TenantSessionContext("user", "tenant", "member", "app", 2026, 1L, 2L);
+            new TenantSessionContext("user", "tenant", "member", "app", 1L, 2L);
 
     @Test
-    void shouldIntersectIndependentGrantsAndCarryTenantYear() {
+    void shouldIntersectIndependentGrantsAndCarryTenant() {
         OrganizationScopeDirectory directory = mock(OrganizationScopeDirectory.class);
         when(directory.descendants("tenant", "root")).thenReturn(Set.of("root", "left", "right"));
         when(directory.contains("tenant", "left", "left")).thenReturn(true);
@@ -41,7 +41,7 @@ class AuthorizedDataQueryScopeTest {
 
         assertThat(scope.tenantRefId()).isEqualTo("tenant");
         assertThat(scope.appRefId()).isEqualTo("app");
-        assertThat(scope.year()).isEqualTo(2026);
+        assertThat(scope.appRefId()).isEqualTo("app");
         assertThat(scope.clauses()).hasSize(2);
         assertThat(scope.clauses().get(0).allowedOrgRefIds()).containsExactly("left");
         assertThat(scope.clauses().get(0).requiredOwnerUserRefId()).isNull();
@@ -81,7 +81,7 @@ class AuthorizedDataQueryScopeTest {
         ScopedDataAuthorizationDao dao = mock(ScopedDataAuthorizationDao.class);
         OrganizationScopeDirectory directory = mock(OrganizationScopeDirectory.class);
         when(session.requireCurrent()).thenReturn(context);
-        when(dao.selectDataGrants("tenant", "member", "app", 2026, "DOC.READ"))
+        when(dao.selectDataGrants("tenant", "member", "app", "DOC.READ"))
                 .thenReturn(List.of(grant("b", "r", "p", "TENANT", null, "TENANT_ALL", null)));
         ScopedDataQueryScopeService service = new ScopedDataQueryScopeService(session, dao, directory);
         assertThat(service.requireScope("DOC.READ").clauses()).hasSize(1);
