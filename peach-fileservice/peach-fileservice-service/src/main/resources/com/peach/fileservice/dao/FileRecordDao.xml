@@ -12,7 +12,7 @@
 
     <sql id="allColumnAlias">
         FILE_ID as fileId, OBJECT_ID as objectId, TENANT_ID as tenantId, ORG_ID as orgId, BIZ_TYPE as bizType,
-            BIZ_ID as bizId,
+        BIZ_ID as bizId,
         BIZ_TAG as bizTag, FILE_NAME as fileName, DISPLAY_NAME as displayName, CONTENT_TYPE as contentType,
         FILE_SIZE as fileSize, FILE_EXT as fileExt, FILE_STATUS as fileStatus, DELETE_TIME as deleteTime,
         EXPIRE_DELETE_TIME as expireDeleteTime, REMARK as remark, IS_DELETE as isDelete, CREATED_TIME as createdTime,
@@ -23,23 +23,23 @@
         #{fileId,jdbcType=VARCHAR}, #{objectId,jdbcType=VARCHAR}, #{tenantId,jdbcType=VARCHAR}, #{orgId,jdbcType=VARCHAR},
         #{bizType,jdbcType=VARCHAR}, #{bizId,jdbcType=VARCHAR},
         #{bizTag,jdbcType=VARCHAR}, #{fileName,jdbcType=VARCHAR}, #{displayName,jdbcType=VARCHAR},
-            #{contentType,jdbcType=VARCHAR},
+        #{contentType,jdbcType=VARCHAR},
         #{fileSize,jdbcType=BIGINT}, #{fileExt,jdbcType=VARCHAR}, #{fileStatus,jdbcType=VARCHAR},
-            #{deleteTime,jdbcType=VARCHAR},
+        #{deleteTime,jdbcType=VARCHAR},
         #{expireDeleteTime,jdbcType=VARCHAR}, #{remark,jdbcType=VARCHAR}, #{isDelete,jdbcType=INTEGER},
-            #{createdTime,jdbcType=VARCHAR},
+        #{createdTime,jdbcType=VARCHAR},
         #{creatorId,jdbcType=VARCHAR}, #{modifyTime,jdbcType=VARCHAR}, #{modifierId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
         #{item.fileId,jdbcType=VARCHAR}, #{item.objectId,jdbcType=VARCHAR}, #{item.tenantId,jdbcType=VARCHAR},
-            #{item.orgId,jdbcType=VARCHAR}, #{item.bizType,jdbcType=VARCHAR}, #{item.bizId,jdbcType=VARCHAR},
+        #{item.orgId,jdbcType=VARCHAR}, #{item.bizType,jdbcType=VARCHAR}, #{item.bizId,jdbcType=VARCHAR},
         #{item.bizTag,jdbcType=VARCHAR}, #{item.fileName,jdbcType=VARCHAR}, #{item.displayName,jdbcType=VARCHAR},
-            #{item.contentType,jdbcType=VARCHAR},
+        #{item.contentType,jdbcType=VARCHAR},
         #{item.fileSize,jdbcType=BIGINT}, #{item.fileExt,jdbcType=VARCHAR}, #{item.fileStatus,jdbcType=VARCHAR},
-            #{item.deleteTime,jdbcType=VARCHAR},
+        #{item.deleteTime,jdbcType=VARCHAR},
         #{item.expireDeleteTime,jdbcType=VARCHAR}, #{item.remark,jdbcType=VARCHAR}, #{item.isDelete,jdbcType=INTEGER},
-            #{item.createdTime,jdbcType=VARCHAR},
+        #{item.createdTime,jdbcType=VARCHAR},
         #{item.creatorId,jdbcType=VARCHAR}, #{item.modifyTime,jdbcType=VARCHAR}, #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
@@ -266,10 +266,10 @@
             r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
             r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
             r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete,
-                r.CREATED_TIME as createdTime,
+            r.CREATED_TIME as createdTime,
             r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER_ID as modifierId,
             o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey,
-                o.STORAGE_STATUS as storageStatus
+            o.STORAGE_STATUS as storageStatus
         FROM PEACH_FILE_RECORD r
         LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
         <where>
@@ -306,10 +306,10 @@
             r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
             r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
             r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete,
-                r.CREATED_TIME as createdTime,
+            r.CREATED_TIME as createdTime,
             r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER_ID as modifierId,
             o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey,
-                o.STORAGE_STATUS as storageStatus
+            o.STORAGE_STATUS as storageStatus
         FROM PEACH_FILE_RECORD r
         LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
         WHERE r.FILE_ID = #{fileId,jdbcType=VARCHAR}
@@ -360,10 +360,10 @@
             r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
             r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
             r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete,
-                r.CREATED_TIME as createdTime,
+            r.CREATED_TIME as createdTime,
             r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER_ID as modifierId,
             o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey,
-                o.STORAGE_STATUS as storageStatus
+            o.STORAGE_STATUS as storageStatus
         FROM PEACH_FILE_RECORD r
         LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
         WHERE r.IS_DELETE = 1
