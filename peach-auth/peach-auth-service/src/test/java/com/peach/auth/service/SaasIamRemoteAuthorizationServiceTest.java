@@ -144,6 +144,6 @@ class SaasIamRemoteAuthorizationServiceTest {
         assertThat(result.getMemberVersion()).isEqualTo(2L);
         assertThat(result.getAuthVersion()).isEqualTo(7L);
         verify(grantDao, never()).selectApiGrants(
-                anyString(), anyString(), anyString(), anyInt(), anyString());
+                anyString(), anyString(), anyString(), anyInt(), anyString(), anyBoolean());
     }
 }
