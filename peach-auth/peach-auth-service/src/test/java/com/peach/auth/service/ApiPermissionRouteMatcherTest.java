@@ -40,6 +40,19 @@ class ApiPermissionRouteMatcherTest {
     }
 
     @Test
+    void shouldResolveNestedRoleAndPermissionPhysicalIdRoutes() {
+        String actual = "PUT:/api/auth/saas/roles/"
+                + "1234567890abcdef1234567890abcdef/permissions/"
+                + "abcdef1234567890abcdef1234567890/data-policies";
+        String template =
+                "PUT:/api/auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/data-policies";
+        assertThat(ApiPermissionRouteMatcher.resolve(actual, List.of(template)))
+                .isEqualTo(template);
+        assertThat(ApiPermissionRouteMatcher.resolve(
+                actual.replace("data-policies", "field-policies"), List.of(template))).isNull();
+    }
+
+    @Test
     void shouldDenyAmbiguousOrUnsafeCatalogPatterns() {
         assertThat(ApiPermissionRouteMatcher.resolve("GET:/api/files/preview", List.of(
                 "GET:/api/files/{id}", "GET:/api/{type}/preview"))).isNull();

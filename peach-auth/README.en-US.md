@@ -225,7 +225,7 @@ Auth now loads the **complete active API permission catalog visible to the verif
 
 #### Development API catalog for SaaS role management
 
-The development seed `sql/INIT.sql` now registers four `SaasRoleController` public-gateway route actions under `/api/auth/saas/roles` (create, update permission assignment, grant binding, revoke binding), and grants them to the sample 2026 tenant administrator. Exact routes and `{roleRefId}/{bindingRefId}` placeholders use the server-side trusted catalog matcher. **This is for development database initialization only**, not production provisioning. No internal `/auth/external/iam/**` endpoint receives a public-gateway permission. If the Nacos route uses a different public prefix from `/api/auth`, register the exact effective public paths in the trusted catalog instead of granting `**` wildcards.
+The development seed `sql/INIT.sql` now registers six SaaS role-management public-gateway route actions under `/api/auth/saas/roles` (create, update permission assignment, grant binding, revoke binding, and #207 data/field policy replacement), and grants them to the sample 2026 tenant administrator. Exact routes and `{roleRefId}/{bindingRefId}` placeholders use the server-side trusted catalog matcher. **This is for development database initialization only**, not production provisioning. No internal `/auth/external/iam/**` endpoint receives a public-gateway permission. If the Nacos route uses a different public prefix from `/api/auth`, register the exact effective public paths in the trusted catalog instead of granting `**` wildcards.
 
 #### Ownership constraint for platform APIs
 

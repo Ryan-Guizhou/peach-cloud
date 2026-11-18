@@ -79,6 +79,14 @@ VALUES
      1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
     (REPLACE(UUID(), '-', ''), 'PERM_INIT_API_ROLE_REVOKE', NULL, NULL,
      'DELETE:/api/auth/saas/roles/bindings/{bindingRefId}', 'SaaS 撤销角色 API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_API_DATA_POLICY', NULL, NULL,
+     'PUT:/api/auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/data-policies',
+     'SaaS 更新行级策略 API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_INIT_API_FIELD_POLICY', NULL, NULL,
+     'PUT:/api/auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/field-policies',
+     'SaaS 更新字段策略 API', 'API', 'SYSTEM',
      1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
 
 INSERT IGNORE INTO PEACH_ROLE
@@ -106,7 +114,9 @@ INNER JOIN PEACH_PERMISSION_DEFINITION P ON P.PERMISSION_CODE IN
      'POST:/api/auth/saas/roles',
      'PUT:/api/auth/saas/roles/{roleRefId}/permissions',
      'POST:/api/auth/saas/roles/bindings',
-     'DELETE:/api/auth/saas/roles/bindings/{bindingRefId}')
+     'DELETE:/api/auth/saas/roles/bindings/{bindingRefId}',
+     'PUT:/api/auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/data-policies',
+     'PUT:/api/auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/field-policies')
     AND P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL
 WHERE R.ROLE_ID = 'ROLE_INIT_TENANTADMIN' AND R.IS_DELETE = 0;
 

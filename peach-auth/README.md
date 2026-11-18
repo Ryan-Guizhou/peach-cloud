@@ -282,7 +282,7 @@ sequenceDiagram
 
 #### 开发环境角色管理 API 资源初始化
 
-`sql/INIT.sql` 的开发种子数据现在显式注册 `SaasRoleController` 四项 `/api/auth/saas/roles` 路由（创建、修改权限、授权绑定、撤销绑定），并给示例租户 2026 年管理员角色授予对应动作；精确路径与 `{roleRefId}/{bindingRefId}` 段变量都由服务器端可信目录匹配。**只适用于初始化开发数据库**，不自动填充生产目录，不给内部 `/auth/external/iam/**` 注册公网权限。若 Nacos 网关实际路由前缀与 `/api/auth` 不同，必须在受信目录登记相应的精确外部路径，不得使用 `**` 通配授权兜底。
+`sql/INIT.sql` 的开发种子数据现在显式注册 `SaasRoleController` 六项 `/api/auth/saas/roles` 路由（创建、修改权限、授权绑定、撤销绑定，以及 #207 的行级/字段级策略替换），并给示例租户 2026 年管理员角色授予对应动作；精确路径与 `{roleRefId}/{bindingRefId}` 段变量都由服务器端可信目录匹配。**只适用于初始化开发数据库**，不自动填充生产目录，不给内部 `/auth/external/iam/**` 注册公网权限。若 Nacos 网关实际路由前缀与 `/api/auth` 不同，必须在受信目录登记相应的精确外部路径，不得使用 `**` 通配授权兜底。
 
 #### 系统 API 权限归属约束
 
