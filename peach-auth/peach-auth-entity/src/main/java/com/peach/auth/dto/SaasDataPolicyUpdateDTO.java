@@ -12,7 +12,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 替换角色某个动作的全部行级策略，成员/租户/应用/年度从 Token 获取。
+ * 替换角色某个动作的全部行级策略，成员、租户及应用从 Token 获取。
  *
  * @Author Mr Shu
  * @Version 1.0.0

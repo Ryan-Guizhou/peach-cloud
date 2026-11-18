@@ -9,14 +9,14 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * 当前租户应用和年度的新角色创建参数，身份范围不接受浏览器指定。
+ * 当前租户及应用的新角色创建参数，身份范围不接受浏览器指定。
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/17 18:25
  */
 @Data
-@Schema(description = "租户年度角色创建")
+@Schema(description = "租户角色创建")
 public class SaasRoleCreateDTO implements Serializable {
 
     @Serial

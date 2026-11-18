@@ -9,9 +9,9 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * 授予当前租户、应用、年度内某成员的一条独立角色绑定。
+ * 授予当前租户和应用内某成员的一条独立角色绑定。
  *
- * <p>租户、应用、自然年度和操作人都从已认证 Token 获取，不能被客户端覆盖。</p>
+ * <p>租户、应用和操作人都从已认证 Token 获取，不能被客户端覆盖。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0

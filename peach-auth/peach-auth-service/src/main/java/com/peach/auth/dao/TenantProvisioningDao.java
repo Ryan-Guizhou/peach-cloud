@@ -35,7 +35,9 @@ public interface TenantProvisioningDao {
      */
     int countPlatformCreateGrant(@Param("tenantRefId") String tenantRefId,
                                  @Param("memberRefId") String memberRefId,
-                                 @Param("appRefId") String appRefId);
+                                 @Param("appRefId") String appRefId,
+                                 @Param("memberVersion") long memberVersion,
+                                 @Param("authVersion") long authVersion);
 
     int insertTenant(@Param("id") String id, @Param("tenantId") String tenantId,
                      @Param("tenantCode") String tenantCode, @Param("tenantName") String tenantName,

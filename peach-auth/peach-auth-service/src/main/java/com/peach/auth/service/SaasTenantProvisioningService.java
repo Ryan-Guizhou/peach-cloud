@@ -98,7 +98,8 @@ public class SaasTenantProvisioningService {
         TenantSessionContext operator = tenantSessionService.requireCurrent();
         if (!operator.tenantRefId().equals(provisioningDao.lockPlatformTenant(operator.tenantRefId()))
                 || provisioningDao.countPlatformCreateGrant(
-                operator.tenantRefId(), operator.memberRefId(), operator.appRefId()) != 1) {
+                operator.tenantRefId(), operator.memberRefId(), operator.appRefId(),
+                operator.memberVersion(), operator.authVersion()) < 1) {
             throw new SecurityException("Trusted platform tenant creation privilege is required");
         }
         if (tenantMemberDao.countEnabledUser(ownerUserRefId) != 1) {

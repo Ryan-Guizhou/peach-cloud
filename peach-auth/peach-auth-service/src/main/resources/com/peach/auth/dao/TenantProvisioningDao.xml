@@ -33,6 +33,7 @@
             AND P.RESOURCE_TYPE = 'API' AND P.STATUS = 'ACTIVE' AND P.IS_DELETE = 0
         WHERE M.ID = #{memberRefId} AND M.TENANT_REF_ID = #{tenantRefId}
           AND M.STATUS = 'ACTIVE' AND M.IS_DELETE = 0
+          AND M.VERSION = #{memberVersion} AND M.AUTH_VERSION = #{authVersion}
           AND P.PERMISSION_CODE = 'PLATFORM.TENANT.CREATE'
     </select>
 
