@@ -131,11 +131,11 @@ sequenceDiagram
 
 ### Tenant and application authorization isolation
 
-Authorization has no application dimension. Both legacy `FISCAL` and mistakenly introduced `AUTH_YEAR` are removed from schemas, login contracts, role bindings, trusted sessions, cache keys and management UI. Effective permissions are scoped by verified tenant, member, application, grant scope and membership/authorization versions. Historical year-bearing tokens are rejected and require a new login; no legacy authorization fallback is permitted. Real database and cross-service acceptance remain outstanding.
+Authorization has no calendar-year dimension. Both legacy `FISCAL` and mistakenly introduced `AUTH_YEAR` are removed from schemas, login contracts, role bindings, trusted sessions, cache keys and management UI. Effective permissions are scoped by verified tenant, member, application, grant scope and membership/authorization versions. Historical year-bearing tokens are rejected and require a new login; no legacy authorization fallback is permitted. Real database and cross-service acceptance remain outstanding.
 
 ## Independent SaaS RBAC grant source (#206 development branch; not merged)
 
-This increment introduces `PEACH_PERMISSION_DEFINITION`, `PEACH_ROLE_PERMISSION`, `PEACH_MEMBER_ROLE_BINDING` and `PEACH_IAM_AUTH_AUDIT`. The existing `PEACH_ROLE` schema gains physical tenant/app references, natural-year `AUTH_YEAR`, and version fields. Tenant members gain an `AUTH_VERSION` for revoking stale session grants. The new decision path joins **active membership, enabled tenant/app, active roles, active role permissions, and each individual binding**. Legacy `PEACH_AUTH_PARTY` and `PEACH_AUTH_FUNCTION` are not considered sources of new authorizations.
+This increment introduces `PEACH_PERMISSION_DEFINITION`, `PEACH_ROLE_PERMISSION`, `PEACH_MEMBER_ROLE_BINDING` and `PEACH_IAM_AUTH_AUDIT`. The existing `PEACH_ROLE` schema gains physical tenant/app references and version fields. Tenant members gain an `AUTH_VERSION` for revoking stale session grants. The new decision path joins **active membership, enabled tenant/app, active roles, active role permissions, and each individual binding**. Legacy `PEACH_AUTH_PARTY` and `PEACH_AUTH_FUNCTION` are not considered sources of new authorizations.
 
 ```mermaid
 flowchart LR
@@ -154,7 +154,7 @@ flowchart LR
 
 ### #206 Transactional role binding and security limits (current development branch)
 
-`ScopedRoleBindingService.grant/revoke` provides server-side transactions for separate member role bindings. The implementation verifies the Sa-Token principal's physical member, tenant, app, and natural year against the `TENANT.ROLE.MANAGE` permission, serializes administration writes with a tenant-row lock, then locks the target member to read its prior `AUTH_VERSION`. The binding write, version increment, and append-only `PEACH_IAM_AUTH_AUDIT` record are committed atomically. Version conflicts, audit errors, or unauthorized requests roll back. Revoked bindings are logically deleted and retained for history.
+`ScopedRoleBindingService.grant/revoke` provides server-side transactions for separate member role bindings. The implementation verifies the Sa-Token principal's physical member, tenant, app against the `TENANT.ROLE.MANAGE` permission, serializes administration writes with a tenant-row lock, then locks the target member to read its prior `AUTH_VERSION`. The binding write, version increment, and append-only `PEACH_IAM_AUTH_AUDIT` record are committed atomically. Version conflicts, audit errors, or unauthorized requests roll back. Revoked bindings are logically deleted and retained for history.
 
 A tenant administrator may only delegate permissions that are simultaneously delegable and already held by the administrator at full TENANT scope in the selected app. Cross-tenant roles, disabled users, foreign organization scopes, and unheld permissions are rejected. Self-assignment/revocation is currently prohibited to avoid escalation and lockout. Organization hierarchy changes require their own `TENANT.ORG.MANAGE` grant. Tenant-owned permission definitions may not impersonate reserved `TENANT.*` or `SYSTEM.*` codes.
 
@@ -174,7 +174,7 @@ Development `sql/INIT.sql` bootstraps three protected semantic permission codes 
 | `POST /auth/saas/roles/bindings` | Grant a single member role and scope | `{"targetMemberRefId":"<physical-member-id>","roleRefId":"<physical-role-id>","scopeType":"TENANT"}` |
 | `DELETE /auth/saas/roles/bindings/{bindingRefId}` | Soft-revoke an individual binding | No body |
 
-New roles receive a permanent global `ROLE_ID` and are bound to a physical tenant, app, and natural year. Only tenant-created TENANT roles may be edited; SYSTEM roles and non-delegable permissions are protected. Edits use tenant/role locks, version CAS, tenant-wide member `AUTH_VERSION` increments, and audit records in one transaction. Legacy `/auth/role`, `/auth/authParty`, `/auth/authFunction`, and `/auth/authResource` interfaces now reject access rather than bypassing the new authorization source.
+New roles receive a permanent global `ROLE_ID` and are bound to a physical tenant, app. Only tenant-created TENANT roles may be edited; SYSTEM roles and non-delegable permissions are protected. Edits use tenant/role locks, version CAS, tenant-wide member `AUTH_VERSION` increments, and audit records in one transaction. Legacy `/auth/role`, `/auth/authParty`, `/auth/authFunction`, and `/auth/authResource` interfaces now reject access rather than bypassing the new authorization source.
 
 **Remaining production acceptance:** Real MySQL 8.4 concurrency/audit/DDL/seed verification, protected platform administrator bootstrap, permission resource and row/field enforcement (#207), gateway (#208), cross-service/front-end (#209/#210), and schema migration/rollback (#211). This increment is not an end-to-end secured SaaS product.
 
@@ -214,9 +214,9 @@ flowchart LR
 
 ### SQL-level list prefiltering (#207, downstream integration pending)
 
-`ScopedDataQueryScopeService.requireScope(permissionCode)` now returns a trusted `AuthorizedDataQueryScope` using the revalidated Token's physical tenant, application and calendar year. Each independent grant is computed as **the same role binding scope intersected with that action's data-policy scope**. The organization tree is expanded with bounded MySQL recursion over active nodes; a cycle, more than 512 organizations, or no valid grant fails closed. A `RowClause` combines its organization set and optional SELF owner constraint with AND; multiple clauses are then joined with OR. The active field-definition uniqueness slot is released after soft deletion, while historical `FIELD_ID` values stay globally unique.
+`ScopedDataQueryScopeService.requireScope(permissionCode)` now returns a trusted `AuthorizedDataQueryScope` using the revalidated Token's physical tenant, application. Each independent grant is computed as **the same role binding scope intersected with that action's data-policy scope**. The organization tree is expanded with bounded MySQL recursion over active nodes; a cycle, more than 512 organizations, or no valid grant fails closed. A `RowClause` combines its organization set and optional SELF owner constraint with AND; multiple clauses are then joined with OR. The active field-definition uniqueness slot is released after soft deletion, while historical `FIELD_ID` values stay globally unique.
 
-Business MyBatis mappers **must** bind `tenantRefId`, `appRefId`, `year`, `IS_DELETE=0`, and all `clauses` inside SQL `WHERE` for `COUNT/SELECT/EXPORT/UPDATE/DELETE`. Within one clause, organization `IN (#{...})` and owner `= #{...}` use AND, while different clauses use OR; an unrestricted organization applies only to its own clause. Never interpolate `\$\{\}` SQL fragments, mix owner and organization restrictions from different bindings, or filter only after pagination. **Downstream business modules are not yet wired to this contract**. #209/#211 must complete integration and acceptance before list/export endpoints are considered secure.
+Business MyBatis mappers **must** bind `tenantRefId`, `appRefId`, `IS_DELETE=0`, and all `clauses` inside SQL `WHERE` for `COUNT/SELECT/EXPORT/UPDATE/DELETE`. Within one clause, organization `IN (#{...})` and owner `= #{...}` use AND, while different clauses use OR; an unrestricted organization applies only to its own clause. Never interpolate `\$\{\}` SQL fragments, mix owner and organization restrictions from different bindings, or filter only after pagination. **Downstream business modules are not yet wired to this contract**. #209/#211 must complete integration and acceptance before list/export endpoints are considered secure.
 
 ### Policy administration API and permission-revocation safety (#207, integration pending)
 
@@ -224,7 +224,7 @@ Business MyBatis mappers **must** bind `tenantRefId`, `appRefId`, `year`, `IS_DE
 
 `PUT /auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/field-policies` replaces all field rules for one action with `{"resourceCode":"DOC","policies":[{"fieldRefId":"<physical ID>","readEffect":"MASK","writeEffect":"DENY"}]}`. Maximum 128 rules. Each field must belong to an active, delegable server-side resource field directory; SYSTEM fields are non-delegable by default and require an explicitly trusted migration with `DELEGABLE=1`. Only the server-side directory determines masking strategies.
 
-Neither endpoint accepts a browser-supplied operator, tenant, application or year. The current Token must hold tenant-wide administration, the target action must be delegable and held by the operator; SYSTEM actions additionally require an effective `TENANT + TENANT_ALL` row grant for the operator. Without trusted bootstrap evidence access is denied. The transaction locks tenant and role, compares the policy set, retires old rows, creates new rows, increments role and tenant member `AUTH_VERSION` and appends an audit record; all steps roll back together on failure. **Revoking an action from a role also retires its data and field policies, preventing stale privilege resurrection when that action is later reassigned.**
+Neither endpoint accepts a browser-supplied operator, tenant, application. The current Token must hold tenant-wide administration, the target action must be delegable and held by the operator; SYSTEM actions additionally require an effective `TENANT + TENANT_ALL` row grant for the operator. Without trusted bootstrap evidence access is denied. The transaction locks tenant and role, compares the policy set, retires old rows, creates new rows, increments role and tenant member `AUTH_VERSION` and appends an audit record; all steps roll back together on failure. **Revoking an action from a role also retires its data and field policies, preventing stale privilege resurrection when that action is later reassigned.**
 
 This completes the protected policy-configuration path, not the downstream access-control rollout. Field directory bootstrapping/creation, real MySQL concurrency validation and business SQL `COUNT/SELECT/EXPORT/UPDATE` integration are still required before declaring every business endpoint safe.
 
@@ -244,7 +244,7 @@ sequenceDiagram
     Auth->>Auth: Validate service Same-Token
     Auth->>Session: Validate subject Token and scoped session
     Auth->>DB: Validate user/tenant/member/app and auth versions
-    Auth->>DB: Read active same-binding API permissions for year
+    Auth->>DB: Read active same-binding API permissions for app
     Auth-->>Consumer: allowed or denied (not object authorization)
 ```
 
@@ -286,7 +286,7 @@ The Auth-only filter also explicitly rejects percent-encoded paths, semicolon ma
 
 `POST /auth/switchContext` now shares Auth's dedicated `SaasAuthSessionFilter`: service Same-Token, actual end-user login, and fresh database member/authorization versions are required before a server-only per-request `VERIFIED_SAAS_AUTH_REQUEST` attribute permits skipping legacy user-level Redis Profile loading. `TenantSessionService.switchTenant()` independently verifies the selected target tenant, application. Gateway #208 exposes an exact **authenticated-only self-service** action, never an anonymous allowlist entry, so each business role need not be assigned switching permission. Logout revokes only the caller's current token.
 
-The login-bootstrap response `LoginInitVO` now exposes `year` instead of legacy `fiscal`. This is only a suggested application default for the login form; the authoritative year is supplied by `LoginDTO.year` and stored in the verified tenant-member token snapshot. The legacy FISCAL model is no longer exposed by this login-bootstrap contract.
+The login-bootstrap response and login/switch payloads no longer contain `year` or `fiscal`. Tenant and application are selected explicitly and independently verified by Auth.
 
 ### #225 Verified member login menus and permission snapshot
 

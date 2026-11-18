@@ -188,7 +188,7 @@ sequenceDiagram
 
 ### 租户与应用授权隔离
 
-认证和授权不再包含任何授权维度。历史 `FISCAL` 与后续误引入的 `AUTH_YEAR` 均从数据表、登录接口、角色绑定、可信 Token、缓存键和管理前端移除。所有授权只按可信租户、成员、应用、独立角色范围及成员/授权版本执行；旧会话必须重新登录，不存在兼容通道。实际数据库及跨服务验收仍需完成。
+认证和授权不再包含年度维度。历史 `FISCAL` 与后续误引入的 `AUTH_YEAR/year` 均从数据表、登录接口、角色绑定、可信 Token、缓存键和管理前端移除。所有授权只按可信租户、成员、应用、独立角色范围及成员/授权版本执行；旧年度会话必须重新登录，不存在旧授权兼容通道。实际数据库及跨服务验收仍需完成。
 
 ## SaaS RBAC 独立授权事实源（#206 开发分支，尚未合并）
 
@@ -343,7 +343,7 @@ sequenceDiagram
 
 `POST /auth/switchContext` 现在复用 Auth 专用 `SaasAuthSessionFilter`：先校验服务 Same-Token、真实用户登录态与当前数据库成员/授权版本，再设置只在本请求有效的 `VERIFIED_SAAS_AUTH_REQUEST` 内部属性，跳过旧用户 Profile Redis 缓存。实际目标租户和应用由 `TenantSessionService.switchTenant()` 再次验证。网关 #208 为此提供精确的“已登录自服务”入口，**不是匿名白名单**，不要求每个业务角色都具有切换上下文权限。注销接口仅针对本人当前 Token。
 
-认证登录初始化响应 `LoginInitVO` 的旧 `fiscal` 字段已改为 `year`（建议值，仅用于登录页默认显示）；真正的由 `LoginDTO.year` 和成员 Token 快照确定。不要再把旧 FISCAL 权限双模型同时下发。
+认证登录初始化响应 `LoginInitVO` 不再提供年度建议值；`LoginDTO`、`SwitchContextDTO` 和可信 Token 快照均不包含 `year` 或 `fiscal`。登录和切换只选择租户与应用。
 
 ### #225 当前成员的受信登录菜单与权限快照
 
