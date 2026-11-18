@@ -119,6 +119,7 @@ public class TenantSessionService {
         }
         Object stored = session.get(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT);
         if (!(stored instanceof Map<?, ?> values)
+                || values.containsKey("year") || values.containsKey("fiscal")
                 || !(values.get("userRefId") instanceof String userId)
                 || !(values.get("tenantRefId") instanceof String tenantId)
                 || !(values.get("memberRefId") instanceof String memberId)

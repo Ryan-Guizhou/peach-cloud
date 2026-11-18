@@ -70,7 +70,8 @@ public class GatewayTokenContextResolver {
             return Mono.empty();
         }
         Object stored = session.get(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT);
-        if (!(stored instanceof Map<?, ?> values)) {
+        if (!(stored instanceof Map<?, ?> values)
+                || values.containsKey("year") || values.containsKey("fiscal")) {
             return Mono.empty();
         }
         String user = requiredString(values.get("userRefId"));

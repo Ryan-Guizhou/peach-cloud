@@ -96,7 +96,7 @@ public class LoginPermissionCacheRefresher {
         writeCache(userVO, currentUserOrg, snapshot);
     }
 
-    public void writeCache(UserVO userVO, UserOrgVO currentUserOrg, Integer fiscal,
+    public void writeCache(UserVO userVO, UserOrgVO currentUserOrg,
                            LoginPermissionSnapshotVO snapshot) {
         String userId = userVO.getUserId();
         String profileKey = SatokenConstant.USER_PROFILE_CACHE_PREFIX + userId;
