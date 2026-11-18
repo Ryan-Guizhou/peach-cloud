@@ -113,6 +113,9 @@ class SaasTenantProvisioningServiceTest {
                 anyString(), anyString(), anyString())).thenReturn(1);
         when(memberDao.insert(any(TenantMemberDO.class))).thenReturn(1);
         when(provisioningDao.insertOwnerRole(any(RoleDO.class))).thenReturn(1);
+        when(provisioningDao.insertOwnerManagementDataPolicy(
+                anyString(), anyString(), anyString(), anyString(), anyString(),
+                anyString(), anyString())).thenReturn(1);
         when(roleDao.insertRolePermission(anyString(), anyString(), anyString(),
                 anyString(), anyString())).thenReturn(1);
         when(bindingDao.insert(any(MemberRoleBindingDO.class))).thenReturn(1);
@@ -130,6 +133,9 @@ class SaasTenantProvisioningServiceTest {
         verify(provisioningDao).insertOwnerRole(role.capture());
         assertThat(role.getValue().getRoleCode()).isEqualTo("ROLE_TENANT_OWNER");
         assertThat(role.getValue().getRoleType()).isEqualTo("SYSTEM");
+        verify(provisioningDao, times(3)).insertOwnerManagementDataPolicy(
+                anyString(), anyString(), anyString(), anyString(), anyString(),
+                anyString(), anyString());
         verify(roleDao, times(permissions.size())).insertRolePermission(
                 anyString(), anyString(), anyString(), anyString(), anyString());
         verify(versionDao).incrementForMember(created.getTenantRefId(), created.getOwnerMemberRefId());

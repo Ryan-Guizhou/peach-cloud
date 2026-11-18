@@ -76,6 +76,16 @@
          #{createdTime}, #{creatorId}, 0)
     </insert>
 
+    <insert id="insertOwnerManagementDataPolicy">
+        INSERT INTO PEACH_ROLE_DATA_POLICY
+        (ID, TENANT_REF_ID, APP_REF_ID, ROLE_REF_ID, PERMISSION_REF_ID,
+         DATA_SCOPE, ORG_REF_ID, STATUS, IS_DELETE, VERSION,
+         CREATED_TIME, CREATOR_ID)
+        VALUES
+        (#{id}, #{tenantRefId}, #{appRefId}, #{roleRefId}, #{permissionRefId},
+         'TENANT_ALL', NULL, 'ACTIVE', 0, 0, #{createdTime}, #{operatorRefId})
+    </insert>
+
     <select id="selectOwnerPermissions" resultType="com.peach.auth.vo.RolePermissionGrantVO">
         SELECT ID AS permissionRefId, PERMISSION_CODE AS permissionCode,
                OWNER_TYPE AS ownerType

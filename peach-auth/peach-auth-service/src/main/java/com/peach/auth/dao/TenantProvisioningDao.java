@@ -57,6 +57,17 @@ public interface TenantProvisioningDao {
     int insertOwnerRole(RoleDO role);
 
     /**
+     * 初始所有者对三个核心管理动作获得同一角色绑定的完整租户行级证据。
+     */
+    int insertOwnerManagementDataPolicy(@Param("id") String id,
+                                        @Param("tenantRefId") String tenantRefId,
+                                        @Param("appRefId") String appRefId,
+                                        @Param("roleRefId") String roleRefId,
+                                        @Param("permissionRefId") String permissionRefId,
+                                        @Param("operatorRefId") String operatorRefId,
+                                        @Param("createdTime") String createdTime);
+
+    /**
      * 仅查询系统定义、全局、有效且允许租户管理者委派的初始权限。
      */
     List<RolePermissionGrantVO> selectOwnerPermissions();

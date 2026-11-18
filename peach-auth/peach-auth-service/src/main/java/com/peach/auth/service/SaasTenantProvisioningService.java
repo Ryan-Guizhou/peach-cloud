@@ -54,6 +54,8 @@ public class SaasTenantProvisioningService {
     private static final int MAX_OWNER_PERMISSIONS = 256;
     private static final Set<String> RESERVED_CODES =
             Set.of("PLATFORM", "SYSTEM", "DEFAULT", "ROOT");
+    private static final Set<String> OWNER_MANAGEMENT_ACTIONS = Set.of(
+            "TENANT.MEMBER.MANAGE", "TENANT.ORG.MANAGE", "TENANT.ROLE.MANAGE");
     private static final Set<String> REQUIRED_OWNER_CODES = Set.of(
             "TENANT.MEMBER.MANAGE",
             "TENANT.ORG.MANAGE",
@@ -169,6 +171,12 @@ public class SaasTenantProvisioningService {
             verifyInsert(roleManagementDao.insertRolePermission(
                     UniqueIdFacade.nextId(), tenantRefId, role.getId(),
                     permission.getPermissionRefId(), actorRefId), "owner permission");
+            if (OWNER_MANAGEMENT_ACTIONS.contains(permission.getPermissionCode())) {
+                verifyInsert(provisioningDao.insertOwnerManagementDataPolicy(
+                        UniqueIdFacade.nextId(), tenantRefId, appRefId, role.getId(),
+                        permission.getPermissionRefId(), actorRefId, now),
+                        "owner management data scope");
+            }
         }
 
         MemberRoleBindingDO binding = new MemberRoleBindingDO();
