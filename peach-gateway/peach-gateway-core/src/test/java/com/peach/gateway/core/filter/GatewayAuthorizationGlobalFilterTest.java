@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 
+import java.util.ArrayList;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -63,9 +65,10 @@ class GatewayAuthorizationGlobalFilterTest {
     @Test
     void shouldRejectInternalIamPathEvenWhenPublicRuleIsAdded() {
         GatewaySaTokenProperties props = new GatewaySaTokenProperties();
-        props.getPublicEndpoints().add(
-                com.peach.gateway.core.security.GatewaySecurityEndpointRule.any(
-                        "/api/auth/external/iam/**"));
+        var rules = new ArrayList<>(props.getPublicEndpoints());
+        rules.add(com.peach.gateway.core.security.GatewaySecurityEndpointRule.any(
+                "/api/auth/external/iam/**"));
+        props.setPublicEndpoints(rules);
         GatewayAuthorizationGlobalFilter filter = filter(props);
         GatewayFilterChain chain = mock(GatewayFilterChain.class);
         MockServerWebExchange exchange = MockServerWebExchange.from(
