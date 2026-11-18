@@ -63,7 +63,10 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
      * @param modifyTime 修改时间
      * @param modifier 修改人
      */
-    void logicalDelete(@Param("fileId") String fileId, @Param("fileStatus") String fileStatus,
+    int logicalDelete(@Param("fileId") String fileId,
+                      @Param("tenantId") String tenantId,
+                      @Param("orgId") String orgId,
+                      @Param("fileStatus") String fileStatus,
                        @Param("deleteTime") String deleteTime, @Param("expireDeleteTime") String expireDeleteTime,
                        @Param("isDelete") Integer isDelete, @Param("modifyTime") String modifyTime,
                        @Param("modifier") String modifier);
@@ -79,7 +82,10 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
      * @param modifyTime 修改时间
      * @param modifier 修改人
      */
-    void restoreByFileId(@Param("fileId") String fileId, @Param("fileStatus") String fileStatus,
+    int restoreByFileId(@Param("fileId") String fileId,
+                        @Param("tenantId") String tenantId,
+                        @Param("orgId") String orgId,
+                        @Param("fileStatus") String fileStatus,
                          @Param("isDelete") Integer isDelete, @Param("modifyTime") String modifyTime,
                          @Param("modifier") String modifier);
 

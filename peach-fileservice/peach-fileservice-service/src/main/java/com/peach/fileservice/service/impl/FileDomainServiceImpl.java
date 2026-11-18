@@ -27,6 +27,7 @@ import com.peach.fileservice.entity.FileRecordDO;
 import com.peach.fileservice.entity.FileUploadSessionDO;
 import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.service.IFileDomainService;
+import com.peach.fileservice.service.support.FileRecordScopeGuard;
 import com.peach.fileservice.vo.FileDownloadUrlVO;
 import com.peach.fileservice.vo.FileDigestVO;
 import com.peach.fileservice.vo.FileExternalFileVO;
@@ -388,7 +389,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     @Override
     public FileRecordVO selectByFileId(String fileId) {
-        return fileRecordDao.selectDetailByFileId(fileId);
+        return requireRecord(fileId);
     }
 
     @Override
@@ -428,8 +429,11 @@ public class FileDomainServiceImpl implements IFileDomainService {
         }
         String now = DateUtil.nowTime();
         String expireTime = format(LocalDateTime.now(ZoneId.systemDefault()).plusDays(fileDomainProperties.getRetentionDays()));
-        fileRecordDao.logicalDelete(fileId, FileDomainConstant.FileStatus.DELETED, now, expireTime,
-                FileDomainConstant.LogicDelete.YES, now, currentOperator());
+        if (fileRecordDao.logicalDelete(fileId, recordVO.getTenantId(), recordVO.getOrgId(),
+                FileDomainConstant.FileStatus.DELETED, now, expireTime,
+                FileDomainConstant.LogicDelete.YES, now, currentOperator()) != 1) {
+            throw new SecurityException("Scoped file deletion conflicted");
+        }
         fileObjectDao.decreaseRefCount(recordVO.getObjectId(), 1, now, currentOperator());
         if (fileRecordDao.countActiveByObjectId(recordVO.getObjectId()) <= 0) {
             fileObjectDao.updateStorageStatus(recordVO.getObjectId(), FileDomainConstant.StorageStatus.DELETE_PENDING,
@@ -450,8 +454,11 @@ public class FileDomainServiceImpl implements IFileDomainService {
             throw new IllegalArgumentException("file restore expired");
         }
         String now = DateUtil.nowTime();
-        fileRecordDao.restoreByFileId(fileId, FileDomainConstant.FileStatus.ACTIVE,
-                FileDomainConstant.LogicDelete.NO, now, currentOperator());
+        if (fileRecordDao.restoreByFileId(fileId, recordVO.getTenantId(), recordVO.getOrgId(),
+                FileDomainConstant.FileStatus.ACTIVE,
+                FileDomainConstant.LogicDelete.NO, now, currentOperator()) != 1) {
+            throw new SecurityException("Scoped file restore conflicted");
+        }
         fileObjectDao.increaseRefCount(recordVO.getObjectId(), 1, now, currentOperator());
         fileObjectDao.updateStorageStatus(recordVO.getObjectId(), FileDomainConstant.StorageStatus.ACTIVE,
                 FileDomainConstant.LogicDelete.NO, now, currentOperator());
@@ -605,6 +612,10 @@ public class FileDomainServiceImpl implements IFileDomainService {
         if (recordVO == null) {
             throw new IllegalArgumentException("file not found");
         }
+        // 在返回文件详情、签名下载地址及变更记录前核验当前业务上下文，
+        // 不能只靠 pageList 的租户条件防止知道 fileId 的其他租户直接访问。
+        FileRecordScopeGuard.requireSameScope(
+                requireTenantId(), requireOrgId(), recordVO.getTenantId(), recordVO.getOrgId());
         return recordVO;
     }
 
@@ -622,6 +633,9 @@ public class FileDomainServiceImpl implements IFileDomainService {
         if (sessionVO == null) {
             throw new IllegalArgumentException("upload session not found");
         }
+        // 仅 ID 匹配不足以允许跨租户/机构的上传分片续传或提交。
+        FileRecordScopeGuard.requireSameScope(
+                requireTenantId(), requireOrgId(), sessionVO.getTenantId(), sessionVO.getOrgId());
         return sessionVO;
     }
 

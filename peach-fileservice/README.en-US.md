@@ -96,3 +96,11 @@ The Maven command verifies compilation and packaging only. Real provider upload,
 - Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
 - Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
 - Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+
+### #231 Legacy file-object and upload-session scope guard
+
+File pagination already populates a business tenant/organization scope through `AuditContext.requireTenantId/requireOrgId`, but direct `selectByFileId`, `requireRecord` and `requireSession` calls previously did not check row ownership. A guessed file or upload-session ID could therefore reach a different tenant's record. `FileRecordScopeGuard` now requires an exact match between the server's existing trusted business tenant/organization and the persisted `TENANT_ID/ORG_ID` **before returning details, generating presigned download URLs, deleting/restoring records, or using upload sessions**. The file detail SQL includes ownership fields; missing or mismatched scopes fail closed. Background cleanup remains a separate trusted system activity, never a fabricated user session. Focused tests cover cross-tenant, cross-organization and missing scopes.
+
+**Scope limitation:** This is a stopgap on existing business IDs, not completed SaaS physical `tenantRefId/memberRefId/appRefId` isolation, full field/row authorization, or replacement of the old Redis user profile. Full database migration and end-to-end object storage checks are tracked in #232 and #211; passing this code's CI is not production authorization acceptance.
+
+The `FileRecordDao.logicalDelete` and `restoreByFileId` MyBatis SQL `WHERE` clauses additionally bind the verified row's `TENANT_ID` and `ORG_ID` and require exactly one affected row. Concurrent scope or soft-delete status changes therefore fail rather than falling back to an update by `FILE_ID` alone.
