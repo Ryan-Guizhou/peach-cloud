@@ -185,3 +185,46 @@ New roles receive a permanent global `ROLE_ID` and are bound to a physical tenan
 When a member leaves, is disabled/re-enabled, or rejoins by accepting a new invitation while retaining the original member ID, `TenantMemberLifecycleService` atomically soft-revokes **all** previously active `PEACH_MEMBER_ROLE_BINDING` entries, increments the member's `AUTH_VERSION`, and appends authorization audit evidence. Rejoining never resurrects prior role privileges: a tenant administrator must explicitly grant new bindings. Any failure rolls back the member status change and invalidation together.
 
 After a successful organization-tree move, `OrganizationHierarchyService` increments authorization versions for all tenant members in the same transaction. This prevents stale `ORG_TREE` scope caches from staying valid. #208 must still enforce membership status and version on every protected gateway request; the current implementation guards its own domain services but does not secure every cross-service entry point.
+
+
+## #207 Row and field authorization (development branch, not accepted)
+
+The incremental backend introduces `PEACH_ROLE_DATA_POLICY`, `PEACH_FIELD_DEFINITION`, `PEACH_ROLE_FIELD_POLICY` and `ScopedDataAuthorizationService`. It currently supports decisions for **one authenticated database object** and field projection, not SQL-safe list pagination or integration across all services. **It is not approved for production business-data exposure.**
+
+```mermaid
+flowchart LR
+  Token["Sa-Token member/tenant/app/year/version"] --> Valid["Validate current Token Session"]
+  Valid --> Grants["Same role binding + action + data policy"]
+  Object["Server-side database object ownership"] --> Intersection["Binding scope ∩ data policy ∩ object"]
+  Grants --> Intersection
+  Intersection -->|At least one intact grant| Fields["Registered field catalog and matching grant rules"]
+  Fields --> Read["Read: DENY > MASK > ALLOW"]
+  Fields --> Write["Write: every field requires explicit ALLOW"]
+  Intersection -->|No match| Deny["Deny"]
+```
+
+| Capability | Current implementation | Safety limitation |
+| --- | --- | --- |
+| Row scopes | Independently intersect `SELF/ORG/ORG_TREE/TENANT_ALL` data policies with `TENANT/ORG/ORG_TREE` role binding scopes, then union intact grants | Object tenant, app, year and owner must come from real database rows, never client-supplied claims |
+| Organization trees | `DatabaseOrganizationScopeMatcher` traverses active ancestors within the verified tenant with cycle/depth rejection | Per-object only; lists and pagination need database predicates and indexes |
+| Field reads | `ALLOW/MASK/DENY`, exclude unregistered fields, FULL/PHONE/EMAIL masks | Explicit DENY overrides ALLOW; do not mix field rules from distinct grants |
+| Field writes | `requireWritableFields` rejects the entire update when any submitted field lacks explicit write permission | Business code must lock the real row and perform checks in the same transaction before UPDATE |
+| File and other objects | `requireObjectAction` validates actions without field projection | Cross-service Feign, storage objects, background tasks remain under #209 |
+
+**Security contract:** Callers provide server-defined actions and trusted row ownership. Never apply post-page filtering as a substitute for SQL-level security; it leaks counts and breaks pagination. Each grant must independently contain the action, role, year, binding scope, and data scope. A second grant cannot contribute missing pieces. Policy administration, field catalog bootstrapping, complete downstream integration, and real multi-tenant MySQL acceptance remain outstanding in #207.
+
+### SQL-level list prefiltering (#207, downstream integration pending)
+
+`ScopedDataQueryScopeService.requireScope(permissionCode)` now returns a trusted `AuthorizedDataQueryScope` using the revalidated Token's physical tenant, application and calendar year. Each independent grant is computed as **the same role binding scope intersected with that action's data-policy scope**. The organization tree is expanded with bounded MySQL recursion over active nodes; a cycle, more than 512 organizations, or no valid grant fails closed. A `RowClause` combines its organization set and optional SELF owner constraint with AND; multiple clauses are then joined with OR. The active field-definition uniqueness slot is released after soft deletion, while historical `FIELD_ID` values stay globally unique.
+
+Business MyBatis mappers **must** bind `tenantRefId`, `appRefId`, `year`, `IS_DELETE=0`, and all `clauses` inside SQL `WHERE` for `COUNT/SELECT/EXPORT/UPDATE/DELETE`. Within one clause, organization `IN (#{...})` and owner `= #{...}` use AND, while different clauses use OR; an unrestricted organization applies only to its own clause. Never interpolate `\$\{\}` SQL fragments, mix owner and organization restrictions from different bindings, or filter only after pagination. **Downstream business modules are not yet wired to this contract**. #209/#211 must complete integration and acceptance before list/export endpoints are considered secure.
+
+### Policy administration API and permission-revocation safety (#207, integration pending)
+
+`PUT /auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/data-policies` replaces all row policies for one action with `{"policies":[{"dataScope":"SELF","orgRefId":null}]}`. Valid scopes are `SELF/ORG/ORG_TREE/TENANT_ALL`; an organization anchor must be an active physical ID in the current tenant. An empty list revokes all policies, whereas null is rejected. Maximum 32 policies.
+
+`PUT /auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/field-policies` replaces all field rules for one action with `{"resourceCode":"DOC","policies":[{"fieldRefId":"<physical ID>","readEffect":"MASK","writeEffect":"DENY"}]}`. Maximum 128 rules. Each field must belong to an active, delegable server-side resource field directory; SYSTEM fields are non-delegable by default and require an explicitly trusted migration with `DELEGABLE=1`. Only the server-side directory determines masking strategies.
+
+Neither endpoint accepts a browser-supplied operator, tenant, application or year. The current Token must hold tenant-wide administration, the target action must be delegable and held by the operator; SYSTEM actions additionally require an effective `TENANT + TENANT_ALL` row grant for the operator. Without trusted bootstrap evidence access is denied. The transaction locks tenant and role, compares the policy set, retires old rows, creates new rows, increments role and tenant member `AUTH_VERSION` and appends an audit record; all steps roll back together on failure. **Revoking an action from a role also retires its data and field policies, preventing stale privilege resurrection when that action is later reassigned.**
+
+This completes the protected policy-configuration path, not the downstream access-control rollout. Field directory bootstrapping/creation, real MySQL concurrency validation and business SQL `COUNT/SELECT/EXPORT/UPDATE` integration are still required before declaring every business endpoint safe.

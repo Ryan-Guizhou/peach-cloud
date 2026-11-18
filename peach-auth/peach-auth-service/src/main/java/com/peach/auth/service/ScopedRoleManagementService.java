@@ -4,6 +4,7 @@ import com.peach.auth.dao.IamAuthorizationAuditDao;
 import com.peach.auth.dao.MemberAuthVersionDao;
 import com.peach.auth.dao.OrganizationHierarchyDao;
 import com.peach.auth.dao.ScopedRoleManagementDao;
+import com.peach.auth.dao.ScopedDataPolicyManagementDao;
 import com.peach.auth.entity.RoleDO;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
@@ -51,6 +52,7 @@ public class ScopedRoleManagementService {
     private final TenantMembershipPolicy membershipPolicy;
     private final TenantSessionService sessionService;
     private final ScopedRoleManagementDao roleManagementDao;
+    private final ScopedDataPolicyManagementDao dataPolicyManagementDao;
     private final OrganizationHierarchyDao hierarchyDao;
     private final ScopedPermissionService permissionService;
     private final MemberAuthVersionDao versionDao;
@@ -135,6 +137,13 @@ public class ScopedRoleManagementService {
             if (!requested.contains(permissionRefId)
                     && roleManagementDao.revokeRolePermission(tenantRefId, roleRefId, permissionRefId) != 1) {
                 throw new IllegalStateException("Role permission revocation conflicted");
+            }
+            if (!requested.contains(permissionRefId)) {
+                // 永久避免旧字段/数据策略在同一权限重新授权后复活。
+                dataPolicyManagementDao.retireDataPolicies(tenantRefId, context.appRefId(),
+                        roleRefId, permissionRefId);
+                dataPolicyManagementDao.retireFieldPolicies(tenantRefId, context.appRefId(),
+                        roleRefId, permissionRefId);
             }
         }
         for (String permissionRefId : requested) {

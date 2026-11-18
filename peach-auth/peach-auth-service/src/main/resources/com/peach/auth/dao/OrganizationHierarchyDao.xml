@@ -9,6 +9,12 @@
         FOR UPDATE
     </select>
 
+    <select id="findEnabledTenantBusinessId" resultType="java.lang.String">
+        SELECT TENANT_ID FROM PEACH_TENANT
+        WHERE ID = #{tenantRefId}
+          AND STATUS = 'ENABLE' AND IS_DELETE = 0
+    </select>
+
     <select id="selectInTenant" resultType="com.peach.auth.entity.OrganizationDO">
         SELECT ID AS id, ORG_ID AS orgId, TENANT_ID AS tenantId,
                PARENT_ORG_REF_ID AS parentOrgRefId,
@@ -17,6 +23,28 @@
         WHERE ID = #{id}
           AND TENANT_ID = #{tenantBusinessId}
           AND IS_DELETE = 0
+    </select>
+
+    <!-- 有界、同租户、只访问有效机构；超限由服务端拒绝整个授权计划。 -->
+    <select id="selectActiveDescendantIds" resultType="java.lang.String">
+        WITH RECURSIVE ORG_DESC (ID, DEPTH) AS (
+            SELECT ID, 1
+            FROM PEACH_ORGANIZATION
+            WHERE ID = #{ancestorOrgRefId}
+              AND TENANT_ID = #{tenantBusinessId}
+              AND STATUS = 'ENABLE' AND IS_DELETE = 0
+            UNION ALL
+            SELECT CHILD.ID, P.DEPTH + 1
+            FROM PEACH_ORGANIZATION CHILD
+            INNER JOIN ORG_DESC P ON CHILD.PARENT_ORG_REF_ID = P.ID
+            WHERE CHILD.TENANT_ID = #{tenantBusinessId}
+              AND CHILD.STATUS = 'ENABLE' AND CHILD.IS_DELETE = 0
+              AND P.DEPTH &lt; (#{maxDepth} + 1)
+        )
+        <!-- Look one level past the configured depth and return NULL to fail closed on truncation. -->
+        SELECT CASE WHEN EXISTS (SELECT 1 FROM ORG_DESC WHERE DEPTH > #{maxDepth})
+                    THEN NULL ELSE ID END
+        FROM ORG_DESC LIMIT #{limit}
     </select>
 
     <update id="updateParent">

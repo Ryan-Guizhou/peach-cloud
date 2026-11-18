@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.ScopedDataPolicyManagementDao">
+
+    <select id="selectDataPolicies" resultType="com.peach.auth.vo.RoleDataPolicyVO">
+        SELECT DATA_SCOPE AS dataScope, ORG_REF_ID AS orgRefId
+        FROM PEACH_ROLE_DATA_POLICY
+        WHERE TENANT_REF_ID = #{tenantRefId} AND APP_REF_ID = #{appRefId}
+          AND ROLE_REF_ID = #{roleRefId} AND PERMISSION_REF_ID = #{permissionRefId}
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+    </select>
+
+    <update id="retireDataPolicies">
+        UPDATE PEACH_ROLE_DATA_POLICY
+        SET STATUS = 'DISABLED', IS_DELETE = 1,
+            DELETED_AT = CURRENT_TIMESTAMP(3), VERSION = VERSION + 1
+        WHERE TENANT_REF_ID = #{tenantRefId} AND APP_REF_ID = #{appRefId}
+          AND ROLE_REF_ID = #{roleRefId} AND PERMISSION_REF_ID = #{permissionRefId}
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+    </update>
+
+    <insert id="insertDataPolicy">
+        INSERT INTO PEACH_ROLE_DATA_POLICY
+        (ID, TENANT_REF_ID, APP_REF_ID, ROLE_REF_ID, PERMISSION_REF_ID,
+         DATA_SCOPE, ORG_REF_ID, STATUS, IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+        VALUES
+        (#{id}, #{tenantRefId}, #{appRefId}, #{roleRefId}, #{permissionRefId},
+         #{dataScope}, #{orgRefId,jdbcType=VARCHAR}, 'ACTIVE', 0, 0,
+         DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), #{operatorRefId})
+    </insert>
+
+    <select id="selectFieldPolicies" resultType="com.peach.auth.vo.RoleFieldPolicyVO">
+        SELECT FIELD_REF_ID AS fieldRefId, READ_EFFECT AS readEffect,
+               WRITE_EFFECT AS writeEffect
+        FROM PEACH_ROLE_FIELD_POLICY
+        WHERE TENANT_REF_ID = #{tenantRefId} AND APP_REF_ID = #{appRefId}
+          AND ROLE_REF_ID = #{roleRefId} AND PERMISSION_REF_ID = #{permissionRefId}
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+    </select>
+
+    <select id="selectDelegableFieldRefs" resultType="java.lang.String">
+        SELECT F.ID
+        FROM PEACH_FIELD_DEFINITION F
+        WHERE F.ID IN
+        <foreach collection="fieldRefIds" item="fieldRefId" open="(" separator="," close=")">
+            #{fieldRefId}
+        </foreach>
+          AND F.RESOURCE_CODE = #{resourceCode}
+          AND F.STATUS = 'ACTIVE' AND F.IS_DELETE = 0
+          AND (F.APP_REF_ID IS NULL OR F.APP_REF_ID = #{appRefId})
+          AND ((F.OWNER_TYPE = 'TENANT' AND F.TENANT_REF_ID = #{tenantRefId})
+               OR (F.OWNER_TYPE = 'SYSTEM' AND F.TENANT_REF_ID IS NULL AND F.DELEGABLE = 1))
+    </select>
+
+    <update id="retireFieldPolicies">
+        UPDATE PEACH_ROLE_FIELD_POLICY
+        SET STATUS = 'DISABLED', IS_DELETE = 1,
+            DELETED_AT = CURRENT_TIMESTAMP(3), VERSION = VERSION + 1
+        WHERE TENANT_REF_ID = #{tenantRefId} AND APP_REF_ID = #{appRefId}
+          AND ROLE_REF_ID = #{roleRefId} AND PERMISSION_REF_ID = #{permissionRefId}
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+    </update>
+
+    <insert id="insertFieldPolicy">
+        INSERT INTO PEACH_ROLE_FIELD_POLICY
+        (ID, TENANT_REF_ID, APP_REF_ID, ROLE_REF_ID, PERMISSION_REF_ID,
+         FIELD_REF_ID, READ_EFFECT, WRITE_EFFECT, STATUS, IS_DELETE,
+         VERSION, CREATED_TIME, CREATOR_ID)
+        VALUES
+        (#{id}, #{tenantRefId}, #{appRefId}, #{roleRefId}, #{permissionRefId},
+         #{fieldRefId}, #{readEffect}, #{writeEffect}, 'ACTIVE', 0, 0,
+         DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), #{operatorRefId})
+    </insert>
+</mapper>

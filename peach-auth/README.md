@@ -242,3 +242,46 @@ flowchart LR
 成员退出、管理员停用、重新启用以及再次接受邀请恢复**原成员 ID**时，`TenantMemberLifecycleService` 在同一事务逻辑撤销该成员的全部旧 `PEACH_MEMBER_ROLE_BINDING` 活动记录，递增 `AUTH_VERSION`，写入成员授权失效审计。重新入租户不会恢复历史角色；需要管理员重新明确授予。任何一步异常均回滚本次成员状态变更，不允许成员恢复后权限自动复活。
 
 机构树移动成功后，`OrganizationHierarchyService` 同事务递增租户内全部成员授权版本，避免旧 `ORG_TREE` 权限范围缓存继续生效。成员状态和角色范围仍需 #208 在所有网关请求期强制校验；本模块对其受控 Service 调用实施 Fail-Closed，不等同于所有跨服务接口已受保护。
+
+
+## #207 数据行与字段级授权（开发分支，尚未验收）
+
+新增 `PEACH_ROLE_DATA_POLICY`、`PEACH_FIELD_DEFINITION`、`PEACH_ROLE_FIELD_POLICY` 和后端 `ScopedDataAuthorizationService`。本阶段仅支持单个真实数据库对象的安全授权判断与字段过滤；**尚未在列表分页和外部微服务接入，因此不可直接用于生产开放业务数据**。
+
+```mermaid
+flowchart LR
+  Token["Sa-Token 当前成员/租户/应用/年度/版本"] --> Valid["验证当前 Token Session"]
+  Valid --> Grants["同一条角色绑定 + 同一动作 + 数据策略"]
+  Object["服务端数据库对象权属"] --> Intersection["绑定作用域 ∩ 数据策略 ∩ 对象"]
+  Grants --> Intersection
+  Intersection -->|至少一条完整证据| Fields["字段目录与同绑定字段规则"]
+  Fields --> Read["读：DENY > MASK > ALLOW"]
+  Fields --> Write["写：每字段必须明确 ALLOW"]
+  Intersection -->|无匹配| Deny["拒绝"]
+```
+
+| 能力 | 当前实现 | 限制 |
+| --- | --- | --- |
+| 行级作用域 | `SELF/ORG/ORG_TREE/TENANT_ALL` 与 `TENANT/ORG/ORG_TREE` 绑定逐条求交，再取可用绑定并集 | 数据权属必须从真实数据库取回，不接收前端租户/年度/所有者自报值 |
+| 机构树 | `DatabaseOrganizationScopeMatcher` 使用有效租户内祖先链，检测循环及深度 | 只支持单对象判断；列表分页需 SQL 级谓词和数据库索引 |
+| 字段查看 | `ALLOW/MASK/DENY`，未注册字段不输出；支持 FULL/PHONE/EMAIL 脱敏 | 明确拒绝优先，字段策略不得与其他角色绑定拼接 |
+| 字段更新 | `requireWritableFields` 要求请求中的所有字段可写；任意未授权字段使整体请求失败 | 业务层必须在同一事务锁定对象，随后执行更新，不能仅依赖控制器校验 |
+| 文件等业务对象 | `requireObjectAction` 可校验不含字段的单对象动作 | 具体文件服务、Feign 身份传递、异步任务接入待 #209 完成 |
+
+**安全约束：** 调用方只传服务端可信动作和对象权属；不是把数据库记录读取后在分页结果里过滤。每条有效证据同时持有动作、角色、年度、机构和数据范围，绝不跨两条证据拼接出第三种授权。字段的显式拒绝优先于其他角色的允许。SQL 需要前置行级过滤才能正确处理总数/分页/批量导出，不能以本单对象判断代替。策略管理写入接口、字段目录引导、完整服务接入及实际 MySQL/多租户验收仍在 #207 进行中。
+
+### SQL 级列表预筛选（#207，待跨服务接入）
+
+`ScopedDataQueryScopeService.requireScope(permissionCode)` 已提供受信的 `AuthorizedDataQueryScope`：它以当前 Token 重新验证的物理租户、应用和自然年度为固定条件，逐条计算**同一角色绑定范围 ∩ 对应动作的数据策略范围**。组织树由真实 MySQL 有界递归读取，只保留有效机构；环路、超量（超过 512 个机构）和无授权均拒绝。每个 `RowClause` 中的组织集合与 SELF 所有者条件必须同时满足，再对多条 Clause 求并集。字段目录的有效唯一约束随逻辑删除释放，历史 `FIELD_ID` 仍永久唯一。
+
+业务 Mapper **必须**在 `COUNT/SELECT/EXPORT/UPDATE/DELETE` 的 SQL `WHERE` 中同时绑定 `tenantRefId`、`appRefId`、`year`、`IS_DELETE=0` 和 `clauses`：每条 Clause 内组织 `IN (#{...})` 与所有者 `= #{...}` 为 AND，不同 Clause 为 OR；组织不限仅对当前 Clause 有效。严禁 `\$\{\}` 拼入 SQL、跨绑定拼接 SELF 与机构或在分页后过滤。此契约**尚未被各业务模块统一接入**，端到端联调仍在 #209/#211；当前不能宣称分页/导出已安全开放。
+
+### 策略管理 API 与授权撤销安全边界（#207，需联调）
+
+`PUT /auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/data-policies` 使用 `{"policies":[{"dataScope":"SELF","orgRefId":null}]}` 替换该动作下所有行范围。`dataScope` 仅支持 `SELF/ORG/ORG_TREE/TENANT_ALL`，机构范围必须为当前租户有效机构的物理 ID。空数组撤销所有策略，禁止 null。上限 32 条。
+
+`PUT /auth/saas/roles/{roleRefId}/permissions/{permissionRefId}/field-policies` 使用 `{"resourceCode":"DOC","policies":[{"fieldRefId":"<物理ID>","readEffect":"MASK","writeEffect":"DENY"}]}` 替换该动作全部字段策略，上限 128 条。字段必须来自有效且可委派的服务端资源字段目录；系统字段默认不可委派，需在受信迁移中显式配置 `DELEGABLE=1`；脱敏规则仅由目录定义，不能由浏览器指定。
+
+两个端点均不接受操作人、租户、应用或年度参数；使用当前 Token 且要求当前租户年度的完整管理权限、可委派动作和操作者已持有该动作。对 SYSTEM 动作还要求操作者拥有 `TENANT + TENANT_ALL` 的完整行级证据；没有已受信引导的授权就保持拒绝。事务中锁定租户和租户角色，差量判断后逻辑撤销旧策略、插入新策略、递增角色版本及租户成员 `AUTH_VERSION` 并追加审计；任何失败整体回滚。**当角色撤销动作权限时同步逻辑撤销相应数据和字段策略，防止以后重新授予该权限时历史策略复活。**
+
+这只是权限策略配置闭环，后续仍须完成字段目录的安全引导/创建、真实 MySQL 并发验收及业务 SQL 侧 `COUNT/SELECT/EXPORT/UPDATE` 调用方改造，不能把本服务视作所有业务入口已经受保护。

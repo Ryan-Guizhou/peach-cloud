@@ -4,6 +4,7 @@ import com.peach.auth.dao.IamAuthorizationAuditDao;
 import com.peach.auth.dao.MemberAuthVersionDao;
 import com.peach.auth.dao.OrganizationHierarchyDao;
 import com.peach.auth.dao.ScopedRoleManagementDao;
+import com.peach.auth.dao.ScopedDataPolicyManagementDao;
 import com.peach.auth.entity.RoleDO;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
@@ -36,6 +37,7 @@ class ScopedRoleManagementServiceTest {
 
     private ScopedRoleManagementDao roleDao;
     private MemberAuthVersionDao versionDao;
+    private ScopedDataPolicyManagementDao dataPolicyManagementDao;
     private IamAuthorizationAuditDao auditDao;
     private ScopedPermissionService permissionService;
     private AuthBusinessIdGenerator businessIdGenerator;
@@ -46,6 +48,7 @@ class ScopedRoleManagementServiceTest {
         TenantMembershipPolicy policy = mock(TenantMembershipPolicy.class);
         TenantSessionService sessionService = mock(TenantSessionService.class);
         roleDao = mock(ScopedRoleManagementDao.class);
+        dataPolicyManagementDao = mock(ScopedDataPolicyManagementDao.class);
         versionDao = mock(MemberAuthVersionDao.class);
         auditDao = mock(IamAuthorizationAuditDao.class);
         permissionService = mock(ScopedPermissionService.class);
@@ -55,7 +58,7 @@ class ScopedRoleManagementServiceTest {
                 new TenantSessionContext("user", "tenant", "admin", "app", 2026, 1L, 2L));
         when(hierarchyDao.lockTenantAndFindBusinessId("tenant")).thenReturn("TENANT_BIZ");
         service = new ScopedRoleManagementService(policy, sessionService, roleDao,
-                hierarchyDao, permissionService, versionDao, auditDao, businessIdGenerator);
+                dataPolicyManagementDao, hierarchyDao, permissionService, versionDao, auditDao, businessIdGenerator);
     }
 
     @Test
@@ -138,6 +141,23 @@ class ScopedRoleManagementServiceTest {
         assertThatThrownBy(() -> service.replacePermissions(
                 "tenant", "admin", "another-year-role", List.of("permission")))
                 .isInstanceOf(SecurityException.class);
+    }
+
+    @Test
+    void shouldRetirePriorFieldAndDataPoliciesOnPermissionRevoke() {
+        when(roleDao.lockScopedRole("tenant", "app", 2026, "role"))
+                .thenReturn(role("TENANT"));
+        when(roleDao.selectActivePermissionRefs("tenant", "role")).thenReturn(List.of("old"));
+        when(roleDao.revokeRolePermission("tenant", "role", "old")).thenReturn(1);
+        when(roleDao.incrementRoleVersion("tenant", "app", 2026, "role", 3L, "admin"))
+                .thenReturn(1);
+        when(versionDao.incrementForTenant("tenant")).thenReturn(1);
+        when(auditDao.append(anyString(), eq("tenant"), eq("app"), eq(2026),
+                eq("admin"), eq("role"), eq("ROLE_PERMISSION_SYNC"), eq(3L), eq(4L)))
+                .thenReturn(1);
+        service.replacePermissions("tenant", "admin", "role", List.of());
+        verify(dataPolicyManagementDao).retireDataPolicies("tenant", "app", "role", "old");
+        verify(dataPolicyManagementDao).retireFieldPolicies("tenant", "app", "role", "old");
     }
 
     private static RoleDO role(String roleType) {
