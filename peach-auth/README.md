@@ -270,3 +270,8 @@ sequenceDiagram
 #### Sa-Token 过滤器适配
 
 认证服务 `application.yml` 仅将上述两个 POST 内部 IAM 端点注册在 `peach.satoken.user-context.service-token-only-endpoints`，默认空。匹配路径不再尝试读取旧 `USER_PROFILE` 的 `userId/tenantId/orgId/fiscal`，而是先在 Servlet Filter 中**强制校验 Same-Token**，再由 Controller 二次检查 Same-Token 并以独立用户 Token 查询数据库。该配置不是公开白名单，不允许没有可信服务令牌的请求直达 Controller。其他普通路由仍沿用既有用户上下文机制，必须在后续迁移中持续替换旧租户字段，不能把这一专用通道泛化为跳过认证。
+
+
+#### 内部目录最小批量查询（#209）
+
+新增 `POST /auth/external/iam/directory/members` 与 `POST /auth/external/iam/directory/organizations`，请求只包含物理主键数组 `{"ids":["<物理主键>"]}`（最多 100 条、禁止重复）。调用仍强制 Same-Token 与当前真实用户 Token，并分别要求成员完整租户管理权限 `TENANT.MEMBER.MANAGE`、机构完整租户管理权限 `TENANT.ORG.MANAGE`。MyBatis 直接按已验证 `tenantRefId` 查询并联结有效租户/用户或有效租户/机构，跨租户及删除/停用对象不返回；结果仅包含成员 `id/memberId/userRefId`、机构 `id/orgId/parentOrgRefId`，无姓名、邮箱、密码摘要。Feign 依赖失败时抛出安全异常，不把服务异常伪装成“结果为空”。调用者不应将结果用于代替 #207 行级授权。

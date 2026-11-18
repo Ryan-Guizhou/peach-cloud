@@ -2,9 +2,14 @@ package com.peach.auth.openfeign;
 
 import com.peach.auth.constant.SaasIamHeaders;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
+import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.openfeign.fallback.SaasIamFeignClientFallbackFactory;
 import com.peach.auth.vo.SaasIamContextVO;
 import com.peach.auth.vo.SaasIamPermissionDecisionVO;
+import com.peach.auth.vo.SaasIamMemberBriefVO;
+import com.peach.auth.vo.SaasIamOrganizationBriefVO;
+
+import java.util.List;
 import com.peach.common.constant.ServiceContextConstant;
 import com.peach.common.constant.ServiceNameConstant;
 import com.peach.common.constant.ServicePathConstant;
@@ -53,4 +58,19 @@ public interface SaasIamFeignClient {
      */
     @PostMapping("/iam/context")
     SaasIamContextVO requireContext(@RequestHeader(SaasIamHeaders.SUBJECT_TOKEN) String subjectToken);
+    /**
+     * 受保护的当前租户成员最小目录查询。
+     */
+    @PostMapping("/iam/directory/members")
+    List<SaasIamMemberBriefVO> members(
+            @RequestHeader(SaasIamHeaders.SUBJECT_TOKEN) String subjectToken,
+            @RequestBody SaasIamBatchLookupDTO request);
+
+    /**
+     * 受保护的当前租户机构最小目录查询。
+     */
+    @PostMapping("/iam/directory/organizations")
+    List<SaasIamOrganizationBriefVO> organizations(
+            @RequestHeader(SaasIamHeaders.SUBJECT_TOKEN) String subjectToken,
+            @RequestBody SaasIamBatchLookupDTO request);
 }

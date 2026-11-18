@@ -213,3 +213,8 @@ Prerequisites: the consumer depends on `peach-auth-openfeign-external`, has a re
 #### Sa-Token filter adapter
 
 The Auth service `application.yml` explicitly registers only the two internal IAM POST endpoints under `peach.satoken.user-context.service-token-only-endpoints` (empty by default). These endpoints do not load legacy `USER_PROFILE` data using `userId/tenantId/orgId/fiscal`. Instead, the Servlet filter **requires Same-Token** before reaching the controller, where Same-Token is checked again and the end-user token is revalidated against the database. This is not a public allowlist: missing or invalid trusted service credentials are rejected. Other application routes continue their existing user-context flow until migrated and must not use this narrowly scoped mechanism as a general authentication bypass.
+
+
+#### Minimal trusted directory batch lookups (#209)
+
+Two internal APIs, `POST /auth/external/iam/directory/members` and `POST /auth/external/iam/directory/organizations`, accept only `{"ids":["<physical ID>"]}` (at most 100 non-duplicate IDs). Each enforces both Same-Token service authentication and a valid end-user token, plus full-tenant `TENANT.MEMBER.MANAGE` or `TENANT.ORG.MANAGE` permission respectively. MyBatis queries are scoped to the verified physical `tenantRefId`, active tenant/user/member or tenant/organization records, and return no disabled, deleted or cross-tenant records. The response exposes only `id/memberId/userRefId` for members and `id/orgId/parentOrgRefId` for organizations, without names, contacts or password hashes. Feign fallback throws on directory failures, never turning service unavailability into a seemingly valid empty directory. These results do not replace #207 row-level authorization.

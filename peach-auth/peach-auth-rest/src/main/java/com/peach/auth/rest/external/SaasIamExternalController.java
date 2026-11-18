@@ -3,9 +3,15 @@ package com.peach.auth.rest.external;
 import cn.dev33.satoken.same.SaSameUtil;
 import com.peach.auth.constant.SaasIamHeaders;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
+import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.service.SaasIamRemoteAuthorizationService;
+import com.peach.auth.service.SaasIamRemoteDirectoryService;
 import com.peach.auth.vo.SaasIamContextVO;
 import com.peach.auth.vo.SaasIamPermissionDecisionVO;
+import com.peach.auth.vo.SaasIamMemberBriefVO;
+import com.peach.auth.vo.SaasIamOrganizationBriefVO;
+
+import java.util.List;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,6 +42,8 @@ public class SaasIamExternalController {
 
     private final SaasIamRemoteAuthorizationService remoteAuthorizationService;
 
+    private final SaasIamRemoteDirectoryService directoryService;
+
     /**
      * 实时判断 API 入口动作权限，不代替业务对象行/字段判定。
      */
@@ -63,6 +71,35 @@ public class SaasIamExternalController {
         try {
             SaSameUtil.checkCurrentRequestToken();
             return ResponseEntity.ok(remoteAuthorizationService.requireContext(subjectToken));
+        } catch (RuntimeException exception) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+    /**
+     * 只对具有当前租户成员管理权限的受信服务返回最小成员目录。
+     */
+    @PostMapping("/directory/members")
+    public ResponseEntity<List<SaasIamMemberBriefVO>> members(
+            @RequestHeader(value = SaasIamHeaders.SUBJECT_TOKEN, required = false) String subjectToken,
+            @Valid @RequestBody SaasIamBatchLookupDTO request) {
+        try {
+            SaSameUtil.checkCurrentRequestToken();
+            return ResponseEntity.ok(directoryService.members(subjectToken, request.getIds()));
+        } catch (RuntimeException exception) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    /**
+     * 只对具有完整租户机构管理权限的受信服务返回最小机构目录。
+     */
+    @PostMapping("/directory/organizations")
+    public ResponseEntity<List<SaasIamOrganizationBriefVO>> organizations(
+            @RequestHeader(value = SaasIamHeaders.SUBJECT_TOKEN, required = false) String subjectToken,
+            @Valid @RequestBody SaasIamBatchLookupDTO request) {
+        try {
+            SaSameUtil.checkCurrentRequestToken();
+            return ResponseEntity.ok(directoryService.organizations(subjectToken, request.getIds()));
         } catch (RuntimeException exception) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }

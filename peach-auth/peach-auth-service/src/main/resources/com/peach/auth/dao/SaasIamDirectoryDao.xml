@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.SaasIamDirectoryDao">
+
+    <select id="selectActiveMembers" resultType="com.peach.auth.vo.SaasIamMemberBriefVO">
+        SELECT M.ID AS id, M.MEMBER_ID AS memberId, M.USER_REF_ID AS userRefId
+        FROM PEACH_TENANT_MEMBER M
+        INNER JOIN PEACH_TENANT T ON T.ID = M.TENANT_REF_ID
+            AND T.STATUS = 'ENABLE' AND T.IS_DELETE = 0
+        INNER JOIN PEACH_USER U ON U.ID = M.USER_REF_ID
+            AND U.STATUS IN ('1','ENABLE') AND U.IS_DELETE = 0
+        WHERE M.TENANT_REF_ID = #{tenantRefId}
+          AND M.IS_DELETE = 0 AND M.STATUS = 'ACTIVE'
+          AND M.ID IN
+          <foreach collection="ids" item="id" open="(" separator="," close=")">
+              #{id}
+          </foreach>
+    </select>
+
+    <select id="selectActiveOrganizations" resultType="com.peach.auth.vo.SaasIamOrganizationBriefVO">
+        SELECT O.ID AS id, O.ORG_ID AS orgId, O.PARENT_ORG_REF_ID AS parentOrgRefId
+        FROM PEACH_ORGANIZATION O
+        INNER JOIN PEACH_TENANT T ON T.TENANT_ID = O.TENANT_ID
+            AND T.ID = #{tenantRefId}
+            AND T.STATUS = 'ENABLE' AND T.IS_DELETE = 0
+        WHERE O.IS_DELETE = 0 AND O.STATUS = 'ENABLE'
+          AND O.ID IN
+          <foreach collection="ids" item="id" open="(" separator="," close=")">
+              #{id}
+          </foreach>
+    </select>
+</mapper>
