@@ -47,6 +47,10 @@ class SaasIamRemoteAuthorizationServiceTest {
         when(grantDao.selectApiGrants("tenant", "member", "app", 2026,
                 "GET:/api/documents")).thenReturn(List.of(new RoleScopeGrantVO()));
         assertThat(service.hasApiPermission("real-user-token", "GET:/api/documents")).isTrue();
+        assertThat(service.decideApiPermission("real-user-token", "GET:/api/documents")
+                .getContext().getMemberRefId()).isEqualTo("member");
+        assertThat(service.decideApiPermission("real-user-token", "GET:/api/documents")
+                .getContext().getAuthVersion()).isEqualTo(7L);
         verify(grantDao).selectApiGrants("tenant", "member", "app", 2026,
                 "GET:/api/documents");
     }

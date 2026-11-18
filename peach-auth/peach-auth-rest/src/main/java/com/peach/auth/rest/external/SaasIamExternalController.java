@@ -45,9 +45,8 @@ public class SaasIamExternalController {
             @Valid @RequestBody SaasIamPermissionCheckDTO request) {
         try {
             SaSameUtil.checkCurrentRequestToken();
-            boolean permitted = remoteAuthorizationService.hasApiPermission(
-                    subjectToken, request.getPermissionCode());
-            return ResponseEntity.ok(new SaasIamPermissionDecisionVO(permitted));
+            return ResponseEntity.ok(remoteAuthorizationService.decideApiPermission(
+                    subjectToken, request.getPermissionCode()));
         } catch (RuntimeException exception) {
             // 绝不返回鉴权失败详情、用户 Token 或权限目录存在性。
             return ResponseEntity.status(HttpStatus.FORBIDDEN)

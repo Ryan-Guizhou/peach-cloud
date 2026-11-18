@@ -1,6 +1,5 @@
 package com.peach.auth.vo;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -19,11 +18,21 @@ import java.io.Serializable;
  */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class SaasIamPermissionDecisionVO implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 202611180902L;
 
     private boolean allowed;
+
+    private SaasIamContextVO context;
+
+    public SaasIamPermissionDecisionVO(boolean allowed) {
+        this.allowed = allowed;
+    }
+
+    public SaasIamPermissionDecisionVO(boolean allowed, SaasIamContextVO context) {
+        this.allowed = allowed;
+        this.context = allowed ? context : null;
+    }
 }

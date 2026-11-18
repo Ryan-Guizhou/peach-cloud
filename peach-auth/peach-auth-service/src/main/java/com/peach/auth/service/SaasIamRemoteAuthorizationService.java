@@ -4,6 +4,7 @@ import com.peach.auth.dao.ScopedRoleGrantDao;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
 import com.peach.auth.vo.RoleScopeGrantVO;
+import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import com.peach.auth.vo.SaasIamContextVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -50,15 +51,36 @@ public class SaasIamRemoteAuthorizationService {
      */
     @Transactional(readOnly = true)
     public boolean hasApiPermission(String subjectToken, String permissionCode) {
+        return decideApiPermission(subjectToken, permissionCode).isAllowed();
+    }
+
+    /**
+     * 单次事务返回动作授权与同一次 Token 重验证的物理成员上下文。
+     *
+     * <p>只有 allowed=true 才附加上下文，调用方必须比对最初 Token 快照，
+     * 以避免租户切换与旧版本身份在不同服务之间交叉使用。</p>
+     *
+     * @param subjectToken 当前最终用户 Token
+     * @param permissionCode 精确 API 动作码
+     * @return 不带 Token 的最小权限证据
+     */
+    @Transactional(readOnly = true)
+    public SaasIamPermissionDecisionVO decideApiPermission(String subjectToken, String permissionCode) {
         TenantSessionContext context = sessionService.requireForToken(subjectToken);
         String code = normalizedCode(permissionCode);
         if (code == null) {
-            return false;
+            return new SaasIamPermissionDecisionVO(false);
         }
         List<RoleScopeGrantVO> grants = grantDao.selectApiGrants(
                 context.tenantRefId(), context.memberRefId(), context.appRefId(),
                 context.year(), code);
-        return !CollectionUtils.isEmpty(grants);
+        if (CollectionUtils.isEmpty(grants)) {
+            return new SaasIamPermissionDecisionVO(false);
+        }
+        return new SaasIamPermissionDecisionVO(true,
+                new SaasIamContextVO(context.userRefId(), context.tenantRefId(),
+                        context.memberRefId(), context.appRefId(), context.year(),
+                        context.memberVersion(), context.authVersion()));
     }
 
     /**
