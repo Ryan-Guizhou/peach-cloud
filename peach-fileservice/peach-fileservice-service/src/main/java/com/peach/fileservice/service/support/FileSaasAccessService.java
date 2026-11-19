@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import com.peach.common.unique.UniqueIdFacade;
@@ -77,6 +78,44 @@ public class FileSaasAccessService {
     }
 
     /**
+     * 接收 Auth 的同绑定角色行范围，必须与当前在线用户物理身份一致。
+     * 仅在固定 MyBatis WHERE 使用参数化组织 ID，不拼接 SQL 字符串。
+     *
+     * @param scope 当前动作实时核验的物理用户
+     * @return 可授权文件列表的物理行范围
+     */
+    public SaasIamFileQueryScopeVO requireListQueryScope(FileSaasScope scope) {
+        if (scope == null) {
+            throw new SecurityException("Trusted file list identity required");
+        }
+        String token = requireSubjectToken();
+        try {
+            SaasIamFileQueryScopeVO plan = iamFeignClient.fileQueryScope(token);
+            if (plan == null || !scope.tenantRefId().equals(plan.getTenantRefId())
+                    || !scope.appRefId().equals(plan.getAppRefId())
+                    || !scope.userRefId().equals(plan.getUserRefId())
+                    || (!plan.isTenantAll() && !plan.isSelf()
+                    && (plan.getOrganizationRefIds() == null || plan.getOrganizationRefIds().isEmpty())
+                    && (plan.getSelfOrganizationRefIds() == null || plan.getSelfOrganizationRefIds().isEmpty()))) {
+                throw new SecurityException("Trusted file SQL scope missing or mismatched");
+            }
+            validateOrganizationScope(plan.getOrganizationRefIds());
+            validateOrganizationScope(plan.getSelfOrganizationRefIds());
+            return plan;
+        } catch (RuntimeException exception) {
+            log.warn("Trusted file query scope rejected");
+            throw new SecurityException("File query scope authorization required");
+        }
+    }
+
+    private static void validateOrganizationScope(List<String> organizations) {
+        if (organizations == null || organizations.size() > 512
+                || organizations.stream().anyMatch(id -> !StringUtils.hasText(id) || id.length() > 32)) {
+            throw new SecurityException("Invalid bounded file organization scope");
+        }
+    }
+
+    /**
      * 对真实文件记录再次执行 Auth 数据范围校验，动作与范围必须来自同一有效绑定。
      *
      * @param action FILE.READ / FILE.DOWNLOAD / FILE.DELETE / FILE.RESTORE
@@ -87,7 +126,7 @@ public class FileSaasAccessService {
         if (record == null || !StringUtils.hasText(record.getId())
                 || !scope.tenantRefId().equals(record.getTenantRefId())
                 || !scope.appRefId().equals(record.getAppRefId())
-                || !scope.userRefId().equals(record.getOwnerUserRefId())) {
+                || !StringUtils.hasText(record.getOwnerUserRefId())) {
             throw new SecurityException("File ownership is unavailable or mismatched");
         }
         requireDataDecision(action, scope, record.getId(), record.getOrgRefId(),
@@ -217,7 +256,7 @@ public class FileSaasAccessService {
                 || record.getId().length() > 32 || !StringUtils.hasText(record.getFileId())
                 || !scope.tenantRefId().equals(record.getTenantRefId())
                 || !scope.appRefId().equals(record.getAppRefId())
-                || !scope.userRefId().equals(record.getOwnerUserRefId())) {
+                || !StringUtils.hasText(record.getOwnerUserRefId())) {
             throw new SecurityException("File field scope is invalid");
         }
         SaasIamFileObjectCheckDTO object = new SaasIamFileObjectCheckDTO();
