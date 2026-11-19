@@ -388,6 +388,31 @@
         LIMIT 1
     </select>
 
+    <update id="updateScopedMetadata">
+        UPDATE PEACH_FILE_RECORD
+        <set>
+            <if test="changes.containsKey('displayName')">
+                DISPLAY_NAME = #{changes.displayName,jdbcType=VARCHAR},
+            </if>
+            <if test="changes.containsKey('bizTag')">
+                BIZ_TAG = #{changes.bizTag,jdbcType=VARCHAR},
+            </if>
+            <if test="changes.containsKey('remark')">
+                REMARK = #{changes.remark,jdbcType=VARCHAR},
+            </if>
+            MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
+        </set>
+        WHERE FILE_ID = #{fileId,jdbcType=VARCHAR}
+          AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+          AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+          AND OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+          AND ((ORG_REF_ID IS NULL AND #{orgRefId,jdbcType=VARCHAR} IS NULL)
+              OR ORG_REF_ID = #{orgRefId,jdbcType=VARCHAR})
+          AND IS_DELETE = 0
+          AND FILE_STATUS = 'ACTIVE'
+    </update>
+
     <select id="countActiveByObjectId" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_FILE_RECORD

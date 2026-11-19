@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Indexed;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 文件记录数据访问。
@@ -45,6 +46,20 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
     FileRecordVO selectScopedDetail(@Param("fileId") String fileId,
                                     @Param("tenantRefId") String tenantRefId,
                                     @Param("appRefId") String appRefId);
+
+    /**
+     * 固定 SQL 只修改白名单列，并再次限制物理租户、应用、对象所有者和机构状态。
+     *
+     * @return 影响行数，必须恰好等于 1
+     */
+    int updateScopedMetadata(@Param("fileId") String fileId,
+                             @Param("tenantRefId") String tenantRefId,
+                             @Param("appRefId") String appRefId,
+                             @Param("ownerUserRefId") String ownerUserRefId,
+                             @Param("orgRefId") String orgRefId,
+                             @Param("changes") Map<String, String> changes,
+                             @Param("modifyTime") String modifyTime,
+                             @Param("modifierId") String modifierId);
 
     /**
      * 统计指定文件对象的活跃引用数量

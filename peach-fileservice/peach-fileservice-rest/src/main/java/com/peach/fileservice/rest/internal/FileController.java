@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import com.peach.common.response.Response;
 import com.peach.fileservice.common.FileApiConstant;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
+import com.peach.fileservice.dto.FileMetadataPatchDTO;
 import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.service.IFileDomainService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -115,6 +117,17 @@ public class FileController {
     @Operation(summary = "分页查询业务文件")
     public Response pageList(@RequestBody FileQueryQO qo) {
         return Response.success(fileDomainService.pageList(qo));
+    }
+
+    /**
+     * 文件元数据部分更新，只允许同一角色绑定的行权限与字段 WRITE=ALLOW 均满足。
+     */
+    @PatchMapping("/{fileId}/metadata")
+    @Operation(summary = "更新文件元数据")
+    public Response updateMetadata(@NotBlank @PathVariable String fileId,
+                                   @Valid @RequestBody FileMetadataPatchDTO patch) {
+        fileDomainService.updateMetadata(fileId, patch);
+        return Response.success();
     }
 
     /**

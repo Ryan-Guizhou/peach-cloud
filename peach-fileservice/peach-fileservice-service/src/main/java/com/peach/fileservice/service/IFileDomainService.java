@@ -6,6 +6,7 @@ import com.peach.fileservice.dto.FileMultipartInitDTO;
 import com.peach.fileservice.dto.FileMultipartPartUrlDTO;
 import com.peach.fileservice.dto.FileExternalUploadDTO;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
+import com.peach.fileservice.dto.FileMetadataPatchDTO;
 import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.vo.FileDownloadUrlVO;
 import com.peach.fileservice.vo.FileDigestVO;
@@ -140,6 +141,14 @@ public interface IFileDomainService {
      * @return 文件记录分页结果
      */
     PageResult<FileRecordVO> pageList(FileQueryQO qo);
+
+    /**
+     * 根据同一角色绑定中的 FILE.EDIT 行/字段权限更新受控文件元数据。
+     *
+     * @param fileId 永久文件业务 ID
+     * @param patch 服务端仅接受固定白名单字段的修改请求
+     */
+    void updateMetadata(String fileId, FileMetadataPatchDTO patch);
 
     /**
      * 逻辑删除文件

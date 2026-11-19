@@ -21,6 +21,7 @@ import com.peach.fileservice.dto.FileMultipartInitDTO;
 import com.peach.fileservice.dto.FileMultipartPartUrlDTO;
 import com.peach.fileservice.dto.FileExternalUploadDTO;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
+import com.peach.fileservice.dto.FileMetadataPatchDTO;
 import com.peach.fileservice.entity.FileObjectDO;
 import com.peach.fileservice.entity.FileRecordDO;
 import com.peach.fileservice.entity.FileUploadSessionDO;
@@ -481,6 +482,26 @@ public class FileDomainServiceImpl implements IFileDomainService {
         return new PageResult<>(visible, pageInfo.getTotal());
     }
 
+
+    /**
+     * 在行/字段授权通过后，仅用固定 SQL 更新经白名单允许的文件元数据列。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateMetadata(String fileId, FileMetadataPatchDTO patch) {
+        FileSaasScope scope = saasAccessService.requireForFile("PATCH", fileId, "/metadata");
+        FileRecordVO record = requireActiveRecord(fileId);
+        if (patch == null || patch.getChanges() == null) {
+            throw new IllegalArgumentException("File metadata patch is required");
+        }
+        saasAccessService.requireWritableFileFields(scope, record, patch.getChanges());
+        int affected = fileRecordDao.updateScopedMetadata(fileId, scope.tenantRefId(),
+                scope.appRefId(), record.getOwnerUserRefId(), record.getOrgRefId(),
+                patch.getChanges(), DateUtil.nowTime(), currentOperator());
+        if (affected != 1) {
+            throw new SecurityException("Scoped file metadata update conflicted");
+        }
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
