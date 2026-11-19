@@ -35,6 +35,12 @@
         </dependency>
 
 
+        <!-- 受信跨服务 SaaS 身份与动作授权 -->
+        <dependency>
+            <groupId>com.peach</groupId>
+            <artifactId>peach-auth-openfeign-external</artifactId>
+        </dependency>
+
         <!-- Sa-Token 权限认证 -->
         <dependency>
             <groupId>com.peach</groupId>
