@@ -3,6 +3,7 @@ package com.peach.auth.service;
 import com.peach.auth.dao.IamAuthorizationAuditDao;
 import com.peach.auth.dao.MemberAuthVersionDao;
 import com.peach.auth.dao.OrganizationHierarchyDao;
+import com.peach.auth.dao.ScopedRoleBindingDao;
 import com.peach.auth.dao.ScopedRoleManagementDao;
 import com.peach.auth.dao.ScopedDataPolicyManagementDao;
 import com.peach.auth.entity.RoleDO;
@@ -52,6 +53,7 @@ public class ScopedRoleManagementService {
     private final TenantMembershipPolicy membershipPolicy;
     private final TenantSessionService sessionService;
     private final ScopedRoleManagementDao roleManagementDao;
+    private final ScopedRoleBindingDao bindingDao;
     private final ScopedDataPolicyManagementDao dataPolicyManagementDao;
     private final OrganizationHierarchyDao hierarchyDao;
     private final ScopedPermissionService permissionService;
@@ -151,6 +153,11 @@ public class ScopedRoleManagementService {
                     roleRefId, permissionRefId, operatorMemberRefId) != 1) {
                 throw new IllegalStateException("Role permission grant conflicted");
             }
+        }
+        // 同一租户行锁下复核变更后的真实授权事实，防止撤销最后一条
+        // TENANT.MEMBER.MANAGE 权限使整个租户失去有效管理者。
+        if (bindingDao.countActiveTenantAdministrators(tenantRefId) < 1) {
+            throw new SecurityException("Tenant must retain at least one active administrator");
         }
         long oldVersion = role.getVersion();
         if (oldVersion == Long.MAX_VALUE || roleManagementDao.incrementRoleVersion(

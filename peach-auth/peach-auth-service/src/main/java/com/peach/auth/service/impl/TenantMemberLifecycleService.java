@@ -1,5 +1,6 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.dao.OrganizationHierarchyDao;
 import com.peach.auth.dao.TenantInvitationDao;
 import com.peach.auth.dao.ScopedRoleBindingDao;
 import com.peach.auth.dao.MemberAuthVersionDao;
@@ -56,6 +57,8 @@ public class TenantMemberLifecycleService {
     private final MemberAuthVersionDao authVersionDao;
 
     private final IamAuthorizationAuditDao authorizationAuditDao;
+
+    private final OrganizationHierarchyDao hierarchyDao;
 
     /**
      * 供已完成全局账号验证的内部登录流程查询允许选择的租户成员。
@@ -197,6 +200,11 @@ public class TenantMemberLifecycleService {
                 verifiedUserRefId, requireVersion(invitation.getVersion())) != 1) {
             throw new IllegalStateException("Invitation was concurrently modified");
         }
+        // 邀请与成员状态在同一事务提交，新增关系保留完整加入审计。
+        if (authorizationAuditDao.append(UniqueIdFacade.nextId(), tenantRefId, null,
+                memberRefId, memberRefId, "MEMBER_JOIN", 0L, 0L) != 1) {
+            throw new IllegalStateException("Membership acceptance audit append failed");
+        }
         log.info("Tenant invitation accepted, tenantRefId={}, memberRefId={}", tenantRefId, memberRefId);
         return memberRefId;
     }
@@ -212,6 +220,7 @@ public class TenantMemberLifecycleService {
         requireId(tenantRefId, "tenantRefId");
         requireId(verifiedUserRefId, "verifiedUserRefId");
         policy().requireCurrentUser(verifiedUserRefId);
+        lockTenantForProtectedMembershipChange(tenantRefId);
         TenantMemberDO member = tenantMemberDao.selectByUserAndTenant(tenantRefId, verifiedUserRefId);
         if (member == null) {
             throw new IllegalStateException("No tenant membership exists");
@@ -222,6 +231,7 @@ public class TenantMemberLifecycleService {
         if (!isActive(member)) {
             throw new IllegalStateException("Unable to leave tenant membership");
         }
+        assertNotProtectedOwner(tenantRefId, member.getId());
         invalidateMemberAuthorizations(tenantRefId, member, member.getId(), "MEMBER_LEFT");
         if (tenantMemberDao.softDelete(member.getId(), tenantRefId,
                 requireVersion(member.getVersion()), verifiedUserRefId) != 1) {
@@ -283,6 +293,8 @@ public class TenantMemberLifecycleService {
         requireId(operatorMemberRefId, "operatorMemberRefId");
         requireId(targetMemberRefId, "targetMemberRefId");
         policy().requireTenantAdministrator(tenantRefId, operatorMemberRefId);
+        lockTenantForProtectedMembershipChange(tenantRefId);
+        policy().requireTenantAdministrator(tenantRefId, operatorMemberRefId);
         if (operatorMemberRefId.equals(targetMemberRefId)) {
             throw new IllegalStateException("Administrator cannot change own membership status");
         }
@@ -299,6 +311,7 @@ public class TenantMemberLifecycleService {
         if (!STATUS_ACTIVE.equals(member.getStatus()) && !STATUS_DISABLED.equals(member.getStatus())) {
             throw new IllegalStateException("Unsupported membership state transition");
         }
+        assertNotProtectedOwner(tenantRefId, targetMemberRefId);
         String operation = STATUS_DISABLED.equals(requestedStatus) ? "MEMBER_DISABLED" : "MEMBER_ENABLED";
         invalidateMemberAuthorizations(tenantRefId, member, operatorMemberRefId, operation);
         if (tenantMemberDao.changeStatus(targetMemberRefId, tenantRefId, requestedStatus,
@@ -319,6 +332,22 @@ public class TenantMemberLifecycleService {
      * @param operatorMemberRefId 当前操作人的成员物理主键
      * @param operation 状态变更语义码
      */
+    private void lockTenantForProtectedMembershipChange(String tenantRefId) {
+        if (!StringUtils.hasText(hierarchyDao.lockTenantAndFindBusinessId(tenantRefId))) {
+            throw new SecurityException("Tenant membership target is unavailable");
+        }
+    }
+
+    private void assertNotProtectedOwner(String tenantRefId, String memberRefId) {
+        if (scopedRoleBindingDao.countProtectedOwnerMember(tenantRefId, memberRefId) > 0) {
+            throw new SecurityException("Tenant owner cannot be disabled or leave without protected transfer");
+        }
+        if (scopedRoleBindingDao.countAdministratorMember(tenantRefId, memberRefId) > 0
+                && scopedRoleBindingDao.countActiveTenantAdministrators(tenantRefId) <= 1) {
+            throw new SecurityException("Last tenant administrator cannot leave or be disabled");
+        }
+    }
+
     private void invalidateMemberAuthorizations(String tenantRefId, TenantMemberDO member,
                                                 String operatorMemberRefId, String operation) {
         long priorVersion = requireVersion(member.getAuthVersion());

@@ -89,6 +89,51 @@ VALUES
      'SaaS 更新字段策略 API', 'API', 'SYSTEM',
      1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
 
+-- #219: 开发环境 SaaS 平台开通与租户成员、机构管理接口目录。
+-- 平台创建码和 API 都不可委派；此处只建定义，禁止自动授予示例管理员。
+-- 生产应使用受控迁移部署目录，PLATFORM 控制租户与角色需离线预置。
+INSERT IGNORE INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID,
+     PERMISSION_CODE, PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE,
+     DELEGABLE, STATUS, IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_PLATFORM_CREATE', NULL, NULL,
+     'PLATFORM.TENANT.CREATE', '平台可信租户创建权限', 'API', 'SYSTEM',
+     0, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_PLATFORM_API', NULL, NULL,
+     'POST:/api/auth/saas/platform/tenants', '平台创建租户API', 'API', 'SYSTEM',
+     0, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_MEMBER_INVITE', NULL, NULL,
+     'POST:/api/auth/saas/tenants/members/invitations', '邀请成员API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_MEMBER_CANCEL', NULL, NULL,
+     'DELETE:/api/auth/saas/tenants/members/invitations/{invitationRefId}', '取消邀请API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_MEMBER_ACCEPT', NULL, NULL,
+     'POST:/api/auth/saas/tenants/members/invitations/{invitationRefId}/accept', '接受邀请API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_MEMBER_DISABLE', NULL, NULL,
+     'POST:/api/auth/saas/tenants/members/{memberRefId}/disable', '停用成员API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_MEMBER_ENABLE', NULL, NULL,
+     'POST:/api/auth/saas/tenants/members/{memberRefId}/enable', '恢复成员API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_MEMBER_LEAVE', NULL, NULL,
+     'POST:/api/auth/saas/tenants/members/leave', '当前成员退出API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_ORG_CREATE', NULL, NULL,
+     'POST:/api/auth/saas/tenants/organizations', '创建机构API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_ORG_UPDATE', NULL, NULL,
+     'PUT:/api/auth/saas/tenants/organizations/{orgRefId}', '更新机构API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_ORG_DELETE', NULL, NULL,
+     'DELETE:/api/auth/saas/tenants/organizations/{orgRefId}', '删除机构API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_ORG_MOVE', NULL, NULL,
+     'POST:/api/auth/saas/tenants/organizations/{orgRefId}/move', '移动机构API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
+
 INSERT IGNORE INTO PEACH_ROLE
     (ID, ROLE_ID, TENANT_ID, ORG_ID, ROLE_CODE,
      ROLE_NAME, ROLE_DESC, ROLE_SCOPE, ROLE_TYPE,

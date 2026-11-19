@@ -39,6 +39,16 @@
         WHERE ID = #{id} AND TENANT_REF_ID = #{tenantRefId}
     </select>
 
+    <select id="findTenantForVerifiedInvitee" resultType="java.lang.String">
+        SELECT I.TENANT_REF_ID
+        FROM PEACH_TENANT_INVITATION I
+        INNER JOIN PEACH_TENANT T ON T.ID = I.TENANT_REF_ID
+            AND T.STATUS = 'ENABLE' AND T.IS_DELETE = 0
+        WHERE I.ID = #{id} AND I.INVITEE_USER_REF_ID = #{userRefId}
+          AND I.STATUS = 'PENDING' AND I.IS_DELETE = 0
+          AND I.EXPIRES_AT > CURRENT_TIMESTAMP(3)
+    </select>
+
     <select id="selectPending" resultType="com.peach.auth.entity.TenantInvitationDO">
         SELECT <include refid="invitationColumns" />
         FROM PEACH_TENANT_INVITATION

@@ -3,6 +3,7 @@ package com.peach.auth.service;
 import com.peach.auth.dao.IamAuthorizationAuditDao;
 import com.peach.auth.dao.MemberAuthVersionDao;
 import com.peach.auth.dao.OrganizationHierarchyDao;
+import com.peach.auth.dao.ScopedRoleBindingDao;
 import com.peach.auth.dao.ScopedRoleManagementDao;
 import com.peach.auth.dao.ScopedDataPolicyManagementDao;
 import com.peach.auth.entity.RoleDO;
@@ -36,6 +37,7 @@ import static org.mockito.Mockito.when;
 class ScopedRoleManagementServiceTest {
 
     private ScopedRoleManagementDao roleDao;
+    private ScopedRoleBindingDao bindingDao;
     private MemberAuthVersionDao versionDao;
     private ScopedDataPolicyManagementDao dataPolicyManagementDao;
     private IamAuthorizationAuditDao auditDao;
@@ -48,6 +50,8 @@ class ScopedRoleManagementServiceTest {
         TenantMembershipPolicy policy = mock(TenantMembershipPolicy.class);
         TenantSessionService sessionService = mock(TenantSessionService.class);
         roleDao = mock(ScopedRoleManagementDao.class);
+        bindingDao = mock(ScopedRoleBindingDao.class);
+        when(bindingDao.countActiveTenantAdministrators("tenant")).thenReturn(1);
         dataPolicyManagementDao = mock(ScopedDataPolicyManagementDao.class);
         versionDao = mock(MemberAuthVersionDao.class);
         auditDao = mock(IamAuthorizationAuditDao.class);
@@ -58,7 +62,8 @@ class ScopedRoleManagementServiceTest {
                 new TenantSessionContext("user", "tenant", "admin", "app", 1L, 2L));
         when(hierarchyDao.lockTenantAndFindBusinessId("tenant")).thenReturn("TENANT_BIZ");
         service = new ScopedRoleManagementService(policy, sessionService, roleDao,
-                dataPolicyManagementDao, hierarchyDao, permissionService, versionDao, auditDao, businessIdGenerator);
+                bindingDao, dataPolicyManagementDao, hierarchyDao, permissionService,
+                versionDao, auditDao, businessIdGenerator);
     }
 
     @Test
@@ -158,6 +163,21 @@ class ScopedRoleManagementServiceTest {
         service.replacePermissions("tenant", "admin", "role", List.of());
         verify(dataPolicyManagementDao).retireDataPolicies("tenant", "app", "role", "old");
         verify(dataPolicyManagementDao).retireFieldPolicies("tenant", "app", "role", "old");
+    }
+
+    @Test
+    void shouldDenyRemovingLastAdminPermissionFromTenantRole() {
+        when(roleDao.lockScopedRole("tenant", "app", "role")).thenReturn(role("TENANT"));
+        when(roleDao.selectActivePermissionRefs("tenant", "role")).thenReturn(List.of("old"));
+        when(roleDao.revokeRolePermission("tenant", "role", "old")).thenReturn(1);
+        when(bindingDao.countActiveTenantAdministrators("tenant")).thenReturn(0);
+
+        assertThatThrownBy(() -> service.replacePermissions(
+                "tenant", "admin", "role", List.of()))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("administrator");
+        verify(roleDao, never()).incrementRoleVersion(
+                "tenant", "app", "role", 3L, "admin");
     }
 
     private static RoleDO role(String roleType) {

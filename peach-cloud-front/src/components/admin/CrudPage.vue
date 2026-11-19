@@ -17,6 +17,7 @@ export interface CrudField {
   label: string
   name: string
   required?: boolean
+  immutableOnEdit?: boolean
   type?: 'text' | 'number' | 'textarea'
 }
 
@@ -250,7 +251,8 @@ onMounted(() => {
             v-model:value="formState[field.name] as string | undefined"
             :rows="4"
           />
-          <a-input v-else v-model:value="formState[field.name] as string | undefined" />
+          <a-input v-else v-model:value="formState[field.name] as string | undefined"
+                   :disabled="Boolean(editingId) && field.immutableOnEdit === true" />
         </a-form-item>
       </a-form>
     </a-modal>

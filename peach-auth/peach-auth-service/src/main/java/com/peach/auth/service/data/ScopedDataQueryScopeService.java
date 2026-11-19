@@ -33,7 +33,7 @@ public class ScopedDataQueryScopeService {
     private final OrganizationScopeDirectory organizationScopeDirectory;
 
     /**
-     * 返回按成员、应用、及动作隔离的 SQL 参数，不返回可拼接的 SQL 片段。
+     * 返回按成员、应用及动作隔离的 SQL 参数，不返回可拼接的 SQL 片段。
      *
      * @param permissionCode 受信业务端预先定义的动作语义码
      * @return 以 Clause 为单位原子组合的安全预筛选参数

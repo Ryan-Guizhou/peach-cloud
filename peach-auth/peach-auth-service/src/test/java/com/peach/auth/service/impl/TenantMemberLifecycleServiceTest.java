@@ -1,5 +1,6 @@
 package com.peach.auth.service.impl;
 
+import com.peach.auth.dao.OrganizationHierarchyDao;
 import com.peach.auth.dao.TenantInvitationDao;
 import com.peach.auth.dao.ScopedRoleBindingDao;
 import com.peach.auth.dao.MemberAuthVersionDao;
@@ -46,6 +47,7 @@ class TenantMemberLifecycleServiceTest {
     private ScopedRoleBindingDao roleBindingDao;
     private MemberAuthVersionDao memberAuthVersionDao;
     private IamAuthorizationAuditDao auditDao;
+    private OrganizationHierarchyDao hierarchyDao;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -59,8 +61,11 @@ class TenantMemberLifecycleServiceTest {
         roleBindingDao = mock(ScopedRoleBindingDao.class);
         memberAuthVersionDao = mock(MemberAuthVersionDao.class);
         auditDao = mock(IamAuthorizationAuditDao.class);
+        hierarchyDao = mock(OrganizationHierarchyDao.class);
+        when(hierarchyDao.lockTenantAndFindBusinessId("tenant")).thenReturn("tenant-business");
         service = new TenantMemberLifecycleService(memberDao, invitationDao,
-                businessIdGenerator, provider, roleBindingDao, memberAuthVersionDao, auditDao);
+                businessIdGenerator, provider, roleBindingDao, memberAuthVersionDao, auditDao,
+                hierarchyDao);
     }
 
     @Test
@@ -107,6 +112,9 @@ class TenantMemberLifecycleServiceTest {
                 eq("existing-member"), eq("existing-member"), eq("MEMBER_REJOIN"),
                 eq(0L), eq(1L))).thenReturn(1);
         when(invitationDao.accept("invitation", "tenant", "user", 1L)).thenReturn(1);
+        when(auditDao.append(anyString(), eq("tenant"), isNull(),
+                eq("existing-member"), eq("existing-member"), eq("MEMBER_JOIN"),
+                eq(0L), eq(0L))).thenReturn(1);
         assertThat(service.accept("tenant", "invitation", "user")).isEqualTo("existing-member");
         verify(memberDao).restore("existing-member", "tenant", 3L);
         verify(roleBindingDao).revokeAllForMember("tenant", "existing-member");
@@ -149,6 +157,48 @@ class TenantMemberLifecycleServiceTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("own membership");
         verifyNoInteractions(memberDao);
+    }
+
+    @Test
+    void shouldDenyLeavingAsLastEffectiveTenantAdministrator() {
+        when(memberDao.selectByUserAndTenant("tenant", "user"))
+                .thenReturn(member("member-id", "ACTIVE", 0, 1L));
+        when(roleBindingDao.countAdministratorMember("tenant", "member-id")).thenReturn(1);
+        when(roleBindingDao.countActiveTenantAdministrators("tenant")).thenReturn(1);
+
+        assertThatThrownBy(() -> service.leave("tenant", "user"))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("Last tenant administrator");
+        verify(memberDao, never()).softDelete(anyString(), anyString(),
+                org.mockito.ArgumentMatchers.anyLong(), anyString());
+        verifyNoInteractions(memberAuthVersionDao);
+    }
+
+    @Test
+    void shouldDenyDisablingProtectedOwnerEvenWhenAnotherAdminExists() {
+        when(memberDao.countEnabledTenant("tenant")).thenReturn(1);
+        when(memberDao.selectByIdInTenant("target", "tenant"))
+                .thenReturn(member("target", "ACTIVE", 0, 1L));
+        when(roleBindingDao.countProtectedOwnerMember("tenant", "target")).thenReturn(1);
+
+        assertThatThrownBy(() -> service.disable("tenant", "admin", "target"))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("Tenant owner");
+        verifyNoInteractions(memberAuthVersionDao);
+    }
+
+    @Test
+    void shouldFailClosedWhenNewMembershipAcceptanceAuditCannotPersist() {
+        when(memberDao.countEnabledTenant("tenant")).thenReturn(1);
+        when(memberDao.countEnabledUser("user")).thenReturn(1);
+        when(invitationDao.selectByIdInTenant("invitation", "tenant"))
+                .thenReturn(invitation("user", "PENDING"));
+        when(memberDao.insert(any(TenantMemberDO.class))).thenReturn(1);
+        when(invitationDao.accept("invitation", "tenant", "user", 1L)).thenReturn(1);
+
+        assertThatThrownBy(() -> service.accept("tenant", "invitation", "user"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("audit");
     }
 
     private static TenantMemberDO member(String id, String status, int deleted, long version) {

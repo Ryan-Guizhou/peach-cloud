@@ -17,6 +17,7 @@
 
     <select id="selectInTenant" resultType="com.peach.auth.entity.OrganizationDO">
         SELECT ID AS id, ORG_ID AS orgId, TENANT_ID AS tenantId,
+               ORG_CODE AS orgCode, ORG_NAME AS orgName,
                PARENT_ORG_REF_ID AS parentOrgRefId,
                VERSION AS version, STATUS AS status, IS_DELETE AS isDelete
         FROM PEACH_ORGANIZATION

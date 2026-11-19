@@ -13,7 +13,7 @@ import java.io.Serial;
 import java.time.LocalDateTime;
 
 /**
- * 成员针对单个应用与的独立角色绑定。
+ * 成员针对单个应用与独立数据范围的角色绑定。
  *
  * <p>租户范围不带 SCOPE_REF_ID；机构及机构树范围必须指向已启用机构物理 ID。</p>
  *

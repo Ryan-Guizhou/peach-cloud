@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.TenantProvisioningDao">
+    <select id="lockPlatformTenant" resultType="java.lang.String">
+        SELECT ID
+        FROM PEACH_TENANT
+        WHERE ID = #{tenantRefId} AND TENANT_CODE = 'PLATFORM'
+          AND STATUS = 'ENABLE' AND IS_DELETE = 0
+        FOR UPDATE
+    </select>
+
+    <select id="countPlatformCreateGrant" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_TENANT_MEMBER M
+        INNER JOIN PEACH_TENANT T ON T.ID = M.TENANT_REF_ID
+            AND T.TENANT_CODE = 'PLATFORM' AND T.STATUS = 'ENABLE' AND T.IS_DELETE = 0
+        INNER JOIN PEACH_USER U ON U.ID = M.USER_REF_ID
+            AND U.STATUS IN ('1', 'ENABLE') AND U.IS_DELETE = 0
+        INNER JOIN PEACH_APPLICATION A ON A.ID = #{appRefId}
+            AND A.TENANT_ID = T.TENANT_ID AND A.IS_OPEN = 1 AND A.IS_DELETE = 0
+        INNER JOIN PEACH_MEMBER_ROLE_BINDING B ON B.TENANT_REF_ID = M.TENANT_REF_ID
+            AND B.MEMBER_REF_ID = M.ID AND B.APP_REF_ID = A.ID
+            AND B.SCOPE_TYPE = 'TENANT' AND B.SCOPE_REF_ID IS NULL
+            AND B.STATUS = 'ACTIVE' AND B.IS_DELETE = 0
+        INNER JOIN PEACH_ROLE R ON R.ID = B.ROLE_REF_ID
+            AND R.TENANT_REF_ID = T.ID AND R.APP_REF_ID = A.ID
+            AND R.ROLE_TYPE = 'SYSTEM' AND R.ROLE_STATUS = 'ACTIVE' AND R.IS_DELETE = 0
+        INNER JOIN PEACH_ROLE_PERMISSION RP ON RP.ROLE_REF_ID = R.ID
+            AND RP.TENANT_REF_ID = T.ID AND RP.STATUS = 'ACTIVE' AND RP.IS_DELETE = 0
+        INNER JOIN PEACH_PERMISSION_DEFINITION P ON P.ID = RP.PERMISSION_REF_ID
+            AND P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL
+            AND P.APP_REF_ID IS NULL AND P.DELEGABLE = 0
+            AND P.RESOURCE_TYPE = 'API' AND P.STATUS = 'ACTIVE' AND P.IS_DELETE = 0
+        WHERE M.ID = #{memberRefId} AND M.TENANT_REF_ID = #{tenantRefId}
+          AND M.STATUS = 'ACTIVE' AND M.IS_DELETE = 0
+          AND M.VERSION = #{memberVersion} AND M.AUTH_VERSION = #{authVersion}
+          AND P.PERMISSION_CODE = 'PLATFORM.TENANT.CREATE'
+    </select>
+
+    <insert id="insertTenant">
+        INSERT INTO PEACH_TENANT
+        (ID, TENANT_ID, TENANT_CODE, TENANT_NAME, STATUS, SORT_NUM,
+         IS_DELETE, CREATED_TIME, CREATOR_ID)
+        VALUES
+        (#{id}, #{tenantId}, #{tenantCode}, #{tenantName}, 'ENABLE', 0,
+         0, #{createdTime}, #{operatorRefId})
+    </insert>
+
+    <insert id="insertApplication">
+        INSERT INTO PEACH_APPLICATION
+        (ID, APP_ID, APP_NAME, APP_TYPE, IS_OPEN, APP_DESC, TENANT_ID,
+         CREATED_TIME, CREATOR_ID, IS_DELETE)
+        VALUES
+        (#{id}, #{appId}, #{appName}, 'SYSTEM', 1, 'Tenant administration',
+         #{tenantId}, #{createdTime}, #{operatorRefId}, 0)
+    </insert>
+
+    <insert id="insertRootOrganization">
+        INSERT INTO PEACH_ORGANIZATION
+        (ID, ORG_ID, TENANT_ID, PARENT_ORG_REF_ID, ORG_CODE, ORG_NAME,
+         STATUS, SORT_NUM, VERSION, IS_DELETE, CREATED_TIME, CREATOR_ID)
+        VALUES
+        (#{id}, #{orgId}, #{tenantId}, NULL, 'DEFAULT', #{orgName},
+         'ENABLE', 0, 0, 0, #{createdTime}, #{operatorRefId})
+    </insert>
+
+    <insert id="insertOwnerRole" parameterType="com.peach.auth.entity.RoleDO">
+        INSERT INTO PEACH_ROLE
+        (ID, ROLE_ID, TENANT_ID, ORG_ID, ROLE_CODE, ROLE_NAME, ROLE_DESC,
+         ROLE_SCOPE, ROLE_TYPE, TENANT_REF_ID, APP_REF_ID, ROLE_STATUS,
+         VERSION, CREATED_TIME, CREATOR_ID, IS_DELETE)
+        VALUES
+        (#{id}, #{roleId}, #{tenantId}, 'TENANT', 'ROLE_TENANT_OWNER',
+         '租户所有者', '系统保护的租户初始所有者', 'TENANT', 'SYSTEM',
+         #{tenantRefId}, #{appRefId}, 'ACTIVE', 0,
+         #{createdTime}, #{creatorId}, 0)
+    </insert>
+
+    <insert id="insertOwnerManagementDataPolicy">
+        INSERT INTO PEACH_ROLE_DATA_POLICY
+        (ID, TENANT_REF_ID, APP_REF_ID, ROLE_REF_ID, PERMISSION_REF_ID,
+         DATA_SCOPE, ORG_REF_ID, STATUS, IS_DELETE, VERSION,
+         CREATED_TIME, CREATOR_ID)
+        VALUES
+        (#{id}, #{tenantRefId}, #{appRefId}, #{roleRefId}, #{permissionRefId},
+         'TENANT_ALL', NULL, 'ACTIVE', 0, 0, #{createdTime}, #{operatorRefId})
+    </insert>
+
+    <select id="selectOwnerPermissions" resultType="com.peach.auth.vo.RolePermissionGrantVO">
+        SELECT ID AS permissionRefId, PERMISSION_CODE AS permissionCode,
+               OWNER_TYPE AS ownerType
+        FROM PEACH_PERMISSION_DEFINITION
+        WHERE OWNER_TYPE = 'SYSTEM' AND TENANT_REF_ID IS NULL
+          AND APP_REF_ID IS NULL AND DELEGABLE = 1
+          AND STATUS = 'ACTIVE' AND IS_DELETE = 0
+        ORDER BY PERMISSION_CODE
+        LIMIT 257
+    </select>
+</mapper>

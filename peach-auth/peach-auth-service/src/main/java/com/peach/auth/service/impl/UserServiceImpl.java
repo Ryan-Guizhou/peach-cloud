@@ -67,6 +67,8 @@ public class UserServiceImpl implements IUserService {
 
     private final TenantMemberDao tenantMemberDao;
 
+    private final AuthenticatedInvitationService invitationService;
+
     private final TenantSessionService tenantSessionService;
 
     private final SaasLoginSnapshotService saasLoginSnapshotService;
@@ -144,6 +146,18 @@ public class UserServiceImpl implements IUserService {
         }
         loginLockService.clearOnSuccess(username);
         UserSensitiveFieldSupport.decryptUserFields(user);
+
+        // 只能在账号密码及验证码验证成功后消费本人邀请。
+        // 临时全局登录令牌不返回给调用方，也绝不作为未授权的 SaaS 会话使用。
+        if (StringUtil.isNotBlank(loginDTO.getInvitationRefId())) {
+            try {
+                invitationService.acceptAfterAuthentication(
+                        user.getUserId(), user.getId(), loginDTO.getInvitationRefId());
+            } catch (RuntimeException exception) {
+                log.warn("Authenticated invitation acceptance rejected");
+                return Response.fail("邀请无效、已过期或不可接受");
+            }
+        }
 
         // 先完成账号认证，再查询数据库有效租户成员与已开放应用。
         List<LoginTargetVO> targets = tenantMemberDao.selectLoginTargets(user.getId());

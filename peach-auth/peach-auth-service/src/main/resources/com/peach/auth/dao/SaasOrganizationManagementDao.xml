@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.SaasOrganizationManagementDao">
+    <insert id="insert" parameterType="com.peach.auth.entity.OrganizationDO">
+        INSERT INTO PEACH_ORGANIZATION
+        (ID, ORG_ID, TENANT_ID, PARENT_ORG_REF_ID, ORG_CODE, ORG_NAME,
+         STATUS, SORT_NUM, VERSION, IS_DELETE, CREATED_TIME, CREATOR_ID)
+        VALUES
+        (#{id}, #{orgId}, #{tenantId}, #{parentOrgRefId,jdbcType=VARCHAR},
+         #{orgCode}, #{orgName}, 'ENABLE', 0, 0, 0,
+         #{createdTime}, #{creatorId})
+    </insert>
+
+    <sql id="organizationFields">
+        ID AS id, ORG_ID AS orgId, TENANT_ID AS tenantId,
+        PARENT_ORG_REF_ID AS parentOrgRefId, ORG_CODE AS orgCode,
+        ORG_NAME AS orgName, STATUS AS status, SORT_NUM AS sortNum,
+        VERSION AS version, IS_DELETE AS isDelete
+    </sql>
+
+    <select id="selectActiveInTenant" resultType="com.peach.auth.vo.OrganizationVO">
+        SELECT <include refid="organizationFields" />
+        FROM PEACH_ORGANIZATION
+        WHERE TENANT_ID = #{tenantBusinessId} AND IS_DELETE = 0
+        ORDER BY ORG_CODE, ID
+    </select>
+
+    <select id="selectByIdInTenant" resultType="com.peach.auth.vo.OrganizationVO">
+        SELECT <include refid="organizationFields" />
+        FROM PEACH_ORGANIZATION
+        WHERE ID = #{id} AND TENANT_ID = #{tenantBusinessId} AND IS_DELETE = 0
+    </select>
+
+    <update id="updateName">
+        UPDATE PEACH_ORGANIZATION
+        SET ORG_NAME = #{orgName}, VERSION = VERSION + 1,
+            MODIFY_TIME = DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'),
+            MODIFIER_ID = #{operatorRefId}
+        WHERE ID = #{id} AND TENANT_ID = #{tenantBusinessId}
+          AND VERSION = #{version} AND STATUS = 'ENABLE' AND IS_DELETE = 0
+    </update>
+
+    <select id="countDependencies" resultType="java.lang.Integer">
+        SELECT
+            (SELECT COUNT(1) FROM PEACH_ORGANIZATION
+             WHERE TENANT_ID = #{tenantBusinessId}
+               AND PARENT_ORG_REF_ID = #{orgRefId} AND IS_DELETE = 0)
+            + (SELECT COUNT(1) FROM PEACH_USER_ORG
+               WHERE TENANT_ID = #{tenantBusinessId}
+                 AND ORG_ID = #{orgId} AND IS_DELETE = 0)
+            + (SELECT COUNT(1) FROM PEACH_USER
+               WHERE TENANT_ID = #{tenantBusinessId}
+                 AND DEFAULT_ORG_ID = #{orgId} AND IS_DELETE = 0)
+            + (SELECT COUNT(1) FROM PEACH_ROLE
+               WHERE TENANT_ID = #{tenantBusinessId}
+                 AND ORG_ID = #{orgId} AND IS_DELETE = 0)
+            + (SELECT COUNT(1) FROM PEACH_MEMBER_ROLE_BINDING
+               WHERE TENANT_REF_ID = #{tenantRefId}
+                 AND SCOPE_REF_ID = #{orgRefId} AND IS_DELETE = 0)
+            + (SELECT COUNT(1) FROM PEACH_ROLE_DATA_POLICY
+               WHERE TENANT_REF_ID = #{tenantRefId}
+                 AND ORG_REF_ID = #{orgRefId} AND IS_DELETE = 0)
+            + (SELECT COUNT(1) FROM PEACH_AUTH_PARTY
+               WHERE TENANT_ID = #{tenantBusinessId}
+                 AND ORG_ID = #{orgId} AND IS_DELETE = 0)
+            + (SELECT COUNT(1) FROM PEACH_AUTH_FUNCTION
+               WHERE TENANT_ID = #{tenantBusinessId}
+                 AND ORG_ID = #{orgId} AND IS_DELETE = 0)
+            + (SELECT COUNT(1) FROM PEACH_AUTH_RESOURCE
+               WHERE TENANT_ID = #{tenantBusinessId}
+                 AND ORG_ID = #{orgId} AND IS_DELETE = 0)
+    </select>
+
+    <update id="retire">
+        UPDATE PEACH_ORGANIZATION
+        SET IS_DELETE = 1, STATUS = 'DISABLE',
+            DELETED_AT = CURRENT_TIMESTAMP(3),
+            VERSION = VERSION + 1,
+            MODIFY_TIME = DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'),
+            MODIFIER_ID = #{operatorRefId}
+        WHERE ID = #{id} AND TENANT_ID = #{tenantBusinessId}
+          AND VERSION = #{version} AND STATUS = 'ENABLE' AND IS_DELETE = 0
+    </update>
+</mapper>

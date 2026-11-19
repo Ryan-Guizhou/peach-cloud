@@ -15,6 +15,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 const loginUsername = ref('')
 const loginPassword = ref('')
+const invitationRefId = ref('')
 const isEmailFocused = ref(false)
 const showPassword = ref(false)
 const remember = ref(true)
@@ -102,11 +103,13 @@ const handleSubmit = async () => {
     const loginInfo = await submitLogin({
       username: loginUsername.value.trim(),
       password: encryptedPassword,
+      invitationRefId: invitationRefId.value.trim() || undefined,
       tenantRefId: selected?.tenantRefId,
       appRefId: selected?.appRefId,
       captchaVerification: captchaRequired.value ? captchaVerification.value : undefined,
     })
     if (loginInfo.requiresTenantSelection) {
+      invitationRefId.value = ''
       const targets = (loginInfo.tenantOptions ?? []).filter(target =>
         Boolean(target.tenantRefId && target.appRefId))
       if (targets.length === 0) {
@@ -205,6 +208,21 @@ onMounted(initializeLogin)
             {{ showPassword ? '隐藏' : '显示' }}
           </button>
         </div>
+      </label>
+
+      <label v-if="!requiresTenantSelection" class="field">
+        <span>租户邀请编号（可选）</span>
+        <div class="field__control">
+          <input
+            v-model="invitationRefId"
+            type="text"
+            maxlength="32"
+            autocomplete="off"
+            placeholder="首次加入租户时填写邀请编号"
+            :disabled="isSubmitting"
+          />
+        </div>
+        <small>只有通过密码和验证码认证，才能接受属于本账号的有效邀请。</small>
       </label>
 
       <label v-if="requiresTenantSelection" class="field">
