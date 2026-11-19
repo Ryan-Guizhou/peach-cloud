@@ -68,12 +68,12 @@ class FileDomainSaasScopeTest {
         row.setFileId("FILE00001");
         when(saasAccessService.requireForFile("GET", "FILE00001", "")).thenReturn(SCOPE);
         when(saasAccessService.requireContext()).thenReturn(SCOPE);
-        when(fileRecordDao.selectScopedDetail("FILE00001", "tenant-ref", "app-ref", "user-ref"))
+        when(fileRecordDao.selectScopedDetail("FILE00001", "tenant-ref", "app-ref"))
                 .thenReturn(row);
         when(saasAccessService.projectVisibleFields("FILE.READ", SCOPE, row)).thenReturn(row);
 
         assertThat(domainService.selectByFileId("FILE00001").getFileId()).isEqualTo("FILE00001");
-        verify(fileRecordDao).selectScopedDetail("FILE00001", "tenant-ref", "app-ref", "user-ref");
+        verify(fileRecordDao).selectScopedDetail("FILE00001", "tenant-ref", "app-ref");
     }
 
     @Test
@@ -98,7 +98,7 @@ class FileDomainSaasScopeTest {
         row.setIsDelete(0);
         when(saasAccessService.requireForFile("GET", "FILE00001", "/url")).thenReturn(SCOPE);
         when(saasAccessService.requireContext()).thenReturn(SCOPE);
-        when(fileRecordDao.selectScopedDetail("FILE00001", "tenant-ref", "app-ref", "user-ref"))
+        when(fileRecordDao.selectScopedDetail("FILE00001", "tenant-ref", "app-ref"))
                 .thenReturn(row);
         doThrow(new SecurityException("data denied"))
                 .when(saasAccessService).requireFileData("FILE.DOWNLOAD", SCOPE, row);

@@ -40,12 +40,11 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
     FileRecordVO selectDetailByFileId(@Param("fileId") String fileId);
 
     /**
-     * 物理租户、应用和所有者必须同时匹配，未迁移记录一律不可见。
+     * SQL 强制物理租户和应用，完整所有者/机构权限由 Auth 单对象策略校验。
      */
     FileRecordVO selectScopedDetail(@Param("fileId") String fileId,
                                     @Param("tenantRefId") String tenantRefId,
-                                    @Param("appRefId") String appRefId,
-                                    @Param("ownerUserRefId") String ownerUserRefId);
+                                    @Param("appRefId") String appRefId);
 
     /**
      * 统计指定文件对象的活跃引用数量
@@ -75,6 +74,7 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
                       @Param("tenantRefId") String tenantRefId,
                       @Param("appRefId") String appRefId,
                       @Param("ownerUserRefId") String ownerUserRefId,
+                      @Param("orgRefId") String orgRefId,
                       @Param("fileStatus") String fileStatus,
                        @Param("deleteTime") String deleteTime, @Param("expireDeleteTime") String expireDeleteTime,
                        @Param("isDelete") Integer isDelete, @Param("modifyTime") String modifyTime,
@@ -95,6 +95,7 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
                         @Param("tenantRefId") String tenantRefId,
                         @Param("appRefId") String appRefId,
                         @Param("ownerUserRefId") String ownerUserRefId,
+                        @Param("orgRefId") String orgRefId,
                         @Param("fileStatus") String fileStatus,
                          @Param("isDelete") Integer isDelete, @Param("modifyTime") String modifyTime,
                          @Param("modifier") String modifier);

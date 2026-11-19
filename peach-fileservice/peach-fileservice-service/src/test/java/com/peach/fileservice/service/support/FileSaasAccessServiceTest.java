@@ -132,13 +132,14 @@ class FileSaasAccessServiceTest {
     }
 
     @Test
-    void shouldRejectForgedOwnerBeforeCallingAuthDataPolicy() {
+    void shouldRejectForgedTenantBeforeCallingAuthDataPolicy() {
         FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
         FileRecordVO row = new FileRecordVO();
         row.setId("00000000000000000000000000000001");
         row.setTenantRefId("tenant");
         row.setAppRefId("app");
         row.setOwnerUserRefId("different-user");
+        row.setTenantRefId("foreign-tenant");
 
         assertThatThrownBy(() -> service.requireFileData("FILE.READ", scope, row))
                 .isInstanceOf(SecurityException.class);

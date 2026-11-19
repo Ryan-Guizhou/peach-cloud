@@ -289,7 +289,34 @@
         <where>
             r.TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
             AND r.APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
-            AND r.OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+            AND (
+                <choose>
+                    <when test="tenantAllVisible">
+                        1 = 1
+                    </when>
+                    <otherwise>
+                        1 = 0
+                        <if test="selfVisible">
+                            OR r.OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+                        </if>
+                        <if test="organizationRefIds != null and organizationRefIds.size() > 0">
+                            OR r.ORG_REF_ID IN
+                            <foreach collection="organizationRefIds" item="orgRefId"
+                                     open="(" separator="," close=")">
+                                #{orgRefId,jdbcType=VARCHAR}
+                            </foreach>
+                        </if>
+                        <if test="selfOrganizationRefIds != null and selfOrganizationRefIds.size() > 0">
+                            OR (r.OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+                                AND r.ORG_REF_ID IN
+                                <foreach collection="selfOrganizationRefIds" item="orgRefId"
+                                         open="(" separator="," close=")">
+                                    #{orgRefId,jdbcType=VARCHAR}
+                                </foreach>)
+                        </if>
+                    </otherwise>
+                </choose>
+            )
             <if test="tenantId != null and tenantId != ''">
                 AND r.TENANT_ID = #{tenantId,jdbcType=VARCHAR}
             </if>
@@ -358,7 +385,6 @@
         WHERE r.FILE_ID = #{fileId,jdbcType=VARCHAR}
           AND r.TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
           AND r.APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
-          AND r.OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
         LIMIT 1
     </select>
 
@@ -382,6 +408,8 @@
           AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
           AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
           AND OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+          AND ((ORG_REF_ID IS NULL AND #{orgRefId,jdbcType=VARCHAR} IS NULL)
+              OR ORG_REF_ID = #{orgRefId,jdbcType=VARCHAR})
           AND IS_DELETE = 0
     </update>
 
@@ -397,6 +425,8 @@
           AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
           AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
           AND OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+          AND ((ORG_REF_ID IS NULL AND #{orgRefId,jdbcType=VARCHAR} IS NULL)
+              OR ORG_REF_ID = #{orgRefId,jdbcType=VARCHAR})
           AND IS_DELETE = 1
     </update>
 

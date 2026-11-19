@@ -28,6 +28,7 @@ import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.service.IFileDomainService;
 import com.peach.fileservice.service.support.FileSaasAccessService;
 import com.peach.fileservice.service.support.FileSaasScope;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.fileservice.vo.FileDownloadUrlVO;
 import com.peach.fileservice.vo.FileDigestVO;
 import com.peach.fileservice.vo.FileExternalFileVO;
@@ -462,6 +463,9 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     @Override
     public PageResult<FileRecordVO> pageList(FileQueryQO qo) {
+        if (qo != null && qo.getIsDelete() != null && !Integer.valueOf(0).equals(qo.getIsDelete())) {
+            throw new SecurityException("Deleted file list is not authorized");
+        }
         if (qo == null || qo.getPageNum() == null || qo.getPageNum() < 1
                 || qo.getPageNum() > 1000 || qo.getPageSize() == null
                 || qo.getPageSize() < 1 || qo.getPageSize() > 50) {
@@ -490,7 +494,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         String now = DateUtil.nowTime();
         String expireTime = format(LocalDateTime.now(ZoneId.systemDefault()).plusDays(fileDomainProperties.getRetentionDays()));
         if (fileRecordDao.logicalDelete(fileId, scope.tenantRefId(), scope.appRefId(),
-                scope.userRefId(),
+                recordVO.getOwnerUserRefId(), recordVO.getOrgRefId(),
                 FileDomainConstant.FileStatus.DELETED, now, expireTime,
                 FileDomainConstant.LogicDelete.YES, now, currentOperator()) != 1) {
             throw new SecurityException("Scoped file deletion conflicted");
@@ -518,7 +522,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         }
         String now = DateUtil.nowTime();
         if (fileRecordDao.restoreByFileId(fileId, scope.tenantRefId(), scope.appRefId(),
-                scope.userRefId(),
+                recordVO.getOwnerUserRefId(), recordVO.getOrgRefId(),
                 FileDomainConstant.FileStatus.ACTIVE,
                 FileDomainConstant.LogicDelete.NO, now, currentOperator()) != 1) {
             throw new SecurityException("Scoped file restore conflicted");
@@ -701,7 +705,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     private FileRecordVO requireRecord(String fileId) {
         FileSaasScope scope = saasAccessService.requireContext();
         FileRecordVO recordVO = fileRecordDao.selectScopedDetail(
-                fileId, scope.tenantRefId(), scope.appRefId(), scope.userRefId());
+                fileId, scope.tenantRefId(), scope.appRefId());
         if (recordVO == null) {
             throw new IllegalArgumentException("file not found");
         }
@@ -935,7 +939,12 @@ public class FileDomainServiceImpl implements IFileDomainService {
             throw new IllegalArgumentException("File query is required");
         }
         FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/pageList");
-        saasAccessService.requireOwnDataAction("FILE.LIST", scope);
+        SaasIamFileQueryScopeVO plan = saasAccessService.requireListQueryScope(scope);
+        qo.setTenantAllVisible(plan.isTenantAll());
+        qo.setSelfVisible(plan.isSelf());
+        qo.setOrganizationRefIds(plan.getOrganizationRefIds());
+        qo.setSelfOrganizationRefIds(plan.getSelfOrganizationRefIds());
+        qo.setIsDelete(0);
         qo.setTenantRefId(scope.tenantRefId());
         qo.setAppRefId(scope.appRefId());
         qo.setOwnerUserRefId(scope.userRefId());
