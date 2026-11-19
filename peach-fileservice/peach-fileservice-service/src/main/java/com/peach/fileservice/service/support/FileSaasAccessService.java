@@ -174,14 +174,16 @@ public class FileSaasAccessService {
      * @param record 通过 scoped SQL 返回的真实文件行
      */
     public void requireFileData(String action, FileSaasScope scope, FileRecordVO record) {
-        if (record == null || !StringUtils.hasText(record.getId())
+        if (scope == null || record == null || !StringUtils.hasText(record.getId())
                 || !scope.tenantRefId().equals(record.getTenantRefId())
                 || !scope.appRefId().equals(record.getAppRefId())
                 || !StringUtils.hasText(record.getOwnerUserRefId())) {
             throw new SecurityException("File ownership is unavailable or mismatched");
         }
-        requireDataDecision(action, scope, record.getId(), record.getOrgRefId(),
-                Integer.valueOf(1).equals(record.getIsDelete()));
+        // Auth 必须收到数据库真实所有者，绝不能将当前登录者冒充为对象 owner；
+        // 否则 SELF 可能错误放行不属于本人的文件。
+        requireDataDecision(action, scope, record.getId(), record.getOwnerUserRefId(),
+                record.getOrgRefId(), Integer.valueOf(1).equals(record.getIsDelete()));
     }
 
     /**
@@ -195,7 +197,8 @@ public class FileSaasAccessService {
                 || !scope.userRefId().equals(session.getOwnerUserRefId())) {
             throw new SecurityException("Trusted upload session scope mismatch");
         }
-        requireDataDecision("FILE.UPLOAD", scope, session.getId(), session.getOrgRefId(), false);
+        requireDataDecision("FILE.UPLOAD", scope, session.getId(),
+                session.getOwnerUserRefId(), session.getOrgRefId(), false);
     }
 
     /**
@@ -208,12 +211,14 @@ public class FileSaasAccessService {
         if (!List.of("FILE.UPLOAD", "FILE.LIST").contains(action)) {
             throw new SecurityException("Unsupported file data action");
         }
-        requireDataDecision(action, scope, UniqueIdFacade.nextId(), null, false);
+        requireDataDecision(action, scope, UniqueIdFacade.nextId(),
+                scope.userRefId(), null, false);
     }
 
     private void requireDataDecision(String action, FileSaasScope scope, String objectRefId,
-                                     String orgRefId, boolean deleted) {
-        if (scope == null || !StringUtils.hasText(objectRefId) || objectRefId.length() > 32) {
+                                     String ownerUserRefId, String orgRefId, boolean deleted) {
+        if (scope == null || !StringUtils.hasText(objectRefId) || objectRefId.length() > 32
+                || !StringUtils.hasText(ownerUserRefId) || ownerUserRefId.length() > 32) {
             throw new SecurityException("Trusted file object is required");
         }
         String token = StpUtil.getTokenValue();
@@ -225,7 +230,7 @@ public class FileSaasAccessService {
         request.setTenantRefId(scope.tenantRefId());
         request.setAppRefId(scope.appRefId());
         request.setObjectRefId(objectRefId);
-        request.setOwnerUserRefId(scope.userRefId());
+        request.setOwnerUserRefId(ownerUserRefId);
         request.setOrgRefId(orgRefId);
         request.setDeleted(deleted);
         try {

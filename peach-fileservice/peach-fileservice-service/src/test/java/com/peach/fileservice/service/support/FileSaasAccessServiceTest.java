@@ -97,6 +97,30 @@ class FileSaasAccessServiceTest {
 
 
     @Test
+    void shouldForwardPersistedOwnerNotCallerToAuthForCrossOwnerFile() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        FileRecordVO record = record(scope);
+        record.setOwnerUserRefId("other-owner");
+        record.setOrgRefId("org-a");
+        when(iamFeignClient.checkFileObjectPermission(eq("subject-token"),
+                any(SaasIamFileObjectCheckDTO.class)))
+                .thenReturn(new SaasIamPermissionDecisionVO(false));
+
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
+            assertThatThrownBy(() -> service.requireFileData("FILE.READ", scope, record))
+                    .isInstanceOf(SecurityException.class);
+        }
+
+        org.mockito.ArgumentCaptor<SaasIamFileObjectCheckDTO> evidence =
+                org.mockito.ArgumentCaptor.forClass(SaasIamFileObjectCheckDTO.class);
+        verify(iamFeignClient).checkFileObjectPermission(eq("subject-token"), evidence.capture());
+        assertThat(evidence.getValue().getOwnerUserRefId()).isEqualTo("other-owner");
+        assertThat(evidence.getValue().getOrgRefId()).isEqualTo("org-a");
+        assertThat(evidence.getValue().getObjectRefId()).isEqualTo(record.getId());
+    }
+
+    @Test
     void shouldAllowCrossOwnerFileOnlyWithExplicitIamRowGrant() {
         FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
         FileRecordVO row = record(scope);
