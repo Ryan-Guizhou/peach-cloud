@@ -1,6 +1,8 @@
 package com.peach.auth.service.impl;
 
 import com.peach.auth.dao.TenantInvitationDao;
+import com.peach.auth.dao.UserDao;
+import com.peach.auth.entity.UserDO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
@@ -27,6 +29,8 @@ class AuthenticatedInvitationServiceTest {
     @Mock
     private AuthInvitationTokenSession tokenSession;
     @Mock
+    private UserDao userDao;
+    @Mock
     private TenantInvitationDao invitationDao;
     @Mock
     private TenantMemberLifecycleService lifecycleService;
@@ -35,12 +39,14 @@ class AuthenticatedInvitationServiceTest {
 
     @Test
     void shouldAcceptOnlyOwnedInvitationAndCloseTemporarySubject() {
+        when(userDao.lockCredential("user-ref")).thenReturn(credential(4L));
         when(invitationDao.findTenantForVerifiedInvitee("invitation", "user-ref"))
                 .thenReturn("tenant-ref");
 
-        service.acceptAfterAuthentication("USER_00001", "user-ref", "invitation");
+        service.acceptAfterAuthentication("USER_00001", "user-ref", "invitation", 4L);
 
-        InOrder ordered = inOrder(tokenSession, invitationDao, lifecycleService);
+        InOrder ordered = inOrder(userDao, tokenSession, invitationDao, lifecycleService);
+        ordered.verify(userDao).lockCredential("user-ref");
         ordered.verify(tokenSession).open("USER_00001");
         ordered.verify(invitationDao).findTenantForVerifiedInvitee("invitation", "user-ref");
         ordered.verify(lifecycleService).accept("tenant-ref", "invitation", "user-ref");
@@ -49,8 +55,9 @@ class AuthenticatedInvitationServiceTest {
 
     @Test
     void shouldRejectAnotherUsersInvitationAndCloseTemporarySubject() {
+        when(userDao.lockCredential("user-ref")).thenReturn(credential(4L));
         assertThatThrownBy(() -> service.acceptAfterAuthentication(
-                "USER_00001", "user-ref", "foreign-invitation"))
+                "USER_00001", "user-ref", "foreign-invitation", 4L))
                 .isInstanceOf(SecurityException.class)
                 .hasMessageContaining("does not belong");
         verify(tokenSession).close();
@@ -60,8 +67,26 @@ class AuthenticatedInvitationServiceTest {
     @Test
     void shouldRejectUnverifiedIdentityBeforeCreatingAnyToken() {
         assertThatThrownBy(() -> service.acceptAfterAuthentication(
-                "", "user-ref", "invitation"))
+                "", "user-ref", "invitation", 4L))
                 .isInstanceOf(SecurityException.class);
+        verifyNoInteractions(tokenSession, userDao, invitationDao, lifecycleService);
+    }
+
+    @Test
+    void shouldRejectStalePasswordVersionBeforeCreatingTemporaryToken() {
+        when(userDao.lockCredential("user-ref")).thenReturn(credential(5L));
+        assertThatThrownBy(() -> service.acceptAfterAuthentication(
+                "USER_00001", "user-ref", "invitation", 4L))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("Password");
         verifyNoInteractions(tokenSession, invitationDao, lifecycleService);
+    }
+
+    private static UserDO credential(long version) {
+        UserDO user = new UserDO();
+        user.setId("user-ref");
+        user.setUserId("USER_00001");
+        user.setPasswordVersion(version);
+        return user;
     }
 }

@@ -155,7 +155,8 @@ public class UserServiceImpl implements IUserService {
         if (StringUtil.isNotBlank(loginDTO.getInvitationRefId())) {
             try {
                 invitationService.acceptAfterAuthentication(
-                        user.getUserId(), user.getId(), loginDTO.getInvitationRefId());
+                        user.getUserId(), user.getId(), loginDTO.getInvitationRefId(),
+                        user.getPasswordVersion());
             } catch (RuntimeException exception) {
                 log.warn("Authenticated invitation acceptance rejected");
                 return Response.fail("邀请无效、已过期或不可接受");

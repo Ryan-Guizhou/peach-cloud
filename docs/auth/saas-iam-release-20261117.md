@@ -361,3 +361,5 @@ MySQL 唯一索引允许多个 NULL，所以可以存在多个历史重复 CODE�
 - 请求：`requireCurrent` / `requireForToken` 必须以业务 USER_ID、物理用户 ID 与 Token 的 PASSWORD_VERSION 三元组查询有效用户。缺少字段的旧 Token 直接拒绝，不降级猜测版本；网关复用受信 Auth 查询，因此旧 Token 不能重新获得跨租户授权。
 - 修改：受信当前用户、自身旧密码、强密码和 Redis 失败锁校验 → 用户行锁 → BCrypt → 新 BCrypt + VERSION CAS + 同事务审计 → commit → 全账号 Sa-Token 注销（不在回滚事务中执行）。Redis 注销失败仍有数据库版本最终拒绝；其他未接入在线 SaaS 鉴权的遗留业务服务必须另在 #211 检查，不虚报全链路通过。
 - 迁移：DDL 必须先于新版 Auth；旧 Token 必须批量清理；禁止旧新版 Auth 混跑；原有无效哈希由受控核验的重设途径处理，不使用默认密码重置后门。
+
+登录中如果包含首次受邀账号加入，`AuthenticatedInvitationService` 会以新事务锁定 `PEACH_USER` 物理用户行、再次比对 BCrypt 验证时使用的 `PASSWORD_VERSION`，在版本失效时**拒绝消费邀请**，消除改密与首次加入交叉执行期间的旧口令竞态。

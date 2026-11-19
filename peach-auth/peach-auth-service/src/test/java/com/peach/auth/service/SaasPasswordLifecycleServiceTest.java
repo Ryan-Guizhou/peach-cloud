@@ -22,6 +22,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -94,12 +95,12 @@ class SaasPasswordLifecycleServiceTest {
         service.changePassword(request());
 
         verify(userDao).changePassword("user", "bcrypt-new", 4L, "member");
-        verify(auditDao).append(anyString(), org.mockito.ArgumentMatchers.eq("tenant"),
-                org.mockito.ArgumentMatchers.eq("app"),
-                org.mockito.ArgumentMatchers.eq("member"),
-                org.mockito.ArgumentMatchers.eq("user"),
-                org.mockito.ArgumentMatchers.eq("USER_PASSWORD_CHANGE"),
-                org.mockito.ArgumentMatchers.eq(4L), org.mockito.ArgumentMatchers.eq(5L));
+        verify(auditDao).append(anyString(), eq("tenant"),
+                eq("app"),
+                eq("member"),
+                eq("user"),
+                eq("USER_PASSWORD_CHANGE"),
+                eq(4L), eq(5L));
         verifyNoInteractions(tokenRevoker);
         for (TransactionSynchronization callback : TransactionSynchronizationManager.getSynchronizations()) {
             callback.afterCommit();

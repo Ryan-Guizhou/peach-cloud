@@ -1,6 +1,10 @@
 package com.peach.auth.service.impl;
 
 import com.peach.auth.dao.TenantInvitationDao;
+import com.peach.auth.dao.UserDao;
+import com.peach.auth.entity.UserDO;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -21,6 +25,8 @@ public class AuthenticatedInvitationService {
 
     private final AuthInvitationTokenSession tokenSession;
 
+    private final UserDao userDao;
+
     private final TenantInvitationDao invitationDao;
 
     private final TenantMemberLifecycleService lifecycleService;
@@ -31,12 +37,21 @@ public class AuthenticatedInvitationService {
      * @param businessUserId 已认证账号的永久用户业务号
      * @param userRefId 已认证账号的 UUID 物理主键
      * @param invitationRefId 当前用户待接受邀请的物理主键
+     * @param verifiedPasswordVersion 最初 BCrypt 验证时读取的全局密码版本
      */
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public void acceptAfterAuthentication(String businessUserId, String userRefId,
-                                           String invitationRefId) {
+                                          String invitationRefId, long verifiedPasswordVersion) {
         if (!StringUtils.hasText(businessUserId) || !StringUtils.hasText(userRefId)
                 || !StringUtils.hasText(invitationRefId) || invitationRefId.length() > 32) {
             throw new SecurityException("Verified invitation identity is required");
+        }
+        UserDO current = userDao.lockCredential(userRefId);
+        if (current == null || !businessUserId.equals(current.getUserId())
+                || current.getPasswordVersion() == null
+                || verifiedPasswordVersion < 0
+                || current.getPasswordVersion() != verifiedPasswordVersion) {
+            throw new SecurityException("Password credential changed during invitation authentication");
         }
         boolean temporarySubjectCreated = false;
         try {
