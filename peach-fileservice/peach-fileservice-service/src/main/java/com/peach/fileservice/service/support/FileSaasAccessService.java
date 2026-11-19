@@ -2,6 +2,10 @@ package com.peach.fileservice.service.support;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.common.unique.UniqueIdFacade;
+import com.peach.fileservice.vo.FileRecordVO;
+import com.peach.fileservice.vo.FileUploadSessionVO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.vo.SaasIamContextVO;
 import com.peach.auth.vo.SaasIamPermissionDecisionVO;
@@ -68,6 +72,79 @@ public class FileSaasAccessService {
             // 不泄漏最终用户 Token、远端权限目录及具体认证错误。
             log.warn("Trusted file authorization rejected");
             throw new SecurityException("Trusted file authorization required");
+        }
+    }
+
+    /**
+     * 对真实文件记录再次执行 Auth 数据范围校验，动作与范围必须来自同一有效绑定。
+     *
+     * @param action FILE.READ / FILE.DOWNLOAD / FILE.DELETE / FILE.RESTORE
+     * @param scope 本次动作授权得到的物理身份
+     * @param record 通过 scoped SQL 返回的真实文件行
+     */
+    public void requireFileData(String action, FileSaasScope scope, FileRecordVO record) {
+        if (record == null || !StringUtils.hasText(record.getId())
+                || !scope.tenantRefId().equals(record.getTenantRefId())
+                || !scope.appRefId().equals(record.getAppRefId())
+                || !scope.userRefId().equals(record.getOwnerUserRefId())) {
+            throw new SecurityException("File ownership is unavailable or mismatched");
+        }
+        requireDataDecision(action, scope, record.getId(), record.getOrgRefId(),
+                Integer.valueOf(1).equals(record.getIsDelete()));
+    }
+
+    /**
+     * 上传分片会话的所有者/成员/应用归属及同绑定 FILE.UPLOAD 数据策略。
+     */
+    public void requireUploadSessionData(FileSaasScope scope, FileUploadSessionVO session) {
+        if (session == null || !StringUtils.hasText(session.getId())
+                || !scope.tenantRefId().equals(session.getTenantRefId())
+                || !scope.appRefId().equals(session.getAppRefId())
+                || !scope.memberRefId().equals(session.getMemberRefId())
+                || !scope.userRefId().equals(session.getOwnerUserRefId())) {
+            throw new SecurityException("Trusted upload session scope mismatch");
+        }
+        requireDataDecision("FILE.UPLOAD", scope, session.getId(), session.getOrgRefId(), false);
+    }
+
+    /**
+     * 创建新文件或分页列出本人文件前用服务端构造的虚拟对象校验 FILE 数据策略。
+     *
+     * <p>未指定机构时只接受独立绑定的 TENANT_ALL 或 SELF 范围授权，
+     * ORG/ORG_TREE 不能借此冒充全租户数据范围。</p>
+     */
+    public void requireOwnDataAction(String action, FileSaasScope scope) {
+        if (!List.of("FILE.UPLOAD", "FILE.LIST").contains(action)) {
+            throw new SecurityException("Unsupported file data action");
+        }
+        requireDataDecision(action, scope, UniqueIdFacade.nextId(), null, false);
+    }
+
+    private void requireDataDecision(String action, FileSaasScope scope, String objectRefId,
+                                     String orgRefId, boolean deleted) {
+        if (scope == null || !StringUtils.hasText(objectRefId) || objectRefId.length() > 32) {
+            throw new SecurityException("Trusted file object is required");
+        }
+        String token = StpUtil.getTokenValue();
+        if (!StringUtils.hasText(token) || token.length() > 1024) {
+            throw new SecurityException("Authenticated file subject is required");
+        }
+        SaasIamFileObjectCheckDTO request = new SaasIamFileObjectCheckDTO();
+        request.setPermissionCode(action);
+        request.setTenantRefId(scope.tenantRefId());
+        request.setAppRefId(scope.appRefId());
+        request.setObjectRefId(objectRefId);
+        request.setOwnerUserRefId(scope.userRefId());
+        request.setOrgRefId(orgRefId);
+        request.setDeleted(deleted);
+        try {
+            SaasIamPermissionDecisionVO decision = iamFeignClient.checkFileObjectPermission(token, request);
+            if (decision == null || !decision.isAllowed()) {
+                throw new SecurityException("File data policy rejected");
+            }
+        } catch (RuntimeException exception) {
+            log.warn("Trusted file data policy rejected, action={}", action);
+            throw new SecurityException("Trusted file data authorization is required");
         }
     }
 
