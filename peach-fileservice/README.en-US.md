@@ -142,3 +142,13 @@ The new `PATCH /file/internal/{fileId}/metadata` endpoint accepts:
 Only these three fields are writable; values must be non-null and no longer than 255, 64 and 500 characters respectively. The PATCH action permission, the effective same-binding `FILE.EDIT` DATA row policy and explicit `WRITE_EFFECT=ALLOW` for every requested field are all required. The fixed UPDATE rechecks persisted tenant/app, owner/org, active state and soft-delete status. Permission definitions do not automatically grant any role or field policy.
 
 The permanent business tenant number is now supplied from Auth's own tenant database through `SaasIamContextVO.tenantBusinessId`. Fileservice no longer directly queries the Auth tenant table. Historical unmapped file ownership remains quarantined pending #211 validation.
+
+#### #232 Bounded atomic batch delete/restore
+
+`POST /file/internal/batch/delete` and `POST /file/internal/batch/restore` accept 1–50 distinct permanent file IDs:
+
+```json
+{"fileIds":["FILE00001","FILE00002"]}
+```
+
+Each call requires its separate protected SYSTEM batch API action. **Every file** additionally requires the corresponding single-file DELETE/RESTORE API and same-binding `FILE.DELETE` / `FILE.RESTORE` DATA row authorization. Fixed MyBatis WHERE predicates recheck tenant/app and stored owner/org. Any authorization or concurrent update conflict rolls back the entire local database transaction. Physical object-store cleanup is a separate background workflow and is not automatically rolled back with MySQL.
