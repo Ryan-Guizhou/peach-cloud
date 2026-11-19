@@ -152,3 +152,9 @@ The permanent business tenant number is now supplied from Auth's own tenant data
 ```
 
 Each call requires its separate protected SYSTEM batch API action. **Every file** additionally requires the corresponding single-file DELETE/RESTORE API and same-binding `FILE.DELETE` / `FILE.RESTORE` DATA row authorization. Fixed MyBatis WHERE predicates recheck tenant/app and stored owner/org. Any authorization or concurrent update conflict rolls back the entire local database transaction. Physical object-store cleanup is a separate background workflow and is not automatically rolled back with MySQL.
+
+#### Protected CSV metadata export
+
+`POST /file/internal/export` accepts the same business filters as the file list and returns an UTF-8 `text/csv` attachment. It first requires its own SYSTEM API action `POST:/api/file/internal/export`, then revalidates the list API action, the same-binding `FILE.LIST` row scope applied in MyBatis before COUNT and pagination, and the `FILE_RECORD` field `ALLOW / MASK / DENY` projection for every row. Browser-supplied tenant or organization scopes are never trusted.
+
+Exports are capped at **500 rows**, fetched in pages of 50. Oversized exports, inconsistent page totals, incomplete reads, or failed field authorization deny the entire export. The output contains only permitted fixed metadata fields, never bucket, objectKey, provider or physical ownership identifiers; formula-like spreadsheet values are escaped to mitigate CSV injection. The export API catalog entry grants no roles automatically.
