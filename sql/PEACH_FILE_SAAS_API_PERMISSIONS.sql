@@ -157,3 +157,14 @@ VALUES
     (REPLACE(UUID(), '-', ''), 'PERM_FILE_BATCH_RESTORE', NULL, NULL,
      'POST:/api/file/internal/batch/restore', '批量恢复文件入口',
      'API', 'SYSTEM', 1, 'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM');
+
+-- #232: 独立文件元数据导出 API 权限，必须叠加 FILE.LIST 行级和字段投影授权。
+-- 只创建目录资源，不自动授予任何成员或角色。
+INSERT INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID, PERMISSION_CODE,
+     PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE, DELEGABLE, STATUS,
+     IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_METADATA_EXPORT', NULL, NULL,
+     'POST:/api/file/internal/export', '导出受控文件元数据',
+     'API', 'SYSTEM', 1, 'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM');
