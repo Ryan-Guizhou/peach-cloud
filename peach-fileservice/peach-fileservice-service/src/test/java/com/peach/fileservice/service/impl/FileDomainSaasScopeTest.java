@@ -5,6 +5,7 @@ import com.peach.fileservice.config.FileDomainProperties;
 import com.peach.fileservice.dao.FileRecordDao;
 import com.peach.fileservice.dao.FileUploadSessionDao;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
+import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.dto.FileMetadataPatchDTO;
 import com.peach.fileservice.dto.FileBatchActionDTO;
 import java.util.List;
@@ -199,6 +200,16 @@ class FileDomainSaasScopeTest {
                 .thenThrow(new SecurityException("denied"));
 
         assertThatThrownBy(() -> domainService.batchRestore(data))
+                .isInstanceOf(SecurityException.class);
+        verifyNoInteractions(fileRecordDao);
+    }
+
+    @Test
+    void shouldRejectCsvExportWithoutIndependentApiPermission() {
+        FileQueryQO filter = new FileQueryQO();
+        when(saasAccessService.requireCurrent("POST:/api/file/internal/export"))
+                .thenThrow(new SecurityException("denied"));
+        assertThatThrownBy(() -> domainService.exportMetadataCsv(filter))
                 .isInstanceOf(SecurityException.class);
         verifyNoInteractions(fileRecordDao);
     }
