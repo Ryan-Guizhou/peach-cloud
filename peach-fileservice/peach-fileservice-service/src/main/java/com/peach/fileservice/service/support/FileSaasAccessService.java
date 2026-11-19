@@ -4,9 +4,11 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
 import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import com.peach.common.unique.UniqueIdFacade;
 import com.peach.fileservice.vo.FileRecordVO;
 import com.peach.fileservice.vo.FileUploadSessionVO;
@@ -38,6 +40,9 @@ import java.util.ArrayList;
 @Service
 @RequiredArgsConstructor
 public class FileSaasAccessService {
+
+    private static final Map<String, Integer> EDITABLE_METADATA_LENGTHS =
+            Map.of("displayName", 255, "bizTag", 64, "remark", 500);
 
     private static final Pattern ACTION_CODE =
             Pattern.compile("^(GET|POST|PUT|PATCH|DELETE):/api/file/[a-zA-Z0-9/_{}.-]+$");
@@ -74,6 +79,53 @@ public class FileSaasAccessService {
             // 不泄漏最终用户 Token、远端权限目录及具体认证错误。
             log.warn("Trusted file authorization rejected");
             throw new SecurityException("Trusted file authorization required");
+        }
+    }
+
+    /**
+     * 文件元数据写入必须同时通过本地物理归属校验与 Auth 同绑定行/字段写权限。
+     * 未注册列、缺失值和超长字段均在调用数据库或 Auth 前拒绝。
+     *
+     * @param scope 当前身份的物理租户应用范围
+     * @param record 通过限定租户/应用的 SQL 查询得到的真实文件记录
+     * @param changes 客户端请求的全部待修改字段
+     */
+    public void requireWritableFileFields(FileSaasScope scope, FileRecordVO record,
+                                          Map<String, String> changes) {
+        if (scope == null || record == null || !StringUtils.hasText(record.getId())
+                || !scope.tenantRefId().equals(record.getTenantRefId())
+                || !scope.appRefId().equals(record.getAppRefId())
+                || !StringUtils.hasText(record.getOwnerUserRefId())
+                || changes == null || changes.isEmpty() || changes.size() > EDITABLE_METADATA_LENGTHS.size()
+                || !EDITABLE_METADATA_LENGTHS.keySet().containsAll(changes.keySet())) {
+            throw new SecurityException("Protected file metadata changes are invalid");
+        }
+        for (Map.Entry<String, String> entry : changes.entrySet()) {
+            if (entry.getValue() == null
+                    || entry.getValue().length() > EDITABLE_METADATA_LENGTHS.get(entry.getKey())) {
+                throw new SecurityException("Protected file metadata value is invalid");
+            }
+        }
+        SaasIamFileObjectCheckDTO object = new SaasIamFileObjectCheckDTO();
+        object.setPermissionCode("FILE.EDIT");
+        object.setTenantRefId(record.getTenantRefId());
+        object.setAppRefId(record.getAppRefId());
+        object.setObjectRefId(record.getId());
+        object.setOwnerUserRefId(record.getOwnerUserRefId());
+        object.setOrgRefId(record.getOrgRefId());
+        object.setDeleted(Integer.valueOf(1).equals(record.getIsDelete()));
+        SaasIamFileFieldWriteDTO request = new SaasIamFileFieldWriteDTO();
+        request.setObject(object);
+        request.setChanges(Map.copyOf(changes));
+        String token = requireSubjectToken();
+        try {
+            SaasIamPermissionDecisionVO decision = iamFeignClient.checkFileFieldWrites(token, request);
+            if (decision == null || !decision.isAllowed()) {
+                throw new SecurityException("File metadata write policy denied");
+            }
+        } catch (RuntimeException exception) {
+            log.warn("Trusted file metadata field write denied");
+            throw new SecurityException("File metadata write authorization required");
         }
     }
 
@@ -362,8 +414,8 @@ public class FileSaasAccessService {
      */
     public FileSaasScope requireForFile(String method, String fileId, String suffix) {
         if (fileId == null || !fileId.matches("[A-Za-z0-9-]{1,64}")
-                || suffix == null || !List.of("", "/url", "/restore").contains(suffix)
-                || !List.of("GET", "POST", "DELETE").contains(method)) {
+                || suffix == null || !List.of("", "/url", "/restore", "/metadata").contains(suffix)
+                || !List.of("GET", "POST", "PATCH", "DELETE").contains(method)) {
             throw new SecurityException("Invalid file action");
         }
         return requireCurrent(method + ":/api/file/internal/" + fileId + suffix);
