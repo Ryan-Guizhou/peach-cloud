@@ -55,6 +55,16 @@ class MysqlCodeAllocationTest {
     }
 
     @Test
+    void shouldAllocateInPermanentTenantBusinessIdNamespace() {
+        when(jdbc.queryForMap(anyString(), eq("TENANT_00000001"), eq("ORG")))
+                .thenReturn(Map.of("MAX_CODE_WIDTH", 8, "CURRENT_VALUE", 0L,
+                        "STATUS", "ENABLE", "SCOPE_TYPE", "TENANT", "RULE_VERSION", 0L));
+        when(jdbc.update(anyString(), eq(1L), eq("TENANT_00000001"), eq("ORG"),
+                eq(0L), eq(0L), eq("TENANT"))).thenReturn(1);
+        assertThat(generator.next("TENANT_00000001", "ORG")).isEqualTo("ORG_00000001");
+    }
+
+    @Test
     void shouldUseConfiguredSeparatorWithoutASecondAllocationPath() {
         when(jdbc.queryForMap(anyString(), eq("T001"), eq("ORG")))
                 .thenReturn(Map.of("MAX_CODE_WIDTH", 5, "CURRENT_VALUE", 7L,

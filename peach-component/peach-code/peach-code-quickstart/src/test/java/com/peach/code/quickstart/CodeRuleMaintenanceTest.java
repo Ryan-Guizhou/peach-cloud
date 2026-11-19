@@ -81,6 +81,15 @@ class CodeRuleMaintenanceTest {
     }
 
     @Test
+    void shouldAdvanceInPermanentTenantBusinessIdNamespace() {
+        stubRule("TENANT_00000001", "ORG", "TENANT", "ENABLE", 7L, 2L);
+        when(jdbc.update(anyString(), eq(8L), eq("fixed-id"), eq(2L), eq(7L)))
+                .thenReturn(1);
+        maintenance.advanceWatermark("TENANT_00000001", "ORG", 8L, 2L, "actor-id");
+        verify(jdbc).update(anyString(), eq(8L), eq("fixed-id"), eq(2L), eq(7L));
+    }
+
+    @Test
     void shouldRejectConcurrentRuleVersionChange() {
         stubRule("T001", "ORG", "TENANT", "ENABLE", 0L, 4L);
         assertThatThrownBy(() -> maintenance.changeStatus("T001", "ORG", false, 3L, "actor-id"))

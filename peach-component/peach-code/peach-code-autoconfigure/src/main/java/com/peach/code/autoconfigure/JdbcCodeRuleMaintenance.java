@@ -28,7 +28,8 @@ import java.util.function.Function;
  */
 public class JdbcCodeRuleMaintenance implements CodeRuleMaintenance {
 
-    private static final Pattern SAFE_KEY = Pattern.compile("[A-Za-z0-9][A-Za-z0-9-]{0,31}");
+    private static final Pattern SAFE_NAMESPACE = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_-]{0,31}");
+    private static final Pattern SAFE_PREFIX = Pattern.compile("[A-Za-z0-9][A-Za-z0-9-]{0,31}");
     private static final String SELECT_RULE = "SELECT ID, STATUS, SCOPE_TYPE, CODE_PREFIX, "
             + "CODE_SEPARATOR, MAX_CODE_WIDTH, CURRENT_VALUE, RULE_VERSION "
             + "FROM PEACH_CODE_RULE WHERE TENANT_ID = ? AND CODE_PREFIX = ? "
@@ -209,7 +210,8 @@ public class JdbcCodeRuleMaintenance implements CodeRuleMaintenance {
     }
 
     private static String safePart(String value, String name) {
-        if (value == null || !SAFE_KEY.matcher(value).matches()) {
+        Pattern pattern = "namespace".equals(name) ? SAFE_NAMESPACE : SAFE_PREFIX;
+        if (value == null || !pattern.matcher(value).matches()) {
             throw new CodeGeneratorException(name + " contains unsupported characters");
         }
         return value;
