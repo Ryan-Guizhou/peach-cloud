@@ -1,6 +1,7 @@
 package com.peach.fileservice.service.impl;
 
 import com.peach.fileservice.dao.FileObjectDao;
+import com.peach.fileservice.config.FileDomainProperties;
 import com.peach.fileservice.dao.FileRecordDao;
 import com.peach.fileservice.dao.FileUploadSessionDao;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
@@ -49,7 +50,7 @@ class FileDomainSaasScopeTest {
     private MultiZoneStorage multiZoneStorage;
 
     @Mock
-    private com.peach.fileservice.config.FileDomainProperties properties;
+    private FileDomainProperties properties;
 
     @Mock
     private ObjectProvider<IFileDomainService> self;

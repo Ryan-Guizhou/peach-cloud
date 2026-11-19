@@ -1,6 +1,7 @@
 package com.peach.fileservice.entity;
 
 import java.io.Serial;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -46,31 +47,31 @@ public class FileUploadSessionDO extends PeachDO implements Serializable {
 
     @Id
     @Column(name = "ID")
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     @Schema(description = "UUID物理主键")
     private String id;
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     @Column(name = "TENANT_REF_ID")
     @Schema(description = "SaaS物理归属")
     private String tenantRefId;
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     @Column(name = "APP_REF_ID")
     @Schema(description = "SaaS物理归属")
     private String appRefId;
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     @Column(name = "ORG_REF_ID")
     @Schema(description = "SaaS物理归属")
     private String orgRefId;
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     @Column(name = "OWNER_USER_REF_ID")
     @Schema(description = "SaaS物理归属")
     private String ownerUserRefId;
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     @Column(name = "MEMBER_REF_ID")
     @Schema(description = "SaaS物理归属")
     private String memberRefId;
