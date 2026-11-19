@@ -380,3 +380,32 @@ sequenceDiagram
 - **事务与发号安全**：写入先锁定物理租户并重新鉴权，`CodeRuleMaintenance` 使用相同事务的行锁、乐观版本和 `PEACH_CODE_RULE_AUDIT`；历史编码格式不变，水位只允许向前且不超过宽度。预览从现有水位计算候选值，**不预留编码**。`peach-code` 现允许永久业务租户号 `TENANT_...` 的下划线作为命名空间，编号前缀仍有严格字符限制。
 - **部署**：生产只使用受审计迁移 `sql/PEACH_SAAS_CODE_RULE_PERMISSIONS.sql` 注册 SYSTEM 权限定义。该 SQL 不自动绑定管理员；需由可信 DBA 在真实 PLATFORM 控制租户下配置受保护角色和网关 API 权限，任何授权变化均须同步失效旧成员 Token。开发 `sql/INIT.sql` 不能作为生产引导。真实 MySQL 并发、历史 Redis 水位与网关/Nacos/Redis 联调仍由 #211 跟踪。
 
+
+### #220 全局账户密码修改、凭证版本和多设备失效
+
+**当前能力**：`POST /auth/changePassword` 仅接受当前已认证 SaaS 用户的 RSA-OAEP 加密旧密码和新密码，前端位于个人中心的「修改登录密码」。先通过 `SaasAuthSessionFilter` 执行 Same-Token、Sa-Token 及成员授权版本验证，Service 用可信 Token 物理账号锁定 `PEACH_USER` 行核对 BCrypt 旧散列；12～72 个可打印 ASCII 字符且包含大写、小写、数字、符号的强密码才允许更新。重复原密码、错误旧密码或并发版本冲突一律拒绝，失败计数复用 Redis 登录锁。
+
+修改成功的同一事务写入新 BCrypt 散列、`PEACH_USER.PASSWORD_VERSION + 1` 及 `PEACH_IAM_AUTH_AUDIT` 的 `USER_PASSWORD_CHANGE` 审计；提交后使用 Sa-Token 尝试注销全局业务 `USER_ID` 的所有设备令牌。**即使 Redis 注销失败**，`TenantSessionService.requireCurrent/requireForToken` 每次用账号物理 ID + 全局业务 USER_ID + 数据库密码版本复核，旧版本会被拒绝；跨租户切换及已验证密码与新 Token 绑定之间的竞态也必须拒绝。前端成功后清理本地会话并返回登录页。普通用户资料更新接口禁止改写密码，避免绕过版本失效。
+
+**上线前置条件（必须先执行）**：在现有数据库单次受审查执行 `sql/PEACH_USER_PASSWORD_VERSION.sql`，然后迁移 SYSTEM API 定义 `sql/PEACH_PASSWORD_SECURITY_PERMISSIONS.sql` 并按正常权限授权流程将 `POST:/api/auth/changePassword` 授予需要使用密码修改的有效成员角色。**新库**采用已更新的 `sql/PEACH_USER.sql` / `sql/ALL_TABLE_CREATE.sql`，不要在新库再次执行追加列迁移。上线时需要清理历史 Token 并避免旧版 Auth 实例仍接受没有 PASSWORD_VERSION 的会话；必须实际验证网关、MySQL、Redis、跨设备、跨租户和回滚结果（#211）。开发 `sql/INIT.sql` 不可作为生产赋权。
+
+**继续关闭的功能**：`/auth/register`、`/auth/forget`、`/auth/reset` 仍明确拒绝。未接入安全的一次性重置票据与独立身份核验/投递渠道之前，不开放匿名找回或允许不验证旧密码的重设。旧 Base64/明文口令不自动解锁，必须走受控重设迁移。
+
+```mermaid
+sequenceDiagram
+    participant UI as 个人中心
+    participant Auth as SaaS 会话过滤器
+    participant Service as PasswordLifecycleService
+    participant DB as MySQL
+    participant Redis as Sa-Token/Redis
+    UI->>Auth: 密文旧/新密码 + 当前 Token
+    Auth->>DB: 校验成员、授权版本及密码版本
+    Auth->>Service: 已认证当前用户请求
+    Service->>DB: FOR UPDATE 锁账号、核验旧 BCrypt
+    Service->>DB: 更新散列和 PASSWORD_VERSION、写审计
+    DB-->>Service: COMMIT
+    Service->>Redis: 提交后全账号 Token 注销
+    Note over Auth,DB: 后续每次鉴权必须复核新密码版本
+    Service-->>UI: 修改完成并需重新登录
+```
+

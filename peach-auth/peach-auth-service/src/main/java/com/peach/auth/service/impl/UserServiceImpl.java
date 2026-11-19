@@ -144,6 +144,9 @@ public class UserServiceImpl implements IUserService {
                     ? Response.fail(formatLockMessage(failedStatus))
                     : Response.fail("用户名或密码错误");
         }
+        if (user.getPasswordVersion() == null || user.getPasswordVersion() < 0) {
+            return Response.fail("认证凭证版本不可用");
+        }
         loginLockService.clearOnSuccess(username);
         UserSensitiveFieldSupport.decryptUserFields(user);
 
@@ -152,7 +155,8 @@ public class UserServiceImpl implements IUserService {
         if (StringUtil.isNotBlank(loginDTO.getInvitationRefId())) {
             try {
                 invitationService.acceptAfterAuthentication(
-                        user.getUserId(), user.getId(), loginDTO.getInvitationRefId());
+                        user.getUserId(), user.getId(), loginDTO.getInvitationRefId(),
+                        user.getPasswordVersion());
             } catch (RuntimeException exception) {
                 log.warn("Authenticated invitation acceptance rejected");
                 return Response.fail("邀请无效、已过期或不可接受");
@@ -181,7 +185,8 @@ public class UserServiceImpl implements IUserService {
         StpUtil.login(user.getUserId(), new SaLoginParameter().setIsConcurrent(true).setIsShare(false));
         try {
             TenantSessionContext context = tenantSessionService.bindAfterAuthentication(
-                    user.getId(), selected.getTenantRefId(), selected.getAppRefId());
+                    user.getId(), selected.getTenantRefId(), selected.getAppRefId(),
+                    user.getPasswordVersion());
             LoginInfo loginInfo = buildMemberLoginInfo(user, context, selected, targets);
             log.info("Tenant member login succeeded, memberRefId={}, tenantRefId={}",
                     context.memberRefId(), context.tenantRefId());
@@ -343,10 +348,9 @@ public class UserServiceImpl implements IUserService {
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
         if (StringUtil.isNotBlank(userDO.getPassword())) {
-            userDO.setPassword(passwordHashSupport.encode(userDO.getPassword()));
-        } else {
-            userDO.setPassword(null);
+            throw new SecurityException("Password updates require the protected password lifecycle");
         }
+        userDO.setPassword(null);
         UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillModifyTime(null);
         userDao.updateById(userDO);

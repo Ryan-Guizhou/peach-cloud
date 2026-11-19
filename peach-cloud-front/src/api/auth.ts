@@ -50,6 +50,14 @@ export async function submitLogin(request: LoginRequest): Promise<LoginInfo> {
   return unwrapApiResponse(data, '登录失败', { requireData: true })
 }
 
+export async function submitPasswordChange(request: {
+  oldPassword: string
+  newPassword: string
+}): Promise<void> {
+  const { data } = await http.post<ApiResponse<unknown>>('/auth/changePassword', request)
+  unwrapApiResponse(data, '密码修改失败')
+}
+
 export async function submitLogout(): Promise<void> {
   const { data } = await http.post<ApiResponse<unknown>>('/auth/logout')
   unwrapApiResponse(data, '退出失败')

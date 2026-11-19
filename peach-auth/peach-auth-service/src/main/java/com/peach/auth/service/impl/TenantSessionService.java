@@ -3,6 +3,7 @@ package com.peach.auth.service.impl;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.session.SaSession;
 import com.peach.auth.dao.TenantMemberDao;
+import com.peach.auth.dao.UserDao;
 import com.peach.auth.entity.TenantMemberDO;
 import com.peach.common.constant.SaTokenConstant;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class TenantSessionService {
     private static final String STATUS_ACTIVE = "ACTIVE";
 
     private final TenantMemberDao tenantMemberDao;
+    private final UserDao userDao;
     private final TenantMemberLifecycleService membershipService;
 
     /**
@@ -46,10 +48,31 @@ public class TenantSessionService {
     @Transactional(readOnly = true)
     public TenantSessionContext bindAfterAuthentication(String verifiedUserRefId,
                                                          String tenantRefId, String appRefId) {
+        return bindAfterAuthentication(verifiedUserRefId, tenantRefId, appRefId,
+                requireStoredPasswordVersion(StpUtil.getTokenSession()));
+    }
+
+    /**
+     * 绑定被真实密码验证过的版本，避免密码验证之后与 Token 绑定之间的竞态提权。
+     *
+     * @param verifiedUserRefId 已核验账号物理 ID
+     * @param tenantRefId 有效租户物理 ID
+     * @param appRefId 有效应用物理 ID
+     * @param verifiedPasswordVersion BCrypt 验证时读取的数据库全局密码版本
+     * @return 带当前密码版本的可信成员会话
+     */
+    @Transactional(readOnly = true)
+    public TenantSessionContext bindAfterAuthentication(String verifiedUserRefId,
+                                                         String tenantRefId, String appRefId,
+                                                         long verifiedPasswordVersion) {
         requireIdentity(verifiedUserRefId);
         requireIdentity(tenantRefId);
         requireIdentity(appRefId);
         requireLoginUser(verifiedUserRefId);
+        if (verifiedPasswordVersion < 0 || userDao.countActivePasswordVersion(
+                verifiedUserRefId, StpUtil.getLoginIdAsString(), verifiedPasswordVersion) != 1) {
+            throw new SecurityException("Verified password version is no longer current");
+        }
         TenantMemberDO member = membershipService.resolveActive(tenantRefId, verifiedUserRefId);
         if (member == null || !Objects.equals(verifiedUserRefId, member.getUserRefId())
                 || !Objects.equals(tenantRefId, member.getTenantRefId())) {
@@ -73,7 +96,8 @@ public class TenantSessionService {
                 "memberRefId", context.memberRefId(),
                 "appRefId", context.appRefId(),
                 "memberVersion", String.valueOf(context.memberVersion()),
-                "authVersion", String.valueOf(context.authVersion())));
+                "authVersion", String.valueOf(context.authVersion()),
+                "passwordVersion", String.valueOf(verifiedPasswordVersion)));
         return context;
     }
 
@@ -119,26 +143,32 @@ public class TenantSessionService {
         }
         Object stored = session.get(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT);
         if (!(stored instanceof Map<?, ?> values)
-                || values.containsKey("year") || values.containsKey("fiscal")
+                || values.size() != 7
                 || !(values.get("userRefId") instanceof String userId)
                 || !(values.get("tenantRefId") instanceof String tenantId)
                 || !(values.get("memberRefId") instanceof String memberId)
                 || !(values.get("appRefId") instanceof String appId)
                 || !(values.get("memberVersion") instanceof String version)
-                || !(values.get("authVersion") instanceof String grantedVersion)) {
+                || !(values.get("authVersion") instanceof String grantedVersion)
+                || !(values.get("passwordVersion") instanceof String passwordVersionValue)) {
             throw new SecurityException("Tenant token is missing a trusted context");
         }
         long memberVersion;
         long authVersion;
+        long passwordVersion;
         try {
             memberVersion = Long.parseLong(version);
             authVersion = Long.parseLong(grantedVersion);
+            passwordVersion = Long.parseLong(passwordVersionValue);
         } catch (NumberFormatException exception) {
             throw new SecurityException("Tenant token member or authorization version is invalid");
         }
         TenantSessionContext context = new TenantSessionContext(
                 userId, tenantId, memberId, appId, memberVersion, authVersion);
-        if (tenantMemberDao.countAuthenticatedUserIdentity(trustedLoginId, context.userRefId()) != 1) {
+        if (passwordVersion < 0 || userDao.countActivePasswordVersion(
+                context.userRefId(), trustedLoginId, passwordVersion) != 1
+                || tenantMemberDao.countAuthenticatedUserIdentity(trustedLoginId,
+                context.userRefId()) != 1) {
             throw new SecurityException("Subject token principal does not match global user");
         }
         TenantMemberDO active = membershipService.resolveActive(context.tenantRefId(), context.userRefId());
@@ -162,7 +192,28 @@ public class TenantSessionService {
     @Transactional(readOnly = true)
     public TenantSessionContext switchTenant(String tenantRefId, String appRefId) {
         TenantSessionContext current = requireCurrent();
-        return bindAfterAuthentication(current.userRefId(), tenantRefId, appRefId);
+        return bindAfterAuthentication(current.userRefId(), tenantRefId, appRefId,
+                requireStoredPasswordVersion(StpUtil.getTokenSession()));
+    }
+
+    private static long requireStoredPasswordVersion(SaSession session) {
+        if (session == null) {
+            throw new SecurityException("Trusted password version token session is required");
+        }
+        Object value = session.get(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT);
+        if (!(value instanceof Map<?, ?> values)
+                || !(values.get("passwordVersion") instanceof String version)) {
+            throw new SecurityException("Authenticated password version is missing");
+        }
+        try {
+            long parsed = Long.parseLong(version);
+            if (parsed >= 0) {
+                return parsed;
+            }
+        } catch (NumberFormatException ignored) {
+            // 历史会话或非法令牌一律拒绝，不降级使用当前数据库版本。
+        }
+        throw new SecurityException("Authenticated password version is invalid");
     }
 
     private void requireLoginUser(String userRefId) {

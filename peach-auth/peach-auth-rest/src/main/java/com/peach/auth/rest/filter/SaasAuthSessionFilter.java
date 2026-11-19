@@ -41,6 +41,7 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
     private static final String PLATFORM_ROOT = "/auth/saas/platform";
     private static final String CODE_RULE_ROOT = "/auth/saas/code-rules";
     private static final String SWITCH_CONTEXT_PATH = "/auth/switchContext";
+    private static final String CHANGE_PASSWORD_PATH = "/auth/changePassword";
 
     private final TenantSessionService tenantSessionService;
 
@@ -82,7 +83,7 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
      * 在认证服务直接访问场景下也拒绝编码路径和 Servlet 路径规范化歧义。
      */
     private boolean isProtectedSaasSessionPath(String path) {
-        return SWITCH_CONTEXT_PATH.equals(path)
+        return CHANGE_PASSWORD_PATH.equals(path) || SWITCH_CONTEXT_PATH.equals(path)
                 || ROLE_ROOT.equals(path) || path.startsWith(ROLE_ROOT + "/")
                 || TENANT_ROOT.equals(path) || path.startsWith(TENANT_ROOT + "/")
                 || LEGACY_ORGANIZATION_ROOT.equals(path)

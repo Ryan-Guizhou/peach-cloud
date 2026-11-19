@@ -7,6 +7,8 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.peach.auth.common.RsaPasswordUtil;
 import com.peach.auth.LoginInfo;
 import com.peach.auth.dto.RegisterDTO;
+import com.peach.auth.dto.SaasPasswordChangeDTO;
+import com.peach.auth.service.SaasPasswordLifecycleService;
 import com.peach.auth.dto.SwitchContextDTO;
 import com.peach.auth.service.IUserService;
 import com.peach.captcha.constant.CaptchaEnum;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+import jakarta.validation.Valid;
 
 /**
  * 用户登录。
@@ -45,6 +48,8 @@ import org.springframework.validation.annotation.Validated;
 public class LoginController {
 
     private final IUserService userService;
+
+    private final SaasPasswordLifecycleService passwordLifecycleService;
 
     private final CaptchaService captchaService;
 
@@ -106,8 +111,9 @@ public class LoginController {
 
     @PostMapping("/changePassword")
     @Operation(summary = "用户修改密码")
-    public Response changePassword() {
-        return Response.fail("密码修改接口尚未开放");
+    public Response changePassword(@RequestBody @Valid SaasPasswordChangeDTO request) {
+        passwordLifecycleService.changePassword(request);
+        return Response.success().setMsg("密码修改成功，请重新登录");
     }
 
     @PostMapping("/changeInfo")

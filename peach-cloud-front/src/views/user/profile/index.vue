@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
 import { fetchCurrentProfile, selectProfileAvatar, updateCurrentProfile, uploadProfileAvatar } from '../../../api/profile'
+import { initLogin, submitPasswordChange } from '../../../api/auth'
+import { encryptLoginPassword } from '../../../utils/rsa'
 import PeachCloudLogo from '../../../components/auth/PeachCloudLogo.vue'
 import { useAuthStore } from '../../../stores/auth'
 import type { AvatarHistoryItem, UserProfile, UserProfileUpdateRequest } from '../../../types/profile'
@@ -15,6 +17,47 @@ const LOADING_TIP_MS = 3000
 const DEV_DEBUG = true
 
 const authStore = useAuthStore()
+const router = useRouter()
+const passwordForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
+const isChangingPassword = ref(false)
+const passwordError = ref('')
+const passwordPolicy = /^(?=.{12,72}$)(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9])[!-~]+$/
+
+const handleChangePassword = async (): Promise<void> => {
+  if (isChangingPassword.value) return
+  passwordError.value = ''
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    passwordError.value = '新密码和确认密码不一致'
+    return
+  }
+  if (!passwordPolicy.test(passwordForm.newPassword)) {
+    passwordError.value = '新密码至少12位，最多72位，须包含大小写字母、数字和符号'
+    return
+  }
+  if (!passwordForm.oldPassword) {
+    passwordError.value = '请输入当前密码'
+    return
+  }
+  isChangingPassword.value = true
+  try {
+    const init = await initLogin()
+    const [oldPassword, newPassword] = await Promise.all([
+      encryptLoginPassword(passwordForm.oldPassword, init.publicKey),
+      encryptLoginPassword(passwordForm.newPassword, init.publicKey),
+    ])
+    await submitPasswordChange({ oldPassword, newPassword })
+    passwordForm.oldPassword = ''
+    passwordForm.newPassword = ''
+    passwordForm.confirmPassword = ''
+    authStore.clearSession()
+    await router.replace('/login')
+  } catch {
+    passwordError.value = '修改密码失败，请确认当前密码与登录状态，或稍后重试'
+  } finally {
+    isChangingPassword.value = false
+  }
+}
+
 const fileInput = ref<HTMLInputElement | null>(null)
 const profile = ref<UserProfile | null>(null)
 const isLoading = ref(true)
@@ -448,6 +491,35 @@ onBeforeUnmount(clearLoadingTipTimer)
           </article>
         </section>
 
+        <!-- 全局账号密码修改：成功后同账号所有设备和租户的旧 Token 都会失效。 -->
+        <section class="profile-card password-manager" v-if="displayProfile">
+          <header>
+            <div>
+              <span class="profile-card__eyebrow">ACCOUNT SECURITY</span>
+              <h2>修改登录密码</h2>
+              <p>至少12位，包含大小写字母、数字和符号。修改成功后需要重新登录。</p>
+            </div>
+          </header>
+          <form class="password-form" @submit.prevent="handleChangePassword">
+            <label class="profile-field">
+              <span>当前密码</span>
+              <input v-model="passwordForm.oldPassword" type="password" autocomplete="current-password" required maxlength="72" />
+            </label>
+            <label class="profile-field">
+              <span>新密码</span>
+              <input v-model="passwordForm.newPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="72" />
+            </label>
+            <label class="profile-field">
+              <span>确认新密码</span>
+              <input v-model="passwordForm.confirmPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="72" />
+            </label>
+            <p v-if="passwordError" class="password-error" role="alert">{{ passwordError }}</p>
+            <button class="profile-save" type="submit" :disabled="isChangingPassword">
+              {{ isChangingPassword ? '正在验证…' : '安全修改密码' }}
+            </button>
+          </form>
+        </section>
+
         <!-- 头像管理卡片 -->
         <section class="profile-card avatar-manager" v-if="displayProfile">
           <header>
@@ -516,10 +588,10 @@ onBeforeUnmount(clearLoadingTipTimer)
 .profile-identity { display: flex; align-items: center; flex-direction: column; padding: 30px; text-align: center; }.profile-avatar { position: relative; display: grid; overflow: hidden; place-items: center; border: 1px solid var(--color-border-strong); border-radius: 50%; background: radial-gradient(circle, rgba(33,200,239,.22), rgba(7,17,31,.9)); }.profile-avatar--large { width: 128px; height: 128px; margin: 24px 0 16px; }.profile-avatar img,.avatar-history__image img { width: 100%; height: 100%; object-fit: cover; }.profile-avatar strong { font-size: 32px; }.profile-avatar__live { position: absolute; right: 8px; bottom: 12px; width: 13px; height: 13px; border: 3px solid var(--navy-900); border-radius: 50%; background: var(--color-success); }.profile-identity h2 { margin: 0; font-size: 24px; }.profile-identity > p { margin: 6px 0 22px; color: var(--color-text-muted); font-size: 12px; }
 .profile-context { width: 100%; border-top: 1px solid var(--color-border); }.profile-context div { display: flex; justify-content: space-between; gap: 10px; padding: 13px 0; border-bottom: 1px solid var(--color-border); text-align: left; }.profile-context span,.profile-context strong { font-size: 11px; }.profile-context span { color: var(--color-text-muted); }.profile-context strong { overflow: hidden; max-width: 65%; text-overflow: ellipsis; white-space: nowrap; }
 .profile-details { padding: 28px; }.profile-details header,.avatar-manager header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }.profile-details h2,.avatar-manager h2 { margin: 7px 0 0; font-size: 19px; }.profile-details header small { color: var(--color-text-muted); }.profile-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }.profile-field { display: flex; min-width: 0; flex-direction: column; gap: 8px; }.profile-field:first-child { grid-column: 1 / -1; }.profile-field span,.profile-readonly-grid span { color: var(--color-text-muted); font-size: 10px; }.profile-field input { width: 100%; min-height: 44px; padding: 0 13px; border: 1px solid var(--color-border); border-radius: var(--control-radius); outline: none; background: rgba(7,17,31,.54); color: var(--color-text-primary); }.profile-field input:focus { border-color: var(--color-border-strong); box-shadow: 0 0 0 3px rgba(33,200,239,.13); }.profile-field input::placeholder { color: var(--color-text-muted); }.profile-readonly-grid { display: grid; grid-column: 1 / -1; grid-template-columns: 1fr 1fr; gap: 1px; overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-border); }.profile-readonly-grid div { min-width: 0; padding: 13px; background: rgba(7,17,31,.58); }.profile-readonly-grid strong { display: block; overflow: hidden; margin-top: 7px; color: var(--color-text-secondary); font-size: 12px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }.profile-readonly-grid em { padding: 4px 8px; border-radius: 999px; background: rgba(37,216,179,.1); color: var(--color-success); font-style: normal; }.profile-save { justify-self: start; min-height: 44px; padding: 0 17px; border-radius: var(--control-radius); background: linear-gradient(120deg,#087a99,#1a67d8); color: white; font-weight: 800; }
-.avatar-manager { margin-top: 16px; padding: 28px; }.avatar-manager header p { max-width: 620px; margin: 8px 0 0; color: var(--color-text-muted); font-size: 12px; line-height: 1.6; }.avatar-manager header > div:last-child { display: flex; align-items: flex-end; flex-direction: column; gap: 7px; }.avatar-manager header small { color: var(--color-text-muted); font-size: 9px; }.profile-upload { min-height: 44px; padding: 0 17px; border-radius: var(--control-radius); background: linear-gradient(120deg,#087a99,#1a67d8); color: white; font-weight: 800; }.profile-upload:focus-visible,.avatar-history__item:focus-visible,.profile-back:focus-visible,.profile-save:focus-visible { outline: 3px solid rgba(102,227,255,.55); outline-offset: 3px; }
+.password-manager { margin-top: 16px; padding: 28px; }.password-manager h2 { margin: 7px 0 0; font-size: 19px; }.password-manager header p { margin: 8px 0 0; color: var(--color-text-muted); font-size: 12px; }.password-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 20px; }.password-form .profile-save { grid-column: 1 / -1; }.password-error { grid-column: 1 / -1; margin: 0; color: var(--color-danger); font-size: 12px; }.avatar-manager { margin-top: 16px; padding: 28px; }.avatar-manager header p { max-width: 620px; margin: 8px 0 0; color: var(--color-text-muted); font-size: 12px; line-height: 1.6; }.avatar-manager header > div:last-child { display: flex; align-items: flex-end; flex-direction: column; gap: 7px; }.avatar-manager header small { color: var(--color-text-muted); font-size: 9px; }.profile-upload { min-height: 44px; padding: 0 17px; border-radius: var(--control-radius); background: linear-gradient(120deg,#087a99,#1a67d8); color: white; font-weight: 800; }.profile-upload:focus-visible,.avatar-history__item:focus-visible,.profile-back:focus-visible,.profile-save:focus-visible { outline: 3px solid rgba(102,227,255,.55); outline-offset: 3px; }
 .avatar-history { display: grid; grid-template-columns: repeat(5,minmax(100px,1fr)); gap: 14px; margin-top: 26px; }.avatar-history__item { display: flex; align-items: center; flex-direction: column; gap: 9px; min-height: 144px; padding: 12px; border: 1px solid var(--color-border); border-radius: 13px; background: rgba(7,17,31,.6); color: var(--color-text-muted); font-size: 10px; }.avatar-history__item:not(:disabled):hover { border-color: var(--color-border-strong); transform: translateY(-2px); }.avatar-history__item.is-current { border-color: var(--color-border-strong); color: var(--cyan-300); box-shadow: inset 0 0 28px rgba(33,200,239,.08); }.avatar-history__image { display: grid; overflow: hidden; width: 84px; height: 84px; place-items: center; border-radius: 50%; background: var(--color-bg-raised); }.avatar-empty,.profile-state { margin-top: 20px; padding: 28px; border: 1px dashed var(--color-border); border-radius: var(--card-radius); color: var(--color-text-muted); text-align: center; }.avatar-empty p { margin: 0 0 8px; color: var(--color-text-secondary); }.avatar-empty small { font-size: 10px; line-height: 1.6; opacity: .85; }.profile-state--loading { display: flex; align-items: center; gap: 18px; text-align: left; }.profile-state__body { flex: 1; min-width: 0; }.profile-state--loading strong { display: block; color: var(--color-text-secondary); font-size: 13px; }.profile-state--loading small { display: block; margin-top: 4px; color: var(--color-danger); font-size: 11px; line-height: 1.6; }.profile-state--error { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }.profile-state__retry { min-height: 40px; padding: 0 14px; border-radius: 8px; color: white; background: var(--color-accent-strong); font-size: 12px; flex: none; }.profile-spinner { width: 38px; height: 38px; flex: none; border: 3px solid var(--color-border); border-top-color: var(--cyan-400); border-radius: 50%; animation: profile-spin 1s linear infinite; }.profile-feedback { margin-bottom: 16px; padding: 12px 15px; border: 1px solid rgba(37,216,179,.25); border-radius: 10px; background: rgba(37,216,179,.08); color: var(--color-success); font-size: 12px; }.profile-feedback.is-error { border-color: rgba(255,110,124,.25); background: rgba(255,110,124,.08); color: var(--color-danger); }.profile-feedback--block { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px; margin-top: 0; margin-bottom: 16px; border-style: solid; }.profile-feedback--block .profile-feedback__main strong { display: block; margin-bottom: 6px; font-size: 13px; }.profile-feedback--block .profile-feedback__main p { margin: 0; color: inherit; line-height: 1.6; font-size: 12px; opacity: .92; }.profile-feedback--block.is-error .profile-feedback__main strong { color: var(--color-danger); }.profile-feedback__detail { margin: 10px 0 0; padding: 10px 12px; max-height: 160px; overflow: auto; border-radius: 8px; background: rgba(0,0,0,.35); color: var(--color-text-secondary); font-size: 10px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }.profile-retry-btn { min-height: 36px; padding: 0 14px; border-radius: 8px; color: white; background: var(--color-accent-strong); font-size: 12px; flex: none; }.visually-hidden { position: absolute; overflow: hidden; width: 1px; height: 1px; clip: rect(0,0,0,0); white-space: nowrap; }
 @keyframes profile-spin { to { transform: rotate(360deg); } }
-@media (max-width: 800px) { .profile-grid { grid-template-columns: 1fr; }.avatar-history { grid-template-columns: repeat(3,1fr); }.profile-heading,.avatar-manager header,.profile-state--loading,.profile-feedback--block { flex-direction: column; }.avatar-manager header > div:last-child { align-items: flex-start; } }
+@media (max-width: 800px) { .password-form { grid-template-columns: 1fr; }.profile-grid { grid-template-columns: 1fr; }.avatar-history { grid-template-columns: repeat(3,1fr); }.profile-heading,.avatar-manager header,.profile-state--loading,.profile-feedback--block { flex-direction: column; }.avatar-manager header > div:last-child { align-items: flex-start; } }
 @media (max-width: 520px) { .profile-content { width: min(100% - 24px,1160px); padding-top: 30px; }.profile-form,.profile-readonly-grid { grid-template-columns: 1fr; }.avatar-history { grid-template-columns: repeat(2,1fr); }.profile-topbar { min-height: 70px; padding: 0 12px; } }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
 </style>

@@ -165,6 +165,16 @@ VALUES
      'POST:/api/auth/saas/code-rules/{prefix}/watermark', '前移编码水位API', 'API', 'SYSTEM',
      1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
 
+-- #220: 受保护的已认证用户密码修改 API，不属于匿名密码找回或重置。
+INSERT IGNORE INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID,
+     PERMISSION_CODE, PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE,
+     DELEGABLE, STATUS, IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_SAAS_PASSWORD_CHANGE', NULL, NULL,
+     'POST:/api/auth/changePassword', '已认证用户修改密码API', 'API', 'SYSTEM',
+     1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
+
 INSERT IGNORE INTO PEACH_ROLE
     (ID, ROLE_ID, TENANT_ID, ORG_ID, ROLE_CODE,
      ROLE_NAME, ROLE_DESC, ROLE_SCOPE, ROLE_TYPE,
@@ -209,7 +219,8 @@ INNER JOIN PEACH_PERMISSION_DEFINITION P ON P.PERMISSION_CODE IN
      'GET:/api/auth/saas/code-rules/{prefix}/preview',
      'PUT:/api/auth/saas/code-rules/{prefix}/status',
      'PUT:/api/auth/saas/code-rules/{prefix}/format',
-     'POST:/api/auth/saas/code-rules/{prefix}/watermark')
+     'POST:/api/auth/saas/code-rules/{prefix}/watermark',
+     'POST:/api/auth/changePassword')
     AND P.OWNER_TYPE = 'SYSTEM' AND P.TENANT_REF_ID IS NULL
 WHERE R.ROLE_ID = 'ROLE_INIT_TENANTADMIN' AND R.IS_DELETE = 0;
 

@@ -323,3 +323,32 @@ The new `SaasPolicyEditor.vue` loads the full existing policy and trusted field 
 - **Transactions:** Writes lock the physical tenant and re-authorize. `CodeRuleMaintenance` uses rule locks, optimistic versions and `PEACH_CODE_RULE_AUDIT` in the same transaction. Once issued, code formats cannot change and watermarks may only advance within the configured width. Preview **never reserves a code**. `peach-code` now accepts the underscore in permanent business namespaces such as `TENANT_...` while retaining strict prefix validation.
 - **Deployment:** Review and apply `sql/PEACH_SAAS_CODE_RULE_PERMISSIONS.sql` for SYSTEM permission definitions only. It never grants an initial PLATFORM administrator. Trusted DBA provisioning must separately bind protected PLATFORM SYSTEM roles, install matching Gateway API resources and invalidate prior auth versions. Developer `sql/INIT.sql` is not a production bootstrap. Live MySQL concurrency, historical Redis watermarks and Nacos/Redis/Gateway end-to-end checks remain with #211.
 
+
+### #220 Global account password changes, credential versions and multi-device revocation
+
+**Current implementation:** `POST /auth/changePassword` accepts RSA-OAEP encrypted old and new passwords only for the current authenticated SaaS principal. The frontend exposes a Change Password form in Profile. `SaasAuthSessionFilter` enforces Same-Token, current Sa-Token login and database membership/authorization versions. The service locks the trusted `PEACH_USER` row and verifies the old BCrypt hash. Strong passwords must be 12–72 printable ASCII characters with upper/lowercase letters, numbers and symbols. Incorrect credentials are rate-limited using the Redis login lock. Same-password reuse and concurrent version conflicts are rejected.
+
+The new BCrypt hash, global `PEACH_USER.PASSWORD_VERSION + 1` and `USER_PASSWORD_CHANGE` audit record commit in the same transaction. After commit, Sa-Token attempts global account token revocation for all devices. **If Redis revocation fails**, `TenantSessionService.requireCurrent/requireForToken` still checks the physical user ID, permanent business USER_ID and database credential version for every SaaS request. Older tokens and changes racing between password verification and tenant-session binding are rejected. The frontend clears local session data and navigates to login after success. Generic profile edits cannot update passwords.
+
+**Deployment prerequisites:** On an existing schema, apply `sql/PEACH_USER_PASSWORD_VERSION.sql` once before deploying updated Auth instances. Then apply `sql/PEACH_PASSWORD_SECURITY_PERMISSIONS.sql` and use normal version-invalidating role management to grant `POST:/api/auth/changePassword` to eligible active roles. For fresh databases, use the updated `sql/PEACH_USER.sql` / `sql/ALL_TABLE_CREATE.sql` and **do not apply the add-column migration again**. Revoke legacy sessions and avoid mixed old/new Auth instances during rollout. The development-only `sql/INIT.sql` is not a production grant. Verify MySQL, Gateway, Redis, cross-device/tenant behavior and transaction rollback in the live environment (#211).
+
+**Still unavailable:** `/auth/register`, `/auth/forget` and `/auth/reset` remain fail-closed. Do not enable anonymous recovery or reset without independently verified identity, high-entropy one-time tickets and a secure delivery channel. Legacy Base64/plaintext credentials are not accepted; migrate them through a controlled reset process.
+
+```mermaid
+sequenceDiagram
+    participant UI as Profile
+    participant Auth as SaaS Session Filter
+    participant Service as PasswordLifecycleService
+    participant DB as MySQL
+    participant Redis as Sa-Token/Redis
+    UI->>Auth: RSA encrypted old/new passwords + current Token
+    Auth->>DB: Check member, grant and password versions
+    Auth->>Service: Trusted current user
+    Service->>DB: FOR UPDATE lock and verify old BCrypt
+    Service->>DB: Update hash, PASSWORD_VERSION and audit
+    DB-->>Service: COMMIT
+    Service->>Redis: Revoke all account tokens after commit
+    Note over Auth,DB: Every later auth rechecks database password version
+    Service-->>UI: Re-login required
+```
+
