@@ -6,6 +6,8 @@ import com.peach.fileservice.dao.FileRecordDao;
 import com.peach.fileservice.dao.FileUploadSessionDao;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
 import com.peach.fileservice.dto.FileMetadataPatchDTO;
+import com.peach.fileservice.dto.FileBatchActionDTO;
+import java.util.List;
 import java.util.Map;
 import com.peach.fileservice.service.IFileDomainService;
 import com.peach.fileservice.service.support.FileSaasAccessService;
@@ -163,6 +165,40 @@ class FileDomainSaasScopeTest {
                 .thenThrow(new SecurityException("denied"));
 
         assertThatThrownBy(() -> domainService.updateMetadata("FILE00001", patch))
+                .isInstanceOf(SecurityException.class);
+        verifyNoInteractions(fileRecordDao);
+    }
+
+    @Test
+    void shouldRejectDuplicateFileIdentifiersBeforeBatchAuthorization() {
+        FileBatchActionDTO data = new FileBatchActionDTO();
+        data.setFileIds(List.of("FILE00001", "FILE00001"));
+
+        assertThatThrownBy(() -> domainService.batchLogicalDelete(data))
+                .isInstanceOf(IllegalArgumentException.class);
+        verifyNoInteractions(saasAccessService, fileRecordDao);
+    }
+
+    @Test
+    void shouldRejectBatchApiDenialBeforeLookingUpFileRecords() {
+        FileBatchActionDTO data = new FileBatchActionDTO();
+        data.setFileIds(List.of("FILE00001", "FILE00002"));
+        when(saasAccessService.requireCurrent("POST:/api/file/internal/batch/delete"))
+                .thenThrow(new SecurityException("denied"));
+
+        assertThatThrownBy(() -> domainService.batchLogicalDelete(data))
+                .isInstanceOf(SecurityException.class);
+        verifyNoInteractions(fileRecordDao);
+    }
+
+    @Test
+    void shouldRejectBatchRestoreWithoutItsOwnApiPermission() {
+        FileBatchActionDTO data = new FileBatchActionDTO();
+        data.setFileIds(List.of("FILE00001"));
+        when(saasAccessService.requireCurrent("POST:/api/file/internal/batch/restore"))
+                .thenThrow(new SecurityException("denied"));
+
+        assertThatThrownBy(() -> domainService.batchRestore(data))
                 .isInstanceOf(SecurityException.class);
         verifyNoInteractions(fileRecordDao);
     }

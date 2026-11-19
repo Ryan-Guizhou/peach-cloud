@@ -97,6 +97,22 @@ class FileSaasAccessServiceTest {
 
 
     @Test
+    void shouldAllowCrossOwnerFileOnlyWithExplicitIamRowGrant() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        FileRecordVO row = record(scope);
+        row.setOwnerUserRefId("another-user");
+        when(iamFeignClient.checkFileObjectPermission(eq("subject-token"),
+                any(SaasIamFileObjectCheckDTO.class)))
+                .thenReturn(new SaasIamPermissionDecisionVO(true));
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
+            service.requireFileData("FILE.READ", scope, row);
+        }
+        verify(iamFeignClient).checkFileObjectPermission(eq("subject-token"),
+                any(SaasIamFileObjectCheckDTO.class));
+    }
+
+    @Test
     void shouldAuthorizeFileRowOnlyAfterLiveSameBindingDataPolicy() {
         FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
         FileRecordVO row = new FileRecordVO();
