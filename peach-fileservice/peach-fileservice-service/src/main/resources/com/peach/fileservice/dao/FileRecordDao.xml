@@ -339,7 +339,7 @@
                 AND r.IS_DELETE = #{isDelete,jdbcType=INTEGER}
             </if>
         </where>
-        ORDER BY r.CREATED_TIME DESC
+        ORDER BY r.CREATED_TIME DESC, r.FILE_ID DESC
     </select>
 
     <select id="selectDetailByFileId" resultType="com.peach.fileservice.vo.FileRecordVO">
