@@ -353,3 +353,11 @@ MySQL 唯一索引允许多个 NULL，所以可以存在多个历史重复 CODE�
 - 平台创建从受保护系统权限 `PLATFORM.TENANT.CREATE` 判定；首次平台控制租户和 SYSTEM 管理员须由受控部署流程单独初始化，不得部署匿名引导入口。
 - 新功能必须复用现有 DAO/Service、UUID 物理 `ID` 和不可复用业务编号，并在角色成员/数据权限 SQL 中保留真实租户、应用及版本边界。
 - 本 Issue 仅表示代码交付；真实 MySQL/Nacos/Redis/网关及跨服务隔离验证留在 #211，开发前后的任务状态以 GitHub Issue/PR/CI 实际记录为准。
+
+### #220 密码版本与全账号会话失效
+
+- 数据模型：`PEACH_USER.PASSWORD_VERSION BIGINT NOT NULL DEFAULT 0`，当前全局账号在**所有租户/应用/设备共享同一版本**。不修改成员 `VERSION`、`AUTH_VERSION` 或租户隔离模型；Token 仍仅携带服务端会话专属快照。
+- 登录原子边界：`UserDao.login` 读取哈希及 PASSWORD_VERSION → 先 BCrypt 认证 → `TenantSessionService.bindAfterAuthentication(..., verifiedPasswordVersion)` 强制重新查询 DB 版本，版本不一致立即拒绝并清理新 Token。切租户沿用已验证 Token 原版本，不会偷换成数据库当前版本。
+- 请求：`requireCurrent` / `requireForToken` 必须以业务 USER_ID、物理用户 ID 与 Token 的 PASSWORD_VERSION 三元组查询有效用户。缺少字段的旧 Token 直接拒绝，不降级猜测版本；网关复用受信 Auth 查询，因此旧 Token 不能重新获得跨租户授权。
+- 修改：受信当前用户、自身旧密码、强密码和 Redis 失败锁校验 → 用户行锁 → BCrypt → 新 BCrypt + VERSION CAS + 同事务审计 → commit → 全账号 Sa-Token 注销（不在回滚事务中执行）。Redis 注销失败仍有数据库版本最终拒绝；其他未接入在线 SaaS 鉴权的遗留业务服务必须另在 #211 检查，不虚报全链路通过。
+- 迁移：DDL 必须先于新版 Auth；旧 Token 必须批量清理；禁止旧新版 Auth 混跑；原有无效哈希由受控核验的重设途径处理，不使用默认密码重置后门。
