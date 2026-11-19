@@ -3,6 +3,8 @@ package com.peach.fileservice.service.support;
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import java.util.Map;
 import com.peach.fileservice.vo.FileRecordVO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.vo.SaasIamContextVO;
@@ -144,6 +146,53 @@ class FileSaasAccessServiceTest {
         assertThatThrownBy(() -> service.requireFileData("FILE.READ", scope, row))
                 .isInstanceOf(SecurityException.class);
         verifyNoInteractions(iamFeignClient);
+    }
+
+    @Test
+    void shouldRedactUnapprovedMetadataFromFileDetails() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        FileRecordVO raw = record(scope);
+        raw.setFileName("secret.pdf");
+        raw.setObjectId("object-internal");
+        raw.setStorageProvider("storage-internal");
+        raw.setBucketName("private-bucket");
+        raw.setObjectKey("secret-path");
+        when(iamFeignClient.projectFileFields(eq("subject-token"),
+                any(SaasIamFileFieldReadDTO.class)))
+                .thenReturn(Map.of("fileId", "FILE0001", "fileName", "****"));
+
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
+            FileRecordVO visible = service.projectVisibleFields("FILE.READ", scope, raw);
+            assertThat(visible.getFileId()).isEqualTo("FILE0001");
+            assertThat(visible.getFileName()).isEqualTo("****");
+            assertThat(visible.getObjectId()).isNull();
+            assertThat(visible.getBucketName()).isNull();
+            assertThat(visible.getObjectKey()).isNull();
+        }
+    }
+
+    @Test
+    void shouldRejectFieldProjectionWithoutExplicitReadableFileId() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        when(iamFeignClient.projectFileFields(eq("subject-token"),
+                any(SaasIamFileFieldReadDTO.class)))
+                .thenReturn(Map.of("fileName", "report.pdf"));
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
+            assertThatThrownBy(() -> service.projectVisibleFields("FILE.READ", scope, record(scope)))
+                    .isInstanceOf(SecurityException.class);
+        }
+    }
+
+    private static FileRecordVO record(FileSaasScope scope) {
+        FileRecordVO row = new FileRecordVO();
+        row.setId("00000000000000000000000000000001");
+        row.setFileId("FILE0001");
+        row.setTenantRefId(scope.tenantRefId());
+        row.setAppRefId(scope.appRefId());
+        row.setOwnerUserRefId(scope.userRefId());
+        return row;
     }
 
     @Test

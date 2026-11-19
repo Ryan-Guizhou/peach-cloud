@@ -2,6 +2,9 @@ package com.peach.auth.service;
 
 import com.peach.auth.dao.ScopedDataAuthorizationDao;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import com.peach.auth.vo.ScopedFieldRuleVO;
+import java.util.Map;
 import com.peach.auth.service.data.OrganizationScopeMatcher;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
@@ -98,6 +101,51 @@ class SaasIamRemoteFileDataServiceTest {
                 .thenReturn(List.of(grant("TENANT", "SELF")));
 
         assertThat(service.decide("subject", request).isAllowed()).isTrue();
+    }
+
+    @Test
+    void shouldReturnOnlyExplicitlyApprovedAndMaskedFields() {
+        SaasIamFileObjectCheckDTO object = descriptor("FILE.READ", "tenant", "app", "user");
+        SaasIamFileFieldReadDTO request = new SaasIamFileFieldReadDTO();
+        request.setObject(object);
+        request.setFields(Map.of("fileId", "FILE0001",
+                "fileName", "secret.pdf", "createdTime", "2026-11-19"));
+        when(sessionService.requireForToken("subject")).thenReturn(principal());
+        when(authorizationDao.selectDataGrants("tenant", "member", "app", "FILE.READ"))
+                .thenReturn(List.of(grant("TENANT", "SELF")));
+        when(authorizationDao.selectFieldRules("tenant", "member", "app",
+                "FILE.READ", "FILE_RECORD", List.of("binding")))
+                .thenReturn(List.of(field("fileId", "ALLOW"), field("fileName", "MASK")));
+
+        Map<String, Object> projected = service.projectFields("subject", request);
+
+        assertThat(projected).containsEntry("fileId", "FILE0001")
+                .containsEntry("fileName", "****")
+                .doesNotContainKey("createdTime");
+    }
+
+    @Test
+    void shouldDenyFieldReadWhenNoFieldPolicyExists() {
+        SaasIamFileFieldReadDTO request = new SaasIamFileFieldReadDTO();
+        request.setObject(descriptor("FILE.READ", "tenant", "app", "user"));
+        request.setFields(Map.of("fileId", "FILE0001"));
+        when(sessionService.requireForToken("subject")).thenReturn(principal());
+        when(authorizationDao.selectDataGrants("tenant", "member", "app", "FILE.READ"))
+                .thenReturn(List.of(grant("TENANT", "SELF")));
+
+        assertThat(service.projectFields("subject", request)).isEmpty();
+    }
+
+    private static ScopedFieldRuleVO field(String name, String readEffect) {
+        ScopedFieldRuleVO field = new ScopedFieldRuleVO();
+        field.setBindingRefId("binding");
+        field.setRoleRefId("role");
+        field.setPermissionRefId("permission");
+        field.setFieldCode(name);
+        field.setMaskStrategy("FULL");
+        field.setReadEffect(readEffect);
+        field.setWriteEffect("DENY");
+        return field;
     }
 
     @Test

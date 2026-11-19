@@ -166,6 +166,7 @@ public class FileSaasAccessService {
     public FileRecordVO projectVisibleFields(String action, FileSaasScope scope, FileRecordVO record) {
         if (!List.of("FILE.READ", "FILE.LIST").contains(action) || scope == null
                 || record == null || !StringUtils.hasText(record.getId())
+                || !StringUtils.hasText(record.getFileId())
                 || !scope.tenantRefId().equals(record.getTenantRefId())
                 || !scope.appRefId().equals(record.getAppRefId())
                 || !scope.userRefId().equals(record.getOwnerUserRefId())) {

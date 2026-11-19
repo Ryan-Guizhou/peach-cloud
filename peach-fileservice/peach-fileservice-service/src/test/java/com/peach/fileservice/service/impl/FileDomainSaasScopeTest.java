@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
-import static doThrow;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -70,6 +70,7 @@ class FileDomainSaasScopeTest {
         when(saasAccessService.requireContext()).thenReturn(SCOPE);
         when(fileRecordDao.selectScopedDetail("FILE00001", "tenant-ref", "app-ref", "user-ref"))
                 .thenReturn(row);
+        when(saasAccessService.projectVisibleFields("FILE.READ", SCOPE, row)).thenReturn(row);
 
         assertThat(domainService.selectByFileId("FILE00001").getFileId()).isEqualTo("FILE00001");
         verify(fileRecordDao).selectScopedDetail("FILE00001", "tenant-ref", "app-ref", "user-ref");
@@ -97,7 +98,7 @@ class FileDomainSaasScopeTest {
         when(saasAccessService.requireContext()).thenReturn(SCOPE);
         when(fileRecordDao.selectScopedDetail("FILE00001", "tenant-ref", "app-ref", "user-ref"))
                 .thenReturn(row);
-        org.mockito.Mockito.doThrow(new SecurityException("data denied"))
+        doThrow(new SecurityException("data denied"))
                 .when(saasAccessService).requireFileData("FILE.DOWNLOAD", SCOPE, row);
 
         assertThatThrownBy(() -> domainService.getDownloadUrl("FILE00001"))
