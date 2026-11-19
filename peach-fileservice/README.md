@@ -182,7 +182,7 @@ Maven 命令只验证编译和打包，不替代真实 provider、分片直传�
 - 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
 - README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。
 
-### #231 文件详情与上传会话的现有对象边界收敛
+### #231 文件详情与上传会话的历史止血方案（已由 #232 物理范围替代）
 
 此前文件分页由 `AuditContext.requireTenantId/requireOrgId` 赋予查询范围，但 `FileDomainServiceImpl.selectByFileId`、`requireRecord` 和 `requireSession` 没有统一验证数据库行归属，知道别人的文件 ID/上传会话 ID 时存在跨租户/机构访问风险。现由 `FileRecordScopeGuard` 在**返回详情、生成临时下载 URL、逻辑删除/恢复、读取上传会话**前比较服务端现有可信业务租户及机构与数据库记录的真实 `TENANT_ID/ORG_ID`。文件详情 SQL 补出归属列，任何上下文缺失、记录归属缺失或不同均拒绝。后台清理任务独立于用户会话，不通过模拟用户绕过校验。对应纯函数单测涵盖跨租户、跨机构和空范围。
 
@@ -195,7 +195,7 @@ Maven 命令只验证编译和打包，不替代真实 provider、分片直传�
 **已提交到 feature 分支的基础能力：** 文件记录、对象和上传会话统一增加 UUID 物理 `ID`，保留唯一业务编号 `FILE_ID`、`OBJECT_ID`、`SESSION_ID`；添加受信 `TENANT_REF_ID`、`APP_REF_ID`、`OWNER_USER_REF_ID`、可选 `ORG_REF_ID` 和上传者 `MEMBER_REF_ID`。通过 `SaasIamFeignClient` 在线向 Auth 校验实际最终用户 Token 的 API 动作与物理上下文，由 Auth 再校验成员、授权和全局密码版本。任意 Feign/Redis/同令牌验证失败都**拒绝**，不会降级使用浏览器自报业务租户或旧 USER_PROFILE。
 
 - 秒传对象 SQL 同时限定物理 tenant、app 和 owner，禁止跨租户/用户借 SHA-256 复用对象；文件分页 SQL 与 COUNT 同时限定物理范围和 owner；文件详情、签名 URL 生成前必须从受限 SQL 读取真实记录。删除和恢复 UPDATE WHERE 再次约束三元组，上传会话续传需匹配上传成员物理 ID。
-- 普通文件列表目前采取**仅所有者可见**的最严格兜底策略，不会假装已有全机构/跨机构共享能力。Role/Data/Field 按同一授权绑定求交的文件完整接入仍是 #232 尚未完成部分；在补齐之前，严禁将此阶段单独合并为生产完整 RBAC。
+- 文件列表已经按 Auth 每条有效角色绑定的 SELF/ORG/ORG_TREE/TENANT_ALL 范围独立求交再取并集；SQL 在 COUNT 和分页之前使用相同物理范围，只有真正获得行授权才允许跨所有者读取。
 - `sql/PEACH_FILE_SAAS_PHYSICAL_MIGRATION.sql` 是**存量库一次性迁移**，需 DBA 备份、执行物理主键切换、做存量对象与真实 tenant/app/owner/member 的人工证据映射和核对。没有真实映射的旧行继续保持 NULL 并由新 SQL 过滤，不允许自动猜测、默认开放或把旧 TENANT_ID 当物理主键。新库用 `sql/PEACH_FILE_*.sql` / `sql/ALL_TABLE_CREATE.sql`，不得再次运行 ALTER。
 - `sql/PEACH_FILE_SAAS_API_PERMISSIONS.sql` 只注册固定 SYSTEM API 定义，不自动授权。认证服务原有 `GET:/api/file/internal/*` 等通配资源不满足最新 API 路径解析器，应停止使用并按 `{fileId}` 模板配置最小授权。External 代理调用复用 Internal 的文件领域方法，因此当前需要同时具有相应内部动作权限。
 - 文件服务内部清理任务仅访问已拥有物理范围映射的到期数据，不伪造终端用户 Token；历史未映射记录不得直接清理。
@@ -204,7 +204,7 @@ Maven 命令只验证编译和打包，不替代真实 provider、分片直传�
 
 #### 文件对象行级策略（同一角色绑定）
 
-#232 的远程 IAM 接口 `/auth/external/iam/file-object/check` 要求业务服务通过独立 Same-Token 转交最终用户 Token、真实物理对象 ID 和数据库内 tenant/app/owner/org 权属。Auth 使用当前 Token 读取最新成员、角色、授权与密码版本，再对 `FILE.LIST`、`FILE.READ`、`FILE.DOWNLOAD`、`FILE.UPLOAD`、`FILE.DELETE`、`FILE.RESTORE` 对应的 `DATA` 系统语义和 `PEACH_ROLE_DATA_POLICY` 在**同一角色绑定**中求交。普通 API 许可不替代对象行级许可，没有完整行级策略时默认拒绝。文件服务还强制物理 tenant/app/owner SQL 限定，在此阶段只会收窄授权，不会因为 TENANT_ALL 放宽到其他所有者的数据。
+#232 的远程 IAM 接口 `/auth/external/iam/file-object/check` 要求业务服务通过独立 Same-Token 转交最终用户 Token、真实物理对象 ID 和数据库内 tenant/app/owner/org 权属。Auth 使用当前 Token 读取最新成员、角色、授权与密码版本，再对 `FILE.LIST`、`FILE.READ`、`FILE.DOWNLOAD`、`FILE.UPLOAD`、`FILE.DELETE`、`FILE.RESTORE` 对应的 `DATA` 系统语义和 `PEACH_ROLE_DATA_POLICY` 在**同一角色绑定**中求交。普通 API 许可不替代对象行级许可，没有完整行级策略时默认拒绝。文件服务仍强制物理 tenant/app SQL 边界，跨所有者访问仅在当前文件的同绑定机构或全租户 DATA 授权生效后允许。
 
 配置最小权限时，需由可信管理员经当前角色/策略维护流程单独创建、授权每一动作对应的 DATA 策略（例如 SELF），不能仅执行权限定义迁移，更不能为自动授权而直接写业务 MySQL。机构树和字段级读写脱敏、列表多绑定并集的完整 SQL 实现仍属 #232 待完成项。
 
@@ -212,4 +212,18 @@ Maven 命令只验证编译和打包，不替代真实 provider、分片直传�
 
 `SaasIamFeignClient.projectFileFields` 经受信 Same-Token 调用 Auth 对 `FILE_RECORD` 资源的 `PEACH_ROLE_FIELD_POLICY` 求值，与同一条 `FILE.READ` / `FILE.LIST` 行范围和角色绑定配对。只有字段策略明确 `ALLOW` 或 `MASK` 才能进入安全的 `FileRecordVO`；`DENY` 或未知字段直接剔除。必须显式允许 `fileId` 才能展示详情或列表项，缺少对应字段策略时返回授权错误。对象存储的 bucket、objectKey、provider 以及内部物理归属不进入公开响应。
 
-文件列表限制每页不超过 50 条，先通过 SQL 层的物理 tenant/app/owner 过滤与 COUNT；Auth 对页面中每条记录独立执行行/字段范围求交，但通过**一次批量 Feign 调用**查询当前成员的角色数据与字段策略，避免每行发一次远程请求。某条记录未授权将整页拒绝，不把分页后过滤的部分列表冒充准确 COUNT。该批处理仍需在真实 MySQL/Feign 环境验证性能和授权版本一致性。字段写权限、机构组织树跨所有者的 SQL 并集仍未实现，不允许宣称已具备完整文件数据授权。
+文件列表限制每页不超过 50 条，先通过 SQL 层的物理 tenant/app/owner 过滤与 COUNT；Auth 对页面中每条记录独立执行行/字段范围求交，但通过**一次批量 Feign 调用**查询当前成员的角色数据与字段策略，避免每行发一次远程请求。某条记录未授权将整页拒绝，不把分页后过滤的部分列表冒充准确 COUNT。该批处理仍需在真实 MySQL/Feign 环境验证性能和授权版本一致性。机构树 SQL 并集与受控元数据字段写权限已接入代码；真实 MySQL、存储实例、网关与存量迁移仍需 #211 联调，不代表生产验收完成。
+
+#### #232 当前机构数据范围与元数据写入
+
+Auth 对每条有效成员角色绑定及其 DATA 策略先求交，再将 `SELF`、`ORG`、`ORG_TREE`、`TENANT_ALL` 的有效范围取并集。文件服务只接受与当前在线 Token 的物理租户、应用、用户一致的范围；MyBatis 固定参数化 SQL 先过滤可见行再进行 COUNT 和分页。单次机构展开最多 512 个，异常、失效或数据不完整时默认拒绝。每页最多 50 条，之后由 Auth 批量核验每条记录的字段权限。已删除文件列表当前单独拒绝。
+
+新增接口：`PATCH /file/internal/{fileId}/metadata`，请求示例：
+
+```json
+{"changes":{"displayName":"新名称","bizTag":"标签","remark":"备注"}}
+```
+
+仅这三个字段允许变更，长度分别最多 255、64、500 字符，不能为 null。必须同时通过精确 API 动作、同一角色绑定的 `FILE.EDIT` DATA 行策略及全部请求字段的 `WRITE_EFFECT=ALLOW`，不可部分更新。固定 UPDATE SQL 还要重新核验真实 tenant/app、owner/org、未删除与 ACTIVE 状态。SQL 权限定义不自动为任何用户授予角色或字段策略。
+
+受信永久业务租户号改由 Auth 从自己的租户表解析，通过 `SaasIamContextVO.tenantBusinessId` 返回，文件服务不再直接读取 Auth 租户表。存量未证实的真实对象归属保持隔离，交由 #211 联调与迁移验收。
