@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+import jakarta.validation.Valid;
 
 /**
  * 用户登录。
@@ -110,7 +111,7 @@ public class LoginController {
 
     @PostMapping("/changePassword")
     @Operation(summary = "用户修改密码")
-    public Response changePassword(@RequestBody @jakarta.validation.Valid SaasPasswordChangeDTO request) {
+    public Response changePassword(@RequestBody @Valid SaasPasswordChangeDTO request) {
         passwordLifecycleService.changePassword(request);
         return Response.success().setMsg("密码修改成功，请重新登录");
     }

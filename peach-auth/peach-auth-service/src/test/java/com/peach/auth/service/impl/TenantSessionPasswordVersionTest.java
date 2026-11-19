@@ -59,7 +59,7 @@ class TenantSessionPasswordVersionTest {
 
     @Test
     void shouldRejectLegacyTokenWithoutPasswordVersion() {
-        SaSession session = tokenSession(0L);
+        SaSession session = mock(SaSession.class);
         Map<String, String> values = tokenValues(0L);
         values.remove("passwordVersion");
         when(session.get(SaTokenConstant.TOKEN_SESSION_SAAS_CONTEXT)).thenReturn(values);

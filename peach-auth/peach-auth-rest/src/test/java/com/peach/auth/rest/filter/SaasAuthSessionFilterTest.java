@@ -41,6 +41,7 @@ class SaasAuthSessionFilterTest {
     void shouldApplyOnlyToAuthRoleManagementPaths() {
         assertThat(filter.shouldNotFilter(request("POST", "/auth/saas/roles"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/switchContext"))).isFalse();
+        assertThat(filter.shouldNotFilter(request("POST", "/auth/changePassword"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/saas/platform/tenants"))).isFalse();
         assertThat(filter.shouldNotFilter(request("PUT", "/auth/saas/code-rules/ORG/format"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/saas/tenants/members/invitations"))).isFalse();
@@ -56,6 +57,7 @@ class SaasAuthSessionFilterTest {
     void shouldDenyEncodedOrTraversingRoleRoutesBeforeReadingAnyToken() throws Exception {
         assertThat(filter.isCanonicalSessionPath("/auth/saas/roles")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/switchContext")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/changePassword")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/saas/platform/tenants")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/saas/code-rules/ORG/preview")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/saas/code-rules/%2e%2e/format")).isFalse();
