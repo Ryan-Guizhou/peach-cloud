@@ -342,28 +342,6 @@
         ORDER BY r.CREATED_TIME DESC, r.FILE_ID DESC
     </select>
 
-    <select id="selectDetailByFileId" resultType="com.peach.fileservice.vo.FileRecordVO">
-        SELECT
-            r.ID as id, r.TENANT_REF_ID as tenantRefId, r.APP_REF_ID as appRefId,
-            r.ORG_REF_ID as orgRefId, r.OWNER_USER_REF_ID as ownerUserRefId,
-            r.FILE_ID as fileId, r.OBJECT_ID as objectId,
-            r.TENANT_ID as tenantId, r.ORG_ID as orgId,
-            r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
-            r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
-            r.FILE_SIZE as fileSize, r.FILE_EXT as fileExt, r.FILE_STATUS as fileStatus, r.DELETE_TIME as deleteTime,
-            r.EXPIRE_DELETE_TIME as expireDeleteTime, r.REMARK as remark, r.IS_DELETE as isDelete,
-            r.CREATED_TIME as createdTime,
-            r.CREATOR_ID as creatorId, r.MODIFY_TIME as modifyTime, r.MODIFIER_ID as modifierId,
-            o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey,
-            o.STORAGE_STATUS as storageStatus
-        FROM PEACH_FILE_RECORD r
-        INNER JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
-            AND o.TENANT_REF_ID = r.TENANT_REF_ID AND o.APP_REF_ID = r.APP_REF_ID
-            AND o.OWNER_USER_REF_ID = r.OWNER_USER_REF_ID
-        WHERE r.FILE_ID = #{fileId,jdbcType=VARCHAR}
-        LIMIT 1
-    </select>
-
     <select id="selectScopedDetail" resultType="com.peach.fileservice.vo.FileRecordVO">
         SELECT
             r.ID as id, r.TENANT_REF_ID as tenantRefId, r.APP_REF_ID as appRefId,

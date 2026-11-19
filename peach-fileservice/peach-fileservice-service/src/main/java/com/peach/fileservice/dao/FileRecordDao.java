@@ -33,14 +33,6 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
     List<FileRecordVO> selectByQO(FileQueryQO qo);
 
     /**
-     * 根据文件ID查询文件详情
-     *
-     * @param fileId 文件ID
-     * @return 文件记录视图对象（包含关联的文件对象信息），不存在时返回null
-     */
-    FileRecordVO selectDetailByFileId(@Param("fileId") String fileId);
-
-    /**
      * SQL 强制物理租户和应用，完整所有者/机构权限由 Auth 单对象策略校验。
      */
     FileRecordVO selectScopedDetail(@Param("fileId") String fileId,
