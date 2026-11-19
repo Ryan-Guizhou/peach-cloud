@@ -8,6 +8,9 @@ import com.peach.fileservice.dto.FileUploadCheckDTO;
 import com.peach.fileservice.dto.FileMetadataPatchDTO;
 import com.peach.fileservice.dto.FileBatchActionDTO;
 import com.peach.fileservice.qo.FileQueryQO;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import com.peach.fileservice.service.IFileDomainService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -129,6 +132,19 @@ public class FileController {
                                    @Valid @RequestBody FileMetadataPatchDTO patch) {
         fileDomainService.updateMetadata(fileId, patch);
         return Response.success();
+    }
+
+    /**
+     * 文件元数据有界 CSV 导出；必须同时具备导出 API 和列表行/字段权限。
+     */
+    @PostMapping(value = "/export", produces = "text/csv")
+    @Operation(summary = "导出受控文件元数据")
+    public ResponseEntity<byte[]> export(@RequestBody FileQueryQO qo) {
+        byte[] csv = fileDomainService.exportMetadataCsv(qo);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"files.csv\"")
+                .body(csv);
     }
 
     /**

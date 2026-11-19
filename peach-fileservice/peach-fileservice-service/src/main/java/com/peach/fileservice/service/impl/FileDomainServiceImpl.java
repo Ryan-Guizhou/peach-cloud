@@ -30,6 +30,7 @@ import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.service.IFileDomainService;
 import com.peach.fileservice.service.support.FileSaasAccessService;
 import com.peach.fileservice.service.support.FileSaasScope;
+import com.peach.fileservice.service.support.FileMetadataCsvExporter;
 import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.fileservice.vo.FileDownloadUrlVO;
 import com.peach.fileservice.vo.FileDigestVO;
@@ -74,6 +75,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.Locale;
 
 
@@ -484,6 +486,59 @@ public class FileDomainServiceImpl implements IFileDomainService {
         return new PageResult<>(visible, pageInfo.getTotal());
     }
 
+
+    /**
+     * 导出固定白名单文件元数据，先检查独立导出 API，再复用列表行/字段权限。
+     *
+     * <p>分页和 COUNT 在同一只读数据库事务中执行，最多导出 500 行；
+     * 列表逐页重新核验 Token、组织范围和字段策略，任何异常整份拒绝。
+     * CSV 编码由独立工具集中执行公式注入防护。</p>
+     *
+     * @param filter 业务查询过滤条件，租户、应用和组织授权只能来自服务端
+     * @return 不含内部存储对象定位信息的 UTF-8 CSV
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportMetadataCsv(FileQueryQO filter) {
+        if (filter == null || filter.getIsDelete() != null
+                && !Integer.valueOf(0).equals(filter.getIsDelete())) {
+            throw new SecurityException("Protected file export filter is invalid");
+        }
+        saasAccessService.requireCurrent("POST:/api/file/internal/export");
+        FileQueryQO query = new FileQueryQO();
+        query.setBizType(filter.getBizType());
+        query.setBizId(filter.getBizId());
+        query.setBizTag(filter.getBizTag());
+        query.setFileStatus(filter.getFileStatus());
+        query.setIsDelete(0);
+        query.setPageSize(50);
+        List<FileRecordVO> rows = new ArrayList<>();
+        long expectedTotal = -1;
+        for (int page = 1; page <= 10; page++) {
+            query.setPageNum(page);
+            PageResult<FileRecordVO> result = pageList(query);
+            if (result == null || result.getTotal() == null || result.getTotal() < 0
+                    || result.getTotal() > 500 || result.getResult() == null) {
+                throw new SecurityException("Protected file export exceeds safe bounds");
+            }
+            if (expectedTotal < 0) {
+                expectedTotal = result.getTotal();
+            } else if (expectedTotal != result.getTotal()) {
+                throw new SecurityException("Protected file export snapshot changed");
+            }
+            rows.addAll(result.getResult());
+            if (rows.size() > 500) {
+                throw new SecurityException("Protected file export exceeds safe bounds");
+            }
+            if (rows.size() >= expectedTotal) {
+                break;
+            }
+        }
+        if (rows.size() != expectedTotal) {
+            throw new SecurityException("Protected file export is incomplete");
+        }
+        return FileMetadataCsvExporter.encode(rows);
+    }
 
     /**
      * 批量删除在一个本地数据库事务中执行，各文件独立验证 API 与对象行权限。

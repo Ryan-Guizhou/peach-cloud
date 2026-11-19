@@ -144,6 +144,14 @@ public interface IFileDomainService {
     PageResult<FileRecordVO> pageList(FileQueryQO qo);
 
     /**
+     * 按受信行级范围、逐条字段投影导出最多 500 条文件元数据。
+     *
+     * @param filter 不含授权主体声明的业务查询条件
+     * @return UTF-8 CSV，不含任何存储内部定位
+     */
+    byte[] exportMetadataCsv(FileQueryQO filter);
+
+    /**
      * 批量删除。每个文件仍单独校验自身的动作权限和数据权限。
      *
      * @param data 最多 50 个唯一业务文件编号
