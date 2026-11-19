@@ -3,6 +3,8 @@ package com.peach.auth.rest.external;
 import cn.dev33.satoken.same.SaSameUtil;
 import com.peach.auth.constant.SaasIamHeaders;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.service.SaasIamRemoteFileDataService;
 import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.service.SaasIamRemoteAuthorizationService;
 import com.peach.auth.service.SaasIamRemoteDirectoryService;
@@ -44,6 +46,8 @@ public class SaasIamExternalController {
 
     private final SaasIamRemoteDirectoryService directoryService;
 
+    private final SaasIamRemoteFileDataService fileDataService;
+
     /**
      * 实时判断 API 入口动作权限，不代替业务对象行/字段判定。
      */
@@ -57,6 +61,22 @@ public class SaasIamExternalController {
                     subjectToken, request.getPermissionCode()));
         } catch (RuntimeException exception) {
             // 绝不返回鉴权失败详情、用户 Token 或权限目录存在性。
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new SaasIamPermissionDecisionVO(false));
+        }
+    }
+
+    /**
+     * 受保护文件对象的行级授权，绝不信任请求头中的租户/机构自报信息。
+     */
+    @PostMapping("/file-object/check")
+    public ResponseEntity<SaasIamPermissionDecisionVO> checkFileObject(
+            @RequestHeader(value = SaasIamHeaders.SUBJECT_TOKEN, required = false) String subjectToken,
+            @Valid @RequestBody SaasIamFileObjectCheckDTO request) {
+        try {
+            SaSameUtil.checkCurrentRequestToken();
+            return ResponseEntity.ok(fileDataService.decide(subjectToken, request));
+        } catch (RuntimeException exception) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new SaasIamPermissionDecisionVO(false));
         }

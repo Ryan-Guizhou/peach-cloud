@@ -1,6 +1,7 @@
 package com.peach.auth.openfeign.fallback;
 
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.vo.SaasIamContextVO;
@@ -28,6 +29,12 @@ public class SaasIamFeignClientFallbackFactory implements FallbackFactory<SaasIa
             @Override
             public SaasIamPermissionDecisionVO checkApiPermission(
                     String subjectToken, SaasIamPermissionCheckDTO request) {
+                return new SaasIamPermissionDecisionVO(false);
+            }
+
+            @Override
+            public SaasIamPermissionDecisionVO checkFileObjectPermission(
+                    String subjectToken, SaasIamFileObjectCheckDTO request) {
                 return new SaasIamPermissionDecisionVO(false);
             }
 

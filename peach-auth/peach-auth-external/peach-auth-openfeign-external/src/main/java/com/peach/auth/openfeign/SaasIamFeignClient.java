@@ -2,6 +2,7 @@ package com.peach.auth.openfeign;
 
 import com.peach.auth.constant.SaasIamHeaders;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.openfeign.fallback.SaasIamFeignClientFallbackFactory;
 import com.peach.auth.vo.SaasIamContextVO;
@@ -51,10 +52,22 @@ public interface SaasIamFeignClient {
             @RequestBody SaasIamPermissionCheckDTO request);
 
     /**
+     * 在线核验同一角色绑定的文件对象数据权限；动作 API 许可不能代替它。
+     *
+     * @param subjectToken 当前最终用户 Token
+     * @param request 服务端从数据库实体构造的物理对象描述和受控动作语义
+     * @return 只有经过行范围与真实成员版本验证才允许
+     */
+    @PostMapping("/iam/file-object/check")
+    SaasIamPermissionDecisionVO checkFileObjectPermission(
+            @RequestHeader(SaasIamHeaders.SUBJECT_TOKEN) String subjectToken,
+            @RequestBody SaasIamFileObjectCheckDTO request);
+
+    /**
      * 获取服务端按 Token 和数据库确认的物理成员上下文。
      *
      * @param subjectToken 当前用户的原始 Token，禁止用户主动选择其他身份
-     * @return 仅含物理主键、年度与授权版本的最小上下文
+     * @return 仅含物理主键、成员与授权版本的最小上下文
      */
     @PostMapping("/iam/context")
     SaasIamContextVO requireContext(@RequestHeader(SaasIamHeaders.SUBJECT_TOKEN) String subjectToken);
