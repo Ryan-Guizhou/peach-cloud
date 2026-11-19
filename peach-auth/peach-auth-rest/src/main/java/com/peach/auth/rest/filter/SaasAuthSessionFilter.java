@@ -39,6 +39,7 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
     private static final String TENANT_ROOT = "/auth/saas/tenants";
     private static final String LEGACY_ORGANIZATION_ROOT = "/auth/organization";
     private static final String PLATFORM_ROOT = "/auth/saas/platform";
+    private static final String CODE_RULE_ROOT = "/auth/saas/code-rules";
     private static final String SWITCH_CONTEXT_PATH = "/auth/switchContext";
 
     private final TenantSessionService tenantSessionService;
@@ -86,7 +87,8 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
                 || TENANT_ROOT.equals(path) || path.startsWith(TENANT_ROOT + "/")
                 || LEGACY_ORGANIZATION_ROOT.equals(path)
                 || path.startsWith(LEGACY_ORGANIZATION_ROOT + "/")
-                || PLATFORM_ROOT.equals(path) || path.startsWith(PLATFORM_ROOT + "/");
+                || PLATFORM_ROOT.equals(path) || path.startsWith(PLATFORM_ROOT + "/")
+                || CODE_RULE_ROOT.equals(path) || path.startsWith(CODE_RULE_ROOT + "/");
     }
 
     boolean isCanonicalSessionPath(String path) {

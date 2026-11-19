@@ -42,6 +42,7 @@ class SaasAuthSessionFilterTest {
         assertThat(filter.shouldNotFilter(request("POST", "/auth/saas/roles"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/switchContext"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/saas/platform/tenants"))).isFalse();
+        assertThat(filter.shouldNotFilter(request("PUT", "/auth/saas/code-rules/ORG/format"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/saas/tenants/members/invitations"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/organization/pageList"))).isFalse();
         assertThat(filter.shouldNotFilter(request("PUT",
@@ -56,6 +57,8 @@ class SaasAuthSessionFilterTest {
         assertThat(filter.isCanonicalSessionPath("/auth/saas/roles")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/switchContext")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/saas/platform/tenants")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/saas/code-rules/ORG/preview")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/saas/code-rules/%2e%2e/format")).isFalse();
         assertThat(filter.isCanonicalSessionPath("/auth/saas/tenants/organizations")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/saas/platform/%2e%2e/roles")).isFalse();
         assertThat(filter.isCanonicalSessionPath("/auth/saas/tenants//members")).isFalse();

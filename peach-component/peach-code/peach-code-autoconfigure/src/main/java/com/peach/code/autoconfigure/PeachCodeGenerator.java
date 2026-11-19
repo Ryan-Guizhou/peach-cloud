@@ -26,7 +26,8 @@ import java.util.regex.Pattern;
  */
 public class PeachCodeGenerator implements CodeGenerator {
 
-    private static final Pattern SAFE_PART = Pattern.compile("[A-Za-z0-9][A-Za-z0-9-]{0,31}");
+    private static final Pattern SAFE_NAMESPACE = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_-]{0,31}");
+    private static final Pattern SAFE_PREFIX = Pattern.compile("[A-Za-z0-9][A-Za-z0-9-]{0,31}");
     private static final String RULE_SELECT_SQL = "SELECT MAX_CODE_WIDTH, CURRENT_VALUE, STATUS, CODE_SEPARATOR, SCOPE_TYPE, RULE_VERSION "
             + "FROM PEACH_CODE_RULE WHERE TENANT_ID = ? AND CODE_PREFIX = ? AND IS_DELETE = 0 FOR UPDATE";
     private static final String RULE_UPDATE_SQL = "UPDATE PEACH_CODE_RULE SET CURRENT_VALUE = ?, "
@@ -133,7 +134,8 @@ public class PeachCodeGenerator implements CodeGenerator {
     }
 
     private static void validatePart(String value, String name) {
-        if (value == null || !SAFE_PART.matcher(value).matches()) {
+        Pattern pattern = "tenantId".equals(name) ? SAFE_NAMESPACE : SAFE_PREFIX;
+        if (value == null || !pattern.matcher(value).matches()) {
             throw new CodeGeneratorException(name + " contains unsupported characters");
         }
     }

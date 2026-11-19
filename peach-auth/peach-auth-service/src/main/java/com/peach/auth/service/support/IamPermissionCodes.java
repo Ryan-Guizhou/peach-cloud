@@ -21,6 +21,12 @@ public final class IamPermissionCodes {
     /** 租户角色和成员角色绑定管理权限。 */
     public static final String TENANT_ROLE_MANAGE = "TENANT.ROLE.MANAGE";
 
+    /** 当前租户的编码规则维护权限，仅对本租户命名空间生效。 */
+    public static final String TENANT_CODE_RULE_MANAGE = "TENANT.CODE.RULE.MANAGE";
+
+    /** PLATFORM 控制租户的不可委派全局发号规则管理权限。 */
+    public static final String PLATFORM_CODE_RULE_MANAGE = "PLATFORM.CODE.RULE.MANAGE";
+
     private IamPermissionCodes() {
         throw new IllegalStateException("Utility class");
     }
