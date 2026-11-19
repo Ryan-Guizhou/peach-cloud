@@ -33,10 +33,35 @@ public class FileRecordDO extends PeachDO implements Serializable {
     @Serial
     private static final long serialVersionUID = -6089582482751673964L;
 
-    @Id
     @Column(name = "FILE_ID")
     @Schema(description = "业务文件ID")
     private String fileId;
+
+    @Id
+    @Column(name = "ID")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Schema(description = "UUID物理主键")
+    private String id;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "TENANT_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String tenantRefId;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "APP_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String appRefId;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "ORG_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String orgRefId;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "OWNER_USER_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String ownerUserRefId;
 
     @Column(name = "OBJECT_ID")
     @Schema(description = "物理对象ID")

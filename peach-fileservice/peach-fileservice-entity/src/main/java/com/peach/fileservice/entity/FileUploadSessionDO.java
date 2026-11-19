@@ -40,10 +40,40 @@ public class FileUploadSessionDO extends PeachDO implements Serializable {
     @Serial
     private static final long serialVersionUID = -8459293278843801649L;
 
-    @Id
     @Column(name = "SESSION_ID")
     @Schema(description = "上传会话ID")
     private String sessionId;
+
+    @Id
+    @Column(name = "ID")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Schema(description = "UUID物理主键")
+    private String id;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "TENANT_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String tenantRefId;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "APP_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String appRefId;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "ORG_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String orgRefId;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "OWNER_USER_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String ownerUserRefId;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "MEMBER_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String memberRefId;
 
     @Column(name = "FILE_ID")
     @Schema(description = "预生成文件ID")

@@ -35,10 +35,35 @@ public class FileObjectDO extends PeachDO implements Serializable {
     @Serial
     private static final long serialVersionUID = -4923191473705995553L;
 
-    @Id
     @Column(name = "OBJECT_ID")
     @Schema(description = "物理对象ID")
     private String objectId;
+
+    @Id
+    @Column(name = "ID")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Schema(description = "UUID物理主键")
+    private String id;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "TENANT_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String tenantRefId;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "APP_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String appRefId;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "ORG_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String orgRefId;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "OWNER_USER_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String ownerUserRefId;
 
     @Column(name = "HASH_SHA256")
     @Schema(description = "SHA-256摘要")

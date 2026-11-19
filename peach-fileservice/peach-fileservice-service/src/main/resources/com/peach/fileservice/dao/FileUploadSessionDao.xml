@@ -7,7 +7,8 @@
         CONTENT_TYPE,                                     BIZ_TYPE,                                         BIZ_ID,                                           BIZ_TAG,
         REMARK,                                           STORAGE_PROVIDER,                                 BUCKET_NAME,                                      OBJECT_KEY,
         UPLOAD_ID,                                        SESSION_STATUS,                                   EXPIRE_TIME,                                      IS_DELETE,
-        CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
+        CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID,
+        ID, TENANT_REF_ID, APP_REF_ID, ORG_REF_ID, OWNER_USER_REF_ID, MEMBER_REF_ID
     </sql>
 
     <sql id="allColumnAlias">
@@ -16,7 +17,8 @@
         CONTENT_TYPE as contentType,                      BIZ_TYPE as bizType,                              BIZ_ID as bizId,                                  BIZ_TAG as bizTag,
         REMARK as remark,                                 STORAGE_PROVIDER as storageProvider,              BUCKET_NAME as bucketName,                        OBJECT_KEY as objectKey,
         UPLOAD_ID as uploadId,                            SESSION_STATUS as sessionStatus,                  EXPIRE_TIME as expireTime,                        IS_DELETE as isDelete,
-        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
+        CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId,
+        ID as id, TENANT_REF_ID as tenantRefId, APP_REF_ID as appRefId, ORG_REF_ID as orgRefId, OWNER_USER_REF_ID as ownerUserRefId, MEMBER_REF_ID as memberRefId
     </sql>
 
     <sql id="allColumnValue">
@@ -25,7 +27,8 @@
         #{contentType,jdbcType=VARCHAR},                  #{bizType,jdbcType=VARCHAR},                      #{bizId,jdbcType=VARCHAR},                        #{bizTag,jdbcType=VARCHAR},
         #{remark,jdbcType=VARCHAR},                       #{storageProvider,jdbcType=VARCHAR},              #{bucketName,jdbcType=VARCHAR},                   #{objectKey,jdbcType=VARCHAR},
         #{uploadId,jdbcType=VARCHAR},                     #{sessionStatus,jdbcType=VARCHAR},                #{expireTime,jdbcType=VARCHAR},                   #{isDelete,jdbcType=INTEGER},
-        #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
+        #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR}, #{tenantRefId,jdbcType=VARCHAR}, #{appRefId,jdbcType=VARCHAR}, #{orgRefId,jdbcType=VARCHAR}, #{ownerUserRefId,jdbcType=VARCHAR}, #{memberRefId,jdbcType=VARCHAR}
     </sql>
 
 
@@ -35,7 +38,8 @@
         #{item.contentType,jdbcType=VARCHAR},             #{item.bizType,jdbcType=VARCHAR},                 #{item.bizId,jdbcType=VARCHAR},                   #{item.bizTag,jdbcType=VARCHAR},
         #{item.remark,jdbcType=VARCHAR},                  #{item.storageProvider,jdbcType=VARCHAR},         #{item.bucketName,jdbcType=VARCHAR},              #{item.objectKey,jdbcType=VARCHAR},
         #{item.uploadId,jdbcType=VARCHAR},                #{item.sessionStatus,jdbcType=VARCHAR},           #{item.expireTime,jdbcType=VARCHAR},              #{item.isDelete,jdbcType=INTEGER},
-        #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
+        #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR}, #{item.tenantRefId,jdbcType=VARCHAR}, #{item.appRefId,jdbcType=VARCHAR}, #{item.orgRefId,jdbcType=VARCHAR}, #{item.ownerUserRefId,jdbcType=VARCHAR}, #{item.memberRefId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
@@ -346,6 +350,12 @@
         <if test="modifierId != null and modifierId != ''">
             AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         </if>
+                <if test="tenantRefId != null and tenantRefId != ''">
+                AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+            </if>
+            <if test="appRefId != null and appRefId != ''">
+                AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+            </if>
     </sql>
 
     <insert id="insert" parameterType="com.peach.fileservice.entity.FileUploadSessionDO">
