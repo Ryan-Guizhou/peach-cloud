@@ -30,6 +30,9 @@ public class FileExternalUploadDTO implements Serializable {
     @Schema(description = "业务ID")
     private String bizId;
 
+    @Schema(description = "可选的目标机构物理 ID，需通过在线授权")
+    private String orgRefId;
+
     @Schema(description = "业务标签")
     private String bizTag;
 

@@ -127,7 +127,7 @@ class FileDomainSaasScopeTest {
 
         assertThat(domainService.uploadCheck(request).getInstantUpload()).isFalse();
         verify(fileObjectDao).selectActiveBySha256AndSize(
-                "001122", 2048L, "tenant-ref", "app-ref", "user-ref");
+                "001122", 2048L, "tenant-ref", "app-ref", "user-ref", null);
     }
 
     @Test

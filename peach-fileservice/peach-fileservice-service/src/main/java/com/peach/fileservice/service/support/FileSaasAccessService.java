@@ -212,11 +212,21 @@ public class FileSaasAccessService {
      * ORG/ORG_TREE 不能借此冒充全租户数据范围。</p>
      */
     public void requireOwnDataAction(String action, FileSaasScope scope) {
-        if (!List.of("FILE.UPLOAD", "FILE.LIST").contains(action)) {
-            throw new SecurityException("Unsupported file data action");
+        requireOwnDataAction(action, scope, null);
+    }
+
+    /**
+     * 创建新文件时目标机构来自待授权业务选择而非可信用户身份。
+     * 只有 Auth 对此机构确认有效且当前角色绑定的 FILE.UPLOAD 数据策略覆盖目标机构时才可落库。
+     */
+    public void requireOwnDataAction(String action, FileSaasScope scope, String targetOrgRefId) {
+        if (!"FILE.UPLOAD".equals(action) || scope == null
+                || targetOrgRefId != null
+                && (!StringUtils.hasText(targetOrgRefId) || targetOrgRefId.length() > 32)) {
+            throw new SecurityException("Unsupported file upload data scope");
         }
         requireDataDecision(action, scope, UniqueIdFacade.nextId(),
-                scope.userRefId(), null, false);
+                scope.userRefId(), targetOrgRefId, false);
     }
 
     private void requireDataDecision(String action, FileSaasScope scope, String objectRefId,

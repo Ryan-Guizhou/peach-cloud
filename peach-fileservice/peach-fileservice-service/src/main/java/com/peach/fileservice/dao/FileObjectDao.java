@@ -35,7 +35,8 @@ public interface FileObjectDao extends PeachDao<FileObjectDO, FileObjectVO> {
                                            @Param("fileSize") Long fileSize,
                                            @Param("tenantRefId") String tenantRefId,
                                            @Param("appRefId") String appRefId,
-                                           @Param("ownerUserRefId") String ownerUserRefId);
+                                           @Param("ownerUserRefId") String ownerUserRefId,
+                                           @Param("orgRefId") String orgRefId);
 
     /**
      * 增加文件对象的引用计数

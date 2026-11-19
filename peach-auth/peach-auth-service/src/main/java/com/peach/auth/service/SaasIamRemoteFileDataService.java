@@ -269,6 +269,12 @@ public class SaasIamRemoteFileDataService {
             return new SaasIamPermissionDecisionVO(false);
         }
         TenantSessionContext context = sessionService.requireForToken(subjectToken);
+        if ("FILE.UPLOAD".equals(request.getPermissionCode())
+                && StringUtils.hasText(request.getOrgRefId())
+                && !organizationScopeMatcher.contains(request.getTenantRefId(),
+                        request.getOrgRefId(), request.getOrgRefId())) {
+            return new SaasIamPermissionDecisionVO(false);
+        }
         if (!request.getTenantRefId().equals(context.tenantRefId())
                 || !request.getAppRefId().equals(context.appRefId())) {
             return new SaasIamPermissionDecisionVO(false);

@@ -268,6 +268,8 @@
           AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
           AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
           AND OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+          AND ((ORG_REF_ID IS NULL AND #{orgRefId,jdbcType=VARCHAR} IS NULL)
+              OR ORG_REF_ID = #{orgRefId,jdbcType=VARCHAR})
           AND IS_DELETE = 0
           AND STORAGE_STATUS = 'ACTIVE'
         LIMIT 1

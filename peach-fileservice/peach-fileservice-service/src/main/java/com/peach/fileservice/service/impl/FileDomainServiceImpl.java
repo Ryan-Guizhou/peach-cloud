@@ -155,6 +155,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         check.setContentType(data.getContentType());
         check.setBizType(data.getBizType());
         check.setBizId(data.getBizId());
+        check.setOrgRefId(data.getOrgRefId());
         check.setBizTag(data.getBizTag());
         check.setRemark(data.getRemark());
         check.setStorageProvider(data.getStorageProvider());
@@ -187,11 +188,12 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Transactional(rollbackFor = Exception.class)
     public FileUploadCheckVO uploadCheck(FileUploadCheckDTO data) {
         FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/upload/check");
-        saasAccessService.requireOwnDataAction("FILE.UPLOAD", scope);
+        saasAccessService.requireOwnDataAction("FILE.UPLOAD", scope,
+                data == null ? null : data.getOrgRefId());
         validateCheckData(data);
         FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(
                 data.getSha256(), data.getFileSize(),
-                scope.tenantRefId(), scope.appRefId(), scope.userRefId());
+                scope.tenantRefId(), scope.appRefId(), scope.userRefId(), data.getOrgRefId());
         FileUploadCheckVO result = new FileUploadCheckVO();
         if (objectVO == null) {
             result.setInstantUpload(Boolean.FALSE);
@@ -212,7 +214,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Transactional(rollbackFor = Exception.class)
     public FileUploadVO upload(FileUploadCheckDTO data, MultipartFile file) {
         FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/upload");
-        saasAccessService.requireOwnDataAction("FILE.UPLOAD", scope);
+        saasAccessService.requireOwnDataAction("FILE.UPLOAD", scope,
+                data == null ? null : data.getOrgRefId());
         validateCheckData(data);
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("upload file is empty");
@@ -222,7 +225,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         }
         FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(
                 data.getSha256(), data.getFileSize(),
-                scope.tenantRefId(), scope.appRefId(), scope.userRefId());
+                scope.tenantRefId(), scope.appRefId(), scope.userRefId(), data.getOrgRefId());
         if (objectVO != null) {
             return createRecordFromExistingObject(data, objectVO);
         }
@@ -257,11 +260,12 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Transactional(rollbackFor = Exception.class)
     public FileMultipartInitVO initMultipartUpload(FileMultipartInitDTO data) {
         FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/multipart/init");
-        saasAccessService.requireOwnDataAction("FILE.UPLOAD", scope);
+        saasAccessService.requireOwnDataAction("FILE.UPLOAD", scope,
+                data == null ? null : data.getOrgRefId());
         validateCheckData(data);
         FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(
                 data.getSha256(), data.getFileSize(),
-                scope.tenantRefId(), scope.appRefId(), scope.userRefId());
+                scope.tenantRefId(), scope.appRefId(), scope.userRefId(), data.getOrgRefId());
         if (objectVO != null) {
             FileUploadVO uploadVO = createRecordFromExistingObject(data, objectVO);
             FileMultipartInitVO result = new FileMultipartInitVO();
@@ -304,7 +308,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         sessionDO.setAppRefId(scope.appRefId());
         sessionDO.setOwnerUserRefId(scope.userRefId());
         sessionDO.setMemberRefId(scope.memberRefId());
-        sessionDO.setOrgRefId(null);
+        sessionDO.setOrgRefId(data.getOrgRefId());
         sessionDO.setTenantId(scope.tenantId());
         sessionDO.setOrgId(null);
         sessionDO.setCreatorId(scope.memberRefId());
@@ -360,7 +364,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
         verifyUploadedObjectDigest(sessionVO);
         FileObjectVO exists = fileObjectDao.selectActiveBySha256AndSize(
                 sessionVO.getHashSha256(), sessionVO.getFileSize(),
-                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getOwnerUserRefId());
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getOwnerUserRefId(),
+                sessionVO.getOrgRefId());
         FileUploadVO result;
         if (exists != null) {
             deletePhysicalObject(sessionVO.getStorageProvider(), sessionVO.getBucketName(), sessionVO.getObjectKey());
@@ -728,7 +733,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         objectDO.setTenantRefId(scope.tenantRefId());
         objectDO.setAppRefId(scope.appRefId());
         objectDO.setOwnerUserRefId(scope.userRefId());
-        objectDO.setOrgRefId(null);
+        objectDO.setOrgRefId(data.getOrgRefId());
         objectDO.setTenantId(scope.tenantId());
         objectDO.setOrgId(null);
         objectDO.setCreatorId(scope.memberRefId());
@@ -756,7 +761,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         recordDO.setTenantRefId(scope.tenantRefId());
         recordDO.setAppRefId(scope.appRefId());
         recordDO.setOwnerUserRefId(scope.userRefId());
-        recordDO.setOrgRefId(null);
+        recordDO.setOrgRefId(data.getOrgRefId());
         recordDO.setTenantId(scope.tenantId());
         recordDO.setOrgId(null);
         recordDO.setCreatorId(scope.memberRefId());
