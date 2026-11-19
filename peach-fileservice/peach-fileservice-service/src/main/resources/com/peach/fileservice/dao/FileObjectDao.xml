@@ -265,6 +265,9 @@
         FROM PEACH_FILE_OBJECT
         WHERE HASH_SHA256 = #{hashSha256,jdbcType=VARCHAR}
           AND FILE_SIZE = #{fileSize,jdbcType=BIGINT}
+          AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+          AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+          AND OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
           AND IS_DELETE = 0
           AND STORAGE_STATUS = 'ACTIVE'
         LIMIT 1

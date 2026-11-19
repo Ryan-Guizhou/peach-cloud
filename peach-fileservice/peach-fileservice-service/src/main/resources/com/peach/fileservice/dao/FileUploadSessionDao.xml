@@ -416,6 +416,16 @@
         WHERE SESSION_ID = #{value,jdbcType=VARCHAR}
     </select>
 
+    <select id="selectScopedSession" resultType="com.peach.fileservice.vo.FileUploadSessionVO">
+        SELECT
+            <include refid="allColumnAlias" />
+        FROM PEACH_FILE_UPLOAD_SESSION
+        WHERE SESSION_ID = #{sessionId,jdbcType=VARCHAR}
+          AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+          AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+          AND MEMBER_REF_ID = #{memberRefId,jdbcType=VARCHAR}
+    </select>
+
     <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.fileservice.entity.FileUploadSessionDO">
         SELECT
             <include refid="allColumnAlias" />
