@@ -3,6 +3,9 @@ package com.peach.fileservice.service.support;
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import com.peach.common.unique.UniqueIdFacade;
 import com.peach.fileservice.vo.FileRecordVO;
 import com.peach.fileservice.vo.FileUploadSessionVO;
@@ -146,6 +149,89 @@ public class FileSaasAccessService {
             log.warn("Trusted file data policy rejected, action={}", action);
             throw new SecurityException("Trusted file data authorization is required");
         }
+    }
+
+    /**
+     * 按同一授权绑定的行/字段策略投影一个真实文件记录。
+     *
+     * <p>原始记录绝不直接返回客户端；只有字段定义明确 ALLOW/MASK
+     * 并具有与对象行范围一致的角色绑定才可出现在返回对象中。
+     * FILE_ID 本身必须明确 ALLOW，否则记录不具备可安全展示的身份。</p>
+     *
+     * @param action FILE.READ 或 FILE.LIST
+     * @param scope 本次动作已验证的物理用户归属
+     * @param record 从带物理租户/应用/所有者谓词的 SQL 得到的记录
+     * @return 不包含内部存储定位、租户业务标识和未授权字段的视图
+     */
+    public FileRecordVO projectVisibleFields(String action, FileSaasScope scope, FileRecordVO record) {
+        if (!List.of("FILE.READ", "FILE.LIST").contains(action) || scope == null
+                || record == null || !StringUtils.hasText(record.getId())
+                || !scope.tenantRefId().equals(record.getTenantRefId())
+                || !scope.appRefId().equals(record.getAppRefId())
+                || !scope.userRefId().equals(record.getOwnerUserRefId())) {
+            throw new SecurityException("File field scope is invalid");
+        }
+        String token = StpUtil.getTokenValue();
+        if (!StringUtils.hasText(token) || token.length() > 1024) {
+            throw new SecurityException("Authenticated file subject is required");
+        }
+        SaasIamFileObjectCheckDTO object = new SaasIamFileObjectCheckDTO();
+        object.setPermissionCode(action);
+        object.setTenantRefId(record.getTenantRefId());
+        object.setAppRefId(record.getAppRefId());
+        object.setObjectRefId(record.getId());
+        object.setOwnerUserRefId(record.getOwnerUserRefId());
+        object.setOrgRefId(record.getOrgRefId());
+        object.setDeleted(Integer.valueOf(1).equals(record.getIsDelete()));
+
+        Map<String, Object> source = new LinkedHashMap<>();
+        source.put("fileId", record.getFileId());
+        source.put("fileName", record.getFileName());
+        source.put("displayName", record.getDisplayName());
+        source.put("contentType", record.getContentType());
+        source.put("fileSize", record.getFileSize());
+        source.put("fileExt", record.getFileExt());
+        source.put("fileStatus", record.getFileStatus());
+        source.put("bizType", record.getBizType());
+        source.put("bizId", record.getBizId());
+        source.put("bizTag", record.getBizTag());
+        source.put("remark", record.getRemark());
+        source.put("createdTime", record.getCreatedTime());
+        SaasIamFileFieldReadDTO request = new SaasIamFileFieldReadDTO();
+        request.setObject(object);
+        request.setFields(source);
+        try {
+            Map<String, Object> permitted = iamFeignClient.projectFileFields(token, request);
+            if (permitted == null || permitted.isEmpty()
+                    || !source.keySet().containsAll(permitted.keySet())
+                    || !record.getFileId().equals(permitted.get("fileId"))) {
+                throw new SecurityException("Required file identity field was not allowed");
+            }
+            FileRecordVO visible = new FileRecordVO();
+            visible.setFileId(record.getFileId());
+            visible.setFileName(asText(permitted.get("fileName")));
+            visible.setDisplayName(asText(permitted.get("displayName")));
+            visible.setContentType(asText(permitted.get("contentType")));
+            Object size = permitted.get("fileSize");
+            if (size instanceof Number number) {
+                visible.setFileSize(number.longValue());
+            }
+            visible.setFileExt(asText(permitted.get("fileExt")));
+            visible.setFileStatus(asText(permitted.get("fileStatus")));
+            visible.setBizType(asText(permitted.get("bizType")));
+            visible.setBizId(asText(permitted.get("bizId")));
+            visible.setBizTag(asText(permitted.get("bizTag")));
+            visible.setRemark(asText(permitted.get("remark")));
+            visible.setCreatedTime(asText(permitted.get("createdTime")));
+            return visible;
+        } catch (RuntimeException exception) {
+            log.warn("Trusted file field projection denied, action={}", action);
+            throw new SecurityException("File field authorization required");
+        }
+    }
+
+    private static String asText(Object value) {
+        return value instanceof String text ? text : null;
     }
 
     /**
