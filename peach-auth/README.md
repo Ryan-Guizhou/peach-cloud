@@ -371,3 +371,12 @@ sequenceDiagram
 - **机构管理**：`/auth/saas/tenants/organizations` 提供创建、更名、删除前依赖检查和移动。原有 `/auth/organization/**` 页面路由保留为**受信 SaaS 代理**，其后端不再使用用户自报的租户 ID。所有机构写入先锁定物理租户、校验 `TENANT.ORG.MANAGE`、机构归属与乐观版本，在同事务递增 `AUTH_VERSION` 并记审计。
 - **所有者与最后管理员保护**：受保护的 `ROLE_TENANT_OWNER` 不可被普通用户授权、撤销、停用或直接退出；最后一名有效完整租户范围管理员不能被停用/退出，也不能撤销其最后一条管理员绑定。迁移中的旧 SYSTEM 角色保持受保护。
 - **安全边界**：全部新增 SaaS 和旧机构管理 HTTP 路由由 `SaasAuthSessionFilter` 在业务服务直连时也强制核验 Same-Token、登录与当前成员版本；网关 API 必须按受控 `OWNER_TYPE=SYSTEM` 权限目录配置，不得以配置白名单跳过。生产需实际验证 MySQL 事务、成员锁、角色权限、API 路由、Nacos、Redis 和跨租户拒绝证据；统一记录在 #211，**不得用单测/CI 代替真实验收**。整个模型不包含授权年度维度。
+
+### #221 受信 SaaS 编码规则管理及水位保护
+
+- **接口**：`/auth/saas/code-rules` 提供有界分页、详情、无副作用预览，以及带 `expectedVersion` 的启停、格式调整、水位前移。由 `SaasAuthSessionFilter` 校验 Same-Token、最终用户 Token 与数据库最新成员/授权版本；不允许客户端指定租户、命名空间、操作人。
+- **平台规则**：仅实际 `TENANT_CODE=PLATFORM` 控制租户、具有不可委派 SYSTEM 权限 `PLATFORM.CODE.RULE.MANAGE` 的成员可以访问 `PLATFORM` 全局 USER/TENANT/ORG/ROLE 等序列。
+- **租户规则**：要求 SYSTEM 定义的 `TENANT.CODE.RULE.MANAGE` 完整 TENANT 授权。业务命名空间始终由当前受信物理租户查询永久 `TENANT_ID` 得出；只可操作 `SCOPE_TYPE=TENANT` 的**已有规则**，不允许自建任意规则或访问其他租户。
+- **事务与发号安全**：写入先锁定物理租户并重新鉴权，`CodeRuleMaintenance` 使用相同事务的行锁、乐观版本和 `PEACH_CODE_RULE_AUDIT`；历史编码格式不变，水位只允许向前且不超过宽度。预览从现有水位计算候选值，**不预留编码**。`peach-code` 现允许永久业务租户号 `TENANT_...` 的下划线作为命名空间，编号前缀仍有严格字符限制。
+- **部署**：生产只使用受审计迁移 `sql/PEACH_SAAS_CODE_RULE_PERMISSIONS.sql` 注册 SYSTEM 权限定义。该 SQL 不自动绑定管理员；需由可信 DBA 在真实 PLATFORM 控制租户下配置受保护角色和网关 API 权限，任何授权变化均须同步失效旧成员 Token。开发 `sql/INIT.sql` 不能作为生产引导。真实 MySQL 并发、历史 Redis 水位与网关/Nacos/Redis 联调仍由 #211 跟踪。
+
