@@ -131,3 +131,16 @@ VALUES
 -- SQL view results, signed download URLs and multipart session metadata must not
 -- include internal bucket/objectKey/provider, tenant or owner physical identifiers.
 -- Use protected Auth policy management to grant individual fields as ALLOW or MASK.
+
+-- #232: FILE.EDIT 元数据写权限。仅注册定义；不创建角色授予/字段写策略。
+INSERT INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID, PERMISSION_CODE,
+     PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE, DELEGABLE, STATUS,
+     IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_METADATA_PATCH', NULL, NULL,
+     'PATCH:/api/file/internal/{fileId}/metadata', '修改受控文件元数据 API',
+     'API', 'SYSTEM', 1, 'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_EDIT', NULL, NULL,
+     'FILE.EDIT', '受控文件元数据行级写权限',
+     'DATA', 'SYSTEM', 1, 'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM');
