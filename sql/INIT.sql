@@ -252,6 +252,49 @@ VALUES
      '文件恢复行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
      0, 0, @NOW, @ADMIN_USER_ID);
 
+-- #232: 文件读取字段目录（无默认 ALLOW 授权，缺少字段策略则拒绝）。
+INSERT IGNORE INTO PEACH_FIELD_DEFINITION
+    (ID, FIELD_ID, TENANT_REF_ID, APP_REF_ID, OWNER_TYPE, RESOURCE_CODE,
+     FIELD_CODE, MASK_STRATEGY, DELEGABLE, STATUS, IS_DELETE, VERSION,
+     CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILEID', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileId', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILENAME', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileName', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_DISPLAYNAME', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'displayName', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_CONTENTTYPE', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'contentType', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILESIZE', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileSize', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILEEXT', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileExt', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILESTATUS', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileStatus', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_BIZTYPE', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'bizType', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_BIZID', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'bizId', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_BIZTAG', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'bizTag', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_REMARK', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'remark', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_CREATEDTIME', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'createdTime', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
+
 INSERT IGNORE INTO PEACH_ROLE
     (ID, ROLE_ID, TENANT_ID, ORG_ID, ROLE_CODE,
      ROLE_NAME, ROLE_DESC, ROLE_SCOPE, ROLE_TYPE,

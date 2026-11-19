@@ -207,3 +207,9 @@ Maven 命令只验证编译和打包，不替代真实 provider、分片直传�
 #232 的远程 IAM 接口 `/auth/external/iam/file-object/check` 要求业务服务通过独立 Same-Token 转交最终用户 Token、真实物理对象 ID 和数据库内 tenant/app/owner/org 权属。Auth 使用当前 Token 读取最新成员、角色、授权与密码版本，再对 `FILE.LIST`、`FILE.READ`、`FILE.DOWNLOAD`、`FILE.UPLOAD`、`FILE.DELETE`、`FILE.RESTORE` 对应的 `DATA` 系统语义和 `PEACH_ROLE_DATA_POLICY` 在**同一角色绑定**中求交。普通 API 许可不替代对象行级许可，没有完整行级策略时默认拒绝。文件服务还强制物理 tenant/app/owner SQL 限定，在此阶段只会收窄授权，不会因为 TENANT_ALL 放宽到其他所有者的数据。
 
 配置最小权限时，需由可信管理员经当前角色/策略维护流程单独创建、授权每一动作对应的 DATA 策略（例如 SELF），不能仅执行权限定义迁移，更不能为自动授权而直接写业务 MySQL。机构树和字段级读写脱敏、列表多绑定并集的完整 SQL 实现仍属 #232 待完成项。
+
+#### 文件详情与列表的字段权限（已接入）
+
+`SaasIamFeignClient.projectFileFields` 经受信 Same-Token 调用 Auth 对 `FILE_RECORD` 资源的 `PEACH_ROLE_FIELD_POLICY` 求值，与同一条 `FILE.READ` / `FILE.LIST` 行范围和角色绑定配对。只有字段策略明确 `ALLOW` 或 `MASK` 才能进入安全的 `FileRecordVO`；`DENY` 或未知字段直接剔除。必须显式允许 `fileId` 才能展示详情或列表项，缺少对应字段策略时返回授权错误。对象存储的 bucket、objectKey、provider 以及内部物理归属不进入公开响应。
+
+文件列表限制每页不超过 50 条，先通过 SQL 层的物理 tenant/app/owner 过滤与 COUNT，再对页面内每条进行受信 Auth 字段投影；不能把分页之后逐条拒绝的结果当作有权限的部分列表。这是安全优先的初版，存在每条记录一次远程字段求值的 N+1 开销，下一步应在保持授权一致性的前提下提供批量投影，且在补齐后才能把 #232 视为性能验收通过。字段写权限、机构组织树跨所有者的 SQL 并集仍未实现，不允许宣称已具备完整文件数据授权。

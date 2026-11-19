@@ -83,3 +83,51 @@ VALUES
 
 -- Auth still requires online Token + member/auth version and valid SYSTEM grants.
 -- Disable old wildcard file API permissions before enabling the guarded file endpoints.
+
+-- Readable fields for FILE_RECORD. Definitions only; no default READ_EFFECT/WRITE_EFFECT
+-- or ROLE_FIELD_POLICY rows are created. Missing policy remains DENY.
+INSERT INTO PEACH_FIELD_DEFINITION
+    (ID, FIELD_ID, TENANT_REF_ID, APP_REF_ID, OWNER_TYPE, RESOURCE_CODE,
+     FIELD_CODE, MASK_STRATEGY, DELEGABLE, STATUS, IS_DELETE, VERSION,
+     CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILEID', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileId', 'FULL', 1,
+     'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILENAME', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileName', 'FULL', 1,
+     'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_DISPLAYNAME', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'displayName', 'FULL', 1,
+     'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_CONTENTTYPE', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'contentType', 'FULL', 1,
+     'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILESIZE', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileSize', 'FULL', 1,
+     'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILEEXT', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileExt', 'FULL', 1,
+     'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILESTATUS', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileStatus', 'FULL', 1,
+     'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_BIZTYPE', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'bizType', 'FULL', 1,
+     'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_BIZID', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'bizId', 'FULL', 1,
+     'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_BIZTAG', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'bizTag', 'FULL', 1,
+     'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_REMARK', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'remark', 'FULL', 1,
+     'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_CREATEDTIME', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'createdTime', 'FULL', 1,
+     'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM');
+
+-- SQL view results, signed download URLs and multipart session metadata must not
+-- include internal bucket/objectKey/provider, tenant or owner physical identifiers.
+-- Use protected Auth policy management to grant individual fields as ALLOW or MASK.
