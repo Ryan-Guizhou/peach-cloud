@@ -227,3 +227,13 @@ Auth 对每条有效成员角色绑定及其 DATA 策略先求交，再将 `SELF
 仅这三个字段允许变更，长度分别最多 255、64、500 字符，不能为 null。必须同时通过精确 API 动作、同一角色绑定的 `FILE.EDIT` DATA 行策略及全部请求字段的 `WRITE_EFFECT=ALLOW`，不可部分更新。固定 UPDATE SQL 还要重新核验真实 tenant/app、owner/org、未删除与 ACTIVE 状态。SQL 权限定义不自动为任何用户授予角色或字段策略。
 
 受信永久业务租户号改由 Auth 从自己的租户表解析，通过 `SaasIamContextVO.tenantBusinessId` 返回，文件服务不再直接读取 Auth 租户表。存量未证实的真实对象归属保持隔离，交由 #211 联调与迁移验收。
+
+#### #232 批量删除与恢复（受信原子操作）
+
+`POST /file/internal/batch/delete` 与 `POST /file/internal/batch/restore` 接受最多 50 个不重复的文件业务编号。请求体：
+
+```json
+{"fileIds":["FILE00001","FILE00002"]}
+```
+
+调用方必须拥有批量入口的 SYSTEM API 动作权限；领域服务对**每一个文件**仍单独要求对应 DELETE/RESTORE API 和 `FILE.DELETE` / `FILE.RESTORE` 同绑定 DATA 行级授权。更新范围也由固定 MyBatis WHERE 约束物理 tenant/app、owner 和 org。任一项授权或并发状态检查失败，整批本地数据库事务回滚，不允许部分成功。外部对象存储的异步物理清理仍由独立清理任务完成，不能把数据库回滚等同于存储动作可回滚。
