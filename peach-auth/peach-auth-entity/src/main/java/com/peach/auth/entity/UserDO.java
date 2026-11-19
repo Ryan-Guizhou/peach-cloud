@@ -1,6 +1,7 @@
 package com.peach.auth.entity;
 
 import java.io.Serial;
+import lombok.ToString;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.peach.common.PeachDO;
@@ -46,7 +47,14 @@ public class UserDO extends PeachDO implements Serializable {
     @JsonIgnore
     @Column(name = "PASSWORD")
     @Schema(description = "密码哈希（禁止序列化）")
+    @ToString.Exclude
     private String password;
+
+    @JsonIgnore
+    @ToString.Exclude
+    @Column(name = "PASSWORD_VERSION")
+    @Schema(description = "全局账号密码版本，不下发前端")
+    private Long passwordVersion;
 
     @Column(name = "USER_NAME")
     @Schema(description = "用户名称")

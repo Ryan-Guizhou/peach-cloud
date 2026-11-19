@@ -67,8 +67,9 @@ public class UserContextFilter extends OncePerRequestFilter {
         // SaaS 角色管理或切换上下文请求已由 Auth 前置过滤器完成 Same-Token 和数据库成员版本核验。
         // 仅允许该请求的服务端内部属性绕开旧 USER_PROFILE Hash；不能从 HTTP 头传入。
         if (Boolean.TRUE.equals(request.getAttribute(VERIFIED_SAAS_AUTH_REQUEST))
-                && ("/auth/switchContext".equals(path) || "/auth/saas/roles".equals(path)
-                        || path.startsWith("/auth/saas/roles/"))) {
+                && ("/auth/switchContext".equals(path) || "/auth/changePassword".equals(path)
+                        || "/auth/organization".equals(path) || path.startsWith("/auth/organization/")
+                        || "/auth/saas".equals(path) || path.startsWith("/auth/saas/"))) {
             try {
                 filterChain.doFilter(request, response);
             } finally {

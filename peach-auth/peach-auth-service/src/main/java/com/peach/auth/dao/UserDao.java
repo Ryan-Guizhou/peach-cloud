@@ -24,6 +24,30 @@ public interface UserDao extends PeachDao<UserDO, UserVO> {
 
     UserVO login(@Param("username") String username);
 
+    /**
+     * 锁定当前有效全局账号凭证，避免两次并发改密覆盖或使用过期版本。
+     *
+     * @param userRefId 由当前 Token 身份确定的用户物理主键
+     * @return 用户物理身份、BCrypt 散列及密码版本，不存在返回 null
+     */
+    UserDO lockCredential(@Param("userRefId") String userRefId);
+
+    /**
+     * 核验已登录 SaaS Token 的全局密码版本，任何旧版本立即拒绝。
+     */
+    int countActivePasswordVersion(@Param("userRefId") String userRefId,
+                                   @Param("businessUserId") String businessUserId,
+                                   @Param("passwordVersion") long passwordVersion);
+
+    /**
+     * CAS 更新 BCrypt 散列并原子递增全局密码版本。
+     */
+    int changePassword(@Param("userRefId") String userRefId,
+                       @Param("passwordHash") String passwordHash,
+                       @Param("expectedVersion") long expectedVersion,
+                       @Param("operatorRefId") String operatorRefId);
+
+
     List<UserVO> selectByQO(UserQO userQO);
 
     int updateProfileBasic(@Param("userId") String userId, @Param("userName") String userName,

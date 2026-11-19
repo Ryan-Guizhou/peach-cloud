@@ -14,6 +14,7 @@
 
     <sql id="allColumnAlias">
         ID as id, USER_ID as userId,                                USER_CODE as userCode,                            PASSWORD as password,                             USER_NAME as userName,
+        PASSWORD_VERSION as passwordVersion,
         IDENTITY_CODE as identityCode,                    INVLIDATE as invlidate,                           AUTH_MODE as authMode,                            STATUS as status,
         UNLOCK_TIME as unlockTime,                        MENU_STYLE as menuStyle,                          MENU_ROLE as menuRole,                            LASTEST_LOGIN as lastestLogin,
         ERROR_COUNT as errorCount,                        START_DATE as startDate,                          END_DATE as endDate,                              MOBILE_PHONE as mobilePhone,
@@ -457,6 +458,35 @@
             <include refid="allColumnCond" />
         </where>
     </select>
+
+    <select id="lockCredential" resultType="com.peach.auth.entity.UserDO">
+        SELECT ID AS id, USER_ID AS userId, PASSWORD AS password,
+               PASSWORD_VERSION AS passwordVersion
+        FROM PEACH_USER
+        WHERE ID = #{userRefId}
+          AND STATUS IN ('1', 'ENABLE') AND IS_DELETE = 0
+        FOR UPDATE
+    </select>
+
+    <select id="countActivePasswordVersion" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM PEACH_USER
+        WHERE ID = #{userRefId} AND USER_ID = #{businessUserId}
+          AND PASSWORD_VERSION = #{passwordVersion}
+          AND STATUS IN ('1', 'ENABLE') AND IS_DELETE = 0
+    </select>
+
+    <update id="changePassword">
+        UPDATE PEACH_USER
+        SET PASSWORD = #{passwordHash},
+            PASSWORD_VERSION = PASSWORD_VERSION + 1,
+            IS_MODIFY = 1,
+            PASSWD_MODIFY_TIME = DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'),
+            MODIFY_TIME = DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'),
+            MODIFIER_ID = #{operatorRefId}
+        WHERE ID = #{userRefId} AND PASSWORD_VERSION = #{expectedVersion}
+          AND STATUS IN ('1', 'ENABLE') AND IS_DELETE = 0
+    </update>
 
     <select id="login" resultType="com.peach.auth.vo.UserVO">
         SELECT <include refid="allColumnAlias" />
