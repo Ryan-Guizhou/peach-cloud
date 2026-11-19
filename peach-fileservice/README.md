@@ -237,3 +237,9 @@ Auth 对每条有效成员角色绑定及其 DATA 策略先求交，再将 `SELF
 ```
 
 调用方必须拥有批量入口的 SYSTEM API 动作权限；领域服务对**每一个文件**仍单独要求对应 DELETE/RESTORE API 和 `FILE.DELETE` / `FILE.RESTORE` 同绑定 DATA 行级授权。更新范围也由固定 MyBatis WHERE 约束物理 tenant/app、owner 和 org。任一项授权或并发状态检查失败，整批本地数据库事务回滚，不允许部分成功。外部对象存储的异步物理清理仍由独立清理任务完成，不能把数据库回滚等同于存储动作可回滚。
+
+#### 受控 CSV 元数据导出
+
+`POST /file/internal/export` 使用与文件列表相同的 `FileQueryQO` 业务过滤条件，返回 UTF-8 `text/csv` 附件。导出先要求独立 SYSTEM API 动作 `POST:/api/file/internal/export`，再逐页验证列表 API、`FILE.LIST` 行级 SQL 授权和每条记录的 `FILE_RECORD` 字段 `ALLOW / MASK / DENY`。分页与 COUNT 先完成物理租户、应用和同绑定组织范围过滤，不允许在导出时信任浏览器声明的租户/机构。
+
+单次最多导出 **500 条**，每页 50 条，超额、分页过程中总数不一致或字段授权失败时整次拒绝，不返回部分数据。仅输出已授权的固定元数据列，不包含 bucket、objectKey、provider 和物理主键；CSV 中公式前缀会转义，以避免电子表格公式注入。导出权限目录仅登记资源，不自动授予角色。
