@@ -436,7 +436,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         FileSaasScope scope = saasAccessService.requireForFile("GET", fileId, "");
         FileRecordVO record = requireRecord(fileId);
         saasAccessService.requireFileData("FILE.READ", scope, record);
-        return record;
+        return saasAccessService.projectVisibleFields("FILE.READ", scope, record);
     }
 
     @Override
@@ -462,10 +462,21 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     @Override
     public PageResult<FileRecordVO> pageList(FileQueryQO qo) {
+        if (qo == null || qo.getPageNum() == null || qo.getPageNum() < 1
+                || qo.getPageNum() > 1000 || qo.getPageSize() == null
+                || qo.getPageSize() < 1 || qo.getPageSize() > 50) {
+            throw new IllegalArgumentException("Invalid protected file pagination");
+        }
         fillCurrentTenantOrg(qo);
         PageInfo<FileRecordVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> fileRecordDao.selectByQO(qo));
-        return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
+        // 先在 SQL 中完成 tenant/app/owner 范围收敛和 COUNT，
+        // 再对同一页每条文件独立核验角色绑定与字段脱敏，不在分页后丢弃行。
+        FileSaasScope scope = saasAccessService.requireContext();
+        List<FileRecordVO> visible = pageInfo.getList().stream()
+                .map(row -> saasAccessService.projectVisibleFields("FILE.LIST", scope, row))
+                .toList();
+        return new PageResult<>(visible, pageInfo.getTotal());
     }
 
 
