@@ -8,6 +8,7 @@ import java.util.Map;
 import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.openfeign.fallback.SaasIamFeignClientFallbackFactory;
 import com.peach.auth.vo.SaasIamContextVO;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import com.peach.auth.vo.SaasIamMemberBriefVO;
 import com.peach.auth.vo.SaasIamOrganizationBriefVO;
@@ -81,6 +82,14 @@ public interface SaasIamFeignClient {
     List<Map<String, Object>> projectFileFieldsBatch(
             @RequestHeader(SaasIamHeaders.SUBJECT_TOKEN) String subjectToken,
             @RequestBody List<SaasIamFileFieldReadDTO> requests);
+
+    /**
+     * 只返回从同一有效角色绑定的 FILE.LIST 数据策略求交得到的查询范围。
+     * 业务 SQL 必须同时强制物理 tenant/app，禁止前端自报范围。
+     */
+    @PostMapping("/iam/file-object/query-scope")
+    SaasIamFileQueryScopeVO fileQueryScope(
+            @RequestHeader(SaasIamHeaders.SUBJECT_TOKEN) String subjectToken);
 
     /**
      * 获取服务端按 Token 和数据库确认的物理成员上下文。

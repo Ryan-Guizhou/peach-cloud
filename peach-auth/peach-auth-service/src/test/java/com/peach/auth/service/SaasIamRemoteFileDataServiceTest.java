@@ -5,7 +5,8 @@ import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
 import com.peach.auth.vo.ScopedFieldRuleVO;
 import java.util.Map;
-import com.peach.auth.service.data.OrganizationScopeMatcher;
+import com.peach.auth.service.data.OrganizationScopeDirectory;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
 import com.peach.auth.vo.RoleDataGrantVO;
@@ -40,7 +41,7 @@ class SaasIamRemoteFileDataServiceTest {
     private ScopedDataAuthorizationDao authorizationDao;
 
     @Mock
-    private OrganizationScopeMatcher organizationScopeMatcher;
+    private OrganizationScopeDirectory organizationScopeMatcher;
 
     @InjectMocks
     private SaasIamRemoteFileDataService service;
@@ -194,6 +195,21 @@ class SaasIamRemoteFileDataServiceTest {
                 .thenReturn(List.of(grant("TENANT", "SELF")));
 
         assertThat(service.projectBatchFields("subject", List.of(first, second))).isEmpty();
+    }
+
+    @Test
+    void shouldPlanSelfOnlyFileListWithinCurrentPhysicalTenant() {
+        when(sessionService.requireForToken("subject")).thenReturn(principal());
+        when(authorizationDao.selectDataGrants("tenant", "member", "app", "FILE.LIST"))
+                .thenReturn(List.of(grant("TENANT", "SELF")));
+
+        SaasIamFileQueryScopeVO scope = service.planListQuery("subject");
+
+        assertThat(scope.isSelf()).isTrue();
+        assertThat(scope.isTenantAll()).isFalse();
+        assertThat(scope.getTenantRefId()).isEqualTo("tenant");
+        assertThat(scope.getAppRefId()).isEqualTo("app");
+        assertThat(scope.getOrganizationRefIds()).isEmpty();
     }
 
     @Test

@@ -10,7 +10,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import com.peach.auth.service.data.DataObjectDescriptor;
 import com.peach.auth.service.data.DataScopeEvaluator;
-import com.peach.auth.service.data.OrganizationScopeMatcher;
+import com.peach.auth.service.data.OrganizationScopeDirectory;
+import com.peach.auth.service.data.FileSaasQueryScopePlanner;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
 import com.peach.auth.vo.RoleDataGrantVO;
@@ -50,11 +52,23 @@ public class SaasIamRemoteFileDataService {
 
     private final ScopedDataAuthorizationDao authorizationDao;
 
-    private final OrganizationScopeMatcher organizationScopeMatcher;
+    private final OrganizationScopeDirectory organizationScopeMatcher;
 
     private static final Set<String> ALLOWED_FILE_FIELDS = Set.of(
             "fileId", "fileName", "displayName", "contentType", "fileSize", "fileExt",
             "fileStatus", "bizType", "bizId", "bizTag", "remark", "createdTime");
+
+    /**
+     * 由真正的有效角色授权求出可用于文件列表 SQL 的同绑定物理行范围。
+     * 缺失权限或组织树不完整时拒绝，不把 org scope 自动扩大为 tenant scope。
+     */
+    @Transactional(readOnly = true)
+    public SaasIamFileQueryScopeVO planListQuery(String subjectToken) {
+        TenantSessionContext context = sessionService.requireForToken(subjectToken);
+        List<RoleDataGrantVO> grants = authorizationDao.selectDataGrants(
+                context.tenantRefId(), context.memberRefId(), context.appRefId(), "FILE.LIST");
+        return FileSaasQueryScopePlanner.plan(context, grants, organizationScopeMatcher);
+    }
 
     /**
      * 批量投影本人文件列表。只查询一次角色 DATA 授权和字段策略，

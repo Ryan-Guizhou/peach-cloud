@@ -11,6 +11,7 @@ import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.service.SaasIamRemoteAuthorizationService;
 import com.peach.auth.service.SaasIamRemoteDirectoryService;
 import com.peach.auth.vo.SaasIamContextVO;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import com.peach.auth.vo.SaasIamMemberBriefVO;
 import com.peach.auth.vo.SaasIamOrganizationBriefVO;
@@ -112,6 +113,20 @@ public class SaasIamExternalController {
             return ResponseEntity.ok(fileDataService.projectBatchFields(subjectToken, requests));
         } catch (RuntimeException exception) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(List.of());
+        }
+    }
+
+    /**
+     * 受信文件查询范围：先校验服务身份、最终用户成员/版本，再按同绑定求交。
+     */
+    @PostMapping("/file-object/query-scope")
+    public ResponseEntity<SaasIamFileQueryScopeVO> fileQueryScope(
+            @RequestHeader(value = SaasIamHeaders.SUBJECT_TOKEN, required = false) String subjectToken) {
+        try {
+            SaSameUtil.checkCurrentRequestToken();
+            return ResponseEntity.ok(fileDataService.planListQuery(subjectToken));
+        } catch (RuntimeException exception) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 

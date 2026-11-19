@@ -7,6 +7,7 @@ import java.util.Map;
 import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.vo.SaasIamContextVO;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import com.peach.auth.vo.SaasIamMemberBriefVO;
 import com.peach.auth.vo.SaasIamOrganizationBriefVO;
@@ -50,6 +51,11 @@ public class SaasIamFeignClientFallbackFactory implements FallbackFactory<SaasIa
             public List<Map<String, Object>> projectFileFieldsBatch(
                     String subjectToken, List<SaasIamFileFieldReadDTO> requests) {
                 return List.of();
+            }
+
+            @Override
+            public SaasIamFileQueryScopeVO fileQueryScope(String subjectToken) {
+                throw new SecurityException("Trusted file query scope is unavailable");
             }
 
             @Override
