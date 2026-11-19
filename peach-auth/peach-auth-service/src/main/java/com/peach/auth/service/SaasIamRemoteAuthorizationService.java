@@ -1,6 +1,8 @@
 package com.peach.auth.service;
 
 import com.peach.auth.dao.ScopedRoleGrantDao;
+import com.peach.auth.dao.OrganizationHierarchyDao;
+import org.springframework.util.StringUtils;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
 import com.peach.auth.vo.RoleScopeGrantVO;
@@ -43,6 +45,8 @@ public class SaasIamRemoteAuthorizationService {
     private final TenantSessionService sessionService;
 
     private final ScopedRoleGrantDao grantDao;
+
+    private final OrganizationHierarchyDao organizationHierarchyDao;
 
     /**
      * 当前持有者是否存在由数据库确认的 API 类动作权限。
@@ -91,9 +95,21 @@ public class SaasIamRemoteAuthorizationService {
         if (CollectionUtils.isEmpty(grants)) {
             return new SaasIamPermissionDecisionVO(false);
         }
-        return new SaasIamPermissionDecisionVO(true,
-                new SaasIamContextVO(context.userRefId(), context.tenantRefId(),
-                        context.memberRefId(), context.appRefId(), context.memberVersion(), context.authVersion()));
+        return new SaasIamPermissionDecisionVO(true, trustedContext(context));
+    }
+
+    /**
+     * 仅 Auth 访问本地物理租户表。文件服务通过受信 Feign 获得业务编号，不直连 Auth DB。
+     */
+    private SaasIamContextVO trustedContext(TenantSessionContext context) {
+        String businessId = organizationHierarchyDao.findEnabledTenantBusinessId(context.tenantRefId());
+        if (!StringUtils.hasText(businessId)) {
+            throw new SecurityException("Active business tenant mapping is required");
+        }
+        SaasIamContextVO snapshot = new SaasIamContextVO(context.userRefId(), context.tenantRefId(),
+                context.memberRefId(), context.appRefId(), context.memberVersion(), context.authVersion());
+        snapshot.setTenantBusinessId(businessId);
+        return snapshot;
     }
 
     private boolean isProtectedPlatformRoute(String requestCode) {
@@ -115,8 +131,7 @@ public class SaasIamRemoteAuthorizationService {
     @Transactional(readOnly = true)
     public SaasIamContextVO requireContext(String subjectToken) {
         TenantSessionContext context = sessionService.requireForToken(subjectToken);
-        return new SaasIamContextVO(context.userRefId(), context.tenantRefId(),
-                context.memberRefId(), context.appRefId(), context.memberVersion(), context.authVersion());
+        return trustedContext(context);
     }
 
 }

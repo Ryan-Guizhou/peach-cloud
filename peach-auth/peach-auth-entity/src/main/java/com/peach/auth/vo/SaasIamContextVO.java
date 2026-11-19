@@ -36,4 +36,18 @@ public class SaasIamContextVO implements Serializable {
     private long memberVersion;
 
     private long authVersion;
+
+    /** 由 Auth 真实租户映射得到的永久业务租户号，仅供存量文件兼容字段使用。 */
+    private String tenantBusinessId;
+
+    /** 保留原有六参构造签名以兼容其他受信服务调用。 */
+    public SaasIamContextVO(String userRefId, String tenantRefId, String memberRefId,
+                            String appRefId, long memberVersion, long authVersion) {
+        this.userRefId = userRefId;
+        this.tenantRefId = tenantRefId;
+        this.memberRefId = memberRefId;
+        this.appRefId = appRefId;
+        this.memberVersion = memberVersion;
+        this.authVersion = authVersion;
+    }
 }

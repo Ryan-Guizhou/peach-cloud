@@ -1,6 +1,7 @@
 package com.peach.auth.service;
 
 import com.peach.auth.dao.ScopedRoleGrantDao;
+import com.peach.auth.dao.OrganizationHierarchyDao;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
 import com.peach.auth.vo.RoleScopeGrantVO;
@@ -32,13 +33,17 @@ class SaasIamRemoteAuthorizationServiceTest {
 
     private TenantSessionService sessionService;
     private ScopedRoleGrantDao grantDao;
+
+    private OrganizationHierarchyDao organizationHierarchyDao;
     private SaasIamRemoteAuthorizationService service;
 
     @BeforeEach
     void setUp() {
         sessionService = mock(TenantSessionService.class);
         grantDao = mock(ScopedRoleGrantDao.class);
-        service = new SaasIamRemoteAuthorizationService(sessionService, grantDao);
+        organizationHierarchyDao = mock(OrganizationHierarchyDao.class);
+        when(organizationHierarchyDao.findEnabledTenantBusinessId("tenant")).thenReturn("TENANT_00000001");
+        service = new SaasIamRemoteAuthorizationService(sessionService, grantDao, organizationHierarchyDao);
         when(sessionService.requireForToken("real-user-token")).thenReturn(
                 new TenantSessionContext("user", "tenant", "member", "app", 2L, 7L));
     }
@@ -141,6 +146,7 @@ class SaasIamRemoteAuthorizationServiceTest {
         assertThat(result.getAppRefId()).isEqualTo("app");
         assertThat(result.getMemberVersion()).isEqualTo(2L);
         assertThat(result.getAuthVersion()).isEqualTo(7L);
+        assertThat(result.getTenantBusinessId()).isEqualTo("TENANT_00000001");
         verify(grantDao, never()).selectApiGrants(
                 anyString(), anyString(), anyString(), anyString(), anyBoolean());
     }
