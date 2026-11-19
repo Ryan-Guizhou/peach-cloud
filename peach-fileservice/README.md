@@ -189,3 +189,15 @@ Maven 命令只验证编译和打包，不替代真实 provider、分片直传�
 **限制：** 这里仍是旧业务租户/机构号止血，不能替代新 SaaS 的 `tenantRefId/memberRefId/appRefId` 和行级/字段级真实授权，也不表示旧用户级 Redis Profile 已可靠迁移。后续完整物理迁移与所有 SQL/对象存储权限端到端覆盖另见 #232、#211；没有经过真实迁移与验收前不得当作生产隔离已完成。
 
 额外在 `FileRecordDao.logicalDelete` / `restoreByFileId` 的 MyBatis `WHERE` 中绑定已校验记录的 `TENANT_ID` 与 `ORG_ID`，并检查影响行数必须为 1；并发期间归属或逻辑删除状态发生变化时抛错，避免只在 Java 查询时检查、SQL 写入却又退化为仅使用 `FILE_ID`。
+
+### #232 物理 SaaS 文件隔离（研发中，尚未完成数据策略验收）
+
+**已提交到 feature 分支的基础能力：** 文件记录、对象和上传会话统一增加 UUID 物理 `ID`，保留唯一业务编号 `FILE_ID`、`OBJECT_ID`、`SESSION_ID`；添加受信 `TENANT_REF_ID`、`APP_REF_ID`、`OWNER_USER_REF_ID`、可选 `ORG_REF_ID` 和上传者 `MEMBER_REF_ID`。通过 `SaasIamFeignClient` 在线向 Auth 校验实际最终用户 Token 的 API 动作与物理上下文，由 Auth 再校验成员、授权和全局密码版本。任意 Feign/Redis/同令牌验证失败都**拒绝**，不会降级使用浏览器自报业务租户或旧 USER_PROFILE。
+
+- 秒传对象 SQL 同时限定物理 tenant、app 和 owner，禁止跨租户/用户借 SHA-256 复用对象；文件分页 SQL 与 COUNT 同时限定物理范围和 owner；文件详情、签名 URL 生成前必须从受限 SQL 读取真实记录。删除和恢复 UPDATE WHERE 再次约束三元组，上传会话续传需匹配上传成员物理 ID。
+- 普通文件列表目前采取**仅所有者可见**的最严格兜底策略，不会假装已有全机构/跨机构共享能力。Role/Data/Field 按同一授权绑定求交的文件完整接入仍是 #232 尚未完成部分；在补齐之前，严禁将此阶段单独合并为生产完整 RBAC。
+- `sql/PEACH_FILE_SAAS_PHYSICAL_MIGRATION.sql` 是**存量库一次性迁移**，需 DBA 备份、执行物理主键切换、做存量对象与真实 tenant/app/owner/member 的人工证据映射和核对。没有真实映射的旧行继续保持 NULL 并由新 SQL 过滤，不允许自动猜测、默认开放或把旧 TENANT_ID 当物理主键。新库用 `sql/PEACH_FILE_*.sql` / `sql/ALL_TABLE_CREATE.sql`，不得再次运行 ALTER。
+- `sql/PEACH_FILE_SAAS_API_PERMISSIONS.sql` 只注册固定 SYSTEM API 定义，不自动授权。认证服务原有 `GET:/api/file/internal/*` 等通配资源不满足最新 API 路径解析器，应停止使用并按 `{fileId}` 模板配置最小授权。External 代理调用复用 Internal 的文件领域方法，因此当前需要同时具有相应内部动作权限。
+- 文件服务内部清理任务仅访问已拥有物理范围映射的到期数据，不伪造终端用户 Token；历史未映射记录不得直接清理。
+- 真实 MySQL、网关、Auth Feign Same-Token、Nacos/Redis、数据范围、字段遮盖、存储 provider 与迁移结果还需由 #211 验收。**本节仅描述代码进度，不代表 #232 已完成或可部署生产。**
+

@@ -1,0 +1,58 @@
+-- #232: System-defined file API action directory.
+-- Only permission DEFINITIONS are created; never grant to tenant users automatically.
+-- Provision file row/field policies and active role bindings separately using Auth IAM.
+-- This SQL requires the latest structured METHOD:/path matcher; legacy '*' API paths
+-- are not valid authorization evidence. Check uniqueness before one-time deployment.
+INSERT INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID, PERMISSION_CODE,
+     PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE, DELEGABLE, STATUS,
+     IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_LIST', NULL, NULL, 'POST:/api/file/internal/pageList',
+     '查询文件列表', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_CHECK', NULL, NULL, 'POST:/api/file/internal/upload/check',
+     '文件秒传预检', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_UPLOAD', NULL, NULL, 'POST:/api/file/internal/upload',
+     '上传文件', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_VIEW', NULL, NULL, 'GET:/api/file/internal/{fileId}',
+     '读取文件详情', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_URL', NULL, NULL, 'GET:/api/file/internal/{fileId}/url',
+     '签名下载文件', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DELETE', NULL, NULL, 'DELETE:/api/file/internal/{fileId}',
+     '逻辑删除文件', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_RESTORE', NULL, NULL, 'POST:/api/file/internal/{fileId}/restore',
+     '恢复文件', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_MP_INIT', NULL, NULL, 'POST:/api/file/internal/multipart/init',
+     '分片初始化', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_MP_PART', NULL, NULL, 'POST:/api/file/internal/multipart/part-url',
+     '获取分片预签名URL', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_MP_DONE', NULL, NULL, 'POST:/api/file/internal/multipart/complete',
+     '完成分片上传', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_MP_ABORT', NULL, NULL, 'POST:/api/file/internal/multipart/abort/{sessionId}',
+     '中止分片上传', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_EXT_UPLOAD', NULL, NULL, 'POST:/api/file/external/upload',
+     '受信服务外部上传', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_EXT_READ', NULL, NULL, 'GET:/api/file/external/{fileId}',
+     '受信服务外部读取', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_EXT_URL', NULL, NULL, 'GET:/api/file/external/{fileId}/url',
+     '受信服务外部签名下载', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_EXT_DELETE', NULL, NULL, 'DELETE:/api/file/external/{fileId}',
+     '受信服务外部删除', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM');
+
+-- Auth still requires online Token + member/auth version and valid SYSTEM grants.
+-- Disable old wildcard file API permissions before enabling the guarded file endpoints.
