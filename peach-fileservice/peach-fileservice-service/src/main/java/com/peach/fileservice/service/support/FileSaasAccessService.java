@@ -12,7 +12,6 @@ import com.peach.fileservice.vo.FileUploadSessionVO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.vo.SaasIamContextVO;
 import com.peach.auth.vo.SaasIamPermissionDecisionVO;
-import com.peach.fileservice.dao.FileSaasScopeDao;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -44,7 +43,6 @@ public class FileSaasAccessService {
 
     private final SaasIamFeignClient iamFeignClient;
 
-    private final FileSaasScopeDao scopeDao;
 
     /**
      * 受控文件动作，缺失最终用户 Token、远程 IAM 拒绝或数据库范围丢失均拒绝。
@@ -69,9 +67,8 @@ public class FileSaasAccessService {
                 throw new SecurityException("File API action was not authorized");
             }
             SaasIamContextVO subject = decision.getContext();
-            String businessId = scopeDao.findEnabledTenantBusinessId(subject.getTenantRefId());
             return new FileSaasScope(subject.getTenantRefId(), subject.getAppRefId(),
-                    subject.getUserRefId(), subject.getMemberRefId(), businessId);
+                    subject.getUserRefId(), subject.getMemberRefId(), subject.getTenantBusinessId());
         } catch (RuntimeException exception) {
             // 不泄漏最终用户 Token、远端权限目录及具体认证错误。
             log.warn("Trusted file authorization rejected");
@@ -313,9 +310,8 @@ public class FileSaasAccessService {
             if (context == null) {
                 throw new SecurityException("Trusted IAM context unavailable");
             }
-            String businessId = scopeDao.findEnabledTenantBusinessId(context.getTenantRefId());
             return new FileSaasScope(context.getTenantRefId(), context.getAppRefId(),
-                    context.getUserRefId(), context.getMemberRefId(), businessId);
+                    context.getUserRefId(), context.getMemberRefId(), context.getTenantBusinessId());
         } catch (RuntimeException exception) {
             log.warn("Trusted file context rejected");
             throw new SecurityException("Trusted file identity required");

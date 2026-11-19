@@ -10,7 +10,6 @@ import com.peach.fileservice.vo.FileRecordVO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.vo.SaasIamContextVO;
 import com.peach.auth.vo.SaasIamPermissionDecisionVO;
-import com.peach.fileservice.dao.FileSaasScopeDao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -41,9 +40,6 @@ class FileSaasAccessServiceTest {
     @Mock
     private SaasIamFeignClient iamFeignClient;
 
-    @Mock
-    private FileSaasScopeDao scopeDao;
-
     @InjectMocks
     private FileSaasAccessService service;
 
@@ -52,7 +48,7 @@ class FileSaasAccessServiceTest {
         SaasIamContextVO context = new SaasIamContextVO("user", "tenant", "member", "app", 2L, 7L);
         when(iamFeignClient.checkApiPermission(eq("subject-token"), any(SaasIamPermissionCheckDTO.class)))
                 .thenReturn(new SaasIamPermissionDecisionVO(true, context));
-        when(scopeDao.findEnabledTenantBusinessId("tenant")).thenReturn("TENANT_00000001");
+        context.setTenantBusinessId("TENANT_00000001");
         try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
             stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
             FileSaasScope actual = service.requireCurrent("POST:/api/file/internal/upload/check");
@@ -73,7 +69,7 @@ class FileSaasAccessServiceTest {
             assertThatThrownBy(() -> service.requireCurrent("POST:/api/file/internal/upload"))
                     .isInstanceOf(SecurityException.class);
         }
-        verifyNoInteractions(iamFeignClient, scopeDao);
+        verifyNoInteractions(iamFeignClient);
     }
 
     @Test
@@ -85,8 +81,7 @@ class FileSaasAccessServiceTest {
             assertThatThrownBy(() -> service.requireCurrent("GET:/api/file/internal/FILE0001"))
                     .isInstanceOf(SecurityException.class);
         }
-        verifyNoInteractions(scopeDao);
-    }
+            }
 
     @Test
     void shouldRejectMissingPhysicalOwnerOrTenantMapping() {
@@ -241,6 +236,6 @@ class FileSaasAccessServiceTest {
                 .isInstanceOf(SecurityException.class);
         assertThatThrownBy(() -> service.requireForFile("GET", "FILE1", "/unknown"))
                 .isInstanceOf(SecurityException.class);
-        verifyNoInteractions(iamFeignClient, scopeDao);
+        verifyNoInteractions(iamFeignClient);
     }
 }
