@@ -1,15 +1,16 @@
 package com.peach.fileservice.qo;
 
-import java.io.Serial;
-import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import com.peach.common.PeachEntity;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 文件查询参数。

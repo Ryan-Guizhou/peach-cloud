@@ -1,27 +1,30 @@
 package com.peach.fileservice.service.support;
 
 import cn.dev33.satoken.stp.StpUtil;
-import com.peach.auth.dto.SaasIamPermissionCheckDTO;
-import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
 import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamPermissionCheckDTO;
+import com.peach.auth.openfeign.SaasIamFeignClient;
+import com.peach.auth.vo.SaasIamContextVO;
 import com.peach.auth.vo.SaasIamFileQueryScopeVO;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import com.peach.common.unique.UniqueIdFacade;
 import com.peach.fileservice.vo.FileRecordVO;
 import com.peach.fileservice.vo.FileUploadSessionVO;
-import com.peach.auth.openfeign.SaasIamFeignClient;
-import com.peach.auth.vo.SaasIamContextVO;
-import com.peach.auth.vo.SaasIamPermissionDecisionVO;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.regex.Pattern;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * 文件操作的受信 IAM 在线授权入口，网络异常一律默认拒绝。
@@ -29,7 +32,8 @@ import java.util.ArrayList;
  * <p>只允许以当前 Servlet 请求关联的 Sa-Token 为最终用户凭证；
  * Feign 中间件应独立附加 Same-Token 服务凭证。绝不信任客户端自报
  * tenantRefId、appRefId、memberRefId、角色或业务租户号。
- * 动作允许不等于完整对象授权；对象 SQL 还必须按物理范围及所有者收敛。</p>
+ * 动作允许不等于完整对象授权；对象 SQL 必须限定物理租户、应用，
+ * 真实所有者和机构均交给 Auth 同绑定行级授权核验。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0

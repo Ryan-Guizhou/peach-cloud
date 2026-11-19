@@ -1,29 +1,33 @@
 package com.peach.fileservice.service.support;
 
 import cn.dev33.satoken.stp.StpUtil;
-import com.peach.auth.dto.SaasIamPermissionCheckDTO;
-import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
 import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
-import java.util.Map;
-import java.util.List;
-import com.peach.fileservice.vo.FileRecordVO;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.vo.SaasIamContextVO;
 import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.auth.vo.SaasIamPermissionDecisionVO;
+import com.peach.fileservice.vo.FileRecordVO;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -112,8 +116,8 @@ class FileSaasAccessServiceTest {
                     .isInstanceOf(SecurityException.class);
         }
 
-        org.mockito.ArgumentCaptor<SaasIamFileObjectCheckDTO> evidence =
-                org.mockito.ArgumentCaptor.forClass(SaasIamFileObjectCheckDTO.class);
+        ArgumentCaptor<SaasIamFileObjectCheckDTO> evidence =
+                ArgumentCaptor.forClass(SaasIamFileObjectCheckDTO.class);
         verify(iamFeignClient).checkFileObjectPermission(eq("subject-token"), evidence.capture());
         assertThat(evidence.getValue().getOwnerUserRefId()).isEqualTo("other-owner");
         assertThat(evidence.getValue().getOrgRefId()).isEqualTo("org-a");

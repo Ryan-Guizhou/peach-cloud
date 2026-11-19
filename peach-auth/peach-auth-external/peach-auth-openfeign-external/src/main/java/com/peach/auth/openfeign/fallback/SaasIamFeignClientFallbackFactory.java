@@ -1,20 +1,21 @@
 package com.peach.auth.openfeign.fallback;
 
-import com.peach.auth.dto.SaasIamPermissionCheckDTO;
-import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
 import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
-import java.util.Map;
-import com.peach.auth.dto.SaasIamBatchLookupDTO;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.vo.SaasIamContextVO;
 import com.peach.auth.vo.SaasIamFileQueryScopeVO;
-import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import com.peach.auth.vo.SaasIamMemberBriefVO;
 import com.peach.auth.vo.SaasIamOrganizationBriefVO;
+import com.peach.auth.vo.SaasIamPermissionDecisionVO;
+
+import org.springframework.cloud.openfeign.FallbackFactory;
 
 import java.util.List;
-import org.springframework.cloud.openfeign.FallbackFactory;
+import java.util.Map;
 
 /**
  * IAM Feign 超时、断路器和依赖异常时严格拒绝，不返回空成功响应。

@@ -1,31 +1,33 @@
 package com.peach.auth.service;
 
 import com.peach.auth.dao.ScopedDataAuthorizationDao;
-import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
 import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
-import com.peach.auth.service.data.FieldPermissionEvaluator;
-import com.peach.auth.vo.ScopedFieldRuleVO;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.service.data.DataObjectDescriptor;
 import com.peach.auth.service.data.DataScopeEvaluator;
-import com.peach.auth.service.data.OrganizationScopeDirectory;
+import com.peach.auth.service.data.FieldPermissionEvaluator;
 import com.peach.auth.service.data.FileSaasQueryScopePlanner;
-import com.peach.auth.vo.SaasIamFileQueryScopeVO;
+import com.peach.auth.service.data.OrganizationScopeDirectory;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
 import com.peach.auth.vo.RoleDataGrantVO;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.auth.vo.SaasIamPermissionDecisionVO;
+import com.peach.auth.vo.ScopedFieldRuleVO;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -34,7 +36,7 @@ import java.util.Set;
  * <p>只有通过独立 Same-Token 的 FileService 可以提交真实数据库对象描述。
  * 不允许最终用户直接构造权限码或物理归属；Auth 每次使用最终用户 Token
  * 重新验证数据库成员、应用、授权和全局密码版本。
- * 当前接口是行级证据，不代表已经完成字段查看、编辑与脱敏。</p>
+ * 本服务对文件行权限及字段查看、脱敏、写入进行独立的同绑定判定。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0

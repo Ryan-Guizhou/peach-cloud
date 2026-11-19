@@ -1,17 +1,19 @@
 package com.peach.auth.service;
 
-import com.peach.auth.dao.ScopedRoleGrantDao;
 import com.peach.auth.dao.OrganizationHierarchyDao;
-import org.springframework.util.StringUtils;
+import com.peach.auth.dao.ScopedRoleGrantDao;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
 import com.peach.auth.vo.RoleScopeGrantVO;
-import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import com.peach.auth.vo.SaasIamContextVO;
+import com.peach.auth.vo.SaasIamPermissionDecisionVO;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 

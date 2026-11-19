@@ -1,25 +1,26 @@
 package com.peach.auth.rest.external;
 
 import cn.dev33.satoken.same.SaSameUtil;
+
 import com.peach.auth.constant.SaasIamHeaders;
-import com.peach.auth.dto.SaasIamPermissionCheckDTO;
-import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
 import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
-import java.util.Map;
-import com.peach.auth.service.SaasIamRemoteFileDataService;
-import com.peach.auth.dto.SaasIamBatchLookupDTO;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.service.SaasIamRemoteAuthorizationService;
 import com.peach.auth.service.SaasIamRemoteDirectoryService;
+import com.peach.auth.service.SaasIamRemoteFileDataService;
 import com.peach.auth.vo.SaasIamContextVO;
 import com.peach.auth.vo.SaasIamFileQueryScopeVO;
-import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import com.peach.auth.vo.SaasIamMemberBriefVO;
 import com.peach.auth.vo.SaasIamOrganizationBriefVO;
+import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 
-import java.util.List;
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Indexed;
@@ -28,6 +29,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 跨微服务 IAM 受信入口，不供浏览器直连。

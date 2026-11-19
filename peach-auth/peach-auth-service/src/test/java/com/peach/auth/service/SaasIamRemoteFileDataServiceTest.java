@@ -1,28 +1,31 @@
 package com.peach.auth.service;
 
 import com.peach.auth.dao.ScopedDataAuthorizationDao;
-import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
 import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
-import com.peach.auth.vo.ScopedFieldRuleVO;
-import java.util.Map;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.service.data.OrganizationScopeDirectory;
-import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
 import com.peach.auth.vo.RoleDataGrantVO;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
+import com.peach.auth.vo.ScopedFieldRuleVO;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -251,7 +254,7 @@ class SaasIamRemoteFileDataServiceTest {
                 "FILE.EDIT", "FILE_RECORD", List.of("binding")))
                 .thenReturn(List.of(writable));
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(
+        assertThatThrownBy(
                         () -> service.checkWriteFields("subject", request))
                 .isInstanceOf(SecurityException.class);
     }
@@ -259,7 +262,7 @@ class SaasIamRemoteFileDataServiceTest {
     private static SaasIamFileFieldWriteDTO editRequest(String owner) {
         SaasIamFileFieldWriteDTO request = new SaasIamFileFieldWriteDTO();
         request.setObject(descriptor("FILE.EDIT", "tenant", "app", owner));
-        request.setChanges(new java.util.LinkedHashMap<>(Map.of("displayName", "new name")));
+        request.setChanges(new LinkedHashMap<>(Map.of("displayName", "new name")));
         return request;
     }
 

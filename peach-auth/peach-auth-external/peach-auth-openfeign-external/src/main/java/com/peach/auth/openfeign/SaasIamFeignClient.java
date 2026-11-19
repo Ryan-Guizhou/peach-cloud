@@ -1,27 +1,28 @@
 package com.peach.auth.openfeign;
 
 import com.peach.auth.constant.SaasIamHeaders;
-import com.peach.auth.dto.SaasIamPermissionCheckDTO;
-import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
 import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
-import java.util.Map;
-import com.peach.auth.dto.SaasIamBatchLookupDTO;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.openfeign.fallback.SaasIamFeignClientFallbackFactory;
 import com.peach.auth.vo.SaasIamContextVO;
 import com.peach.auth.vo.SaasIamFileQueryScopeVO;
-import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import com.peach.auth.vo.SaasIamMemberBriefVO;
 import com.peach.auth.vo.SaasIamOrganizationBriefVO;
-
-import java.util.List;
+import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import com.peach.common.constant.ServiceContextConstant;
 import com.peach.common.constant.ServiceNameConstant;
 import com.peach.common.constant.ServicePathConstant;
+
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * SaaS IAM 最小受信跨服务契约。
