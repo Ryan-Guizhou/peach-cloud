@@ -5,6 +5,8 @@ import com.peach.fileservice.config.FileDomainProperties;
 import com.peach.fileservice.dao.FileRecordDao;
 import com.peach.fileservice.dao.FileUploadSessionDao;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
+import com.peach.fileservice.dto.FileMetadataPatchDTO;
+import java.util.Map;
 import com.peach.fileservice.service.IFileDomainService;
 import com.peach.fileservice.service.support.FileSaasAccessService;
 import com.peach.fileservice.service.support.FileSaasScope;
@@ -20,6 +22,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -121,6 +125,46 @@ class FileDomainSaasScopeTest {
         assertThat(domainService.uploadCheck(request).getInstantUpload()).isFalse();
         verify(fileObjectDao).selectActiveBySha256AndSize(
                 "001122", 2048L, "tenant-ref", "app-ref", "user-ref");
+    }
+
+    @Test
+    void shouldUpdateOnlyAuthorizedMetadataWithScopedSql() {
+        FileRecordVO row = new FileRecordVO();
+        row.setId("00000000000000000000000000000001");
+        row.setFileId("FILE00001");
+        row.setTenantRefId("tenant-ref");
+        row.setAppRefId("app-ref");
+        row.setOwnerUserRefId("user-ref");
+        row.setFileStatus("ACTIVE");
+        row.setIsDelete(0);
+        FileMetadataPatchDTO patch = new FileMetadataPatchDTO();
+        patch.setChanges(Map.of("displayName", "revised.pdf"));
+        when(saasAccessService.requireForFile("PATCH", "FILE00001", "/metadata")).thenReturn(SCOPE);
+        when(saasAccessService.requireContext()).thenReturn(SCOPE);
+        when(fileRecordDao.selectScopedDetail("FILE00001", "tenant-ref", "app-ref"))
+                .thenReturn(row);
+        when(saasAccessService.currentOperator()).thenReturn("member-ref");
+        when(fileRecordDao.updateScopedMetadata(eq("FILE00001"), eq("tenant-ref"), eq("app-ref"),
+                eq("user-ref"), isNull(), eq(patch.getChanges()), anyString(), eq("member-ref")))
+                .thenReturn(1);
+
+        domainService.updateMetadata("FILE00001", patch);
+
+        verify(saasAccessService).requireWritableFileFields(SCOPE, row, patch.getChanges());
+        verify(fileRecordDao).updateScopedMetadata(eq("FILE00001"), eq("tenant-ref"), eq("app-ref"),
+                eq("user-ref"), isNull(), eq(patch.getChanges()), anyString(), eq("member-ref"));
+    }
+
+    @Test
+    void shouldDenyMetadataPatchBeforeQueryingAnyRecord() {
+        FileMetadataPatchDTO patch = new FileMetadataPatchDTO();
+        patch.setChanges(Map.of("displayName", "revised.pdf"));
+        when(saasAccessService.requireForFile("PATCH", "FILE00001", "/metadata"))
+                .thenThrow(new SecurityException("denied"));
+
+        assertThatThrownBy(() -> domainService.updateMetadata("FILE00001", patch))
+                .isInstanceOf(SecurityException.class);
+        verifyNoInteractions(fileRecordDao);
     }
 
     @Test

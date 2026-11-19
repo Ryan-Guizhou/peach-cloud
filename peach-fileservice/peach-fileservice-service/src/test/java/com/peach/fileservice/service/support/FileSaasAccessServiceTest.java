@@ -4,11 +4,13 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
 import java.util.Map;
 import java.util.List;
 import com.peach.fileservice.vo.FileRecordVO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.vo.SaasIamContextVO;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -81,7 +83,7 @@ class FileSaasAccessServiceTest {
             assertThatThrownBy(() -> service.requireCurrent("GET:/api/file/internal/FILE0001"))
                     .isInstanceOf(SecurityException.class);
         }
-            }
+    }
 
     @Test
     void shouldRejectMissingPhysicalOwnerOrTenantMapping() {
@@ -229,6 +231,71 @@ class FileSaasAccessServiceTest {
             assertThatThrownBy(() -> service.projectVisiblePage(scope, List.of(first, second)))
                     .isInstanceOf(SecurityException.class);
         }
+    }
+
+    @Test
+    void shouldAcceptOnlyCurrentUserTrustedListQueryScope() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        SaasIamFileQueryScopeVO plan = new SaasIamFileQueryScopeVO();
+        plan.setTenantRefId("tenant");
+        plan.setAppRefId("app");
+        plan.setUserRefId("user");
+        plan.setSelf(true);
+        when(iamFeignClient.fileQueryScope("subject-token")).thenReturn(plan);
+
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
+            assertThat(service.requireListQueryScope(scope).isSelf()).isTrue();
+        }
+        verify(iamFeignClient).fileQueryScope("subject-token");
+    }
+
+    @Test
+    void shouldRejectQueryScopeBelongingToDifferentApplication() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        SaasIamFileQueryScopeVO plan = new SaasIamFileQueryScopeVO();
+        plan.setTenantRefId("tenant");
+        plan.setAppRefId("foreign-app");
+        plan.setUserRefId("user");
+        plan.setTenantAll(true);
+        when(iamFeignClient.fileQueryScope("subject-token")).thenReturn(plan);
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
+            assertThatThrownBy(() -> service.requireListQueryScope(scope))
+                    .isInstanceOf(SecurityException.class);
+        }
+    }
+
+    @Test
+    void shouldAuthorizeOnlyKnownWritableMetadataFields() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        when(iamFeignClient.checkFileFieldWrites(eq("subject-token"),
+                any(SaasIamFileFieldWriteDTO.class)))
+                .thenReturn(new SaasIamPermissionDecisionVO(true));
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
+            service.requireWritableFileFields(scope, record(scope), Map.of("displayName", "new label"));
+        }
+        verify(iamFeignClient).checkFileFieldWrites(eq("subject-token"),
+                any(SaasIamFileFieldWriteDTO.class));
+    }
+
+    @Test
+    void shouldRejectUnknownMetadataFieldBeforeAnyRemoteCall() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        assertThatThrownBy(() -> service.requireWritableFileFields(
+                scope, record(scope), Map.of("objectKey", "secret")))
+                .isInstanceOf(SecurityException.class);
+        verifyNoInteractions(iamFeignClient);
+    }
+
+    @Test
+    void shouldRejectNullOrOversizeMetadataBeforeAnyRemoteCall() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        assertThatThrownBy(() -> service.requireWritableFileFields(
+                scope, record(scope), Map.of("remark", "x".repeat(501))))
+                .isInstanceOf(SecurityException.class);
+        verifyNoInteractions(iamFeignClient);
     }
 
     @Test
