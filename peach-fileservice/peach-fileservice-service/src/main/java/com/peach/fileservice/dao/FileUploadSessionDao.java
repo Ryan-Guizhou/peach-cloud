@@ -22,6 +22,14 @@ import java.util.List;
 public interface FileUploadSessionDao extends PeachDao<FileUploadSessionDO, FileUploadSessionVO> {
 
     /**
+     * 物理租户、应用、创建成员必须同时匹配才能访问分片会话。
+     */
+    FileUploadSessionVO selectScopedSession(@Param("sessionId") String sessionId,
+                                            @Param("tenantRefId") String tenantRefId,
+                                            @Param("appRefId") String appRefId,
+                                            @Param("memberRefId") String memberRefId);
+
+    /**
      * 更新上传会话状态
      *
      * @param sessionId 会话ID

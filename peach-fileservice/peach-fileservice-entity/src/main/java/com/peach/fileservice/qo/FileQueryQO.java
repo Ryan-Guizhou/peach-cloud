@@ -32,6 +32,18 @@ public class FileQueryQO extends PeachEntity implements Serializable {
     @Schema(description = "租户ID")
     private String tenantId;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Schema(description = "仅由服务端设置的物理租户ID")
+    private String tenantRefId;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Schema(description = "仅由服务端设置的物理应用ID")
+    private String appRefId;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Schema(description = "仅由服务端设置的文件所有者物理ID")
+    private String ownerUserRefId;
+
     @Schema(description = "机构ID")
     private String orgId;
 

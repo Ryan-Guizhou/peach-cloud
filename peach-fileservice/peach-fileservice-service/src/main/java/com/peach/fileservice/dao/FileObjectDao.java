@@ -31,7 +31,11 @@ public interface FileObjectDao extends PeachDao<FileObjectDO, FileObjectVO> {
      * @param fileSize 文件大小（字节）
      * @return 活跃的文件对象，不存在时返回null
      */
-    FileObjectVO selectActiveBySha256AndSize(@Param("hashSha256") String hashSha256, @Param("fileSize") Long fileSize);
+    FileObjectVO selectActiveBySha256AndSize(@Param("hashSha256") String hashSha256,
+                                           @Param("fileSize") Long fileSize,
+                                           @Param("tenantRefId") String tenantRefId,
+                                           @Param("appRefId") String appRefId,
+                                           @Param("ownerUserRefId") String ownerUserRefId);
 
     /**
      * 增加文件对象的引用计数

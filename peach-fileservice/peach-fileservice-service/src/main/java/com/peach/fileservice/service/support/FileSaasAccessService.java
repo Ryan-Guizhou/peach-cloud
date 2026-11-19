@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
+import java.util.List;
 
 /**
  * 文件操作的受信 IAM 在线授权入口，网络异常一律默认拒绝。
@@ -74,6 +75,42 @@ public class FileSaasAccessService {
      * 用已验证的本次请求最终用户 Token 取得审计成员。
      */
     public String currentOperator() {
-        return requireCurrent("POST:/api/file/internal/pageList").memberRefId();
+        return requireContext().memberRefId();
+    }
+
+    /**
+     * 只查询当前用户 Token 的在线物理身份，不能单独用于授予读写动作。
+     *
+     * @return IAM 在线核验的物理归属及当前用户
+     */
+    public FileSaasScope requireContext() {
+        String token = StpUtil.getTokenValue();
+        if (!StringUtils.hasText(token) || token.length() > 1024) {
+            throw new SecurityException("Valid end-user token is required");
+        }
+        try {
+            SaasIamContextVO context = iamFeignClient.requireContext(token);
+            if (context == null) {
+                throw new SecurityException("Trusted IAM context unavailable");
+            }
+            String businessId = scopeDao.findEnabledTenantBusinessId(context.getTenantRefId());
+            return new FileSaasScope(context.getTenantRefId(), context.getAppRefId(),
+                    context.getUserRefId(), context.getMemberRefId(), businessId);
+        } catch (RuntimeException exception) {
+            log.warn("Trusted file context rejected");
+            throw new SecurityException("Trusted file identity required");
+        }
+    }
+
+    /**
+     * 文件永久业务 ID 只能是一个安全路径段，拒绝请求路径语法注入。
+     */
+    public FileSaasScope requireForFile(String method, String fileId, String suffix) {
+        if (fileId == null || !fileId.matches("[A-Za-z0-9-]{1,64}")
+                || suffix == null || !List.of("", "/url", "/restore").contains(suffix)
+                || !List.of("GET", "POST", "DELETE").contains(method)) {
+            throw new SecurityException("Invalid file action");
+        }
+        return requireCurrent(method + ":/api/file/internal/" + fileId + suffix);
     }
 }

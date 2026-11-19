@@ -40,6 +40,14 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
     FileRecordVO selectDetailByFileId(@Param("fileId") String fileId);
 
     /**
+     * 物理租户、应用和所有者必须同时匹配，未迁移记录一律不可见。
+     */
+    FileRecordVO selectScopedDetail(@Param("fileId") String fileId,
+                                    @Param("tenantRefId") String tenantRefId,
+                                    @Param("appRefId") String appRefId,
+                                    @Param("ownerUserRefId") String ownerUserRefId);
+
+    /**
      * 统计指定文件对象的活跃引用数量
      *
      * <p>用于判断文件对象是否仍被使用，决定是否物理删除存储对象。</p>
@@ -64,8 +72,9 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
      * @param modifier 修改人
      */
     int logicalDelete(@Param("fileId") String fileId,
-                      @Param("tenantId") String tenantId,
-                      @Param("orgId") String orgId,
+                      @Param("tenantRefId") String tenantRefId,
+                      @Param("appRefId") String appRefId,
+                      @Param("ownerUserRefId") String ownerUserRefId,
                       @Param("fileStatus") String fileStatus,
                        @Param("deleteTime") String deleteTime, @Param("expireDeleteTime") String expireDeleteTime,
                        @Param("isDelete") Integer isDelete, @Param("modifyTime") String modifyTime,
@@ -83,8 +92,9 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
      * @param modifier 修改人
      */
     int restoreByFileId(@Param("fileId") String fileId,
-                        @Param("tenantId") String tenantId,
-                        @Param("orgId") String orgId,
+                        @Param("tenantRefId") String tenantRefId,
+                        @Param("appRefId") String appRefId,
+                        @Param("ownerUserRefId") String ownerUserRefId,
                         @Param("fileStatus") String fileStatus,
                          @Param("isDelete") Integer isDelete, @Param("modifyTime") String modifyTime,
                          @Param("modifier") String modifier);
