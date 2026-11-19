@@ -181,6 +181,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Transactional(rollbackFor = Exception.class)
     public FileUploadCheckVO uploadCheck(FileUploadCheckDTO data) {
         FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/upload/check");
+        saasAccessService.requireOwnDataAction("FILE.UPLOAD", scope);
         validateCheckData(data);
         FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(
                 data.getSha256(), data.getFileSize(),
@@ -205,6 +206,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Transactional(rollbackFor = Exception.class)
     public FileUploadVO upload(FileUploadCheckDTO data, MultipartFile file) {
         FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/upload");
+        saasAccessService.requireOwnDataAction("FILE.UPLOAD", scope);
         validateCheckData(data);
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("upload file is empty");
@@ -249,6 +251,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Transactional(rollbackFor = Exception.class)
     public FileMultipartInitVO initMultipartUpload(FileMultipartInitDTO data) {
         FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/multipart/init");
+        saasAccessService.requireOwnDataAction("FILE.UPLOAD", scope);
         validateCheckData(data);
         FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(
                 data.getSha256(), data.getFileSize(),
@@ -318,6 +321,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     public FileMultipartPartVO prepareMultipartPart(FileMultipartPartUrlDTO data) {
         saasAccessService.requireCurrent("POST:/api/file/internal/multipart/part-url");
         FileUploadSessionVO sessionVO = requireActiveSession(data.getSessionId());
+        saasAccessService.requireUploadSessionData(saasAccessService.requireContext(), sessionVO);
         UploadPartResult uploadPartResult = preparePart(sessionVO, data.getPartNumber());
         fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(),
                 sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getMemberRefId(), FileDomainConstant.SessionStatus.UPLOADING,
@@ -336,6 +340,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     public FileUploadVO completeMultipartUpload(FileMultipartCompleteDTO data) {
         saasAccessService.requireCurrent("POST:/api/file/internal/multipart/complete");
         FileUploadSessionVO sessionVO = requireSession(data.getSessionId());
+        saasAccessService.requireUploadSessionData(saasAccessService.requireContext(), sessionVO);
         if (FileDomainConstant.SessionStatus.COMPLETED.equals(sessionVO.getSessionStatus())) {
             FileUploadVO result = new FileUploadVO();
             result.setFileId(sessionVO.getFileId());
@@ -406,6 +411,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         }
         saasAccessService.requireCurrent("POST:/api/file/internal/multipart/abort/" + sessionId);
         FileUploadSessionVO sessionVO = requireSession(sessionId);
+        saasAccessService.requireUploadSessionData(saasAccessService.requireContext(), sessionVO);
         if (FileDomainConstant.SessionStatus.COMPLETED.equals(sessionVO.getSessionStatus())
                 || FileDomainConstant.SessionStatus.ABORTED.equals(sessionVO.getSessionStatus())) {
             return;
@@ -427,14 +433,17 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     @Override
     public FileRecordVO selectByFileId(String fileId) {
-        saasAccessService.requireForFile("GET", fileId, "");
-        return requireRecord(fileId);
+        FileSaasScope scope = saasAccessService.requireForFile("GET", fileId, "");
+        FileRecordVO record = requireRecord(fileId);
+        saasAccessService.requireFileData("FILE.READ", scope, record);
+        return record;
     }
 
     @Override
     public FileDownloadUrlVO getDownloadUrl(String fileId) {
-        saasAccessService.requireForFile("GET", fileId, "/url");
+        FileSaasScope scope = saasAccessService.requireForFile("GET", fileId, "/url");
         FileRecordVO recordVO = requireActiveRecord(fileId);
+        saasAccessService.requireFileData("FILE.DOWNLOAD", scope, recordVO);
         PresignedUrlRequest request = PresignedUrlRequest.builder()
                 .bucketName(recordVO.getBucketName())
                 .objectKey(recordVO.getObjectKey())
@@ -465,6 +474,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     public void logicalDelete(String fileId) {
         FileSaasScope scope = saasAccessService.requireForFile("DELETE", fileId, "");
         FileRecordVO recordVO = requireRecord(fileId);
+        saasAccessService.requireFileData("FILE.DELETE", scope, recordVO);
         if (FileDomainConstant.LogicDelete.YES.equals(recordVO.getIsDelete())) {
             return;
         }
@@ -489,6 +499,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     public void restore(String fileId) {
         FileSaasScope scope = saasAccessService.requireForFile("POST", fileId, "/restore");
         FileRecordVO recordVO = requireRecord(fileId);
+        saasAccessService.requireFileData("FILE.RESTORE", scope, recordVO);
         if (!FileDomainConstant.LogicDelete.YES.equals(recordVO.getIsDelete())) {
             return;
         }
@@ -915,6 +926,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
             throw new IllegalArgumentException("File query is required");
         }
         FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/pageList");
+        saasAccessService.requireOwnDataAction("FILE.LIST", scope);
         qo.setTenantRefId(scope.tenantRefId());
         qo.setAppRefId(scope.appRefId());
         qo.setOwnerUserRefId(scope.userRefId());
