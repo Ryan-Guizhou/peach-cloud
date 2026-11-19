@@ -87,6 +87,15 @@ FROM PEACH_FILE_RECORD R JOIN PEACH_FILE_OBJECT O ON O.OBJECT_ID = R.OBJECT_ID
 WHERE R.TENANT_REF_ID IS NOT NULL AND O.TENANT_REF_ID IS NOT NULL
   AND (R.TENANT_REF_ID <> O.TENANT_REF_ID OR R.APP_REF_ID <> O.APP_REF_ID);
 
+-- DBA 审计：同一业务文件与物理对象不得跨机构关联，包含 NULL 与非 NULL 不匹配。
+-- 旧数据未完成权属映射前仅展示异常，不自动补齐或放行。
+SELECT R.FILE_ID, R.ORG_REF_ID AS RECORD_ORG_REF_ID, O.ORG_REF_ID AS OBJECT_ORG_REF_ID
+FROM PEACH_FILE_RECORD R
+INNER JOIN PEACH_FILE_OBJECT O ON O.OBJECT_ID = R.OBJECT_ID
+WHERE R.TENANT_REF_ID IS NOT NULL AND O.TENANT_REF_ID IS NOT NULL
+  AND R.APP_REF_ID IS NOT NULL AND O.APP_REF_ID IS NOT NULL
+  AND NOT (R.ORG_REF_ID <=> O.ORG_REF_ID);
+
 -- Keep unverified historic rows quarantined; the new SQL requires physical scope
 -- and therefore denies them instead of falling back to legacy business tenant IDs.
 -- Do not declare production acceptance until the DBA reconciliation report and
