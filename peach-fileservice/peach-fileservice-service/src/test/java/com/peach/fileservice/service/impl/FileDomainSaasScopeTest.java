@@ -215,6 +215,23 @@ class FileDomainSaasScopeTest {
     }
 
     @Test
+    void shouldConstrainInstantUploadReuseToChosenOrganization() {
+        FileUploadCheckDTO request = new FileUploadCheckDTO();
+        request.setSha256("001122");
+        request.setFileSize(2048L);
+        request.setFileName("report.pdf");
+        request.setBizType("report");
+        request.setOrgRefId("target-org-ref");
+        when(saasAccessService.requireCurrent("POST:/api/file/internal/upload/check"))
+                .thenReturn(SCOPE);
+
+        assertThat(domainService.uploadCheck(request).getInstantUpload()).isFalse();
+        verify(saasAccessService).requireOwnDataAction("FILE.UPLOAD", SCOPE, "target-org-ref");
+        verify(fileObjectDao).selectActiveBySha256AndSize(
+                "001122", 2048L, "tenant-ref", "app-ref", "user-ref", "target-org-ref");
+    }
+
+    @Test
     void shouldRejectForeignFileBeforeQueryingStorage() {
         when(saasAccessService.requireForFile("DELETE", "FILE00001", ""))
                 .thenThrow(new SecurityException("denied"));

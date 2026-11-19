@@ -269,14 +269,17 @@ public class SaasIamRemoteFileDataService {
             return new SaasIamPermissionDecisionVO(false);
         }
         TenantSessionContext context = sessionService.requireForToken(subjectToken);
-        if ("FILE.UPLOAD".equals(request.getPermissionCode())
-                && StringUtils.hasText(request.getOrgRefId())
-                && !organizationScopeMatcher.contains(request.getTenantRefId(),
-                        request.getOrgRefId(), request.getOrgRefId())) {
-            return new SaasIamPermissionDecisionVO(false);
-        }
         if (!request.getTenantRefId().equals(context.tenantRefId())
                 || !request.getAppRefId().equals(context.appRefId())) {
+            return new SaasIamPermissionDecisionVO(false);
+        }
+        // 上传目标机构由用户选择，仅是待验证对象归属，不是用户身份。
+        // 不论 DATA 是 SELF / TENANT_ALL / ORG_TREE，都必须确认目标机构当前真实有效。
+        if ("FILE.UPLOAD".equals(request.getPermissionCode())
+                && request.getOrgRefId() != null
+                && (!StringUtils.hasText(request.getOrgRefId())
+                || !organizationScopeMatcher.contains(context.tenantRefId(),
+                        request.getOrgRefId(), request.getOrgRefId()))) {
             return new SaasIamPermissionDecisionVO(false);
         }
         List<RoleDataGrantVO> grants = authorizationDao.selectDataGrants(

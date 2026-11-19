@@ -267,6 +267,31 @@ class SaasIamRemoteFileDataServiceTest {
     }
 
     @Test
+    void shouldDenyNonexistentUploadOrganizationEvenWithTenantAllPolicy() {
+        SaasIamFileObjectCheckDTO request = descriptor("FILE.UPLOAD", "tenant", "app", "user");
+        request.setOrgRefId("inactive-org");
+        when(sessionService.requireForToken("subject")).thenReturn(principal());
+        when(organizationScopeMatcher.contains("tenant", "inactive-org", "inactive-org"))
+                .thenReturn(false);
+
+        assertThat(service.decide("subject", request).isAllowed()).isFalse();
+        verifyNoInteractions(authorizationDao);
+    }
+
+    @Test
+    void shouldAllowAuthorizedActiveOrganizationUpload() {
+        SaasIamFileObjectCheckDTO request = descriptor("FILE.UPLOAD", "tenant", "app", "user");
+        request.setOrgRefId("active-org");
+        when(sessionService.requireForToken("subject")).thenReturn(principal());
+        when(organizationScopeMatcher.contains("tenant", "active-org", "active-org"))
+                .thenReturn(true);
+        when(authorizationDao.selectDataGrants("tenant", "member", "app", "FILE.UPLOAD"))
+                .thenReturn(List.of(grant("TENANT", "SELF")));
+
+        assertThat(service.decide("subject", request).isAllowed()).isTrue();
+    }
+
+    @Test
     void shouldRejectUnrecognizedFileActionBeforeTokenInspection() {
         SaasIamFileObjectCheckDTO request = descriptor("USER.DELETE", "tenant", "app", "user");
         assertThat(service.decide("subject", request).isAllowed()).isFalse();

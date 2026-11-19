@@ -14,6 +14,7 @@ import com.peach.fileservice.vo.FileRecordVO;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import ArgumentCaptor;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -122,6 +123,31 @@ class FileSaasAccessServiceTest {
         assertThat(evidence.getValue().getOwnerUserRefId()).isEqualTo("other-owner");
         assertThat(evidence.getValue().getOrgRefId()).isEqualTo("org-a");
         assertThat(evidence.getValue().getObjectRefId()).isEqualTo(record.getId());
+    }
+
+    @Test
+    void shouldForwardChosenOrganizationAsUntrustedUploadTargetForAuthValidation() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        when(iamFeignClient.checkFileObjectPermission(eq("subject-token"),
+                any(SaasIamFileObjectCheckDTO.class)))
+                .thenReturn(new SaasIamPermissionDecisionVO(true));
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
+            service.requireOwnDataAction("FILE.UPLOAD", scope, "target-org");
+        }
+        ArgumentCaptor<SaasIamFileObjectCheckDTO> proof =
+                ArgumentCaptor.forClass(SaasIamFileObjectCheckDTO.class);
+        verify(iamFeignClient).checkFileObjectPermission(eq("subject-token"), proof.capture());
+        assertThat(proof.getValue().getOrgRefId()).isEqualTo("target-org");
+        assertThat(proof.getValue().getOwnerUserRefId()).isEqualTo("user");
+    }
+
+    @Test
+    void shouldRejectOversizedUploadTargetBeforeFeign() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        assertThatThrownBy(() -> service.requireOwnDataAction(
+                "FILE.UPLOAD", scope, "x".repeat(33))).isInstanceOf(SecurityException.class);
+        verifyNoInteractions(iamFeignClient);
     }
 
     @Test
