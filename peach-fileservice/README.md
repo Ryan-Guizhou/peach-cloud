@@ -212,4 +212,4 @@ Maven 命令只验证编译和打包，不替代真实 provider、分片直传�
 
 `SaasIamFeignClient.projectFileFields` 经受信 Same-Token 调用 Auth 对 `FILE_RECORD` 资源的 `PEACH_ROLE_FIELD_POLICY` 求值，与同一条 `FILE.READ` / `FILE.LIST` 行范围和角色绑定配对。只有字段策略明确 `ALLOW` 或 `MASK` 才能进入安全的 `FileRecordVO`；`DENY` 或未知字段直接剔除。必须显式允许 `fileId` 才能展示详情或列表项，缺少对应字段策略时返回授权错误。对象存储的 bucket、objectKey、provider 以及内部物理归属不进入公开响应。
 
-文件列表限制每页不超过 50 条，先通过 SQL 层的物理 tenant/app/owner 过滤与 COUNT，再对页面内每条进行受信 Auth 字段投影；不能把分页之后逐条拒绝的结果当作有权限的部分列表。这是安全优先的初版，存在每条记录一次远程字段求值的 N+1 开销，下一步应在保持授权一致性的前提下提供批量投影，且在补齐后才能把 #232 视为性能验收通过。字段写权限、机构组织树跨所有者的 SQL 并集仍未实现，不允许宣称已具备完整文件数据授权。
+文件列表限制每页不超过 50 条，先通过 SQL 层的物理 tenant/app/owner 过滤与 COUNT；Auth 对页面中每条记录独立执行行/字段范围求交，但通过**一次批量 Feign 调用**查询当前成员的角色数据与字段策略，避免每行发一次远程请求。某条记录未授权将整页拒绝，不把分页后过滤的部分列表冒充准确 COUNT。该批处理仍需在真实 MySQL/Feign 环境验证性能和授权版本一致性。字段写权限、机构组织树跨所有者的 SQL 并集仍未实现，不允许宣称已具备完整文件数据授权。

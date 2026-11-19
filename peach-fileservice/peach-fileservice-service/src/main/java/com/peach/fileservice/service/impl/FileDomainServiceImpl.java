@@ -470,12 +470,10 @@ public class FileDomainServiceImpl implements IFileDomainService {
         fillCurrentTenantOrg(qo);
         PageInfo<FileRecordVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> fileRecordDao.selectByQO(qo));
-        // 先在 SQL 中完成 tenant/app/owner 范围收敛和 COUNT，
-        // 再对同一页每条文件独立核验角色绑定与字段脱敏，不在分页后丢弃行。
+        // 物理范围、SQL COUNT 先收敛；一页只调用一次受信 Auth 批量字段投影。
+        // Auth 对每行独立求权限交集，任何行未授权整页拒绝，避免分页后伪造总数。
         FileSaasScope scope = saasAccessService.requireContext();
-        List<FileRecordVO> visible = pageInfo.getList().stream()
-                .map(row -> saasAccessService.projectVisibleFields("FILE.LIST", scope, row))
-                .toList();
+        List<FileRecordVO> visible = saasAccessService.projectVisiblePage(scope, pageInfo.getList());
         return new PageResult<>(visible, pageInfo.getTotal());
     }
 
