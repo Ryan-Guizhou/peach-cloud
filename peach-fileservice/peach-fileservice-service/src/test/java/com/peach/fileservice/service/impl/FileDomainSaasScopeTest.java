@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
+import static doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -82,6 +83,26 @@ class FileDomainSaasScopeTest {
         assertThatThrownBy(() -> domainService.getDownloadUrl("FILE00001"))
                 .isInstanceOf(SecurityException.class);
         verifyNoInteractions(fileRecordDao, multiZoneStorage);
+    }
+
+    @Test
+    void shouldRejectUnverifiedFileRowDataPolicyBeforeStorageAccess() {
+        FileRecordVO row = new FileRecordVO();
+        row.setFileId("FILE00001");
+        row.setId("00000000000000000000000000000001");
+        row.setTenantRefId("tenant-ref");
+        row.setAppRefId("app-ref");
+        row.setOwnerUserRefId("user-ref");
+        when(saasAccessService.requireForFile("GET", "FILE00001", "/url")).thenReturn(SCOPE);
+        when(saasAccessService.requireContext()).thenReturn(SCOPE);
+        when(fileRecordDao.selectScopedDetail("FILE00001", "tenant-ref", "app-ref", "user-ref"))
+                .thenReturn(row);
+        org.mockito.Mockito.doThrow(new SecurityException("data denied"))
+                .when(saasAccessService).requireFileData("FILE.DOWNLOAD", SCOPE, row);
+
+        assertThatThrownBy(() -> domainService.getDownloadUrl("FILE00001"))
+                .isInstanceOf(SecurityException.class);
+        verifyNoInteractions(multiZoneStorage);
     }
 
     @Test

@@ -2,6 +2,8 @@ package com.peach.fileservice.service.support;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.fileservice.vo.FileRecordVO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.vo.SaasIamContextVO;
 import com.peach.auth.vo.SaasIamPermissionDecisionVO;
@@ -90,6 +92,58 @@ class FileSaasAccessServiceTest {
             stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
             assertThatThrownBy(service::requireContext).isInstanceOf(SecurityException.class);
         }
+    }
+
+
+    @Test
+    void shouldAuthorizeFileRowOnlyAfterLiveSameBindingDataPolicy() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        FileRecordVO row = new FileRecordVO();
+        row.setId("00000000000000000000000000000001");
+        row.setTenantRefId("tenant");
+        row.setAppRefId("app");
+        row.setOwnerUserRefId("user");
+        when(iamFeignClient.checkFileObjectPermission(eq("subject-token"),
+                any(SaasIamFileObjectCheckDTO.class)))
+                .thenReturn(new SaasIamPermissionDecisionVO(true));
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
+            service.requireFileData("FILE.READ", scope, row);
+        }
+        verify(iamFeignClient).checkFileObjectPermission(eq("subject-token"),
+                any(SaasIamFileObjectCheckDTO.class));
+    }
+
+    @Test
+    void shouldDenyDataPolicyBeforeGrantingSignedDownload() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        FileRecordVO row = new FileRecordVO();
+        row.setId("00000000000000000000000000000001");
+        row.setTenantRefId("tenant");
+        row.setAppRefId("app");
+        row.setOwnerUserRefId("user");
+        when(iamFeignClient.checkFileObjectPermission(eq("subject-token"),
+                any(SaasIamFileObjectCheckDTO.class)))
+                .thenReturn(new SaasIamPermissionDecisionVO(false));
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
+            assertThatThrownBy(() -> service.requireFileData("FILE.DOWNLOAD", scope, row))
+                    .isInstanceOf(SecurityException.class);
+        }
+    }
+
+    @Test
+    void shouldRejectForgedOwnerBeforeCallingAuthDataPolicy() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        FileRecordVO row = new FileRecordVO();
+        row.setId("00000000000000000000000000000001");
+        row.setTenantRefId("tenant");
+        row.setAppRefId("app");
+        row.setOwnerUserRefId("different-user");
+
+        assertThatThrownBy(() -> service.requireFileData("FILE.READ", scope, row))
+                .isInstanceOf(SecurityException.class);
+        verifyNoInteractions(iamFeignClient);
     }
 
     @Test
