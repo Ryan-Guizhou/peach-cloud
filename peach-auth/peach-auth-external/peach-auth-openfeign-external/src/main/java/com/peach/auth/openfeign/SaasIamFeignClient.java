@@ -75,6 +75,14 @@ public interface SaasIamFeignClient {
             @RequestBody SaasIamFileFieldReadDTO request);
 
     /**
+     * 有界批量文件列表字段投影：一次请求共享角色授权证据，逐行求范围交集。
+     */
+    @PostMapping("/iam/file-object/read-fields-batch")
+    List<Map<String, Object>> projectFileFieldsBatch(
+            @RequestHeader(SaasIamHeaders.SUBJECT_TOKEN) String subjectToken,
+            @RequestBody List<SaasIamFileFieldReadDTO> requests);
+
+    /**
      * 获取服务端按 Token 和数据库确认的物理成员上下文。
      *
      * @param subjectToken 当前用户的原始 Token，禁止用户主动选择其他身份

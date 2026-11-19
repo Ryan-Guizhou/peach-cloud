@@ -47,6 +47,12 @@ public class SaasIamFeignClientFallbackFactory implements FallbackFactory<SaasIa
             }
 
             @Override
+            public List<Map<String, Object>> projectFileFieldsBatch(
+                    String subjectToken, List<SaasIamFileFieldReadDTO> requests) {
+                return List.of();
+            }
+
+            @Override
             public SaasIamContextVO requireContext(String subjectToken) {
                 throw new SecurityException("Trusted IAM context is unavailable");
             }

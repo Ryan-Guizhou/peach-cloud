@@ -57,6 +57,74 @@ public class SaasIamRemoteFileDataService {
             "fileStatus", "bizType", "bizId", "bizTag", "remark", "createdTime");
 
     /**
+     * 批量投影本人文件列表。只查询一次角色 DATA 授权和字段策略，
+     * 对每条来自数据库的物理对象独立计算绑定/数据范围交集；任意行失败则整页拒绝。
+     *
+     * <p>请求数上限 50，禁止将应用/租户维度的泛化授权跨对象重用。</p>
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> projectBatchFields(String subjectToken,
+                                                         List<SaasIamFileFieldReadDTO> requests) {
+        if (CollectionUtils.isEmpty(requests) || requests.size() > 50) {
+            return List.of();
+        }
+        TenantSessionContext context = sessionService.requireForToken(subjectToken);
+        List<RoleDataGrantVO> candidates = authorizationDao.selectDataGrants(
+                context.tenantRefId(), context.memberRefId(), context.appRefId(), "FILE.LIST");
+        if (CollectionUtils.isEmpty(candidates) || candidates.size() > 64) {
+            return List.of();
+        }
+        List<List<RoleDataGrantVO>> grantsByRecord = new ArrayList<>(requests.size());
+        List<String> bindingRefIds = new ArrayList<>();
+        for (SaasIamFileFieldReadDTO request : requests) {
+            if (request == null || request.getObject() == null
+                    || request.getFields() == null || request.getFields().isEmpty()
+                    || request.getFields().size() > ALLOWED_FILE_FIELDS.size()
+                    || !ALLOWED_FILE_FIELDS.containsAll(request.getFields().keySet())) {
+                return List.of();
+            }
+            SaasIamFileObjectCheckDTO object = request.getObject();
+            if (!"FILE.LIST".equals(object.getPermissionCode()) || object.isDeleted()
+                    || !context.tenantRefId().equals(object.getTenantRefId())
+                    || !context.appRefId().equals(object.getAppRefId())
+                    || !StringUtils.hasText(object.getObjectRefId())
+                    || !StringUtils.hasText(object.getOwnerUserRefId())) {
+                return List.of();
+            }
+            DataObjectDescriptor descriptor = new DataObjectDescriptor(
+                    object.getTenantRefId(), object.getAppRefId(), object.getObjectRefId(),
+                    object.getOwnerUserRefId(), object.getOrgRefId(), false);
+            List<RoleDataGrantVO> matching = DataScopeEvaluator.matching(
+                    context, descriptor, candidates, organizationScopeMatcher);
+            if (matching.isEmpty()) {
+                return List.of();
+            }
+            grantsByRecord.add(matching);
+            for (RoleDataGrantVO grant : matching) {
+                if (!bindingRefIds.contains(grant.getBindingRefId())) {
+                    bindingRefIds.add(grant.getBindingRefId());
+                }
+            }
+        }
+        List<ScopedFieldRuleVO> policies = authorizationDao.selectFieldRules(
+                context.tenantRefId(), context.memberRefId(), context.appRefId(),
+                "FILE.LIST", "FILE_RECORD", bindingRefIds);
+        if (CollectionUtils.isEmpty(policies) || policies.size() > 256) {
+            return List.of();
+        }
+        List<Map<String, Object>> result = new ArrayList<>(requests.size());
+        for (int index = 0; index < requests.size(); index++) {
+            Map<String, Object> projected = FieldPermissionEvaluator.projectRead(
+                    requests.get(index).getFields(), grantsByRecord.get(index), policies);
+            if (projected.isEmpty()) {
+                return List.of();
+            }
+            result.add(projected);
+        }
+        return List.copyOf(result);
+    }
+
+    /**
      * 只返回当前用户在同一对象/动作上确实获得的可见或脱敏字段。
      * 缺少数据或字段策略、未知字段、权限后端异常都拒绝而不降级。
      */

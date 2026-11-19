@@ -101,6 +101,21 @@ public class SaasIamExternalController {
     }
 
     /**
+     * 受信文件服务的有界批量字段投影，任何记录无权即整体默认拒绝。
+     */
+    @PostMapping("/file-object/read-fields-batch")
+    public ResponseEntity<List<Map<String, Object>>> projectFileFieldsBatch(
+            @RequestHeader(value = SaasIamHeaders.SUBJECT_TOKEN, required = false) String subjectToken,
+            @RequestBody List<@Valid SaasIamFileFieldReadDTO> requests) {
+        try {
+            SaSameUtil.checkCurrentRequestToken();
+            return ResponseEntity.ok(fileDataService.projectBatchFields(subjectToken, requests));
+        } catch (RuntimeException exception) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(List.of());
+        }
+    }
+
+    /**
      * 只对已验证 Same-Token 且持有合法最终用户 Token 的服务返回最小物理身份。
      */
     @PostMapping("/context")
