@@ -3,6 +3,8 @@ package com.peach.auth.openfeign;
 import com.peach.auth.constant.SaasIamHeaders;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import java.util.Map;
 import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.openfeign.fallback.SaasIamFeignClientFallbackFactory;
 import com.peach.auth.vo.SaasIamContextVO;
@@ -62,6 +64,15 @@ public interface SaasIamFeignClient {
     SaasIamPermissionDecisionVO checkFileObjectPermission(
             @RequestHeader(SaasIamHeaders.SUBJECT_TOKEN) String subjectToken,
             @RequestBody SaasIamFileObjectCheckDTO request);
+
+    /**
+     * 查询同一对象、同一动作、同一授权绑定的字段读取/脱敏结果。
+     * 未授权字段从响应完全剔除。
+     */
+    @PostMapping("/iam/file-object/read-fields")
+    Map<String, Object> projectFileFields(
+            @RequestHeader(SaasIamHeaders.SUBJECT_TOKEN) String subjectToken,
+            @RequestBody SaasIamFileFieldReadDTO request);
 
     /**
      * 获取服务端按 Token 和数据库确认的物理成员上下文。

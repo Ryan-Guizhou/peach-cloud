@@ -4,6 +4,8 @@ import cn.dev33.satoken.same.SaSameUtil;
 import com.peach.auth.constant.SaasIamHeaders;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import java.util.Map;
 import com.peach.auth.service.SaasIamRemoteFileDataService;
 import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.service.SaasIamRemoteAuthorizationService;
@@ -79,6 +81,22 @@ public class SaasIamExternalController {
         } catch (RuntimeException exception) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new SaasIamPermissionDecisionVO(false));
+        }
+    }
+
+    /**
+     * 文件服务仅提交后端从数据库读取的白名单字段，响应始终受字段策略约束。
+     */
+    @PostMapping("/file-object/read-fields")
+    public ResponseEntity<Map<String, Object>> projectFileFields(
+            @RequestHeader(value = SaasIamHeaders.SUBJECT_TOKEN, required = false) String subjectToken,
+            @Valid @RequestBody SaasIamFileFieldReadDTO request) {
+        try {
+            SaSameUtil.checkCurrentRequestToken();
+            Map<String, Object> visible = fileDataService.projectFields(subjectToken, request);
+            return ResponseEntity.ok(visible);
+        } catch (RuntimeException exception) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of());
         }
     }
 

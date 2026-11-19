@@ -2,6 +2,12 @@ package com.peach.auth.service;
 
 import com.peach.auth.dao.ScopedDataAuthorizationDao;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import com.peach.auth.service.data.FieldPermissionEvaluator;
+import com.peach.auth.vo.ScopedFieldRuleVO;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import com.peach.auth.service.data.DataObjectDescriptor;
 import com.peach.auth.service.data.DataScopeEvaluator;
 import com.peach.auth.service.data.OrganizationScopeMatcher;
@@ -45,6 +51,66 @@ public class SaasIamRemoteFileDataService {
     private final ScopedDataAuthorizationDao authorizationDao;
 
     private final OrganizationScopeMatcher organizationScopeMatcher;
+
+    private static final Set<String> ALLOWED_FILE_FIELDS = Set.of(
+            "fileId", "fileName", "displayName", "contentType", "fileSize", "fileExt",
+            "fileStatus", "bizType", "bizId", "bizTag", "remark", "createdTime");
+
+    /**
+     * 只返回当前用户在同一对象/动作上确实获得的可见或脱敏字段。
+     * 缺少数据或字段策略、未知字段、权限后端异常都拒绝而不降级。
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> projectFields(String subjectToken, SaasIamFileFieldReadDTO request) {
+        if (request == null || request.getObject() == null
+                || request.getFields() == null || request.getFields().isEmpty()
+                || request.getFields().size() > ALLOWED_FILE_FIELDS.size()
+                || !ALLOWED_FILE_FIELDS.containsAll(request.getFields().keySet())) {
+            return Map.of();
+        }
+        SaasIamFileObjectCheckDTO object = request.getObject();
+        if (!Set.of("FILE.READ", "FILE.LIST").contains(object.getPermissionCode())
+                || !StringUtils.hasText(object.getTenantRefId())
+                || !StringUtils.hasText(object.getAppRefId())
+                || !StringUtils.hasText(object.getObjectRefId())
+                || !StringUtils.hasText(object.getOwnerUserRefId())
+                || object.isDeleted()) {
+            return Map.of();
+        }
+        TenantSessionContext context = sessionService.requireForToken(subjectToken);
+        if (!object.getTenantRefId().equals(context.tenantRefId())
+                || !object.getAppRefId().equals(context.appRefId())) {
+            return Map.of();
+        }
+        List<RoleDataGrantVO> candidates = authorizationDao.selectDataGrants(
+                context.tenantRefId(), context.memberRefId(), context.appRefId(),
+                object.getPermissionCode());
+        if (CollectionUtils.isEmpty(candidates) || candidates.size() > 64) {
+            return Map.of();
+        }
+        DataObjectDescriptor descriptor = new DataObjectDescriptor(
+                object.getTenantRefId(), object.getAppRefId(), object.getObjectRefId(),
+                object.getOwnerUserRefId(), object.getOrgRefId(), false);
+        List<RoleDataGrantVO> matching = DataScopeEvaluator.matching(
+                context, descriptor, candidates, organizationScopeMatcher);
+        if (matching.isEmpty()) {
+            return Map.of();
+        }
+        List<String> bindings = new ArrayList<>();
+        for (RoleDataGrantVO grant : matching) {
+            if (!bindings.contains(grant.getBindingRefId())) {
+                bindings.add(grant.getBindingRefId());
+            }
+        }
+        List<ScopedFieldRuleVO> rules = authorizationDao.selectFieldRules(
+                context.tenantRefId(), context.memberRefId(), context.appRefId(),
+                object.getPermissionCode(), "FILE_RECORD", bindings);
+        if (CollectionUtils.isEmpty(rules) || rules.size() > 256) {
+            return Map.of();
+        }
+        Map<String, Object> whitelisted = new LinkedHashMap<>(request.getFields());
+        return FieldPermissionEvaluator.projectRead(whitelisted, matching, rules);
+    }
 
     /**
      * 根据真正的角色/策略绑定判断指定文件对象动作。
