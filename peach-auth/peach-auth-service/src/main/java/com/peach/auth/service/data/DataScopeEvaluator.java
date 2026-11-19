@@ -99,7 +99,10 @@ public final class DataScopeEvaluator {
             return false;
         }
         if (ORG.equals(type)) {
-            return anchor.equals(object.orgRefId());
+            // 组织策略必须验证真实机构仍属于当前有效租户；
+            // 仅比对数据库行中的机构编号可能放行已经停用或移出的机构。
+            return anchor.equals(object.orgRefId()) && hierarchy != null
+                    && hierarchy.contains(object.tenantRefId(), anchor, object.orgRefId());
         }
         return ORG_TREE.equals(type) && hierarchy != null
                 && hierarchy.contains(object.tenantRefId(), anchor, object.orgRefId());

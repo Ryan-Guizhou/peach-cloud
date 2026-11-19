@@ -89,6 +89,30 @@ class DataScopeEvaluatorTest {
     }
 
     @Test
+    void shouldRejectInactiveOrganizationSpecifiedOnlyByDataPolicy() {
+        RoleDataGrantVO grant = grant("binding", "role", "permission",
+                "TENANT", null, "ORG", "disabled-org");
+        OrganizationScopeMatcher directory = (tenant, root, candidate) -> false;
+
+        assertThat(DataScopeEvaluator.matching(session,
+                object("tenant-a", "app-a", "disabled-org", false),
+                List.of(grant), directory)).isEmpty();
+    }
+
+    @Test
+    void shouldRequireOrganizationEvidenceForDirectDataScopePolicy() {
+        RoleDataGrantVO grant = grant("binding", "role", "permission",
+                "TENANT", null, "ORG", "org-left");
+
+        assertThat(DataScopeEvaluator.matching(session,
+                object("tenant-a", "app-a", "org-left", false),
+                List.of(grant), null)).isEmpty();
+        assertThat(DataScopeEvaluator.matching(session,
+                object("tenant-a", "app-a", "org-left", false),
+                List.of(grant), hierarchy)).containsExactly(grant);
+    }
+
+    @Test
     void shouldRejectDisabledDirectOrganizationAnchor() {
         RoleDataGrantVO grant = grant("b", "r", "p", "ORG", "disabled",
                 "TENANT_ALL", null);
