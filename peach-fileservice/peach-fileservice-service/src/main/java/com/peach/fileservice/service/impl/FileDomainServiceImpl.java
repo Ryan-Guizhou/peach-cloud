@@ -319,7 +319,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
         saasAccessService.requireCurrent("POST:/api/file/internal/multipart/part-url");
         FileUploadSessionVO sessionVO = requireActiveSession(data.getSessionId());
         UploadPartResult uploadPartResult = preparePart(sessionVO, data.getPartNumber());
-        fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.UPLOADING,
+        fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(),
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getMemberRefId(), FileDomainConstant.SessionStatus.UPLOADING,
                 DateUtil.nowTime(), currentOperator());
         FileMultipartPartVO result = new FileMultipartPartVO();
         result.setSessionId(sessionVO.getSessionId());
@@ -391,7 +392,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
             result.setFileName(recordDO.getFileName());
             result.setFileSize(recordDO.getFileSize());
         }
-        fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.COMPLETED,
+        fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(),
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getMemberRefId(), FileDomainConstant.SessionStatus.COMPLETED,
                 DateUtil.nowTime(), currentOperator());
         return result;
     }
@@ -418,7 +420,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
         } else {
             multiZoneStorage.abortMultipartUpload(sessionVO.getStorageProvider(), request);
         }
-        fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.ABORTED,
+        fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(),
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getMemberRefId(), FileDomainConstant.SessionStatus.ABORTED,
                 DateUtil.nowTime(), currentOperator());
     }
 
@@ -538,7 +541,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
             } catch (RuntimeException ex) {
                 log.error("abort expired upload session failed, sessionId={}", sessionVO.getSessionId(), ex);
             }
-            fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.EXPIRED,
+            fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(),
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getMemberRefId(), FileDomainConstant.SessionStatus.EXPIRED,
                     DateUtil.nowTime(), FileDomainConstant.SYSTEM_OPERATOR);
         }
     }
@@ -802,7 +806,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
                 throw new IllegalStateException("uploaded object size mismatch");
             }
         } catch (IOException | NoSuchAlgorithmException ex) {
-            fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.FAILED,
+            fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(),
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getMemberRefId(), FileDomainConstant.SessionStatus.FAILED,
                     DateUtil.nowTime(), currentOperator());
             throw new IllegalStateException("multipart upload verification failed", ex);
         }

@@ -452,4 +452,28 @@
             <include refid="allColumnCond" />
         </where>
     </select>
+    <update id="updateSessionStatus">
+        UPDATE PEACH_FILE_UPLOAD_SESSION
+        SET SESSION_STATUS = #{sessionStatus,jdbcType=VARCHAR},
+            MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            MODIFIER_ID = #{modifier,jdbcType=VARCHAR}
+        WHERE SESSION_ID = #{sessionId,jdbcType=VARCHAR}
+          AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+          AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+          AND MEMBER_REF_ID = #{memberRefId,jdbcType=VARCHAR}
+          AND IS_DELETE = 0
+    </update>
+
+    <select id="selectExpiredSessions" resultType="com.peach.fileservice.vo.FileUploadSessionVO">
+        SELECT <include refid="allColumnAlias" />
+        FROM PEACH_FILE_UPLOAD_SESSION
+        WHERE IS_DELETE = 0
+          AND TENANT_REF_ID IS NOT NULL AND APP_REF_ID IS NOT NULL
+          AND MEMBER_REF_ID IS NOT NULL
+          AND SESSION_STATUS IN ('INITIATED', 'UPLOADING', 'FAILED')
+          AND EXPIRE_TIME IS NOT NULL
+          AND EXPIRE_TIME &lt;= #{nowTime,jdbcType=VARCHAR}
+        ORDER BY EXPIRE_TIME ASC
+        LIMIT 200
+    </select>
 </mapper>

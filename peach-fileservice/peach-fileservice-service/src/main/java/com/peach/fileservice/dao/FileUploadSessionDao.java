@@ -37,8 +37,13 @@ public interface FileUploadSessionDao extends PeachDao<FileUploadSessionDO, File
      * @param modifyTime 修改时间
      * @param modifier 修改人
      */
-    void updateSessionStatus(@Param("sessionId") String sessionId, @Param("sessionStatus") String sessionStatus,
-                             @Param("modifyTime") String modifyTime, @Param("modifier") String modifier);
+    void updateSessionStatus(@Param("sessionId") String sessionId,
+                             @Param("tenantRefId") String tenantRefId,
+                             @Param("appRefId") String appRefId,
+                             @Param("memberRefId") String memberRefId,
+                             @Param("sessionStatus") String sessionStatus,
+                             @Param("modifyTime") String modifyTime,
+                             @Param("modifier") String modifier);
 
     /**
      * 查询过期的上传会话列表
