@@ -6,6 +6,7 @@ import com.peach.common.response.Response;
 import com.peach.fileservice.common.FileApiConstant;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
 import com.peach.fileservice.dto.FileMetadataPatchDTO;
+import com.peach.fileservice.dto.FileBatchActionDTO;
 import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.service.IFileDomainService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -127,6 +128,26 @@ public class FileController {
     public Response updateMetadata(@NotBlank @PathVariable String fileId,
                                    @Valid @RequestBody FileMetadataPatchDTO patch) {
         fileDomainService.updateMetadata(fileId, patch);
+        return Response.success();
+    }
+
+    /**
+     * 批量逻辑删除，逐文件验证动作和数据权限，任何拒绝整批回滚。
+     */
+    @PostMapping("/batch/delete")
+    @Operation(summary = "批量删除业务文件")
+    public Response batchDelete(@Valid @RequestBody FileBatchActionDTO data) {
+        fileDomainService.batchLogicalDelete(data);
+        return Response.success();
+    }
+
+    /**
+     * 批量恢复文件，逐文件验证行权限，任何拒绝整批回滚。
+     */
+    @PostMapping("/batch/restore")
+    @Operation(summary = "批量恢复业务文件")
+    public Response batchRestore(@Valid @RequestBody FileBatchActionDTO data) {
+        fileDomainService.batchRestore(data);
         return Response.success();
     }
 

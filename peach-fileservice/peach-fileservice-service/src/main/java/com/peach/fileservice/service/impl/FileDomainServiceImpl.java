@@ -22,6 +22,7 @@ import com.peach.fileservice.dto.FileMultipartPartUrlDTO;
 import com.peach.fileservice.dto.FileExternalUploadDTO;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
 import com.peach.fileservice.dto.FileMetadataPatchDTO;
+import com.peach.fileservice.dto.FileBatchActionDTO;
 import com.peach.fileservice.entity.FileObjectDO;
 import com.peach.fileservice.entity.FileRecordDO;
 import com.peach.fileservice.entity.FileUploadSessionDO;
@@ -72,6 +73,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Locale;
 
 
@@ -482,6 +484,34 @@ public class FileDomainServiceImpl implements IFileDomainService {
         return new PageResult<>(visible, pageInfo.getTotal());
     }
 
+
+    /**
+     * 批量删除在一个本地数据库事务中执行，各文件独立验证 API 与对象行权限。
+     * 不允许仅依靠批量入口权限跳过逐文件 FILE.DELETE 校验。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchLogicalDelete(FileBatchActionDTO data) {
+        List<String> fileIds = requireBatchFileIds(data);
+        saasAccessService.requireCurrent("POST:/api/file/internal/batch/delete");
+        for (String fileId : fileIds) {
+            logicalDelete(fileId);
+        }
+    }
+
+    /**
+     * 批量恢复要求每个文件均具有独立的 FILE.RESTORE 行级权限；
+     * 任一项失败时本地数据库事务回滚，不返回部分成功。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchRestore(FileBatchActionDTO data) {
+        List<String> fileIds = requireBatchFileIds(data);
+        saasAccessService.requireCurrent("POST:/api/file/internal/batch/restore");
+        for (String fileId : fileIds) {
+            restore(fileId);
+        }
+    }
 
     /**
      * 在行/字段授权通过后，仅用固定 SQL 更新经白名单允许的文件元数据列。
@@ -953,6 +983,22 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     private String currentOperator() {
         return saasAccessService.currentOperator();
+    }
+
+    /**
+     * 接受有限数量且无重复的永久文件业务标识；拒绝非法路径片段与批量超限。
+     */
+    private List<String> requireBatchFileIds(FileBatchActionDTO data) {
+        if (data == null || data.getFileIds() == null || data.getFileIds().isEmpty()
+                || data.getFileIds().size() > 50) {
+            throw new IllegalArgumentException("File batch size must be between 1 and 50");
+        }
+        List<String> ids = data.getFileIds();
+        if (ids.stream().anyMatch(id -> id == null || !id.matches("[A-Za-z0-9-]{1,64}"))
+                || new HashSet<>(ids).size() != ids.size()) {
+            throw new IllegalArgumentException("File batch identifiers must be valid and unique");
+        }
+        return List.copyOf(ids);
     }
 
     private void fillCurrentTenantOrg(FileQueryQO qo) {
