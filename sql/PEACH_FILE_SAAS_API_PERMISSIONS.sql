@@ -144,3 +144,16 @@ VALUES
     (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_EDIT', NULL, NULL,
      'FILE.EDIT', '受控文件元数据行级写权限',
      'DATA', 'SYSTEM', 1, 'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM');
+
+-- #232: 受信批量入口只授予动作权限；具体每个文件仍需单独具备 FILE.DELETE/RESTORE DATA 范围。
+INSERT INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID, PERMISSION_CODE,
+     PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE, DELEGABLE, STATUS,
+     IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_BATCH_DELETE', NULL, NULL,
+     'POST:/api/file/internal/batch/delete', '批量删除文件入口',
+     'API', 'SYSTEM', 1, 'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_BATCH_RESTORE', NULL, NULL,
+     'POST:/api/file/internal/batch/restore', '批量恢复文件入口',
+     'API', 'SYSTEM', 1, 'ACTIVE', 0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM');
