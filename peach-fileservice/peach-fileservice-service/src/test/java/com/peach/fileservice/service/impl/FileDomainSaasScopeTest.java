@@ -94,6 +94,8 @@ class FileDomainSaasScopeTest {
         row.setTenantRefId("tenant-ref");
         row.setAppRefId("app-ref");
         row.setOwnerUserRefId("user-ref");
+        row.setFileStatus("ACTIVE");
+        row.setIsDelete(0);
         when(saasAccessService.requireForFile("GET", "FILE00001", "/url")).thenReturn(SCOPE);
         when(saasAccessService.requireContext()).thenReturn(SCOPE);
         when(fileRecordDao.selectScopedDetail("FILE00001", "tenant-ref", "app-ref", "user-ref"))
