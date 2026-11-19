@@ -27,7 +27,7 @@ public class SaasIamFileObjectCheckDTO implements Serializable {
     private static final long serialVersionUID = 232001L;
 
     @NotBlank
-    @Pattern(regexp = "FILE\\.(LIST|READ|DOWNLOAD|UPLOAD|DELETE|RESTORE)")
+    @Pattern(regexp = "FILE\\.(LIST|READ|DOWNLOAD|UPLOAD|DELETE|RESTORE|EDIT)")
     private String permissionCode;
 
     @NotBlank

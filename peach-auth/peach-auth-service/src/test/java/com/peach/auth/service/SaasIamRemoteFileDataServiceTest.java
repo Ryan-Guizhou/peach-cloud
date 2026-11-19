@@ -3,6 +3,7 @@ package com.peach.auth.service;
 import com.peach.auth.dao.ScopedDataAuthorizationDao;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
 import com.peach.auth.vo.ScopedFieldRuleVO;
 import java.util.Map;
 import com.peach.auth.service.data.OrganizationScopeDirectory;
@@ -210,6 +211,56 @@ class SaasIamRemoteFileDataServiceTest {
         assertThat(scope.getTenantRefId()).isEqualTo("tenant");
         assertThat(scope.getAppRefId()).isEqualTo("app");
         assertThat(scope.getOrganizationRefIds()).isEmpty();
+    }
+
+    @Test
+    void shouldRequireSameBindingWritableMetadataPolicy() {
+        SaasIamFileFieldWriteDTO request = editRequest("user");
+        when(sessionService.requireForToken("subject")).thenReturn(principal());
+        when(authorizationDao.selectDataGrants("tenant", "member", "app", "FILE.EDIT"))
+                .thenReturn(List.of(grant("TENANT", "SELF")));
+        ScopedFieldRuleVO writable = field("displayName", "ALLOW");
+        writable.setWriteEffect("ALLOW");
+        when(authorizationDao.selectFieldRules("tenant", "member", "app",
+                "FILE.EDIT", "FILE_RECORD", List.of("binding")))
+                .thenReturn(List.of(writable));
+
+        assertThat(service.checkWriteFields("subject", request).isAllowed()).isTrue();
+    }
+
+    @Test
+    void shouldDenyWriteWhenDataPolicyAndFieldPolicyCannotBeJoined() {
+        SaasIamFileFieldWriteDTO request = editRequest("different-owner");
+        when(sessionService.requireForToken("subject")).thenReturn(principal());
+        when(authorizationDao.selectDataGrants("tenant", "member", "app", "FILE.EDIT"))
+                .thenReturn(List.of(grant("TENANT", "SELF")));
+
+        assertThat(service.checkWriteFields("subject", request).isAllowed()).isFalse();
+    }
+
+    @Test
+    void shouldDenyWriteWhenAnyFieldNotExplicitlyAllowed() {
+        SaasIamFileFieldWriteDTO request = editRequest("user");
+        request.getChanges().put("remark", "must be denied");
+        when(sessionService.requireForToken("subject")).thenReturn(principal());
+        when(authorizationDao.selectDataGrants("tenant", "member", "app", "FILE.EDIT"))
+                .thenReturn(List.of(grant("TENANT", "SELF")));
+        ScopedFieldRuleVO writable = field("displayName", "ALLOW");
+        writable.setWriteEffect("ALLOW");
+        when(authorizationDao.selectFieldRules("tenant", "member", "app",
+                "FILE.EDIT", "FILE_RECORD", List.of("binding")))
+                .thenReturn(List.of(writable));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> service.checkWriteFields("subject", request))
+                .isInstanceOf(SecurityException.class);
+    }
+
+    private static SaasIamFileFieldWriteDTO editRequest(String owner) {
+        SaasIamFileFieldWriteDTO request = new SaasIamFileFieldWriteDTO();
+        request.setObject(descriptor("FILE.EDIT", "tenant", "app", owner));
+        request.setChanges(new java.util.LinkedHashMap<>(Map.of("displayName", "new name")));
+        return request;
     }
 
     @Test

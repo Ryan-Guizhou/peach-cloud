@@ -5,6 +5,7 @@ import com.peach.auth.constant.SaasIamHeaders;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
 import java.util.Map;
 import com.peach.auth.service.SaasIamRemoteFileDataService;
 import com.peach.auth.dto.SaasIamBatchLookupDTO;
@@ -127,6 +128,22 @@ public class SaasIamExternalController {
             return ResponseEntity.ok(fileDataService.planListQuery(subjectToken));
         } catch (RuntimeException exception) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    /**
+     * 文件元数据字段写入验权：Same-Token 和最终用户 Token 版本校验均为必需。
+     */
+    @PostMapping("/file-object/write-fields")
+    public ResponseEntity<SaasIamPermissionDecisionVO> checkFileFieldWrites(
+            @RequestHeader(value = SaasIamHeaders.SUBJECT_TOKEN, required = false) String subjectToken,
+            @Valid @RequestBody SaasIamFileFieldWriteDTO request) {
+        try {
+            SaSameUtil.checkCurrentRequestToken();
+            return ResponseEntity.ok(fileDataService.checkWriteFields(subjectToken, request));
+        } catch (RuntimeException exception) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new SaasIamPermissionDecisionVO(false));
         }
     }
 

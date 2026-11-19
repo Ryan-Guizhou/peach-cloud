@@ -4,6 +4,7 @@ import com.peach.auth.constant.SaasIamHeaders;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
 import java.util.Map;
 import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.openfeign.fallback.SaasIamFeignClientFallbackFactory;
@@ -90,6 +91,14 @@ public interface SaasIamFeignClient {
     @PostMapping("/iam/file-object/query-scope")
     SaasIamFileQueryScopeVO fileQueryScope(
             @RequestHeader(SaasIamHeaders.SUBJECT_TOKEN) String subjectToken);
+
+    /**
+     * 在同一 FILE.EDIT 行级授权证据下核验全部修改字段是否明确允许写入。
+     */
+    @PostMapping("/iam/file-object/write-fields")
+    SaasIamPermissionDecisionVO checkFileFieldWrites(
+            @RequestHeader(SaasIamHeaders.SUBJECT_TOKEN) String subjectToken,
+            @RequestBody SaasIamFileFieldWriteDTO request);
 
     /**
      * 获取服务端按 Token 和数据库确认的物理成员上下文。

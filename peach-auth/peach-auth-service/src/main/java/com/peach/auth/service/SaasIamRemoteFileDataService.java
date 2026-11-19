@@ -3,6 +3,7 @@ package com.peach.auth.service;
 import com.peach.auth.dao.ScopedDataAuthorizationDao;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
 import com.peach.auth.service.data.FieldPermissionEvaluator;
 import com.peach.auth.vo.ScopedFieldRuleVO;
 import java.util.ArrayList;
@@ -46,13 +47,16 @@ public class SaasIamRemoteFileDataService {
 
     private static final Set<String> FILE_ACTIONS =
             Set.of("FILE.LIST", "FILE.READ", "FILE.DOWNLOAD", "FILE.UPLOAD",
-                    "FILE.DELETE", "FILE.RESTORE");
+                    "FILE.DELETE", "FILE.RESTORE", "FILE.EDIT");
 
     private final TenantSessionService sessionService;
 
     private final ScopedDataAuthorizationDao authorizationDao;
 
     private final OrganizationScopeDirectory organizationScopeMatcher;
+
+    private static final Set<String> WRITABLE_FILE_FIELDS =
+            Set.of("displayName", "bizTag", "remark");
 
     private static final Set<String> ALLOWED_FILE_FIELDS = Set.of(
             "fileId", "fileName", "displayName", "contentType", "fileSize", "fileExt",
@@ -68,6 +72,57 @@ public class SaasIamRemoteFileDataService {
         List<RoleDataGrantVO> grants = authorizationDao.selectDataGrants(
                 context.tenantRefId(), context.memberRefId(), context.appRefId(), "FILE.LIST");
         return FileSaasQueryScopePlanner.plan(context, grants, organizationScopeMatcher);
+    }
+
+    /**
+     * 仅同一有效角色绑定同时满足 FILE.EDIT 行级范围与所有待更新字段 WRITE=ALLOW
+     * 才能修改文件元数据。字段目录和数据对象权属不能从最终用户参数信任。
+     *
+     * @param subjectToken 当前真正的最终用户 Token
+     * @param request 由可信文件服务从数据库获取物理归属后构造的修改字段
+     * @return 允许或拒绝，不返回可编辑内部属性
+     */
+    @Transactional(readOnly = true)
+    public SaasIamPermissionDecisionVO checkWriteFields(String subjectToken,
+                                                         SaasIamFileFieldWriteDTO request) {
+        if (request == null || request.getObject() == null || request.getChanges() == null
+                || request.getChanges().isEmpty()
+                || !WRITABLE_FILE_FIELDS.containsAll(request.getChanges().keySet())) {
+            return new SaasIamPermissionDecisionVO(false);
+        }
+        SaasIamFileObjectCheckDTO object = request.getObject();
+        if (!"FILE.EDIT".equals(object.getPermissionCode()) || object.isDeleted()
+                || !StringUtils.hasText(object.getTenantRefId())
+                || !StringUtils.hasText(object.getAppRefId())
+                || !StringUtils.hasText(object.getObjectRefId())
+                || !StringUtils.hasText(object.getOwnerUserRefId())) {
+            return new SaasIamPermissionDecisionVO(false);
+        }
+        TenantSessionContext context = sessionService.requireForToken(subjectToken);
+        if (!context.tenantRefId().equals(object.getTenantRefId())
+                || !context.appRefId().equals(object.getAppRefId())) {
+            return new SaasIamPermissionDecisionVO(false);
+        }
+        List<RoleDataGrantVO> candidates = authorizationDao.selectDataGrants(
+                context.tenantRefId(), context.memberRefId(), context.appRefId(), "FILE.EDIT");
+        List<RoleDataGrantVO> matching = DataScopeEvaluator.matching(
+                context, new DataObjectDescriptor(object.getTenantRefId(), object.getAppRefId(),
+                        object.getObjectRefId(), object.getOwnerUserRefId(), object.getOrgRefId(), false),
+                candidates, organizationScopeMatcher);
+        if (matching.isEmpty()) {
+            return new SaasIamPermissionDecisionVO(false);
+        }
+        List<String> bindings = new ArrayList<>();
+        for (RoleDataGrantVO grant : matching) {
+            if (!bindings.contains(grant.getBindingRefId())) {
+                bindings.add(grant.getBindingRefId());
+            }
+        }
+        List<ScopedFieldRuleVO> rules = authorizationDao.selectFieldRules(
+                context.tenantRefId(), context.memberRefId(), context.appRefId(),
+                "FILE.EDIT", "FILE_RECORD", bindings);
+        FieldPermissionEvaluator.requireWrite(request.getChanges(), matching, rules);
+        return new SaasIamPermissionDecisionVO(true);
     }
 
     /**

@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * 受信服务间 SaaS 权限事实查询：先重新验证 Token 与成员版本，再查当前动作。
  *
- * <p>从不接受 HTTP 请求中的 tenant/member/app/year 作为鉴权事实；
+ * <p>从不接受 HTTP 请求中的 tenant/member/app 作为鉴权事实；
  * 所有身份仅由原始 Token 中的单一 SaaS 快照及实时数据库校验得到。
  * 此方法仅检查 API 入口动作，任何行/字段/文件操作仍需独立数据权限。</p>
  *

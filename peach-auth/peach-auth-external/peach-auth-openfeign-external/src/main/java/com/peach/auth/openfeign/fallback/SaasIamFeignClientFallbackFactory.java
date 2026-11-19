@@ -3,6 +3,7 @@ package com.peach.auth.openfeign.fallback;
 import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
 import java.util.Map;
 import com.peach.auth.dto.SaasIamBatchLookupDTO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
@@ -51,6 +52,12 @@ public class SaasIamFeignClientFallbackFactory implements FallbackFactory<SaasIa
             public List<Map<String, Object>> projectFileFieldsBatch(
                     String subjectToken, List<SaasIamFileFieldReadDTO> requests) {
                 return List.of();
+            }
+
+            @Override
+            public SaasIamPermissionDecisionVO checkFileFieldWrites(
+                    String subjectToken, SaasIamFileFieldWriteDTO request) {
+                return new SaasIamPermissionDecisionVO(false);
             }
 
             @Override
