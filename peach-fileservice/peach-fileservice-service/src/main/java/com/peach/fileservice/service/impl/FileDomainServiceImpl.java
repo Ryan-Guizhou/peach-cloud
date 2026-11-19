@@ -27,7 +27,8 @@ import com.peach.fileservice.entity.FileRecordDO;
 import com.peach.fileservice.entity.FileUploadSessionDO;
 import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.service.IFileDomainService;
-import com.peach.fileservice.service.support.FileRecordScopeGuard;
+import com.peach.fileservice.service.support.FileSaasAccessService;
+import com.peach.fileservice.service.support.FileSaasScope;
 import com.peach.fileservice.vo.FileDownloadUrlVO;
 import com.peach.fileservice.vo.FileDigestVO;
 import com.peach.fileservice.vo.FileExternalFileVO;
@@ -120,6 +121,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     private final FileDomainProperties fileDomainProperties;
 
+    private final FileSaasAccessService saasAccessService;
+
     private final ObjectProvider<IFileDomainService> self;
 
     @Override
@@ -134,6 +137,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileUploadVO uploadExternal(FileExternalUploadDTO data, MultipartFile file) {
+        saasAccessService.requireCurrent("POST:/api/file/external/upload");
         if (data == null) {
             throw new IllegalArgumentException("upload data is null");
         }
@@ -179,8 +183,11 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileUploadCheckVO uploadCheck(FileUploadCheckDTO data) {
+        FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/upload/check");
         validateCheckData(data);
-        FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(data.getSha256(), data.getFileSize());
+        FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(
+                data.getSha256(), data.getFileSize(),
+                scope.tenantRefId(), scope.appRefId(), scope.userRefId());
         FileUploadCheckVO result = new FileUploadCheckVO();
         if (objectVO == null) {
             result.setInstantUpload(Boolean.FALSE);
@@ -200,6 +207,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileUploadVO upload(FileUploadCheckDTO data, MultipartFile file) {
+        FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/upload");
         validateCheckData(data);
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("upload file is empty");
@@ -207,7 +215,9 @@ public class FileDomainServiceImpl implements IFileDomainService {
         if (data.getFileSize() != null && file.getSize() != data.getFileSize()) {
             throw new IllegalArgumentException("file size mismatch");
         }
-        FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(data.getSha256(), data.getFileSize());
+        FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(
+                data.getSha256(), data.getFileSize(),
+                scope.tenantRefId(), scope.appRefId(), scope.userRefId());
         if (objectVO != null) {
             return createRecordFromExistingObject(data, objectVO);
         }
@@ -241,8 +251,11 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileMultipartInitVO initMultipartUpload(FileMultipartInitDTO data) {
+        FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/multipart/init");
         validateCheckData(data);
-        FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(data.getSha256(), data.getFileSize());
+        FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(
+                data.getSha256(), data.getFileSize(),
+                scope.tenantRefId(), scope.appRefId(), scope.userRefId());
         if (objectVO != null) {
             FileUploadVO uploadVO = createRecordFromExistingObject(data, objectVO);
             FileMultipartInitVO result = new FileMultipartInitVO();
@@ -259,6 +272,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
                 resolveContentType(data.getContentType(), null));
 
         FileUploadSessionDO sessionDO = new FileUploadSessionDO();
+        sessionDO.setId(UniqueIdFacade.nextId());
         sessionDO.setSessionId(sessionId);
         sessionDO.setFileId(fileId);
         sessionDO.setObjectId(objectId);
@@ -280,6 +294,14 @@ public class FileDomainServiceImpl implements IFileDomainService {
         sessionDO.setExpireTime(format(LocalDateTime.now(ZoneId.systemDefault()).plusMinutes(fileDomainProperties.getUploadSessionExpireMinutes())));
         sessionDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
         sessionDO.fillCreateTime();
+        sessionDO.setTenantRefId(scope.tenantRefId());
+        sessionDO.setAppRefId(scope.appRefId());
+        sessionDO.setOwnerUserRefId(scope.userRefId());
+        sessionDO.setMemberRefId(scope.memberRefId());
+        sessionDO.setOrgRefId(null);
+        sessionDO.setTenantId(scope.tenantId());
+        sessionDO.setOrgId(null);
+        sessionDO.setCreatorId(scope.memberRefId());
         fileUploadSessionDao.insert(sessionDO);
 
         FileMultipartInitVO result = new FileMultipartInitVO();
@@ -297,6 +319,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileMultipartPartVO prepareMultipartPart(FileMultipartPartUrlDTO data) {
+        saasAccessService.requireCurrent("POST:/api/file/internal/multipart/part-url");
         FileUploadSessionVO sessionVO = requireActiveSession(data.getSessionId());
         UploadPartResult uploadPartResult = preparePart(sessionVO, data.getPartNumber());
         fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.UPLOADING,
@@ -313,6 +336,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileUploadVO completeMultipartUpload(FileMultipartCompleteDTO data) {
+        saasAccessService.requireCurrent("POST:/api/file/internal/multipart/complete");
         FileUploadSessionVO sessionVO = requireSession(data.getSessionId());
         if (FileDomainConstant.SessionStatus.COMPLETED.equals(sessionVO.getSessionStatus())) {
             FileUploadVO result = new FileUploadVO();
@@ -325,13 +349,16 @@ public class FileDomainServiceImpl implements IFileDomainService {
         }
         CompleteMultipartUploadResult completeResult = completeMultipart(sessionVO, data.getParts());
         verifyUploadedObjectDigest(sessionVO);
-        FileObjectVO exists = fileObjectDao.selectActiveBySha256AndSize(sessionVO.getHashSha256(), sessionVO.getFileSize());
+        FileObjectVO exists = fileObjectDao.selectActiveBySha256AndSize(
+                sessionVO.getHashSha256(), sessionVO.getFileSize(),
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getOwnerUserRefId());
         FileUploadVO result;
         if (exists != null) {
             deletePhysicalObject(sessionVO.getStorageProvider(), sessionVO.getBucketName(), sessionVO.getObjectKey());
             result = createRecordFromExistingSession(sessionVO, exists);
         } else {
             FileObjectDO objectDO = new FileObjectDO();
+            objectDO.setId(UniqueIdFacade.nextId());
             objectDO.setObjectId(sessionVO.getObjectId());
             objectDO.setHashSha256(sessionVO.getHashSha256());
             objectDO.setHashMd5(sessionVO.getHashMd5());
@@ -347,7 +374,14 @@ public class FileDomainServiceImpl implements IFileDomainService {
             objectDO.setUploadTime(DateUtil.nowTime());
             objectDO.setLastAccessTime(DateUtil.nowTime());
             objectDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
-            objectDO.fillCreateTime(sessionVO.getTenantId(), sessionVO.getOrgId());
+            objectDO.fillCreateTime();
+            objectDO.setTenantRefId(sessionVO.getTenantRefId());
+            objectDO.setAppRefId(sessionVO.getAppRefId());
+            objectDO.setOwnerUserRefId(sessionVO.getOwnerUserRefId());
+            objectDO.setOrgRefId(sessionVO.getOrgRefId());
+            objectDO.setTenantId(sessionVO.getTenantId());
+            objectDO.setOrgId(sessionVO.getOrgId());
+            objectDO.setCreatorId(sessionVO.getMemberRefId());
             fileObjectDao.insert(objectDO);
 
             FileRecordDO recordDO = buildFileRecord(sessionVO, sessionVO.getObjectId(), sessionVO.getFileSize());
