@@ -1,6 +1,7 @@
 package com.peach.fileservice.vo;
 
 import java.io.Serial;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.peach.fileservice.entity.FileRecordDO;
@@ -35,12 +36,15 @@ public class FileRecordVO extends FileRecordDO implements Serializable {
     private static final long serialVersionUID = -5642364679587302553L;
 
     @Schema(description = "存储提供方")
+    @JsonIgnore
     private String storageProvider;
 
     @Schema(description = "bucket名称")
+    @JsonIgnore
     private String bucketName;
 
     @Schema(description = "对象key")
+    @JsonIgnore
     private String objectKey;
 
     @Schema(description = "对象存储状态")

@@ -1,19 +1,30 @@
 package com.peach.fileservice.rest.internal;
 
-import lombok.RequiredArgsConstructor;
-
 import com.peach.common.response.Response;
 import com.peach.fileservice.common.FileApiConstant;
+import com.peach.fileservice.dto.FileBatchActionDTO;
+import com.peach.fileservice.dto.FileMetadataPatchDTO;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
 import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.service.IFileDomainService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Indexed;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,9 +32,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 
 /**
  * 文件上传下载与文件记录管理接口。
@@ -115,6 +123,50 @@ public class FileController {
     @Operation(summary = "分页查询业务文件")
     public Response pageList(@RequestBody FileQueryQO qo) {
         return Response.success(fileDomainService.pageList(qo));
+    }
+
+    /**
+     * 文件元数据部分更新，只允许同一角色绑定的行权限与字段 WRITE=ALLOW 均满足。
+     */
+    @PatchMapping("/{fileId}/metadata")
+    @Operation(summary = "更新文件元数据")
+    public Response updateMetadata(@NotBlank @PathVariable String fileId,
+                                   @Valid @RequestBody FileMetadataPatchDTO patch) {
+        fileDomainService.updateMetadata(fileId, patch);
+        return Response.success();
+    }
+
+    /**
+     * 文件元数据有界 CSV 导出；必须同时具备导出 API 和列表行/字段权限。
+     */
+    @PostMapping(value = "/export", produces = "text/csv")
+    @Operation(summary = "导出受控文件元数据")
+    public ResponseEntity<byte[]> export(@RequestBody FileQueryQO qo) {
+        byte[] csv = fileDomainService.exportMetadataCsv(qo);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"files.csv\"")
+                .body(csv);
+    }
+
+    /**
+     * 批量逻辑删除，逐文件验证动作和数据权限，任何拒绝整批回滚。
+     */
+    @PostMapping("/batch/delete")
+    @Operation(summary = "批量删除业务文件")
+    public Response batchDelete(@Valid @RequestBody FileBatchActionDTO data) {
+        fileDomainService.batchLogicalDelete(data);
+        return Response.success();
+    }
+
+    /**
+     * 批量恢复文件，逐文件验证行权限，任何拒绝整批回滚。
+     */
+    @PostMapping("/batch/restore")
+    @Operation(summary = "批量恢复业务文件")
+    public Response batchRestore(@Valid @RequestBody FileBatchActionDTO data) {
+        fileDomainService.batchRestore(data);
+        return Response.success();
     }
 
     /**

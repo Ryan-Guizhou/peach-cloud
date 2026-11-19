@@ -56,6 +56,9 @@ public class FileUploadCheckDTO implements Serializable {
     @Schema(description = "业务ID")
     private String bizId;
 
+    @Schema(description = "目标机构物理 ID：仅为业务选择，须通过 Auth 的 FILE.UPLOAD 数据策略验证")
+    private String orgRefId;
+
     @Schema(description = "业务标签")
     private String bizTag;
 

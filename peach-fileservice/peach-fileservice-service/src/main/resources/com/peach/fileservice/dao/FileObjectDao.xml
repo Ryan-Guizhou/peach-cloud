@@ -6,7 +6,8 @@
         STORAGE_PROVIDER,                                 BUCKET_NAME,                                      OBJECT_KEY,                                       ORIGIN_FILE_NAME,
         CONTENT_TYPE,                                     EXTENSION,                                        STORAGE_STATUS,                                   REF_COUNT,
         UPLOAD_TIME,                                      LAST_ACCESS_TIME,                                 IS_DELETE,                                        CREATED_TIME,
-        CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
+        CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID,
+        ID, TENANT_REF_ID, APP_REF_ID, ORG_REF_ID, OWNER_USER_REF_ID
     </sql>
 
     <sql id="allColumnAlias">
@@ -14,7 +15,8 @@
         STORAGE_PROVIDER as storageProvider,              BUCKET_NAME as bucketName,                        OBJECT_KEY as objectKey,                          ORIGIN_FILE_NAME as originFileName,
         CONTENT_TYPE as contentType,                      EXTENSION as extension,                           STORAGE_STATUS as storageStatus,                  REF_COUNT as refCount,
         UPLOAD_TIME as uploadTime,                        LAST_ACCESS_TIME as lastAccessTime,               IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
-        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
+        CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId,
+        ID as id, TENANT_REF_ID as tenantRefId, APP_REF_ID as appRefId, ORG_REF_ID as orgRefId, OWNER_USER_REF_ID as ownerUserRefId
     </sql>
 
     <sql id="allColumnValue">
@@ -22,7 +24,8 @@
         #{storageProvider,jdbcType=VARCHAR},              #{bucketName,jdbcType=VARCHAR},                   #{objectKey,jdbcType=VARCHAR},                    #{originFileName,jdbcType=VARCHAR},
         #{contentType,jdbcType=VARCHAR},                  #{extension,jdbcType=VARCHAR},                    #{storageStatus,jdbcType=VARCHAR},                #{refCount,jdbcType=INTEGER},
         #{uploadTime,jdbcType=VARCHAR},                   #{lastAccessTime,jdbcType=VARCHAR},               #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},
-        #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
+        #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR}, #{tenantRefId,jdbcType=VARCHAR}, #{appRefId,jdbcType=VARCHAR}, #{orgRefId,jdbcType=VARCHAR}, #{ownerUserRefId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
@@ -30,7 +33,8 @@
         #{item.storageProvider,jdbcType=VARCHAR},         #{item.bucketName,jdbcType=VARCHAR},              #{item.objectKey,jdbcType=VARCHAR},               #{item.originFileName,jdbcType=VARCHAR},
         #{item.contentType,jdbcType=VARCHAR},             #{item.extension,jdbcType=VARCHAR},               #{item.storageStatus,jdbcType=VARCHAR},           #{item.refCount,jdbcType=INTEGER},
         #{item.uploadTime,jdbcType=VARCHAR},              #{item.lastAccessTime,jdbcType=VARCHAR},          #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},
-        #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
+        #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR}, #{item.tenantRefId,jdbcType=VARCHAR}, #{item.appRefId,jdbcType=VARCHAR}, #{item.orgRefId,jdbcType=VARCHAR}, #{item.ownerUserRefId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
@@ -162,6 +166,12 @@
         <if test="modifierId != null and modifierId != ''">
             AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         </if>
+                <if test="tenantRefId != null and tenantRefId != ''">
+                AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+            </if>
+            <if test="appRefId != null and appRefId != ''">
+                AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+            </if>
     </sql>
 
     <insert id="insert" parameterType="com.peach.fileservice.entity.FileObjectDO">
@@ -255,6 +265,11 @@
         FROM PEACH_FILE_OBJECT
         WHERE HASH_SHA256 = #{hashSha256,jdbcType=VARCHAR}
           AND FILE_SIZE = #{fileSize,jdbcType=BIGINT}
+          AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+          AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+          AND OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+          AND ((ORG_REF_ID IS NULL AND #{orgRefId,jdbcType=VARCHAR} IS NULL)
+              OR ORG_REF_ID = #{orgRefId,jdbcType=VARCHAR})
           AND IS_DELETE = 0
           AND STORAGE_STATUS = 'ACTIVE'
         LIMIT 1

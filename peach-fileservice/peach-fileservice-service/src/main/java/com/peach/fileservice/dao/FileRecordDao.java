@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Indexed;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 文件记录数据访问。
@@ -32,12 +33,25 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
     List<FileRecordVO> selectByQO(FileQueryQO qo);
 
     /**
-     * 根据文件ID查询文件详情
-     *
-     * @param fileId 文件ID
-     * @return 文件记录视图对象（包含关联的文件对象信息），不存在时返回null
+     * SQL 强制物理租户和应用，完整所有者/机构权限由 Auth 单对象策略校验。
      */
-    FileRecordVO selectDetailByFileId(@Param("fileId") String fileId);
+    FileRecordVO selectScopedDetail(@Param("fileId") String fileId,
+                                    @Param("tenantRefId") String tenantRefId,
+                                    @Param("appRefId") String appRefId);
+
+    /**
+     * 固定 SQL 只修改白名单列，并再次限制物理租户、应用、对象所有者和机构状态。
+     *
+     * @return 影响行数，必须恰好等于 1
+     */
+    int updateScopedMetadata(@Param("fileId") String fileId,
+                             @Param("tenantRefId") String tenantRefId,
+                             @Param("appRefId") String appRefId,
+                             @Param("ownerUserRefId") String ownerUserRefId,
+                             @Param("orgRefId") String orgRefId,
+                             @Param("changes") Map<String, String> changes,
+                             @Param("modifyTime") String modifyTime,
+                             @Param("modifierId") String modifierId);
 
     /**
      * 统计指定文件对象的活跃引用数量
@@ -64,8 +78,10 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
      * @param modifier 修改人
      */
     int logicalDelete(@Param("fileId") String fileId,
-                      @Param("tenantId") String tenantId,
-                      @Param("orgId") String orgId,
+                      @Param("tenantRefId") String tenantRefId,
+                      @Param("appRefId") String appRefId,
+                      @Param("ownerUserRefId") String ownerUserRefId,
+                      @Param("orgRefId") String orgRefId,
                       @Param("fileStatus") String fileStatus,
                        @Param("deleteTime") String deleteTime, @Param("expireDeleteTime") String expireDeleteTime,
                        @Param("isDelete") Integer isDelete, @Param("modifyTime") String modifyTime,
@@ -83,8 +99,10 @@ public interface FileRecordDao extends PeachDao<FileRecordDO, FileRecordVO> {
      * @param modifier 修改人
      */
     int restoreByFileId(@Param("fileId") String fileId,
-                        @Param("tenantId") String tenantId,
-                        @Param("orgId") String orgId,
+                        @Param("tenantRefId") String tenantRefId,
+                        @Param("appRefId") String appRefId,
+                        @Param("ownerUserRefId") String ownerUserRefId,
+                        @Param("orgRefId") String orgRefId,
                         @Param("fileStatus") String fileStatus,
                          @Param("isDelete") Integer isDelete, @Param("modifyTime") String modifyTime,
                          @Param("modifier") String modifier);

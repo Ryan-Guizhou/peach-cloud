@@ -179,13 +179,75 @@ Maven 命令只验证编译和打包，不替代真实 provider、分片直传�
 
 - 后端文档统一遵循当前 peach-cloud 基线：Java 21、Spring Boot 3.5.4、Spring Cloud 2025.0.0、Spring Cloud Alibaba 2025.0.0.0。
 - 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
-- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
+- 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 target/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
 - README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。
 
-### #231 文件详情与上传会话的现有对象边界收敛
+### #231 文件详情与上传会话的历史止血方案（已由 #232 物理范围替代）
 
-此前文件分页由 `AuditContext.requireTenantId/requireOrgId` 赋予查询范围，但 `FileDomainServiceImpl.selectByFileId`、`requireRecord` 和 `requireSession` 没有统一验证数据库行归属，知道别人的文件 ID/上传会话 ID 时存在跨租户/机构访问风险。现由 `FileRecordScopeGuard` 在**返回详情、生成临时下载 URL、逻辑删除/恢复、读取上传会话**前比较服务端现有可信业务租户及机构与数据库记录的真实 `TENANT_ID/ORG_ID`。文件详情 SQL 补出归属列，任何上下文缺失、记录归属缺失或不同均拒绝。后台清理任务独立于用户会话，不通过模拟用户绕过校验。对应纯函数单测涵盖跨租户、跨机构和空范围。
+此前文件分页由 `AuditContext.requireTenantId/requireOrgId` 赋予查询范围，但 `FileDomainServiceImpl.selectByFileId`、`requireRecord` 和 `requireSession` 没有统一验证数据库行归属，知道别人的文件 ID/上传会话 ID 时存在跨租户/机构访问风险。当时曾由 `FileRecordScopeGuard` 在**返回详情、生成临时下载 URL、逻辑删除/恢复、读取上传会话**前比较服务端现有可信业务租户及机构与数据库记录的真实 `TENANT_ID/ORG_ID`。文件详情 SQL 补出归属列，任何上下文缺失、记录归属缺失或不同均拒绝。后台清理任务独立于用户会话，不通过模拟用户绕过校验。对应纯函数单测涵盖跨租户、跨机构和空范围。
 
 **限制：** 这里仍是旧业务租户/机构号止血，不能替代新 SaaS 的 `tenantRefId/memberRefId/appRefId` 和行级/字段级真实授权，也不表示旧用户级 Redis Profile 已可靠迁移。后续完整物理迁移与所有 SQL/对象存储权限端到端覆盖另见 #232、#211；没有经过真实迁移与验收前不得当作生产隔离已完成。
 
-额外在 `FileRecordDao.logicalDelete` / `restoreByFileId` 的 MyBatis `WHERE` 中绑定已校验记录的 `TENANT_ID` 与 `ORG_ID`，并检查影响行数必须为 1；并发期间归属或逻辑删除状态发生变化时抛错，避免只在 Java 查询时检查、SQL 写入却又退化为仅使用 `FILE_ID`。
+旧方案额外在 `FileRecordDao.logicalDelete` / `restoreByFileId` 的 MyBatis `WHERE` 中绑定已校验记录的 `TENANT_ID` 与 `ORG_ID`，并检查影响行数必须为 1；并发期间归属或逻辑删除状态发生变化时抛错，避免只在 Java 查询时检查、SQL 写入却又退化为仅使用 `FILE_ID`。
+
+### #232 物理 SaaS 文件隔离（研发中，尚未完成数据策略验收）
+
+**已提交到 feature 分支的基础能力：** 文件记录、对象和上传会话统一增加 UUID 物理 `ID`，保留唯一业务编号 `FILE_ID`、`OBJECT_ID`、`SESSION_ID`；添加受信 `TENANT_REF_ID`、`APP_REF_ID`、`OWNER_USER_REF_ID`、可选 `ORG_REF_ID` 和上传者 `MEMBER_REF_ID`。通过 `SaasIamFeignClient` 在线向 Auth 校验实际最终用户 Token 的 API 动作与物理上下文，由 Auth 再校验成员、授权和全局密码版本。任意 Feign/Redis/同令牌验证失败都**拒绝**，不会降级使用浏览器自报业务租户或旧 USER_PROFILE。
+
+- 秒传对象 SQL 同时限定物理 tenant、app、owner、org，禁止跨租户、用户或机构借 SHA-256 复用对象；文件分页 SQL 与 COUNT 同时限定物理 tenant/app 与已获授权的机构/所有者范围；文件详情、签名 URL 生成前必须从受限 SQL 读取真实记录。删除和恢复 UPDATE WHERE 再次约束三元组，上传会话续传需匹配上传成员物理 ID。
+- 文件列表已经按 Auth 每条有效角色绑定的 SELF/ORG/ORG_TREE/TENANT_ALL 范围独立求交再取并集；SQL 在 COUNT 和分页之前使用相同物理范围，只有真正获得行授权才允许跨所有者读取。
+- `sql/PEACH_FILE_SAAS_PHYSICAL_MIGRATION.sql` 是**存量库一次性迁移**，需 DBA 备份、执行物理主键切换、做存量对象与真实 tenant/app/owner/member 的人工证据映射和核对。没有真实映射的旧行继续保持 NULL 并由新 SQL 过滤，不允许自动猜测、默认开放或把旧 TENANT_ID 当物理主键。新库用 `sql/PEACH_FILE_*.sql` / `sql/ALL_TABLE_CREATE.sql`，不得再次运行 ALTER。
+- `sql/PEACH_FILE_SAAS_API_PERMISSIONS.sql` 只注册固定 SYSTEM API 定义，不自动授权。认证服务原有 `GET:/api/file/internal/*` 等通配资源不满足最新 API 路径解析器，应停止使用并按 `{fileId}` 模板配置最小授权。External 代理调用复用 Internal 的文件领域方法，因此当前需要同时具有相应内部动作权限。
+- 文件服务内部清理任务仅访问已拥有物理范围映射的到期数据，不伪造终端用户 Token；历史未映射记录不得直接清理。
+- 真实 MySQL、网关、Auth Feign Same-Token、Nacos/Redis、数据范围、字段遮盖、存储 provider 与迁移结果还需由 #211 验收。**本节仅描述代码进度，不代表 #232 已完成或可部署生产。**
+
+
+#### 文件对象行级策略（同一角色绑定）
+
+#232 的远程 IAM 接口 `/auth/external/iam/file-object/check` 要求业务服务通过独立 Same-Token 转交最终用户 Token、真实物理对象 ID 和数据库内 tenant/app/owner/org 权属。Auth 使用当前 Token 读取最新成员、角色、授权与密码版本，再对 `FILE.LIST`、`FILE.READ`、`FILE.DOWNLOAD`、`FILE.UPLOAD`、`FILE.DELETE`、`FILE.RESTORE` 对应的 `DATA` 系统语义和 `PEACH_ROLE_DATA_POLICY` 在**同一角色绑定**中求交。普通 API 许可不替代对象行级许可，没有完整行级策略时默认拒绝。文件服务仍强制物理 tenant/app SQL 边界，跨所有者访问仅在当前文件的同绑定机构或全租户 DATA 授权生效后允许。
+
+配置最小权限时，需由可信管理员经当前角色/策略维护流程单独创建、授权每一动作对应的 DATA 策略（例如 SELF），不能仅执行权限定义迁移，更不能为自动授权而直接写业务 MySQL。机构树与字段读写、脱敏及列表多绑定并集已接入代码；真实 MySQL、Feign 和撤权并发验证继续在 #211 验收。
+
+#### 文件详情与列表的字段权限（已接入）
+
+`SaasIamFeignClient.projectFileFields` 经受信 Same-Token 调用 Auth 对 `FILE_RECORD` 资源的 `PEACH_ROLE_FIELD_POLICY` 求值，与同一条 `FILE.READ` / `FILE.LIST` 行范围和角色绑定配对。只有字段策略明确 `ALLOW` 或 `MASK` 才能进入安全的 `FileRecordVO`；`DENY` 或未知字段直接剔除。必须显式允许 `fileId` 才能展示详情或列表项，缺少对应字段策略时返回授权错误。对象存储的 bucket、objectKey、provider 以及内部物理归属不进入公开响应。
+
+文件列表限制每页不超过 50 条，先通过 SQL 层的物理 tenant/app 与受信组织/所有者行范围过滤与 COUNT；Auth 对页面中每条记录独立执行行/字段范围求交，但通过**一次批量 Feign 调用**查询当前成员的角色数据与字段策略，避免每行发一次远程请求。某条记录未授权将整页拒绝，不把分页后过滤的部分列表冒充准确 COUNT。该批处理仍需在真实 MySQL/Feign 环境验证性能和授权版本一致性。机构树 SQL 并集与受控元数据字段写权限已接入代码；真实 MySQL、存储实例、网关与存量迁移仍需 #211 联调，不代表生产验收完成。
+
+#### #232 当前机构数据范围与元数据写入
+
+Auth 对每条有效成员角色绑定及其 DATA 策略先求交，再将 `SELF`、`ORG`、`ORG_TREE`、`TENANT_ALL` 的有效范围取并集。文件服务只接受与当前在线 Token 的物理租户、应用、用户一致的范围；MyBatis 固定参数化 SQL 先过滤可见行再进行 COUNT 和分页。单次机构展开最多 512 个，异常、失效或数据不完整时默认拒绝。每页最多 50 条，之后由 Auth 批量核验每条记录的字段权限。已删除文件列表当前单独拒绝。
+
+新增接口：`PATCH /file/internal/{fileId}/metadata`，请求示例：
+
+```json
+{"changes":{"displayName":"新名称","bizTag":"标签","remark":"备注"}}
+```
+
+仅这三个字段允许变更，长度分别最多 255、64、500 字符，不能为 null。必须同时通过精确 API 动作、同一角色绑定的 `FILE.EDIT` DATA 行策略及全部请求字段的 `WRITE_EFFECT=ALLOW`，不可部分更新。固定 UPDATE SQL 还要重新核验真实 tenant/app、owner/org、未删除与 ACTIVE 状态。SQL 权限定义不自动为任何用户授予角色或字段策略。
+
+受信永久业务租户号改由 Auth 从自己的租户表解析，通过 `SaasIamContextVO.tenantBusinessId` 返回，文件服务不再直接读取 Auth 租户表。存量未证实的真实对象归属保持隔离，交由 #211 联调与迁移验收。
+
+#### #232 批量删除与恢复（受信原子操作）
+
+`POST /file/internal/batch/delete` 与 `POST /file/internal/batch/restore` 接受最多 50 个不重复的文件业务编号。请求体：
+
+```json
+{"fileIds":["FILE00001","FILE00002"]}
+```
+
+调用方必须拥有批量入口的 SYSTEM API 动作权限；领域服务对**每一个文件**仍单独要求对应 DELETE/RESTORE API 和 `FILE.DELETE` / `FILE.RESTORE` 同绑定 DATA 行级授权。更新范围也由固定 MyBatis WHERE 约束物理 tenant/app、owner 和 org。任一项授权或并发状态检查失败，整批本地数据库事务回滚，不允许部分成功。外部对象存储的异步物理清理仍由独立清理任务完成，不能把数据库回滚等同于存储动作可回滚。
+
+#### 受控 CSV 元数据导出
+
+`POST /file/internal/export` 使用与文件列表相同的 `FileQueryQO` 业务过滤条件，返回 UTF-8 `text/csv` 附件。导出先要求独立 SYSTEM API 动作 `POST:/api/file/internal/export`，再逐页验证列表 API、`FILE.LIST` 行级 SQL 授权和每条记录的 `FILE_RECORD` 字段 `ALLOW / MASK / DENY`。分页与 COUNT 先完成物理租户、应用和同绑定组织范围过滤，不允许在导出时信任浏览器声明的租户/机构。
+
+单次最多导出 **500 条**，每页 50 条，超额、分页过程中总数不一致或字段授权失败时整次拒绝，不返回部分数据。仅输出已授权的固定元数据列，不包含 bucket、objectKey、provider 和物理主键；CSV 中公式前缀会转义，以避免电子表格公式注入。导出权限目录仅登记资源，不自动授予角色。
+
+#### 指定目标机构上传与秒传隔离
+
+`FileUploadCheckDTO.orgRefId`（外部上传使用 `FileExternalUploadDTO.orgRefId`）为**可选目标机构物理 ID**，不是用户身份或已授权上下文。上传、秒传和分片初始化都会以最终用户 Token、同一角色绑定的 `FILE.UPLOAD` DATA 规则及 Auth 当前有效机构目录验证该目标。非法、停用、跨租户或不在有效授权范围内的机构一律拒绝；验证通过后，文件记录、物理对象与上传会话同时持久化受信的 `ORG_REF_ID`。
+
+秒传 SHA-256 复用必须在同一个 tenant/app/owner/org 物理范围内完成；指定不同机构的文件不会借摘要共用存储对象。未指定目标机构时保持原有本人文件行为，仅适用能覆盖无机构对象的有效 DATA 策略；不能凭旧 `ORG_ID` 或浏览器表单扩大授权。已有文件的真实所有者必须从数据库转交 Auth，不得替换成当前登录用户。
+
+针对机构树和秒传查询新增索引：`IDX_FILE_RECORD_SAAS_ORG` 与 `IDX_FILE_OBJECT_SAAS_DEDUP`。新库和一次性存量迁移脚本已同步，生产环境仍由 DBA 结合表大小、锁及执行计划确认后执行。

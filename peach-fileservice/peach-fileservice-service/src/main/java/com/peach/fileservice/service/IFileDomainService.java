@@ -6,6 +6,8 @@ import com.peach.fileservice.dto.FileMultipartInitDTO;
 import com.peach.fileservice.dto.FileMultipartPartUrlDTO;
 import com.peach.fileservice.dto.FileExternalUploadDTO;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
+import com.peach.fileservice.dto.FileMetadataPatchDTO;
+import com.peach.fileservice.dto.FileBatchActionDTO;
 import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.vo.FileDownloadUrlVO;
 import com.peach.fileservice.vo.FileDigestVO;
@@ -140,6 +142,36 @@ public interface IFileDomainService {
      * @return 文件记录分页结果
      */
     PageResult<FileRecordVO> pageList(FileQueryQO qo);
+
+    /**
+     * 按受信行级范围、逐条字段投影导出最多 500 条文件元数据。
+     *
+     * @param filter 不含授权主体声明的业务查询条件
+     * @return UTF-8 CSV，不含任何存储内部定位
+     */
+    byte[] exportMetadataCsv(FileQueryQO filter);
+
+    /**
+     * 批量删除。每个文件仍单独校验自身的动作权限和数据权限。
+     *
+     * @param data 最多 50 个唯一业务文件编号
+     */
+    void batchLogicalDelete(FileBatchActionDTO data);
+
+    /**
+     * 批量恢复。任何项缺少授权时全部事务回滚。
+     *
+     * @param data 最多 50 个唯一业务文件编号
+     */
+    void batchRestore(FileBatchActionDTO data);
+
+    /**
+     * 根据同一角色绑定中的 FILE.EDIT 行/字段权限更新受控文件元数据。
+     *
+     * @param fileId 永久文件业务 ID
+     * @param patch 服务端仅接受固定白名单字段的修改请求
+     */
+    void updateMetadata(String fileId, FileMetadataPatchDTO patch);
 
     /**
      * 逻辑删除文件

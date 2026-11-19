@@ -7,7 +7,8 @@
         BIZ_TAG, FILE_NAME, DISPLAY_NAME, CONTENT_TYPE,
         FILE_SIZE, FILE_EXT, FILE_STATUS, DELETE_TIME,
         EXPIRE_DELETE_TIME, REMARK, IS_DELETE, CREATED_TIME,
-        CREATOR_ID, MODIFY_TIME, MODIFIER_ID
+        CREATOR_ID, MODIFY_TIME, MODIFIER_ID,
+        ID, TENANT_REF_ID, APP_REF_ID, ORG_REF_ID, OWNER_USER_REF_ID
     </sql>
 
     <sql id="allColumnAlias">
@@ -16,7 +17,8 @@
         BIZ_TAG as bizTag, FILE_NAME as fileName, DISPLAY_NAME as displayName, CONTENT_TYPE as contentType,
         FILE_SIZE as fileSize, FILE_EXT as fileExt, FILE_STATUS as fileStatus, DELETE_TIME as deleteTime,
         EXPIRE_DELETE_TIME as expireDeleteTime, REMARK as remark, IS_DELETE as isDelete, CREATED_TIME as createdTime,
-        CREATOR_ID as creatorId, MODIFY_TIME as modifyTime, MODIFIER_ID as modifierId
+        CREATOR_ID as creatorId, MODIFY_TIME as modifyTime, MODIFIER_ID as modifierId,
+        ID as id, TENANT_REF_ID as tenantRefId, APP_REF_ID as appRefId, ORG_REF_ID as orgRefId, OWNER_USER_REF_ID as ownerUserRefId
     </sql>
 
     <sql id="allColumnValue">
@@ -28,7 +30,8 @@
         #{deleteTime,jdbcType=VARCHAR},
         #{expireDeleteTime,jdbcType=VARCHAR}, #{remark,jdbcType=VARCHAR}, #{isDelete,jdbcType=INTEGER},
         #{createdTime,jdbcType=VARCHAR},
-        #{creatorId,jdbcType=VARCHAR}, #{modifyTime,jdbcType=VARCHAR}, #{modifierId,jdbcType=VARCHAR}
+        #{creatorId,jdbcType=VARCHAR}, #{modifyTime,jdbcType=VARCHAR}, #{modifierId,jdbcType=VARCHAR},
+        #{id,jdbcType=VARCHAR}, #{tenantRefId,jdbcType=VARCHAR}, #{appRefId,jdbcType=VARCHAR}, #{orgRefId,jdbcType=VARCHAR}, #{ownerUserRefId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="itemAllColumnValue">
@@ -40,7 +43,8 @@
         #{item.deleteTime,jdbcType=VARCHAR},
         #{item.expireDeleteTime,jdbcType=VARCHAR}, #{item.remark,jdbcType=VARCHAR}, #{item.isDelete,jdbcType=INTEGER},
         #{item.createdTime,jdbcType=VARCHAR},
-        #{item.creatorId,jdbcType=VARCHAR}, #{item.modifyTime,jdbcType=VARCHAR}, #{item.modifierId,jdbcType=VARCHAR}
+        #{item.creatorId,jdbcType=VARCHAR}, #{item.modifyTime,jdbcType=VARCHAR}, #{item.modifierId,jdbcType=VARCHAR},
+        #{item.id,jdbcType=VARCHAR}, #{item.tenantRefId,jdbcType=VARCHAR}, #{item.appRefId,jdbcType=VARCHAR}, #{item.orgRefId,jdbcType=VARCHAR}, #{item.ownerUserRefId,jdbcType=VARCHAR}
     </sql>
 
     <sql id="allColumnSet">
@@ -172,6 +176,12 @@
         <if test="modifierId != null and modifierId != ''">
             AND MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         </if>
+                <if test="tenantRefId != null and tenantRefId != ''">
+                AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+            </if>
+            <if test="appRefId != null and appRefId != ''">
+                AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+            </if>
     </sql>
 
     <insert id="insert" parameterType="com.peach.fileservice.entity.FileRecordDO">
@@ -261,6 +271,8 @@
 
     <select id="selectByQO" parameterType="com.peach.fileservice.qo.FileQueryQO" resultType="com.peach.fileservice.vo.FileRecordVO">
         SELECT
+            r.ID as id, r.TENANT_REF_ID as tenantRefId, r.APP_REF_ID as appRefId,
+            r.ORG_REF_ID as orgRefId, r.OWNER_USER_REF_ID as ownerUserRefId,
             r.FILE_ID as fileId, r.OBJECT_ID as objectId, r.TENANT_ID as tenantId, r.ORG_ID as orgId,
             r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
             r.BIZ_TAG as bizTag, r.FILE_NAME as fileName, r.DISPLAY_NAME as displayName, r.CONTENT_TYPE as contentType,
@@ -271,8 +283,42 @@
             o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey,
             o.STORAGE_STATUS as storageStatus
         FROM PEACH_FILE_RECORD r
-        LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
+        INNER JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
+            AND o.TENANT_REF_ID = r.TENANT_REF_ID AND o.APP_REF_ID = r.APP_REF_ID
+            AND o.OWNER_USER_REF_ID = r.OWNER_USER_REF_ID
+            AND ((o.ORG_REF_ID IS NULL AND r.ORG_REF_ID IS NULL)
+                OR o.ORG_REF_ID = r.ORG_REF_ID)
         <where>
+            r.TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+            AND r.APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+            AND (
+                <choose>
+                    <when test="tenantAllVisible">
+                        1 = 1
+                    </when>
+                    <otherwise>
+                        1 = 0
+                        <if test="selfVisible">
+                            OR r.OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+                        </if>
+                        <if test="organizationRefIds != null and organizationRefIds.size() > 0">
+                            OR r.ORG_REF_ID IN
+                            <foreach collection="organizationRefIds" item="orgRefId"
+                                     open="(" separator="," close=")">
+                                #{orgRefId,jdbcType=VARCHAR}
+                            </foreach>
+                        </if>
+                        <if test="selfOrganizationRefIds != null and selfOrganizationRefIds.size() > 0">
+                            OR (r.OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+                                AND r.ORG_REF_ID IN
+                                <foreach collection="selfOrganizationRefIds" item="orgRefId"
+                                         open="(" separator="," close=")">
+                                    #{orgRefId,jdbcType=VARCHAR}
+                                </foreach>)
+                        </if>
+                    </otherwise>
+                </choose>
+            )
             <if test="tenantId != null and tenantId != ''">
                 AND r.TENANT_ID = #{tenantId,jdbcType=VARCHAR}
             </if>
@@ -295,11 +341,13 @@
                 AND r.IS_DELETE = #{isDelete,jdbcType=INTEGER}
             </if>
         </where>
-        ORDER BY r.CREATED_TIME DESC
+        ORDER BY r.CREATED_TIME DESC, r.FILE_ID DESC
     </select>
 
-    <select id="selectDetailByFileId" resultType="com.peach.fileservice.vo.FileRecordVO">
+    <select id="selectScopedDetail" resultType="com.peach.fileservice.vo.FileRecordVO">
         SELECT
+            r.ID as id, r.TENANT_REF_ID as tenantRefId, r.APP_REF_ID as appRefId,
+            r.ORG_REF_ID as orgRefId, r.OWNER_USER_REF_ID as ownerUserRefId,
             r.FILE_ID as fileId, r.OBJECT_ID as objectId,
             r.TENANT_ID as tenantId, r.ORG_ID as orgId,
             r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
@@ -311,10 +359,41 @@
             o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey,
             o.STORAGE_STATUS as storageStatus
         FROM PEACH_FILE_RECORD r
-        LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
+        INNER JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
+            AND o.TENANT_REF_ID = r.TENANT_REF_ID AND o.APP_REF_ID = r.APP_REF_ID
+            AND o.OWNER_USER_REF_ID = r.OWNER_USER_REF_ID
+            AND ((o.ORG_REF_ID IS NULL AND r.ORG_REF_ID IS NULL)
+                OR o.ORG_REF_ID = r.ORG_REF_ID)
         WHERE r.FILE_ID = #{fileId,jdbcType=VARCHAR}
+          AND r.TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+          AND r.APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
         LIMIT 1
     </select>
+
+    <update id="updateScopedMetadata">
+        UPDATE PEACH_FILE_RECORD
+        <set>
+            <if test="changes.containsKey('displayName')">
+                DISPLAY_NAME = #{changes.displayName,jdbcType=VARCHAR},
+            </if>
+            <if test="changes.containsKey('bizTag')">
+                BIZ_TAG = #{changes.bizTag,jdbcType=VARCHAR},
+            </if>
+            <if test="changes.containsKey('remark')">
+                REMARK = #{changes.remark,jdbcType=VARCHAR},
+            </if>
+            MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
+            MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
+        </set>
+        WHERE FILE_ID = #{fileId,jdbcType=VARCHAR}
+          AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+          AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+          AND OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+          AND ((ORG_REF_ID IS NULL AND #{orgRefId,jdbcType=VARCHAR} IS NULL)
+              OR ORG_REF_ID = #{orgRefId,jdbcType=VARCHAR})
+          AND IS_DELETE = 0
+          AND FILE_STATUS = 'ACTIVE'
+    </update>
 
     <select id="countActiveByObjectId" resultType="java.lang.Integer">
         SELECT COUNT(1)
@@ -333,8 +412,11 @@
             MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         WHERE FILE_ID = #{fileId,jdbcType=VARCHAR}
-          AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
-          AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+          AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+          AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+          AND OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+          AND ((ORG_REF_ID IS NULL AND #{orgRefId,jdbcType=VARCHAR} IS NULL)
+              OR ORG_REF_ID = #{orgRefId,jdbcType=VARCHAR})
           AND IS_DELETE = 0
     </update>
 
@@ -347,13 +429,18 @@
             MODIFY_TIME = #{modifyTime,jdbcType=VARCHAR},
             MODIFIER_ID = #{modifierId,jdbcType=VARCHAR}
         WHERE FILE_ID = #{fileId,jdbcType=VARCHAR}
-          AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
-          AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+          AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+          AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+          AND OWNER_USER_REF_ID = #{ownerUserRefId,jdbcType=VARCHAR}
+          AND ((ORG_REF_ID IS NULL AND #{orgRefId,jdbcType=VARCHAR} IS NULL)
+              OR ORG_REF_ID = #{orgRefId,jdbcType=VARCHAR})
           AND IS_DELETE = 1
     </update>
 
     <select id="selectExpiredDeletedRecords" resultType="com.peach.fileservice.vo.FileRecordVO">
         SELECT
+            r.ID as id, r.TENANT_REF_ID as tenantRefId, r.APP_REF_ID as appRefId,
+            r.ORG_REF_ID as orgRefId, r.OWNER_USER_REF_ID as ownerUserRefId,
             r.FILE_ID as fileId, r.OBJECT_ID as objectId,
             r.TENANT_ID as tenantId, r.ORG_ID as orgId,
             r.BIZ_TYPE as bizType, r.BIZ_ID as bizId,
@@ -365,8 +452,13 @@
             o.STORAGE_PROVIDER as storageProvider, o.BUCKET_NAME as bucketName, o.OBJECT_KEY as objectKey,
             o.STORAGE_STATUS as storageStatus
         FROM PEACH_FILE_RECORD r
-        LEFT JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
+        INNER JOIN PEACH_FILE_OBJECT o ON r.OBJECT_ID = o.OBJECT_ID
+            AND o.TENANT_REF_ID = r.TENANT_REF_ID AND o.APP_REF_ID = r.APP_REF_ID
+            AND o.OWNER_USER_REF_ID = r.OWNER_USER_REF_ID
+            AND ((o.ORG_REF_ID IS NULL AND r.ORG_REF_ID IS NULL)
+                OR o.ORG_REF_ID = r.ORG_REF_ID)
         WHERE r.IS_DELETE = 1
+          AND r.TENANT_REF_ID IS NOT NULL AND r.APP_REF_ID IS NOT NULL
           AND r.EXPIRE_DELETE_TIME IS NOT NULL
           AND r.EXPIRE_DELETE_TIME &lt;= #{nowTime,jdbcType=VARCHAR}
         ORDER BY r.EXPIRE_DELETE_TIME ASC

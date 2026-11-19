@@ -1,15 +1,21 @@
 package com.peach.auth.openfeign.fallback;
 
-import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamBatchLookupDTO;
+import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.vo.SaasIamContextVO;
-import com.peach.auth.vo.SaasIamPermissionDecisionVO;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.auth.vo.SaasIamMemberBriefVO;
 import com.peach.auth.vo.SaasIamOrganizationBriefVO;
+import com.peach.auth.vo.SaasIamPermissionDecisionVO;
+
+import org.springframework.cloud.openfeign.FallbackFactory;
 
 import java.util.List;
-import org.springframework.cloud.openfeign.FallbackFactory;
+import java.util.Map;
 
 /**
  * IAM Feign 超时、断路器和依赖异常时严格拒绝，不返回空成功响应。
@@ -29,6 +35,35 @@ public class SaasIamFeignClientFallbackFactory implements FallbackFactory<SaasIa
             public SaasIamPermissionDecisionVO checkApiPermission(
                     String subjectToken, SaasIamPermissionCheckDTO request) {
                 return new SaasIamPermissionDecisionVO(false);
+            }
+
+            @Override
+            public SaasIamPermissionDecisionVO checkFileObjectPermission(
+                    String subjectToken, SaasIamFileObjectCheckDTO request) {
+                return new SaasIamPermissionDecisionVO(false);
+            }
+
+            @Override
+            public Map<String, Object> projectFileFields(String subjectToken,
+                                                          SaasIamFileFieldReadDTO request) {
+                return Map.of();
+            }
+
+            @Override
+            public List<Map<String, Object>> projectFileFieldsBatch(
+                    String subjectToken, List<SaasIamFileFieldReadDTO> requests) {
+                return List.of();
+            }
+
+            @Override
+            public SaasIamPermissionDecisionVO checkFileFieldWrites(
+                    String subjectToken, SaasIamFileFieldWriteDTO request) {
+                return new SaasIamPermissionDecisionVO(false);
+            }
+
+            @Override
+            public SaasIamFileQueryScopeVO fileQueryScope(String subjectToken) {
+                throw new SecurityException("Trusted file query scope is unavailable");
             }
 
             @Override

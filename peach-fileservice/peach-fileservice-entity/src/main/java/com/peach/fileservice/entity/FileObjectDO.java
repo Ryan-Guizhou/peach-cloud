@@ -1,6 +1,7 @@
 package com.peach.fileservice.entity;
 
 import java.io.Serial;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import com.peach.common.PeachDO;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -35,10 +36,35 @@ public class FileObjectDO extends PeachDO implements Serializable {
     @Serial
     private static final long serialVersionUID = -4923191473705995553L;
 
-    @Id
     @Column(name = "OBJECT_ID")
     @Schema(description = "物理对象ID")
     private String objectId;
+
+    @Id
+    @Column(name = "ID")
+    @JsonIgnore
+    @Schema(description = "UUID物理主键")
+    private String id;
+
+    @JsonIgnore
+    @Column(name = "TENANT_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String tenantRefId;
+
+    @JsonIgnore
+    @Column(name = "APP_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String appRefId;
+
+    @JsonIgnore
+    @Column(name = "ORG_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String orgRefId;
+
+    @JsonIgnore
+    @Column(name = "OWNER_USER_REF_ID")
+    @Schema(description = "SaaS物理归属")
+    private String ownerUserRefId;
 
     @Column(name = "HASH_SHA256")
     @Schema(description = "SHA-256摘要")

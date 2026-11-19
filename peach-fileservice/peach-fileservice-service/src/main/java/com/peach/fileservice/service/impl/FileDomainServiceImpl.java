@@ -1,35 +1,37 @@
 package com.peach.fileservice.service.impl;
 
-import com.github.pagehelper.page.PageMethod;
-
-import lombok.RequiredArgsConstructor;
-
 import com.github.pagehelper.PageInfo;
-import com.peach.common.unique.UniqueIdFacade;
+import com.github.pagehelper.page.PageMethod;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.common.PageResult;
+import com.peach.common.unique.UniqueIdFacade;
 import com.peach.common.util.DateUtil;
-import com.peach.common.audit.AuditContext;
 import com.peach.common.util.StringUtil;
 import com.peach.content.UploadContent;
 import com.peach.fileservice.common.FileDomainConstant;
+import com.peach.fileservice.common.util.FileDigestUtils;
 import com.peach.fileservice.config.FileDomainProperties;
 import com.peach.fileservice.dao.FileObjectDao;
 import com.peach.fileservice.dao.FileRecordDao;
 import com.peach.fileservice.dao.FileUploadSessionDao;
+import com.peach.fileservice.dto.FileBatchActionDTO;
+import com.peach.fileservice.dto.FileExternalUploadDTO;
+import com.peach.fileservice.dto.FileMetadataPatchDTO;
 import com.peach.fileservice.dto.FileMultipartCompleteDTO;
 import com.peach.fileservice.dto.FileMultipartCompletePartDTO;
 import com.peach.fileservice.dto.FileMultipartInitDTO;
 import com.peach.fileservice.dto.FileMultipartPartUrlDTO;
-import com.peach.fileservice.dto.FileExternalUploadDTO;
 import com.peach.fileservice.dto.FileUploadCheckDTO;
 import com.peach.fileservice.entity.FileObjectDO;
 import com.peach.fileservice.entity.FileRecordDO;
 import com.peach.fileservice.entity.FileUploadSessionDO;
 import com.peach.fileservice.qo.FileQueryQO;
 import com.peach.fileservice.service.IFileDomainService;
-import com.peach.fileservice.service.support.FileRecordScopeGuard;
-import com.peach.fileservice.vo.FileDownloadUrlVO;
+import com.peach.fileservice.service.support.FileMetadataCsvExporter;
+import com.peach.fileservice.service.support.FileSaasAccessService;
+import com.peach.fileservice.service.support.FileSaasScope;
 import com.peach.fileservice.vo.FileDigestVO;
+import com.peach.fileservice.vo.FileDownloadUrlVO;
 import com.peach.fileservice.vo.FileExternalFileVO;
 import com.peach.fileservice.vo.FileMultipartInitVO;
 import com.peach.fileservice.vo.FileMultipartPartVO;
@@ -38,7 +40,6 @@ import com.peach.fileservice.vo.FileRecordVO;
 import com.peach.fileservice.vo.FileUploadCheckVO;
 import com.peach.fileservice.vo.FileUploadSessionVO;
 import com.peach.fileservice.vo.FileUploadVO;
-import com.peach.fileservice.common.util.FileDigestUtils;
 import com.peach.request.AbortMultipartUploadRequest;
 import com.peach.request.CompleteMultipartUploadRequest;
 import com.peach.request.DeleteObjectRequest;
@@ -52,10 +53,11 @@ import com.peach.response.InitiateMultipartUploadResult;
 import com.peach.response.PresignedUrlResult;
 import com.peach.response.UploadPartResult;
 import com.peach.response.UploadResult;
-import com.peach.satoken.context.SecurityContextHolder;
-import com.peach.satoken.context.UserContext;
 import com.peach.service.MultiZoneStorage;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
@@ -71,6 +73,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
@@ -120,6 +124,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     private final FileDomainProperties fileDomainProperties;
 
+    private final FileSaasAccessService saasAccessService;
+
     private final ObjectProvider<IFileDomainService> self;
 
     @Override
@@ -134,6 +140,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileUploadVO uploadExternal(FileExternalUploadDTO data, MultipartFile file) {
+        saasAccessService.requireCurrent("POST:/api/file/external/upload");
         if (data == null) {
             throw new IllegalArgumentException("upload data is null");
         }
@@ -148,6 +155,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
         check.setContentType(data.getContentType());
         check.setBizType(data.getBizType());
         check.setBizId(data.getBizId());
+        check.setOrgRefId(data.getOrgRefId());
         check.setBizTag(data.getBizTag());
         check.setRemark(data.getRemark());
         check.setStorageProvider(data.getStorageProvider());
@@ -179,8 +187,13 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileUploadCheckVO uploadCheck(FileUploadCheckDTO data) {
+        FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/upload/check");
+        saasAccessService.requireOwnDataAction("FILE.UPLOAD", scope,
+                data == null ? null : data.getOrgRefId());
         validateCheckData(data);
-        FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(data.getSha256(), data.getFileSize());
+        FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(
+                data.getSha256(), data.getFileSize(),
+                scope.tenantRefId(), scope.appRefId(), scope.userRefId(), data.getOrgRefId());
         FileUploadCheckVO result = new FileUploadCheckVO();
         if (objectVO == null) {
             result.setInstantUpload(Boolean.FALSE);
@@ -200,6 +213,9 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileUploadVO upload(FileUploadCheckDTO data, MultipartFile file) {
+        FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/upload");
+        saasAccessService.requireOwnDataAction("FILE.UPLOAD", scope,
+                data == null ? null : data.getOrgRefId());
         validateCheckData(data);
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("upload file is empty");
@@ -207,7 +223,9 @@ public class FileDomainServiceImpl implements IFileDomainService {
         if (data.getFileSize() != null && file.getSize() != data.getFileSize()) {
             throw new IllegalArgumentException("file size mismatch");
         }
-        FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(data.getSha256(), data.getFileSize());
+        FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(
+                data.getSha256(), data.getFileSize(),
+                scope.tenantRefId(), scope.appRefId(), scope.userRefId(), data.getOrgRefId());
         if (objectVO != null) {
             return createRecordFromExistingObject(data, objectVO);
         }
@@ -241,8 +259,13 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileMultipartInitVO initMultipartUpload(FileMultipartInitDTO data) {
+        FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/multipart/init");
+        saasAccessService.requireOwnDataAction("FILE.UPLOAD", scope,
+                data == null ? null : data.getOrgRefId());
         validateCheckData(data);
-        FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(data.getSha256(), data.getFileSize());
+        FileObjectVO objectVO = fileObjectDao.selectActiveBySha256AndSize(
+                data.getSha256(), data.getFileSize(),
+                scope.tenantRefId(), scope.appRefId(), scope.userRefId(), data.getOrgRefId());
         if (objectVO != null) {
             FileUploadVO uploadVO = createRecordFromExistingObject(data, objectVO);
             FileMultipartInitVO result = new FileMultipartInitVO();
@@ -259,6 +282,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
                 resolveContentType(data.getContentType(), null));
 
         FileUploadSessionDO sessionDO = new FileUploadSessionDO();
+        sessionDO.setId(UniqueIdFacade.nextId());
         sessionDO.setSessionId(sessionId);
         sessionDO.setFileId(fileId);
         sessionDO.setObjectId(objectId);
@@ -280,6 +304,14 @@ public class FileDomainServiceImpl implements IFileDomainService {
         sessionDO.setExpireTime(format(LocalDateTime.now(ZoneId.systemDefault()).plusMinutes(fileDomainProperties.getUploadSessionExpireMinutes())));
         sessionDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
         sessionDO.fillCreateTime();
+        sessionDO.setTenantRefId(scope.tenantRefId());
+        sessionDO.setAppRefId(scope.appRefId());
+        sessionDO.setOwnerUserRefId(scope.userRefId());
+        sessionDO.setMemberRefId(scope.memberRefId());
+        sessionDO.setOrgRefId(data.getOrgRefId());
+        sessionDO.setTenantId(scope.tenantId());
+        sessionDO.setOrgId(null);
+        sessionDO.setCreatorId(scope.memberRefId());
         fileUploadSessionDao.insert(sessionDO);
 
         FileMultipartInitVO result = new FileMultipartInitVO();
@@ -297,9 +329,12 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileMultipartPartVO prepareMultipartPart(FileMultipartPartUrlDTO data) {
+        saasAccessService.requireCurrent("POST:/api/file/internal/multipart/part-url");
         FileUploadSessionVO sessionVO = requireActiveSession(data.getSessionId());
+        saasAccessService.requireUploadSessionData(saasAccessService.requireContext(), sessionVO);
         UploadPartResult uploadPartResult = preparePart(sessionVO, data.getPartNumber());
-        fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.UPLOADING,
+        fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(),
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getMemberRefId(), FileDomainConstant.SessionStatus.UPLOADING,
                 DateUtil.nowTime(), currentOperator());
         FileMultipartPartVO result = new FileMultipartPartVO();
         result.setSessionId(sessionVO.getSessionId());
@@ -313,7 +348,9 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public FileUploadVO completeMultipartUpload(FileMultipartCompleteDTO data) {
+        saasAccessService.requireCurrent("POST:/api/file/internal/multipart/complete");
         FileUploadSessionVO sessionVO = requireSession(data.getSessionId());
+        saasAccessService.requireUploadSessionData(saasAccessService.requireContext(), sessionVO);
         if (FileDomainConstant.SessionStatus.COMPLETED.equals(sessionVO.getSessionStatus())) {
             FileUploadVO result = new FileUploadVO();
             result.setFileId(sessionVO.getFileId());
@@ -325,13 +362,17 @@ public class FileDomainServiceImpl implements IFileDomainService {
         }
         CompleteMultipartUploadResult completeResult = completeMultipart(sessionVO, data.getParts());
         verifyUploadedObjectDigest(sessionVO);
-        FileObjectVO exists = fileObjectDao.selectActiveBySha256AndSize(sessionVO.getHashSha256(), sessionVO.getFileSize());
+        FileObjectVO exists = fileObjectDao.selectActiveBySha256AndSize(
+                sessionVO.getHashSha256(), sessionVO.getFileSize(),
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getOwnerUserRefId(),
+                sessionVO.getOrgRefId());
         FileUploadVO result;
         if (exists != null) {
             deletePhysicalObject(sessionVO.getStorageProvider(), sessionVO.getBucketName(), sessionVO.getObjectKey());
             result = createRecordFromExistingSession(sessionVO, exists);
         } else {
             FileObjectDO objectDO = new FileObjectDO();
+            objectDO.setId(UniqueIdFacade.nextId());
             objectDO.setObjectId(sessionVO.getObjectId());
             objectDO.setHashSha256(sessionVO.getHashSha256());
             objectDO.setHashMd5(sessionVO.getHashMd5());
@@ -347,7 +388,14 @@ public class FileDomainServiceImpl implements IFileDomainService {
             objectDO.setUploadTime(DateUtil.nowTime());
             objectDO.setLastAccessTime(DateUtil.nowTime());
             objectDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
-            objectDO.fillCreateTime(sessionVO.getTenantId(), sessionVO.getOrgId());
+            objectDO.fillCreateTime();
+            objectDO.setTenantRefId(sessionVO.getTenantRefId());
+            objectDO.setAppRefId(sessionVO.getAppRefId());
+            objectDO.setOwnerUserRefId(sessionVO.getOwnerUserRefId());
+            objectDO.setOrgRefId(sessionVO.getOrgRefId());
+            objectDO.setTenantId(sessionVO.getTenantId());
+            objectDO.setOrgId(sessionVO.getOrgId());
+            objectDO.setCreatorId(sessionVO.getMemberRefId());
             fileObjectDao.insert(objectDO);
 
             FileRecordDO recordDO = buildFileRecord(sessionVO, sessionVO.getObjectId(), sessionVO.getFileSize());
@@ -360,7 +408,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
             result.setFileName(recordDO.getFileName());
             result.setFileSize(recordDO.getFileSize());
         }
-        fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.COMPLETED,
+        fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(),
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getMemberRefId(), FileDomainConstant.SessionStatus.COMPLETED,
                 DateUtil.nowTime(), currentOperator());
         return result;
     }
@@ -368,7 +417,12 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void abortMultipartUpload(String sessionId) {
+        if (sessionId == null || !sessionId.matches("[A-Za-z0-9-]{1,64}")) {
+            throw new SecurityException("Invalid upload session identifier");
+        }
+        saasAccessService.requireCurrent("POST:/api/file/internal/multipart/abort/" + sessionId);
         FileUploadSessionVO sessionVO = requireSession(sessionId);
+        saasAccessService.requireUploadSessionData(saasAccessService.requireContext(), sessionVO);
         if (FileDomainConstant.SessionStatus.COMPLETED.equals(sessionVO.getSessionStatus())
                 || FileDomainConstant.SessionStatus.ABORTED.equals(sessionVO.getSessionStatus())) {
             return;
@@ -383,18 +437,24 @@ public class FileDomainServiceImpl implements IFileDomainService {
         } else {
             multiZoneStorage.abortMultipartUpload(sessionVO.getStorageProvider(), request);
         }
-        fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.ABORTED,
+        fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(),
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getMemberRefId(), FileDomainConstant.SessionStatus.ABORTED,
                 DateUtil.nowTime(), currentOperator());
     }
 
     @Override
     public FileRecordVO selectByFileId(String fileId) {
-        return requireRecord(fileId);
+        FileSaasScope scope = saasAccessService.requireForFile("GET", fileId, "");
+        FileRecordVO record = requireRecord(fileId);
+        saasAccessService.requireFileData("FILE.READ", scope, record);
+        return saasAccessService.projectVisibleFields("FILE.READ", scope, record);
     }
 
     @Override
     public FileDownloadUrlVO getDownloadUrl(String fileId) {
+        FileSaasScope scope = saasAccessService.requireForFile("GET", fileId, "/url");
         FileRecordVO recordVO = requireActiveRecord(fileId);
+        saasAccessService.requireFileData("FILE.DOWNLOAD", scope, recordVO);
         PresignedUrlRequest request = PresignedUrlRequest.builder()
                 .bucketName(recordVO.getBucketName())
                 .objectKey(recordVO.getObjectKey())
@@ -413,23 +473,139 @@ public class FileDomainServiceImpl implements IFileDomainService {
 
     @Override
     public PageResult<FileRecordVO> pageList(FileQueryQO qo) {
+        if (qo != null && qo.getIsDelete() != null && !Integer.valueOf(0).equals(qo.getIsDelete())) {
+            throw new SecurityException("Deleted file list is not authorized");
+        }
+        if (qo == null || qo.getPageNum() == null || qo.getPageNum() < 1
+                || qo.getPageNum() > 1000 || qo.getPageSize() == null
+                || qo.getPageSize() < 1 || qo.getPageSize() > 50) {
+            throw new IllegalArgumentException("Invalid protected file pagination");
+        }
         fillCurrentTenantOrg(qo);
         PageInfo<FileRecordVO> pageInfo = PageMethod.startPage(qo.getPageNum(), qo.getPageSize())
                 .doSelectPageInfo(() -> fileRecordDao.selectByQO(qo));
-        return new PageResult<>(pageInfo.getList(), pageInfo.getTotal());
+        // 物理范围、SQL COUNT 先收敛；一页只调用一次受信 Auth 批量字段投影。
+        // Auth 对每行独立求权限交集，任何行未授权整页拒绝，避免分页后伪造总数。
+        FileSaasScope scope = saasAccessService.requireContext();
+        List<FileRecordVO> visible = saasAccessService.projectVisiblePage(scope, pageInfo.getList());
+        return new PageResult<>(visible, pageInfo.getTotal());
     }
 
+
+    /**
+     * 导出固定白名单文件元数据，先检查独立导出 API，再复用列表行/字段权限。
+     *
+     * <p>分页和 COUNT 在同一只读数据库事务中执行，最多导出 500 行；
+     * 列表逐页重新核验 Token、组织范围和字段策略，任何异常整份拒绝。
+     * CSV 编码由独立工具集中执行公式注入防护。</p>
+     *
+     * @param filter 业务查询过滤条件，租户、应用和组织授权只能来自服务端
+     * @return 不含内部存储对象定位信息的 UTF-8 CSV
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportMetadataCsv(FileQueryQO filter) {
+        if (filter == null || filter.getIsDelete() != null
+                && !Integer.valueOf(0).equals(filter.getIsDelete())) {
+            throw new SecurityException("Protected file export filter is invalid");
+        }
+        saasAccessService.requireCurrent("POST:/api/file/internal/export");
+        FileQueryQO query = new FileQueryQO();
+        query.setBizType(filter.getBizType());
+        query.setBizId(filter.getBizId());
+        query.setBizTag(filter.getBizTag());
+        query.setFileStatus(filter.getFileStatus());
+        query.setIsDelete(0);
+        query.setPageSize(50);
+        List<FileRecordVO> rows = new ArrayList<>();
+        long expectedTotal = -1;
+        for (int page = 1; page <= 10; page++) {
+            query.setPageNum(page);
+            PageResult<FileRecordVO> result = pageList(query);
+            if (result == null || result.getTotal() == null || result.getTotal() < 0
+                    || result.getTotal() > 500 || result.getResult() == null) {
+                throw new SecurityException("Protected file export exceeds safe bounds");
+            }
+            if (expectedTotal < 0) {
+                expectedTotal = result.getTotal();
+            } else if (expectedTotal != result.getTotal()) {
+                throw new SecurityException("Protected file export snapshot changed");
+            }
+            rows.addAll(result.getResult());
+            if (rows.size() > 500) {
+                throw new SecurityException("Protected file export exceeds safe bounds");
+            }
+            if (rows.size() >= expectedTotal) {
+                break;
+            }
+        }
+        if (rows.size() != expectedTotal) {
+            throw new SecurityException("Protected file export is incomplete");
+        }
+        return FileMetadataCsvExporter.encode(rows);
+    }
+
+    /**
+     * 批量删除在一个本地数据库事务中执行，各文件独立验证 API 与对象行权限。
+     * 不允许仅依靠批量入口权限跳过逐文件 FILE.DELETE 校验。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchLogicalDelete(FileBatchActionDTO data) {
+        List<String> fileIds = requireBatchFileIds(data);
+        saasAccessService.requireCurrent("POST:/api/file/internal/batch/delete");
+        for (String fileId : fileIds) {
+            logicalDelete(fileId);
+        }
+    }
+
+    /**
+     * 批量恢复要求每个文件均具有独立的 FILE.RESTORE 行级权限；
+     * 任一项失败时本地数据库事务回滚，不返回部分成功。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchRestore(FileBatchActionDTO data) {
+        List<String> fileIds = requireBatchFileIds(data);
+        saasAccessService.requireCurrent("POST:/api/file/internal/batch/restore");
+        for (String fileId : fileIds) {
+            restore(fileId);
+        }
+    }
+
+    /**
+     * 在行/字段授权通过后，仅用固定 SQL 更新经白名单允许的文件元数据列。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateMetadata(String fileId, FileMetadataPatchDTO patch) {
+        FileSaasScope scope = saasAccessService.requireForFile("PATCH", fileId, "/metadata");
+        FileRecordVO record = requireActiveRecord(fileId);
+        if (patch == null || patch.getChanges() == null) {
+            throw new IllegalArgumentException("File metadata patch is required");
+        }
+        saasAccessService.requireWritableFileFields(scope, record, patch.getChanges());
+        int affected = fileRecordDao.updateScopedMetadata(fileId, scope.tenantRefId(),
+                scope.appRefId(), record.getOwnerUserRefId(), record.getOrgRefId(),
+                patch.getChanges(), DateUtil.nowTime(), currentOperator());
+        if (affected != 1) {
+            throw new SecurityException("Scoped file metadata update conflicted");
+        }
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void logicalDelete(String fileId) {
+        FileSaasScope scope = saasAccessService.requireForFile("DELETE", fileId, "");
         FileRecordVO recordVO = requireRecord(fileId);
+        saasAccessService.requireFileData("FILE.DELETE", scope, recordVO);
         if (FileDomainConstant.LogicDelete.YES.equals(recordVO.getIsDelete())) {
             return;
         }
         String now = DateUtil.nowTime();
         String expireTime = format(LocalDateTime.now(ZoneId.systemDefault()).plusDays(fileDomainProperties.getRetentionDays()));
-        if (fileRecordDao.logicalDelete(fileId, recordVO.getTenantId(), recordVO.getOrgId(),
+        if (fileRecordDao.logicalDelete(fileId, scope.tenantRefId(), scope.appRefId(),
+                recordVO.getOwnerUserRefId(), recordVO.getOrgRefId(),
                 FileDomainConstant.FileStatus.DELETED, now, expireTime,
                 FileDomainConstant.LogicDelete.YES, now, currentOperator()) != 1) {
             throw new SecurityException("Scoped file deletion conflicted");
@@ -445,7 +621,9 @@ public class FileDomainServiceImpl implements IFileDomainService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void restore(String fileId) {
+        FileSaasScope scope = saasAccessService.requireForFile("POST", fileId, "/restore");
         FileRecordVO recordVO = requireRecord(fileId);
+        saasAccessService.requireFileData("FILE.RESTORE", scope, recordVO);
         if (!FileDomainConstant.LogicDelete.YES.equals(recordVO.getIsDelete())) {
             return;
         }
@@ -454,7 +632,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
             throw new IllegalArgumentException("file restore expired");
         }
         String now = DateUtil.nowTime();
-        if (fileRecordDao.restoreByFileId(fileId, recordVO.getTenantId(), recordVO.getOrgId(),
+        if (fileRecordDao.restoreByFileId(fileId, scope.tenantRefId(), scope.appRefId(),
+                recordVO.getOwnerUserRefId(), recordVO.getOrgRefId(),
                 FileDomainConstant.FileStatus.ACTIVE,
                 FileDomainConstant.LogicDelete.NO, now, currentOperator()) != 1) {
             throw new SecurityException("Scoped file restore conflicted");
@@ -497,7 +676,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
             } catch (RuntimeException ex) {
                 log.error("abort expired upload session failed, sessionId={}", sessionVO.getSessionId(), ex);
             }
-            fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.EXPIRED,
+            fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(),
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getMemberRefId(), FileDomainConstant.SessionStatus.EXPIRED,
                     DateUtil.nowTime(), FileDomainConstant.SYSTEM_OPERATOR);
         }
     }
@@ -532,6 +712,7 @@ public class FileDomainServiceImpl implements IFileDomainService {
     private FileObjectDO buildFileObject(FileUploadCheckDTO data, String objectId, UploadResult uploadResult,
                                          String originFileName) {
         FileObjectDO objectDO = new FileObjectDO();
+        objectDO.setId(UniqueIdFacade.nextId());
         objectDO.setObjectId(objectId);
         objectDO.setHashSha256(data.getSha256());
         objectDO.setHashMd5(data.getMd5());
@@ -548,11 +729,20 @@ public class FileDomainServiceImpl implements IFileDomainService {
         objectDO.setLastAccessTime(DateUtil.nowTime());
         objectDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
         objectDO.fillCreateTime();
+        FileSaasScope scope = saasAccessService.requireContext();
+        objectDO.setTenantRefId(scope.tenantRefId());
+        objectDO.setAppRefId(scope.appRefId());
+        objectDO.setOwnerUserRefId(scope.userRefId());
+        objectDO.setOrgRefId(data.getOrgRefId());
+        objectDO.setTenantId(scope.tenantId());
+        objectDO.setOrgId(null);
+        objectDO.setCreatorId(scope.memberRefId());
         return objectDO;
     }
 
     private FileRecordDO buildFileRecord(FileUploadCheckDTO data, String objectId, Long fileSize) {
         FileRecordDO recordDO = new FileRecordDO();
+        recordDO.setId(UniqueIdFacade.nextId());
         recordDO.setFileId(UniqueIdFacade.nextId());
         recordDO.setObjectId(objectId);
         recordDO.setBizType(data.getBizType());
@@ -567,11 +757,20 @@ public class FileDomainServiceImpl implements IFileDomainService {
         recordDO.setRemark(data.getRemark());
         recordDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
         recordDO.fillCreateTime();
+        FileSaasScope scope = saasAccessService.requireContext();
+        recordDO.setTenantRefId(scope.tenantRefId());
+        recordDO.setAppRefId(scope.appRefId());
+        recordDO.setOwnerUserRefId(scope.userRefId());
+        recordDO.setOrgRefId(data.getOrgRefId());
+        recordDO.setTenantId(scope.tenantId());
+        recordDO.setOrgId(null);
+        recordDO.setCreatorId(scope.memberRefId());
         return recordDO;
     }
 
     private FileRecordDO buildFileRecord(FileUploadSessionVO sessionVO, String objectId, Long fileSize) {
         FileRecordDO recordDO = new FileRecordDO();
+        recordDO.setId(UniqueIdFacade.nextId());
         recordDO.setFileId(UniqueIdFacade.nextId());
         recordDO.setObjectId(objectId);
         recordDO.setBizType(sessionVO.getBizType());
@@ -585,7 +784,14 @@ public class FileDomainServiceImpl implements IFileDomainService {
         recordDO.setFileStatus(FileDomainConstant.FileStatus.ACTIVE);
         recordDO.setRemark(sessionVO.getRemark());
         recordDO.setIsDelete(FileDomainConstant.LogicDelete.NO);
-        recordDO.fillCreateTime(sessionVO.getTenantId(), sessionVO.getOrgId());
+        recordDO.fillCreateTime();
+        recordDO.setTenantRefId(sessionVO.getTenantRefId());
+        recordDO.setAppRefId(sessionVO.getAppRefId());
+        recordDO.setOwnerUserRefId(sessionVO.getOwnerUserRefId());
+        recordDO.setOrgRefId(sessionVO.getOrgRefId());
+        recordDO.setTenantId(sessionVO.getTenantId());
+        recordDO.setOrgId(sessionVO.getOrgId());
+        recordDO.setCreatorId(sessionVO.getMemberRefId());
         return recordDO;
     }
 
@@ -608,14 +814,13 @@ public class FileDomainServiceImpl implements IFileDomainService {
     }
 
     private FileRecordVO requireRecord(String fileId) {
-        FileRecordVO recordVO = fileRecordDao.selectDetailByFileId(fileId);
+        FileSaasScope scope = saasAccessService.requireContext();
+        FileRecordVO recordVO = fileRecordDao.selectScopedDetail(
+                fileId, scope.tenantRefId(), scope.appRefId());
         if (recordVO == null) {
             throw new IllegalArgumentException("file not found");
         }
-        // 在返回文件详情、签名下载地址及变更记录前核验当前业务上下文，
-        // 不能只靠 pageList 的租户条件防止知道 fileId 的其他租户直接访问。
-        FileRecordScopeGuard.requireSameScope(
-                requireTenantId(), requireOrgId(), recordVO.getTenantId(), recordVO.getOrgId());
+        // SQL 强制物理租户、应用、所有者一致，未迁移的旧记录默认为不可见。
         return recordVO;
     }
 
@@ -629,13 +834,13 @@ public class FileDomainServiceImpl implements IFileDomainService {
     }
 
     private FileUploadSessionVO requireSession(String sessionId) {
-        FileUploadSessionVO sessionVO = fileUploadSessionDao.selectById(sessionId);
+        FileSaasScope scope = saasAccessService.requireContext();
+        FileUploadSessionVO sessionVO = fileUploadSessionDao.selectScopedSession(
+                sessionId, scope.tenantRefId(), scope.appRefId(), scope.memberRefId());
         if (sessionVO == null) {
             throw new IllegalArgumentException("upload session not found");
         }
-        // 仅 ID 匹配不足以允许跨租户/机构的上传分片续传或提交。
-        FileRecordScopeGuard.requireSameScope(
-                requireTenantId(), requireOrgId(), sessionVO.getTenantId(), sessionVO.getOrgId());
+        // 仅当前受信租户应用内原始上传成员可以续传和提交。
         return sessionVO;
     }
 
@@ -736,7 +941,8 @@ public class FileDomainServiceImpl implements IFileDomainService {
                 throw new IllegalStateException("uploaded object size mismatch");
             }
         } catch (IOException | NoSuchAlgorithmException ex) {
-            fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(), FileDomainConstant.SessionStatus.FAILED,
+            fileUploadSessionDao.updateSessionStatus(sessionVO.getSessionId(),
+                sessionVO.getTenantRefId(), sessionVO.getAppRefId(), sessionVO.getMemberRefId(), FileDomainConstant.SessionStatus.FAILED,
                     DateUtil.nowTime(), currentOperator());
             throw new IllegalStateException("multipart upload verification failed", ex);
         }
@@ -836,24 +1042,41 @@ public class FileDomainServiceImpl implements IFileDomainService {
     }
 
     private String currentOperator() {
-        UserContext context = SecurityContextHolder.get();
-        if (context == null || StringUtil.isBlank(context.getUserId())) {
-            return FileDomainConstant.SYSTEM_OPERATOR;
+        return saasAccessService.currentOperator();
+    }
+
+    /**
+     * 接受有限数量且无重复的永久文件业务标识；拒绝非法路径片段与批量超限。
+     */
+    private List<String> requireBatchFileIds(FileBatchActionDTO data) {
+        if (data == null || data.getFileIds() == null || data.getFileIds().isEmpty()
+                || data.getFileIds().size() > 50) {
+            throw new IllegalArgumentException("File batch size must be between 1 and 50");
         }
-        return context.getUserId();
+        List<String> ids = data.getFileIds();
+        if (ids.stream().anyMatch(id -> id == null || !id.matches("[A-Za-z0-9-]{1,64}"))
+                || new HashSet<>(ids).size() != ids.size()) {
+            throw new IllegalArgumentException("File batch identifiers must be valid and unique");
+        }
+        return List.copyOf(ids);
     }
 
     private void fillCurrentTenantOrg(FileQueryQO qo) {
-        qo.setTenantId(requireTenantId());
-        qo.setOrgId(requireOrgId());
-    }
-
-    private String requireTenantId() {
-        return AuditContext.requireTenantId();
-    }
-
-    private String requireOrgId() {
-        return AuditContext.requireOrgId();
+        if (qo == null) {
+            throw new IllegalArgumentException("File query is required");
+        }
+        FileSaasScope scope = saasAccessService.requireCurrent("POST:/api/file/internal/pageList");
+        SaasIamFileQueryScopeVO plan = saasAccessService.requireListQueryScope(scope);
+        qo.setTenantAllVisible(plan.isTenantAll());
+        qo.setSelfVisible(plan.isSelf());
+        qo.setOrganizationRefIds(plan.getOrganizationRefIds());
+        qo.setSelfOrganizationRefIds(plan.getSelfOrganizationRefIds());
+        qo.setIsDelete(0);
+        qo.setTenantRefId(scope.tenantRefId());
+        qo.setAppRefId(scope.appRefId());
+        qo.setOwnerUserRefId(scope.userRefId());
+        qo.setTenantId(scope.tenantId());
+        qo.setOrgId(null);
     }
 
     private String format(LocalDateTime localDateTime) {

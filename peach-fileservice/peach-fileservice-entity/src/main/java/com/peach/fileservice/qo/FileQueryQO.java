@@ -1,13 +1,16 @@
 package com.peach.fileservice.qo;
 
-import java.io.Serial;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.peach.common.PeachEntity;
+
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 文件查询参数。
@@ -31,6 +34,34 @@ public class FileQueryQO extends PeachEntity implements Serializable {
 
     @Schema(description = "租户ID")
     private String tenantId;
+
+    @JsonIgnore
+    @Schema(description = "仅由服务端设置的物理租户ID")
+    private String tenantRefId;
+
+    @JsonIgnore
+    @Schema(description = "仅由服务端设置的物理应用ID")
+    private String appRefId;
+
+    @JsonIgnore
+    @Schema(description = "仅由服务端设置的文件所有者物理ID")
+    private String ownerUserRefId;
+
+    @JsonIgnore
+    @Schema(description = "服务端授权的全租户可见范围")
+    private boolean tenantAllVisible;
+
+    @JsonIgnore
+    @Schema(description = "服务端授权的本人可见范围")
+    private boolean selfVisible;
+
+    @JsonIgnore
+    @Schema(description = "服务端授权的跨所有者有效机构范围")
+    private List<String> organizationRefIds = List.of();
+
+    @JsonIgnore
+    @Schema(description = "服务端授权的本人有效机构范围")
+    private List<String> selfOrganizationRefIds = List.of();
 
     @Schema(description = "机构ID")
     private String orgId;

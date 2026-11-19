@@ -1,19 +1,26 @@
 package com.peach.auth.rest.external;
 
 import cn.dev33.satoken.same.SaSameUtil;
+
 import com.peach.auth.constant.SaasIamHeaders;
-import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamBatchLookupDTO;
+import com.peach.auth.dto.SaasIamFileFieldReadDTO;
+import com.peach.auth.dto.SaasIamFileFieldWriteDTO;
+import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
+import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.service.SaasIamRemoteAuthorizationService;
 import com.peach.auth.service.SaasIamRemoteDirectoryService;
+import com.peach.auth.service.SaasIamRemoteFileDataService;
 import com.peach.auth.vo.SaasIamContextVO;
-import com.peach.auth.vo.SaasIamPermissionDecisionVO;
+import com.peach.auth.vo.SaasIamFileQueryScopeVO;
 import com.peach.auth.vo.SaasIamMemberBriefVO;
 import com.peach.auth.vo.SaasIamOrganizationBriefVO;
+import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 
-import java.util.List;
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Indexed;
@@ -22,6 +29,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 跨微服务 IAM 受信入口，不供浏览器直连。
@@ -44,6 +54,8 @@ public class SaasIamExternalController {
 
     private final SaasIamRemoteDirectoryService directoryService;
 
+    private final SaasIamRemoteFileDataService fileDataService;
+
     /**
      * 实时判断 API 入口动作权限，不代替业务对象行/字段判定。
      */
@@ -57,6 +69,83 @@ public class SaasIamExternalController {
                     subjectToken, request.getPermissionCode()));
         } catch (RuntimeException exception) {
             // 绝不返回鉴权失败详情、用户 Token 或权限目录存在性。
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new SaasIamPermissionDecisionVO(false));
+        }
+    }
+
+    /**
+     * 受保护文件对象的行级授权，绝不信任请求头中的租户/机构自报信息。
+     */
+    @PostMapping("/file-object/check")
+    public ResponseEntity<SaasIamPermissionDecisionVO> checkFileObject(
+            @RequestHeader(value = SaasIamHeaders.SUBJECT_TOKEN, required = false) String subjectToken,
+            @Valid @RequestBody SaasIamFileObjectCheckDTO request) {
+        try {
+            SaSameUtil.checkCurrentRequestToken();
+            return ResponseEntity.ok(fileDataService.decide(subjectToken, request));
+        } catch (RuntimeException exception) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new SaasIamPermissionDecisionVO(false));
+        }
+    }
+
+    /**
+     * 文件服务仅提交后端从数据库读取的白名单字段，响应始终受字段策略约束。
+     */
+    @PostMapping("/file-object/read-fields")
+    public ResponseEntity<Map<String, Object>> projectFileFields(
+            @RequestHeader(value = SaasIamHeaders.SUBJECT_TOKEN, required = false) String subjectToken,
+            @Valid @RequestBody SaasIamFileFieldReadDTO request) {
+        try {
+            SaSameUtil.checkCurrentRequestToken();
+            Map<String, Object> visible = fileDataService.projectFields(subjectToken, request);
+            return ResponseEntity.ok(visible);
+        } catch (RuntimeException exception) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of());
+        }
+    }
+
+    /**
+     * 受信文件服务的有界批量字段投影，任何记录无权即整体默认拒绝。
+     */
+    @PostMapping("/file-object/read-fields-batch")
+    public ResponseEntity<List<Map<String, Object>>> projectFileFieldsBatch(
+            @RequestHeader(value = SaasIamHeaders.SUBJECT_TOKEN, required = false) String subjectToken,
+            @RequestBody List<@Valid SaasIamFileFieldReadDTO> requests) {
+        try {
+            SaSameUtil.checkCurrentRequestToken();
+            return ResponseEntity.ok(fileDataService.projectBatchFields(subjectToken, requests));
+        } catch (RuntimeException exception) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(List.of());
+        }
+    }
+
+    /**
+     * 受信文件查询范围：先校验服务身份、最终用户成员/版本，再按同绑定求交。
+     */
+    @PostMapping("/file-object/query-scope")
+    public ResponseEntity<SaasIamFileQueryScopeVO> fileQueryScope(
+            @RequestHeader(value = SaasIamHeaders.SUBJECT_TOKEN, required = false) String subjectToken) {
+        try {
+            SaSameUtil.checkCurrentRequestToken();
+            return ResponseEntity.ok(fileDataService.planListQuery(subjectToken));
+        } catch (RuntimeException exception) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    /**
+     * 文件元数据字段写入验权：Same-Token 和最终用户 Token 版本校验均为必需。
+     */
+    @PostMapping("/file-object/write-fields")
+    public ResponseEntity<SaasIamPermissionDecisionVO> checkFileFieldWrites(
+            @RequestHeader(value = SaasIamHeaders.SUBJECT_TOKEN, required = false) String subjectToken,
+            @Valid @RequestBody SaasIamFileFieldWriteDTO request) {
+        try {
+            SaSameUtil.checkCurrentRequestToken();
+            return ResponseEntity.ok(fileDataService.checkWriteFields(subjectToken, request));
+        } catch (RuntimeException exception) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new SaasIamPermissionDecisionVO(false));
         }

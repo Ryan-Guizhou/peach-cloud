@@ -175,6 +175,162 @@ VALUES
      'POST:/api/auth/changePassword', '已认证用户修改密码API', 'API', 'SYSTEM',
      1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
 
+-- #232: 开发环境新增文件领域精确系统 API 资源目录；不自动授予任何管理员。
+INSERT IGNORE INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID, PERMISSION_CODE,
+     PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE, DELEGABLE, STATUS,
+     IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_LIST', NULL, NULL, 'POST:/api/file/internal/pageList',
+     '查询文件列表', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_CHECK', NULL, NULL, 'POST:/api/file/internal/upload/check',
+     '文件秒传预检', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_UPLOAD', NULL, NULL, 'POST:/api/file/internal/upload',
+     '上传文件', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_VIEW', NULL, NULL, 'GET:/api/file/internal/{fileId}',
+     '读取文件详情', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_URL', NULL, NULL, 'GET:/api/file/internal/{fileId}/url',
+     '签名下载文件', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DELETE', NULL, NULL, 'DELETE:/api/file/internal/{fileId}',
+     '逻辑删除文件', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_RESTORE', NULL, NULL, 'POST:/api/file/internal/{fileId}/restore',
+     '恢复文件', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_MP_INIT', NULL, NULL, 'POST:/api/file/internal/multipart/init',
+     '分片初始化', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_MP_PART', NULL, NULL, 'POST:/api/file/internal/multipart/part-url',
+     '获取分片预签名URL', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_MP_DONE', NULL, NULL, 'POST:/api/file/internal/multipart/complete',
+     '完成分片上传', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_MP_ABORT', NULL, NULL, 'POST:/api/file/internal/multipart/abort/{sessionId}',
+     '中止分片上传', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_EXT_UPLOAD', NULL, NULL, 'POST:/api/file/external/upload',
+     '受信服务外部上传', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_EXT_READ', NULL, NULL, 'GET:/api/file/external/{fileId}',
+     '受信服务外部读取', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_EXT_URL', NULL, NULL, 'GET:/api/file/external/{fileId}/url',
+     '受信服务外部签名下载', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_EXT_DELETE', NULL, NULL, 'DELETE:/api/file/external/{fileId}',
+     '受信服务外部删除', 'API', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID);
+
+-- #232: 开发环境文件对象 DATA 语义目录，需同一角色绑定配置行级策略后才可生效。
+INSERT IGNORE INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID, PERMISSION_CODE,
+     PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE, DELEGABLE, STATUS,
+     IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_LIST', NULL, NULL, 'FILE.LIST',
+     '文件列表行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_READ', NULL, NULL, 'FILE.READ',
+     '文件对象读取行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_DOWNLOAD', NULL, NULL, 'FILE.DOWNLOAD',
+     '文件签名下载行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_UPLOAD', NULL, NULL, 'FILE.UPLOAD',
+     '文件上传行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_DELETE', NULL, NULL, 'FILE.DELETE',
+     '文件逻辑删除行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_RESTORE', NULL, NULL, 'FILE.RESTORE',
+     '文件恢复行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, @NOW, @ADMIN_USER_ID);
+
+-- #232: 文件读取字段目录（无默认 ALLOW 授权，缺少字段策略则拒绝）。
+INSERT IGNORE INTO PEACH_FIELD_DEFINITION
+    (ID, FIELD_ID, TENANT_REF_ID, APP_REF_ID, OWNER_TYPE, RESOURCE_CODE,
+     FIELD_CODE, MASK_STRATEGY, DELEGABLE, STATUS, IS_DELETE, VERSION,
+     CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILEID', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileId', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILENAME', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileName', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_DISPLAYNAME', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'displayName', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_CONTENTTYPE', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'contentType', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILESIZE', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileSize', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILEEXT', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileExt', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_FILESTATUS', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'fileStatus', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_BIZTYPE', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'bizType', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_BIZID', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'bizId', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_BIZTAG', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'bizTag', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_REMARK', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'remark', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'FLD_FILE_CREATEDTIME', NULL, NULL,
+     'SYSTEM', 'FILE_RECORD', 'createdTime', 'FULL', 1,
+     'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
+
+-- #232：受控文件元数据 PATCH 与同角色绑定 FILE.EDIT 行级授权目录，不自动授予任何角色。
+INSERT IGNORE INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID, PERMISSION_CODE,
+     PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE, DELEGABLE, STATUS,
+     IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_METADATA_PATCH', NULL, NULL,
+     'PATCH:/api/file/internal/{fileId}/metadata', '修改受控文件元数据 API',
+     'API', 'SYSTEM', 1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_EDIT', NULL, NULL,
+     'FILE.EDIT', '受控文件元数据行级写权限',
+     'DATA', 'SYSTEM', 1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
+
+-- #232：批量文件操作的独立系统 API 定义；逐文件权限和 DATA 行级授权另行校验。
+INSERT IGNORE INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID, PERMISSION_CODE,
+     PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE, DELEGABLE, STATUS,
+     IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_BATCH_DELETE', NULL, NULL,
+     'POST:/api/file/internal/batch/delete', '批量删除文件入口',
+     'API', 'SYSTEM', 1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_BATCH_RESTORE', NULL, NULL,
+     'POST:/api/file/internal/batch/restore', '批量恢复文件入口',
+     'API', 'SYSTEM', 1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
+
+-- #232：开发文件元数据导出精确 API 权限，仅注册 SYSTEM 定义不自动授予。
+INSERT IGNORE INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID, PERMISSION_CODE,
+     PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE, DELEGABLE, STATUS,
+     IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_METADATA_EXPORT', NULL, NULL,
+     'POST:/api/file/internal/export', '导出受控文件元数据',
+     'API', 'SYSTEM', 1, 'ACTIVE', 0, 0, @NOW, @ADMIN_USER_ID);
+
 INSERT IGNORE INTO PEACH_ROLE
     (ID, ROLE_ID, TENANT_ID, ORG_ID, ROLE_CODE,
      ROLE_NAME, ROLE_DESC, ROLE_SCOPE, ROLE_TYPE,

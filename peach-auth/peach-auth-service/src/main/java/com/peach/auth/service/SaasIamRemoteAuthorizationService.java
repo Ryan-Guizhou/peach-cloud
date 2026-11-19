@@ -1,22 +1,26 @@
 package com.peach.auth.service;
 
+import com.peach.auth.dao.OrganizationHierarchyDao;
 import com.peach.auth.dao.ScopedRoleGrantDao;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
 import com.peach.auth.vo.RoleScopeGrantVO;
-import com.peach.auth.vo.SaasIamPermissionDecisionVO;
 import com.peach.auth.vo.SaasIamContextVO;
+import com.peach.auth.vo.SaasIamPermissionDecisionVO;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
 /**
  * 受信服务间 SaaS 权限事实查询：先重新验证 Token 与成员版本，再查当前动作。
  *
- * <p>从不接受 HTTP 请求中的 tenant/member/app/year 作为鉴权事实；
+ * <p>从不接受 HTTP 请求中的 tenant/member/app 作为鉴权事实；
  * 所有身份仅由原始 Token 中的单一 SaaS 快照及实时数据库校验得到。
  * 此方法仅检查 API 入口动作，任何行/字段/文件操作仍需独立数据权限。</p>
  *
@@ -43,6 +47,8 @@ public class SaasIamRemoteAuthorizationService {
     private final TenantSessionService sessionService;
 
     private final ScopedRoleGrantDao grantDao;
+
+    private final OrganizationHierarchyDao organizationHierarchyDao;
 
     /**
      * 当前持有者是否存在由数据库确认的 API 类动作权限。
@@ -91,9 +97,21 @@ public class SaasIamRemoteAuthorizationService {
         if (CollectionUtils.isEmpty(grants)) {
             return new SaasIamPermissionDecisionVO(false);
         }
-        return new SaasIamPermissionDecisionVO(true,
-                new SaasIamContextVO(context.userRefId(), context.tenantRefId(),
-                        context.memberRefId(), context.appRefId(), context.memberVersion(), context.authVersion()));
+        return new SaasIamPermissionDecisionVO(true, trustedContext(context));
+    }
+
+    /**
+     * 仅 Auth 访问本地物理租户表。文件服务通过受信 Feign 获得业务编号，不直连 Auth DB。
+     */
+    private SaasIamContextVO trustedContext(TenantSessionContext context) {
+        String businessId = organizationHierarchyDao.findEnabledTenantBusinessId(context.tenantRefId());
+        if (!StringUtils.hasText(businessId)) {
+            throw new SecurityException("Active business tenant mapping is required");
+        }
+        SaasIamContextVO snapshot = new SaasIamContextVO(context.userRefId(), context.tenantRefId(),
+                context.memberRefId(), context.appRefId(), context.memberVersion(), context.authVersion());
+        snapshot.setTenantBusinessId(businessId);
+        return snapshot;
     }
 
     private boolean isProtectedPlatformRoute(String requestCode) {
@@ -115,8 +133,7 @@ public class SaasIamRemoteAuthorizationService {
     @Transactional(readOnly = true)
     public SaasIamContextVO requireContext(String subjectToken) {
         TenantSessionContext context = sessionService.requireForToken(subjectToken);
-        return new SaasIamContextVO(context.userRefId(), context.tenantRefId(),
-                context.memberRefId(), context.appRefId(), context.memberVersion(), context.authVersion());
+        return trustedContext(context);
     }
 
 }
