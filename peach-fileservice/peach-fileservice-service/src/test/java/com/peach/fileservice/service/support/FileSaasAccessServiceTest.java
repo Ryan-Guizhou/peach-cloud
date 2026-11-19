@@ -5,6 +5,7 @@ import com.peach.auth.dto.SaasIamPermissionCheckDTO;
 import com.peach.auth.dto.SaasIamFileObjectCheckDTO;
 import com.peach.auth.dto.SaasIamFileFieldReadDTO;
 import java.util.Map;
+import java.util.List;
 import com.peach.fileservice.vo.FileRecordVO;
 import com.peach.auth.openfeign.SaasIamFeignClient;
 import com.peach.auth.vo.SaasIamContextVO;
@@ -21,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -193,6 +195,44 @@ class FileSaasAccessServiceTest {
         row.setAppRefId(scope.appRefId());
         row.setOwnerUserRefId(scope.userRefId());
         return row;
+    }
+
+    @Test
+    void shouldBatchProjectMultipleFilesWithOneTrustedFeignRequest() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        FileRecordVO first = record(scope);
+        FileRecordVO second = record(scope);
+        second.setId("00000000000000000000000000000002");
+        second.setFileId("FILE0002");
+        when(iamFeignClient.projectFileFieldsBatch(eq("subject-token"),
+                anyList())).thenReturn(List.of(
+                    Map.of("fileId", "FILE0001", "fileName", "first.pdf"),
+                    Map.of("fileId", "FILE0002", "fileName", "second.pdf")));
+
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
+            List<FileRecordVO> projected = service.projectVisiblePage(scope, List.of(first, second));
+            assertThat(projected).hasSize(2);
+            assertThat(projected.get(0).getFileName()).isEqualTo("first.pdf");
+            assertThat(projected.get(1).getFileName()).isEqualTo("second.pdf");
+        }
+        verify(iamFeignClient).projectFileFieldsBatch(eq("subject-token"), anyList());
+    }
+
+    @Test
+    void shouldFailClosedOnPartialBatchResults() {
+        FileSaasScope scope = new FileSaasScope("tenant", "app", "user", "member", "TENANT_00000001");
+        FileRecordVO first = record(scope);
+        FileRecordVO second = record(scope);
+        second.setId("00000000000000000000000000000002");
+        second.setFileId("FILE0002");
+        when(iamFeignClient.projectFileFieldsBatch(eq("subject-token"),
+                anyList())).thenReturn(List.of(Map.of("fileId", "FILE0001")));
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getTokenValue).thenReturn("subject-token");
+            assertThatThrownBy(() -> service.projectVisiblePage(scope, List.of(first, second)))
+                    .isInstanceOf(SecurityException.class);
+        }
     }
 
     @Test

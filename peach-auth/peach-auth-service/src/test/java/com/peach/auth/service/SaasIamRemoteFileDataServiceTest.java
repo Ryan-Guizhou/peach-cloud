@@ -19,6 +19,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 /**
@@ -146,6 +148,52 @@ class SaasIamRemoteFileDataServiceTest {
         field.setReadEffect(readEffect);
         field.setWriteEffect("DENY");
         return field;
+    }
+
+    @Test
+    void shouldReuseSingleBindingLookupForWholeBatchButRevalidateEachFile() {
+        SaasIamFileFieldReadDTO first = new SaasIamFileFieldReadDTO();
+        first.setObject(descriptor("FILE.LIST", "tenant", "app", "user"));
+        first.setFields(Map.of("fileId", "FILE0001", "fileName", "secret-a.pdf"));
+        SaasIamFileFieldReadDTO second = new SaasIamFileFieldReadDTO();
+        second.setObject(descriptor("FILE.LIST", "tenant", "app", "user"));
+        second.getObject().setObjectRefId("00000000000000000000000000000002");
+        second.setFields(Map.of("fileId", "FILE0002", "fileName", "secret-b.pdf"));
+        when(sessionService.requireForToken("subject")).thenReturn(principal());
+        when(authorizationDao.selectDataGrants("tenant", "member", "app", "FILE.LIST"))
+                .thenReturn(List.of(grant("TENANT", "SELF")));
+        when(authorizationDao.selectFieldRules("tenant", "member", "app",
+                "FILE.LIST", "FILE_RECORD", List.of("binding")))
+                .thenReturn(List.of(field("fileId", "ALLOW"), field("fileName", "MASK")));
+
+        List<Map<String, Object>> visible = service.projectBatchFields(
+                "subject", List.of(first, second));
+
+        assertThat(visible).hasSize(2);
+        assertThat(visible.get(0)).containsEntry("fileId", "FILE0001")
+                .containsEntry("fileName", "****");
+        assertThat(visible.get(1)).containsEntry("fileId", "FILE0002")
+                .containsEntry("fileName", "****");
+        verify(authorizationDao, times(1))
+                .selectDataGrants("tenant", "member", "app", "FILE.LIST");
+        verify(authorizationDao, times(1))
+                .selectFieldRules("tenant", "member", "app",
+                        "FILE.LIST", "FILE_RECORD", List.of("binding"));
+    }
+
+    @Test
+    void shouldRejectBatchWithForeignTenantRatherThanReturnPartialResults() {
+        SaasIamFileFieldReadDTO first = new SaasIamFileFieldReadDTO();
+        first.setObject(descriptor("FILE.LIST", "tenant", "app", "user"));
+        first.setFields(Map.of("fileId", "FILE0001"));
+        SaasIamFileFieldReadDTO second = new SaasIamFileFieldReadDTO();
+        second.setObject(descriptor("FILE.LIST", "foreign", "app", "user"));
+        second.setFields(Map.of("fileId", "FILE0002"));
+        when(sessionService.requireForToken("subject")).thenReturn(principal());
+        when(authorizationDao.selectDataGrants("tenant", "member", "app", "FILE.LIST"))
+                .thenReturn(List.of(grant("TENANT", "SELF")));
+
+        assertThat(service.projectBatchFields("subject", List.of(first, second))).isEmpty();
     }
 
     @Test
