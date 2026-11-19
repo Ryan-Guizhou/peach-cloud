@@ -201,3 +201,9 @@ Maven 命令只验证编译和打包，不替代真实 provider、分片直传�
 - 文件服务内部清理任务仅访问已拥有物理范围映射的到期数据，不伪造终端用户 Token；历史未映射记录不得直接清理。
 - 真实 MySQL、网关、Auth Feign Same-Token、Nacos/Redis、数据范围、字段遮盖、存储 provider 与迁移结果还需由 #211 验收。**本节仅描述代码进度，不代表 #232 已完成或可部署生产。**
 
+
+#### 文件对象行级策略（同一角色绑定）
+
+#232 的远程 IAM 接口 `/auth/external/iam/file-object/check` 要求业务服务通过独立 Same-Token 转交最终用户 Token、真实物理对象 ID 和数据库内 tenant/app/owner/org 权属。Auth 使用当前 Token 读取最新成员、角色、授权与密码版本，再对 `FILE.LIST`、`FILE.READ`、`FILE.DOWNLOAD`、`FILE.UPLOAD`、`FILE.DELETE`、`FILE.RESTORE` 对应的 `DATA` 系统语义和 `PEACH_ROLE_DATA_POLICY` 在**同一角色绑定**中求交。普通 API 许可不替代对象行级许可，没有完整行级策略时默认拒绝。文件服务还强制物理 tenant/app/owner SQL 限定，在此阶段只会收窄授权，不会因为 TENANT_ALL 放宽到其他所有者的数据。
+
+配置最小权限时，需由可信管理员经当前角色/策略维护流程单独创建、授权每一动作对应的 DATA 策略（例如 SELF），不能仅执行权限定义迁移，更不能为自动授权而直接写业务 MySQL。机构树和字段级读写脱敏、列表多绑定并集的完整 SQL 实现仍属 #232 待完成项。

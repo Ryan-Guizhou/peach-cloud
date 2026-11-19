@@ -116,3 +116,9 @@ The `FileRecordDao.logicalDelete` and `restoreByFileId` MyBatis SQL `WHERE` clau
 - Background cleanup is separate from user requests and only processes expired records with validated physical mapping; it does not fabricate user tokens or reclaim unmapped historical data.
 - Live MySQL, Gateway, Auth Feign Same-Token, Redis/Nacos, full row/field enforcement, provider URL behavior and historical migration still require #211 acceptance. **This section records implementation progress, not #232 completion or production readiness.**
 
+
+#### Same-role-binding file row policies
+
+The internal `/auth/external/iam/file-object/check` IAM endpoint requires a separate Same-Token service identity, the genuine end-user token and the file service's database-backed physical object, tenant, app, owner and organization IDs. Auth revalidates current membership, grant and password versions before intersecting a specific `DATA` action (`FILE.LIST`, `FILE.READ`, `FILE.DOWNLOAD`, `FILE.UPLOAD`, `FILE.DELETE` or `FILE.RESTORE`) with its `PEACH_ROLE_DATA_POLICY` in the **same role binding**. API permission alone cannot grant row access, and missing data policy denies by default. File SQL is still restricted to physical tenant/app/owner, so a broad TENANT_ALL policy cannot reveal another owner's file at this stage.
+
+An authorized administrator must separately grant each DATA permission and configure its row policy (for example SELF) via existing protected role/policy flows. Importing the directory alone grants nothing. Organization-tree/field read-write masking and complete multi-binding SQL list unions are still outstanding in #232.

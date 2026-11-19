@@ -54,5 +54,32 @@ VALUES
      '受信服务外部删除', 'API', 'SYSTEM', 1, 'ACTIVE',
      0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM');
 
+-- Independent DATA semantic permissions; no roles or row policies are granted.
+-- Within the same role, each permission MUST have a PEACH_ROLE_DATA_POLICY row;
+-- an API grant alone never unlocks the file object or field contents.
+INSERT INTO PEACH_PERMISSION_DEFINITION
+    (ID, PERMISSION_ID, TENANT_REF_ID, APP_REF_ID, PERMISSION_CODE,
+     PERMISSION_NAME, RESOURCE_TYPE, OWNER_TYPE, DELEGABLE, STATUS,
+     IS_DELETE, VERSION, CREATED_TIME, CREATOR_ID)
+VALUES
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_LIST', NULL, NULL, 'FILE.LIST',
+     '文件列表行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_READ', NULL, NULL, 'FILE.READ',
+     '文件对象读取行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_DOWNLOAD', NULL, NULL, 'FILE.DOWNLOAD',
+     '文件签名下载行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_UPLOAD', NULL, NULL, 'FILE.UPLOAD',
+     '文件上传行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_DELETE', NULL, NULL, 'FILE.DELETE',
+     '文件逻辑删除行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM'),
+    (REPLACE(UUID(), '-', ''), 'PERM_FILE_SAAS_DATA_RESTORE', NULL, NULL, 'FILE.RESTORE',
+     '文件恢复行级范围', 'DATA', 'SYSTEM', 1, 'ACTIVE',
+     0, 0, DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s'), 'SYSTEM');
+
 -- Auth still requires online Token + member/auth version and valid SYSTEM grants.
 -- Disable old wildcard file API permissions before enabling the guarded file endpoints.
