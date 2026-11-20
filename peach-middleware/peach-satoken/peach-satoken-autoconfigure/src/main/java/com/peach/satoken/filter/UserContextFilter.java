@@ -23,7 +23,7 @@ import java.util.List;
  * <p>该过滤器只作用于引入 {@code peach-satoken-starter} 的 Servlet 业务服务。公开端点直接放行；
  * 普通非公开端点必须先存在 Sa-Token 登录态，再按 loginId 从 Redis 用户上下文 Hash 中恢复
  * {@link UserContext}，并绑定到 {@link SecurityContextHolder} 供当前请求链路使用。
- * 对已由 Auth 专用过滤器验证 Same-Token 和数据库成员授权版本的 SaaS 角色请求，
+ * 对已由 Auth 专用过滤器验证 Same-Token 和数据库成员授权版本的 SaaS 管理请求，
  * 可通过 Servlet 内部属性跳过旧 Hash；其他请求绝不能从 HTTP 头设置该属性。</p>
  * <p>过滤器不会写入 Redis，也不会刷新用户上下文缓存。登录、切换租户/机构或用户资料变更后的缓存写入，
  * 必须由认证服务按 {@link UserContextSupport} 约定的字段完成。</p>
@@ -64,10 +64,15 @@ public class UserContextFilter extends OncePerRequestFilter {
 
         SecurityContextHolder.clear();
 
-        // SaaS 角色管理或切换上下文请求已由 Auth 前置过滤器完成 Same-Token 和数据库成员版本核验。
+        // SaaS 及全局目录管理请求已由 Auth 前置过滤器完成 Same-Token 和数据库成员版本核验。
         // 仅允许该请求的服务端内部属性绕开旧 USER_PROFILE Hash；不能从 HTTP 头传入。
         if (Boolean.TRUE.equals(request.getAttribute(VERIFIED_SAAS_AUTH_REQUEST))
                 && ("/auth/switchContext".equals(path) || "/auth/changePassword".equals(path)
+                        || "/auth/user".equals(path) || path.startsWith("/auth/user/")
+                        || "/auth/menu".equals(path) || path.startsWith("/auth/menu/")
+                        || "/auth/function".equals(path) || path.startsWith("/auth/function/")
+                        || "/auth/resource".equals(path) || path.startsWith("/auth/resource/")
+                        || "/auth/router".equals(path) || path.startsWith("/auth/router/")
                         || "/auth/organization".equals(path) || path.startsWith("/auth/organization/")
                         || "/auth/saas".equals(path) || path.startsWith("/auth/saas/"))) {
             try {

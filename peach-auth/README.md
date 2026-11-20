@@ -416,3 +416,7 @@ sequenceDiagram
 ### 旧全局用户管理隔离（#240）
 
 `/auth/user/*` 属于全局账号维护入口，不是租户成员管理。服务端先要求 Same-Token 服务身份、已登录的最终用户 SaaS Session 及实时租户/成员/应用版本；Controller 在用户列表、详情、新增、更新、删除前还会校验真实 `PLATFORM` 控制租户与不可委派的 `PLATFORM.TENANT.CREATE` SYSTEM 角色授权。普通租户管理员即使持有旧用户 API 菜单权限也不具备该全局操作权。历史业务用户接口不做跨租户自动映射；租户内成员及机构操作请使用受控 SaaS 端点。平台级受信角色的离线初始化与真实环境联调仍由 #211 追踪。
+
+### 旧全局系统目录的 PLATFORM 权限边界（#246）
+
+历史接口 `/auth/menu/*`、`/auth/function/*`、`/auth/resource/*` 和 `/auth/router/*` 保留管理端兼容 CRUD，但操作的是旧全局系统目录，**不是普通租户的 SaaS 角色/资源事实源**。Auth 直连时先经 Same-Token、有效用户 Token 与实时数据库租户/成员/应用及授权版本检查；每次列表、详情、增删改均由 `PlatformAdministrationAuthorizationService` 复核真实 PLATFORM 控制租户及不可委派 SYSTEM 管理员证据。非平台租户、旧 Token、服务身份缺失时安全拒绝。现阶段沿用现有 PLATFORM 管理员授权证明，未来若需要细分权限须单独提出 Issue。真实运行验收仍在 #211。

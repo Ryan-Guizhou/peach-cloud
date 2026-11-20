@@ -10,7 +10,7 @@ import com.peach.auth.dto.UserDTO;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.auth.qo.UserQO;
 import com.peach.auth.service.IUserService;
-import com.peach.auth.service.PlatformUserManagementAuthorizationService;
+import com.peach.auth.service.PlatformAdministrationAuthorizationService;
 import com.peach.auth.vo.UserVO;
 import com.peach.common.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,7 +46,7 @@ public class UserController {
 
     private final IUserService userService;
 
-    private final PlatformUserManagementAuthorizationService platformAuthorizationService;
+    private final PlatformAdministrationAuthorizationService platformAuthorizationService;
 
     @Operation(summary = "查询用户列表")
     @PostMapping("/pageList")

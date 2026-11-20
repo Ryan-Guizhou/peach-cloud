@@ -48,6 +48,10 @@ class SaasAuthSessionFilterTest {
         assertThat(filter.shouldNotFilter(request("POST", "/auth/organization/pageList"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/user/pageList"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/user/add"))).isFalse();
+        assertThat(filter.shouldNotFilter(request("POST", "/auth/menu/add"))).isFalse();
+        assertThat(filter.shouldNotFilter(request("DELETE", "/auth/function/delById"))).isFalse();
+        assertThat(filter.shouldNotFilter(request("POST", "/auth/resource/pageList"))).isFalse();
+        assertThat(filter.shouldNotFilter(request("POST", "/auth/router/update"))).isFalse();
         assertThat(filter.shouldNotFilter(request("GET", "/auth/user/selectById"))).isFalse();
         assertThat(filter.shouldNotFilter(request("PUT",
                 "/auth/saas/roles/1234567890abcdef1234567890abcdef/permissions"))).isFalse();
@@ -60,6 +64,13 @@ class SaasAuthSessionFilterTest {
     void shouldDenyEncodedOrTraversingRoleRoutesBeforeReadingAnyToken() throws Exception {
         assertThat(filter.isCanonicalSessionPath("/auth/saas/roles")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/user/pageList")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/menu/pageList")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/function/add")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/resource/delById")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/router/update")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/menu/%2e%2e/add")).isFalse();
+        assertThat(filter.isCanonicalSessionPath("/auth/function/../add")).isFalse();
+        assertThat(filter.isCanonicalSessionPath("/auth/router//add")).isFalse();
         assertThat(filter.isCanonicalSessionPath("/auth/user/%2e%2e/add")).isFalse();
         assertThat(filter.isCanonicalSessionPath("/auth/switchContext")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/changePassword")).isTrue();

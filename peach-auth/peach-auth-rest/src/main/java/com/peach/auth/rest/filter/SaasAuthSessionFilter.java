@@ -37,6 +37,10 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
 
     private static final String ROLE_ROOT = "/auth/saas/roles";
     private static final String GLOBAL_USER_ROOT = "/auth/user";
+    private static final String LEGACY_MENU_ROOT = "/auth/menu";
+    private static final String LEGACY_FUNCTION_ROOT = "/auth/function";
+    private static final String LEGACY_RESOURCE_ROOT = "/auth/resource";
+    private static final String LEGACY_ROUTER_ROOT = "/auth/router";
     private static final String TENANT_ROOT = "/auth/saas/tenants";
     private static final String LEGACY_ORGANIZATION_ROOT = "/auth/organization";
     private static final String PLATFORM_ROOT = "/auth/saas/platform";
@@ -86,6 +90,10 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
     private boolean isProtectedSaasSessionPath(String path) {
         return CHANGE_PASSWORD_PATH.equals(path) || SWITCH_CONTEXT_PATH.equals(path)
                 || GLOBAL_USER_ROOT.equals(path) || path.startsWith(GLOBAL_USER_ROOT + "/")
+                || LEGACY_MENU_ROOT.equals(path) || path.startsWith(LEGACY_MENU_ROOT + "/")
+                || LEGACY_FUNCTION_ROOT.equals(path) || path.startsWith(LEGACY_FUNCTION_ROOT + "/")
+                || LEGACY_RESOURCE_ROOT.equals(path) || path.startsWith(LEGACY_RESOURCE_ROOT + "/")
+                || LEGACY_ROUTER_ROOT.equals(path) || path.startsWith(LEGACY_ROUTER_ROOT + "/")
                 || ROLE_ROOT.equals(path) || path.startsWith(ROLE_ROOT + "/")
                 || TENANT_ROOT.equals(path) || path.startsWith(TENANT_ROOT + "/")
                 || LEGACY_ORGANIZATION_ROOT.equals(path)

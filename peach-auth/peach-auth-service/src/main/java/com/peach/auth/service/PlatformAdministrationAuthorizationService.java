@@ -9,9 +9,9 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 旧全局用户管理仅允许可信平台控制租户的受保护 SYSTEM 管理员使用。
+ * 旧全局账号及全局系统目录仅允许可信平台控制租户的受保护 SYSTEM 管理员使用。
  *
- * <p>该授权是全局用户数据的服务侧防线，不能用业务租户角色、请求参数或仅
+ * <p>该授权是全局系统数据的服务侧防线，不能用业务租户角色、请求参数或仅
  * API 菜单权限替代。沿用平台租户开通时的不可委派权限事实源；
  * 在单个事务中持有平台租户行锁并复核当前成员授权版本。</p>
  *
@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @RequiredArgsConstructor
-public class PlatformUserManagementAuthorizationService {
+public class PlatformAdministrationAuthorizationService {
 
     private final TenantSessionService tenantSessionService;
 

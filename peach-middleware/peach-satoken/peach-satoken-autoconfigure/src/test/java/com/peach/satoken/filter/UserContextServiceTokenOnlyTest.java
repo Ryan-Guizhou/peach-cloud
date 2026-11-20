@@ -94,6 +94,26 @@ class UserContextServiceTokenOnlyTest {
     }
 
     @Test
+    void shouldSkipLegacyHashForVerifiedPlatformGlobalAdministrationRoutes() throws Exception {
+        UserContextSupport support = mock(UserContextSupport.class);
+        UserContextFilter filter = new UserContextFilter(new UserContextProperties(), support);
+        for (String path : List.of(
+                "/auth/user/pageList", "/auth/menu/add", "/auth/function/delById",
+                "/auth/resource/pageList", "/auth/router/update")) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
+            request.setAttribute(UserContextFilter.VERIFIED_SAAS_AUTH_REQUEST, Boolean.TRUE);
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockFilterChain chain = new MockFilterChain();
+
+            filter.doFilter(request, response, chain);
+
+            assertThat(response.getStatus()).isEqualTo(200);
+            assertThat(chain.getRequest()).isNotNull();
+        }
+        verifyNoInteractions(support);
+    }
+
+    @Test
     void shouldRejectUntrustedServiceWithoutLoadingLegacyUserProfile() throws Exception {
         UserContextProperties properties = new UserContextProperties();
         properties.setServiceTokenOnlyEndpoints(List.of(

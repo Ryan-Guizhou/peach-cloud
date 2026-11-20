@@ -11,6 +11,7 @@ import com.peach.auth.enums.UserLogEnum;
 import com.peach.auth.qo.MenuQO;
 import com.peach.auth.service.IMenuService;
 import com.peach.auth.vo.MenuVO;
+import com.peach.auth.service.PlatformAdministrationAuthorizationService;
 import com.peach.common.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,9 +46,12 @@ public class MenuController {
 
     private final IMenuService menuService;
 
+    private final PlatformAdministrationAuthorizationService platformAuthorizationService;
+
     @PostMapping("/pageList")
     @Operation(summary = "分页查询菜单")
     public Response pageList(@RequestBody MenuQO menuQO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         PageInfo<MenuVO> pageInfo = menuService.pageList(menuQO);
         return Response.success(pageInfo);
     }
@@ -55,6 +59,7 @@ public class MenuController {
     @GetMapping("/selectById")
     @Operation(summary = "根据菜单ID查询菜单")
     public Response selectById(@NotBlank(message = "菜单ID不能为空") String menuId) {
+        platformAuthorizationService.requirePlatformAdministrator();
         MenuVO menuVO = menuService.selectById(menuId);
         return Response.success(menuVO);
     }
@@ -64,6 +69,7 @@ public class MenuController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增菜单信息,菜单信息:['+#p0+']'")
     public Response add(@Validated({PeachGroup.InsertGroup.class}) @RequestBody MenuDTO menuDTO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         menuService.add(menuDTO);
         return Response.success();
     }
@@ -73,6 +79,7 @@ public class MenuController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.DELETE,
             optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除菜单信息,菜单ID:['+#p0+']'")
     public Response delById(@NotBlank(message = "菜单ID不能为空") String menuId) {
+        platformAuthorizationService.requirePlatformAdministrator();
         menuService.delById(menuId);
         return Response.success();
     }
@@ -82,6 +89,7 @@ public class MenuController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'更新菜单信息,菜单信息:['+#p0+']'")
     public Response update(@Validated({PeachGroup.UpdateGroup.class}) @RequestBody MenuDTO menuDTO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         menuService.update(menuDTO);
         return Response.success();
     }
