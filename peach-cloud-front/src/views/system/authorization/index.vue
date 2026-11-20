@@ -50,6 +50,12 @@ let roleVersion = 0
 let memberVersion = 0
 let directoryVersion = 0
 
+const scopeKey = computed(() => [
+  authStore.session?.token,
+  authStore.session?.tenantRefId,
+  authStore.session?.appRefId,
+].join(':'))
+
 const missingPermissionRefs = computed(() => {
   const visible = new Set(catalog.permissions.map(item => item.id))
   return existingPermissionRefs.value.filter(id => !visible.has(id))
@@ -156,6 +162,7 @@ watch(selectedRoleId, async (id) => {
   const scope = scopeKey.value
   selectedPermissionRefs.value = []
   existingPermissionRefs.value = []
+  loadingRole.value = false
   if (!id || !canManage.value) {
     return
   }
@@ -183,6 +190,7 @@ watch(selectedMemberId, async (id) => {
   const scope = scopeKey.value
   bindings.value = []
   selectedBindingId.value = ''
+  loadingMember.value = false
   if (!id || !canManage.value) {
     return
   }
@@ -202,12 +210,6 @@ watch(selectedMemberId, async (id) => {
     }
   }
 })
-
-const scopeKey = computed(() => [
-  authStore.session?.token,
-  authStore.session?.tenantRefId,
-  authStore.session?.appRefId,
-].join(':'))
 
 watch(scopeKey, () => {
   roleVersion += 1
@@ -244,7 +246,9 @@ watch(canManage, (allowed) => {
   selectedRoleId.value = ''
   selectedMemberId.value = ''
   selectedPermissionRefs.value = []
+  existingPermissionRefs.value = []
   bindings.value = []
+  selectedBindingId.value = ''
   resetDirectories()
 })
 
@@ -265,10 +269,7 @@ async function saveRolePermissions() {
     // 服务端对整个租户递增 AUTH_VERSION（包括当前操作者）。
     // 不得继续用旧 Token 拉取授权快照，否则会误报写入失败并保留过期的页面状态。
     message.success('角色权限已提交，旧授权会话已失效，请重新登录')
-    websocketStore.disconnect()
-    authStore.clearSession()
-    clearDynamicRoutes()
-    await router.replace('/login')
+    void handlePolicyCommitted()
   } catch (error: unknown) {
     message.error(error instanceof Error ? error.message : '角色权限同步失败')
   } finally {
@@ -299,7 +300,7 @@ async function grant() {
       scopeRefId: selectedScope.value === 'TENANT' ? undefined : selectedOrgId.value,
     })
     message.success('当前成员角色授权成功，授权会话已失效，请重新登录')
-    await handlePolicyCommitted()
+    void handlePolicyCommitted()
   } catch (error: unknown) {
     message.error(error instanceof Error ? error.message : '角色授权失败')
   } finally {
