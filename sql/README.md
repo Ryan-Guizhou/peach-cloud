@@ -227,3 +227,36 @@ foreach ($name in $order) {
 - `PEACH_SAAS_UI_RESOURCE.sql`：仅使用 `PEACH_PERMISSION_DEFINITION.ID` 物理外键 `PERMISSION_REF_ID` 映射 MENU 的菜单/路由显示元数据。无权限绑定或无该映射时不会下发 UI 页面。
 - `ALL_TABLE_CREATE.sql` 已包含该单表脚本。部署新库必须先执行建表脚本/聚合 DDL，之后执行 `INIT.sql` 种子数据；既有库须单独执行经过审查的数据结构迁移，绝不由应用自动更改生产表。
 - `INIT.sql` 仅给开发环境 2026 年初始管理员授予工作台、角色管理、角色授权三项 MENU 权限，且只注册三条对应受控组件路线；不能把旧 `PEACH_MENU/PEACH_ROUTER` 的业务 ID join 到新角色来隐式授权。
+
+## SaaS IAM 路由建表契约与存量库迁移（#252）
+
+**当前代码修复：** `PEACH_ROUTER.FUNC_CODE` 已按 `RouterDO`、`RouterDao.xml` 和 `PEACH_FUNCTION.FUNC_CODE` 的实际契约补齐为 `VARCHAR(128) NULL`；新增列允许为空，保留已有路由的未绑定功能情况。新建数据库应直接使用更新后的 `PEACH_ROUTER.sql` 或 `ALL_TABLE_CREATE.sql`，避免单表和聚合 DDL 混用不同版本。
+
+在仓库根目录运行下列**静态**验证（无需连接 MySQL）：
+
+```bash
+node scripts/check-auth-id-soft-delete.mjs
+node scripts/verify-changes.mjs
+```
+
+门禁检查认证实体 `@Column`、基础 MyBatis Mapper `allColumn` 与单表/聚合 DDL 的物理列是否一致。它可以发现源代码与建表字段偏差，**不能替代**实际 MySQL、数据迁移和 Auth/网关联调。
+
+**现有数据库由 DBA 按环境执行，仓库不会自动升级生产表。** 先确认备份及当前结构，再在目标库执行只读预检：
+
+```sql
+SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'PEACH_ROUTER'
+  AND COLUMN_NAME = 'FUNC_CODE';
+```
+
+如果返回已有 `FUNC_CODE`，应先校验其类型是否兼容，**不能重复添加列**。仅在确认列不存在、完成备份并安排维护窗口后，手动执行一次：
+
+```sql
+ALTER TABLE PEACH_ROUTER
+    ADD COLUMN FUNC_CODE VARCHAR(128) NULL COMMENT '关联功能编码，与PEACH_FUNCTION.FUNC_CODE一致'
+    AFTER FILE_PATH;
+```
+
+新增后再次检查 `INFORMATION_SCHEMA.COLUMNS`，实际执行 `RouterDao.selectByQO`、`selectByFuncCodes` 与历史路由查询，结合真实租户/应用授权测试。对于旧行 `FUNC_CODE IS NULL`，**不得猜测或自动回填**功能编码；需要按经确认的历史业务对应关系单独迁移。回滚应基于实际备份和变更记录评估，不能在存在新数据时直接 `DROP COLUMN`。本轮尚未执行真实数据库验证，继续由 [#211](https://github.com/Ryan-Guizhou/peach-cloud/issues/211) 跟踪。

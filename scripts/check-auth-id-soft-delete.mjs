@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 const authTables = [
   'APPLICATION', 'AUTH_FUNCTION', 'AUTH_LOG', 'AUTH_PARTY',
@@ -67,4 +67,66 @@ for (const name of authTables) {
   assertCondition(aggregate.includes(`-- PEACH_${name}.sql`), `aggregated DDL missing PEACH_${name}`);
 }
 
-console.log('Authentication ID and soft-delete invariant checks passed.');
+
+// 列级一致性校验：既要覆盖实体映射，也要覆盖历史 Mapper XML，避免 Maven
+// 编译能通过但真实 MySQL 执行查询时出现 Unknown column。
+function tableColumns(sql, tableName, source) {
+  const statement = sql.match(new RegExp(
+    'CREATE\\s+TABLE\\s+' + tableName + '\\s*\\(([\\s\\S]*?)\\)\\s*(?:COMMENT|ENGINE|;)', 'i'));
+  assertCondition(statement, source + ': missing CREATE TABLE ' + tableName);
+  return new Set([...statement[1].matchAll(
+    /^\s*([A-Z][A-Z0-9_]*)\s+(?:VARCHAR|CHAR|TINYINT|SMALLINT|INT|BIGINT|DATETIME|TIMESTAMP|DATE|DECIMAL|TEXT|MEDIUMTEXT|LONGTEXT|BLOB|DOUBLE|FLOAT|JSON|BIT|BOOLEAN)\b/gm)]
+    .map(match => match[1]));
+}
+
+const tableCache = new Map();
+function authTableColumns(tableName) {
+  if (tableCache.has(tableName)) return tableCache.get(tableName);
+  assertCondition(/^PEACH_[A-Z][A-Z0-9_]*$/.test(tableName),
+    tableName + ': unsupported authentication table name');
+  const path = 'sql/' + tableName + '.sql';
+  const sourceColumns = tableColumns(read(path), tableName, path);
+  const aggregateColumns = tableColumns(aggregate, tableName, 'sql/ALL_TABLE_CREATE.sql');
+  const sourceOnly = [...sourceColumns].filter(column => !aggregateColumns.has(column));
+  const aggregateOnly = [...aggregateColumns].filter(column => !sourceColumns.has(column));
+  assertCondition(sourceOnly.length === 0 && aggregateOnly.length === 0,
+    tableName + ': source and aggregate DDL columns diverge: sourceOnly='
+      + sourceOnly.join(',') + ', aggregateOnly=' + aggregateOnly.join(','));
+  tableCache.set(tableName, sourceColumns);
+  return sourceColumns;
+}
+
+for (const name of authTables) {
+  authTableColumns('PEACH_' + name);
+}
+
+const entityDir = 'peach-auth/peach-auth-entity/src/main/java/com/peach/auth/entity/';
+for (const fileName of readdirSync(entityDir).filter(name => name.endsWith('DO.java'))) {
+  const path = entityDir + fileName;
+  const java = read(path);
+  const tableName = java.match(/@Table\s*\(\s*name\s*=\s*"([A-Z][A-Z0-9_]*)"/)?.[1];
+  if (!tableName) continue;
+  const columns = authTableColumns(tableName);
+  for (const match of java.matchAll(/@Column\s*\(\s*name\s*=\s*"([A-Z][A-Z0-9_]*)"/g)) {
+    assertCondition(columns.has(match[1]),
+      path + ': @Column(' + match[1] + ') is missing from ' + tableName);
+  }
+}
+
+for (const name of authMappers) {
+  const path = 'peach-auth/peach-auth-service/src/main/resources/com/peach/auth/dao/'
+    + name + 'Dao.xml';
+  const xml = read(path);
+  const tableName = 'PEACH_' + name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase();
+  const columns = authTableColumns(tableName);
+  const allColumn = xml.match(/<sql id="allColumn">([\s\S]*?)<\/sql>/);
+  assertCondition(allColumn, path + ': missing allColumn SQL fragment');
+  for (const column of allColumn[1].split(',').map(x => x.trim()).filter(Boolean)) {
+    assertCondition(/^[A-Z][A-Z0-9_]*$/.test(column),
+      path + ': unsupported allColumn token ' + column);
+    assertCondition(columns.has(column),
+      path + ': mapper field ' + column + ' is missing from ' + tableName);
+  }
+}
+
+console.log('Authentication ID, soft-delete and DDL/entity/Mapper column checks passed.');
