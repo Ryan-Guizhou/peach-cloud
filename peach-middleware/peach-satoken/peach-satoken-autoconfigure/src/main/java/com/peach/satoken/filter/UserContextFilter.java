@@ -73,6 +73,8 @@ public class UserContextFilter extends OncePerRequestFilter {
                         || "/auth/function".equals(path) || path.startsWith("/auth/function/")
                         || "/auth/resource".equals(path) || path.startsWith("/auth/resource/")
                         || "/auth/router".equals(path) || path.startsWith("/auth/router/")
+                        || "/auth/authLog".equals(path) || path.startsWith("/auth/authLog/")
+                        || "/auth/operLog".equals(path) || path.startsWith("/auth/operLog/")
                         || "/auth/organization".equals(path) || path.startsWith("/auth/organization/")
                         || "/auth/saas".equals(path) || path.startsWith("/auth/saas/"))) {
             try {

@@ -420,3 +420,7 @@ sequenceDiagram
 ### 旧全局系统目录的 PLATFORM 权限边界（#246）
 
 历史接口 `/auth/menu/*`、`/auth/function/*`、`/auth/resource/*` 和 `/auth/router/*` 保留管理端兼容 CRUD，但操作的是旧全局系统目录，**不是普通租户的 SaaS 角色/资源事实源**。Auth 直连时先经 Same-Token、有效用户 Token 与实时数据库租户/成员/应用及授权版本检查；每次列表、详情、增删改均由 `PlatformAdministrationAuthorizationService` 复核真实 PLATFORM 控制租户及不可委派 SYSTEM 管理员证据。非平台租户、旧 Token、服务身份缺失时安全拒绝。现阶段沿用现有 PLATFORM 管理员授权证明，未来若需要细分权限须单独提出 Issue。真实运行验收仍在 #211。
+
+### 旧全局审计日志访问边界（#249）
+
+历史 `/auth/authLog/pageList` 与 `/auth/operLog/pageList` 可跨租户读取旧全局日志。为避免普通 SaaS 租户借助浏览器 QO 查询他人的操作、安全审计和响应字段，两个入口必须通过 Same-Token、当前 Token 实时成员/租户/应用及授权版本，以及真实 PLATFORM 控制租户不可委派 SYSTEM 管理员验证。普通租户被拒绝；本次不伪称已实现按租户物理 ID 过滤的租户审计中心。真实 MySQL 与跨租户联调仍在 #211。

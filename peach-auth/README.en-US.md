@@ -363,3 +363,7 @@ The `/auth/user/*` API manages global accounts, not tenant-local members. Every 
 ### Legacy global catalog PLATFORM boundary (#246)
 
 The compatibility CRUD endpoints at `/auth/menu/*`, `/auth/function/*`, `/auth/resource/*`, and `/auth/router/*` operate on legacy global system catalogs, **not** the new tenant-local SaaS role/resource authorization source. Each direct Auth request requires Same-Token service identity, an authenticated end-user token, and live tenant/member/application and authorization versions. Every list, detail, insert, update and delete additionally requires the real PLATFORM control tenant and a protected non-delegable SYSTEM administrator grant, checked by `PlatformAdministrationAuthorizationService`. Tenant admins and stale or untrusted sessions are denied. The existing PLATFORM administrator grant is reused until separately scoped platform privileges are defined. Real deployment acceptance remains under #211.
+
+### Legacy global audit log protection (#249)
+
+The legacy `/auth/authLog/pageList` and `/auth/operLog/pageList` queries can otherwise expose global activity across tenants. Both require Same-Token, live database-verified tenant/member/application and authorization versions, and an administrator grant from the real PLATFORM control tenant's protected non-delegable SYSTEM role before querying. Ordinary tenant administrators cannot use these global log endpoints. This is not a tenant-scoped audit catalog; real integration and per-tenant logging remain under #211.
