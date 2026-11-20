@@ -6,6 +6,7 @@ import com.github.pagehelper.PageInfo;
 import com.peach.auth.qo.AuthLogQO;
 import com.peach.auth.service.IAuthLogService;
 import com.peach.auth.vo.AuthLogVO;
+import com.peach.auth.service.PlatformAdministrationAuthorizationService;
 import com.peach.common.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,9 +36,12 @@ public class AuthLogController {
 
     private final IAuthLogService authLogService;
 
+    private final PlatformAdministrationAuthorizationService platformAuthorizationService;
+
     @PostMapping("/pageList")
     @Operation(summary = "分页查询授权日志")
     public Response pageList(@RequestBody AuthLogQO authLogQO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         PageInfo<AuthLogVO> pageInfo = authLogService.pageList(authLogQO);
         return Response.success(pageInfo);
     }

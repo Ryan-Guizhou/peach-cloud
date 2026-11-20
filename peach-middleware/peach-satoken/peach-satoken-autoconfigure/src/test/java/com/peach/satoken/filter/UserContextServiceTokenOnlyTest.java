@@ -98,6 +98,7 @@ class UserContextServiceTokenOnlyTest {
         UserContextSupport support = mock(UserContextSupport.class);
         UserContextFilter filter = new UserContextFilter(new UserContextProperties(), support);
         for (String path : List.of(
+                "/auth/authLog/pageList", "/auth/operLog/pageList",
                 "/auth/user/pageList", "/auth/menu/add", "/auth/function/delById",
                 "/auth/resource/pageList", "/auth/router/update")) {
             MockHttpServletRequest request = new MockHttpServletRequest("POST", path);

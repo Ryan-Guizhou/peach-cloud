@@ -52,6 +52,8 @@ class SaasAuthSessionFilterTest {
         assertThat(filter.shouldNotFilter(request("DELETE", "/auth/function/delById"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/resource/pageList"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/router/update"))).isFalse();
+        assertThat(filter.shouldNotFilter(request("POST", "/auth/authLog/pageList"))).isFalse();
+        assertThat(filter.shouldNotFilter(request("POST", "/auth/operLog/pageList"))).isFalse();
         assertThat(filter.shouldNotFilter(request("GET", "/auth/user/selectById"))).isFalse();
         assertThat(filter.shouldNotFilter(request("PUT",
                 "/auth/saas/roles/1234567890abcdef1234567890abcdef/permissions"))).isFalse();
@@ -68,6 +70,9 @@ class SaasAuthSessionFilterTest {
         assertThat(filter.isCanonicalSessionPath("/auth/function/add")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/resource/delById")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/router/update")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/authLog/pageList")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/operLog/pageList")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/operLog/%2e%2e/pageList")).isFalse();
         assertThat(filter.isCanonicalSessionPath("/auth/menu/%2e%2e/add")).isFalse();
         assertThat(filter.isCanonicalSessionPath("/auth/function/../add")).isFalse();
         assertThat(filter.isCanonicalSessionPath("/auth/router//add")).isFalse();

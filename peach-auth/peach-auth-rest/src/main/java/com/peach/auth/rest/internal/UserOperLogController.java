@@ -6,6 +6,7 @@ import com.github.pagehelper.PageInfo;
 import com.peach.auth.core.IUserOperLogService;
 import com.peach.auth.qo.UserOperLogQO;
 import com.peach.auth.vo.UserOperLogVO;
+import com.peach.auth.service.PlatformAdministrationAuthorizationService;
 import com.peach.common.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,9 +36,12 @@ public class UserOperLogController {
 
     private final IUserOperLogService userOperLogService;
 
+    private final PlatformAdministrationAuthorizationService platformAuthorizationService;
+
     @PostMapping("/pageList")
     @Operation(summary = "分页查询操作日志")
     public Response pageList(@RequestBody UserOperLogQO userOperLogQO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         PageInfo<UserOperLogVO> pageInfo = userOperLogService.pageList(userOperLogQO);
         return Response.success(pageInfo);
     }
