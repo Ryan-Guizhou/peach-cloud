@@ -424,3 +424,7 @@ sequenceDiagram
 ### 旧全局审计日志访问边界（#249）
 
 历史 `/auth/authLog/pageList` 与 `/auth/operLog/pageList` 可跨租户读取旧全局日志。为避免普通 SaaS 租户借助浏览器 QO 查询他人的操作、安全审计和响应字段，两个入口必须通过 Same-Token、当前 Token 实时成员/租户/应用及授权版本，以及真实 PLATFORM 控制租户不可委派 SYSTEM 管理员验证。普通租户被拒绝；本次不伪称已实现按租户物理 ID 过滤的租户审计中心。真实 MySQL 与跨租户联调仍在 #211。
+
+### 个人中心可信 SaaS 会话迁移（#248）
+
+`/auth/profile` 与头像接口不再依赖旧 `USER_PROFILE` Redis Hash：请求必须先通过 Same-Token、最终用户 Token、有效租户/成员/应用及密码/授权版本验证。服务端从可信物理 `userRefId` 查出永久 `USER_ID`，用于本人资料和头像历史，绝不采用浏览器声明的操作者 ID。已停用成员、旧 Token、缺少账号映射均拒绝；资料更新不再写旧用户级缓存。真实 Fileservice 和多租户头像链路继续由 #211 验收。

@@ -17,7 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * 认证服务 SaaS 角色管理及租户切换的专用会话过滤器。
+ * 认证服务 SaaS 会话、用户资料及全局管理的专用会话过滤器。
  *
  * <p>该过滤器顺序必须早于通用 UserContextFilter（order 0）。首先核验
  * Same-Token 服务身份、Sa-Token 最终用户登录态及数据库中的有效租户、成员、
@@ -37,6 +37,7 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
 
     private static final String ROLE_ROOT = "/auth/saas/roles";
     private static final String GLOBAL_USER_ROOT = "/auth/user";
+    private static final String PROFILE_ROOT = "/auth/profile";
     private static final String LEGACY_MENU_ROOT = "/auth/menu";
     private static final String LEGACY_FUNCTION_ROOT = "/auth/function";
     private static final String LEGACY_RESOURCE_ROOT = "/auth/resource";
@@ -92,6 +93,7 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
     private boolean isProtectedSaasSessionPath(String path) {
         return CHANGE_PASSWORD_PATH.equals(path) || SWITCH_CONTEXT_PATH.equals(path)
                 || GLOBAL_USER_ROOT.equals(path) || path.startsWith(GLOBAL_USER_ROOT + "/")
+                || PROFILE_ROOT.equals(path) || path.startsWith(PROFILE_ROOT + "/")
                 || LEGACY_MENU_ROOT.equals(path) || path.startsWith(LEGACY_MENU_ROOT + "/")
                 || LEGACY_FUNCTION_ROOT.equals(path) || path.startsWith(LEGACY_FUNCTION_ROOT + "/")
                 || LEGACY_RESOURCE_ROOT.equals(path) || path.startsWith(LEGACY_RESOURCE_ROOT + "/")

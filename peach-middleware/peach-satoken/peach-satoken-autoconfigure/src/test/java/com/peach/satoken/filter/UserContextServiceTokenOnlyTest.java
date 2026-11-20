@@ -99,6 +99,7 @@ class UserContextServiceTokenOnlyTest {
         UserContextFilter filter = new UserContextFilter(new UserContextProperties(), support);
         for (String path : List.of(
                 "/auth/authLog/pageList", "/auth/operLog/pageList",
+                "/auth/profile", "/auth/profile/basic", "/auth/profile/avatar/history/select",
                 "/auth/user/pageList", "/auth/menu/add", "/auth/function/delById",
                 "/auth/resource/pageList", "/auth/router/update")) {
             MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
