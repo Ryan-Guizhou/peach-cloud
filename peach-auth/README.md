@@ -428,3 +428,11 @@ sequenceDiagram
 ### 个人中心可信 SaaS 会话迁移（#248）
 
 `/auth/profile` 与头像接口不再依赖旧 `USER_PROFILE` Redis Hash：请求必须先通过 Same-Token、最终用户 Token、有效租户/成员/应用及密码/授权版本验证。服务端从可信物理 `userRefId` 查出永久 `USER_ID`，用于本人资料和头像历史，绝不采用浏览器声明的操作者 ID。已停用成员、旧 Token、缺少账号映射均拒绝；资料更新不再写旧用户级缓存。真实 Fileservice 和多租户头像链路继续由 #211 验收。
+
+### 旧操作审计的物理归属与敏感信息保护（#254）
+
+旧 `USER_OPER_LOG` 的写入结构已与 SQL 收敛：`TENANT_ID/ORG_ID` 是可能缺失的旧业务列（无机构 SaaS 成员合法），当前经过 Auth 前置过滤器验证的请求才会把 **物理** `TENANT_REF_ID/APP_REF_ID/MEMBER_REF_ID` 放入同一 Servlet 请求的内部属性，由操作日志组件读取并持久化；浏览器 Header 或请求体无法声明可信归属。
+
+审计保留模块、操作类型、短静态动作描述、URI（不含查询参数）、时间、耗时与成功/失败状态。**不再对 DTO 使用 SpEL 展开、存储请求参数、原始响应 Data 或可能包含敏感值的动态异常文本**；失败的受保护操作也会产生最小失败审计且不覆盖业务异常。旧的 `RESPONSE_DATA` 字段仅为了历史 schema 兼容保留，新写入不填充。原有异步队列仍是尽力而为机制，不能据此宣称日志具备不可丢失或强一致审计保障；IAM 授权变更以独立追加审计表为准。
+
+新库使用最新 `ALL_TABLE_CREATE.sql`；存量库须由 DBA 备份、核对列与索引后，**人工一次性**执行 `sql/USER_OPER_LOG_TRUSTED_CONTEXT_MIGRATION.sql` 并验证实际写入。禁止猜测回填历史租户、应用、机构或成员身份。历史 `RESPONSE_DATA` 是否含敏感数据需独立安全清理评估；完整环境验收仍由 #211 跟踪。

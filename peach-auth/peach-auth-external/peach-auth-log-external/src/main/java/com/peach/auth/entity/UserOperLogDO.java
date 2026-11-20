@@ -106,5 +106,17 @@ public class UserOperLogDO implements Serializable {
     @Schema(description = "请求方式")
     private String requestMethod;
 
+    @Column(name = "TENANT_REF_ID")
+    @Schema(description = "已验证租户物理ID")
+    private String tenantRefId;
+
+    @Column(name = "APP_REF_ID")
+    @Schema(description = "已验证应用物理ID")
+    private String appRefId;
+
+    @Column(name = "MEMBER_REF_ID")
+    @Schema(description = "已验证成员物理ID")
+    private String memberRefId;
+
 
 }

@@ -260,3 +260,21 @@ ALTER TABLE PEACH_ROUTER
 ```
 
 新增后再次检查 `INFORMATION_SCHEMA.COLUMNS`，实际执行 `RouterDao.selectByQO`、`selectByFuncCodes` 与历史路由查询，结合真实租户/应用授权测试。对于旧行 `FUNC_CODE IS NULL`，**不得猜测或自动回填**功能编码；需要按经确认的历史业务对应关系单独迁移。回滚应基于实际备份和变更记录评估，不能在存在新数据时直接 `DROP COLUMN`。本轮尚未执行真实数据库验证，继续由 [#211](https://github.com/Ryan-Guizhou/peach-cloud/issues/211) 跟踪。
+
+## 操作审计存量库迁移（#254）
+
+`USER_OPER_LOG` 的旧 DDL 强制 `TENANT_ID` 和 `ORG_ID` 非空，但旧 Mapper 不写这两个字段，可能造成日志批量入库失败；新 SaaS 会话也允许不隶属机构的成员。修复后的新库 DDL 允许旧业务列为空，新增 `TENANT_REF_ID`、`APP_REF_ID`、`MEMBER_REF_ID` 三个可信物理身份列。**旧记录不根据旧业务编码自动补齐物理身份。**
+
+旧库只允许 DBA 先完成备份与数据/结构核对后手工升级。先执行：
+
+```sql
+SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'USER_OPER_LOG'
+  AND COLUMN_NAME IN ('TENANT_ID', 'ORG_ID', 'TENANT_REF_ID', 'APP_REF_ID', 'MEMBER_REF_ID');
+
+SHOW INDEX FROM USER_OPER_LOG;
+```
+
+确认新列尚不存在且索引未创建后，在维护窗口**一次性**执行 `sql/USER_OPER_LOG_TRUSTED_CONTEXT_MIGRATION.sql`。该迁移**不属于** `ALL_TABLE_CREATE.sql`，不能在新库和历史库重复执行。上线后使用受信双凭证与真实用户会话调用带 `@UserOperLog` 的 Auth 操作，检查新日志物理范围与业务成功、失败两种记录；检查请求与响应中的敏感字段没有落入 `OPT_CONTENT/ERROR_MSG/RESPONSE_DATA`。如历史数据含密钥或敏感响应，需单独评估合规清理。队列入库与跨租户验收仍留在 #211，不以静态 CI 代替真实结果。
