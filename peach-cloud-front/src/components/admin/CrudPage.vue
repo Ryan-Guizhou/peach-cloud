@@ -17,8 +17,10 @@ export interface CrudField {
   label: string
   name: string
   required?: boolean
+  requiredOnCreate?: boolean
+  hiddenOnEdit?: boolean
   immutableOnEdit?: boolean
-  type?: 'text' | 'number' | 'textarea'
+  type?: 'text' | 'number' | 'textarea' | 'password'
 }
 
 const props = defineProps<{
@@ -47,6 +49,7 @@ const hasRowActions = computed(() => Boolean(props.endpoint.update || props.endp
 const canAdd = computed(() => Boolean(props.endpoint.add) && props.fields.length > 0 && hasPermission(`${props.permissionPrefix}:add`))
 const canUpdate = computed(() => Boolean(props.endpoint.update) && props.fields.length > 0 && hasPermission(`${props.permissionPrefix}:update`))
 const canDelete = computed(() => Boolean(props.endpoint.delById) && hasPermission(`${props.permissionPrefix}:delete`))
+const visibleFields = computed(() => props.fields.filter(field => !editingId.value || !field.hiddenOnEdit))
 const emptyDescription = computed(() => {
   if (canAdd.value) {
     return `暂无${props.title}数据，可点击右上角新增创建第一条记录。`
@@ -131,16 +134,17 @@ function openEdit(record: DataRecord) {
   }
   editingId.value = String(record[props.rowKey] ?? '')
   resetFormState()
-  props.fields.forEach((field) => {
+  visibleFields.value.forEach((field) => {
     formState[field.name] = record[field.name] as string | number | boolean | null | undefined
   })
   modalOpen.value = true
 }
 
 function validateRequiredFields(): boolean {
-  const missingField = props.fields.find((field) => {
+  const missingField = visibleFields.value.find((field) => {
     const value = formState[field.name]
-    return field.required && (value === undefined || value === null || String(value).trim().length === 0)
+    const required = field.required || (!editingId.value && field.requiredOnCreate)
+    return required && (value === undefined || value === null || String(value).trim().length === 0)
   })
   if (!missingField) {
     return true
@@ -173,6 +177,8 @@ async function saveRecord() {
     await postRecord(url, payload)
     message.success('保存成功')
     modalOpen.value = false
+    resetFormState()
+    editingVersion.value = null
     await loadData()
   } catch (error: unknown) {
     message.error(error instanceof Error ? error.message : '保存失败')
@@ -275,9 +281,11 @@ onMounted(() => {
       :title="editingId ? `编辑${title}` : `新增${title}`"
       :confirm-loading="saving"
       @ok="saveRecord"
+      @cancel="resetFormState"
     >
       <a-form layout="vertical">
-        <a-form-item v-for="field in fields" :key="field.name" :label="field.label" :required="field.required">
+        <a-form-item v-for="field in visibleFields" :key="field.name" :label="field.label"
+                     :required="field.required || (!editingId && field.requiredOnCreate)">
           <a-input-number
             v-if="field.type === 'number'"
             v-model:value="formState[field.name] as number | undefined"
@@ -287,6 +295,11 @@ onMounted(() => {
             v-else-if="field.type === 'textarea'"
             v-model:value="formState[field.name] as string | undefined"
             :rows="4"
+          />
+          <a-input-password
+            v-else-if="field.type === 'password'"
+            v-model:value="formState[field.name] as string | undefined"
+            autocomplete="new-password"
           />
           <a-input v-else v-model:value="formState[field.name] as string | undefined"
                    :disabled="Boolean(editingId) && field.immutableOnEdit === true" />

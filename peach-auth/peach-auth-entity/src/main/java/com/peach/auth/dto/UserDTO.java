@@ -44,7 +44,7 @@ public class UserDTO implements Serializable {
 
     @Schema(description = "用户账号")
     @NotBlank(message = "用户账号不能为空", groups = {PeachGroup.InsertGroup.class})
-    @Size(min = 4, max = 50, message = "用户账号长度为4-50", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @Size(min = 4, max = 32, message = "用户账号长度为4-32", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String userCode;
 
     @Schema(description = "密码：仅允许写入，禁止响应与日志输出")
