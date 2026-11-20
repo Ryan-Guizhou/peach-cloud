@@ -367,3 +367,7 @@ The compatibility CRUD endpoints at `/auth/menu/*`, `/auth/function/*`, `/auth/r
 ### Legacy global audit log protection (#249)
 
 The legacy `/auth/authLog/pageList` and `/auth/operLog/pageList` queries can otherwise expose global activity across tenants. Both require Same-Token, live database-verified tenant/member/application and authorization versions, and an administrator grant from the real PLATFORM control tenant's protected non-delegable SYSTEM role before querying. Ordinary tenant administrators cannot use these global log endpoints. This is not a tenant-scoped audit catalog; real integration and per-tenant logging remain under #211.
+
+### Trusted SaaS identity for personal profiles (#248)
+
+The `/auth/profile` and avatar endpoints no longer rely on the old `USER_PROFILE` Redis Hash. Each request requires Same-Token and end-user Token checks plus live tenant/member/application, credential and authorization version validation. The trusted physical `userRefId` is mapped in the database to the permanent business `USER_ID` for profile and avatar history operations; no client-provided identity is used. Revoked sessions or missing mappings fail closed and profile updates no longer write the obsolete user cache. Real Fileservice and cross-tenant integration remain tracked in #211.

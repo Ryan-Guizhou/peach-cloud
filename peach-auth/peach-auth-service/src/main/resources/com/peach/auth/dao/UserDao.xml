@@ -468,6 +468,13 @@
         FOR UPDATE
     </select>
 
+    <select id="findBusinessIdByPhysicalId" resultType="java.lang.String">
+        SELECT USER_ID
+        FROM PEACH_USER
+        WHERE ID = #{userRefId}
+          AND STATUS IN ('1', 'ENABLE') AND IS_DELETE = 0
+    </select>
+
     <select id="countActivePasswordVersion" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM PEACH_USER

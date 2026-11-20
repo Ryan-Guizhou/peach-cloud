@@ -3,8 +3,6 @@ package com.peach.auth.service.impl;
 import com.peach.auth.service.support.AuthBusinessIdGenerator;
 import com.peach.auth.service.support.AuthBusinessIdType;
 
-import com.peach.satoken.context.SecurityContextHolder;
-import jakarta.annotation.Nullable;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,20 +26,18 @@ import com.peach.common.util.StringUtil;
 import com.peach.fileservice.openfeign.FileFeignClient;
 import com.peach.fileservice.vo.FileDownloadUrlVO;
 import com.peach.fileservice.vo.FileUploadVO;
-import com.peach.satoken.constant.SatokenConstant;
 import com.peach.redission.distrbutedlock.support.DistributedLockTemplate;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * 用户资料服务实现类。
@@ -67,19 +63,19 @@ public class UserProfileServiceImpl implements IUserProfileService {
 
     private final UserDao userDao;
 
+    private final TenantSessionService tenantSessionService;
+
     private final UserAvatarHistoryDao userAvatarHistoryDao;
 
     private final FileFeignClient fileFeignClient;
 
     private final ObjectMapper objectMapper;
 
-    private final StringRedisTemplate stringRedisTemplate;
-
     private final DistributedLockTemplate distributedLockTemplate;
 
     @Override
     public UserProfileVO getCurrentProfile() {
-        String userId = SecurityContextHolder.currentUserId();
+        String userId = requireCurrentBusinessUserId();
         UserQO query = new UserQO();
         query.setUserId(userId);
         List<UserVO> users = userDao.selectByQO(query);
@@ -107,7 +103,7 @@ public class UserProfileServiceImpl implements IUserProfileService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public UserProfileVO updateCurrentProfile(UserProfileUpdateDTO updateDTO) {
-        String userId = SecurityContextHolder.currentUserId();
+        String userId = requireCurrentBusinessUserId();
         return distributedLockTemplate.call(USER_PROFILE_LOCK, userId, () -> {
             String userName = normalizeRequired(updateDTO.getUserName(), "用户名称不能为空");
             String mobilePhone = SensitiveFieldCipher.encrypt(normalizeOptional(updateDTO.getMobilePhone()));
@@ -116,7 +112,6 @@ public class UserProfileServiceImpl implements IUserProfileService {
             if (affected != 1) {
                 throw new IllegalStateException("个人资料更新失败");
             }
-            putProfileCacheField(userId, SatokenConstant.USER_PROFILE_FIELD_USER_NAME, Objects.requireNonNull(userName));
             return getCurrentProfile();
         });
     }
@@ -125,7 +120,7 @@ public class UserProfileServiceImpl implements IUserProfileService {
     @Transactional(rollbackFor = Exception.class)
     public AvatarHistoryVO uploadAvatar(MultipartFile file) {
         validateAvatar(file);
-        String userId = SecurityContextHolder.currentUserId();
+        String userId = requireCurrentBusinessUserId();
         FileUploadVO uploaded = requireData(fileFeignClient.upload(file, AVATAR_BIZ_TYPE, userId,
                 AVATAR_BIZ_TAG, file.getOriginalFilename(), file.getContentType(), "用户头像", null),
                 FileUploadVO.class, "头像上传失败");
@@ -171,7 +166,7 @@ public class UserProfileServiceImpl implements IUserProfileService {
         if (StringUtil.isBlank(avatarHistoryId)) {
             throw new IllegalArgumentException("头像历史ID不能为空");
         }
-        String userId = SecurityContextHolder.currentUserId();
+        String userId = requireCurrentBusinessUserId();
         return distributedLockTemplate.call(USER_PROFILE_LOCK, userId, () -> {
             List<AvatarHistoryVO> history = userAvatarHistoryDao.selectActiveByUserId(userId);
             AvatarHistoryVO selected = null;
@@ -275,6 +270,20 @@ public class UserProfileServiceImpl implements IUserProfileService {
         }
     }
 
+    /**
+     * 仅由当前有效 SaaS 会话用户物理 ID 取得永久用户业务 ID。
+     *
+     * @return 当前被验证的全局用户业务 ID
+     */
+    private String requireCurrentBusinessUserId() {
+        TenantSessionContext context = tenantSessionService.requireCurrent();
+        String userId = userDao.findBusinessIdByPhysicalId(context.userRefId());
+        if (!StringUtils.hasText(userId)) {
+            throw new SecurityException("Authenticated global user identity is unavailable");
+        }
+        return userId;
+    }
+
     private String normalizeRequired(String value, String message) {
         String normalized = normalizeOptional(value);
         if (StringUtil.isBlank(normalized)) {
@@ -311,9 +320,4 @@ public class UserProfileServiceImpl implements IUserProfileService {
         return objectMapper.convertValue(response.getData(), type);
     }
 
-    private void putProfileCacheField(String userId, String field, @Nullable String value) {
-        if (value != null) {
-            stringRedisTemplate.opsForHash().put(SatokenConstant.USER_PROFILE_CACHE_PREFIX + userId, field, value);
-        }
-    }
 }

@@ -22,6 +22,14 @@ import java.util.List;
 @MybatisDao
 public interface UserDao extends PeachDao<UserDO, UserVO> {
 
+    /**
+     * 将受信 Token 的全局用户物理 ID 映射为永久业务 USER_ID。
+     *
+     * @param userRefId 已验证的用户物理 ID
+     * @return 有效账号的业务 ID，不存在返回 null
+     */
+    String findBusinessIdByPhysicalId(@Param("userRefId") String userRefId);
+
     UserVO login(@Param("username") String username);
 
     /**

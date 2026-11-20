@@ -48,6 +48,8 @@ class SaasAuthSessionFilterTest {
         assertThat(filter.shouldNotFilter(request("POST", "/auth/organization/pageList"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/user/pageList"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/user/add"))).isFalse();
+        assertThat(filter.shouldNotFilter(request("GET", "/auth/profile"))).isFalse();
+        assertThat(filter.shouldNotFilter(request("POST", "/auth/profile/basic"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/menu/add"))).isFalse();
         assertThat(filter.shouldNotFilter(request("DELETE", "/auth/function/delById"))).isFalse();
         assertThat(filter.shouldNotFilter(request("POST", "/auth/resource/pageList"))).isFalse();
@@ -66,6 +68,9 @@ class SaasAuthSessionFilterTest {
     void shouldDenyEncodedOrTraversingRoleRoutesBeforeReadingAnyToken() throws Exception {
         assertThat(filter.isCanonicalSessionPath("/auth/saas/roles")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/user/pageList")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/profile")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/profile/avatar/history/select")).isTrue();
+        assertThat(filter.isCanonicalSessionPath("/auth/profile/%2e%2e/basic")).isFalse();
         assertThat(filter.isCanonicalSessionPath("/auth/menu/pageList")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/function/add")).isTrue();
         assertThat(filter.isCanonicalSessionPath("/auth/resource/delById")).isTrue();

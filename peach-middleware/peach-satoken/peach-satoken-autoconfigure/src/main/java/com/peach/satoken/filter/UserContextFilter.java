@@ -69,6 +69,7 @@ public class UserContextFilter extends OncePerRequestFilter {
         if (Boolean.TRUE.equals(request.getAttribute(VERIFIED_SAAS_AUTH_REQUEST))
                 && ("/auth/switchContext".equals(path) || "/auth/changePassword".equals(path)
                         || "/auth/user".equals(path) || path.startsWith("/auth/user/")
+                        || "/auth/profile".equals(path) || path.startsWith("/auth/profile/")
                         || "/auth/menu".equals(path) || path.startsWith("/auth/menu/")
                         || "/auth/function".equals(path) || path.startsWith("/auth/function/")
                         || "/auth/resource".equals(path) || path.startsWith("/auth/resource/")
