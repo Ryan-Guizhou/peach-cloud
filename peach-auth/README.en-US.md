@@ -393,3 +393,11 @@ Legacy global user maintenance requires a trusted PLATFORM administrator and a v
 Account writes atomically match physical `ID`, expected `VERSION` and `IS_DELETE=0`, then increment the record version. Soft deletion records `DELETED_AT` and the trusted actor's physical member ID in `DELETED_BY_REF_ID`; neither headers nor the client can select the actor. Unversioned generic user DAO write/delete mappings have been removed. Protected password changes and personal profile updates also advance the record version, while password session revocation continues to use the distinct `PASSWORD_VERSION`.
 
 The actual MySQL migration, concurrency/recovery scenarios and other entities' lifecycle controls, including `PEACH_TENANT`, remain subject to #211 acceptance.
+
+### PLATFORM global-account creation and secure initial status (#260)
+
+The trusted PLATFORM user's legacy management page now includes the required `userCode` (4–32 characters) and an initial `password` (6–64 characters). Password input is visible only during account creation; generic edits neither show nor submit it. The browser form state is cleared on cancellation or successful submission, and neither the record list nor operation audit includes the raw password. The backend continues to store only BCrypt hashes and generic edits cannot alter credential lifecycle fields.
+
+When a valid initial password is present and no status is specified, the server initializes the account to `ENABLE`. Trusted platform operators may explicitly create `DISABLED` accounts; arbitrary statuses are rejected. Direct-service creation without a password remains `DISABLED` to avoid activating unusable credentials. Physical primary keys, permanent USER_IDs, initial version defaults and safety flags remain server-owned.
+
+**Creating a global account does not grant SaaS membership or roles.** The new user must be enrolled via a protected tenant invitation/member and application authorization workflow before gaining tenant access. Live onboarding, first login, revocation, multi-device and cross-tenant acceptance remain under #211.

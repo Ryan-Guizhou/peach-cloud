@@ -5,7 +5,7 @@ import CrudPage from '../../../components/admin/CrudPage.vue'
 <template>
   <CrudPage
     title="用户管理"
-    description="维护用户基础资料；更新和删除必须提交当前记录版本，避免并发覆盖。"
+    description="维护全局用户基础资料；初始密码仅用于新增且不回显，更新和删除需提交当前版本。"
     row-key="id"
     permission-prefix="user"
     :endpoint="{ pageList: '/auth/user/pageList', add: '/auth/user/add', update: '/auth/user/update', delById: '/auth/user/delById', idField: 'id', versionField: 'version' }"
@@ -17,7 +17,8 @@ import CrudPage from '../../../components/admin/CrudPage.vue'
       { title: '默认机构', dataIndex: 'defaultOrgId' },
     ]"
     :fields="[
-
+      { label: '用户账号', name: 'userCode', requiredOnCreate: true, immutableOnEdit: true },
+      { label: '初始密码', name: 'password', requiredOnCreate: true, hiddenOnEdit: true, type: 'password' },
       { label: '用户名称', name: 'userName', required: true },
       { label: '手机号', name: 'mobilePhone' },
       { label: '邮箱', name: 'email' },

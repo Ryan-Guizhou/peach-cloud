@@ -322,6 +322,9 @@ public class UserServiceImpl implements IUserService {
     public void add(UserDTO userDTO) {
         requireEditableUserFieldsOnly(userDTO);
         platformAuthorizationService.requirePlatformAdministrator();
+        if (StringUtil.isBlank(userDTO.getUserCode())) {
+            throw new IllegalArgumentException("Global user account code is required");
+        }
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
         userDO.setId(UniqueIdFacade.nextId());
@@ -330,6 +333,12 @@ public class UserServiceImpl implements IUserService {
             userDO.setStatus("DISABLED");
         } else {
             userDO.setPassword(passwordHashSupport.encode(userDO.getPassword()));
+            if (StringUtil.isBlank(userDO.getStatus())) {
+                userDO.setStatus("ENABLE");
+            } else if (!"ENABLE".equals(userDO.getStatus())
+                    && !"DISABLED".equals(userDO.getStatus())) {
+                throw new IllegalArgumentException("Invalid initial global account status");
+            }
         }
         UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillCreateTime(null);
