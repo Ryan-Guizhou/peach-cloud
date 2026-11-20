@@ -39,6 +39,7 @@ const loading = ref(false)
 const saving = ref(false)
 const modalOpen = ref(false)
 const editingId = ref('')
+const editingVersion = ref<number | null>(null)
 const errorMessage = ref('')
 const formState = reactive<DataRecord>({})
 
@@ -89,11 +90,25 @@ function resetFormState() {
   Object.keys(formState).forEach(key => delete formState[key])
 }
 
+function readRecordVersion(record: DataRecord): number | null {
+  const field = props.endpoint.versionField
+  if (!field) {
+    return null
+  }
+  const version = record[field]
+  if (typeof version !== 'number' || !Number.isSafeInteger(version) || version < 0) {
+    message.error('记录版本无效，请刷新列表后重试')
+    return null
+  }
+  return version
+}
+
 function openCreate() {
   if (!canAdd.value) {
     return
   }
   editingId.value = ''
+  editingVersion.value = null
   resetFormState()
   props.fields.forEach((field) => {
     formState[field.name] = undefined
@@ -104,6 +119,15 @@ function openCreate() {
 function openEdit(record: DataRecord) {
   if (!canUpdate.value) {
     return
+  }
+  if (props.endpoint.versionField) {
+    const version = readRecordVersion(record)
+    if (version === null) {
+      return
+    }
+    editingVersion.value = version
+  } else {
+    editingVersion.value = null
   }
   editingId.value = String(record[props.rowKey] ?? '')
   resetFormState()
@@ -139,6 +163,12 @@ async function saveRecord() {
     const payload: DataRecord = { ...formState }
     if (editingId.value) {
       payload[props.rowKey] = editingId.value
+      if (props.endpoint.versionField) {
+        if (editingVersion.value === null) {
+          throw new Error('记录版本无效，请刷新列表后重试')
+        }
+        payload[props.endpoint.versionField] = editingVersion.value
+      }
     }
     await postRecord(url, payload)
     message.success('保存成功')
@@ -162,7 +192,14 @@ async function removeRecord(record: DataRecord) {
     return
   }
   try {
-    await deleteById(props.endpoint.delById, props.endpoint.idField ?? props.rowKey, id, props.endpoint.deleteMode)
+    const version = props.endpoint.versionField ? readRecordVersion(record) : null
+    if (props.endpoint.versionField && version === null) {
+      return
+    }
+    await deleteById(
+      props.endpoint.delById, props.endpoint.idField ?? props.rowKey,
+      id, props.endpoint.deleteMode, props.endpoint.versionField, version ?? undefined,
+    )
     message.success('删除成功')
     await loadData()
   } catch (error: unknown) {

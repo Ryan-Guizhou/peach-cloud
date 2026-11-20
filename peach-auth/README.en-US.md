@@ -385,3 +385,11 @@ Fresh environments use the updated `ALL_TABLE_CREATE.sql`. For existing database
 The compatibility `/auth/user/add` and `/auth/user/update` operations are restricted to trusted PLATFORM administrators and ordinary account metadata. Callers may not supply `isDelete`, `isModify`, `passwdModifyTime`, `errorCount`, `unlockTime`, `lastestLogin`, `invlidate`, or `authMode` through a generic create/update request. The service rejects such changes, and the generic MyBatis update fragments no longer write these fields or the stored password hash. New account lifecycle flags are initialized server-side. Deletion must use the dedicated soft-delete operation that sets `DELETED_AT`; credentials must follow the separate protected password-change lifecycle.
 
 This guard does **not** implement all account `VERSION` concurrency checks or `DELETED_BY` actor auditing, and does not replace real MySQL 8.4 migration and service integration checks. Those remain tracked in [#211](https://github.com/Ryan-Guizhou/peach-cloud/issues/211).
+
+### Global user CAS updates, deletion audit and actor attribution (#258)
+
+Legacy global user maintenance requires a trusted PLATFORM administrator and a verified SaaS member session. Read the physical `ID` and `VERSION` from the user directory before editing. Include `version` in the `/auth/user/update` payload and both `id` and `version` as query parameters for `DELETE /auth/user/delById`. Missing or stale versions and deleted accounts fail closed.
+
+Account writes atomically match physical `ID`, expected `VERSION` and `IS_DELETE=0`, then increment the record version. Soft deletion records `DELETED_AT` and the trusted actor's physical member ID in `DELETED_BY_REF_ID`; neither headers nor the client can select the actor. Unversioned generic user DAO write/delete mappings have been removed. Protected password changes and personal profile updates also advance the record version, while password session revocation continues to use the distinct `PASSWORD_VERSION`.
+
+The actual MySQL migration, concurrency/recovery scenarios and other entities' lifecycle controls, including `PEACH_TENANT`, remain subject to #211 acceptance.

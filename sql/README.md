@@ -278,3 +278,23 @@ SHOW INDEX FROM USER_OPER_LOG;
 ```
 
 确认新列尚不存在且索引未创建后，在维护窗口**一次性**执行 `sql/USER_OPER_LOG_TRUSTED_CONTEXT_MIGRATION.sql`。该迁移**不属于** `ALL_TABLE_CREATE.sql`，不能在新库和历史库重复执行。上线后使用受信双凭证与真实用户会话调用带 `@UserOperLog` 的 Auth 操作，检查新日志物理范围与业务成功、失败两种记录；检查请求与响应中的敏感字段没有落入 `OPT_CONTENT/ERROR_MSG/RESPONSE_DATA`。如历史数据含密钥或敏感响应，需单独评估合规清理。队列入库与跨租户验收仍留在 #211，不以静态 CI 代替真实结果。
+
+## PEACH_USER 并发版本与删除操作人迁移（#258）
+
+`PEACH_USER` 的普通管理更新与软删除现在要求 `VERSION` 比较，删除记录同时保留 `DELETED_BY_REF_ID` 可信成员物理 ID、`DELETED_AT` 时间。新库按最新 `PEACH_USER.sql` 或 `ALL_TABLE_CREATE.sql` 创建，**不能再运行**存量迁移脚本。
+
+已有数据库由 DBA **先确认 #220 的 `PASSWORD_VERSION` 已部署、完成备份、停止不兼容旧 Auth 写入实例**，再执行只读预检：
+
+```sql
+SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'PEACH_USER'
+  AND COLUMN_NAME IN ('PASSWORD_VERSION', 'VERSION', 'DELETED_BY_REF_ID');
+```
+
+仅确认后两列均不存在、密码版本列已存在并安排维护窗口后，人工**执行一次** `sql/PEACH_USER_WRITE_VERSION_MIGRATION.sql`。如已存在部分列，不得直接重复执行，需 DBA 对比实际结构并手工制定差异迁移。
+
+更新后使用真实管理员两次读取相同版本，分别提交更改，必须仅第一项返回成功；过期版本和重复软删除必须拒绝，删除记录应同时出现递增的 `VERSION`、`DELETED_AT` 和正确的 `DELETED_BY_REF_ID`。个人中心修改、密码变化期间，旧目录版本也应失效。旧历史删除数据的删除人未知，应保持 NULL，不得自动猜测或用业务 CODE 填充。
+
+**未在本次代码 CI 中执行真实 MySQL 事务、备份、迁移或回滚**，由 [#211](https://github.com/Ryan-Guizhou/peach-cloud/issues/211) 保留验收证据；`PEACH_TENANT` 等其他生命周期尚需单独检查。

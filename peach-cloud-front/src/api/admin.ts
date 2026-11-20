@@ -22,6 +22,7 @@ export interface CrudEndpoint {
   delById?: string
   idField?: string
   deleteMode?: 'query' | 'body-list'
+  versionField?: string
 }
 
 export async function fetchPage<T extends DataRecord>(
@@ -47,10 +48,19 @@ export async function deleteById(
   idField: string,
   id: string,
   mode: CrudEndpoint['deleteMode'] = 'query',
+  versionField?: string,
+  version?: number,
 ): Promise<void> {
+  const params: Record<string, string | number> = { [idField]: id }
+  if (versionField) {
+    if (mode !== 'query' || version === undefined || !Number.isSafeInteger(version) || version < 0) {
+      throw new Error('记录缺少有效版本，请刷新列表后重试')
+    }
+    params[versionField] = version
+  }
   const request = mode === 'body-list'
     ? http.delete<ApiResponse<void>>(url, { data: [id] })
-    : http.delete<ApiResponse<void>>(url, { params: { [idField]: id } })
+    : http.delete<ApiResponse<void>>(url, { params })
   const { data } = await request
   unwrapApiResponse(data)
 }
