@@ -53,38 +53,20 @@
             <if test="userCode != null and userCode != ''">
                 USER_CODE = #{userCode,jdbcType=VARCHAR},
             </if>
-            <if test="password != null and password != ''">
-                PASSWORD = #{password,jdbcType=VARCHAR},
-            </if>
             <if test="userName != null and userName != ''">
                 USER_NAME = #{userName,jdbcType=VARCHAR},
             </if>
             <if test="identityCode != null and identityCode != ''">
                 IDENTITY_CODE = #{identityCode,jdbcType=VARCHAR},
             </if>
-            <if test="invlidate != null and invlidate != ''">
-                INVLIDATE = #{invlidate,jdbcType=VARCHAR},
-            </if>
-            <if test="authMode != null and authMode != ''">
-                AUTH_MODE = #{authMode,jdbcType=VARCHAR},
-            </if>
             <if test="status != null and status != ''">
                 STATUS = #{status,jdbcType=VARCHAR},
-            </if>
-            <if test="unlockTime != null and unlockTime != ''">
-                UNLOCK_TIME = #{unlockTime,jdbcType=VARCHAR},
             </if>
             <if test="menuStyle != null and menuStyle != ''">
                 MENU_STYLE = #{menuStyle,jdbcType=VARCHAR},
             </if>
             <if test="menuRole != null and menuRole != ''">
                 MENU_ROLE = #{menuRole,jdbcType=VARCHAR},
-            </if>
-            <if test="lastestLogin != null and lastestLogin != ''">
-                LASTEST_LOGIN = #{lastestLogin,jdbcType=VARCHAR},
-            </if>
-            <if test="errorCount != null and errorCount != ''">
-                ERROR_COUNT = #{errorCount,jdbcType=VARCHAR},
             </if>
             <if test="startDate != null and startDate != ''">
                 START_DATE = #{startDate,jdbcType=VARCHAR},
@@ -103,15 +85,6 @@
             </if>
             <if test="defaultOrgId != null and defaultOrgId != ''">
                 DEFAULT_ORG_ID = #{defaultOrgId,jdbcType=VARCHAR},
-            </if>
-            <if test="isDelete != null">
-                IS_DELETE = #{isDelete,jdbcType=INTEGER},
-            </if>
-            <if test="isModify != null">
-                IS_MODIFY = #{isModify,jdbcType=INTEGER},
-            </if>
-            <if test="passwdModifyTime != null and passwdModifyTime != ''">
-                PASSWD_MODIFY_TIME = #{passwdModifyTime,jdbcType=VARCHAR},
             </if>
             <if test="createdTime != null and createdTime != ''">
                 CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
@@ -134,38 +107,20 @@
             <if test="userCode != null and userCode != ''">
                 USER_CODE,
             </if>
-            <if test="password != null and password != ''">
-                PASSWORD,
-            </if>
             <if test="userName != null and userName != ''">
                 USER_NAME,
             </if>
             <if test="identityCode != null and identityCode != ''">
                 IDENTITY_CODE,
             </if>
-            <if test="invlidate != null and invlidate != ''">
-                INVLIDATE,
-            </if>
-            <if test="authMode != null and authMode != ''">
-                AUTH_MODE,
-            </if>
             <if test="status != null and status != ''">
                 STATUS,
-            </if>
-            <if test="unlockTime != null and unlockTime != ''">
-                UNLOCK_TIME,
             </if>
             <if test="menuStyle != null and menuStyle != ''">
                 MENU_STYLE,
             </if>
             <if test="menuRole != null and menuRole != ''">
                 MENU_ROLE,
-            </if>
-            <if test="lastestLogin != null and lastestLogin != ''">
-                LASTEST_LOGIN,
-            </if>
-            <if test="errorCount != null and errorCount != ''">
-                ERROR_COUNT,
             </if>
             <if test="startDate != null and startDate != ''">
                 START_DATE,
@@ -184,15 +139,6 @@
             </if>
             <if test="defaultOrgId != null and defaultOrgId != ''">
                 DEFAULT_ORG_ID,
-            </if>
-            <if test="isDelete != null">
-                IS_DELETE,
-            </if>
-            <if test="isModify != null">
-                IS_MODIFY,
-            </if>
-            <if test="passwdModifyTime != null and passwdModifyTime != ''">
-                PASSWD_MODIFY_TIME,
             </if>
             <if test="createdTime != null and createdTime != ''">
                 CREATED_TIME,
@@ -214,38 +160,20 @@
             <if test="userCode != null and userCode != ''">
                 #{userCode,jdbcType=VARCHAR},
             </if>
-            <if test="password != null and password != ''">
-                #{password,jdbcType=VARCHAR},
-            </if>
             <if test="userName != null and userName != ''">
                 #{userName,jdbcType=VARCHAR},
             </if>
             <if test="identityCode != null and identityCode != ''">
                 #{identityCode,jdbcType=VARCHAR},
             </if>
-            <if test="invlidate != null and invlidate != ''">
-                #{invlidate,jdbcType=VARCHAR},
-            </if>
-            <if test="authMode != null and authMode != ''">
-                #{authMode,jdbcType=VARCHAR},
-            </if>
             <if test="status != null and status != ''">
                 #{status,jdbcType=VARCHAR},
-            </if>
-            <if test="unlockTime != null and unlockTime != ''">
-                #{unlockTime,jdbcType=VARCHAR},
             </if>
             <if test="menuStyle != null and menuStyle != ''">
                 #{menuStyle,jdbcType=VARCHAR},
             </if>
             <if test="menuRole != null and menuRole != ''">
                 #{menuRole,jdbcType=VARCHAR},
-            </if>
-            <if test="lastestLogin != null and lastestLogin != ''">
-                #{lastestLogin,jdbcType=VARCHAR},
-            </if>
-            <if test="errorCount != null and errorCount != ''">
-                #{errorCount,jdbcType=VARCHAR},
             </if>
             <if test="startDate != null and startDate != ''">
                 #{startDate,jdbcType=VARCHAR},
@@ -264,15 +192,6 @@
             </if>
             <if test="defaultOrgId != null and defaultOrgId != ''">
                 #{defaultOrgId,jdbcType=VARCHAR},
-            </if>
-            <if test="isDelete != null">
-                #{isDelete,jdbcType=INTEGER},
-            </if>
-            <if test="isModify != null">
-                #{isModify,jdbcType=INTEGER},
-            </if>
-            <if test="passwdModifyTime != null and passwdModifyTime != ''">
-                #{passwdModifyTime,jdbcType=VARCHAR},
             </if>
             <if test="createdTime != null and createdTime != ''">
                 #{createdTime,jdbcType=VARCHAR},
