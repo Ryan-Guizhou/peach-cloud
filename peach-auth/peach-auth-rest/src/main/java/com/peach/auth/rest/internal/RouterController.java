@@ -6,6 +6,7 @@ import com.github.pagehelper.PageInfo;
 import com.peach.auth.annoation.UserOperLog;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.auth.service.IRouterService;
+import com.peach.auth.service.PlatformAdministrationAuthorizationService;
 import com.peach.common.response.Response;
 import com.peach.auth.dto.RouterDTO;
 
@@ -41,9 +42,12 @@ public class RouterController {
 
     private final IRouterService routerService;
 
+    private final PlatformAdministrationAuthorizationService platformAuthorizationService;
+
     @Operation(summary = "根据路由ID查询路由信息")
     @GetMapping("/selectById")
     public Response selectById(String routerId) {
+        platformAuthorizationService.requirePlatformAdministrator();
         RouterVO routerVO = routerService.selectById(routerId);
         return Response.success(routerVO);
     }
@@ -51,6 +55,7 @@ public class RouterController {
     @Operation(summary = "分页查询路由信息")
     @PostMapping("/pageList")
     public Response pageList(@RequestBody RouterQO routerQO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         PageInfo<RouterVO> pageInfo = routerService.pageList(routerQO);
         return Response.success(pageInfo);
     }
@@ -60,6 +65,7 @@ public class RouterController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'新增路由信息,路由信息:['+#p0+']'")
     public Response add(@RequestBody RouterDTO routerDTO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         routerService.add(routerDTO);
         return Response.success();
     }
@@ -69,6 +75,7 @@ public class RouterController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.DELETE,
                  optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除路由信息,路由ID:['+#p0+']'")
     public Response delById( String routerId) {
+        platformAuthorizationService.requirePlatformAdministrator();
         routerService.delById(routerId);
         return Response.success();
     }
@@ -78,6 +85,7 @@ public class RouterController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'新增路由信息,路由信息:['+#p0+']'")
     public Response update(@RequestBody RouterDTO routerDTO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         routerService.update(routerDTO);
         return Response.success();
     }

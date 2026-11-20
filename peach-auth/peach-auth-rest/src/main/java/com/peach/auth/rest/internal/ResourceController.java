@@ -11,6 +11,7 @@ import com.peach.auth.enums.UserLogEnum;
 import com.peach.auth.qo.ResourceQO;
 import com.peach.auth.service.IResouceService;
 import com.peach.auth.vo.ResourceVO;
+import com.peach.auth.service.PlatformAdministrationAuthorizationService;
 import com.peach.common.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,9 +46,12 @@ public class ResourceController {
 
     private final IResouceService resourceService;
 
+    private final PlatformAdministrationAuthorizationService platformAuthorizationService;
+
     @PostMapping("/pageList")
     @Operation(summary = "分页查询资源")
     public Response pageList(@RequestBody ResourceQO resourceQO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         PageInfo<ResourceVO> pageInfo = resourceService.pageList(resourceQO);
         return Response.success(pageInfo);
     }
@@ -55,6 +59,7 @@ public class ResourceController {
     @GetMapping("/selectById")
     @Operation(summary = "根据资源ID查询资源")
     public Response selectById(@NotBlank(message = "资源ID不能为空") String resourceId) {
+        platformAuthorizationService.requirePlatformAdministrator();
         ResourceVO resourceVO = resourceService.selectById(resourceId);
         return Response.success(resourceVO);
     }
@@ -64,6 +69,7 @@ public class ResourceController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'新增资源信息,资源信息:['+#p0+']'")
     public Response add(@Validated({PeachGroup.InsertGroup.class}) @RequestBody ResourceDTO resourceDTO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         resourceService.add(resourceDTO);
         return Response.success();
     }
@@ -73,6 +79,7 @@ public class ResourceController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.DELETE,
             optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除资源信息,资源ID:['+#p0+']'")
     public Response delById(@NotBlank(message = "资源ID不能为空") String resourceId) {
+        platformAuthorizationService.requirePlatformAdministrator();
         resourceService.delById(resourceId);
         return Response.success();
     }
@@ -82,6 +89,7 @@ public class ResourceController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'更新资源信息,资源信息:['+#p0+']'")
     public Response update(@Validated({PeachGroup.UpdateGroup.class}) @RequestBody ResourceDTO resourceDTO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         resourceService.update(resourceDTO);
         return Response.success();
     }

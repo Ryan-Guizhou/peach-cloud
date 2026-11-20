@@ -16,21 +16,21 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * 全局用户目录只能由 PLATFORM 控制租户下的保护角色操作。
+ * 全局账号及系统目录只能由 PLATFORM 控制租户下的保护角色操作。
  *
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/20 10:20
  */
 @ExtendWith(MockitoExtension.class)
-class PlatformUserManagementAuthorizationServiceTest {
+class PlatformAdministrationAuthorizationServiceTest {
 
     @Mock
     private TenantSessionService tenantSessionService;
     @Mock
     private TenantProvisioningDao provisioningDao;
     @InjectMocks
-    private PlatformUserManagementAuthorizationService service;
+    private PlatformAdministrationAuthorizationService service;
 
     @Test
     void shouldAllowVerifiedPlatformAdministrator() {
