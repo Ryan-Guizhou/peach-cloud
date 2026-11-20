@@ -322,7 +322,7 @@ public class UserServiceImpl implements IUserService {
     public void add(UserDTO userDTO) {
         requireEditableUserFieldsOnly(userDTO);
         platformAuthorizationService.requirePlatformAdministrator();
-        UserDO = new UserDO();
+        UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
         userDO.setId(UniqueIdFacade.nextId());
         userDO.setUserId(authBusinessIdGenerator.next(AuthBusinessIdType.USER));
