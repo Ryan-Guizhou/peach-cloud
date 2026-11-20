@@ -1,5 +1,8 @@
 # peach-auth
 
+> **Current status (2026-11-20):** The staged implementation notes below retain historical descriptions such as “not implemented”, “Draft” and “empty permissions” from earlier development steps. They do **not** describe the current release branch. As of November 19, the core tenant/member identity, trusted login permission snapshot, scoped roles and resources, row/field policies, Gateway/Feign enforcement, protected administration UI, tenant provisioning and file physical-scope authorization have been merged into `release_20261117_v1.0.0`. **Still outstanding:** real MySQL data migration, legacy data mapping, Redis/Nacos/Gateway/Feign end-to-end integration, and cross-tenant security acceptance, tracked in [#211](https://github.com/Ryan-Guizhou/peach-cloud/issues/211). A successful CI run is not production acceptance. No annual authorization dimension exists in the current model.
+
+
 English | [中文](README.md)
 
 ## Purpose
