@@ -1,6 +1,9 @@
 # peach-auth SaaS 身份、租户与权限底座改造设计（release_20261117_v1.0.0）
 
-> 状态：**实施设计 / 尚未实现**。基线：2026-11-17 从 `main` 分支创建的 `release_20261117_v1.0.0`。开发流程：**一个中文 Issue → 一个 PR → 验证 → 合并 release**；不直接变更 `main`。
+> **当前状态（2026-11-20）：** 本节后文包含 11 月 17–19 日按 Issue 分阶段落地时的历史进度和当时的风险说明；“尚未实现”“Draft”“空权限”等描述不应被理解为本分支的最新状态。至 11 月 19 日，核心 SaaS 身份、可信登录快照、角色与资源权限、行/字段策略、网关/Feign、受保护管理界面、租户开通以及文件物理范围控制已在对应 PR 中合入 `release_20261117_v1.0.0`。**仍未完成**真实 MySQL 数据迁移、历史数据映射、Redis/Nacos/网关/Feign 全链路联调与跨租户安全验收，统一由 [#211](https://github.com/Ryan-Guizhou/peach-cloud/issues/211) 跟踪。禁止将单测或 CI 通过等同于生产验收。此模型不包含任何年度授权维度。
+
+
+> 状态：**代码已分批合并，真实环境验收未完成（详见 #211）**。基线：2026-11-17 从 `main` 分支创建的 `release_20261117_v1.0.0`。开发流程：**一个中文 Issue → 一个 PR → 验证 → 合并 release**；不直接变更 `main`。
 >
 > 范围：`peach-auth` 为主要业务域，必要同步 `peach-code`、`peach-common`、`peach-satoken`、`peach-gateway`、`peach-auth-openfeign-external`、`peach-cloud-front` 以及实际受影响的微服务。该文档只陈述已核对的 Current 和待实施 Proposed，不能以本文代替代码验证。
 
