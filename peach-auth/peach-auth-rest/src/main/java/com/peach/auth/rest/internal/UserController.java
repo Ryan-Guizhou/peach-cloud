@@ -21,11 +21,13 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * 用户管理。
@@ -78,9 +80,10 @@ public class UserController {
     @DeleteMapping("/delById")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.DELETE,
             optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除用户信息,用户ID:['+#p0+']'")
-    public Response delById(@NotBlank(message = "用户ID不能为空") String userId) {
+    public Response delById(@RequestParam("id") @NotBlank(message = "用户ID不能为空") String id,
+                            @RequestParam("version") @NotNull(message = "用户版本不能为空") Long version) {
         platformAuthorizationService.requirePlatformAdministrator();
-        userService.delById(userId);
+        userService.delById(id, version);
         return Response.success();
     }
 

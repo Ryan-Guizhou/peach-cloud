@@ -10,6 +10,8 @@ import lombok.ToString;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 
@@ -31,6 +33,11 @@ public class UserDTO implements Serializable {
     @Schema(description = "物理主键，新增由服务端生成")
     @NotBlank(message = "物理ID不能为空", groups = {PeachGroup.UpdateGroup.class})
     private String id;
+
+    @Schema(description = "用户资料乐观并发版本，仅更新时必填")
+    @NotNull(message = "用户资料版本不能为空", groups = {PeachGroup.UpdateGroup.class})
+    @Min(value = 0, message = "用户资料版本不能小于零", groups = {PeachGroup.UpdateGroup.class})
+    private Long version;
 
     @Schema(description = "用户ID")
     private String userId;

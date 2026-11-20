@@ -30,6 +30,26 @@ public interface UserDao extends PeachDao<UserDO, UserVO> {
      */
     String findBusinessIdByPhysicalId(@Param("userRefId") String userRefId);
 
+    /**
+     * 物理 ID 与预期版本 CAS 更新全局账号可维护字段。
+     *
+     * @param userDO 由服务端白名单保护的账号资料，必须包含 id 与 version
+     * @return 受影响行数，仅 1 为更新成功
+     */
+    int updateAdminWithVersion(UserDO userDO);
+
+    /**
+     * 用户软删除 CAS：同时记录可信 SaaS 成员物理 ID 与删除时间。
+     *
+     * @param id 被删除用户物理 ID
+     * @param expectedVersion 用户目录展示的预期版本
+     * @param operatorRefId 当前已验证的操作成员物理 ID
+     * @return 受影响行数，仅 1 为成功
+     */
+    int softDeleteWithVersion(@Param("id") String id,
+                              @Param("expectedVersion") long expectedVersion,
+                              @Param("operatorRefId") String operatorRefId);
+
     UserVO login(@Param("username") String username);
 
     /**

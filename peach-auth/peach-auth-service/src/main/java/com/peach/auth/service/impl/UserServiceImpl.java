@@ -22,6 +22,7 @@ import com.peach.auth.dto.UserDTO;
 import com.peach.auth.entity.UserDO;
 import com.peach.auth.qo.UserQO;
 import com.peach.auth.service.IUserService;
+import com.peach.auth.service.PlatformAdministrationAuthorizationService;
 import com.peach.auth.service.SaasLoginSnapshotService;
 import com.peach.auth.service.LoginLockService;
 import com.peach.auth.service.support.LoginInitConfigSupport;
@@ -62,6 +63,8 @@ import java.util.List;
 public class UserServiceImpl implements IUserService {
 
     private final AuthBusinessIdGenerator authBusinessIdGenerator;
+
+    private final PlatformAdministrationAuthorizationService platformAuthorizationService;
 
     private final UserDao userDao;
 
@@ -318,7 +321,8 @@ public class UserServiceImpl implements IUserService {
     @Override
     public void add(UserDTO userDTO) {
         requireEditableUserFieldsOnly(userDTO);
-        UserDO userDO = new UserDO();
+        platformAuthorizationService.requirePlatformAdministrator();
+        UserDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
         userDO.setId(UniqueIdFacade.nextId());
         userDO.setUserId(authBusinessIdGenerator.next(AuthBusinessIdType.USER));
@@ -335,17 +339,25 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    public void delById(String id) {
-        if (StringUtil.isBlank(id)) {
-            log.info("id is blank");
-            return;
+    public void delById(String id, long expectedVersion) {
+        if (StringUtil.isBlank(id) || expectedVersion < 0) {
+            throw new IllegalArgumentException("Valid global user ID and version are required");
         }
-        userDao.delById(id);
+        platformAuthorizationService.requirePlatformAdministrator();
+        TenantSessionContext operator = tenantSessionService.requireCurrent();
+        if (userDao.softDeleteWithVersion(id, expectedVersion, operator.memberRefId()) != 1) {
+            throw new IllegalStateException("Global user was deleted or modified concurrently");
+        }
     }
 
     @Override
     public void update(UserDTO userDTO) {
         requireEditableUserFieldsOnly(userDTO);
+        if (StringUtil.isBlank(userDTO.getId()) || userDTO.getVersion() == null
+                || userDTO.getVersion() < 0) {
+            throw new IllegalArgumentException("Global user ID and current version are required");
+        }
+        platformAuthorizationService.requirePlatformAdministrator();
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
         if (StringUtil.isNotBlank(userDO.getPassword())) {
@@ -354,7 +366,9 @@ public class UserServiceImpl implements IUserService {
         userDO.setPassword(null);
         UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillModifyTime(null);
-        userDao.updateById(userDO);
+        if (userDao.updateAdminWithVersion(userDO) != 1) {
+            throw new IllegalStateException("Global user was deleted or modified concurrently");
+        }
     }
 
     /**

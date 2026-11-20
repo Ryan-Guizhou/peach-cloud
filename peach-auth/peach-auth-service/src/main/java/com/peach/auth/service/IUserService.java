@@ -85,11 +85,12 @@ public interface IUserService {
     void add(UserDTO userDTO);
 
     /**
-     * 根据用户ID删除用户。
+     * 按用户物理 ID 和当前乐观版本进行可信软删除。
      *
-     * @param id 用户ID
+     * @param id 用户物理 ID
+     * @param expectedVersion 前端从可信目录读取的版本
      */
-    void delById(String id);
+    void delById(String id, long expectedVersion);
 
     /**
      * 更新用户。
