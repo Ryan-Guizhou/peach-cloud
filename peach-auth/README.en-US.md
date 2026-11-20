@@ -352,3 +352,7 @@ sequenceDiagram
     Service-->>UI: Re-login required
 ```
 
+
+### Legacy global user administration boundary (#240)
+
+The `/auth/user/*` API manages global accounts, not tenant-local members. Every request must pass Same-Token service identity checks, an authenticated SaaS user session and live tenant/member/application version validation. Each controller action also requires the real `PLATFORM` control tenant and the protected, non-delegable `PLATFORM.TENANT.CREATE` SYSTEM-role grant. Tenant-level administrators cannot use this legacy API merely because they hold an old user-management route permission. Use the scoped SaaS member/organization APIs for tenant administration. Provisioning and end-to-end validation of the trusted platform operator remain tracked in #211.
