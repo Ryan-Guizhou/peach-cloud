@@ -10,6 +10,7 @@ import com.peach.auth.dto.UserDTO;
 import com.peach.auth.enums.UserLogEnum;
 import com.peach.auth.qo.UserQO;
 import com.peach.auth.service.IUserService;
+import com.peach.auth.service.PlatformUserManagementAuthorizationService;
 import com.peach.auth.vo.UserVO;
 import com.peach.common.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,9 +46,12 @@ public class UserController {
 
     private final IUserService userService;
 
+    private final PlatformUserManagementAuthorizationService platformAuthorizationService;
+
     @Operation(summary = "查询用户列表")
     @PostMapping("/pageList")
     public Response pageList(@RequestBody UserQO userQO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         PageInfo<UserVO> pageInfo = userService.pageList(userQO);
         return Response.success(pageInfo);
     }
@@ -55,6 +59,7 @@ public class UserController {
     @Operation(summary = "根据用户ID查询用户信息")
     @GetMapping("/selectById")
     public Response selectById(@NotBlank(message = "用户ID不能为空") String userId) {
+        platformAuthorizationService.requirePlatformAdministrator();
         UserVO userVO = userService.selectUserById(userId);
         return Response.success(userVO);
     }
@@ -64,6 +69,7 @@ public class UserController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.INFO, optContent = "'Create global user'")
     public Response add(@Validated({PeachGroup.InsertGroup.class}) @RequestBody UserDTO userDTO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         userService.add(userDTO);
         return Response.success();
     }
@@ -73,6 +79,7 @@ public class UserController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.DELETE,
             optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除用户信息,用户ID:['+#p0+']'")
     public Response delById(@NotBlank(message = "用户ID不能为空") String userId) {
+        platformAuthorizationService.requirePlatformAdministrator();
         userService.delById(userId);
         return Response.success();
     }
@@ -82,6 +89,7 @@ public class UserController {
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'Update global user'")
     public Response update(@Validated({PeachGroup.UpdateGroup.class}) @RequestBody UserDTO userDTO) {
+        platformAuthorizationService.requirePlatformAdministrator();
         userService.update(userDTO);
         return Response.success();
     }

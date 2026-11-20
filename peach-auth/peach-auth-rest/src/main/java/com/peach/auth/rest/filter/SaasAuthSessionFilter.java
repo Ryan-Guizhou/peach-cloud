@@ -36,6 +36,7 @@ import java.io.IOException;
 public class SaasAuthSessionFilter extends OncePerRequestFilter {
 
     private static final String ROLE_ROOT = "/auth/saas/roles";
+    private static final String GLOBAL_USER_ROOT = "/auth/user";
     private static final String TENANT_ROOT = "/auth/saas/tenants";
     private static final String LEGACY_ORGANIZATION_ROOT = "/auth/organization";
     private static final String PLATFORM_ROOT = "/auth/saas/platform";
@@ -84,6 +85,7 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
      */
     private boolean isProtectedSaasSessionPath(String path) {
         return CHANGE_PASSWORD_PATH.equals(path) || SWITCH_CONTEXT_PATH.equals(path)
+                || GLOBAL_USER_ROOT.equals(path) || path.startsWith(GLOBAL_USER_ROOT + "/")
                 || ROLE_ROOT.equals(path) || path.startsWith(ROLE_ROOT + "/")
                 || TENANT_ROOT.equals(path) || path.startsWith(TENANT_ROOT + "/")
                 || LEGACY_ORGANIZATION_ROOT.equals(path)
