@@ -2,7 +2,9 @@ package com.peach.auth.rest.filter;
 
 import cn.dev33.satoken.same.SaSameUtil;
 import cn.dev33.satoken.stp.StpUtil;
+import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
+import com.peach.auth.util.UserOperLogTrustedContext;
 import com.peach.satoken.filter.UserContextFilter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -66,10 +68,12 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid SaaS role path");
             return;
         }
+        TenantSessionContext verified;
         try {
             SaSameUtil.checkCurrentRequestToken();
             StpUtil.checkLogin();
-            if (tenantSessionService.requireCurrent() == null) {
+            verified = tenantSessionService.requireCurrent();
+            if (verified == null) {
                 throw new SecurityException("Verified SaaS member context is required");
             }
         } catch (RuntimeException exception) {
@@ -80,9 +84,15 @@ public class SaasAuthSessionFilter extends OncePerRequestFilter {
         }
 
         request.setAttribute(UserContextFilter.VERIFIED_SAAS_AUTH_REQUEST, Boolean.TRUE);
+        request.setAttribute(UserOperLogTrustedContext.TENANT_REF_ID, verified.tenantRefId());
+        request.setAttribute(UserOperLogTrustedContext.APP_REF_ID, verified.appRefId());
+        request.setAttribute(UserOperLogTrustedContext.MEMBER_REF_ID, verified.memberRefId());
         try {
             filterChain.doFilter(request, response);
         } finally {
+            request.removeAttribute(UserOperLogTrustedContext.MEMBER_REF_ID);
+            request.removeAttribute(UserOperLogTrustedContext.APP_REF_ID);
+            request.removeAttribute(UserOperLogTrustedContext.TENANT_REF_ID);
             request.removeAttribute(UserContextFilter.VERIFIED_SAAS_AUTH_REQUEST);
         }
     }

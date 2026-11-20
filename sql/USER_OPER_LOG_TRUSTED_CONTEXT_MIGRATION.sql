@@ -1,0 +1,14 @@
+-- SaaS IAM 操作日志可信身份的存量库手工迁移（#254）。
+-- 仅在 DBA 完成备份、停写和 INFORMATION_SCHEMA 列/索引预检后执行一次。
+-- 不要放入 ALL_TABLE_CREATE.sql，不要在应用启动时自动执行。
+-- 历史数据的 tenant/app/member 不能从用户输入或旧机构代码猜测回填。
+-- 真实迁移执行、回滚验证仍由 #211 记录。
+
+ALTER TABLE USER_OPER_LOG
+    MODIFY COLUMN TENANT_ID VARCHAR(32) NULL COMMENT '原租户业务ID，历史记录可能缺失',
+    MODIFY COLUMN ORG_ID VARCHAR(32) NULL COMMENT '原机构业务ID，可选机构场景允许为空',
+    MODIFY COLUMN IS_SUCCESS VARCHAR(5) NULL COMMENT '是否成功，true或false',
+    ADD COLUMN TENANT_REF_ID VARCHAR(32) NULL COMMENT '当前已验证的租户物理ID',
+    ADD COLUMN APP_REF_ID VARCHAR(32) NULL COMMENT '当前已验证的应用物理ID',
+    ADD COLUMN MEMBER_REF_ID VARCHAR(32) NULL COMMENT '当前已验证的成员物理ID',
+    ADD INDEX IDX_USER_OPER_LOG_TENANT_REF_TIME (TENANT_REF_ID, CREATE_TIME);

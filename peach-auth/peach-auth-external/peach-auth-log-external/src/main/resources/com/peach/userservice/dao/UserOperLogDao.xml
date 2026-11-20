@@ -6,7 +6,8 @@
         CREATOR_NAME,                                     OPT_CONTENT,                                      CREATE_TIME,                                      OPT_LEVEL,
         PRIVATE_IP,                                       PUBLIC_IP,                                        DEVICE,                                           BROWSER,
         OS,                                               EXECUTION_TIME,                                   IS_SUCCESS,                                       ERROR_MSG,
-        RESPONSE_DATA,                                    ROLE_CODE,                                        REQUEST_URI,                                      REQUEST_METHOD
+        RESPONSE_DATA,                                    ROLE_CODE,                                        REQUEST_URI,                                      REQUEST_METHOD,
+        TENANT_REF_ID,                                     APP_REF_ID,                                       MEMBER_REF_ID
 
     </sql>
 
@@ -15,7 +16,8 @@
         CREATOR_NAME as creatorName,                      OPT_CONTENT as optContent,                        CREATE_TIME as createTime,                        OPT_LEVEL as optLevel,
         PRIVATE_IP as privateIp,                          PUBLIC_IP as publicIp,                            DEVICE as device,                                 BROWSER as browser,
         OS as os,                                         EXECUTION_TIME as executionTime,                  IS_SUCCESS as isSuccess,                          ERROR_MSG as errorMsg,
-        RESPONSE_DATA as responseData,                    ROLE_CODE as roleCode,                            REQUEST_URI as requestUri,                        REQUEST_METHOD as requestMethod
+        RESPONSE_DATA as responseData,                    ROLE_CODE as roleCode,                            REQUEST_URI as requestUri,                        REQUEST_METHOD as requestMethod,
+        TENANT_REF_ID as tenantRefId,                      APP_REF_ID as appRefId,                           MEMBER_REF_ID as memberRefId
 
     </sql>
 
@@ -24,7 +26,8 @@
         #{creatorName,jdbcType=VARCHAR},                  #{optContent,jdbcType=VARCHAR},                   #{createTime,jdbcType=VARCHAR},                   #{optLevel,jdbcType=VARCHAR},
         #{privateIp,jdbcType=VARCHAR},                    #{publicIp,jdbcType=VARCHAR},                     #{device,jdbcType=VARCHAR},                       #{browser,jdbcType=VARCHAR},
         #{os,jdbcType=VARCHAR},                           #{executionTime,jdbcType=BIGINT},                 #{isSuccess,jdbcType=VARCHAR},                    #{errorMsg,jdbcType=VARCHAR},
-        #{responseData,jdbcType=VARCHAR},                 #{roleCode,jdbcType=VARCHAR},                     #{requestUri,jdbcType=VARCHAR},                   #{requestMethod,jdbcType=VARCHAR}
+        #{responseData,jdbcType=VARCHAR},                 #{roleCode,jdbcType=VARCHAR},                     #{requestUri,jdbcType=VARCHAR},                   #{requestMethod,jdbcType=VARCHAR},
+        #{tenantRefId,jdbcType=VARCHAR},                  #{appRefId,jdbcType=VARCHAR},                     #{memberRefId,jdbcType=VARCHAR}
 
     </sql>
 
@@ -34,7 +37,8 @@
         #{item.creatorName,jdbcType=VARCHAR},             #{item.optContent,jdbcType=VARCHAR},              #{item.createTime,jdbcType=VARCHAR},              #{item.optLevel,jdbcType=VARCHAR},
         #{item.privateIp,jdbcType=VARCHAR},               #{item.publicIp,jdbcType=VARCHAR},                #{item.device,jdbcType=VARCHAR},                  #{item.browser,jdbcType=VARCHAR},
         #{item.os,jdbcType=VARCHAR},                      #{item.executionTime,jdbcType=BIGINT},            #{item.isSuccess,jdbcType=VARCHAR},               #{item.errorMsg,jdbcType=VARCHAR},
-        #{item.responseData,jdbcType=VARCHAR},            #{item.roleCode,jdbcType=VARCHAR},                #{item.requestUri,jdbcType=VARCHAR},              #{item.requestMethod,jdbcType=VARCHAR}
+        #{item.responseData,jdbcType=VARCHAR},            #{item.roleCode,jdbcType=VARCHAR},                #{item.requestUri,jdbcType=VARCHAR},              #{item.requestMethod,jdbcType=VARCHAR},
+        #{item.tenantRefId,jdbcType=VARCHAR},             #{item.appRefId,jdbcType=VARCHAR},                #{item.memberRefId,jdbcType=VARCHAR}
 
     </sql>
 
@@ -97,6 +101,15 @@
             </if>
             <if test="requestMethod != null and requestMethod != ''">
                 REQUEST_METHOD = #{requestMethod,jdbcType=VARCHAR},
+            </if>
+            <if test="tenantRefId != null and tenantRefId != ''">
+                TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR},
+            </if>
+            <if test="appRefId != null and appRefId != ''">
+                APP_REF_ID = #{appRefId,jdbcType=VARCHAR},
+            </if>
+            <if test="memberRefId != null and memberRefId != ''">
+                MEMBER_REF_ID = #{memberRefId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -161,6 +174,15 @@
             <if test="requestMethod != null and requestMethod != ''">
                 REQUEST_METHOD,
             </if>
+            <if test="tenantRefId != null and tenantRefId != ''">
+                TENANT_REF_ID,
+            </if>
+            <if test="appRefId != null and appRefId != ''">
+                APP_REF_ID,
+            </if>
+            <if test="memberRefId != null and memberRefId != ''">
+                MEMBER_REF_ID,
+            </if>
         </trim>
     </sql>
 
@@ -222,6 +244,15 @@
             </if>
             <if test="requestMethod != null and requestMethod != ''">
                 #{requestMethod,jdbcType=VARCHAR},
+            </if>
+            <if test="tenantRefId != null and tenantRefId != ''">
+                #{tenantRefId,jdbcType=VARCHAR},
+            </if>
+            <if test="appRefId != null and appRefId != ''">
+                #{appRefId,jdbcType=VARCHAR},
+            </if>
+            <if test="memberRefId != null and memberRefId != ''">
+                #{memberRefId,jdbcType=VARCHAR},
             </if>
         </trim>
     </sql>
@@ -287,7 +318,16 @@
         <if test="requestMethod != null and requestMethod != ''">
             AND REQUEST_METHOD = #{requestMethod,jdbcType=VARCHAR}
         </if>
-    </sql>
+        <if test="tenantRefId != null and tenantRefId != ''">
+            AND TENANT_REF_ID = #{tenantRefId,jdbcType=VARCHAR}
+        </if>
+        <if test="appRefId != null and appRefId != ''">
+            AND APP_REF_ID = #{appRefId,jdbcType=VARCHAR}
+        </if>
+        <if test="memberRefId != null and memberRefId != ''">
+            AND MEMBER_REF_ID = #{memberRefId,jdbcType=VARCHAR}
+        </if>
+</sql>
 
     <insert id="insert" parameterType="com.peach.auth.entity.UserOperLogDO">
         INSERT INTO USER_OPER_LOG (

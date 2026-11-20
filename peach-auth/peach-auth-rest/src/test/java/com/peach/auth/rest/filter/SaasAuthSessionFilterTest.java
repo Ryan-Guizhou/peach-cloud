@@ -4,6 +4,8 @@ import cn.dev33.satoken.same.SaSameUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import com.peach.auth.service.impl.TenantSessionContext;
 import com.peach.auth.service.impl.TenantSessionService;
+import com.peach.auth.util.UserOperLogTrustedContext;
+import jakarta.servlet.FilterChain;
 import com.peach.satoken.filter.UserContextFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -126,6 +128,35 @@ class SaasAuthSessionFilterTest {
         assertThat(chain.getRequest()).isNotNull();
         verify(sessionService).requireCurrent();
         assertThat(request.getAttribute(UserContextFilter.VERIFIED_SAAS_AUTH_REQUEST)).isNull();
+        assertThat(request.getAttribute(UserOperLogTrustedContext.TENANT_REF_ID)).isNull();
+        assertThat(request.getAttribute(UserOperLogTrustedContext.APP_REF_ID)).isNull();
+        assertThat(request.getAttribute(UserOperLogTrustedContext.MEMBER_REF_ID)).isNull();
+    }
+
+    @Test
+    void shouldExposeVerifiedPhysicalAuditScopeOnlyDuringTheRequest() throws Exception {
+        MockHttpServletRequest request = request("POST", "/auth/user/update");
+        request.addHeader(UserOperLogTrustedContext.TENANT_REF_ID, "spoofed-tenant");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(sessionService.requireCurrent()).thenReturn(
+                new TenantSessionContext("user", "real-tenant", "real-member", "real-app", 2, 7));
+
+        FilterChain witness = (servletRequest, servletResponse) -> {
+            assertThat(servletRequest.getAttribute(UserOperLogTrustedContext.TENANT_REF_ID))
+                    .isEqualTo("real-tenant");
+            assertThat(servletRequest.getAttribute(UserOperLogTrustedContext.APP_REF_ID))
+                    .isEqualTo("real-app");
+            assertThat(servletRequest.getAttribute(UserOperLogTrustedContext.MEMBER_REF_ID))
+                    .isEqualTo("real-member");
+        };
+        try (MockedStatic<SaSameUtil> same = mockStatic(SaSameUtil.class);
+             MockedStatic<StpUtil> login = mockStatic(StpUtil.class)) {
+            filter.doFilter(request, response, witness);
+        }
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(request.getAttribute(UserOperLogTrustedContext.TENANT_REF_ID)).isNull();
+        assertThat(request.getAttribute(UserOperLogTrustedContext.APP_REF_ID)).isNull();
+        assertThat(request.getAttribute(UserOperLogTrustedContext.MEMBER_REF_ID)).isNull();
     }
 
     @Test

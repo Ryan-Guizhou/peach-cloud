@@ -371,3 +371,11 @@ The legacy `/auth/authLog/pageList` and `/auth/operLog/pageList` queries can oth
 ### Trusted SaaS identity for personal profiles (#248)
 
 The `/auth/profile` and avatar endpoints no longer rely on the old `USER_PROFILE` Redis Hash. Each request requires Same-Token and end-user Token checks plus live tenant/member/application, credential and authorization version validation. The trusted physical `userRefId` is mapped in the database to the permanent business `USER_ID` for profile and avatar history operations; no client-provided identity is used. Revoked sessions or missing mappings fail closed and profile updates no longer write the obsolete user cache. Real Fileservice and cross-tenant integration remain tracked in #211.
+
+### Legacy operation audit integrity and sensitive-data protection (#254)
+
+The legacy `USER_OPER_LOG` persistence now matches the SQL schema. The historical business `TENANT_ID/ORG_ID` columns are nullable because organization-less SaaS membership is valid. Auth verifies the service and end-user tokens, tenant, member, application and versions before placing **physical** `TENANT_REF_ID/APP_REF_ID/MEMBER_REF_ID` in server-only Servlet request attributes. Logging cannot derive trusted scope from browser headers or payloads.
+
+Audit records contain module/action codes, short static operation labels, request URI without query parameters, duration and success/failure status. Parameter SpEL expansion, raw request DTO serialization, response payloads and potentially sensitive dynamic error messages are no longer persisted. Rejected operations are audited without masking the original business exception. The old `RESPONSE_DATA` column remains for historical compatibility but is not populated for new records. The asynchronous queue is still best-effort and is **not** a guarantee of durable, lossless audit; IAM grant changes use a separate append-only audit table.
+
+Fresh environments use the updated `ALL_TABLE_CREATE.sql`. For existing databases, the DBA must back up and inspect columns/indexes before manually running `sql/USER_OPER_LOG_TRUSTED_CONTEXT_MIGRATION.sql` exactly once. Historical owner/member identities must not be guessed or backfilled without evidence. Historical `RESPONSE_DATA` may require a separate sensitive-data cleanup review. Live acceptance remains tracked under #211.
