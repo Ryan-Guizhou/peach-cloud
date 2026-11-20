@@ -181,7 +181,7 @@ export async function replaceFieldPolicies(
 }
 
 
-/** 受信服务按当前 Token 限定租户、应用与年度，分页参数不包含任何浏览器自报身份。 */
+/** 受信服务按当前 Token 限定租户与应用，分页参数不包含任何浏览器自报身份。 */
 export type CatalogKind = 'roles' | 'permissions' | 'members' | 'organizations'
 
 export interface SaasCatalogEntry {
