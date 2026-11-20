@@ -353,6 +353,9 @@ public class UserServiceImpl implements IUserService {
     @Override
     public void update(UserDTO userDTO) {
         requireEditableUserFieldsOnly(userDTO);
+        if (StringUtil.isNotBlank(userDTO.getPassword())) {
+            throw new SecurityException("Password updates require the protected password lifecycle");
+        }
         if (StringUtil.isBlank(userDTO.getId()) || userDTO.getVersion() == null
                 || userDTO.getVersion() < 0) {
             throw new IllegalArgumentException("Global user ID and current version are required");
@@ -360,9 +363,6 @@ public class UserServiceImpl implements IUserService {
         platformAuthorizationService.requirePlatformAdministrator();
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
-        if (StringUtil.isNotBlank(userDO.getPassword())) {
-            throw new SecurityException("Password updates require the protected password lifecycle");
-        }
         userDO.setPassword(null);
         UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillModifyTime(null);
