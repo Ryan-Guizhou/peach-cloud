@@ -401,3 +401,11 @@ The trusted PLATFORM user's legacy management page now includes the required `us
 When a valid initial password is present and no status is specified, the server initializes the account to `ENABLE`. Trusted platform operators may explicitly create `DISABLED` accounts; arbitrary statuses are rejected. Direct-service creation without a password remains `DISABLED` to avoid activating unusable credentials. Physical primary keys, permanent USER_IDs, initial version defaults and safety flags remain server-owned.
 
 **Creating a global account does not grant SaaS membership or roles.** The new user must be enrolled via a protected tenant invitation/member and application authorization workflow before gaining tenant access. Live onboarding, first login, revocation, multi-device and cross-tenant acceptance remain under #211.
+
+### Same-Token trust boundary for legacy external role/router lookups (#262)
+
+The legacy `GET /auth/external/role/{roleId}` and `GET /auth/external/router/{routerId}` endpoints are **internal Feign service lookups**, not tenant-scoped SaaS authorization APIs. Auth must verify a valid Same-Token service identity before consulting either global directory. Missing, invalid or forged service credentials fail closed before accessing the repository.
+
+The public Gateway rejects the entire `/auth/external/**` and `/api/auth/external/**` namespace **before** evaluating public endpoint rules, even if a Nacos configuration accidentally whitelists those paths. The shared `PeachOpenfeignRequestInterceptor` normally injects Same-Token for internal Feign calls, and deployment should prevent direct public access to Auth service ports.
+
+**Limitation:** These compatibility endpoints remain global-directory lookups with service-level trust, not automatic tenant/member/application-scoped authorization. Tenant business objects must instead use the dual-credential, end-user-token `SaasIamFeignClient` authorization and scoped directories. Runtime Feign propagation, Nacos/Gateway network boundaries and cross-tenant checks remain pending under #211.

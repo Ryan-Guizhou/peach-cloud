@@ -458,3 +458,11 @@ sequenceDiagram
 服务端收到有效初始密码、未显式指定状态时将账号初始化为 `ENABLE`，允许受信平台操作员显式新建 `DISABLED` 账号；不接受任意其它状态。直接服务调用在缺少密码时保持 `DISABLED`，避免错误启用无凭证用户。账号物理主键、永久业务 USER_ID、版本初值和安全标志由服务端与数据库负责。
 
 **创建全局账号不自动取得 SaaS 访问权限。** 新用户须由真实租户管理员通过受保护的邀请/成员与应用授权流程加入目标租户后才能登录。真实首登、授权切换、多终端及跨租户验收仍在 #211。
+
+### 旧外部角色/路由服务查询的 Same-Token 边界（#262）
+
+历史 `GET /auth/external/role/{roleId}` 和 `GET /auth/external/router/{routerId}` 是 **内部 Feign 服务查询接口**，不是 SaaS 租户业务权限判定 API。Auth 服务在查询旧全局角色/路由目录之前必须验证有效 Same-Token；缺失、失效或伪造服务身份时直接失败，不能进入 DAO。
+
+公共网关在判断匿名白名单前直接拒绝 `/auth/external/**` 和 `/api/auth/external/**` 整个服务内命名空间，即使运行时 Nacos 误配置匿名规则也不可开放。合法 Feign 客户端由通用 `PeachOpenfeignRequestInterceptor` 默认注入 Same-Token，通过内部服务发现连接 Auth；生产部署应限制 Auth 服务的直接公网入口。
+
+**注意：** 这两个兼容接口查询的是旧全局目录，仅获得 Same-Token 服务级保护，并未自动获得当前 SaaS 租户/应用/成员范围隔离。面向租户业务对象必须使用 `SaasIamFeignClient` 的最终用户 Token 双凭证授权和受控目录查询；真实 Nacos/Gateway 网络边界、Feign 传播及跨租户数据检验仍由 #211 验收。

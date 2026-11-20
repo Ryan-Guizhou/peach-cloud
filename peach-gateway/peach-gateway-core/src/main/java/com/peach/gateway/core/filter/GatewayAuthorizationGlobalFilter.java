@@ -66,10 +66,10 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getRawPath();
         String method = exchange.getRequest().getMethod().name();
-        // 内部 Same-Token IAM 接口不得经公共网关暴露为任意浏览器的受信服务调用。
-        if (isInternalIamPath(path)) {
+        // 所有服务内 Auth external 入口只能经受信 Feign 直连，不得通过公共网关。
+        if (isInternalAuthServicePath(path)) {
             return GatewayFilterSupport.writeError(exchange, HttpStatus.FORBIDDEN,
-                    "Internal IAM endpoint is not public");
+                    "Internal Auth service endpoint is not public");
         }
         if (endpointMatcher.matches(properties.getPublicEndpoints(), method, path)) {
             if (properties.isLogPath()) {
@@ -169,11 +169,20 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
         return method.trim().toUpperCase(Locale.ENGLISH) + ":" + normalizedPath;
     }
 
-    private boolean isInternalIamPath(String path) {
-        return "/auth/external/iam".equals(path)
-                || path.startsWith("/auth/external/iam/")
-                || "/api/auth/external/iam".equals(path)
-                || path.startsWith("/api/auth/external/iam/");
+    /**
+     * 全部 Auth external 入口仅供受信服务间 Feign 直连。
+     *
+     * <p>该安全拒绝发生在匿名白名单匹配之前，避免 Nacos 白名单误配置
+     * 让任意浏览器读取旧全局角色/路由目录或调用 IAM 服务接口。</p>
+     */
+    private boolean isInternalAuthServicePath(String path) {
+        return isInternalAuthPrefix(path, "/auth/external")
+                || isInternalAuthPrefix(path, "/api/auth/external");
+    }
+
+    private boolean isInternalAuthPrefix(String path, String prefix) {
+        return prefix.equals(path) || path.startsWith(prefix + "/")
+                || path.startsWith(prefix + "%");
     }
 
     /**

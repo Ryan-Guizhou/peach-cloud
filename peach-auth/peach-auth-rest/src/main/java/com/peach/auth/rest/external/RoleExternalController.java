@@ -1,5 +1,6 @@
 package com.peach.auth.rest.external;
 
+import cn.dev33.satoken.same.SaSameUtil;
 import lombok.RequiredArgsConstructor;
 
 import com.peach.auth.service.IRoleService;
@@ -34,6 +35,7 @@ public class RoleExternalController {
     @Operation(summary = "根据角色ID查询角色信息")
     @GetMapping("/role/{roleId}")
     public Response selectById(@PathVariable("roleId") String roleId) {
+        SaSameUtil.checkCurrentRequestToken();
         RoleVO roleVO = roleService.selectById(roleId);
         return Response.success(roleVO);
     }

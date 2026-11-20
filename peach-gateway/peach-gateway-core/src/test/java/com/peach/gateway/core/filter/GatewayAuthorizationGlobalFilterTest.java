@@ -115,6 +115,36 @@ class GatewayAuthorizationGlobalFilterTest {
         verify(chain, never()).filter(any());
     }
 
+    @Test
+    void allLegacyExternalAuthRoutesMustBeDeniedEvenUnderPublicWildcardRules() {
+        GatewaySaTokenProperties props = new GatewaySaTokenProperties();
+        var rules = new ArrayList<>(props.getPublicEndpoints());
+        rules.add(GatewaySecurityEndpointRule.any("/api/auth/external/**"));
+        rules.add(GatewaySecurityEndpointRule.any("/auth/external/**"));
+        props.setPublicEndpoints(rules);
+        GatewayAuthorizationGlobalFilter filter = filter(props);
+        GatewayFilterChain chain = mock(GatewayFilterChain.class);
+
+        for (String path : java.util.List.of(
+                "/api/auth/external/role/role-id",
+                "/api/auth/external/router/router-id",
+                "/auth/external/role/role-id",
+                "/auth/external/router/router-id",
+                "/api/auth/external/iam/context",
+                "/auth/external",
+                "/api/auth/external%2Frole/role-id")) {
+            MockServerWebExchange exchange = MockServerWebExchange.from(
+                    MockServerHttpRequest.get(path).build());
+
+            filter.filter(exchange, chain).block();
+
+            assertThat(exchange.getResponse().getStatusCode())
+                    .as("Public gateway must not expose internal Auth route: " + path)
+                    .isEqualTo(HttpStatus.FORBIDDEN);
+        }
+        verify(chain, never()).filter(any());
+    }
+
     @SuppressWarnings("unchecked")
     private static GatewayAuthorizationGlobalFilter filter(GatewaySaTokenProperties properties) {
         ObjectProvider<GatewayIamDecisionVerifier> verifiers =
