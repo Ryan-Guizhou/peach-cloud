@@ -1,5 +1,6 @@
 package com.peach.auth.rest.external;
 
+import cn.dev33.satoken.same.SaSameUtil;
 import lombok.RequiredArgsConstructor;
 
 import com.peach.auth.service.IRouterService;
@@ -37,6 +38,7 @@ public class RouterExternalController {
     public Response selectById(@Parameter(required = true, description = "路由ID")
                                @PathVariable("routerId") String routerId) {
 
+        SaSameUtil.checkCurrentRequestToken();
         RouterVO routerVO = routerService.selectById(routerId);
         return Response.success(routerVO);
     }
