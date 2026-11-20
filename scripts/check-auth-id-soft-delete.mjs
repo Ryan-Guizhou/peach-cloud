@@ -129,4 +129,22 @@ for (const name of authMappers) {
   }
 }
 
+
+// 旧全局用户普通写入不能通过通用更新模板绕过软删除及凭证生命周期。
+// INSERT/只读查询和独立受保护的密码、锁状态/逻辑删除语句不受该检查影响。
+const protectedGlobalUserFields = [
+  'password', 'isDelete', 'isModify', 'passwdModifyTime',
+  'errorCount', 'unlockTime', 'lastestLogin', 'invlidate', 'authMode',
+];
+const userXmlPath = 'peach-auth/peach-auth-service/src/main/resources/com/peach/auth/dao/UserDao.xml';
+const userXml = read(userXmlPath);
+for (const id of ['allColumnSet', 'updateSelectiveColumn', 'updateSelectiveValue']) {
+  const section = userXml.match(new RegExp('<sql id="' + id + '">([\\s\\S]*?)<\\/sql>'))?.[1];
+  assertCondition(section, userXmlPath + ': missing ' + id);
+  for (const property of protectedGlobalUserFields) {
+    assertCondition(!new RegExp('(?:test="|#\\{(?:item\\.)?)' + property + '(?:\\s|[},])').test(section),
+      userXmlPath + ': ' + id + ' must not write protected lifecycle field ' + property);
+  }
+}
+
 console.log('Authentication ID, soft-delete and DDL/entity/Mapper column checks passed.');

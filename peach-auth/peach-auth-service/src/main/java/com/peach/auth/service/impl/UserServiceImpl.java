@@ -317,6 +317,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public void add(UserDTO userDTO) {
+        requireEditableUserFieldsOnly(userDTO);
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
         userDO.setId(UniqueIdFacade.nextId());
@@ -328,9 +329,8 @@ public class UserServiceImpl implements IUserService {
         }
         UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillCreateTime(null);
-        if (userDO.getIsDelete() == null) {
-            userDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
-        }
+        userDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
+        userDO.setIsModify(0);
         userDao.insert(userDO);
     }
 
@@ -345,6 +345,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public void update(UserDTO userDTO) {
+        requireEditableUserFieldsOnly(userDTO);
         UserDO userDO = new UserDO();
         BeanUtils.copyProperties(userDTO, userDO);
         if (StringUtil.isNotBlank(userDO.getPassword())) {
@@ -354,6 +355,29 @@ public class UserServiceImpl implements IUserService {
         UserSensitiveFieldSupport.encryptUserFields(userDO);
         userDO.fillModifyTime(null);
         userDao.updateById(userDO);
+    }
+
+    /**
+     * 普通全局用户维护只允许更新个人资料及受控账户状态，不能修改认证生命周期。
+     *
+     * <p>逻辑删除仅由专用删除方法完成，密码/锁定/登录状态只能由各自受信流程
+     * 调整。即使调用方绕过 HTTP 校验直接执行 Service，也必须安全拒绝。</p>
+     *
+     * @param userDTO 用户维护请求
+     */
+    private void requireEditableUserFieldsOnly(UserDTO userDTO) {
+        if (userDTO == null) {
+            throw new IllegalArgumentException("User details are required");
+        }
+        if (userDTO.getIsDelete() != null || userDTO.getIsModify() != null
+                || StringUtil.isNotBlank(userDTO.getPasswdModifyTime())
+                || StringUtil.isNotBlank(userDTO.getErrorCount())
+                || StringUtil.isNotBlank(userDTO.getUnlockTime())
+                || StringUtil.isNotBlank(userDTO.getLastestLogin())
+                || StringUtil.isNotBlank(userDTO.getInvlidate())
+                || StringUtil.isNotBlank(userDTO.getAuthMode())) {
+            throw new SecurityException("User authentication and deletion state requires a dedicated operation");
+        }
     }
 
     private UserDO buildUserDO(UserQO userQO) {

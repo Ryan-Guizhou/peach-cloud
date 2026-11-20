@@ -436,3 +436,9 @@ sequenceDiagram
 审计保留模块、操作类型、短静态动作描述、URI（不含查询参数）、时间、耗时与成功/失败状态。**不再对 DTO 使用 SpEL 展开、存储请求参数、原始响应 Data 或可能包含敏感值的动态异常文本**；失败的受保护操作也会产生最小失败审计且不覆盖业务异常。旧的 `RESPONSE_DATA` 字段仅为了历史 schema 兼容保留，新写入不填充。原有异步队列仍是尽力而为机制，不能据此宣称日志具备不可丢失或强一致审计保障；IAM 授权变更以独立追加审计表为准。
 
 新库使用最新 `ALL_TABLE_CREATE.sql`；存量库须由 DBA 备份、核对列与索引后，**人工一次性**执行 `sql/USER_OPER_LOG_TRUSTED_CONTEXT_MIGRATION.sql` 并验证实际写入。禁止猜测回填历史租户、应用、机构或成员身份。历史 `RESPONSE_DATA` 是否含敏感数据需独立安全清理评估；完整环境验收仍由 #211 跟踪。
+
+### 旧全局用户普通写入的安全字段边界（#256）
+
+`/auth/user/add`、`/auth/user/update` 仅允许可信 PLATFORM 管理员维护基础账号资料。通用 DTO 中的 `isDelete`、`isModify`、`passwdModifyTime`、`errorCount`、`unlockTime`、`lastestLogin`、`invlidate` 和 `authMode` 不允许通过普通新增/更新接口指定；服务端会拒绝非法输入，MyBatis 普通更新模板也不能改写这些字段或密码哈希。新增用户的初始逻辑删除/密码修改标记由服务端设置。删除必须走独立软删除方法并记录 `DELETED_AT`，密码变更必须走独立的受保护凭证生命周期。
+
+此收敛不等于完成所有账号 `VERSION` 乐观并发与 `DELETED_BY` 操作人审计，也不代替 MySQL 8.4 的真实迁移及多服务回归；这些仍由 [#211](https://github.com/Ryan-Guizhou/peach-cloud/issues/211) 跟踪。
