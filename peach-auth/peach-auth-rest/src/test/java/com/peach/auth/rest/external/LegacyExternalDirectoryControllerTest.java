@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -55,7 +56,7 @@ class LegacyExternalDirectoryControllerTest {
         try (MockedStatic<SaSameUtil> same = mockStatic(SaSameUtil.class)) {
             new RoleExternalController(roles).selectById("role-ref");
             new RouterExternalController(routers).selectById("router-ref");
-            same.verify(SaSameUtil::checkCurrentRequestToken, org.mockito.Mockito.times(2));
+            same.verify(SaSameUtil::checkCurrentRequestToken, times(2));
         }
         verify(roles).selectById("role-ref");
         verify(routers).selectById("router-ref");

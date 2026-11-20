@@ -12,6 +12,7 @@ import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -125,7 +126,7 @@ class GatewayAuthorizationGlobalFilterTest {
         GatewayAuthorizationGlobalFilter filter = filter(props);
         GatewayFilterChain chain = mock(GatewayFilterChain.class);
 
-        for (String path : java.util.List.of(
+        for (String path : List.of(
                 "/api/auth/external/role/role-id",
                 "/api/auth/external/router/router-id",
                 "/auth/external/role/role-id",
