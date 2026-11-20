@@ -48,6 +48,7 @@ const loadingRole = ref(false)
 const loadingMember = ref(false)
 let roleVersion = 0
 let memberVersion = 0
+let directoryVersion = 0
 
 const missingPermissionRefs = computed(() => {
   const visible = new Set(catalog.permissions.map(item => item.id))
@@ -79,55 +80,80 @@ const bindingOptions = computed(() => bindings.value.map(item => ({
   value: item.id,
 })))
 
-async function loadCatalog(kind: CatalogKind, append = false) {
-  if (!canManage.value || (append && !hasMore[kind])) {
-    return
-  }
-  const page = append ? pages[kind] + 1 : 1
-  const result = await fetchSaasCatalog(kind, page, 50)
-  if (!canManage.value) {
-    return
-  }
-  const oldItems = append ? catalog[kind] : []
-  const byId = new Map(oldItems.map(item => [item.id, item]))
-  result.items.forEach(item => byId.set(item.id, item))
-  catalog[kind] = Array.from(byId.values())
-  pages[kind] = page
-  hasMore[kind] = result.hasMore
+function isCurrentDirectoryRequest(version: number, scope: string): boolean {
+  return version === directoryVersion && scope === scopeKey.value && canManage.value
+}
+
+function resetDirectories() {
+  kinds.forEach(kind => {
+    catalog[kind] = []
+    pages[kind] = 0
+    hasMore[kind] = false
+  })
 }
 
 async function loadDirectories() {
   if (!canManage.value || loadingCatalog.value) {
     return
   }
+  const version = ++directoryVersion
+  const scope = scopeKey.value
   loadingCatalog.value = true
   try {
-    await Promise.all(kinds.map(kind => loadCatalog(kind)))
-  } catch (error: unknown) {
-    kinds.forEach(kind => {
-      catalog[kind] = []
-      pages[kind] = 0
-      hasMore[kind] = false
+    const results = await Promise.all(kinds.map(kind => fetchSaasCatalog(kind, 1, 50)))
+    if (!isCurrentDirectoryRequest(version, scope)) {
+      return
+    }
+    kinds.forEach((kind, index) => {
+      const result = results[index]
+      catalog[kind] = result.items
+      pages[kind] = result.page
+      hasMore[kind] = result.hasMore
     })
-    message.error(error instanceof Error ? error.message : '管理目录加载失败')
+  } catch (error: unknown) {
+    if (isCurrentDirectoryRequest(version, scope)) {
+      resetDirectories()
+      message.error(error instanceof Error ? error.message : '管理目录加载失败')
+    }
   } finally {
-    loadingCatalog.value = false
+    if (version === directoryVersion) {
+      loadingCatalog.value = false
+    }
   }
 }
 
 async function loadMore(kind: CatalogKind) {
+  if (!canManage.value || loadingCatalog.value || !hasMore[kind]) {
+    return
+  }
+  const version = ++directoryVersion
+  const scope = scopeKey.value
+  const page = pages[kind] + 1
   loadingCatalog.value = true
   try {
-    await loadCatalog(kind, true)
+    const result = await fetchSaasCatalog(kind, page, 50)
+    if (!isCurrentDirectoryRequest(version, scope)) {
+      return
+    }
+    const byId = new Map(catalog[kind].map(item => [item.id, item]))
+    result.items.forEach(item => byId.set(item.id, item))
+    catalog[kind] = Array.from(byId.values())
+    pages[kind] = result.page
+    hasMore[kind] = result.hasMore
   } catch (error: unknown) {
-    message.error(error instanceof Error ? error.message : '后续目录加载失败')
+    if (isCurrentDirectoryRequest(version, scope)) {
+      message.error(error instanceof Error ? error.message : '后续目录加载失败')
+    }
   } finally {
-    loadingCatalog.value = false
+    if (version === directoryVersion) {
+      loadingCatalog.value = false
+    }
   }
 }
 
 watch(selectedRoleId, async (id) => {
   const version = ++roleVersion
+  const scope = scopeKey.value
   selectedPermissionRefs.value = []
   existingPermissionRefs.value = []
   if (!id || !canManage.value) {
@@ -136,17 +162,17 @@ watch(selectedRoleId, async (id) => {
   loadingRole.value = true
   try {
     const current = await fetchRolePermissionRefs(id)
-    if (version !== roleVersion) {
+    if (version !== roleVersion || scope !== scopeKey.value || !canManage.value) {
       return
     }
     existingPermissionRefs.value = current
     selectedPermissionRefs.value = [...current]
   } catch (error: unknown) {
-    if (version === roleVersion) {
+    if (version === roleVersion && scope === scopeKey.value && canManage.value) {
       message.error(error instanceof Error ? error.message : '角色权限加载失败')
     }
   } finally {
-    if (version === roleVersion) {
+    if (version === roleVersion && scope === scopeKey.value && canManage.value) {
       loadingRole.value = false
     }
   }
@@ -154,6 +180,7 @@ watch(selectedRoleId, async (id) => {
 
 watch(selectedMemberId, async (id) => {
   const version = ++memberVersion
+  const scope = scopeKey.value
   bindings.value = []
   selectedBindingId.value = ''
   if (!id || !canManage.value) {
@@ -162,15 +189,15 @@ watch(selectedMemberId, async (id) => {
   loadingMember.value = true
   try {
     const current = await fetchMemberBindings(id)
-    if (version === memberVersion) {
+    if (version === memberVersion && scope === scopeKey.value && canManage.value) {
       bindings.value = current
     }
   } catch (error: unknown) {
-    if (version === memberVersion) {
+    if (version === memberVersion && scope === scopeKey.value && canManage.value) {
       message.error(error instanceof Error ? error.message : '成员授权记录加载失败')
     }
   } finally {
-    if (version === memberVersion) {
+    if (version === memberVersion && scope === scopeKey.value && canManage.value) {
       loadingMember.value = false
     }
   }
@@ -185,23 +212,31 @@ const scopeKey = computed(() => [
 watch(scopeKey, () => {
   roleVersion += 1
   memberVersion += 1
+  directoryVersion += 1
+  loadingCatalog.value = false
+  loadingRole.value = false
+  loadingMember.value = false
   selectedRoleId.value = ''
   selectedMemberId.value = ''
   selectedPermissionRefs.value = []
   existingPermissionRefs.value = []
   bindings.value = []
   selectedBindingId.value = ''
-  kinds.forEach(kind => {
-    catalog[kind] = []
-    pages[kind] = 0
-    hasMore[kind] = false
-  })
+  resetDirectories()
   if (canManage.value) {
     void loadDirectories()
   }
 })
 
 watch(canManage, (allowed) => {
+  if (!allowed) {
+    directoryVersion += 1
+    roleVersion += 1
+    memberVersion += 1
+    loadingCatalog.value = false
+    loadingRole.value = false
+    loadingMember.value = false
+  }
   if (allowed) {
     void loadDirectories()
     return
@@ -210,11 +245,7 @@ watch(canManage, (allowed) => {
   selectedMemberId.value = ''
   selectedPermissionRefs.value = []
   bindings.value = []
-  kinds.forEach(kind => {
-    catalog[kind] = []
-    pages[kind] = 0
-    hasMore[kind] = false
-  })
+  resetDirectories()
 })
 
 onMounted(() => {
@@ -267,8 +298,8 @@ async function grant() {
       scopeType: selectedScope.value,
       scopeRefId: selectedScope.value === 'TENANT' ? undefined : selectedOrgId.value,
     })
-    bindings.value = await fetchMemberBindings(selectedMemberId.value)
-    message.success('当前成员角色授权成功')
+    message.success('当前成员角色授权成功，授权会话已失效，请重新登录')
+    await handlePolicyCommitted()
   } catch (error: unknown) {
     message.error(error instanceof Error ? error.message : '角色授权失败')
   } finally {
@@ -283,9 +314,8 @@ async function revoke() {
   saving.value = true
   try {
     await revokeMemberRole(selectedBindingId.value)
-    bindings.value = await fetchMemberBindings(selectedMemberId.value)
-    selectedBindingId.value = ''
-    message.success('指定角色绑定已撤销')
+    message.success('指定角色绑定已撤销，授权会话已失效，请重新登录')
+    await handlePolicyCommitted()
   } catch (error: unknown) {
     message.error(error instanceof Error ? error.message : '撤销角色绑定失败')
   } finally {
