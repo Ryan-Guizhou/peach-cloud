@@ -42,12 +42,32 @@ for (const name of authMappers) {
   assertCondition(!/<delete\b/i.test(xml) && !/\bDELETE\s+FROM\s+PEACH_/i.test(xml),
     `${path}: physical deletion in authentication mapper`);
 
-  const update = xml.match(/<update id="updateById"[^>]*>[\s\S]*?<\/update>/);
-  assertCondition(update && /WHERE\s+ID\s*=\s*#\{id,jdbcType=VARCHAR\}/.test(update[0]),
-    `${path}: updateById must use the physical id property`);
   assertCondition(/<sql id="allColumnAlias">[\s\S]*?\bID\s+as\s+id\b/i.test(xml),
     `${path}: missing physical ID result mapping`);
 
+  if (name === 'User') {
+    const update = xml.match(/<update id="updateAdminWithVersion"[^>]*>[\s\S]*?<\/update>/);
+    assertCondition(update && /WHERE\s+ID\s*=\s*#\{id,jdbcType=VARCHAR\}/.test(update[0])
+      && /VERSION\s*=\s*VERSION\s*\+\s*1/.test(update[0])
+      && /VERSION\s*=\s*#\{version,jdbcType=BIGINT\}/.test(update[0])
+      && /IS_DELETE\s*=\s*0/.test(update[0]),
+    `${path}: global user updates must use physical-id/version CAS`);
+    const remove = xml.match(/<update id="softDeleteWithVersion"[^>]*>[\s\S]*?<\/update>/);
+    assertCondition(remove && /IS_DELETE\s*=\s*1/.test(remove[0])
+      && /DELETED_AT\s*=\s*CURRENT_TIMESTAMP\(3\)/.test(remove[0])
+      && /DELETED_BY_REF_ID\s*=\s*#\{operatorRefId,jdbcType=VARCHAR\}/.test(remove[0])
+      && /VERSION\s*=\s*#\{expectedVersion,jdbcType=BIGINT\}/.test(remove[0]),
+    `${path}: global user soft delete requires CAS, actor and audit time`);
+    for (const oldMethod of ['update', 'updateById', 'delById', 'delByIds', 'del']) {
+      assertCondition(!new RegExp('<update id="' + oldMethod + '"').test(xml),
+        `${path}: unsafe legacy ${oldMethod} statement must stay disabled`);
+    }
+    continue;
+  }
+
+  const update = xml.match(/<update id="updateById"[^>]*>[\s\S]*?<\/update>/);
+  assertCondition(update && /WHERE\s+ID\s*=\s*#\{id,jdbcType=VARCHAR\}/.test(update[0]),
+    `${path}: updateById must use the physical id property`);
   for (const method of ['delById', 'delByIds', 'del']) {
     const block = xml.match(new RegExp(`<update id="${method}"[^>]*>[\\s\\S]*?<\\/update>`));
     assertCondition(block && /SET\s+IS_DELETE\s*=\s*1/.test(block[0]),

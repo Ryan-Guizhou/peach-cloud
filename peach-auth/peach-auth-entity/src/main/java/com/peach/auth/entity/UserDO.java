@@ -56,6 +56,10 @@ public class UserDO extends PeachDO implements Serializable {
     @Schema(description = "全局账号密码版本，不下发前端")
     private Long passwordVersion;
 
+    @Column(name = "VERSION")
+    @Schema(description = "资料乐观并发版本，更新时携带")
+    private Long version;
+
     @Column(name = "USER_NAME")
     @Schema(description = "用户名称")
     private String userName;
@@ -115,6 +119,12 @@ public class UserDO extends PeachDO implements Serializable {
     @Column(name = "DEFAULT_ORG_ID")
     @Schema(description = "默认机构ID")
     private String defaultOrgId;
+
+    @JsonIgnore
+    @Column(name = "DELETED_BY_REF_ID")
+    @Schema(description = "删除操作人可信成员物理 ID，仅内部审计")
+    @ToString.Exclude
+    private String deletedByRefId;
 
     @Column(name = "IS_DELETE")
     @Schema(description = "是否删除")

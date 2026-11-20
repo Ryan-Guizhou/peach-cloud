@@ -442,3 +442,11 @@ sequenceDiagram
 `/auth/user/add`、`/auth/user/update` 仅允许可信 PLATFORM 管理员维护基础账号资料。通用 DTO 中的 `isDelete`、`isModify`、`passwdModifyTime`、`errorCount`、`unlockTime`、`lastestLogin`、`invlidate` 和 `authMode` 不允许通过普通新增/更新接口指定；服务端会拒绝非法输入，MyBatis 普通更新模板也不能改写这些字段或密码哈希。新增用户的初始逻辑删除/密码修改标记由服务端设置。删除必须走独立软删除方法并记录 `DELETED_AT`，密码变更必须走独立的受保护凭证生命周期。
 
 此收敛不等于完成所有账号 `VERSION` 乐观并发与 `DELETED_BY` 操作人审计，也不代替 MySQL 8.4 的真实迁移及多服务回归；这些仍由 [#211](https://github.com/Ryan-Guizhou/peach-cloud/issues/211) 跟踪。
+
+### 全局用户更新/删除乐观并发与删除审计（#258）
+
+旧全局用户管理要求真实 PLATFORM 权限和受信 SaaS 成员会话。管理员从用户列表或详情读取当前物理 `ID` 与 `VERSION`，调用 `/auth/user/update` 时在请求 DTO 中提交 `version`；调用 `DELETE /auth/user/delById` 时以查询参数提交 `id` 和 `version`。版本缺失或过期、目标用户已删除均被拒绝，不能覆盖并发编辑结果。
+
+数据库普通编辑在一个 SQL 中 CAS 比较 `ID/VERSION/IS_DELETE` 并递增版本；受信删除记录 `DELETED_AT/DELETED_BY_REF_ID`，操作人来自实时验证的成员物理 ID，不信任请求 Header 或用户提交的操作人信息。旧无版本的通用用户 DAO 更新/删除映射被移除；个人资料更新和受保护改密也递增资料版本，密码认证仍使用独立 `PASSWORD_VERSION` 撤销旧 Token。
+
+存量 MySQL 手工迁移及跨租户、管理员并发与回滚仍由 #211 跟踪；本次不代表其他实体或 `PEACH_TENANT` 已完成同等并发/审计保护。
