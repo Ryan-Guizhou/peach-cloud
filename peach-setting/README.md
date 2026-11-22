@@ -99,3 +99,15 @@ mvn -pl peach-setting/peach-setting-launch -am -Dspring-boot.run.profiles=dev sp
 - 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
 - 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
 - README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。
+
+
+## 调度联调案例
+
+在 IDEA 中使用现有应用入口和正常的 `dev`（或 `docker`）环境启动。本地 application YAML 保留启动与 Nacos 导入配置；调度、受管 `scheduler` 虚拟线程组、RocketMQ、Outbox 和任务默认定义由 Nacos 管理。服务自动登记 `settingSchedulerDemo`、发送心跳并消费执行命令，经受管执行器 Claim 后执行。案例仅返回成功，不修改业务数据。可通过 `PEACH_SCHEDULER_DEMO_ENABLED=false` 关闭测试 Handler 和消费者。
+
+服务启动后自动登记任务，可在任务管理查看定义和初始状态。业务服务与控制面需要共用可访问的 Nacos、Redis、MySQL Outbox 和 RocketMQ 环境。实际执行需在线验证。
+
+
+## 任务自动登记
+
+服务通过 `@PeachJob` 提供稳定的 `jobCode`、`jobName`，在 Nacos 的 `peach.scheduler.executor.jobs[handlerName]` 提供完整默认任务定义，包括周期、时区、误触发与并发策略、超时、重试、参数和初始状态。控制面首次登记时校验定义并创建任务；元数据缺失时只登记 Handler 和刷新心跳，不创建占位草稿。后续心跳不覆盖管理端已维护的周期、参数、启停或删除状态。同一 Handler 仍可关联其他任务。初始状态由集中配置维护。

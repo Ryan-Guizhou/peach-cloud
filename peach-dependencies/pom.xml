@@ -729,6 +729,12 @@
                 <version>${revision}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.peach</groupId>
+                <artifactId>peach-database</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
             <!-- ==================== peach-auth ==================== -->
             <dependency>
                 <groupId>com.peach</groupId>

@@ -291,6 +291,13 @@ spring.cloud:
               filters:
                 - StripPrefix=1
 
+            - id: peach-scheduler
+              uri: lb://peach-scheduler
+              predicates:
+                - Path=/api/scheduler/**
+              filters:
+                - StripPrefix=1
+
 # 网关聚合knife4j 配置
 knife4j:
   gateway:

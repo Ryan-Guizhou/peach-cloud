@@ -1,6 +1,7 @@
 
 # Maven ignores
 .codegraph
+logs/
 
 target/
 !.mvn/wrapper/maven-wrapper.jar
@@ -47,3 +48,6 @@ deploy-pipline/runtime/
 deploy-pipline/env/deploy.env
 deploy-pipline/peach-deploy.env
 deploy/nacos/import-nacos.private.json
+
+# Generated frontend audit report
+peach-cloud-front/premium-audit.json

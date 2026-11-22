@@ -1,5 +1,8 @@
 # 数据源相关配置
 spring.datasource:
+  url: ${spring.datasource.hikari.jdbc-url}
+  username: ${spring.datasource.hikari.username}
+  password: ${spring.datasource.hikari.password}
   driver-class-name: com.mysql.cj.jdbc.Driver
   hikari:
     jdbc-url: jdbc:mysql://@MYSQL_HOST@/@MYSQL_DATABASE@?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8

@@ -20,7 +20,27 @@ springdoc:
     - com.peach.auth.launch.health
 
 peach:
+  scheduler:
+    executor:
+      jobs:
+        authSchedulerDemo:
+          schedule-type: CRON
+          cron-expression: 0 * * * * ?
+          time-zone: Asia/Shanghai
+          misfire-policy: SKIP
+          concurrency-policy: DISALLOW
+          timeout-ms: 30000
+          max-attempts: 1
+          retry-interval-seconds: 10
+          parameters-json: '{}'
+  captcha:
+    cache-type: REDIS
+    service-type: BLOCKPUZZLE
   openapi:
     version: V1.0.0
     server-url: /api/auth
     server-description: Gateway
+
+rocketmq:
+  producer:
+    group: peach-auth-scheduler-producer

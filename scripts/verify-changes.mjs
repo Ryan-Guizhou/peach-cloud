@@ -11,6 +11,8 @@ const commands = [
   ['node', ['scripts/check-spring-wiring.mjs']],
   ['node', ['scripts/check-readme-sync.mjs']],
   ['node', ['scripts/check-docs.mjs']],
+  ['node', ['scripts/sync-database-sql.mjs', '--check']],
+  ['node', ['--test', 'scripts/sync-database-sql.test.mjs']],
   ['git', ['diff', '--check']],
 ];
 

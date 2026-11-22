@@ -18,6 +18,10 @@
     <dependencies>
         <dependency>
             <groupId>com.peach</groupId>
+            <artifactId>peach-database</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.peach</groupId>
             <artifactId>peach-observability-starter</artifactId>
         </dependency>
         <dependency>
