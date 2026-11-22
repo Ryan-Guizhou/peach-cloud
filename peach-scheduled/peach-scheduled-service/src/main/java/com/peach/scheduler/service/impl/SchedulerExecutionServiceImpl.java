@@ -185,6 +185,10 @@ public class SchedulerExecutionServiceImpl implements ISchedulerExecutionService
      */
     @Override
     public List<SchedulerExecutionVO> list(SchedulerExecutionQO query) {
+        if (query.getScheduledFromValue() != null && query.getScheduledToValue() != null
+                && query.getScheduledFromValue().isAfter(query.getScheduledToValue())) {
+            throw new IllegalArgumentException("Scheduled time range is reversed");
+        }
         return toVOList(executionDao.selectPage(query));
     }
 

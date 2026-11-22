@@ -103,3 +103,7 @@ npm run build
 - Architecture, call flows, state, lifecycle and data flow should prefer maintainable Mermaid / PlantUML / draw.io diagrams.
 
 See [`AGENTS.md`](AGENTS.md) for repository Agent, Rule, Skill and centralized quality-gate conventions.
+
+## Startup database migrations
+
+Seven JDBC applications use shared Flyway migrations at startup. See [Peach Database](peach-database/README.en-US.md) for empty-database initialization, existing-schema adoption, frozen migration history and failure handling.

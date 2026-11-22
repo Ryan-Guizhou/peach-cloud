@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
  * 走完整执行侧：{@code command -> PeachJobExecutor -> claim -> handler -> reporter}。
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Indexed
 @Service
+@ConditionalOnProperty(name = "peach.scheduler.quickstart.local-mode", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class ExecutorOrchestrationExample {
 

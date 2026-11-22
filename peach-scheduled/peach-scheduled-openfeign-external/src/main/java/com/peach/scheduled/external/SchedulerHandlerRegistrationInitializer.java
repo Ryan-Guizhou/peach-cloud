@@ -65,6 +65,23 @@ public class SchedulerHandlerRegistrationInitializer implements SmartInitializin
             HandlerRegistrationDTO.Item item = new HandlerRegistrationDTO.Item();
             item.setHandlerName(descriptor.handlerName());
             item.setDescription(descriptor.description());
+            var definition = properties.getExecutor().getJobs().get(descriptor.handlerName());
+            boolean hasCode = descriptor.jobCode() != null && !descriptor.jobCode().isBlank();
+            boolean hasName = descriptor.jobName() != null && !descriptor.jobName().isBlank();
+            if (hasCode != hasName || (hasCode && definition == null)) {
+                throw new IllegalStateException("Declared task requires jobCode, jobName and a configured registration definition");
+            }
+            if (definition != null && descriptor.jobCode() != null && !descriptor.jobCode().isBlank()
+                    && descriptor.jobName() != null && !descriptor.jobName().isBlank()) {
+                var task = new com.peach.scheduled.dto.SchedulerJobSaveDTO();
+                org.springframework.beans.BeanUtils.copyProperties(definition, task);
+                task.setJobCode(descriptor.jobCode());
+                task.setJobName(descriptor.jobName());
+                task.setApplicationName(request.getApplicationName());
+                task.setHandlerName(descriptor.handlerName());
+                task.setDescription(descriptor.description());
+                item.setTask(task);
+            }
             request.getHandlers().add(item);
         }
         if (request.getHandlers().isEmpty()) {

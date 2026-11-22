@@ -328,7 +328,7 @@ onMounted(async () => {
                   default-expand-all
                   :tree-data="functionTreeData"
                 />
-                <a-empty v-else description="暂无可授权功能，请先在功能管理中维护。" />
+                <a-empty v-else description="暂无可授权功能，请先在功能定义中维护。" />
               </a-card>
             </a-col>
             <a-col :xs="24" :xl="15">

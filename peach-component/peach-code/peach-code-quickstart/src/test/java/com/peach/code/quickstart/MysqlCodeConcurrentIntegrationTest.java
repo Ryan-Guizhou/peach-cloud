@@ -40,6 +40,8 @@ class MysqlCodeConcurrentIntegrationTest {
     @Container
     @SuppressWarnings("resource")
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>(DockerImageName.parse("mysql:8.4"))
+            // 仅测试容器允许普通测试用户创建故障注入触发器，兼容默认开启的二进制日志。
+            .withCommand("--log-bin-trust-function-creators=1")
             .withDatabaseName("peach_code_test")
             .withUsername("peach")
             .withPassword("peach-test");

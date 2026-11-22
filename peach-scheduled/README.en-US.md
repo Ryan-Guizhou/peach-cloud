@@ -195,3 +195,16 @@ git diff --check -- peach-scheduled sql
 - Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
 - Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
 - Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+
+### Scheduler service demos and filtering
+
+Handler management retains online and offline records and displays only heartbeat status, with server filtering by application, keyword and online status. There is no Handler enabled switch or schema migration requirement. Task lifecycle enable/disable remains available. Execution cards filter by execution ID, job code, state, trigger source, executor and scheduled time range.
+
+Launch auth and setting from their existing application entry points in IDEA with the normal `dev` (or `docker`) profile. Local application YAML retains startup and Nacos imports; Nacos manages scheduler, virtual-thread, Outbox and RocketMQ settings. Services automatically register `authSchedulerDemo` and `settingSchedulerDemo` and share the same infrastructure environment with the control plane. The demo handlers return success without modifying business data.
+
+Once both Handlers appear online, inspect their automatically registered tasks: auth uses a Cron schedule every minute; setting uses a fixed interval of 60 seconds. Review the centrally configured initial state before testing. Real execution verification requires live services; compilation and simulated responses do not establish successful registration or execution.
+
+
+## Automatic task registration
+
+Services declare stable `jobCode` and `jobName` in `@PeachJob` and supply complete defaults through Nacos `peach.scheduler.executor.jobs[handlerName]`: schedule, time zone, misfire and concurrency policies, timeout, retries, parameters and initial state. The control plane validates the definition on first registration and creates the task. Missing metadata permits Handler registration and heartbeats only, without creating a placeholder draft. Later heartbeats preserve schedules, parameters and lifecycle or deleted states maintained by administrators. Additional tasks may use the same Handler. Initial state is managed centrally.

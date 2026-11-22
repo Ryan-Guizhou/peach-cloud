@@ -5,15 +5,10 @@ import org.springframework.stereotype.Indexed;
 import com.peach.scheduler.config.PeachSchedulerProperties;
 import com.peach.scheduler.core.JobHandler;
 import com.peach.scheduler.core.JobRegistry;
-import com.peach.scheduler.core.PeachJobExecutor;
-import com.peach.scheduler.runtime.DefaultPeachJobExecutor;
 import com.peach.scheduler.runtime.PeachJobRegistrationInitializer;
-import com.peach.scheduler.transport.ExecutionLeaseClient;
-import com.peach.scheduler.transport.ExecutionResultReporter;
 import com.peach.virtualthread.registry.VirtualExecutorRegistry;
 import java.util.List;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -64,25 +59,4 @@ public class PeachSchedulerAutoConfiguration {
         return new PeachJobRegistrationInitializer(registry, handlers);
     }
 
-    /**
-     * 创建默认任务执行器。
-     *
-     * <p>只有执行租约客户端、结果上报器和虚拟线程注册中心同时存在时才创建默认执行器。
-     * 业务可以声明自己的 {@link PeachJobExecutor} Bean 覆盖该默认实现。</p>
-     *
-     * @param registry Handler 注册表
-     * @param virtualExecutorRegistry 虚拟线程执行器注册中心
-     * @param leaseClient 执行租约客户端
-     * @param resultReporter 执行结果上报器
-     * @param properties Scheduler 配置属性
-     * @return 默认任务执行器
-     */
-    @Bean
-    @ConditionalOnBean({VirtualExecutorRegistry.class, ExecutionLeaseClient.class, ExecutionResultReporter.class})
-    @ConditionalOnMissingBean(PeachJobExecutor.class)
-    public PeachJobExecutor peachJobExecutor(JobRegistry registry, VirtualExecutorRegistry virtualExecutorRegistry,
-                                             ExecutionLeaseClient leaseClient, ExecutionResultReporter resultReporter,
-                                             PeachSchedulerProperties properties) {
-        return new DefaultPeachJobExecutor(registry, virtualExecutorRegistry, leaseClient, resultReporter, properties);
-    }
 }

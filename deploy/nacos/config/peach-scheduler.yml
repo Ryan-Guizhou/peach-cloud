@@ -1,0 +1,45 @@
+# Control plane; datasource is imported from peach-datasource.yml.
+spring:
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: never
+    overwrite-existing-jobs: false
+    wait-for-jobs-to-complete-on-shutdown: false
+    properties:
+      org.quartz.scheduler.instanceName: peachScheduler
+      org.quartz.scheduler.instanceId: AUTO
+      org.quartz.jobStore.class: org.springframework.scheduling.quartz.LocalDataSourceJobStore
+      org.quartz.jobStore.driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+      org.quartz.jobStore.isClustered: true
+      org.quartz.jobStore.clusterCheckinInterval: 15000
+      org.quartz.jobStore.misfireThreshold: 60000
+      org.quartz.jobStore.tablePrefix: QRTZ_
+      org.quartz.threadPool.threadCount: ${PEACH_SCHEDULER_QUARTZ_THREADS:8}
+      org.quartz.threadPool.threadPriority: 5
+mybatis:
+  mapper-locations: classpath*:com/peach/scheduler/dao/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:127.0.0.1:9876}
+  producer:
+    group: peach-scheduler-producer
+peach:
+  scheduler:
+    enabled: true
+    provider: quartz
+    rocket:
+      require-jdbc: true
+  rocket:
+    enabled: true
+    app-name: peach-scheduler
+    topic:
+      auto-create: ${PEACH_ROCKET_TOPIC_AUTO_CREATE:true}
+    consumer:
+      dynamic-register: true
+      enable-idempotent: true
+    outbox:
+      enabled: true
+server:
+  port: ${PEACH_SCHEDULER_PORT:8088}

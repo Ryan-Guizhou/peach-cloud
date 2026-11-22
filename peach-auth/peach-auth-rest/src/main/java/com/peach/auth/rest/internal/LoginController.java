@@ -1,6 +1,9 @@
 package com.peach.auth.rest.internal;
 
 import com.peach.common.util.StringUtil;
+import com.peach.auth.LoginInfo;
+import com.peach.auth.service.support.LoginAuditContext;
+import com.peach.satoken.context.SecurityContextHolder;
 import lombok.RequiredArgsConstructor;
 
 import cn.dev33.satoken.stp.StpUtil;
@@ -50,9 +53,14 @@ public class LoginController {
     @Operation(summary = "用户登录")
     @PostMapping("/login")
     public Response login(@RequestBody @Validated(LoginGroup.Login.class) LoginDTO loginDTO) {
+        LoginAuditContext.account(loginDTO.getUsername());
         Response response = userService.login(loginDTO);
         if (response.isSuccess()) {
             response.setMsg("登录成功");
+            if (response.getData() instanceof LoginInfo info) {
+                LoginAuditContext.identity(info.getUserId(), info.getTenantId(), info.getOrgId());
+            }
+            LoginAuditContext.success();
         }
         return response;
     }
@@ -72,7 +80,18 @@ public class LoginController {
     @PostMapping("/logout")
     @Operation(summary = "用户登出")
     public Response logout() {
+        var actor = SecurityContextHolder.get();
+        if (actor != null) {
+            LoginAuditContext.account(actor.getUserCode());
+            LoginAuditContext.identity(actor.getUserId(), actor.getTenantId(), actor.getOrgId());
+        }
         Object userId = StpUtil.getLoginId();
+        if (actor == null) {
+            var session = StpUtil.getTokenSession();
+            LoginAuditContext.identity(String.valueOf(userId),
+                    session.getString(com.peach.common.constant.SaTokenConstant.TOKEN_SESSION_TENANT_ID),
+                    session.getString(com.peach.common.constant.SaTokenConstant.TOKEN_SESSION_ORG_ID));
+        }
         if (StringUtil.isNotBlank(userId)) {
             StpUtil.logout(userId);
             log.info("logout successed, userId is {}",userId);
@@ -81,6 +100,7 @@ public class LoginController {
         }
         Response success = Response.success();
         success.setMsg("登出成功");
+        LoginAuditContext.success();
         return success;
     }
 
@@ -151,6 +171,7 @@ public class LoginController {
         Response response = captchaService.check(captchaVO);
         if (response != null && response.isSuccess()) {
             response.setMsg("滑块验证通过");
+            LoginAuditContext.success();
         }
         return response;
     }

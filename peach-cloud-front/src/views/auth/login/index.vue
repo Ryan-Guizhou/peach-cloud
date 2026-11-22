@@ -96,7 +96,7 @@ const handleSubmit = async () => {
       && route.query.redirect.startsWith('/')
       && !route.query.redirect.startsWith('//')
       ? route.query.redirect
-      : '/workspace'
+      : (loginInfo.roleList.length === 1 && loginInfo.defaultRoute && router.getRoutes().some(item => item.path === loginInfo.defaultRoute) ? loginInfo.defaultRoute : '/workspace')
     await router.replace(redirect)
   } catch (error: unknown) {
     formError.value = error instanceof Error ? error.message : '登录失败，请稍后重试'

@@ -223,8 +223,9 @@ public class SchedulerServiceConfiguration {
      * @return 执行结果。
      */
     @Bean
-    public ISchedulerHandlerService schedulerHandlerService(SchedulerHandlerDao handlerDao) {
-        return new SchedulerHandlerServiceImpl(handlerDao);
+    public ISchedulerHandlerService schedulerHandlerService(SchedulerHandlerDao handlerDao,
+            SchedulerJobDao jobDao, SchedulerJobVersionDao jobVersionDao, ObjectMapper objectMapper) {
+        return new SchedulerHandlerServiceImpl(handlerDao, jobDao, jobVersionDao, objectMapper);
     }
 
     /**

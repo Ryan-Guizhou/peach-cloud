@@ -494,4 +494,10 @@
         </foreach>
         ORDER BY SORT_NO ASC, MENU_SEQ ASC
     </select>
+    <select id="selectCatalogs" resultType="com.peach.auth.vo.MenuVO">
+        SELECT <include refid="allColumnAlias"/> FROM PEACH_MENU
+        WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId}
+          AND IS_LEAF = 0 AND IS_DELETE = 0 AND IS_DISABLE = 0 AND IS_SHOW = 1
+        ORDER BY SORT_NO, MENU_SEQ
+    </select>
 </mapper>

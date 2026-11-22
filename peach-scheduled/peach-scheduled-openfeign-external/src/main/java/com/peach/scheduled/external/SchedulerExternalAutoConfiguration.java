@@ -19,7 +19,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:42
  */
-@AutoConfiguration
+@AutoConfiguration(afterName = "com.peach.scheduler.PeachSchedulerAutoConfiguration")
 @EnableFeignClients(clients = {SchedulerExecutionExternalClient.class, SchedulerHandlerExternalClient.class})
 @EnableScheduling
 @Indexed
@@ -68,7 +68,7 @@ public class SchedulerExternalAutoConfiguration {
      * @param properties Scheduler 执行器配置
      */
     @Bean
-    @ConditionalOnBean({JobRegistry.class, SchedulerHandlerExternalClient.class})
+    @ConditionalOnBean(JobRegistry.class)
     public SchedulerHandlerRegistrationInitializer schedulerHandlerRegistrationInitializer(
             JobRegistry registry,
             SchedulerHandlerExternalClient client,

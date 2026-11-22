@@ -1,1 +1,2 @@
 com.peach.scheduler.PeachSchedulerAutoConfiguration
+com.peach.scheduler.PeachJobExecutorAutoConfiguration

@@ -46,6 +46,20 @@ public interface SchedulerHandlerDao extends PeachDao<SchedulerHandlerDO, Schedu
     List<SchedulerHandlerDO> selectOnline();
 
     /**
+     * 查询全部注册记录，包括离线 Handler。
+     * @return Handler 列表
+     */
+    List<SchedulerHandlerDO> selectAll();
+
+    /**
+     * 按管理条件查询全量注册记录。
+     * @param query 查询条件
+     * @return 匹配的 Handler
+     */
+    List<SchedulerHandlerDO> selectFiltered(com.peach.scheduled.qo.SchedulerHandlerQO query);
+
+
+    /**
      * 将超过指定心跳时间窗口的 Handler 标记为离线。
      *
      * @param seconds 心跳超时秒数

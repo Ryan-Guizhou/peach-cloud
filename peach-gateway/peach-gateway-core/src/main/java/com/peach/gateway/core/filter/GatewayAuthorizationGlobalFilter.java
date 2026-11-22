@@ -23,6 +23,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
@@ -263,7 +264,10 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
                 || e instanceof DisableServiceException) {
             return HttpStatus.FORBIDDEN;
         }
-        return HttpStatus.UNAUTHORIZED;
+        if (e instanceof RedisConnectionFailureException) {
+            return HttpStatus.SERVICE_UNAVAILABLE;
+        }
+        return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 
     /**
@@ -288,7 +292,10 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
         if (e instanceof DisableServiceException) {
             return "Account access restricted";
         }
-        return "Authentication failed";
+        if (e instanceof RedisConnectionFailureException) {
+            return "Authentication service unavailable";
+        }
+        return "Authentication service error";
     }
 
     /**

@@ -2,8 +2,8 @@ package com.peach.setting.rest.internal;
 
 import lombok.RequiredArgsConstructor;
 
-import com.peach.auth.annoation.UserOperLog;
-import com.peach.auth.enums.UserLogEnum;
+import com.peach.log.annoation.UserOperLog;
+import com.peach.log.enums.UserLogEnum;
 import com.peach.common.response.Response;
 import com.peach.setting.common.enums.LanguageGroup;
 import com.peach.setting.common.enums.MultiMessageGroup;

@@ -1,5 +1,6 @@
 package com.peach.scheduled.rest.internal;
 
+import com.peach.scheduled.qo.SchedulerHandlerQO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
 
@@ -30,14 +31,9 @@ public class SchedulerHandlerController {
 
     private final ISchedulerHandlerService schedulerHandlerService;
 
-    /**
-     * 查询当前在线的 Handler 列表。
-     *
-     * @return Handler 列表响应
-     */
     @GetMapping
     @Operation(summary = "查询调度 Handler 列表")
-    public Response list() {
-        return Response.success(schedulerHandlerService.list());
+    public Response list(SchedulerHandlerQO query) {
+        return Response.success(schedulerHandlerService.list(query));
     }
 }

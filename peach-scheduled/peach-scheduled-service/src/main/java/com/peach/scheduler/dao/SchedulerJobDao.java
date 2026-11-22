@@ -38,10 +38,23 @@ public interface SchedulerJobDao extends PeachDao<SchedulerJobDO, SchedulerJobDO
     SchedulerJobDO selectByCode(@Param("jobCode") String jobCode);
 
     /**
+     * 当前读已登记任务，避免并发注册在可重复读快照中遗漏获胜记录。
+     * @param jobCode 稳定任务编码
+     * @return 当前数据库任务定义
+     */
+    SchedulerJobDO selectByCodeForUpdate(@Param("jobCode") String jobCode);
+
+    /**
      * 新增调度任务定义。
      *
      * @param job 任务数据库对象     */
     void insert(SchedulerJobDO job);
+
+    /**
+     * 登记自动发现的默认任务；稳定编码已存在时不覆盖管理配置。
+     * @param job 首次登记的任务草稿
+     */
+    void insertRegistered(SchedulerJobDO job);
 
     /**
      * 修改任务可配置定义并更新调度版本。
@@ -103,4 +116,5 @@ public interface SchedulerJobDao extends PeachDao<SchedulerJobDO, SchedulerJobDO
      * @return 任务定义列表
      */
     List<SchedulerJobDO> selectPage(SchedulerJobQO query);
+
 }

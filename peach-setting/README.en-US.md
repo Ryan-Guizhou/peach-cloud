@@ -42,3 +42,15 @@ mvn -f "peach-setting/pom.xml" -DskipTests package
 - Frontend documentation applies only to peach-cloud-front, which is a separate Vue 3 + Vite + TypeScript project and is not part of the Maven reactor.
 - Source, scripts, SQL, and Markdown files must stay UTF-8 without BOM. Do not document generated output such as 	arget/, .flattened-pom.xml, dependency caches, or IDE files as source layout.
 - Commands and examples must be verifiable against the current repository. Do not include real secrets, tokens, private keys, production passwords, signed URLs, or complete sensitive payloads.
+
+
+## Scheduler integration demo
+
+Launch the existing application entry point in IDEA with the normal `dev` (or `docker`) profile. Local application YAML retains startup and Nacos imports; Nacos manages scheduler settings, the managed `scheduler` virtual-thread group, RocketMQ, Outbox and task defaults. The service registers `settingSchedulerDemo`, sends heartbeats and consumes execution commands through the managed executor and Claim gate. The demo returns success without changing business data. Set `PEACH_SCHEDULER_DEMO_ENABLED=false` to disable the demo Handler and consumer.
+
+Task registration follows service startup automatically; inspect its definition and initial state in task management. Services and the control plane require the same reachable Nacos, Redis, MySQL Outbox and RocketMQ environment. Verify execution against live services.
+
+
+## Automatic task registration
+
+Services declare stable `jobCode` and `jobName` in `@PeachJob` and supply complete defaults through Nacos `peach.scheduler.executor.jobs[handlerName]`: schedule, time zone, misfire and concurrency policies, timeout, retries, parameters and initial state. The control plane validates the definition on first registration and creates the task. Missing metadata permits Handler registration and heartbeats only, without creating a placeholder draft. Later heartbeats preserve schedules, parameters and lifecycle or deleted states maintained by administrators. Additional tasks may use the same Handler. Initial state is managed centrally.

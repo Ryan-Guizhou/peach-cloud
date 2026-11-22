@@ -2,6 +2,19 @@ server:
   port: 18085
 
 peach:
+  scheduler:
+    executor:
+      jobs:
+        settingSchedulerDemo:
+          schedule-type: FIXED_INTERVAL
+          interval-seconds: 60
+          time-zone: Asia/Shanghai
+          misfire-policy: SKIP
+          concurrency-policy: DISALLOW
+          timeout-ms: 30000
+          max-attempts: 1
+          retry-interval-seconds: 10
+          parameters-json: '{}'
   multicache:
     enabled: true
   openapi:
@@ -16,3 +29,7 @@ springdoc:
   packages-to-scan:
     - com.peach.setting.rest.internal
     - com.peach.setting.launch.health
+
+rocketmq:
+  producer:
+    group: peach-setting-scheduler-producer

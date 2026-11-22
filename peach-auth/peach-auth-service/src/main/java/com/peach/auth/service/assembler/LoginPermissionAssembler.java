@@ -28,6 +28,9 @@ import java.util.stream.Collectors;
 
 /**
  * 登录权限快照装配器，统一编译角色、功能、菜单、路由与资源授权结果。
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/22 20:00
  */
 @Indexed
 @Service
@@ -134,11 +137,23 @@ public class LoginPermissionAssembler {
         if (CollectionUtils.isEmpty(menus)) {
             return List.of();
         }
-        return menus.stream()
-                .filter(menu -> menu != null && StringUtil.isNotBlank(menu.getMenuId()))
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toMap(MenuVO::getMenuId, Function.identity(), (left, right) -> left, LinkedHashMap::new),
-                        map -> new ArrayList<>(map.values())));
+        Map<String, MenuVO> result = new LinkedHashMap<>();
+        for (MenuVO menu : menus) { if (menu != null && StringUtil.isNotBlank(menu.getMenuId())) result.put(menu.getMenuId(), menu); }
+        Map<String, MenuVO> catalogs = new LinkedHashMap<>();
+        List<MenuVO> available = menuDao.selectCatalogs(tenantId, INIT_APP_ID);
+        if (available != null) for (MenuVO catalog : available) catalogs.put(catalog.getMenuId(), catalog);
+        for (MenuVO menu : menus) {
+            if (menu == null) continue;
+            String parent = menu.getParentMenuId();
+            Set<String> visited = new LinkedHashSet<>();
+            while (StringUtil.isNotBlank(parent) && visited.add(parent)) {
+                MenuVO catalog = catalogs.get(parent);
+                if (catalog == null) break;
+                result.putIfAbsent(parent, catalog);
+                parent = catalog.getParentMenuId();
+            }
+        }
+        return new ArrayList<>(result.values());
     }
 
     private List<RouterVO> loadRouters(String tenantId, Set<String> funcCodes) {

@@ -32,6 +32,11 @@
       "name": "peach.scheduler.executor",
       "type": "com.peach.scheduler.config.PeachSchedulerProperties$Executor",
       "description": "调度执行器的身份、超时及错误上报配置。"
+    },
+    {
+      "name": "peach.scheduler.executor.jobs",
+      "type": "java.util.Map<java.lang.String,com.peach.scheduler.config.JobRegistrationDefinition>",
+      "description": "按 Handler 名声明首次登记的完整任务定义，首次未启用，后续由管理端维护。"
     }
   ],
   "hints": []

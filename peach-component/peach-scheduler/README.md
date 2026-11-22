@@ -256,6 +256,12 @@ mvn -pl peach-component/peach-scheduler/peach-scheduler-quickstart -am test
 
 ## 构建与验证
 
+### 业务服务任务登记
+
+服务通过 `@PeachJob` 提供稳定的 `jobCode`、`jobName`，在 Nacos 的 `peach.scheduler.executor.jobs[handlerName]` 提供完整默认任务定义，包括周期、时区、误触发与并发策略、超时、重试、参数和初始状态。控制面首次登记时校验定义并创建任务；元数据缺失时只登记 Handler 和刷新心跳，不创建占位草稿。后续心跳不覆盖管理端已维护的周期、参数、启停或删除状态。同一 Handler 仍可关联其他任务。初始状态由集中配置维护。
+
+在 IDEA 中使用正常环境启动 auth、setting 的现有应用入口，Nacos 提供有效默认周期。通用 Quickstart 继续用于本地能力示例。
+
 ```bash
 mvn -f peach-component/peach-scheduler/pom.xml -Dmaven.test.skip=true package -Pdevelopment
 node scripts/check-utf8.mjs

@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Keep Testcontainers' docker-java API compatible with the hosted Docker daemon minimum.
-      DOCKER_API_VERSION: '1.40'
+      DOCKER_API_VERSION: '1.44'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -72,7 +72,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          mvn -B -ntp verify 2>&1 | tee maven-build.log
+          mvn -B -ntp -Dapi.version=1.44 verify 2>&1 | tee maven-build.log
 
       # Use -am only. Sibling *-quickstart modules are selected by
       # scripts/resolve-maven-build-scope.mjs when autoconfigure/starter (or another
@@ -85,7 +85,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          mvn -B -ntp -pl "${{ steps.scope.outputs.projects }}" -am verify 2>&1 | tee maven-build.log
+          mvn -B -ntp -Dapi.version=1.44 -pl "${{ steps.scope.outputs.projects }}" -am verify 2>&1 | tee maven-build.log
 
       - name: Skip Maven for non-Java changes
         if: steps.scope.outputs.mode == 'none'
@@ -111,3 +111,24 @@ jobs:
             maven-warnings.txt
           if-no-files-found: ignore
           retention-days: 7
+
+  frontend-verify:
+    name: Frontend tests and production build
+    needs: governance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: peach-cloud-front/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: peach-cloud-front
+        run: npm ci
+      - name: Verify filtered grants, trees and navigation
+        working-directory: peach-cloud-front
+        run: npm test
+      - name: Build frontend
+        working-directory: peach-cloud-front
+        run: npm run build

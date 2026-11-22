@@ -5,9 +5,9 @@ import com.peach.common.PeachGroup;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.auth.annoation.UserOperLog;
+import com.peach.log.annoation.UserOperLog;
 import com.peach.auth.dto.RoleDTO;
-import com.peach.auth.enums.UserLogEnum;
+import com.peach.log.enums.UserLogEnum;
 import com.peach.auth.qo.RoleQO;
 import com.peach.auth.service.IRoleService;
 import com.peach.auth.vo.RoleVO;
@@ -44,6 +44,31 @@ import jakarta.validation.constraints.NotBlank;
 public class RoleController {
 
     private final IRoleService roleService;
+    private final com.peach.auth.service.impl.RoleWorkspaceService workspace;
+
+    @GetMapping("/workspace")
+    @Operation(summary = "查询角色功能和资源完整快照")
+    public Response workspace(@NotBlank String roleId) { return Response.success(workspace.get(roleId)); }
+
+    @GetMapping("/members")
+    @Operation(summary = "查询角色成员和可选用户")
+    public Response members(@NotBlank String roleId) { return Response.success(workspace.members(roleId)); }
+
+    @PostMapping("/saveGrants")
+    @UserOperLog(optContent = "角色功能与资源授权")
+    public Response saveGrants(@jakarta.validation.Valid @RequestBody com.peach.auth.dto.RoleWorkspaceDTO input) { workspace.saveGrants(input); return Response.success(); }
+
+    @PostMapping("/calibrate")
+    @Operation(summary = "预览失效或越界授权，不写库")
+    public Response calibrate(@jakarta.validation.Valid @RequestBody com.peach.auth.dto.RoleWorkspaceDTO input) { return Response.success(workspace.calibrate(input)); }
+
+    @PostMapping("/saveMembers")
+    @UserOperLog(optContent = "角色成员维护")
+    public Response saveMembers(@jakarta.validation.Valid @RequestBody com.peach.auth.dto.RoleWorkspaceDTO input) { workspace.saveMembers(input); return Response.success(); }
+
+    @PostMapping("/saveDefault")
+    @UserOperLog(optContent = "角色默认菜单设置")
+    public Response saveDefault(@jakarta.validation.Valid @RequestBody com.peach.auth.dto.RoleWorkspaceDTO input) { workspace.saveDefault(input); return Response.success(); }
 
     @PostMapping("/pageList")
     @Operation(summary = "分页查询角色")

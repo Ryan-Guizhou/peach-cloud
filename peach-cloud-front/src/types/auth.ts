@@ -64,6 +64,9 @@ export interface RoleInfo {
 }
 
 export interface MenuInfo {
+  isLeaf?: number
+  menuSeq?: string
+  sortNo?: number
   menuId?: string
   menuName?: string
   menuCode?: string
@@ -106,6 +109,7 @@ export interface AuthResourceInfo {
 }
 
 export interface LoginInfo {
+  defaultRoute?: string
   userId: string
   userName: string
   fiscal: string

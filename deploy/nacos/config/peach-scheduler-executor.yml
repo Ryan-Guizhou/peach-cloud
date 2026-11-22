@@ -1,0 +1,33 @@
+# Shared only by peach-auth and peach-setting.
+peach:
+  virtual-thread:
+    enabled: true
+    groups:
+      scheduler:
+        max-concurrency: 4
+        max-pending: 8
+        backpressure: REJECT
+  scheduler:
+    enabled: ${PEACH_SCHEDULER_ENABLED:true}
+    demo:
+      enabled: ${PEACH_SCHEDULER_DEMO_ENABLED:true}
+    executor:
+      application-name: ${spring.application.name}
+      handler-heartbeat-ms: ${PEACH_SCHEDULER_HEARTBEAT_MS:15000}
+    rocket:
+      require-jdbc: true
+  rocket:
+    enabled: true
+    app-name: ${spring.application.name}
+    outbox:
+      enabled: true
+    consumer:
+      dynamic-register: true
+      enable-idempotent: true
+    topic:
+      auto-create: ${PEACH_ROCKET_TOPIC_AUTO_CREATE:true}
+  openfeign:
+    same-token-enabled: true
+    same-token-fail-fast: true
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:127.0.0.1:9876}

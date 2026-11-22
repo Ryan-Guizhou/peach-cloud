@@ -1,4 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
+import { groupMenuItems } from './menu-groups'
 
 import type { LoginInfo, MenuInfo, RouterInfo } from '../types/auth'
 
@@ -20,25 +21,25 @@ export interface AdminMenuGroup {
   items: AdminRouteConfig[]
 }
 
-const menuGroupRules: Array<{ title: string; codes: string[] }> = [
-  { title: '工作空间', codes: ['workspace', 'profile', 'messageCenter'] },
-  { title: '身份与权限', codes: ['organization', 'user', 'role', 'authorization', 'function', 'resource', 'menu', 'router'] },
-  { title: '文件与存储', codes: ['objectBrowser', 'fileRecord', 'storageInstance'] },
-  { title: '系统设置', codes: ['dict', 'valueSet', 'multiMessage', 'notice', 'ipWhitelist'] },
-  { title: '运行与监控', codes: ['runtimeMonitor'] },
-  { title: '中间件与审计', codes: ['authLog', 'operationLog'] },
-]
-
 const viewModules = import.meta.glob('../views/**/index.vue')
 
+// 当前阶段调度功能向所有登录用户开放，独立于其他模块的权限配置。
+export const schedulerRoutes: AdminRouteConfig[] = [
+  { path: '/scheduler/jobs', name: 'scheduler-jobs', componentPath: 'scheduler/job', meta: { title: '任务管理', menuCode: 'schedulerJob' } },
+  { path: '/scheduler/executions', name: 'scheduler-executions', componentPath: 'scheduler/execution', meta: { title: '执行记录', menuCode: 'schedulerExecution' } },
+  { path: '/scheduler/handlers', name: 'scheduler-handlers', componentPath: 'scheduler/handler', meta: { title: 'Handler 列表', menuCode: 'schedulerHandler' } },
+]
+
 export const fallbackAdminRoutes: AdminRouteConfig[] = [
+  ...schedulerRoutes,
   { path: '/workspace', name: 'workspace-overview', componentPath: 'workspace/overview', meta: { title: '工作台', menuCode: 'workspace' } },
   { path: '/user', name: 'user-manage', componentPath: 'system/user', meta: { title: '用户管理', menuCode: 'user', permissionCode: 'user:view' } },
+  { path: '/tenant', name: 'tenant-manage', componentPath: 'system/tenant', meta: { title: '租户管理', menuCode: 'tenant', permissionCode: 'tenant:view' } },
   { path: '/role', name: 'role-manage', componentPath: 'system/role', meta: { title: '角色管理', menuCode: 'role', permissionCode: 'role:view' } },
   { path: '/menu', name: 'menu-manage', componentPath: 'system/menu', meta: { title: '菜单管理', menuCode: 'menu', permissionCode: 'menu:view' } },
   { path: '/router', name: 'router-manage', componentPath: 'system/router', meta: { title: '路由管理', menuCode: 'router', permissionCode: 'router:view' } },
   { path: '/organization', name: 'organization-manage', componentPath: 'system/organization', meta: { title: '机构管理', menuCode: 'organization', permissionCode: 'organization:view' } },
-  { path: '/function', name: 'function-manage', componentPath: 'system/function', meta: { title: '功能定义字段', menuCode: 'function', permissionCode: 'function:view' } },
+  { path: '/function', name: 'function-manage', componentPath: 'system/function', meta: { title: '功能定义', menuCode: 'function', permissionCode: 'function:view' } },
   { path: '/resource', name: 'resource-manage', componentPath: 'system/resource', meta: { title: '资源管理', menuCode: 'resource', permissionCode: 'resource:view' } },
   { path: '/notice', name: 'notice-manage', componentPath: 'setting/notice', meta: { title: '公告管理', menuCode: 'notice', permissionCode: 'notice:view' } },
   { path: '/message-center', name: 'message-center', componentPath: 'message/center', meta: { title: '消息中心', menuCode: 'messageCenter', permissionCode: 'messageCenter:view' } },
@@ -51,6 +52,7 @@ export const fallbackAdminRoutes: AdminRouteConfig[] = [
   { path: '/object-browser', name: 'object-browser', componentPath: 'file/object-browser', meta: { title: '对象浏览', menuCode: 'objectBrowser', permissionCode: 'objectBrowser:view' } },
   { path: '/runtime-monitor', name: 'runtime-monitor', componentPath: 'monitor/runtime', meta: { title: '运行监控', menuCode: 'runtimeMonitor', permissionCode: 'runtimeMonitor:view' } },
   { path: '/authorization', name: 'authorization-manage', componentPath: 'system/authorization', meta: { title: '角色授权', menuCode: 'authorization', permissionCode: 'authorization:view' } },
+  { path: '/login-log', name: 'login-log', componentPath: 'log/login', meta: { title: '登录日志', menuCode: 'loginLog', permissionCode: 'loginLog:view' } },
   { path: '/auth-log', name: 'auth-log', componentPath: 'log/auth', meta: { title: '授权日志', menuCode: 'authLog', permissionCode: 'authLog:view' } },
   { path: '/operation-log', name: 'operation-log', componentPath: 'log/operation', meta: { title: '操作日志', menuCode: 'operationLog', permissionCode: 'operationLog:view' } },
   { path: '/profile', name: 'user-profile', componentPath: 'user/profile', meta: { title: '个人中心', menuCode: 'profile' } },
@@ -157,6 +159,8 @@ export function buildAdminRoutes(loginInfo: LoginInfo | null): RouteRecordRaw[] 
     }
   })
 
+  schedulerRoutes.forEach(route => routeByPath.set(route.path, route))
+
   const effectiveRoutes = Array.from(routeByPath.values())
 
   return effectiveRoutes.map((route): RouteRecordRaw => ({
@@ -180,6 +184,7 @@ export function buildMenuItems(loginInfo: LoginInfo | null): AdminRouteConfig[] 
   const routerMaps = buildRouterMaps(loginInfo?.routerList ?? [])
   const routeMap = new Map(fallbackAdminRoutes.map(route => [route.meta.menuCode, route]))
   const items = menuList
+    .filter(menu => menu.isLeaf !== 0)
     .map((menuInfo: MenuInfo): AdminRouteConfig | null => {
       const key = menuInfo.menuCode ?? ''
       const menuPath = normalizePath(menuInfo.menuUrl)
@@ -208,28 +213,10 @@ export function buildMenuItems(loginInfo: LoginInfo | null): AdminRouteConfig[] 
       }
     })
     .filter((item): item is AdminRouteConfig => item !== null)
-  return items.length > 0 ? items : fallbackAdminRoutes
+  const effectiveItems = items.length > 0 ? items : fallbackAdminRoutes
+  return [...effectiveItems.filter(item => !schedulerRoutes.some(route => route.path === item.path || route.meta.menuCode === item.meta.menuCode)), ...schedulerRoutes]
 }
 
 export function buildMenuGroups(loginInfo: LoginInfo | null): AdminMenuGroup[] {
-  const items = buildMenuItems(loginInfo)
-  const itemByCode = new Map(items.map(item => [item.meta.menuCode, item]))
-  const used = new Set<string>()
-  const groups: AdminMenuGroup[] = []
-
-  menuGroupRules.forEach((rule) => {
-    const groupItems = rule.codes
-      .map(code => itemByCode.get(code))
-      .filter((item): item is AdminRouteConfig => item != null)
-    groupItems.forEach(item => used.add(item.meta.menuCode))
-    if (groupItems.length > 0) {
-      groups.push({ title: rule.title, items: groupItems })
-    }
-  })
-
-  const others = items.filter(item => !used.has(item.meta.menuCode))
-  if (others.length > 0) {
-    groups.push({ title: '其他', items: others })
-  }
-  return groups.length > 0 ? groups : [{ title: '导航', items }]
+  return groupMenuItems(buildMenuItems(loginInfo), loginInfo?.menuList ?? [])
 }

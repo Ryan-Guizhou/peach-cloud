@@ -39,7 +39,7 @@ public class JobRegistry {
             throw new IllegalArgumentException("Duplicate scheduler handler name: " + name);
         }
         handlers.put(name, handler);
-        descriptors.put(name, new JobDescriptor(name, annotation.description()));
+        descriptors.put(name, new JobDescriptor(name, annotation.description(), annotation.jobCode(), annotation.jobName()));
     }
 
     /**

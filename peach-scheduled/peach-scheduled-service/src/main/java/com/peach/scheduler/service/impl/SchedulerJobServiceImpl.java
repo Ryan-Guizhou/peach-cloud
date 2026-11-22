@@ -91,7 +91,8 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
             throw new IllegalArgumentException("Job code already exists");
         }
         SchedulerJobDO job = map(data, new SchedulerJobDO());
-        job.setId(UniqueIdFacade.nextId());
+        // 任务主键及引用它的 JOB_ID 是 BIGINT，明确使用数字型 Snowflake ID。
+        job.setId(UniqueIdFacade.generateSnowflakeId());
         job.setState(JobState.DRAFT);
         job.setScheduleVersion(1L);
         job.setSyncStatus(SyncStatus.PENDING);
@@ -182,7 +183,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
         return result;
     }
 
-    private void validateScheduleType(SchedulerJobSaveDTO data, ScheduleType type) {
+    private static void validateScheduleType(SchedulerJobSaveDTO data, ScheduleType type) {
         if (type == ScheduleType.CRON && !CronExpression.isValidExpression(data.getCronExpression())) {
             throw new IllegalArgumentException("Invalid Quartz cron expression");
         }
@@ -194,7 +195,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
         }
     }
 
-    private void validateExecutionPolicy(SchedulerJobSaveDTO data) {
+    private static void validateExecutionPolicy(SchedulerJobSaveDTO data) {
         if (data.getTimeoutMs() == null || data.getTimeoutMs() < 1000L || data.getTimeoutMs() > 86400000L) {
             throw new IllegalArgumentException("timeoutMs must be between 1000 and 86400000");
         }
@@ -213,6 +214,11 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
         if (handler == null || !"ONLINE".equals(handler.getStatus())) {
             throw new IllegalArgumentException("Handler is not registered and online for target application");
         }
+        validateDefinition(data, objectMapper);
+    }
+
+    /** 校验管理端与服务注册端共用的调度定义。 */
+    static void validateDefinition(SchedulerJobSaveDTO data, ObjectMapper objectMapper) {
         ScheduleType type;
         try {
             type = ScheduleType.valueOf(data.getScheduleType());
@@ -226,10 +232,13 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
             throw new IllegalArgumentException("Invalid IANA time zone", ex);
         }
         validateExecutionPolicy(data);
-        validateParameters(data.getParametersJson());
+        com.peach.scheduler.model.MisfirePolicy.valueOf(data.getMisfirePolicy());
+        com.peach.scheduler.model.ConcurrencyPolicy.valueOf(data.getConcurrencyPolicy());
+        if (data.getStartAt() != null && !data.getStartAt().isBlank()) LocalDateTime.parse(data.getStartAt());
+        validateParameters(data.getParametersJson(), objectMapper);
     }
 
-    private void validateParameters(String parametersJson) {
+    private static void validateParameters(String parametersJson, ObjectMapper objectMapper) {
         if (parametersJson == null || parametersJson.isBlank()) return;
         if (parametersJson.length() > MAX_PARAMETER_LENGTH) {
             throw new IllegalArgumentException("parametersJson exceeds 16 KiB limit");
@@ -244,7 +253,7 @@ public class SchedulerJobServiceImpl implements ISchedulerJobService {
         }
     }
 
-    private void rejectSensitiveKeys(JsonNode node) {
+    private static void rejectSensitiveKeys(JsonNode node) {
         if (node == null) return;
         if (node.isObject()) {
             Iterator<Map.Entry<String, JsonNode>> fields = node.properties().iterator();

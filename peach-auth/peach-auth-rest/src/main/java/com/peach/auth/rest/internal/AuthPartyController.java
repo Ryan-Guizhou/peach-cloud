@@ -1,8 +1,8 @@
 package com.peach.auth.rest.internal;
 
-import com.peach.auth.annoation.UserOperLog;
+import com.peach.log.annoation.UserOperLog;
 import com.peach.auth.dto.UserRoleAuthDTO;
-import com.peach.auth.enums.UserLogEnum;
+import com.peach.log.enums.UserLogEnum;
 import com.peach.auth.qo.AuthPartyQO;
 import com.peach.auth.service.IAuthPartyService;
 import com.peach.common.response.Response;
@@ -19,6 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 用户角色绑定。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/22 22:00
  */
 @Slf4j
 @Indexed

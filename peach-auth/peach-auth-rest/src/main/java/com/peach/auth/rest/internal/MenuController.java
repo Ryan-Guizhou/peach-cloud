@@ -5,9 +5,9 @@ import com.peach.common.PeachGroup;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.auth.annoation.UserOperLog;
+import com.peach.log.annoation.UserOperLog;
 import com.peach.auth.dto.MenuDTO;
-import com.peach.auth.enums.UserLogEnum;
+import com.peach.log.enums.UserLogEnum;
 import com.peach.auth.qo.MenuQO;
 import com.peach.auth.service.IMenuService;
 import com.peach.auth.vo.MenuVO;
