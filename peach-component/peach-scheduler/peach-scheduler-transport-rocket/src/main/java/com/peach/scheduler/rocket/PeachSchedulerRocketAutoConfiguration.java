@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Bean;
  * @Version 1.0.0
  * @CreateTime 2025/12/29 17:42
  */
-@AutoConfiguration
+@AutoConfiguration(afterName = "com.peach.rocket.autoconfigure.PeachRocketOutboxAutoConfigure")
 @Indexed
 public class PeachSchedulerRocketAutoConfiguration {
 

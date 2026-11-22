@@ -31,4 +31,10 @@ public @interface PeachJob {
      * @return 任务处理器说明。
      */
     String description() default "";
+
+    /** @return 稳定任务编码；为空时仅注册 Handler 能力 */
+    String jobCode() default "";
+
+    /** @return 管理端展示的任务名称 */
+    String jobName() default "";
 }

@@ -15,7 +15,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @EnableScheduling
 @MapperScan("com.peach.scheduler.dao")
-@SpringBootApplication(scanBasePackages = "com.peach.scheduler")
+@SpringBootApplication(scanBasePackages = {"com.peach"})
 public class PeachScheduledApplication {
 
 

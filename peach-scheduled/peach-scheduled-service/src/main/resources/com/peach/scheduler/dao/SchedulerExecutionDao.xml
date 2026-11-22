@@ -100,6 +100,11 @@
         WHERE 1 = 1
         <if test="jobCode != null and jobCode != ''">AND JOB_CODE = #{jobCode}</if>
         <if test="state != null and state != ''">AND STATE = #{state}</if>
+        <if test="executionId != null and executionId != ''">AND EXECUTION_ID = #{executionId}</if>
+        <if test="triggerType != null and triggerType != ''">AND TRIGGER_TYPE = #{triggerType}</if>
+        <if test="executorInstance != null and executorInstance != ''">AND EXECUTOR_INSTANCE = #{executorInstance}</if>
+        <if test="scheduledFromValue != null">AND SCHEDULED_TIME &gt;= #{scheduledFromValue}</if>
+        <if test="scheduledToValue != null">AND SCHEDULED_TIME &lt;= #{scheduledToValue}</if>
         ORDER BY CREATED_TIME DESC
         LIMIT #{safePageSize} OFFSET #{offset}
     </select>

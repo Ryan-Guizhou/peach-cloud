@@ -60,15 +60,26 @@ public class SchedulerReconciler {
     }
 
     private void apply(SchedulerJobDO job) {
+        if (job.getState() == JobState.DRAFT) {
+            return;
+        }
         if (job.getState() == JobState.DELETED || job.getState() == JobState.DISABLED) {
-            if (provider.exists(job.getJobCode())) provider.delete(job.getJobCode());
+            if (provider.exists(job.getJobCode())) {
+                provider.delete(job.getJobCode());
+            }
             return;
         }
         JobDefinition definition = toDefinition(job);
-        if (provider.exists(job.getJobCode())) provider.reschedule(definition);
-        else provider.schedule(definition);
-        if (job.getState() == JobState.PAUSED) provider.pause(job.getJobCode());
-        else provider.resume(job.getJobCode());
+        if (provider.exists(job.getJobCode())) {
+            provider.reschedule(definition);
+        } else {
+            provider.schedule(definition);
+        }
+        if (job.getState() == JobState.PAUSED) {
+            provider.pause(job.getJobCode());
+        }else {
+            provider.resume(job.getJobCode());
+        }
     }
 
     private JobDefinition toDefinition(SchedulerJobDO job) {

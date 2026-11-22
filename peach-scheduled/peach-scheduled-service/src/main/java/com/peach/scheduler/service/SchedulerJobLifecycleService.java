@@ -57,9 +57,22 @@ public class SchedulerJobLifecycleService {
         JobState fromState = job.getState();
         JobState toState = StateMachineTransitionResolver.transit(
                 stateMachineFactory.create(fromState), event);
+        if (toState == JobState.ENABLED) {
+            boolean incomplete = switch (job.getScheduleType()) {
+                case "CRON" -> job.getCronExpression() == null || job.getCronExpression().isBlank();
+                case "FIXED_INTERVAL" -> job.getIntervalSeconds() == null || job.getIntervalSeconds() <= 0;
+                case "ONE_TIME" -> job.getStartAt() == null;
+                default -> true;
+            };
+            if (incomplete) {
+                throw new IllegalArgumentException("Configure the job schedule before enabling it");
+            }
+        }
         int updated = jobDao.updateState(jobId, fromState.name(), toState.name(),
                 job.getVersion(), operatorId);
-        if (updated != 1) throw new IllegalStateException("Concurrent scheduler job update detected");
+        if (updated != 1) {
+            throw new IllegalStateException("Concurrent scheduler job update detected");
+        }
         SchedulerJobDO refreshed = required(jobId);
         jobVersionDao.insertSnapshot(refreshed);
         stateLogDao.insert("JOB", String.valueOf(jobId), fromState.name(), event.name(),

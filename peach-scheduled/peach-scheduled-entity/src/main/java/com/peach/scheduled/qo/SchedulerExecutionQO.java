@@ -3,6 +3,8 @@ package com.peach.scheduled.qo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 /**
  * 调度执行实例列表查询条件。
  *
@@ -13,6 +15,31 @@ import lombok.Data;
 @Data
 @Schema(description = "调度执行实例列表查询条件")
 public class SchedulerExecutionQO {
+
+    /** 执行实例标识。 */
+    private String executionId;
+
+    /** 触发来源。 */
+    private String triggerType;
+
+    /** 执行器实例。 */
+    private String executorInstance;
+
+    /** 计划时间下界，包含。 */
+    private String scheduledFrom;
+
+    /** 计划时间上界，包含。 */
+    private String scheduledTo;
+
+    /** 解析计划时间下界。 @return 本地时间 */
+    public LocalDateTime getScheduledFromValue() {
+        return scheduledFrom == null || scheduledFrom.isBlank() ? null : java.time.LocalDateTime.parse(scheduledFrom);
+    }
+
+    /** 解析计划时间上界。 @return 本地时间 */
+    public LocalDateTime getScheduledToValue() {
+        return scheduledTo == null || scheduledTo.isBlank() ? null : java.time.LocalDateTime.parse(scheduledTo);
+    }
 
     /** 页码，从 1 开始。 */
     @Schema(description = "页码，从 1 开始")

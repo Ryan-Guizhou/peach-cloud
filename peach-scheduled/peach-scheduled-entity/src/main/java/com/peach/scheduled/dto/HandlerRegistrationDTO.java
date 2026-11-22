@@ -13,7 +13,8 @@ import java.util.List;
 /**
  * 业务服务调度 Handler 注册请求。
  * <p>业务服务启动和心跳阶段通过内部接口上报当前实例支持的 Handler 列表，
- * 调度中心仅将其作为能力注册信息，不把它作为服务发现的替代方案。</p>
+ * 调度中心刷新能力心跳，并为首次发现的应用与 Handler 自动登记未启用的默认任务。
+ * 重复上报不覆盖任务管理端配置，也不替代服务发现。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -51,6 +52,9 @@ public class HandlerRegistrationDTO {
     @Data
     @Schema(description = "单个 Handler 注册项")
     public static class Item {
+        /** 完整的首次任务定义；旧客户端不传时仅维护 Handler 心跳。 */
+        @Valid
+        private SchedulerJobSaveDTO task;
 
         /** Handler 名称。 */
         @NotBlank

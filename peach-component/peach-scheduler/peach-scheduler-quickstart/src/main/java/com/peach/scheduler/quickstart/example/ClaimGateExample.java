@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
  * 证明 {@code ExecutionLeaseClient.claim} 可允许或拒绝，且拒绝与 Handler 执行解耦。
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Indexed
 @Service
+@ConditionalOnProperty(name = "peach.scheduler.quickstart.local-mode", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class ClaimGateExample {
 

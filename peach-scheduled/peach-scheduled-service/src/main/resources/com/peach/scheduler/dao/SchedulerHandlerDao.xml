@@ -37,10 +37,22 @@
         ORDER BY APPLICATION_NAME, HANDLER_NAME
     </select>
 
+    <select id="selectAll" resultType="com.peach.scheduled.entity.SchedulerHandlerDO">
+        SELECT <include refid="allColumnAlias" /> FROM PEACH_SCHEDULER_HANDLER
+        ORDER BY APPLICATION_NAME, HANDLER_NAME
+    </select>
     <update id="markOfflineBefore">
         UPDATE PEACH_SCHEDULER_HANDLER
         SET STATUS = 'OFFLINE', MODIFY_TIME = NOW()
         WHERE STATUS = 'ONLINE'
           AND LAST_HEARTBEAT_TIME &lt; DATE_SUB(NOW(), INTERVAL #{seconds,jdbcType=INTEGER} SECOND)
     </update>
+    <select id="selectFiltered" resultType="com.peach.scheduled.entity.SchedulerHandlerDO">
+        SELECT <include refid="allColumnAlias" /> FROM PEACH_SCHEDULER_HANDLER
+        WHERE 1 = 1
+        <if test="applicationName != null and applicationName != ''">AND APPLICATION_NAME = #{applicationName}</if>
+        <if test="status != null and status != ''">AND STATUS = #{status}</if>
+        <if test="keyword != null and keyword != ''">AND (HANDLER_NAME LIKE CONCAT('%', #{keyword}, '%') OR DESCRIPTION LIKE CONCAT('%', #{keyword}, '%') OR APPLICATION_NAME LIKE CONCAT('%', #{keyword}, '%'))</if>
+        ORDER BY APPLICATION_NAME, HANDLER_NAME
+    </select>
 </mapper>

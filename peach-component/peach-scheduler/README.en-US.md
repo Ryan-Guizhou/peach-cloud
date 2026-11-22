@@ -207,6 +207,12 @@ mvn -f peach-component/peach-scheduler/pom.xml -Dmaven.test.skip=true package -P
 node scripts/check-utf8.mjs
 ```
 
+## Service task registration
+
+Services declare stable `jobCode` and `jobName` in `@PeachJob` and supply complete defaults through Nacos `peach.scheduler.executor.jobs[handlerName]`: schedule, time zone, misfire and concurrency policies, timeout, retries, parameters and initial state. The control plane validates the definition on first registration and creates the task. Missing metadata permits Handler registration and heartbeats only, without creating a placeholder draft. Later heartbeats preserve schedules, parameters and lifecycle or deleted states maintained by administrators. Additional tasks may use the same Handler. Initial state is managed centrally.
+
+Launch auth and setting from their existing IDEA entry points with the normal profile. Nacos supplies valid default schedules. The generic Quickstart remains available for local capability examples.
+
 ## Troubleshooting
 
 | Symptom | Check | Action |

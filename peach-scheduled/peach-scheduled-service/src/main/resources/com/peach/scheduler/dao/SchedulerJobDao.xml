@@ -52,7 +52,7 @@
         WHERE JOB_CODE = #{jobCode}
     </select>
 
-    <insert id="insert" parameterType="com.peach.scheduled.entity.SchedulerJobDO">
+    <sql id="insertDefinition">
         INSERT INTO PEACH_SCHEDULER_JOB
         (ID, JOB_CODE, JOB_NAME, APPLICATION_NAME, HANDLER_NAME, DESCRIPTION, SCHEDULE_TYPE, CRON_EXPRESSION,
          INTERVAL_SECONDS, START_AT, TIME_ZONE, MISFIRE_POLICY, CONCURRENCY_POLICY, TIMEOUT_MS, MAX_ATTEMPTS,
@@ -63,6 +63,20 @@
          #{cronExpression}, #{intervalSeconds}, #{startAt}, #{timeZone}, #{misfirePolicy}, #{concurrencyPolicy},
          #{timeoutMs}, #{maxAttempts}, #{retryIntervalSeconds}, #{parametersJson}, #{state}, #{scheduleVersion},
          #{syncStatus}, #{version}, #{creatorId}, NOW(3), #{modifierId}, NOW(3))
+    </sql>
+
+    <select id="selectByCodeForUpdate" resultMap="JobMap">
+        SELECT <include refid="columns" /> FROM PEACH_SCHEDULER_JOB
+        WHERE JOB_CODE = #{jobCode} FOR UPDATE
+    </select>
+
+    <insert id="insert" parameterType="com.peach.scheduled.entity.SchedulerJobDO">
+        <include refid="insertDefinition" />
+    </insert>
+
+    <insert id="insertRegistered" parameterType="com.peach.scheduled.entity.SchedulerJobDO">
+        <include refid="insertDefinition" />
+        ON DUPLICATE KEY UPDATE ID = ID
     </insert>
 
     <update id="updateDefinition" parameterType="com.peach.scheduled.entity.SchedulerJobDO">

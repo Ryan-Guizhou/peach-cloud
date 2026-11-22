@@ -1,6 +1,7 @@
 package com.peach.scheduler.service;
 
 import com.peach.scheduled.dto.HandlerRegistrationDTO;
+import com.peach.scheduled.qo.SchedulerHandlerQO;
 import com.peach.scheduled.vo.SchedulerHandlerVO;
 
 import java.util.List;
@@ -27,9 +28,10 @@ public interface ISchedulerHandlerService {
     void markStaleHandlersOffline();
 
     /**
-     * 查询当前在线 Handler。
-     *
-     * @return 在线 Handler 列表
+     * 筛选 Handler 注册记录。
+     * @param query 查询条件
+     * @return 匹配的 Handler
      */
-    List<SchedulerHandlerVO> list();
+    List<SchedulerHandlerVO> list(SchedulerHandlerQO query);
+
 }

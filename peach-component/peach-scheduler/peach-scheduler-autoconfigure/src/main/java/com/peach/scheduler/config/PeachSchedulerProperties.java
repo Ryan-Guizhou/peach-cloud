@@ -69,6 +69,13 @@ public class PeachSchedulerProperties {
      * @CreateTime 2025/12/29 17:42
      */
     public static class Executor {
+        /** 按 Handler 名配置的首次任务登记定义。 */
+        private final java.util.Map<String, JobRegistrationDefinition> jobs = new java.util.LinkedHashMap<>();
+
+        /** @return 首次登记定义映射；管理端配置优先于后续心跳 */
+        public java.util.Map<String, JobRegistrationDefinition> getJobs() {
+            return jobs;
+        }
 
         /**
          * 当前业务应用名称，应与注册到 Scheduler 控制面的 applicationName 一致。
