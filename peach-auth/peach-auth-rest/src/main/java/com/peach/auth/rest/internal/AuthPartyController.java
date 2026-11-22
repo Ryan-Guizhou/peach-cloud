@@ -19,6 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 用户角色绑定。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/22 22:00
  */
 @Slf4j
 @Indexed
