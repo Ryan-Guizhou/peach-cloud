@@ -42,4 +42,8 @@ public class RoleQO extends PeachEntity implements Serializable {
     @Schema(description = "角色编码")
     private String roleCode;
 
+    @Schema(description = "角色编码或名称关键词")
+    private String keyword;
+    @Schema(description = "角色名称关键词")
+    private String roleName;
 }

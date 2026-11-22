@@ -33,4 +33,10 @@ public class RouterQO extends PeachEntity implements Serializable {
     @Schema(description = "模块编码")
     private String moduleCode;
 
+    @Schema(description = "路由URL关键词")
+    private String routerUrl;
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private String tenantId;
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private String appId;
 }

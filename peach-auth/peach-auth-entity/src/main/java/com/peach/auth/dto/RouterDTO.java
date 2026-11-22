@@ -1,50 +1,48 @@
 package com.peach.auth.dto;
 
-import java.io.Serial;
-
+import com.peach.common.PeachGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
-import java.io.Serializable;
-
 /**
- * 路由信息。
- *
+ * 路由维护参数；所属租户、应用由服务端确定。
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2026/1/18 15:41
+ * @CreateTime 2026/11/22 21:00
  */
 @Data
-@Schema(description = "路由信息")
-public class RouterDTO implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 6818572783834885012L;
-
-    @Schema(description = "路由ID")
+@Schema(description = "路由维护")
+public class RouterDTO {
+    @NotBlank(groups = PeachGroup.UpdateGroup.class)
+    @Size(max = 64, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String routerId;
-
-    @Schema(description = "路由代码")
+    @NotBlank(groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @Size(max = 100, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String routerCode;
-
-    @Schema(description = "路由名称")
+    @NotBlank(groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @Size(max = 100, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String routerName;
-
-    @Schema(description = "路由路径")
+    @NotBlank(groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @Pattern(regexp = "/[A-Za-z0-9_/-]*", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @Size(max = 100, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String routerUrl;
-
-    @Schema(description = "文件路径")
+    @NotBlank(groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @Pattern(regexp = "[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @Size(max = 255, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String filePath;
-
-    @Schema(description = "是否需要授权")
+    @Min(value = 0, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @Max(value = 1, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private Integer isAuth;
-
-    @Schema(description = "是否缓存")
+    @Min(value = 0, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @Max(value = 1, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private Integer isCache;
-
-    @Schema(description = "模块代码")
+    @NotBlank(groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @Size(max = 10, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String moduleCode;
-
-    @Schema(description = "路由级次")
+    @Min(value = 1, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @Max(value = 20, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private Integer routerLevel;
+    @Size(max = 128, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    private String funcCode;
 }

@@ -273,9 +273,10 @@
         LEFT JOIN PEACH_ORGANIZATION o ON uo.ORG_ID = o.ORG_ID
         WHERE uo.USER_ID = #{userId,jdbcType=VARCHAR}
           AND (uo.IS_DELETE IS NULL OR uo.IS_DELETE != 1)
-          AND (t.IS_DELETE IS NULL OR t.IS_DELETE != 1)
+          AND t.DELETED = 0
+          AND t.STATUS IN ('ACTIVE', 'ENABLE', '1')
           AND (o.IS_DELETE IS NULL OR o.IS_DELETE != 1)
-        ORDER BY uo.IS_DEFAULT DESC, t.SORT_NUM ASC, o.SORT_NUM ASC
+        ORDER BY uo.IS_DEFAULT DESC, t.TENANT_CODE ASC, o.SORT_NUM ASC
     </select>
 
     <select id="selectByUserIdAndTenantId" resultType="com.peach.auth.vo.UserOrgVO">
@@ -301,8 +302,14 @@
         WHERE uo.USER_ID = #{userId,jdbcType=VARCHAR}
           AND uo.TENANT_ID = #{tenantId,jdbcType=VARCHAR}
           AND (uo.IS_DELETE IS NULL OR uo.IS_DELETE != 1)
-          AND (t.IS_DELETE IS NULL OR t.IS_DELETE != 1)
+          AND t.DELETED = 0
+          AND t.STATUS IN ('ACTIVE', 'ENABLE', '1')
           AND (o.IS_DELETE IS NULL OR o.IS_DELETE != 1)
-        ORDER BY uo.IS_DEFAULT DESC, t.SORT_NUM ASC, o.SORT_NUM ASC
+        ORDER BY uo.IS_DEFAULT DESC, t.TENANT_CODE ASC, o.SORT_NUM ASC
+    </select>
+    <select id="selectUserIdsByTenantId" resultType="string">
+        SELECT DISTINCT USER_ID FROM PEACH_USER_ORG
+        WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+          AND (IS_DELETE IS NULL OR IS_DELETE != 1)
     </select>
 </mapper>

@@ -20,6 +20,12 @@ import java.util.List;
 @Indexed
 @MybatisDao
 public interface UserOrgDao extends PeachDao<UserOrgDO, UserOrgVO> {
+    /**
+     * 查询该租户绑定的用户，用于状态变更后的定向会话撤销。
+     * @param tenantId 租户业务 ID
+     * @return 去重的用户 ID
+     */
+    List<String> selectUserIdsByTenantId(@Param("tenantId") String tenantId);
 
     List<UserOrgVO> selectByUserId(@Param("userId") String userId);
 

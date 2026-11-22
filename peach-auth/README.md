@@ -8,6 +8,7 @@ artifactId：`peach-auth`
 
 ## 模块定位
 
+
 `peach-auth` 承载用户、角色、菜单、资源、路由权限、登录态和用户操作日志相关能力。它提供实体模型、领域服务、REST 接口、OpenFeign 外部接口、操作日志注解能力和可启动服务。
 
 本模块解决：
@@ -109,3 +110,39 @@ mvn -pl peach-auth/peach-auth-launch -am -Dspring-boot.run.profiles=dev spring-b
 - 前端文档仅适用于 peach-cloud-front，该目录是独立的 Vue 3 + Vite + TypeScript 工程，不属于 Maven reactor。
 - 源码、脚本、SQL 和 Markdown 均保持 UTF-8 无 BOM；不要把 	arget/、.flattened-pom.xml、依赖缓存或 IDE 文件写入源码结构。
 - README 中的命令、类名、配置项和示例必须能从当前仓库验证；不得写入真实密钥、token、私钥、生产密码、签名 URL 或完整敏感报文。
+
+
+## 调度联调案例
+
+在 IDEA 中使用现有应用入口和正常的 `dev`（或 `docker`）环境启动。本地 application YAML 保留启动与 Nacos 导入配置；调度、受管 `scheduler` 虚拟线程组、RocketMQ、Outbox 和任务默认定义由 Nacos 管理。服务自动登记 `authSchedulerDemo`、发送心跳并消费执行命令，经受管执行器 Claim 后执行。案例仅返回成功，不修改业务数据。可通过 `PEACH_SCHEDULER_DEMO_ENABLED=false` 关闭测试 Handler 和消费者。
+
+服务启动后自动登记任务，可在任务管理查看定义和初始状态。业务服务与控制面需要共用可访问的 Nacos、Redis、MySQL Outbox 和 RocketMQ 环境。实际执行需在线验证。
+
+
+## 任务自动登记
+
+服务通过 `@PeachJob` 提供稳定的 `jobCode`、`jobName`，在 Nacos 的 `peach.scheduler.executor.jobs[handlerName]` 提供完整默认任务定义，包括周期、时区、误触发与并发策略、超时、重试、参数和初始状态。控制面首次登记时校验定义并创建任务；元数据缺失时只登记 Handler 和刷新心跳，不创建占位草稿。后续心跳不覆盖管理端已维护的周期、参数、启停或删除状态。同一 Handler 仍可关联其他任务。初始状态由集中配置维护。
+
+## 租户管理
+
+租户列表通过 `/tenant` 页面进入，接口为 `/auth/tenant` 下的分页、详情、新增、修改、状态变更与逻辑删除。沿用现有管理员及菜单/API/按钮资源授权，不引入新的平台角色。
+
+租户状态为 `PENDING → ACTIVE ↔ SUSPENDED → CLOSED`，待激活租户也可直接注销。仅待激活或已注销租户允许逻辑删除，当前登录租户不可停用、注销或删除。更新、状态变更和删除均检查版本号；创建机构和账号不在此功能范围内。
+
+已有数据库先备份并执行[租户增量迁移](../sql/migrations/20261121_tenant_management.sql)。迁移保留租户业务 ID 和用户/机构关联，将旧 `ENABLE` 状态转为 `ACTIVE`，保留旧列便于回退；MySQL DDL 不支持事务回滚。停用后阻止新的登录和上下文切换，并在事务提交后撤销该租户的既有会话。管理员重新登录后加载新增菜单与资源授权。
+
+## 功能定义维护
+
+`POST /auth/function/list` 返回当前登录租户的完整功能列表，按应用、排序号、功能编码排序，供前端构建功能树。`/auth/resource/pageList` 支持功能编码、应用、资源类型和编码/名称关键词 `keyword` 筛选。新增功能和资源时可省略 ID，由服务端生成。
+
+功能编码和所属应用创建后不可修改；上级必须属于同一租户、同一应用且不能形成环。删除功能前检查下级、资源、菜单、路由及授权引用；已有授权的资源不可删除或修改编码/类型。功能与资源的维护使用事务和功能行锁；其他模块直接写入关联表时仍须遵守引用约束。
+
+已有环境执行 [迁移 SQL](../sql/migrations/20261122_function_definition.sql) 并重新登录。`FunctionDefinitionTest` 覆盖服务规则；显式设置 `PEACH_FUNCTION_DB_SMOKE=true` 后，`FunctionDefinitionDatabaseTest` 从 Nacos 在内存读取数据源配置，在 MySQL 验证流程并回滚所有测试写入。
+
+## 登录审计与功能分类
+
+提供独立事务登录审计、租户隔离的只读查询和默认90天保留期清理。功能树按应用根、系统设置、日志审计、文件与存储、任务调度组织。升级步骤、权限与采集边界见 [登录审计](docs/login-audit.md)。
+
+## 角色、路由与操作日志
+
+角色工作区支持功能与资源原子授权、成员维护、默认菜单及校准预览；路由支持组合筛选。操作日志补全租户机构映射并保留失败批次重试。迁移、生效与可靠性边界见 [管理工作区说明](docs/admin-workspace.md)。

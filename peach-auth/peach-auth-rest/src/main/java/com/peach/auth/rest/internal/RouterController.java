@@ -1,10 +1,12 @@
 package com.peach.auth.rest.internal;
 
+import com.peach.auth.group.RouterGroup;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.auth.annoation.UserOperLog;
-import com.peach.auth.enums.UserLogEnum;
+import com.peach.log.annoation.UserOperLog;
+import com.peach.log.enums.UserLogEnum;
 import com.peach.auth.service.IRouterService;
 import com.peach.common.response.Response;
 import com.peach.auth.dto.RouterDTO;
@@ -59,7 +61,7 @@ public class RouterController {
     @PostMapping("/add")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.INSERT,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'新增路由信息,路由信息:['+#p0+']'")
-    public Response add(@RequestBody RouterDTO routerDTO) {
+    public Response add(@Validated({RouterGroup.InsertGroup.class})@RequestBody RouterDTO routerDTO) {
         routerService.add(routerDTO);
         return Response.success();
     }
@@ -68,7 +70,7 @@ public class RouterController {
     @DeleteMapping("/delById")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.DELETE,
                  optLevel = UserLogEnum.LogLevel.ERROR, optContent = "'删除路由信息,路由ID:['+#p0+']'")
-    public Response delById( String routerId) {
+    public Response delById(@NotBlank(message = "routerId conn't be blank") String routerId) {
         routerService.delById(routerId);
         return Response.success();
     }
@@ -77,7 +79,7 @@ public class RouterController {
     @PostMapping("update")
     @UserOperLog(moduleCode = UserLogEnum.Module.USERSERVICE, optType = UserLogEnum.OptType.UPDATE,
             optLevel = UserLogEnum.LogLevel.DEBUG, optContent = "'新增路由信息,路由信息:['+#p0+']'")
-    public Response update(@RequestBody RouterDTO routerDTO) {
+    public Response update(@Validated(RouterGroup.UpdateGroup.class) @RequestBody RouterDTO routerDTO) {
         routerService.update(routerDTO);
         return Response.success();
     }

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.RoleWorkspaceDao">
+    <sql id="scope">TENANT_ID=#{tenantId} AND ORG_ID=#{orgId} AND FISCAL=#{fiscal}</sql>
+    <sql id="app">APP_ID='f73b300578a5436d82ec7fca2c07c284'</sql>
+    <select id="hasPermission" resultType="int">
+        SELECT COUNT(*) FROM PEACH_AUTH_RESOURCE a
+        JOIN PEACH_AUTH_PARTY p ON p.TENANT_ID=a.TENANT_ID AND p.ORG_ID=a.ORG_ID AND p.FISCAL=a.FISCAL AND p.ROLE_CODE=a.PARTY_CODE AND p.PARTY_TYPE='USER'
+        JOIN PEACH_USER u ON u.USER_CODE=p.PARTY_CODE AND u.USER_ID=#{actor.userId}
+        JOIN PEACH_ROLE r ON r.TENANT_ID=p.TENANT_ID AND r.ORG_ID=p.ORG_ID AND r.FISCAL=p.FISCAL AND r.ROLE_CODE=p.ROLE_CODE
+        WHERE a.TENANT_ID=#{actor.tenantId} AND a.ORG_ID=#{actor.orgId} AND a.FISCAL=#{actor.fiscal}
+          AND a.APP_ID='f73b300578a5436d82ec7fca2c07c284' AND a.OP_TYPE='BUTTON' AND a.RESOURCE_CODE=#{permission}
+          AND a.IS_DELETE=0 AND p.IS_DELETE=0 AND COALESCE(r.IS_DELETE,0)=0
+    </select>
+    <select id="lockRole" resultType="com.peach.auth.vo.RoleVO">
+        SELECT ROLE_ID AS roleId,TENANT_ID AS tenantId,ORG_ID AS orgId,FISCAL AS fiscal,ROLE_CODE AS roleCode,ROLE_NAME AS roleName,ROLE_TYPE AS roleType,ROLE_SCOPE AS roleScope,ROLE_DESC AS roleDesc,SKIP_URL AS skipUrl
+        FROM PEACH_ROLE WHERE ROLE_ID=#{id} AND TENANT_ID=#{actor.tenantId} AND ORG_ID=#{actor.orgId} AND FISCAL=#{actor.fiscal} AND COALESCE(IS_DELETE,0)=0 FOR UPDATE
+    </select>
+    <select id="functions" resultType="string">
+        SELECT FUNC_CODE FROM PEACH_AUTH_FUNCTION WHERE <include refid="scope"/> AND <include refid="app"/> AND PARTY_CODE=#{roleCode} AND PARTY_TYPE='ROLE' AND IS_DELETE=0 ORDER BY FUNC_CODE
+    </select>
+    <select id="resources" resultType="com.peach.auth.vo.AuthResourceVO">
+        SELECT FUNC_CODE AS funcCode,OP_TYPE AS opType,RESOURCE_CODE AS resourceCode,RESOURCE_NAME AS resourceName
+        FROM PEACH_AUTH_RESOURCE WHERE <include refid="scope"/> AND <include refid="app"/> AND PARTY_CODE=#{roleCode} AND IS_DELETE=0 ORDER BY FUNC_CODE,OP_TYPE,RESOURCE_CODE
+    </select>
+    <select id="menus" resultType="com.peach.auth.vo.MenuVO">
+        SELECT m.MENU_ID AS menuId,m.MENU_NAME AS menuName,m.MENU_URL AS menuUrl,m.FUNC_CODE AS funcCode
+        FROM PEACH_MENU m JOIN PEACH_ROUTER r ON r.TENANT_ID=m.TENANT_ID AND r.APP_ID=m.APP_ID AND r.ROUTER_URL=m.MENU_URL AND r.FUNC_CODE=m.FUNC_CODE
+        WHERE m.TENANT_ID=#{tenantId} AND m.APP_ID='f73b300578a5436d82ec7fca2c07c284' AND m.IS_LEAF=1 AND m.IS_DELETE=0 AND m.IS_DISABLE=0 AND m.IS_SHOW=1
+          AND EXISTS (SELECT 1 FROM PEACH_AUTH_FUNCTION a WHERE a.TENANT_ID=#{tenantId} AND a.ORG_ID=#{orgId} AND a.FISCAL=#{fiscal} AND a.PARTY_CODE=#{roleCode} AND a.PARTY_TYPE='ROLE' AND a.APP_ID=m.APP_ID AND a.FUNC_CODE=m.FUNC_CODE AND a.IS_DELETE=0)
+        ORDER BY m.SORT_NO,m.MENU_SEQ,m.MENU_ID
+    </select>
+    <select id="users" resultType="com.peach.auth.vo.UserVO">
+        SELECT DISTINCT u.USER_ID AS userId,u.USER_CODE AS userCode,u.USER_NAME AS userName
+        FROM PEACH_USER u JOIN PEACH_USER_ORG o ON o.USER_ID=u.USER_ID
+        WHERE o.TENANT_ID=#{tenantId} AND o.ORG_ID=#{orgId} AND COALESCE(o.IS_DELETE,0)=0 AND COALESCE(u.IS_DELETE,0)=0
+        ORDER BY u.USER_CODE,u.USER_ID
+    </select>
+    <select id="memberCodes" resultType="string">
+        SELECT DISTINCT PARTY_CODE FROM PEACH_AUTH_PARTY WHERE <include refid="scope"/> AND ROLE_CODE=#{roleCode} AND PARTY_TYPE='USER' AND IS_DELETE=0 ORDER BY PARTY_CODE
+    </select>
+    <delete id="deleteFunctions">DELETE FROM PEACH_AUTH_FUNCTION WHERE <include refid="scope"/> AND <include refid="app"/> AND PARTY_CODE=#{roleCode} AND PARTY_TYPE='ROLE'</delete>
+    <delete id="deleteResources">DELETE FROM PEACH_AUTH_RESOURCE WHERE <include refid="scope"/> AND <include refid="app"/> AND PARTY_CODE=#{roleCode}</delete>
+    <delete id="deleteMembers">DELETE FROM PEACH_AUTH_PARTY WHERE <include refid="scope"/> AND ROLE_CODE=#{roleCode} AND PARTY_TYPE='USER'</delete>
+    <insert id="insertFunction">
+        INSERT INTO PEACH_AUTH_FUNCTION (ID,TENANT_ID,ORG_ID,PARTY_CODE,PARTY_TYPE,FUNC_CODE,FISCAL,STATE,APP_ID,IS_DELETE,CREATED_TIME,CREATOR_ID)
+        VALUES (#{id},#{tenantId},#{orgId},#{partyCode},'ROLE',#{funcCode},#{fiscal},'ENABLE',#{appId},0,#{createdTime},#{creatorId})
+    </insert>
+    <insert id="insertResource">
+        INSERT INTO PEACH_AUTH_RESOURCE (RESOURCE_ID,TENANT_ID,ORG_ID,PARTY_CODE,FUNC_CODE,OP_TYPE,RESOURCE_CODE,RESOURCE_NAME,APP_ID,IS_DELETE,FISCAL,CREATED_TIME,CREATOR_ID)
+        VALUES (#{resourceId},#{tenantId},#{orgId},#{partyCode},#{funcCode},#{opType},#{resourceCode},#{resourceName},#{appId},0,#{fiscal},#{createdTime},#{creatorId})
+    </insert>
+    <insert id="insertMember">
+        INSERT INTO PEACH_AUTH_PARTY (ID,TENANT_ID,ORG_ID,ROLE_CODE,ROLE_TYPE,FISCAL,PARTY_CODE,PARTY_TYPE,IS_DELETE,CREATED_TIME,CREATOR_ID)
+        VALUES (#{id},#{tenantId},#{orgId},#{roleCode},#{roleType},#{fiscal},#{partyCode},'USER',0,#{createdTime},#{creatorId})
+    </insert>
+    <select id="countReferences" resultType="int">
+        SELECT (SELECT COUNT(*) FROM PEACH_AUTH_PARTY WHERE <include refid="scope"/> AND ROLE_CODE=#{roleCode})
+          +(SELECT COUNT(*) FROM PEACH_AUTH_FUNCTION WHERE <include refid="scope"/> AND PARTY_CODE=#{roleCode})
+          +(SELECT COUNT(*) FROM PEACH_AUTH_RESOURCE WHERE <include refid="scope"/> AND PARTY_CODE=#{roleCode})
+    </select>
+    <update id="updateDefault">UPDATE PEACH_ROLE SET SKIP_URL=#{url} WHERE ROLE_ID=#{role.roleId} AND TENANT_ID=#{role.tenantId} AND ORG_ID=#{role.orgId} AND FISCAL=#{role.fiscal}</update>
+</mapper>

@@ -53,6 +53,9 @@ public class LoginInfo {
     @Schema(description = "登录凭证")
     private String token;
 
+    @Schema(description = "单角色已授权默认页面，多角色使用工作台")
+    private String defaultRoute;
+
     @Schema(description = "是否默认密码")
     private Integer isDefaultPwd;
 

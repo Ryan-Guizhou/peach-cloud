@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 
 import { switchContext } from '../../api/admin'
+import { submitLogout } from '../../api/auth'
 import WebSocketNotifier from '../../components/admin/WebSocketNotifier.vue'
 import { buildMenuGroups } from '../../router/dynamic'
 import { clearDynamicRoutes, syncDynamicRoutes } from '../../router'
@@ -11,6 +12,8 @@ import { useAuthStore } from '../../stores/auth'
 import { useWebSocketStore } from '../../stores/websocket'
 import { isManualFeatureEnabled, openPeachManual } from '../../utils/manual'
 
+defineProps<{ responsive?: boolean }>()
+const isLoggingOut = ref(false)
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -65,6 +68,14 @@ async function handleSwitchContext(value: unknown) {
 }
 
 async function logout() {
+  if (isLoggingOut.value) return
+  isLoggingOut.value = true
+  try { await submitLogout() }
+  catch (error: unknown) {
+    message.error(error instanceof Error ? error.message : '退出失败，请重试')
+    isLoggingOut.value = false
+    return
+  }
   webSocketStore.disconnect()
   authStore.clearSession()
   clearDynamicRoutes()
@@ -77,7 +88,7 @@ function handleOpenManual() {
 </script>
 
 <template>
-  <div class="console-shell">
+  <div class="console-shell" :class="{ 'console-shell--responsive': responsive }">
     <aside class="console-sidebar">
       <div class="console-sidebar__head">
         <div class="console-brand">
@@ -148,7 +159,7 @@ function handleOpenManual() {
             <span>{{ roleLabel }}</span>
           </span>
         </button>
-        <button type="button" class="console-logout" @click="logout">退出</button>
+        <button type="button" class="console-logout" :disabled="isLoggingOut" @click="logout">退出</button>
       </div>
     </header>
 

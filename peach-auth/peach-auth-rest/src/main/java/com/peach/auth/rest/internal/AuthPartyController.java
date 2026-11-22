@@ -1,8 +1,8 @@
 package com.peach.auth.rest.internal;
 
-import com.peach.auth.annoation.UserOperLog;
+import com.peach.log.annoation.UserOperLog;
 import com.peach.auth.dto.UserRoleAuthDTO;
-import com.peach.auth.enums.UserLogEnum;
+import com.peach.log.enums.UserLogEnum;
 import com.peach.auth.qo.AuthPartyQO;
 import com.peach.auth.service.IAuthPartyService;
 import com.peach.common.response.Response;

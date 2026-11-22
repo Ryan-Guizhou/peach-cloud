@@ -1,0 +1,23 @@
+package com.peach.log.core;
+
+import com.github.pagehelper.PageInfo;
+import com.peach.log.qo.UserOperLogQO;
+import com.peach.log.vo.UserOperLogVO;
+
+import java.util.List;
+
+/**
+ * IUser操作日志服务类。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/1/18 18:54
+ */
+public interface IUserOperLogService {
+
+    PageInfo<UserOperLogVO> pageList(UserOperLogQO userOperLogQO);
+
+    void insert(UserOperLogVO userOperLogVO);
+
+    void batchInsert(List<UserOperLogVO> userOperLogVOList);
+}

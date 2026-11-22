@@ -5,9 +5,9 @@ import com.peach.common.PeachGroup;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.auth.annoation.UserOperLog;
+import com.peach.log.annoation.UserOperLog;
 import com.peach.auth.dto.FunctionDTO;
-import com.peach.auth.enums.UserLogEnum;
+import com.peach.log.enums.UserLogEnum;
 import com.peach.auth.qo.FunctionQO;
 import com.peach.auth.service.IFunctionService;
 import com.peach.auth.vo.FunctionVO;
@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * 功能管理。
+ * 功能定义。
  * <p>提供功能列表查询、单条查询以及基础增删改入口。</p>
  *
  * @Author Mr Shu
@@ -39,7 +39,7 @@ import jakarta.validation.constraints.NotBlank;
 @Validated
 @RestController
 @RequestMapping("/auth/function")
-@Tag(name = "FunctionController", description = "功能管理")
+@Tag(name = "FunctionController", description = "功能定义")
 @RequiredArgsConstructor
 public class FunctionController {
 
@@ -50,6 +50,12 @@ public class FunctionController {
     public Response pageList(@RequestBody FunctionQO functionQO) {
         PageInfo<FunctionVO> pageInfo = functionService.pageList(functionQO);
         return Response.success(pageInfo);
+    }
+
+    @PostMapping("/list")
+    @Operation(summary = "查询完整功能定义列表")
+    public Response list(@RequestBody FunctionQO query) {
+        return Response.success(functionService.list(query));
     }
 
     @GetMapping("/selectById")

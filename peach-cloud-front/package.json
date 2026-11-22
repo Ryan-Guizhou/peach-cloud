@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --experimental-strip-types --test src/views/system/function/tree.test.mjs src/views/system/role/state.test.mjs src/router/menu-groups.test.mjs"
   },
   "dependencies": {
     "ant-design-vue": "^4.2.6",

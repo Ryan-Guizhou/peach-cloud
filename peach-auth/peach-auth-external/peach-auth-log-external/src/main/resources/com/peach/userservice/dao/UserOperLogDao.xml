@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.peach.auth.dao.UserOperLogDao">
+<mapper namespace="com.peach.log.dao.UserOperLogDao">
     <sql id="allColumn">
+        TENANT_ID, ORG_ID,
         ID,                                               OPT_TYPE_CODE,                                    MODULE_CODE,                                      CREATOR_CODE,
         CREATOR_NAME,                                     OPT_CONTENT,                                      CREATE_TIME,                                      OPT_LEVEL,
         PRIVATE_IP,                                       PUBLIC_IP,                                        DEVICE,                                           BROWSER,
@@ -11,6 +12,7 @@
     </sql>
 
     <sql id="allColumnAlias">
+        TENANT_ID as tenantId, ORG_ID as orgId,
         ID as id,                                         OPT_TYPE_CODE as optTypeCode,                     MODULE_CODE as moduleCode,                        CREATOR_CODE as creatorCode,
         CREATOR_NAME as creatorName,                      OPT_CONTENT as optContent,                        CREATE_TIME as createTime,                        OPT_LEVEL as optLevel,
         PRIVATE_IP as privateIp,                          PUBLIC_IP as publicIp,                            DEVICE as device,                                 BROWSER as browser,
@@ -20,6 +22,7 @@
     </sql>
 
     <sql id="allColumnValue">
+        #{tenantId}, #{orgId},
         #{id,jdbcType=VARCHAR},                           #{optTypeCode,jdbcType=VARCHAR},                  #{moduleCode,jdbcType=VARCHAR},                   #{creatorCode,jdbcType=VARCHAR},
         #{creatorName,jdbcType=VARCHAR},                  #{optContent,jdbcType=VARCHAR},                   #{createTime,jdbcType=VARCHAR},                   #{optLevel,jdbcType=VARCHAR},
         #{privateIp,jdbcType=VARCHAR},                    #{publicIp,jdbcType=VARCHAR},                     #{device,jdbcType=VARCHAR},                       #{browser,jdbcType=VARCHAR},
@@ -30,6 +33,7 @@
 
 
     <sql id="itemAllColumnValue">
+        #{item.tenantId}, #{item.orgId},
         #{item.id,jdbcType=VARCHAR},                      #{item.optTypeCode,jdbcType=VARCHAR},             #{item.moduleCode,jdbcType=VARCHAR},              #{item.creatorCode,jdbcType=VARCHAR},
         #{item.creatorName,jdbcType=VARCHAR},             #{item.optContent,jdbcType=VARCHAR},              #{item.createTime,jdbcType=VARCHAR},              #{item.optLevel,jdbcType=VARCHAR},
         #{item.privateIp,jdbcType=VARCHAR},               #{item.publicIp,jdbcType=VARCHAR},                #{item.device,jdbcType=VARCHAR},                  #{item.browser,jdbcType=VARCHAR},
@@ -227,6 +231,8 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null">AND TENANT_ID = #{tenantId}</if>
+        <if test="orgId != null">AND ORG_ID = #{orgId}</if>
         <if test="id != null and id != ''">
             AND ID = #{id,jdbcType=VARCHAR}
         </if>
@@ -289,15 +295,16 @@
         </if>
     </sql>
 
-    <insert id="insert" parameterType="com.peach.auth.entity.UserOperLogDO">
+    <insert id="insert" parameterType="com.peach.log.entity.UserOperLogDO">
         INSERT INTO USER_OPER_LOG (
             <include refid="allColumn" />
         ) VALUES (
             <include refid="allColumnValue" />
         )
+        ON DUPLICATE KEY UPDATE ID = VALUES(ID)
     </insert>
 
-    <insert id="batchInsert" parameterType="com.peach.auth.entity.UserOperLogDO">
+    <insert id="batchInsert" parameterType="com.peach.log.entity.UserOperLogDO">
         INSERT INTO USER_OPER_LOG (
             <include refid="allColumn" />
         ) VALUES
@@ -306,7 +313,7 @@
         </foreach>
     </insert>
 
-    <update id="update" parameterType="com.peach.auth.entity.UserOperLogDO">
+    <update id="update" parameterType="com.peach.log.entity.UserOperLogDO">
         UPDATE USER_OPER_LOG SET
             <include refid="allColumnSet" />
         <where>
@@ -327,27 +334,27 @@
         </foreach>
     </delete>
 
-    <delete id="del" parameterType="com.peach.auth.entity.UserOperLogDO">
+    <delete id="del" parameterType="com.peach.log.entity.UserOperLogDO">
         DELETE FROM USER_OPER_LOG
         <where>
             <include refid="allColumnCond" />
         </where>
     </delete>
 
-    <update id="updateById" parameterType="com.peach.auth.entity.UserOperLogDO">
+    <update id="updateById" parameterType="com.peach.log.entity.UserOperLogDO">
         UPDATE USER_OPER_LOG SET
             <include refid="allColumnSet" />
         WHERE ID =  #{id,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.UserOperLogDO">
+    <select id="selectById" parameterType="string" resultType="com.peach.log.vo.UserOperLogVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM USER_OPER_LOG
         WHERE ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.UserOperLogDO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.log.vo.UserOperLogVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM USER_OPER_LOG
@@ -357,16 +364,17 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.auth.entity.UserOperLogDO" resultType="com.peach.auth.entity.UserOperLogDO">
+    <select id="select" parameterType="com.peach.log.entity.UserOperLogDO" resultType="com.peach.log.vo.UserOperLogVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM USER_OPER_LOG
         <where>
             <include refid="allColumnCond" />
         </where>
+        ORDER BY CREATE_TIME DESC, ID DESC
     </select>
 
-    <select id="count" parameterType="com.peach.auth.entity.UserOperLogDO" resultType="java.lang.Integer">
+    <select id="count" parameterType="com.peach.log.entity.UserOperLogDO" resultType="java.lang.Integer">
         SELECT COUNT(1)
         FROM USER_OPER_LOG
         <where>

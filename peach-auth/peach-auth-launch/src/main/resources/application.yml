@@ -1,20 +1,3 @@
 spring:
   profiles:
     active: @project.profile@
-
-sa-token:
-  token-name: Authorization
-  timeout: 2592000
-  active-timeout: 600
-  is-concurrent: true
-  is-share: true
-  check-same-token: true
-  same-token-timeout: 30
-  is-read-header: true
-  is-read-cookie: false
-  is-log: true
-
-peach:
-  captcha:
-    cache-type: REDIS
-    service-type: BLOCKPUZZLE

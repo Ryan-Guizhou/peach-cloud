@@ -21,4 +21,6 @@ import java.util.List;
 public interface ResourceDao extends PeachDao<ResourceDO, ResourceVO> {
 
     List<ResourceVO> selectByQO(ResourceQO resourceQO);
+    /** 统计资源在当前租户、应用与功能下的授权引用。 */
+    int countReferences(ResourceDO query);
 }

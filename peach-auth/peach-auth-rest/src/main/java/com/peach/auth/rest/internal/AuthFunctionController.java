@@ -3,9 +3,9 @@ package com.peach.auth.rest.internal;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.auth.annoation.UserOperLog;
+import com.peach.log.annoation.UserOperLog;
 import com.peach.auth.dto.RoleFunctionAuthDTO;
-import com.peach.auth.enums.UserLogEnum;
+import com.peach.log.enums.UserLogEnum;
 import com.peach.auth.qo.AuthFunctionQO;
 import com.peach.auth.service.IAuthFunctionService;
 import com.peach.auth.vo.AuthFunctionVO;

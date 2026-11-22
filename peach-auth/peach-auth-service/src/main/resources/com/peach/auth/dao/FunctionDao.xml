@@ -2,6 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.FunctionDao">
     <sql id="allColumn">
+        TENANT_ID,
         FUNC_ID,                                          FUNC_CODE,                                        PARENT_FUNC_CODE,                                 FUNC_NAME,
         FUNC_DESC,                                        FUNC_URL,                                         FUNC_SEQ,                                         FUNC_TYPE,
         IS_MENU,                                          IS_AUTHORIZE,                                     APP_ID,                                           IS_DISABLE,
@@ -10,6 +11,7 @@
     </sql>
 
     <sql id="allColumnAlias">
+        TENANT_ID as tenantId,
         FUNC_ID as funcId,                                FUNC_CODE as funcCode,                            PARENT_FUNC_CODE as parentFuncCode,               FUNC_NAME as funcName,
         FUNC_DESC as funcDesc,                            FUNC_URL as funcUrl,                              FUNC_SEQ as funcSeq,                              FUNC_TYPE as funcType,
         IS_MENU as isMenu,                                IS_AUTHORIZE as isAuthorize,                      APP_ID as appId,                                  IS_DISABLE as isDisable,
@@ -18,6 +20,7 @@
     </sql>
 
     <sql id="allColumnValue">
+        #{tenantId,jdbcType=VARCHAR},
         #{funcId,jdbcType=VARCHAR},                       #{funcCode,jdbcType=VARCHAR},                     #{parentFuncCode,jdbcType=VARCHAR},               #{funcName,jdbcType=VARCHAR},
         #{funcDesc,jdbcType=VARCHAR},                     #{funcUrl,jdbcType=VARCHAR},                      #{funcSeq,jdbcType=VARCHAR},                      #{funcType,jdbcType=VARCHAR},
         #{isMenu,jdbcType=INTEGER},                       #{isAuthorize,jdbcType=INTEGER},                  #{appId,jdbcType=VARCHAR},                        #{isDisable,jdbcType=INTEGER},
@@ -27,6 +30,7 @@
 
 
     <sql id="itemAllColumnValue">
+        #{item.tenantId,jdbcType=VARCHAR},
         #{item.funcId,jdbcType=VARCHAR},                  #{item.funcCode,jdbcType=VARCHAR},                #{item.parentFuncCode,jdbcType=VARCHAR},          #{item.funcName,jdbcType=VARCHAR},
         #{item.funcDesc,jdbcType=VARCHAR},                #{item.funcUrl,jdbcType=VARCHAR},                 #{item.funcSeq,jdbcType=VARCHAR},                 #{item.funcType,jdbcType=VARCHAR},
         #{item.isMenu,jdbcType=INTEGER},                  #{item.isAuthorize,jdbcType=INTEGER},             #{item.appId,jdbcType=VARCHAR},                   #{item.isDisable,jdbcType=INTEGER},
@@ -40,22 +44,22 @@
             <if test="funcCode != null and funcCode != ''">
                 FUNC_CODE = #{funcCode,jdbcType=VARCHAR},
             </if>
-            <if test="parentFuncCode != null and parentFuncCode != ''">
+            <if test="parentFuncCode != null">
                 PARENT_FUNC_CODE = #{parentFuncCode,jdbcType=VARCHAR},
             </if>
             <if test="funcName != null and funcName != ''">
                 FUNC_NAME = #{funcName,jdbcType=VARCHAR},
             </if>
-            <if test="funcDesc != null and funcDesc != ''">
+            <if test="funcDesc != null">
                 FUNC_DESC = #{funcDesc,jdbcType=VARCHAR},
             </if>
-            <if test="funcUrl != null and funcUrl != ''">
+            <if test="funcUrl != null">
                 FUNC_URL = #{funcUrl,jdbcType=VARCHAR},
             </if>
-            <if test="funcSeq != null and funcSeq != ''">
+            <if test="funcSeq != null">
                 FUNC_SEQ = #{funcSeq,jdbcType=VARCHAR},
             </if>
-            <if test="funcType != null and funcType != ''">
+            <if test="funcType != null">
                 FUNC_TYPE = #{funcType,jdbcType=VARCHAR},
             </if>
             <if test="isMenu != null">
@@ -94,22 +98,22 @@
             <if test="funcCode != null and funcCode != ''">
                 FUNC_CODE,
             </if>
-            <if test="parentFuncCode != null and parentFuncCode != ''">
+            <if test="parentFuncCode != null">
                 PARENT_FUNC_CODE,
             </if>
             <if test="funcName != null and funcName != ''">
                 FUNC_NAME,
             </if>
-            <if test="funcDesc != null and funcDesc != ''">
+            <if test="funcDesc != null">
                 FUNC_DESC,
             </if>
-            <if test="funcUrl != null and funcUrl != ''">
+            <if test="funcUrl != null">
                 FUNC_URL,
             </if>
-            <if test="funcSeq != null and funcSeq != ''">
+            <if test="funcSeq != null">
                 FUNC_SEQ,
             </if>
-            <if test="funcType != null and funcType != ''">
+            <if test="funcType != null">
                 FUNC_TYPE,
             </if>
             <if test="isMenu != null">
@@ -147,22 +151,22 @@
             <if test="funcCode != null and funcCode != ''">
                 #{funcCode,jdbcType=VARCHAR},
             </if>
-            <if test="parentFuncCode != null and parentFuncCode != ''">
+            <if test="parentFuncCode != null">
                 #{parentFuncCode,jdbcType=VARCHAR},
             </if>
             <if test="funcName != null and funcName != ''">
                 #{funcName,jdbcType=VARCHAR},
             </if>
-            <if test="funcDesc != null and funcDesc != ''">
+            <if test="funcDesc != null">
                 #{funcDesc,jdbcType=VARCHAR},
             </if>
-            <if test="funcUrl != null and funcUrl != ''">
+            <if test="funcUrl != null">
                 #{funcUrl,jdbcType=VARCHAR},
             </if>
-            <if test="funcSeq != null and funcSeq != ''">
+            <if test="funcSeq != null">
                 #{funcSeq,jdbcType=VARCHAR},
             </if>
-            <if test="funcType != null and funcType != ''">
+            <if test="funcType != null">
                 #{funcType,jdbcType=VARCHAR},
             </if>
             <if test="isMenu != null">
@@ -196,28 +200,29 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">AND TENANT_ID = #{tenantId}</if>
         <if test="funcId != null and funcId != ''">
             AND FUNC_ID = #{funcId,jdbcType=VARCHAR}
         </if>
         <if test="funcCode != null and funcCode != ''">
             AND FUNC_CODE = #{funcCode,jdbcType=VARCHAR}
         </if>
-        <if test="parentFuncCode != null and parentFuncCode != ''">
+        <if test="parentFuncCode != null">
             AND PARENT_FUNC_CODE = #{parentFuncCode,jdbcType=VARCHAR}
         </if>
         <if test="funcName != null and funcName != ''">
             AND FUNC_NAME = #{funcName,jdbcType=VARCHAR}
         </if>
-        <if test="funcDesc != null and funcDesc != ''">
+        <if test="funcDesc != null">
             AND FUNC_DESC = #{funcDesc,jdbcType=VARCHAR}
         </if>
-        <if test="funcUrl != null and funcUrl != ''">
+        <if test="funcUrl != null">
             AND FUNC_URL = #{funcUrl,jdbcType=VARCHAR}
         </if>
-        <if test="funcSeq != null and funcSeq != ''">
+        <if test="funcSeq != null">
             AND FUNC_SEQ = #{funcSeq,jdbcType=VARCHAR}
         </if>
-        <if test="funcType != null and funcType != ''">
+        <if test="funcType != null">
             AND FUNC_TYPE = #{funcType,jdbcType=VARCHAR}
         </if>
         <if test="isMenu != null">
@@ -300,14 +305,14 @@
         WHERE FUNC_ID =  #{funcId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.FunctionDO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.FunctionVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_FUNCTION
         WHERE FUNC_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.FunctionDO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.FunctionVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_FUNCTION
@@ -317,7 +322,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.auth.entity.FunctionDO" resultType="com.peach.auth.entity.FunctionDO">
+    <select id="select" parameterType="com.peach.auth.entity.FunctionDO" resultType="com.peach.auth.vo.FunctionVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_FUNCTION
@@ -332,5 +337,28 @@
         <where>
             <include refid="allColumnCond" />
         </where>
+    </select>
+
+    <select id="selectByQO" resultType="com.peach.auth.vo.FunctionVO">
+        SELECT <include refid="allColumnAlias"/> FROM PEACH_FUNCTION
+        WHERE TENANT_ID = #{tenantId} AND IS_DELETE = 0
+        <if test="appId != null and appId != ''">AND APP_ID = #{appId}</if>
+        <if test="funcCode != null and funcCode != ''">AND FUNC_CODE = #{funcCode}</if>
+        <if test="funcName != null and funcName != ''">AND LOCATE(#{funcName}, FUNC_NAME) &gt; 0</if>
+        ORDER BY APP_ID, FUNC_SEQ, FUNC_CODE, FUNC_ID
+    </select>
+    <select id="lockByCode" resultType="com.peach.auth.vo.FunctionVO">
+        SELECT <include refid="allColumnAlias"/> FROM PEACH_FUNCTION
+        WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode} AND IS_DELETE = 0
+        FOR UPDATE
+    </select>
+    <select id="countReferences" resultType="int">
+        SELECT
+        (SELECT COUNT(*) FROM PEACH_FUNCTION WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND PARENT_FUNC_CODE = #{funcCode}) +
+        (SELECT COUNT(*) FROM PEACH_RESOURCE WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode}) +
+        (SELECT COUNT(*) FROM PEACH_MENU WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode}) +
+        (SELECT COUNT(*) FROM PEACH_ROUTER WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode}) +
+        (SELECT COUNT(*) FROM PEACH_AUTH_FUNCTION WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode}) +
+        (SELECT COUNT(*) FROM PEACH_AUTH_RESOURCE WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode})
     </select>
 </mapper>

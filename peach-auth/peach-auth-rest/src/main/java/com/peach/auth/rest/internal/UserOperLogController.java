@@ -3,9 +3,9 @@ package com.peach.auth.rest.internal;
 import lombok.RequiredArgsConstructor;
 
 import com.github.pagehelper.PageInfo;
-import com.peach.auth.core.IUserOperLogService;
-import com.peach.auth.qo.UserOperLogQO;
-import com.peach.auth.vo.UserOperLogVO;
+import com.peach.log.core.IUserOperLogService;
+import com.peach.log.qo.UserOperLogQO;
+import com.peach.log.vo.UserOperLogVO;
 import com.peach.common.response.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

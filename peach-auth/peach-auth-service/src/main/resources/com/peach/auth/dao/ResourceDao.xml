@@ -2,18 +2,21 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.ResourceDao">
     <sql id="allColumn">
+        TENANT_ID,
         RESOURCE_ID,                                      FUNC_CODE,                                        RESOURCE_TYPE,                                    RESOURCE_CODE,
         RESOURCE_NAME,                                    APP_ID,                                           IS_DELETE,                                        CREATED_TIME,
         CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
+        TENANT_ID as tenantId,
         RESOURCE_ID as resourceId,                        FUNC_CODE as funcCode,                            RESOURCE_TYPE as resourceType,                    RESOURCE_CODE as resourceCode,
         RESOURCE_NAME as resourceName,                    APP_ID as appId,                                  IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
         CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
+        #{tenantId,jdbcType=VARCHAR},
         #{resourceId,jdbcType=VARCHAR},                   #{funcCode,jdbcType=VARCHAR},                     #{resourceType,jdbcType=VARCHAR},                 #{resourceCode,jdbcType=VARCHAR},
         #{resourceName,jdbcType=VARCHAR},                 #{appId,jdbcType=VARCHAR},                        #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},
         #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
@@ -21,6 +24,7 @@
 
 
     <sql id="itemAllColumnValue">
+        #{item.tenantId,jdbcType=VARCHAR},
         #{item.resourceId,jdbcType=VARCHAR},              #{item.funcCode,jdbcType=VARCHAR},                #{item.resourceType,jdbcType=VARCHAR},            #{item.resourceCode,jdbcType=VARCHAR},
         #{item.resourceName,jdbcType=VARCHAR},            #{item.appId,jdbcType=VARCHAR},                   #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},
         #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
@@ -133,6 +137,7 @@
     </sql>
 
     <sql id="allColumnCond">
+        <if test="tenantId != null and tenantId != ''">AND TENANT_ID = #{tenantId}</if>
         <if test="resourceId != null and resourceId != ''">
             AND RESOURCE_ID = #{resourceId,jdbcType=VARCHAR}
         </if>
@@ -219,14 +224,14 @@
         WHERE RESOURCE_ID =  #{resourceId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.ResourceDO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.ResourceVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_RESOURCE
         WHERE RESOURCE_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.ResourceDO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.ResourceVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_RESOURCE
@@ -236,7 +241,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.auth.entity.ResourceDO" resultType="com.peach.auth.entity.ResourceDO">
+    <select id="select" parameterType="com.peach.auth.entity.ResourceDO" resultType="com.peach.auth.vo.ResourceVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_RESOURCE
@@ -258,6 +263,11 @@
         <include refid="allColumnAlias" />
         FROM PEACH_RESOURCE
         <where>
+            AND TENANT_ID = #{tenantId} AND IS_DELETE = 0
+            <if test="appId != null and appId != ''">AND APP_ID = #{appId}</if>
+            <if test="keyword != null and keyword != ''">
+                AND (LOCATE(#{keyword}, RESOURCE_CODE) &gt; 0 OR LOCATE(#{keyword}, RESOURCE_NAME) &gt; 0)
+            </if>
             <if test="resourceId != null and resourceId != ''">
                 AND RESOURCE_ID = #{resourceId,jdbcType=VARCHAR}
             </if>
@@ -271,5 +281,11 @@
                 AND RESOURCE_CODE = #{resourceCode,jdbcType=VARCHAR}
             </if>
         </where>
+        ORDER BY RESOURCE_CODE, RESOURCE_ID
+    </select>
+    <select id="countReferences" resultType="int">
+        SELECT COUNT(*) FROM PEACH_AUTH_RESOURCE
+        WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode}
+          AND RESOURCE_CODE = #{resourceCode}
     </select>
 </mapper>

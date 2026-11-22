@@ -121,6 +121,7 @@ export function readAuthLoginInfo(): LoginInfo | null {
       return null
     }
     return {
+      defaultRoute: normalizeOptionalString(value.defaultRoute),
       userId: value.userId,
       userName: value.userName,
       fiscal,

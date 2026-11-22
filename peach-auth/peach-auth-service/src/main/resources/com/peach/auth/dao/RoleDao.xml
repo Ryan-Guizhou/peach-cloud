@@ -60,7 +60,7 @@
             <if test="isDelete != null">
                 IS_DELETE = #{isDelete,jdbcType=INTEGER},
             </if>
-            <if test="skipUrl != null and skipUrl != ''">
+            <if test="skipUrl != null">
                 SKIP_URL = #{skipUrl,jdbcType=VARCHAR},
             </if>
             <if test="createdTime != null and createdTime != ''">
@@ -108,7 +108,7 @@
             <if test="isDelete != null">
                 IS_DELETE,
             </if>
-            <if test="skipUrl != null and skipUrl != ''">
+            <if test="skipUrl != null">
                 SKIP_URL,
             </if>
             <if test="createdTime != null and createdTime != ''">
@@ -155,7 +155,7 @@
             <if test="isDelete != null">
                 #{isDelete,jdbcType=INTEGER},
             </if>
-            <if test="skipUrl != null and skipUrl != ''">
+            <if test="skipUrl != null">
                 #{skipUrl,jdbcType=VARCHAR},
             </if>
             <if test="createdTime != null and createdTime != ''">
@@ -204,7 +204,7 @@
         <if test="isDelete != null">
             AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
         </if>
-        <if test="skipUrl != null and skipUrl != ''">
+        <if test="skipUrl != null">
             AND SKIP_URL = #{skipUrl,jdbcType=VARCHAR}
         </if>
         <if test="createdTime != null and createdTime != ''">
@@ -272,14 +272,14 @@
         WHERE ROLE_ID =  #{roleId,jdbcType=VARCHAR}
     </update>
 
-    <select id="selectById" parameterType="string" resultType="com.peach.auth.entity.RoleDO">
+    <select id="selectById" parameterType="string" resultType="com.peach.auth.vo.RoleVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROLE
         WHERE ROLE_ID = #{value,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.entity.RoleDO">
+    <select id="selectByIds" parameterType="java.util.List" resultType="com.peach.auth.vo.RoleVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROLE
@@ -289,7 +289,7 @@
         </foreach>
     </select>
 
-    <select id="select" parameterType="com.peach.auth.entity.RoleDO" resultType="com.peach.auth.entity.RoleDO">
+    <select id="select" parameterType="com.peach.auth.entity.RoleDO" resultType="com.peach.auth.vo.RoleVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_ROLE
@@ -314,7 +314,7 @@
             p.party_code as userCode,
             r.tenant_id as tenantId,
             r.org_id as orgId,
-            r.fiscal as fiscal
+            r.fiscal as fiscal, r.SKIP_URL as skipUrl
         FROM PEACH_ROLE r INNER JOIN PEACH_AUTH_PARTY p
             ON r.tenant_id = p.tenant_id
            AND r.org_id = p.org_id
@@ -339,33 +339,13 @@
     </select>
 
 
-    <select id="selectByQO" parameterType="com.peach.auth.qo.RoleQO" resultType="com.peach.auth.vo.RoleVO">
-        SELECT
-        <include refid="allColumnAlias" />
-        FROM PEACH_ROLE
-        <where>
-            <if test="tenantId != null and tenantId != ''">
-                AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
-            </if>
-            <if test="orgId != null and orgId != ''">
-                AND ORG_ID = #{orgId,jdbcType=VARCHAR}
-            </if>
-            <if test="fiscal != null">
-                AND FISCAL = #{fiscal,jdbcType=INTEGER}
-            </if>
-            <if test="roleId != null and roleId != ''">
-                AND ROLE_ID = #{roleId,jdbcType=VARCHAR}
-            </if>
-            <if test="roleCode != null and roleCode != ''">
-                AND ROLE_CODE = #{roleCode,jdbcType=VARCHAR}
-            </if>
-            <if test="userCode != null and userCode != ''">
-                AND ROLE_CODE IN (
-                    SELECT ROLE_CODE
-                    FROM PEACH_AUTH_PARTY
-                    WHERE PARTY_CODE = #{userCode,jdbcType=VARCHAR}
-                )
-            </if>
-        </where>
+    <select id="selectByQO" resultType="com.peach.auth.vo.RoleVO">
+        SELECT <include refid="allColumnAlias"/> FROM PEACH_ROLE
+        WHERE TENANT_ID = #{tenantId} AND ORG_ID = #{orgId} AND FISCAL = #{fiscal} AND COALESCE(IS_DELETE,0) = 0
+        <if test="roleId != null and roleId != ''">AND ROLE_ID = #{roleId}</if>
+        <if test="roleCode != null and roleCode != ''">AND LOCATE(#{roleCode}, ROLE_CODE) &gt; 0</if>
+        <if test="roleName != null and roleName != ''">AND LOCATE(#{roleName}, ROLE_NAME) &gt; 0</if>
+        <if test="keyword != null and keyword != ''">AND (LOCATE(#{keyword}, ROLE_CODE) &gt; 0 OR LOCATE(#{keyword}, ROLE_NAME) &gt; 0)</if>
+        ORDER BY ROLE_CODE, ROLE_ID
     </select>
 </mapper>

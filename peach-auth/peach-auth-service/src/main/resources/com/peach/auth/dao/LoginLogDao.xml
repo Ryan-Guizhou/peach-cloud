@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.LoginLogDao">
+    <sql id="columns">LOG_ID AS logId, OCCURRED_AT AS occurredAt, EVENT_TYPE AS eventType, RESULT AS result, REASON_CODE AS reasonCode, ACCOUNT AS account, ACCOUNT_HASH AS accountHash, USER_ID AS userId, TENANT_ID AS tenantId, ORG_ID AS orgId, IP_ADDRESS AS ipAddress, BROWSER AS browser, DURATION_MS AS durationMs, TRACE_ID AS traceId</sql>
+    <insert id="insert">
+        INSERT INTO PEACH_LOGIN_LOG (LOG_ID, OCCURRED_AT, EVENT_TYPE, RESULT, REASON_CODE, ACCOUNT, ACCOUNT_HASH, USER_ID, TENANT_ID, ORG_ID, IP_ADDRESS, BROWSER, DURATION_MS, TRACE_ID)
+        VALUES (#{logId}, #{occurredAt}, #{eventType}, #{result}, #{reasonCode}, #{account}, #{accountHash}, #{userId}, #{tenantId}, #{orgId}, #{ipAddress}, #{browser}, #{durationMs}, #{traceId})
+    </insert>
+    <select id="selectByQO" resultType="com.peach.auth.entity.LoginLogDO">
+        SELECT <include refid="columns"/> FROM PEACH_LOGIN_LOG
+        <where>
+            <choose>
+                <when test="scope == 'UNASSIGNED'">TENANT_ID IS NULL</when>
+                <otherwise>TENANT_ID = #{tenantId}</otherwise>
+            </choose>
+            AND OCCURRED_AT &gt;= #{startTime} AND OCCURRED_AT &lt;= #{endTime}
+            <if test="accountHash != null">AND ACCOUNT_HASH = #{accountHash}</if>
+            <if test="result != null and result != ''">AND RESULT = #{result}</if>
+            <if test="eventType != null and eventType != ''">AND EVENT_TYPE = #{eventType}</if>
+            <if test="ipAddress != null and ipAddress != ''">AND IP_ADDRESS = #{ipAddress}</if>
+        </where>
+        ORDER BY OCCURRED_AT DESC, LOG_ID DESC
+    </select>
+    <select id="selectById" resultType="com.peach.auth.entity.LoginLogDO">
+        SELECT <include refid="columns"/> FROM PEACH_LOGIN_LOG WHERE LOG_ID = #{value}
+    </select>
+    <select id="hasPermission" resultType="int">
+        SELECT COUNT(*) FROM PEACH_AUTH_RESOURCE a
+        JOIN PEACH_AUTH_PARTY p ON p.TENANT_ID = a.TENANT_ID AND p.ORG_ID = a.ORG_ID
+          AND p.FISCAL = a.FISCAL AND p.ROLE_CODE = a.PARTY_CODE AND p.PARTY_TYPE = 'USER'
+        JOIN PEACH_USER u ON u.USER_CODE = p.PARTY_CODE AND u.USER_ID = #{actor.userId}
+        JOIN PEACH_ROLE r ON r.TENANT_ID = p.TENANT_ID AND r.ORG_ID = p.ORG_ID AND r.FISCAL = p.FISCAL AND r.ROLE_CODE = p.ROLE_CODE
+        WHERE a.TENANT_ID = #{actor.tenantId} AND a.ORG_ID = #{actor.orgId} AND a.FISCAL = #{actor.fiscal}
+          AND a.APP_ID = 'f73b300578a5436d82ec7fca2c07c284'
+          AND a.OP_TYPE = 'BUTTON' AND a.RESOURCE_CODE = #{permission}
+          AND a.IS_DELETE = 0 AND p.IS_DELETE = 0 AND COALESCE(r.IS_DELETE, 0) = 0
+    </select>
+    <delete id="deleteExpired">
+        DELETE FROM PEACH_LOGIN_LOG WHERE OCCURRED_AT &lt; #{cutoff}
+        ORDER BY OCCURRED_AT, LOG_ID LIMIT 1000
+    </delete>
+</mapper>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peach.auth.dao.TenantDao">
+    <sql id="columns">ID AS id, TENANT_ID AS tenantId, TENANT_CODE AS tenantCode, TENANT_NAME AS tenantName, TENANT_TYPE AS tenantType, STATUS AS status, DESCRIPTION AS description, CONTACT_NAME AS contactName, CONTACT_PHONE AS contactPhone, CONTACT_EMAIL AS contactEmail, ACTIVATED_TIME AS activatedTime, CLOSED_AT AS closedAt, VERSION AS version, DELETED AS deleted, CREATOR_ID AS creatorId, CREATOR_CODE AS creatorCode, CREATE_TIME AS createTime, MODIFIER_ID AS modifierId, MODIFIER_CODE AS modifierCode, MODIFY_TIME AS modifyTime, DELETER AS deleter, DELETE_TIME AS deleteTime</sql>
+    <select id="selectById" resultType="com.peach.auth.vo.TenantVO">SELECT <include refid="columns"/> FROM PEACH_TENANT WHERE DELETED = 0 AND ID = #{id}</select>
+    <select id="selectByTenantId" resultType="com.peach.auth.vo.TenantVO">SELECT <include refid="columns"/> FROM PEACH_TENANT WHERE DELETED = 0 AND TENANT_ID = #{tenantId}</select>
+    <select id="selectByQO" resultType="com.peach.auth.vo.TenantVO">
+        SELECT <include refid="columns"/> FROM PEACH_TENANT WHERE DELETED = 0
+        <if test="keyword != null and keyword != ''">AND (TENANT_CODE LIKE CONCAT('%', #{keyword}, '%') OR TENANT_NAME LIKE CONCAT('%', #{keyword}, '%'))</if>
+        <if test="status != null and status != ''">AND STATUS = #{status}</if>
+        <if test="tenantType != null and tenantType != ''">AND TENANT_TYPE = #{tenantType}</if>
+        ORDER BY CREATE_TIME DESC, ID DESC
+    </select>
+    <select id="countByCode" resultType="int">
+        SELECT COUNT(*) FROM PEACH_TENANT WHERE TENANT_CODE = #{code}
+        <if test="excludeId != null">AND ID != #{excludeId}</if>
+    </select>
+    <insert id="insert">INSERT INTO PEACH_TENANT (ID, TENANT_ID, TENANT_CODE, TENANT_NAME, TENANT_TYPE, STATUS, DESCRIPTION, CONTACT_NAME, CONTACT_PHONE, CONTACT_EMAIL, ACTIVATED_TIME, CLOSED_AT, VERSION, DELETED, CREATOR_ID, CREATOR_CODE, CREATE_TIME, MODIFIER_ID, MODIFIER_CODE, MODIFY_TIME, DELETER, DELETE_TIME) VALUES (#{id}, #{tenantId}, #{tenantCode}, #{tenantName}, #{tenantType}, #{status}, #{description}, #{contactName}, #{contactPhone}, #{contactEmail}, #{activatedTime}, #{closedAt}, #{version}, #{deleted}, #{creatorId}, #{creatorCode}, #{createTime}, #{modifierId}, #{modifierCode}, #{modifyTime}, #{deleter}, #{deleteTime})</insert>
+    <update id="updateDetails">UPDATE PEACH_TENANT SET TENANT_CODE = #{tenantCode}, TENANT_NAME = #{tenantName}, TENANT_TYPE = #{tenantType}, DESCRIPTION = #{description}, CONTACT_NAME = #{contactName}, CONTACT_PHONE = #{contactPhone}, CONTACT_EMAIL = #{contactEmail}, MODIFIER_ID = #{modifierId}, MODIFIER_CODE = #{modifierCode}, MODIFY_TIME = #{modifyTime}, VERSION = VERSION + 1 WHERE ID = #{id} AND VERSION = #{version} AND DELETED = 0</update>
+    <update id="updateStatus">UPDATE PEACH_TENANT SET STATUS = #{status}, ACTIVATED_TIME = #{activatedTime}, CLOSED_AT = #{closedAt}, MODIFIER_ID = #{modifierId}, MODIFIER_CODE = #{modifierCode}, MODIFY_TIME = #{modifyTime}, VERSION = VERSION + 1 WHERE ID = #{id} AND VERSION = #{version} AND DELETED = 0</update>
+    <update id="logicalDelete">UPDATE PEACH_TENANT SET DELETED = 1, DELETER = #{deleter}, DELETE_TIME = #{deleteTime}, MODIFIER_ID = #{modifierId}, MODIFIER_CODE = #{modifierCode}, MODIFY_TIME = #{modifyTime}, VERSION = VERSION + 1 WHERE ID = #{id} AND VERSION = #{version} AND DELETED = 0</update>
+</mapper>
