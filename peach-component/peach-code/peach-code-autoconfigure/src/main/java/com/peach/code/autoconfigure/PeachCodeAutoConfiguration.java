@@ -4,7 +4,6 @@ import com.peach.code.CodeGenerator;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -12,6 +11,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**
  * Peach代码自动配置。
@@ -23,7 +25,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * @CreateTime 2026/3/20 16:58
  */
 @AutoConfiguration
-@AutoConfigureAfter(JdbcTemplateAutoConfiguration.class)
+@AutoConfigureAfter(name = {"org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration",
+        "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration"})
 @ConditionalOnClass({JdbcTemplate.class, CodeGenerator.class})
 @ConditionalOnProperty(prefix = "peach.code", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(CodeProperties.class)
@@ -34,15 +37,34 @@ public class PeachCodeAutoConfiguration {
      *
      * @param jdbcTemplate 业务数据库 JDBC 模板
      * @param properties 编码生成器配置
-     * @param transactionProvider MySQL 发号所需的事务管理器
+     * @param coordinatorProvider 可选 Redis 协调器
      * @return 默认编码生成器
      */
     @Bean
     @ConditionalOnBean(JdbcTemplate.class)
     @ConditionalOnMissingBean(CodeGenerator.class)
     public CodeGenerator codeGenerator(JdbcTemplate jdbcTemplate, CodeProperties properties,
-                                       ObjectProvider<org.springframework.transaction.PlatformTransactionManager>
-                                               transactionProvider) {
-        return new PeachCodeGenerator(jdbcTemplate, properties, transactionProvider.getIfAvailable());
+                                       ObjectProvider<CodeSequenceCoordinator> coordinatorProvider) {
+        return new PeachCodeGenerator(jdbcTemplate, properties,
+                new DataSourceTransactionManager(jdbcTemplate.getDataSource()), coordinatorProvider.getIfAvailable());
+    }
+
+    /**
+     * Redis 类和模板都存在时才加载可选协调实现。
+     *
+     * @Author Mr Shu
+     * @Version 1.0.0
+     * @CreateTime 2026/11/23 10:45
+     */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(StringRedisTemplate.class)
+    static class RedisCoordinationConfiguration {
+
+        @Bean
+        @ConditionalOnBean(StringRedisTemplate.class)
+        @ConditionalOnProperty(prefix = "peach.code", name = "redis-enabled", havingValue = "true", matchIfMissing = true)
+        CodeSequenceCoordinator codeSequenceCoordinator(StringRedisTemplate redis, CodeProperties properties) {
+            return new RedisCodeSequenceCoordinator(redis, properties);
+        }
     }
 }

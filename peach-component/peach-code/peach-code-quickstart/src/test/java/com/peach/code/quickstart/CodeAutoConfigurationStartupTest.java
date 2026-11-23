@@ -5,7 +5,9 @@ import com.peach.code.autoconfigure.PeachCodeAutoConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
+import javax.sql.DataSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,8 +37,18 @@ class CodeAutoConfigurationStartupTest {
 
     @Test
     void shouldProvideCodeGeneratorWhenJdbcAndTransactionsExist() {
-        runner.withBean(JdbcTemplate.class, () -> mock(JdbcTemplate.class))
+        runner.withBean(JdbcTemplate.class, () -> new JdbcTemplate(mock(DataSource.class)))
                 .withBean(PlatformTransactionManager.class, () -> mock(PlatformTransactionManager.class))
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).hasSingleBean(CodeGenerator.class);
+                });
+    }
+
+    @Test
+    void optionalRedisClassesMayBeAbsent() {
+        runner.withClassLoader(new FilteredClassLoader("org.springframework.data.redis"))
+                .withBean(JdbcTemplate.class, () -> new JdbcTemplate(mock(DataSource.class)))
                 .run(context -> {
                     assertThat(context).hasNotFailed();
                     assertThat(context).hasSingleBean(CodeGenerator.class);

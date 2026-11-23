@@ -9,14 +9,14 @@
     {
       "name": "peach.code.redis-enabled",
       "type": "java.lang.Boolean",
-      "description": "是否使用 Redis 存储代码生成相关数据。",
+      "description": "是否在 MySQL 规则行锁内启用可选 Redis 水位同步。",
       "defaultValue": true
     },
     {
       "name": "peach.code.redis-key-prefix",
       "type": "java.lang.String",
-      "description": "代码生成数据在 Redis 中使用的键前缀。",
-      "defaultValue": "peach:code:generate:"
+      "description": "Redis 水位键前缀；包含租户摘要和稳定业务类型，不设置 TTL。",
+      "defaultValue": "peach:code:sequence:v2:"
     }
   ],
   "hints": []

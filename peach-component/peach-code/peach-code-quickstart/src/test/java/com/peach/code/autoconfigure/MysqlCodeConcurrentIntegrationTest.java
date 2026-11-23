@@ -1,14 +1,18 @@
-package com.peach.code.quickstart;
+package com.peach.code.autoconfigure;
 
 import com.peach.code.CodeGeneratorException;
 import com.peach.code.autoconfigure.CodeProperties;
 import com.peach.code.autoconfigure.PeachCodeGenerator;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.GenericContainer;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -46,9 +50,17 @@ class MysqlCodeConcurrentIntegrationTest {
             .withUsername("peach")
             .withPassword("peach-test");
 
+    @Container
+    @SuppressWarnings("resource")
+    static final GenericContainer<?> REDIS = new GenericContainer<>(DockerImageName.parse("redis:7.4-alpine"))
+            .withExposedPorts(6379);
+
     private JdbcTemplate jdbc;
     private PeachCodeGenerator first;
     private PeachCodeGenerator second;
+    private LettuceConnectionFactory redisConnection;
+    private StringRedisTemplate redis;
+    private DataSourceTransactionManager transactionManager;
 
     @BeforeEach
     void prepareRule() {
@@ -57,20 +69,35 @@ class MysqlCodeConcurrentIntegrationTest {
         jdbc = new JdbcTemplate(dataSource);
         jdbc.execute("CREATE TABLE IF NOT EXISTS PEACH_CODE_RULE ("
                 + "TENANT_ID VARCHAR(32) NOT NULL,"
+                + "CODE_TYPE VARCHAR(32) NOT NULL,"
                 + "CODE_PREFIX VARCHAR(32) NOT NULL,"
                 + "MAX_CODE_WIDTH INT NOT NULL,"
                 + "CURRENT_VALUE BIGINT NOT NULL,"
                 + "STATUS VARCHAR(16) NOT NULL,"
-                + "MODIFY_TIME VARCHAR(20),"
-                + "PRIMARY KEY (TENANT_ID, CODE_PREFIX)"
+                + "MODIFY_TIME VARCHAR(23),"
+                + "PRIMARY KEY (TENANT_ID, CODE_TYPE)"
                 + ") ENGINE=InnoDB");
         jdbc.execute("DROP TRIGGER IF EXISTS PEACH_CODE_FAIL_UPDATE");
+        jdbc.execute("CREATE TABLE IF NOT EXISTS PEACH_CODE_ISSUED(TENANT_ID VARCHAR(32),CODE_TYPE VARCHAR(32),"
+                + "CODE_VALUE VARCHAR(64),SEQUENCE_VALUE BIGINT,CREATED_TIME VARCHAR(23),PRIMARY KEY(TENANT_ID,CODE_VALUE)) ENGINE=InnoDB");
+        jdbc.update("DELETE FROM PEACH_CODE_ISSUED");
         jdbc.update("DELETE FROM PEACH_CODE_RULE");
-        jdbc.update("INSERT INTO PEACH_CODE_RULE(TENANT_ID,CODE_PREFIX,MAX_CODE_WIDTH,CURRENT_VALUE,STATUS)"
-                        + " VALUES ('T001','MENU',8,0,'ENABLE')");
-        DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
-        first = new PeachCodeGenerator(jdbc, new CodeProperties(), transactionManager);
-        second = new PeachCodeGenerator(jdbc, new CodeProperties(), transactionManager);
+        jdbc.update("INSERT INTO PEACH_CODE_RULE(TENANT_ID,CODE_TYPE,CODE_PREFIX,MAX_CODE_WIDTH,CURRENT_VALUE,STATUS)"
+                        + " VALUES ('T001','MENU','M',5,0,'ENABLE')");
+        transactionManager = new DataSourceTransactionManager(dataSource);
+        redisConnection = new LettuceConnectionFactory(REDIS.getHost(), REDIS.getMappedPort(6379));
+        redisConnection.afterPropertiesSet();
+        redis = new StringRedisTemplate(redisConnection);
+        var keys = redis.keys("peach:code:sequence:v2:*");
+        if (keys != null && !keys.isEmpty()) redis.delete(keys);
+        var coordinator = new RedisCodeSequenceCoordinator(redis, new CodeProperties());
+        first = new PeachCodeGenerator(jdbc, new CodeProperties(), transactionManager, coordinator);
+        second = new PeachCodeGenerator(jdbc, new CodeProperties(), transactionManager, coordinator);
+    }
+
+    @AfterEach
+    void closeRedis() {
+        redisConnection.destroy();
     }
 
     @Test
@@ -95,16 +122,16 @@ class MysqlCodeConcurrentIntegrationTest {
             }
             assertThat(new HashSet<>(allocated)).hasSize(count);
             for (int i = 1; i <= count; i++) {
-                assertThat(allocated).contains(String.format("MENU_%08d", i));
+                assertThat(allocated).contains(String.format("M%05d", i));
             }
-            Long stored = jdbc.queryForObject("SELECT CURRENT_VALUE FROM PEACH_CODE_RULE WHERE TENANT_ID='T001' AND CODE_PREFIX='MENU'", Long.class);
+            Long stored = jdbc.queryForObject("SELECT CURRENT_VALUE FROM PEACH_CODE_RULE WHERE TENANT_ID='T001' AND CODE_TYPE='MENU'", Long.class);
             assertThat(stored).isEqualTo((long) count);
         }
     }
 
     @Test
     void injectedDatabaseUpdateFailureMustNotReturnASequenceOrFallbackToRedis() {
-        assertThat(first.next("T001", "MENU")).isEqualTo("MENU_00000001");
+        assertThat(first.next("T001", "MENU")).isEqualTo("M00001");
         jdbc.execute("CREATE TRIGGER PEACH_CODE_FAIL_UPDATE BEFORE UPDATE ON PEACH_CODE_RULE "
                 + "FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected allocation outage'");
         try {
@@ -114,6 +141,27 @@ class MysqlCodeConcurrentIntegrationTest {
         } finally {
             jdbc.execute("DROP TRIGGER IF EXISTS PEACH_CODE_FAIL_UPDATE");
         }
-        assertThat(second.next("T001", "MENU")).isEqualTo("MENU_00000002");
+        // Failed SQL reservation advanced only Redis; recovering allocation persists that ahead watermark.
+        assertThat(second.next("T001", "MENU")).isEqualTo("M00003");
+    }
+
+    @Test
+    void redisLossAndMysqlOnlyInstanceKeepOneDurableSequence() {
+        assertThat(first.next("T001", "MENU")).isEqualTo("M00001");
+        redis.delete(redis.keys("peach:code:sequence:v2:*"));
+        assertThat(second.next("T001", "MENU")).isEqualTo("M00002");
+        var mysqlOnly = new PeachCodeGenerator(jdbc, new CodeProperties(), transactionManager);
+        assertThat(mysqlOnly.next("T001", "MENU")).isEqualTo("M00003");
+        assertThat(first.next("T001", "MENU")).isEqualTo("M00004");
+    }
+
+    @Test
+    void changedMysqlRulesAndResetWatermarkNeverRewriteOrReuseIssuedCodes() {
+        assertThat(first.next("T001", "MENU")).isEqualTo("M00001");
+        jdbc.update("UPDATE PEACH_CODE_RULE SET CODE_PREFIX='NAV',MAX_CODE_WIDTH=3,CURRENT_VALUE=0");
+        redis.delete(redis.keys("peach:code:sequence:v2:*"));
+        assertThat(second.next("T001", "MENU")).isEqualTo("NAV002");
+        assertThat(jdbc.queryForList("SELECT CODE_VALUE FROM PEACH_CODE_ISSUED", String.class))
+                .containsExactlyInAnyOrder("M00001", "NAV002");
     }
 }
