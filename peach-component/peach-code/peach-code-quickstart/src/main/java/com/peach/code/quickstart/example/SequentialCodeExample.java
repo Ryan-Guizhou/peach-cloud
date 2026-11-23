@@ -7,7 +7,7 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
 /**
- * 同一租户+前缀连续调用 {@link CodeGenerator#next(String, String)}，演示顺序递增发号。
+ * 同一租户+类型连续调用 {@link CodeGenerator#next(String, String)}，演示顺序递增发号。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -21,7 +21,7 @@ public class SequentialCodeExample {
 
     public static final String TENANT_ID = "T001";
 
-    public static final String PREFIX = "MENU";
+    public static final String CODE_TYPE = "MENU";
 
     private final CodeGenerator codeGenerator;
 
@@ -31,8 +31,8 @@ public class SequentialCodeExample {
      * @return 本次分配的菜单编码
      */
     public String nextMenu() {
-        String code = codeGenerator.next(TENANT_ID, PREFIX);
-        log.info("sequential next, tenant={}, prefix={}, code={}", TENANT_ID, PREFIX, code);
+        String code = codeGenerator.next(TENANT_ID, CODE_TYPE);
+        log.info("sequential next, tenant={}, type={}, code={}", TENANT_ID, CODE_TYPE, code);
         return code;
     }
 }

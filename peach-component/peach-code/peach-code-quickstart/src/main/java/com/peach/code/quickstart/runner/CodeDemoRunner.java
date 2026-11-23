@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Indexed;
 
 /**
- * 启动后演示 {@code CodeGenerator} 的顺序发号与租户/前缀隔离。
+ * 启动后演示 {@code CodeGenerator} 的顺序发号与租户/类型隔离。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -42,10 +42,10 @@ public class CodeDemoRunner implements ApplicationRunner {
     }
 
     private void runIsolationDemo() {
-        log.info("=== tenant/prefix isolation demo ===");
+        log.info("=== tenant/type isolation demo ===");
         String t001Menu = isolatedCodeExample.next("T001", "MENU");
-        String t001Notice = isolatedCodeExample.next("T001", "NOTICE");
+        String t001Role = isolatedCodeExample.next("T001", "ROLE");
         String t002Menu = isolatedCodeExample.next("T002", "MENU");
-        log.info("isolation t001Menu={}, t001Notice={}, t002Menu={}", t001Menu, t001Notice, t002Menu);
+        log.info("isolation t001Menu={}, t001Role={}, t002Menu={}", t001Menu, t001Role, t002Menu);
     }
 }

@@ -5,8 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * 业务编码生成器配置。
  *
- * <p>唯一发号权威为 MySQL。保留已有 Redis 配置字段，以便现有配置文件平滑迁移；
- * 这些字段不再参与编码分配，不能用来切换发号权威。</p>
+ * <p>唯一发号权威为 MySQL。Redis 配置控制行锁内的水位同步；
+ * 不能用来切换发号权威。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -18,13 +18,13 @@ public class CodeProperties {
     /** 是否启用业务编码自动配置。 */
     private boolean enabled = true;
 
-    /** 历史配置项：兼容现有配置文件，但不启用 Redis 发号。 */
-    @Deprecated
+    /** 是否启用可选 Redis 水位同步。 */
+
     private boolean redisEnabled = true;
 
-    /** 历史 Redis 序列前缀配置；不再用于发号。 */
-    @Deprecated
-    private String redisKeyPrefix = "peach:code:generate:";
+    /** Redis 水位命名空间；与历史前缀发号键分离，不设置 TTL。 */
+
+    private String redisKeyPrefix = "peach:code:sequence:v2:";
 
     public boolean isEnabled() {
         return enabled;
@@ -34,26 +34,26 @@ public class CodeProperties {
         this.enabled = enabled;
     }
 
-    /** @return 历史 Redis 开关；不影响实际分配策略。 */
-    @Deprecated
+    /** @return Redis 水位同步开关。 */
+
     public boolean isRedisEnabled() {
         return redisEnabled;
     }
 
-    /** @param redisEnabled 历史配置值；不影响实际分配策略。 */
-    @Deprecated
+    /** @param redisEnabled 是否启用 Redis 水位同步。 */
+
     public void setRedisEnabled(boolean redisEnabled) {
         this.redisEnabled = redisEnabled;
     }
 
-    /** @return 历史 Redis 前缀；不影响实际分配策略。 */
-    @Deprecated
+    /** @return Redis 水位命名空间。 */
+
     public String getRedisKeyPrefix() {
         return redisKeyPrefix;
     }
 
-    /** @param redisKeyPrefix 历史 Redis 前缀；不影响实际分配策略。 */
-    @Deprecated
+    /** @param redisKeyPrefix Redis 水位命名空间。 */
+
     public void setRedisKeyPrefix(String redisKeyPrefix) {
         this.redisKeyPrefix = redisKeyPrefix;
     }

@@ -14,7 +14,7 @@ peach:
   code:
     enabled: true
     redis-enabled: false
-    redis-key-prefix: "peach:code:generate:"
+    redis-key-prefix: "peach:code:sequence:v2:"
 
 quickstart:
   code:

@@ -3,128 +3,140 @@ package com.peach.code.autoconfigure;
 import com.peach.code.CodeGenerator;
 import com.peach.code.CodeGeneratorException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
- * 使用唯一 MySQL 事实源分配租户业务编码。
+ * 以 MySQL 行锁串行化发号，并在锁内同步 Redis 水位。
  *
- * <p>每次分配都在独立事务内锁定租户与前缀对应的规则行，校验后更新水位。
- * Redis 不参与发号，避免 Redis 失败和 MySQL 降级期间出现两个并发分配者。
- * 分配事务独立于业务写入事务，业务回滚后序号不会回收。</p>
+ * <p>规则每次从数据库读取；账本永久保留历史编码及序号。独立事务提交规则水位和账本后
+ * 才向调用者返回，因此业务回滚只产生空号。Redis 丢失、超时或停用时仍由同一数据库
+ * 分配路径负责；Redis 绝不会独立向业务发号。</p>
  *
  * @Author Mr Shu
  * @Version 1.0.0
- * @CreateTime 2026/3/20 16:58
+ * @CreateTime 2026/11/23 10:45
  */
 public class PeachCodeGenerator implements CodeGenerator {
 
     private static final Pattern SAFE_PART = Pattern.compile("[A-Za-z0-9][A-Za-z0-9-]{0,31}");
-    private static final String RULE_SELECT_SQL = "SELECT MAX_CODE_WIDTH, CURRENT_VALUE, STATUS "
-            + "FROM PEACH_CODE_RULE WHERE TENANT_ID = ? AND CODE_PREFIX = ? FOR UPDATE";
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+    private static final String RULE_SELECT_SQL = "SELECT CODE_PREFIX, MAX_CODE_WIDTH, CURRENT_VALUE, STATUS "
+            + "FROM PEACH_CODE_RULE WHERE TENANT_ID = ? AND CODE_TYPE = ? FOR UPDATE";
+    private static final String LEDGER_MAX_SQL = "SELECT MAX(SEQUENCE_VALUE) FROM PEACH_CODE_ISSUED "
+            + "WHERE TENANT_ID = ? AND CODE_TYPE = ?";
     private static final String RULE_UPDATE_SQL = "UPDATE PEACH_CODE_RULE SET CURRENT_VALUE = ?, "
-            + "MODIFY_TIME = DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s') "
-            + "WHERE TENANT_ID = ? AND CODE_PREFIX = ? AND STATUS = 'ENABLE' AND CURRENT_VALUE = ?";
+            + "MODIFY_TIME = ? "
+            + "WHERE TENANT_ID = ? AND CODE_TYPE = ? AND STATUS = 'ENABLE' AND CURRENT_VALUE = ?";
+    private static final String LEDGER_INSERT_SQL = "INSERT INTO PEACH_CODE_ISSUED "
+            + "(TENANT_ID,CODE_TYPE,CODE_VALUE,SEQUENCE_VALUE,CREATED_TIME) "
+            + "VALUES (?,?,?,?,?)";
 
     private final JdbcTemplate jdbcTemplate;
     private final TransactionTemplate allocationTransaction;
+    private final CodeSequenceCoordinator coordinator;
 
     /**
-     * 创建仅依赖 JDBC 和事务管理器的发号器。
+     * 创建仅使用数据库持久化分配的实例。
      *
-     * @param jdbcTemplate 业务数据源 JDBC 模板
-     * @param properties 原有配置对象；Redis 开关不再决定发号权威
-     * @param transactionManager 必需的 MySQL 事务管理器
+     * @param jdbcTemplate 连接发号数据库的 JDBC 模板
+     * @param properties 发号配置
+     * @param transactionManager 必须管理同一数据源的 JDBC 事务管理器
      */
     public PeachCodeGenerator(JdbcTemplate jdbcTemplate, CodeProperties properties,
                               PlatformTransactionManager transactionManager) {
+        this(jdbcTemplate, properties, transactionManager, null);
+    }
+
+    PeachCodeGenerator(JdbcTemplate jdbcTemplate, CodeProperties properties,
+                       PlatformTransactionManager transactionManager, CodeSequenceCoordinator coordinator) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
-        if (transactionManager == null) {
-            throw new CodeGeneratorException("MySQL transaction manager is required for code allocation");
+        Objects.requireNonNull(properties, "properties");
+        if (!(transactionManager instanceof DataSourceTransactionManager jdbcManager)
+                || jdbcManager.getDataSource() != jdbcTemplate.getDataSource()) {
+            throw new CodeGeneratorException("Code allocation requires a JDBC transaction manager for the same data source");
         }
+        this.coordinator = properties.isRedisEnabled() ? coordinator : null;
         this.allocationTransaction = new TransactionTemplate(transactionManager);
         this.allocationTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.allocationTransaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
     }
 
     /**
-     * 分配下一业务编码。同一租户和前缀必须在表中对应唯一规则行。
-     *
-     * <p>锁定规则行后校验最大值，溢出时回滚，存储故障时直接失败，不从缓存中继续分配。
-     * 事务成功提交但业务调用失败可能产生空号，不会回收序号。</p>
+     * 按稳定业务类型读取最新规则并分配编码，阻塞等待数据库行锁。
      *
      * @param tenantId 租户标识
-     * @param prefix 编码前缀
-     * @return 租户隔离的业务编码
+     * @param codeType 稳定类型，例如 MENU、ROLE、RESOURCE、FUNCTION；忽略大小写
+     * @return 已独立提交的编码，例如 M00001
+     * @throws CodeGeneratorException 参数、规则、水位、编码冲突或数据库事务异常
      */
     @Override
-    public String next(String tenantId, String prefix) {
+    public String next(String tenantId, String codeType) {
         validatePart(tenantId, "tenantId");
-        validatePart(prefix, "prefix");
-        String normalizedPrefix = prefix.toUpperCase(Locale.ENGLISH);
+        validatePart(codeType, "codeType");
+        String normalizedType = codeType.toUpperCase(Locale.ROOT);
         try {
-            String result = allocationTransaction.execute(status -> allocate(tenantId, normalizedPrefix));
-            if (result == null) {
-                throw new CodeGeneratorException("MySQL code allocation returned null");
-            }
-            return result;
+            return Objects.requireNonNull(allocationTransaction.execute(status -> allocate(tenantId, normalizedType)),
+                    "MySQL code allocation returned null");
         } catch (CodeGeneratorException ex) {
             throw ex;
         } catch (Exception ex) {
-            throw new CodeGeneratorException("Failed to allocate business code: " + normalizedPrefix, ex);
+            throw new CodeGeneratorException("Failed to allocate business code for type " + normalizedType, ex);
         }
     }
 
-    private String allocate(String tenantId, String prefix) {
-        Map<String, Object> row = jdbcTemplate.queryForMap(RULE_SELECT_SQL, tenantId, prefix);
-        if (!"ENABLE".equalsIgnoreCase(String.valueOf(row.get("STATUS")))) {
-            throw new CodeGeneratorException("Code rule is disabled: " + prefix);
+    private String allocate(String tenantId, String codeType) {
+        Map<String, Object> row = jdbcTemplate.queryForMap(RULE_SELECT_SQL, tenantId, codeType);
+        if (!"ENABLE".equals(row.get("STATUS"))) {
+            throw new CodeGeneratorException("Code rule is disabled: " + codeType);
         }
-
-        Object widthObject = row.get("MAX_CODE_WIDTH");
-        Object currentObject = row.get("CURRENT_VALUE");
-        if (!(widthObject instanceof Number) || !(currentObject instanceof Number)) {
-            throw new CodeGeneratorException("Invalid code rule values: " + prefix);
+        String prefix = row.get("CODE_PREFIX") instanceof String value ? value : null;
+        validatePart(prefix, "CODE_PREFIX");
+        if (!(row.get("MAX_CODE_WIDTH") instanceof Number widthNumber)
+                || !(row.get("CURRENT_VALUE") instanceof Number currentNumber)) {
+            throw new CodeGeneratorException("Invalid code rule values: " + codeType);
         }
-        int width = ((Number) widthObject).intValue();
-        long current = ((Number) currentObject).longValue();
+        int width = widthNumber.intValue();
+        long current = currentNumber.longValue();
         if (width < 1 || width > 18 || current < 0) {
-            throw new CodeGeneratorException("Invalid code rule: " + prefix);
+            throw new CodeGeneratorException("Invalid code rule: " + codeType);
         }
+        Long issuedMaximum = jdbcTemplate.queryForObject(LEDGER_MAX_SQL, Long.class, tenantId, codeType);
+        long durable = Math.max(current, issuedMaximum == null ? 0 : issuedMaximum);
         long maximum = maxValue(width);
-        if (current >= maximum) {
-            throw new CodeGeneratorException("Code sequence exceeds MAX_CODE_WIDTH: " + prefix);
+        if (durable >= maximum) {
+            throw new CodeGeneratorException("Code sequence exceeds MAX_CODE_WIDTH: " + codeType);
         }
-        long next = current + 1;
-        int updated = jdbcTemplate.update(RULE_UPDATE_SQL, next, tenantId, prefix, current);
-        if (updated != 1) {
-            throw new CodeGeneratorException("Code rule changed during allocation: " + prefix);
+        long next = coordinator == null ? durable + 1 : coordinator.next(tenantId, codeType, durable, maximum);
+        if (next <= durable || next > maximum) {
+            throw new CodeGeneratorException("Code sequence exceeds MAX_CODE_WIDTH: " + codeType);
         }
-        return format(prefix, next, width);
+        String number = Long.toString(next);
+        String code = prefix + "0".repeat(width - number.length()) + number;
+        String now = LocalDateTime.now().format(TIME_FORMAT);
+        // 唯一账本约束同时保护跨类型前缀冲突及历史格式碰撞，冲突时整笔分配失败。
+        if (jdbcTemplate.update(LEDGER_INSERT_SQL, tenantId, codeType, code, next, now) != 1
+                || jdbcTemplate.update(RULE_UPDATE_SQL, next, now, tenantId, codeType, current) != 1) {
+            throw new CodeGeneratorException("Code rule changed during allocation: " + codeType);
+        }
+        return code;
     }
 
     private static long maxValue(int width) {
-        long value = 1L;
+        long value = 1;
         for (int i = 0; i < width; i++) {
-            value *= 10L;
+            value *= 10;
         }
         return value - 1;
-    }
-
-    private static String format(String prefix, long value, int width) {
-        String number = Long.toString(value);
-        StringBuilder result = new StringBuilder(prefix.length() + width + 1);
-        result.append(prefix).append('_');
-        for (int i = number.length(); i < width; i++) {
-            result.append('0');
-        }
-        return result.append(number).toString();
     }
 
     private static void validatePart(String value, String name) {

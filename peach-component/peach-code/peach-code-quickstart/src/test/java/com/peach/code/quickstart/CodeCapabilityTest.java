@@ -42,19 +42,19 @@ class CodeCapabilityTest {
         String first = sequentialCodeExample.nextMenu();
         String second = sequentialCodeExample.nextMenu();
 
-        assertThat(first).isEqualTo("MENU_00000001");
-        assertThat(second).isEqualTo("MENU_00000002");
+        assertThat(first).isEqualTo("M00001");
+        assertThat(second).isEqualTo("M00002");
     }
 
     @Test
     void shouldIsolateSequencesByTenantAndPrefix() {
         String t001Menu = isolatedCodeExample.next("T001", "MENU");
-        String t001Notice = isolatedCodeExample.next("T001", "NOTICE");
+        String t001Notice = isolatedCodeExample.next("T001", "ROLE");
         String t002Menu = isolatedCodeExample.next("T002", "MENU");
 
-        assertThat(t001Menu).isEqualTo("MENU_00000001");
-        assertThat(t001Notice).isEqualTo("NOTICE_00000001");
-        assertThat(t002Menu).isEqualTo("MENU_00000001");
+        assertThat(t001Menu).isEqualTo("M00001");
+        assertThat(t001Notice).isEqualTo("R00001");
+        assertThat(t002Menu).isEqualTo("M00001");
     }
 
     @Test
@@ -64,6 +64,12 @@ class CodeCapabilityTest {
                 .hasMessageContaining("tenantId");
         assertThatThrownBy(() -> isolatedCodeExample.next("T001", "MENU_X"))
                 .isInstanceOf(CodeGeneratorException.class)
-                .hasMessageContaining("prefix");
+                .hasMessageContaining("codeType");
+    }
+
+    @Test
+    void resourceAndFunctionUseStableTypesAndDefaultPrefixes() {
+        assertThat(isolatedCodeExample.next("T001", "RESOURCE")).isEqualTo("RES00001");
+        assertThat(isolatedCodeExample.next("T001", "FUNCTION")).isEqualTo("F00001");
     }
 }

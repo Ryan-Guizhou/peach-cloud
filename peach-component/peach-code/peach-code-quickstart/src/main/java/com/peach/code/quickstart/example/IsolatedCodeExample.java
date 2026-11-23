@@ -7,7 +7,7 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 
 /**
- * 按租户和前缀分别发号，演示序列隔离：不同租户或不同前缀互不影响。
+ * 按租户和类型分别发号，演示序列隔离：不同租户或不同类型互不影响。
  *
  * @Author Mr Shu
  * @Version 1.0.0
@@ -22,15 +22,15 @@ public class IsolatedCodeExample {
     private final CodeGenerator codeGenerator;
 
     /**
-     * 为指定租户和前缀分配下一个编码。
+     * 为指定租户和类型分配下一个编码。
      *
      * @param tenantId 租户标识
-     * @param prefix 编码前缀
+     * @param codeType 稳定业务类型
      * @return 本次分配的业务编码
      */
-    public String next(String tenantId, String prefix) {
-        String code = codeGenerator.next(tenantId, prefix);
-        log.info("isolated next, tenant={}, prefix={}, code={}", tenantId, prefix, code);
+    public String next(String tenantId, String codeType) {
+        String code = codeGenerator.next(tenantId, codeType);
+        log.info("isolated next, tenant={}, type={}, code={}", tenantId, codeType, code);
         return code;
     }
 }
