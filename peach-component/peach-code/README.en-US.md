@@ -19,7 +19,7 @@ Allocate business codes by `TENANT_ID + CODE_TYPE`. MySQL row locks and a perman
 </dependency>
 ```
 
-Deploy the [rule table](../../../sql/PEACH_CODE_RULE.sql) and [permanent allocation ledger](../../../sql/PEACH_CODE_ISSUED.sql), then provision tenant rules. Auto-configuration requires `JdbcTemplate` and uses a dedicated JDBC transaction manager for that same data source; without JDBC it does not register a default generator. Redis is optional: synchronization activates only when the application supplies Spring Data Redis and a `StringRedisTemplate`. The component does not create a Redis client.
+Deploy the [rule table](../../sql/PEACH_CODE_RULE.sql) and the permanent allocation ledger `PEACH_CODE_ISSUED`, then provision tenant rules. Auto-configuration requires `JdbcTemplate` and uses a dedicated JDBC transaction manager for that same data source; without JDBC it does not register a default generator. Redis is optional: synchronization activates only when the application supplies Spring Data Redis and a `StringRedisTemplate`. The component does not create a Redis client.
 
 ```java
 String menuCode = codeGenerator.next(tenantId, "MENU");         // M00001

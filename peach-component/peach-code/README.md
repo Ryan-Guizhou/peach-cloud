@@ -19,7 +19,7 @@
 </dependency>
 ```
 
-先部署 [规则表](../../../sql/PEACH_CODE_RULE.sql) 和 [永久发号账本](../../../sql/PEACH_CODE_ISSUED.sql)，并为租户准备规则。自动配置需要 `JdbcTemplate`，使用同一数据源的专用 JDBC 事务管理器；没有 JDBC 时不注册默认服务。Redis 为可选依赖：应用提供 Spring Data Redis 和 `StringRedisTemplate` 后才启用同步，不自动创建 Redis 客户端。
+先部署 [规则表](../../sql/PEACH_CODE_RULE.sql) 和永久发号账本 `PEACH_CODE_ISSUED`，并为租户准备规则。自动配置需要 `JdbcTemplate`，使用同一数据源的专用 JDBC 事务管理器；没有 JDBC 时不注册默认服务。Redis 为可选依赖：应用提供 Spring Data Redis 和 `StringRedisTemplate` 后才启用同步，不自动创建 Redis 客户端。
 
 ```java
 String menuCode = codeGenerator.next(tenantId, "MENU");         // M00001
