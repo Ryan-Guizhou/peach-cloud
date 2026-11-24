@@ -131,12 +131,45 @@ test('MySQL baseline rendering emits only missing table segments', () => {
   assert.deepEqual(details.missingTables, ['PEACH_B']);
 });
 
+test('MySQL recovery seed preserves strict source data and tolerates only duplicate keys', (t) => {
+  const renderer = path.join(deployRoot, 'scripts/init/render-mysql-baseline.mjs');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'peach-mysql-seed-'));
+  t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  const schema = path.join(tmp, 'schema.sql');
+  const existing = path.join(tmp, 'existing.txt');
+  const output = path.join(tmp, 'missing.sql');
+  const metadata = path.join(tmp, 'metadata.json');
+  const seed = path.join(deployRoot, 'init/mysql/data/INIT.sql');
+  const seedOutput = path.join(tmp, 'recovery.sql');
+  fs.writeFileSync(schema, 'CREATE TABLE PEACH_A (ID INT PRIMARY KEY);\n');
+  fs.writeFileSync(existing, 'PEACH_A\n');
+  const args = [renderer, '--schema', schema, '--existing', existing, '--output', output, '--metadata', metadata];
+  const source = fs.readFileSync(seed, 'utf8').replace(/\r\n/g, '\n');
+  execFileSync('node', [...args, '--seed', seed, '--seed-output', seedOutput]);
+  const rendered = fs.readFileSync(seedOutput, 'utf8');
+  const duplicateClause = /\nON DUPLICATE KEY UPDATE `([A-Z0-9_]+)` = `\1`;/g;
+  assert.equal([...rendered.matchAll(duplicateClause)].length, [...source.matchAll(/^INSERT INTO /gm)].length);
+  assert.ok(rendered.replace(duplicateClause, ';') === source, 'Recovery must not change baseline values');
+  assert.ok(fs.readFileSync(seed, 'utf8').replace(/\r\n/g, '\n') === source, 'Strict seed must remain unchanged');
+  assert.equal(fs.statSync(seedOutput).mode & 0o777, 0o600);
+
+  const invalid = path.join(tmp, 'invalid.sql');
+  const invalidOutput = path.join(tmp, 'invalid-recovery.sql');
+  fs.writeFileSync(invalid, 'DELETE FROM PEACH_A;\n');
+  const rejected = spawnSync('node', [...args, '--seed', invalid, '--seed-output', invalidOutput], { encoding: 'utf8' });
+  assert.notEqual(rejected.status, 0);
+  assert.match(rejected.stderr, /Unsupported baseline seed statement/);
+  assert.ok(!fs.existsSync(invalidOutput));
+});
+
 test('MySQL initialization tracks completion and verifies the expected schema instead of trusting any table', () => {
   const script = read('scripts/init/init-mysql.sh');
   assert.match(script, /PEACH_DEPLOY_SCHEMA_HISTORY/);
   assert.match(script, /render-mysql-baseline\.mjs/);
   assert.match(script, /missingTables/);
   assert.match(script, /baseline-v1/);
+  assert.match(script, /--seed-output "\$RECOVERY_SEED"/);
+  assert.match(script, /mysql_command < "\$RECOVERY_SEED"/);
   assert.doesNotMatch(script, /existing schema detected[\s\S]*skipping baseline initialization/i);
 });
 
