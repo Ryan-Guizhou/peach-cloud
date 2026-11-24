@@ -16,3 +16,10 @@ test('preserves shortcuts, has a bounded fallback for broken/cyclic ancestry and
   const result = groupMenuItems([item('profile', '/profile'), item('schedulerJob', '/scheduler/jobs')], [])
   assert.deepEqual(result.map(group => group.title), ['快捷入口', '任务调度'])
 })
+
+test('generated menu codes keep familiar groups based on their stable page paths', () => {
+  const result = groupMenuItems([
+    item('M00001', '/workspace'), item('M00002', '/login-log'), item('M00003', '/scheduler/jobs'),
+  ], [])
+  assert.deepEqual(result.map(group => group.title), ['快捷入口', '日志审计', '任务调度'])
+})

@@ -20,6 +20,7 @@ ROLES=[dict(roleId='a',roleCode='ROLE_A',roleName='示例管理员',roleScope='O
 STATE={ident:dict(funcCodes=['USER','REPORT'],grants=list(GRANTS),revision=0,members=['alice']) for ident in ['a','b']}
 ROUTES=[dict(routerId='router-a',moduleCode='system',routerCode='ROLE_ROUTE',routerName='角色页面',routerUrl='/role',filePath='system/role',routerLevel=2,funcCode='USER',isAuth=1,isCache=0)]
 LAST_ROUTE_QUERY={}
+MENU_ROWS=[]
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self,*args,**kwargs): super().__init__(*args,directory=str(ROOT/'dist'),**kwargs)
     def log_message(self,*args): pass
@@ -50,12 +51,21 @@ class Handler(SimpleHTTPRequestHandler):
         elif self.path.endswith('/role/saveMembers'):STATE[body['roleId']]['members']=body['userCodes']
         elif self.path.endswith('/role/saveDefault'):
             next(r for r in ROLES if r['roleId']==body['roleId'])['skipUrl']=body['skipUrl'];STATE[body['roleId']]['revision']+=1
-        elif self.path.endswith('/role/update'):next(r for r in ROLES if r['roleId']==body['roleId']).update(body)
+        elif self.path.endswith('/role/update'):
+            assert 'roleCode' not in body
+            next(r for r in ROLES if r['roleId']==body['roleId']).update(body)
+        elif self.path.endswith('/role/add'):
+            assert 'roleCode' not in body
+            ROLES.append(dict(body, roleId='created-role', roleCode='RL0003', skipUrl=''))
+        elif self.path.endswith('/menu/pageList'):data=dict(list=MENU_ROWS,total=len(MENU_ROWS))
+        elif self.path.endswith('/menu/add'):
+            assert 'menuCode' not in body
+            MENU_ROWS.append(dict(body,menuId='created-menu',menuCode='M0001'))
         elif self.path.endswith('/router/pageList'):
             LAST_ROUTE_QUERY=body
             found=[r for r in ROUTES if all(body.get(field,'') in r[field] for field in ['moduleCode','routerCode','routerUrl'])];data=dict(list=found,total=len(found))
         elif self.path.endswith('/router/update'):
-            assert 'isAuth' not in body and 'isCache' not in body
+            assert 'isAuth' not in body and 'isCache' not in body and 'routerCode' not in body
             next(r for r in ROUTES if r['routerId']==body['routerId']).update(body)
         self.reply(dict(code='200',data=data))
     def reply(self,body):
@@ -94,7 +104,7 @@ with tempfile.TemporaryDirectory(prefix="peach-admin-chrome-") as profile:
             return result.get("result", {}).get("value")
         def wait(expression):
             for _ in range(100):
-                if evaluate(expression): return
+                if evaluate('Boolean(' + expression + ')'): return
                 time.sleep(.1)
             raise AssertionError("Timed out: " + expression + "\n" + str(evaluate("document.body.innerText")))
         def click(text, scope="document"):
@@ -103,7 +113,7 @@ with tempfile.TemporaryDirectory(prefix="peach-admin-chrome-") as profile:
             evaluate("(() => { const el = document.querySelector(" + json.dumps(selector) + "); if(!el) throw Error('Input missing'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, " + json.dumps(value) + "); el.dispatchEvent(new Event('input', {bubbles:true})); el.dispatchEvent(new Event('change', {bubbles:true})); })()")
         cdp("Page.enable")
         session = dict(token="local-fixture", userId="test", userName="界面测试", tenantId="test", orgId="test", fiscal="2026", expiresAt=int(time.time()*1000)+3600000)
-        info=dict(session,permissionList=['role:view','role:add','role:update','role:delete','router:view','router:add','router:update','authorization:update'],menuList=[],routerList=[],roleList=[],userOrgList=[])
+        info=dict(session,permissionList=['role:view','role:add','role:update','role:delete','router:view','router:add','router:update','authorization:update','menu:view','menu:add'],menuList=[],routerList=[dict(routerUrl='/role',filePath='system/role'),dict(routerUrl='/router',filePath='system/router'),dict(routerUrl='/menu',filePath='system/menu')],roleList=[],userOrgList=[])
         script = "localStorage.setItem('peach.auth.session.v1'," + json.dumps(json.dumps(session)) + ");localStorage.setItem('peach.auth.loginInfo.v1'," + json.dumps(json.dumps(info)) + ")"
         cdp("Page.addScriptToEvaluateOnNewDocument", dict(source=script))
         cdp("Emulation.setDeviceMetricsOverride", dict(width=1600, height=1000, deviceScaleFactor=1, mobile=False))
@@ -141,9 +151,14 @@ with tempfile.TemporaryDirectory(prefix="peach-admin-chrome-") as profile:
         assert next(r for r in ROLES if r['roleId']=='a')['skipUrl']=='/report'
         time.sleep(.3)
         role_action('编辑');wait("document.querySelector('.ant-modal input[id$=roleName]')")
-        assert evaluate("document.querySelector('.ant-modal input[id$=roleCode]').disabled")
+        assert evaluate("document.querySelector('.ant-modal input[placeholder=\"保存后自动生成\"]').disabled")
         fill('.ant-modal input[id$=roleName]','修改后的角色')
         click('OK');wait("document.querySelector('.role-table').innerText.includes('修改后的角色')")
+        time.sleep(.3)
+        click('＋ 新增')
+        wait("document.body.innerText.includes('新增角色')")
+        fill('.ant-modal input[id$=roleName]','自动编码角色')
+        click('OK');wait("document.querySelector('.role-table').innerText.includes('RL0003')")
         # Query all three router filters, edit a row, and keep the hidden flags unchanged.
         cdp('Page.navigate',dict(url=f'http://127.0.0.1:{port}/router'))
         wait("document.querySelector('.route-filters') && document.querySelector('table').innerText.includes('ROLE_ROUTE')")
@@ -163,6 +178,19 @@ with tempfile.TemporaryDirectory(prefix="peach-admin-chrome-") as profile:
         cdp('Emulation.setDeviceMetricsOverride',dict(width=390,height=844,deviceScaleFactor=1,mobile=True));time.sleep(.5)
         assert evaluate("document.querySelector('.admin-page-card').getBoundingClientRect().width > 300")
         (artifacts/'router-mobile.png').write_bytes(base64.b64decode(cdp('Page.captureScreenshot',dict(format='png',captureBeyondViewport=True))['data']))
+        cdp('Emulation.setDeviceMetricsOverride',dict(width=1600,height=1000,deviceScaleFactor=1,mobile=False))
+        cdp('Page.navigate',dict(url=f'http://127.0.0.1:{port}/menu'))
+        wait("document.querySelector('.console-page')?.innerText.includes('菜单管理')")
+        click('新增')
+        wait("document.querySelector('.ant-modal input[placeholder=\"保存后自动生成\"]')")
+        assert evaluate("document.querySelector('.ant-modal input[placeholder=\"保存后自动生成\"]').disabled")
+        fill('.ant-modal .ant-form-item:has(label[title="菜单名称"]) input','自动编码菜单')
+        fill('.ant-modal .ant-form-item:has(label[title="菜单路径"]) input','/role')
+        evaluate("document.querySelector('.ant-modal .ant-select-selector').dispatchEvent(new MouseEvent('mousedown',{bubbles:true}))")
+        wait("document.querySelector('.ant-select-item-option-content')")
+        evaluate("document.querySelector('.ant-select-item-option-content').click()")
+        click('OK');wait("document.querySelector('table').innerText.includes('M0001')")
+        (artifacts/'menu-code.png').write_bytes(base64.b64decode(cdp('Page.captureScreenshot',dict(format='png'))['data']))
         print('PASS: role filter-safe grants, calibration preview/save, filtered membership preservation, default menu, metadata edit, router combined filters/edit/hidden flags and narrow layout')
         print('Screenshots: '+str(artifacts))
     finally:

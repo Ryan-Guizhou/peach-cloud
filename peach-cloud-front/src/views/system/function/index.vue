@@ -36,7 +36,7 @@ const columns = [
   { title: '操作', dataIndex: 'actions', width: 150 },
 ]
 const functionFields = [
-  { name: 'funcCode', label: '功能编码', required: true, max: 32 },
+  { name: 'funcCode', label: '功能编码', required: false, max: 32 },
   { name: 'funcName', label: '功能名称', required: true, max: 32 },
   { name: 'appId', label: '应用ID', required: true, max: 32 },
   { name: 'parentFuncCode', label: '上级功能', max: 32 },
@@ -135,6 +135,7 @@ async function save() {
     const kind = editorKind.value
     const idField = kind === 'function' ? 'funcId' : 'resourceId'
     const payload = { ...form }
+    if (kind === 'function') delete payload.funcCode
     if (editingId.value) payload[idField] = editingId.value
     await postRecord(`/auth/${kind}/${editingId.value ? 'update' : 'add'}`, payload)
     if (disposed) return
@@ -216,7 +217,7 @@ onBeforeUnmount(() => { disposed = true; treeRequest?.abort(); resourceRequest?.
         <a-form-item v-for="field in fields" :key="field.name" :name="field.name" :label="field.label" :required="field.required">
           <a-select v-if="field.name === 'resourceType'" v-model:value="form[field.name] as string | undefined" :options="resourceTypes" />
           <a-select v-else-if="field.name === 'parentFuncCode'" v-model:value="form[field.name] as string | undefined" :options="parentOptions" show-search allow-clear option-filter-prop="label" placeholder="不选择则为根功能" @clear="form.parentFuncCode = ''" />
-          <a-input v-else v-model:value="form[field.name] as string | undefined" :maxlength="field.max" :disabled="(editorKind === 'resource' && field.name === 'funcCode') || (!!editingId && ['funcCode', 'appId'].includes(field.name))" />
+          <a-input v-else v-model:value="form[field.name] as string | undefined" :maxlength="field.max" :placeholder="editorKind === 'function' && field.name === 'funcCode' ? '保存后自动生成' : undefined" :disabled="field.name === 'funcCode' || (!!editingId && field.name === 'appId')" />
         </a-form-item>
         <template v-if="editorKind === 'function'">
           <a-form-item label="是否菜单"><a-switch :checked="form.isMenu === 1" @change="(value: boolean | string | number) => form.isMenu = value ? 1 : 0" /></a-form-item>

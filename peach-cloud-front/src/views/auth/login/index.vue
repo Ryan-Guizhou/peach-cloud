@@ -120,8 +120,8 @@ onMounted(initializeLogin)
     :password-length="passwordLength"
   >
     <div class="segment">
-      <RouterLink to="/login" class="segment__item is-active">Login</RouterLink>
-      <RouterLink to="/register" class="segment__item">Register</RouterLink>
+      <RouterLink to="/login" class="segment__item is-active" aria-current="page">登录</RouterLink>
+      <RouterLink to="/register" class="segment__item">注册</RouterLink>
     </div>
 
     <header class="form-header form-header--left">
@@ -133,7 +133,7 @@ onMounted(initializeLogin)
       <p>认证成功后，将按当前租户与机构装配你的数据视图、菜单和权限。</p>
     </header>
 
-    <form class="login-form" @submit.prevent="handleSubmit">
+    <form class="login-form" novalidate @submit.prevent="handleSubmit">
       <label class="field">
         <span>账号</span>
         <div class="field__control">

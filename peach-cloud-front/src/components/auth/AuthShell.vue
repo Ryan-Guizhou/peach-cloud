@@ -18,41 +18,25 @@ defineProps<{
       </div>
 
       <div class="hero-copy">
-        <span class="hero-copy__eyebrow">Data Intelligence Infrastructure</span>
-        <h1>让数据成为组织运行的实时语言。</h1>
+        <span class="hero-copy__eyebrow">PEACH CLOUD · CONTROL PLANE</span>
+        <h1>一个工作空间，连接团队与业务。</h1>
         <p>{{ systemDescription || '统一数据、权限与业务上下文，在一个可信的数据中枢内协同运行。' }}</p>
       </div>
 
-      <div class="hero-panel__art">
-        <div class="data-orbit" aria-hidden="true">
-          <div class="data-orbit__ring data-orbit__ring--outer" />
-          <div class="data-orbit__ring data-orbit__ring--inner" />
-          <div class="data-orbit__core">
-            <span>DATA</span>
-            <strong>100%</strong>
-            <small>可信上下文</small>
-          </div>
-          <span class="data-node data-node--one">租户</span>
-          <span class="data-node data-node--two">机构</span>
-          <span class="data-node data-node--three">权限</span>
-          <span class="data-node data-node--four">资产</span>
-        </div>
-        <div class="data-pulse-card">
-          <div><span>实时数据流</span><strong>12.8K/s</strong></div>
-          <svg viewBox="0 0 280 72" role="img" aria-label="实时数据流趋势">
-            <path d="M2 58 C30 55 36 24 62 34 S98 62 124 39 S163 18 184 35 S220 58 278 12" />
-          </svg>
-        </div>
-      </div>
+      <ul class="hero-features" aria-label="平台能力">
+        <li><strong>统一身份</strong><span>管理账户、租户和机构，协同处理日常工作。</span></li>
+        <li><strong>权限管理</strong><span>通过角色与功能授权，访问属于你的业务空间。</span></li>
+        <li><strong>运行与审计</strong><span>查看任务执行与操作记录，让工作有迹可循。</span></li>
+      </ul>
 
       <div class="hero-panel__footer">
         <div>
-          <strong>{{ systemName || 'PeachCloud DataOS' }}</strong>
+          <strong>{{ systemName || 'Peach Cloud' }}</strong>
           <span>Copyright 2026 PeachCloud Systems. All rights reserved.</span>
         </div>
         <div>
-          <span>Data Security Compliance Center</span>
-          <span>Terms of Service | Privacy Policy</span>
+          <span>账户与业务管理平台</span>
+          <span>统一身份 · 协同管理</span>
         </div>
       </div>
 

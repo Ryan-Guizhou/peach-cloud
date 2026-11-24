@@ -12,7 +12,7 @@ import { useAuthStore } from '../../stores/auth'
 import { useWebSocketStore } from '../../stores/websocket'
 import { isManualFeatureEnabled, openPeachManual } from '../../utils/manual'
 
-defineProps<{ responsive?: boolean }>()
+withDefaults(defineProps<{ responsive?: boolean }>(), { responsive: true })
 const isLoggingOut = ref(false)
 const route = useRoute()
 const router = useRouter()
