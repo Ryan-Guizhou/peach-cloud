@@ -10,7 +10,6 @@ import org.springframework.boot.autoconfigure.flyway.FlywayConfigurationCustomiz
 import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
 import org.springframework.context.annotation.Bean;
 import com.peach.database.migration.V1__Peach_schema;
-import com.peach.database.migration.V5__Peach_system_seed;
 
 /**
  * 项目共享数据库迁移配置，在业务访问数据库前由 Boot 执行；不提供清库和自动修复入口。
@@ -24,10 +23,10 @@ public class PeachDatabaseAutoConfiguration {
     /** 固定项目迁移位置与基线策略，历史迁移不可通过外部配置跳过。 */
     public static FluentConfiguration configure(FluentConfiguration configuration) {
         return configuration.locations("classpath:db/peach/migration")
-                .table("PEACH_FLYWAY_HISTORY").baselineOnMigrate(true).baselineVersion("0")
+                .table("PEACH_FLYWAY_HISTORY").baselineOnMigrate(false)
                 .validateOnMigrate(true).validateMigrationNaming(true).cleanDisabled(true)
                 .outOfOrder(false).placeholderReplacement(false).lockRetryCount(120)
-                .javaMigrations(new V1__Peach_schema(), new V5__Peach_system_seed());
+                .javaMigrations(new V1__Peach_schema());
     }
     @Bean
     FlywayConfigurationCustomizer peachFlywayConfiguration() { return PeachDatabaseAutoConfiguration::configure; }

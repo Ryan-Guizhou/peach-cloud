@@ -5,6 +5,7 @@
     <artifactId>peach-database</artifactId>
     <description>Peach application schema and system data migrations</description>
     <dependencies>
+        <dependency><groupId>com.peach</groupId><artifactId>peach-code-starter</artifactId><scope>test</scope></dependency>
         <dependency><groupId>com.zaxxer</groupId><artifactId>HikariCP</artifactId><optional>true</optional></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-autoconfigure</artifactId></dependency>
         <dependency><groupId>org.springframework</groupId><artifactId>spring-jdbc</artifactId></dependency>

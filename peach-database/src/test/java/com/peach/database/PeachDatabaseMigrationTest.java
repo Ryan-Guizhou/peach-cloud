@@ -69,89 +69,51 @@ class PeachDatabaseMigrationTest {
     }
     private Flyway flyway(DriverManagerDataSource source) { return PeachDatabaseAutoConfiguration.configure(Flyway.configure().dataSource(source)).load(); }
     private void migrate(DriverManagerDataSource source) { new PeachMigrationStrategy().migrate(flyway(source)); }
-    @Test void initializesFreshDatabaseAndDoesNotOverwriteCustomDataOnRestart() {
-        var source=source(); migrate(source); var jdbc=new JdbcTemplate(source);
-        assertTrue(jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_FUNCTION",Integer.class)>0);
-        assertEquals(6,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_RESOURCE WHERE RESOURCE_CODE IN ('GET:/api/auth/role/workspace','GET:/api/auth/role/members','POST:/api/auth/role/saveGrants','POST:/api/auth/role/calibrate','POST:/api/auth/role/saveMembers','POST:/api/auth/role/saveDefault')",Integer.class));
-        jdbc.update("UPDATE PEACH_ROLE SET ROLE_NAME='Custom name'");
-        int count=jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_FLYWAY_HISTORY",Integer.class);
-        migrate(source); assertEquals(count,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_FLYWAY_HISTORY",Integer.class));
-        assertEquals("Custom name",jdbc.queryForObject("SELECT ROLE_NAME FROM PEACH_ROLE LIMIT 1",String.class));
-        assertTrue(flyway(source).getConfiguration().isCleanDisabled());
-        assertThrows(Exception.class,()->flyway(source).clean());
-    }
-    @Test void adoptsRecognizedLegacySchemaAndRetainsExistingData() {
-        var source=source(); var jdbc=new JdbcTemplate(source);
-        jdbc.execute("CREATE TABLE PEACH_USER (USER_ID VARCHAR(32) PRIMARY KEY,USER_CODE VARCHAR(50))");
-        // Partial/noncanonical schemas must not be silently baselined.
-        assertThrows(Exception.class,()->migrate(source));
-        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='PEACH_FLYWAY_HISTORY'",Integer.class));
-    }
-    @Test void upgradesLegacySchemaAndPreservesIdentifiers() throws Exception {
-        var source=source();var jdbc=new JdbcTemplate(source);
-        try(var connection=source.getConnection()) {
-            var context=org.mockito.Mockito.mock(org.flywaydb.core.api.migration.Context.class);
-            org.mockito.Mockito.when(context.getConnection()).thenReturn(connection);
-            new com.peach.database.migration.V1__Peach_schema().migrate(context);
-        }
-        jdbc.execute("DROP TABLE PEACH_TENANT");
-        jdbc.execute("CREATE TABLE PEACH_TENANT(TENANT_ID VARCHAR(32) PRIMARY KEY,TENANT_CODE VARCHAR(64) NOT NULL UNIQUE,TENANT_NAME VARCHAR(128),STATUS VARCHAR(16),SORT_NUM INT,IS_DELETE INT,CREATED_TIME VARCHAR(20),CREATOR_ID VARCHAR(32),MODIFY_TIME VARCHAR(20),MODIFIER_ID VARCHAR(32))");
-        jdbc.update("INSERT INTO PEACH_TENANT(TENANT_ID,TENANT_CODE,TENANT_NAME,STATUS) VALUES ('legacy-id','LEGACY','Retained tenant','DISABLE')");
-        jdbc.execute("ALTER TABLE PEACH_ROUTER DROP COLUMN FUNC_CODE");
-        jdbc.execute("ALTER TABLE PEACH_ROLE MODIFY SKIP_URL VARCHAR(32)");
-        jdbc.execute("DROP TABLE PEACH_LOGIN_LOG");
-        migrate(source);
-        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_USER",Integer.class),"Adoption must not replay initial administrator or memberships");
-        assertEquals("legacy-id",jdbc.queryForObject("SELECT ID FROM PEACH_TENANT WHERE TENANT_CODE='LEGACY'",String.class));
-        assertEquals("SUSPENDED",jdbc.queryForObject("SELECT STATUS FROM PEACH_TENANT WHERE TENANT_CODE='LEGACY'",String.class));
-        assertEquals("SYS_TENANT_MGMT",jdbc.queryForObject("SELECT FUNC_CODE FROM PEACH_ROUTER WHERE ROUTER_URL='/tenant'",String.class));
-        assertEquals(100,jdbc.queryForObject("SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='PEACH_ROLE' AND COLUMN_NAME='SKIP_URL'",Integer.class));
-        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_FLYWAY_HISTORY WHERE TYPE='BASELINE'",Integer.class));
-    }
-    @Test void refusesUnrelatedDatabaseWithoutHistory() {
-        var source=source(); var jdbc=new JdbcTemplate(source);jdbc.execute("CREATE TABLE UNRELATED(ID INT)");
-        assertThrows(Exception.class,()->migrate(source));
-        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()",Integer.class));
-    }
-    @Test void hikariPoolCapacityIsValidatedAndNormalPoolMigrates() {
-        var source=source();
-        try(var pool=new com.zaxxer.hikari.HikariDataSource()) {
-            pool.setJdbcUrl(source.getUrl());pool.setUsername(username);pool.setPassword(password);pool.setMaximumPoolSize(1);
-            var flyway=PeachDatabaseAutoConfiguration.configure(Flyway.configure().dataSource(pool)).load();
-            assertTimeout(java.time.Duration.ofSeconds(3),()->assertThrows(Exception.class,()->new PeachMigrationStrategy().migrate(flyway)));
-        }
-        try(var pool=new com.zaxxer.hikari.HikariDataSource()) {
-            pool.setJdbcUrl(source.getUrl());pool.setUsername(username);pool.setPassword(password);pool.setMaximumPoolSize(3);
-            var flyway=PeachDatabaseAutoConfiguration.configure(Flyway.configure().dataSource(pool)).load();
-            new PeachMigrationStrategy().migrate(flyway);flyway.validate();
-        }
-    }
-    @Test void checksumMismatchAndSqlFailureBlockStartupWithoutCleaningData() {
+    @Test void initializesCompleteFirstVersionAndKeepsRestartChanges() {
         var source=source();migrate(source);var jdbc=new JdbcTemplate(source);
-        jdbc.update("UPDATE PEACH_FLYWAY_HISTORY SET CHECKSUM=CHECKSUM+1 WHERE VERSION='5'");
-        assertThrows(Exception.class,()->migrate(source));
-        jdbc.update("UPDATE PEACH_FLYWAY_HISTORY SET CHECKSUM=CHECKSUM-1 WHERE VERSION='5'");
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_FLYWAY_HISTORY",Integer.class));
+        assertEquals("1",jdbc.queryForObject("SELECT VERSION FROM PEACH_FLYWAY_HISTORY",String.class));
+        assertEquals(27,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_ROUTER",Integer.class));
+        assertEquals(257,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_RESOURCE",Integer.class));
+        assertEquals(4,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_CODE_RULE WHERE MAX_CODE_WIDTH=4",Integer.class));
+        for(String spec:List.of("PEACH_MENU:MENU_CODE:M","PEACH_FUNCTION:FUNC_CODE:F","PEACH_ROUTER:ROUTER_CODE:RT","PEACH_ROLE:ROLE_CODE:RL")) {
+            String[] p=spec.split(":");assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM "+p[0]+" WHERE "+p[1]+" NOT REGEXP '^"+p[2]+"[0-9]{4}$'",Integer.class));
+        }
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_AUTH_RESOURCE WHERE RESOURCE_CODE='POST:/api/auth/router/pageList'",Integer.class));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_MENU m LEFT JOIN PEACH_FUNCTION f ON f.TENANT_ID=m.TENANT_ID AND f.APP_ID=m.APP_ID AND f.FUNC_CODE=m.FUNC_CODE WHERE m.FUNC_CODE IS NOT NULL AND f.FUNC_ID IS NULL",Integer.class));
+        String tenant=jdbc.queryForObject("SELECT TENANT_ID FROM PEACH_TENANT LIMIT 1",String.class);
+        var generator=new com.peach.code.autoconfigure.PeachCodeGenerator(jdbc,new com.peach.code.autoconfigure.CodeProperties(),new org.springframework.jdbc.datasource.DataSourceTransactionManager(source));
+        for(String type:List.of("MENU","FUNCTION","ROUTER","ROLE")) assertTrue(generator.next(tenant,type).matches(Map.of("MENU","M","FUNCTION","F","ROUTER","RT","ROLE","RL").get(type)+"[0-9]{4}"));
+        jdbc.update("UPDATE PEACH_CODE_RULE SET CURRENT_VALUE=9999 WHERE CODE_TYPE='MENU'");assertThrows(com.peach.code.CodeGeneratorException.class,()->generator.next(tenant,"MENU"));
+        jdbc.update("UPDATE PEACH_ROLE SET ROLE_NAME='Custom name'");migrate(source);assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_ROLE WHERE ROLE_NAME='Custom name'",Integer.class));
+    }
+    @Test void refusesNonEmptyUnversionedSchemas() {
+        var source=source();var jdbc=new JdbcTemplate(source);jdbc.execute("CREATE TABLE PEACH_USER(USER_ID INT)");assertThrows(Exception.class,()->migrate(source));
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE()",Integer.class));
+    }
+    @Test void rejectsLegacyHistoryRatherThanSkippingConsolidatedVersion() {
+        for(String type:List.of("BASELINE","JDBC")) {
+            var source=source();migrate(source);var jdbc=new JdbcTemplate(source);
+            jdbc.update("UPDATE PEACH_FLYWAY_HISTORY SET VERSION='14',TYPE=?",type);
+            assertThrows(Exception.class,()->migrate(source));
+            assertEquals(27,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_ROUTER",Integer.class));
+            assertEquals("14",jdbc.queryForObject("SELECT VERSION FROM PEACH_FLYWAY_HISTORY",String.class));
+        }
+    }
+    @Test void blocksChecksumAndSqlFailuresWithoutCleaning() {
+        var source=source();migrate(source);var jdbc=new JdbcTemplate(source);
+        jdbc.update("UPDATE PEACH_FLYWAY_HISTORY SET CHECKSUM=CHECKSUM+1 WHERE VERSION='1'");assertThrows(Exception.class,()->migrate(source));
+        jdbc.update("UPDATE PEACH_FLYWAY_HISTORY SET CHECKSUM=CHECKSUM-1 WHERE VERSION='1'");
         var failure=PeachDatabaseAutoConfiguration.configure(Flyway.configure().dataSource(source)).locations("classpath:db/peach/migration","classpath:db/peach/failure").load();
-        assertThrows(Exception.class,()->new PeachMigrationStrategy().migrate(failure));
-        assertTrue(jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_USER",Integer.class)>0);
+        assertThrows(Exception.class,()->new PeachMigrationStrategy().migrate(failure));assertTrue(jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_ROLE",Integer.class)>0);
         assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_FLYWAY_HISTORY WHERE SUCCESS=0",Integer.class));
     }
-    @Test void springBootAutomaticallyMigratesAndPropagatesFailures() {
-        var source=source();
-        var runner=new org.springframework.boot.test.context.runner.ApplicationContextRunner()
-                .withConfiguration(org.springframework.boot.autoconfigure.AutoConfigurations.of(PeachDatabaseAutoConfiguration.class,org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class))
-                .withBean(javax.sql.DataSource.class,()->source);
-        runner.run(context->{assertNull(context.getStartupFailure());assertNotNull(context.getBean("flywayInitializer"));assertTrue(new JdbcTemplate(source).queryForObject("SELECT COUNT(*) FROM PEACH_MENU",Integer.class)>0);});
-        var unrelated=source();new JdbcTemplate(unrelated).execute("CREATE TABLE FOREIGN_TABLE(ID INT)");
-        runner.withBean(javax.sql.DataSource.class,()->unrelated).run(context->assertNotNull(context.getStartupFailure()));
+    @Test void concurrentStartsShareSingleVersion() throws Exception {
+        var source=source();try(var executor=Executors.newFixedThreadPool(2)) {var a=executor.submit(()->migrate(source));var b=executor.submit(()->migrate(source));a.get(90,TimeUnit.SECONDS);b.get(90,TimeUnit.SECONDS);}
+        assertEquals(1,new JdbcTemplate(source).queryForObject("SELECT COUNT(*) FROM PEACH_FLYWAY_HISTORY",Integer.class));flyway(source).validate();
     }
-    @Test void concurrentApplicationStartsShareOneMigrationHistory() throws Exception {
-        var source=source();
-        try(var executor=Executors.newFixedThreadPool(2)) {
-            var first=executor.submit(()->migrate(source)); var second=executor.submit(()->migrate(source));
-            first.get(90,TimeUnit.SECONDS);second.get(90,TimeUnit.SECONDS);
-        }
-        assertEquals(0,new JdbcTemplate(source).queryForObject("SELECT COUNT(*) FROM PEACH_FLYWAY_HISTORY WHERE SUCCESS=0",Integer.class));
-        flyway(source).validate();
+    @Test void bootRunsInitialVersionAndRejectsInsufficientPool() {
+        var source=source();new org.springframework.boot.test.context.runner.ApplicationContextRunner().withConfiguration(org.springframework.boot.autoconfigure.AutoConfigurations.of(PeachDatabaseAutoConfiguration.class,org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class)).withBean(javax.sql.DataSource.class,()->source).run(context->assertNull(context.getStartupFailure()));
+        try(var pool=new com.zaxxer.hikari.HikariDataSource()) {pool.setJdbcUrl(source.getUrl());pool.setUsername(username);pool.setPassword(password);pool.setMaximumPoolSize(1);assertThrows(Exception.class,()->new PeachMigrationStrategy().migrate(PeachDatabaseAutoConfiguration.configure(Flyway.configure().dataSource(pool)).load()));}
     }
 }
