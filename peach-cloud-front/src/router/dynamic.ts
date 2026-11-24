@@ -23,7 +23,7 @@ export interface AdminMenuGroup {
 
 const viewModules = import.meta.glob('../views/**/index.vue')
 
-// 当前阶段调度功能向所有登录用户开放，独立于其他模块的权限配置。
+// 本地组件目录；是否可访问仍由后端下发的路由和权限决定。
 export const schedulerRoutes: AdminRouteConfig[] = [
   { path: '/scheduler/jobs', name: 'scheduler-jobs', componentPath: 'scheduler/job', meta: { title: '任务管理', menuCode: 'schedulerJob' } },
   { path: '/scheduler/executions', name: 'scheduler-executions', componentPath: 'scheduler/execution', meta: { title: '执行记录', menuCode: 'schedulerExecution' } },
@@ -66,7 +66,11 @@ function normalizePath(path: string | undefined): string {
   if (!trimmed) {
     return ''
   }
-  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+  const normalized = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+  if (!/^\/[A-Za-z0-9_/-]+$/.test(normalized) || normalized.includes('//')) {
+    return ''
+  }
+  return normalized.replace(/\/$/, '')
 }
 
 function normalizeComponentPath(filePath: string | undefined, routePath: string): string {
@@ -78,6 +82,10 @@ function normalizeComponentPath(filePath: string | undefined, routePath: string)
 }
 
 function findView(componentPath: string) {
+  if (!/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)+$/.test(componentPath)
+    || componentPath.startsWith('auth/') || componentPath.startsWith('error/')) {
+    return undefined
+  }
   return viewModules[`../views/${componentPath}/index.vue`]
 }
 
@@ -87,18 +95,6 @@ function fallbackByPath(path: string): AdminRouteConfig | undefined {
 
 function normalizeCode(code: string | undefined): string {
   return (code ?? '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
-}
-
-function fallbackByAnyCode(...codes: Array<string | undefined>): AdminRouteConfig | undefined {
-  const normalizedCodes = codes.map(normalizeCode).filter(code => code.length > 0)
-  if (normalizedCodes.length === 0) {
-    return undefined
-  }
-  return fallbackAdminRoutes.find((route) => {
-    const routeCode = normalizeCode(route.meta.menuCode)
-    const routeName = normalizeCode(route.name)
-    return normalizedCodes.some(code => routeCode === code || routeName === code || routeCode.includes(code) || code.includes(routeCode))
-  })
 }
 
 function buildRouterMaps(routerList: RouterInfo[]) {
@@ -122,7 +118,7 @@ function buildRouterMaps(routerList: RouterInfo[]) {
   return { pathMap, codeMap, funcMap }
 }
 
-export function buildAdminRoutes(loginInfo: LoginInfo | null): RouteRecordRaw[] {
+function buildRouteConfigs(loginInfo: LoginInfo | null): AdminRouteConfig[] {
   const routerList = loginInfo?.routerList ?? []
   const dynamicRoutes: AdminRouteConfig[] = routerList
     .map((routerInfo: RouterInfo): AdminRouteConfig | null => {
@@ -132,17 +128,18 @@ export function buildAdminRoutes(loginInfo: LoginInfo | null): RouteRecordRaw[] 
       }
       const fallback = fallbackByPath(path)
       const componentPath = normalizeComponentPath(routerInfo.filePath, path)
-      const matchedView = findView(componentPath) ? componentPath : fallback?.componentPath
+      // 已有页面 URL 使用稳定组件映射，避免历史错误配置将日志等页面映射为工作台。
+      const matchedView = fallback?.componentPath ?? (findView(componentPath) ? componentPath : undefined)
       if (!matchedView) {
         return null
       }
       return {
         path,
-        name: fallback?.name || routerInfo.routerCode || path.replace(/\//g, '-').replace(/^-/, ''),
+        name: fallback?.name ?? `admin:${path}`,
         componentPath: matchedView,
         meta: {
           title: routerInfo.routerName || fallback?.meta.title || path,
-          menuCode: routerInfo.routerCode || fallback?.meta.menuCode || path,
+          menuCode: fallback?.meta.menuCode || routerInfo.routerCode || path,
           permissionCode: fallback?.meta.permissionCode,
         },
       }
@@ -150,71 +147,75 @@ export function buildAdminRoutes(loginInfo: LoginInfo | null): RouteRecordRaw[] 
     .filter((route): route is AdminRouteConfig => route !== null)
 
   const routeByPath = new Map<string, AdminRouteConfig>()
-  const candidateRoutes = dynamicRoutes.length > 0
-    ? dynamicRoutes
-    : fallbackAdminRoutes
-  candidateRoutes.forEach((route) => {
+  dynamicRoutes.forEach((route) => {
     if (!routeByPath.has(route.path)) {
       routeByPath.set(route.path, route)
     }
   })
 
-  schedulerRoutes.forEach(route => routeByPath.set(route.path, route))
+  // 登录后的基础入口，不代表业务功能授权。
+  for (const path of ['/workspace', '/profile']) {
+    const route = fallbackByPath(path)
+    if (route && !routeByPath.has(path)) routeByPath.set(path, route)
+  }
+  return Array.from(routeByPath.values())
+}
 
-  const effectiveRoutes = Array.from(routeByPath.values())
-
-  return effectiveRoutes.map((route): RouteRecordRaw => ({
-    path: route.path,
-    name: route.name,
-    component: findView(route.componentPath),
-    meta: {
-      requiresAuth: true,
-      title: route.meta.title,
-      menuCode: route.meta.menuCode,
-      permissionCode: route.meta.permissionCode,
-    },
-  }))
+export function buildAdminRoutes(loginInfo: LoginInfo | null): RouteRecordRaw[] {
+  return buildRouteConfigs(loginInfo).flatMap((route): RouteRecordRaw[] => {
+    const component = findView(route.componentPath)
+    if (!component) return []
+    return [{
+      path: route.path,
+      name: route.name,
+      component,
+      meta: {
+        requiresAuth: true,
+        title: route.meta.title,
+        menuCode: route.meta.menuCode,
+        permissionCode: route.meta.permissionCode,
+      },
+    }]
+  })
 }
 
 export function buildMenuItems(loginInfo: LoginInfo | null): AdminRouteConfig[] {
   const menuList = loginInfo?.menuList ?? []
-  if (menuList.length === 0) {
-    return fallbackAdminRoutes
-  }
+  const registered = new Map(buildRouteConfigs(loginInfo).map(route => [route.path, route]))
+  const permissions = new Set(loginInfo?.permissionList ?? [])
   const routerMaps = buildRouterMaps(loginInfo?.routerList ?? [])
-  const routeMap = new Map(fallbackAdminRoutes.map(route => [route.meta.menuCode, route]))
   const items = menuList
     .filter(menu => menu.isLeaf !== 0)
     .map((menuInfo: MenuInfo): AdminRouteConfig | null => {
       const key = menuInfo.menuCode ?? ''
       const menuPath = normalizePath(menuInfo.menuUrl)
-      const matchedRouter = routerMaps.pathMap.get(menuPath)
-        ?? routerMaps.funcMap.get(normalizeCode(menuInfo.funcCode))
-        ?? routerMaps.codeMap.get(normalizeCode(menuInfo.menuCode))
-        ?? routerMaps.codeMap.get(normalizeCode(menuInfo.funcCode))
-      const matchedRouterPath = normalizePath(matchedRouter?.routerUrl)
-      const fallback = routeMap.get(key)
-        ?? fallbackByPath(menuPath)
-        ?? fallbackByPath(matchedRouterPath)
-        ?? fallbackByAnyCode(menuInfo.funcCode, menuInfo.menuCode, matchedRouter?.routerCode)
-      const path = matchedRouterPath || menuPath || fallback?.path
-      if (!path) {
+      // 有明确菜单 URL 时不允许错误的功能编码将其重定向到另一个页面。
+      const matchedRouter = menuPath ? routerMaps.pathMap.get(menuPath)
+        : routerMaps.funcMap.get(normalizeCode(menuInfo.funcCode))
+          ?? routerMaps.codeMap.get(normalizeCode(menuInfo.menuCode))
+      const path = menuPath || normalizePath(matchedRouter?.routerUrl)
+      const route = registered.get(path)
+      if (!route || (route.meta.permissionCode && !permissions.has(route.meta.permissionCode))) {
         return null
       }
       return {
         path,
-        name: matchedRouter?.routerCode || fallback?.name || key || path,
-        componentPath: fallback?.componentPath || normalizeComponentPath(matchedRouter?.filePath, path),
+        name: route.name,
+        componentPath: route.componentPath,
         meta: {
-          title: menuInfo.menuName || matchedRouter?.routerName || fallback?.meta.title || path,
-          menuCode: key || fallback?.meta.menuCode || path,
-          permissionCode: fallback?.meta.permissionCode,
+          title: menuInfo.menuName || route.meta.title,
+          menuCode: key || route.meta.menuCode,
+          permissionCode: route.meta.permissionCode,
         },
       }
     })
     .filter((item): item is AdminRouteConfig => item !== null)
-  const effectiveItems = items.length > 0 ? items : fallbackAdminRoutes
-  return [...effectiveItems.filter(item => !schedulerRoutes.some(route => route.path === item.path || route.meta.menuCode === item.meta.menuCode)), ...schedulerRoutes]
+  const byPath = new Map(items.map(item => [item.path, item]))
+  for (const path of ['/workspace', '/profile']) {
+    const route = registered.get(path)
+    if (route && !byPath.has(path)) byPath.set(path, route)
+  }
+  return Array.from(byPath.values())
 }
 
 export function buildMenuGroups(loginInfo: LoginInfo | null): AdminMenuGroup[] {

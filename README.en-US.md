@@ -104,6 +104,6 @@ npm run build
 
 See [`AGENTS.md`](AGENTS.md) for repository Agent, Rule, Skill and centralized quality-gate conventions.
 
-## Startup database migrations
+## First-time database initialization
 
-Seven JDBC applications use shared Flyway migrations at startup. See [Peach Database](peach-database/README.en-US.md) for empty-database initialization, existing-schema adoption, frozen migration history and failure handling.
+Seven JDBC applications use a shared Flyway V1 to initialize the schema and system data in a fresh empty database, including business codes and administration permissions. See [Peach Database](peach-database/README.en-US.md) for first-time initialization and the boundaries for existing development databases.

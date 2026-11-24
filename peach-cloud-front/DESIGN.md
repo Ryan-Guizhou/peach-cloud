@@ -6,11 +6,15 @@ Chinese administration console for identities, permissions and system operations
 
 ## Direction
 
+All application and authentication routes use the approved light console direction: white surfaces, pale blue-gray canvas, dark readable text and blue primary actions. The global semantic variables in `src/style.css` own this palette. Workspace and Profile reuse AdminLayout, including its default responsive behavior. Login, Registration and Password Recovery share AuthShell, the same branding and focus treatment. Workspace shortcuts come from the authorized menu groups; its context is session-backed and it does not display invented monitoring figures.
+
+Menu, Function, Role and Route creation receive their business codes from the backend (M/F/RL/RT with four digits). Editors show automatic generation before save and treat stored codes as read-only. Save payloads omit owned business code fields; function associations, parent links and resource permissions retain their actual backend values. Tables and trees display returned codes without client-side formatting.
+
 Preserve the existing AdminLayout, Ant Design Vue controls and Chinese product terminology. For `/function`, follow the supplied reference: searchable tree on the left, resource filters and a compact table on the right. Highlight the selected node and retain inline node actions. Below 1100px, stack both panels; tree actions remain reachable on narrow screens.
 
 ## Runtime tokens
 
-`src/style.css` owns the existing primitive, semantic and component CSS variables. Ant Design Vue owns control appearance and popup behavior. Feature pages must not redefine the global palette or typography. Use the existing font stack and spacing rhythm; this change introduces no global theme changes.
+`src/style.css` owns the primitive, semantic and component CSS variables, including the approved global light palette. Ant Design Vue owns control appearance and popup behavior. Feature pages must reuse the global palette, font stack and spacing rhythm.
 
 ## Behavior
 
@@ -37,3 +41,7 @@ Additional checks: menu-group unit tests, frontend build, `scripts/login-audit-s
 Follow the supplied references: roles, function tree and resource grants in three columns, stacking below 1300px. Keep button/API switches and function checkboxes independent. Search is a view over the complete grant draft; it must never delete hidden selections. Distinguish dirty drafts from saved grants, guard navigation, and require explicit authorization after calibration preview. Default menu choices use saved grants only. Member filtering preserves invisible selections and other roles.
 
 The route page uses module/code/URL filters and columns for module, code, name, URL, component and level, with edit actions. Authentication/cache flags are omitted. Keep modal validation, retry/empty/loading states, request cancellation and viewport-safe forms consistent with Function Definition. Regression: state unit tests, build and `scripts/admin-workspace-smoke.py` against isolated fixtures.
+
+Business navigation comes from the authorized backend menus and routes; an empty snapshot exposes only Workspace and Profile. Known built-in URLs resolve to their canonical local components, so stale backend component metadata cannot turn Login Logs into Workspace. Backend-generated codes do not determine page components or Vue route identity. See [console navigation operations](docs/console-navigation.md) for initialization and verification.
+
+The project has not launched: a fresh empty database schema receives the complete V1 schema, system seed, business codes and permissions. Earlier development V14 databases are not automatically compatible with the new V1; use a new schema or an explicitly backed-up rebuild managed by the user. Do not clean, repair or overwrite a development database as an implicit startup step. Browser sessions must be renewed after switching databases.

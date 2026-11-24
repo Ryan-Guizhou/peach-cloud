@@ -27,7 +27,7 @@ public class MenuDTO implements Serializable {
     private static final long serialVersionUID = -8288943614511816025L;
 
     @Schema(description = "菜单ID")
-    @NotBlank(message = "菜单ID不能为空", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @NotBlank(message = "菜单ID不能为空", groups = {PeachGroup.UpdateGroup.class})
     private String menuId;
 
     @Schema(description = "菜单名称")
@@ -36,7 +36,6 @@ public class MenuDTO implements Serializable {
     private String menuName;
 
     @Schema(description = "菜单编码")
-    @NotBlank(message = "菜单编码不能为空", groups = {PeachGroup.InsertGroup.class})
     @Size(max = 50, message = "菜单编码长度不能超过50", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String menuCode;
 

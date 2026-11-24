@@ -1,6 +1,7 @@
 package com.peach.auth.service.impl;
 
 import com.github.pagehelper.page.PageMethod;
+import com.peach.code.CodeGenerator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,6 +43,7 @@ import org.springframework.dao.DuplicateKeyException;
 public class FunctionServiceImpl implements IFunctionService {
 
     private final FunctionDao functionDao;
+    private final CodeGenerator codeGenerator;
 
     @Override
     public PageInfo<FunctionVO> pageList(FunctionQO functionQO) {
@@ -69,10 +71,12 @@ public class FunctionServiceImpl implements IFunctionService {
     public void add(FunctionDTO functionDTO) {
         FunctionDO functionDO = new FunctionDO();
         BeanUtils.copyProperties(functionDTO, functionDO);
-        if (StringUtil.isBlank(functionDO.getFuncId())) functionDO.setFuncId(UUID.randomUUID().toString().replace("-", ""));
+        functionDO.setFuncId(UUID.randomUUID().toString().replace("-", ""));
         functionDO.setTenantId(DefinitionScope.tenantId());
         if (StringUtil.isBlank(functionDO.getAppId())) throw new BusinessException("应用ID不能为空");
+        functionDO.setFuncCode(null);
         validateParent(functionDO);
+        functionDO.setFuncCode(codeGenerator.next(functionDO.getTenantId(), "FUNCTION"));
         functionDO.fillCreateTime(null);
         functionDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
         if (functionDO.getIsMenu() == null) functionDO.setIsMenu(0);

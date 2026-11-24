@@ -18,7 +18,9 @@ export interface CrudField {
   label: string
   name: string
   required?: boolean
-  type?: 'text' | 'number' | 'textarea'
+  generated?: boolean
+  type?: 'text' | 'number' | 'textarea' | 'select'
+  options?: Array<{ value: string; label: string }>
 }
 
 const props = defineProps<{
@@ -130,7 +132,7 @@ function openEdit(record: DataRecord) {
 function validateRequiredFields(): boolean {
   const missingField = props.fields.find((field) => {
     const value = formState[field.name]
-    return field.required && (value === undefined || value === null || String(value).trim().length === 0)
+    return !field.generated && field.required && (value === undefined || value === null || String(value).trim().length === 0)
   })
   if (!missingField) {
     return true
@@ -151,6 +153,7 @@ async function saveRecord() {
   saving.value = true
   try {
     const payload: DataRecord = { ...formState }
+    props.fields.filter(field => field.generated).forEach(field => delete payload[field.name])
     if (editingId.value) {
       payload[props.rowKey] = editingId.value
     }
@@ -255,9 +258,12 @@ onMounted(() => {
       @ok="saveRecord"
     >
       <a-form layout="vertical">
-        <a-form-item v-for="field in fields" :key="field.name" :label="field.label" :required="field.required">
+        <slot name="editor-before" />
+        <a-form-item v-for="field in fields" :key="field.name" :label="field.label" :required="field.required && !field.generated">
+          <a-input v-if="field.generated" :value="formState[field.name] as string | undefined" disabled placeholder="保存后自动生成" />
+          <a-select v-else-if="field.type === 'select'" v-model:value="formState[field.name] as string | undefined" :options="field.options" show-search option-filter-prop="label" allow-clear />
           <a-input-number
-            v-if="field.type === 'number'"
+            v-else-if="field.type === 'number'"
             v-model:value="formState[field.name] as number | undefined"
             class="full-control"
           />

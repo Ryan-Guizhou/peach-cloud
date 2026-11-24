@@ -239,12 +239,34 @@
         </where>
     </select>
 
+    <!-- 查询对象仅包含业务筛选和作用域，审计条件保留在实体专用 allColumnCond。 -->
+    <sql id="queryColumnCond">
+        <if test="id != null and id != ''">
+            AND ID = #{id,jdbcType=VARCHAR}
+        </if>
+        <if test="ipAddress != null and ipAddress != ''">
+            AND IP_ADDRESS = #{ipAddress,jdbcType=VARCHAR}
+        </if>
+        <if test="ipDesc != null and ipDesc != ''">
+            AND IP_DESC = #{ipDesc,jdbcType=VARCHAR}
+        </if>
+        <if test="status != null">
+            AND STATUS = #{status,jdbcType=INTEGER}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="orgId != null and orgId != ''">
+            AND ORG_ID = #{orgId,jdbcType=VARCHAR}
+        </if>
+    </sql>
+
     <select id="selectByQO" parameterType="com.peach.setting.qo.IpWhitelistQO" resultType="com.peach.setting.vo.IpWhitelistVO">
         SELECT
             <include refid="allColumnAlias" />
         FROM PEACH_IP_WHITELIST
         <where>
-            <include refid="allColumnCond" />
+            <include refid="queryColumnCond" />
         </where>
         ORDER BY MODIFY_TIME DESC, CREATED_TIME DESC
     </select>

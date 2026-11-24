@@ -12,6 +12,7 @@ import com.peach.auth.service.IRouterService;
 import com.peach.auth.service.support.AdminScope;
 import com.peach.auth.vo.RouterVO;
 import com.peach.common.exception.BusinessException;
+import com.peach.code.CodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ import java.util.UUID;
 public class RouterServiceImpl implements IRouterService {
     private final RouterDao routerDao;
     private final FunctionDao functionDao;
+    private final CodeGenerator codeGenerator;
     @Override public PageInfo<RouterVO> pageList(RouterQO query) {
         scope(query);
         return PageMethod.startPage(query.getPageNum(), query.getPageSize()).doSelectPageInfo(() -> routerDao.selectByQO(query));
@@ -48,13 +50,16 @@ public class RouterServiceImpl implements IRouterService {
         if (row.getIsAuth() == null) row.setIsAuth(1);
         if (row.getIsCache() == null) row.setIsCache(0);
         if (row.getRouterLevel() == null) row.setRouterLevel(2);
-        validateFunction(row); row.fillCreateTime(AdminScope.actor().getUserId());
+        validateFunction(row); row.setRouterCode(codeGenerator.next(row.getTenantId(), "ROUTER")); row.fillCreateTime(AdminScope.actor().getUserId());
         try { routerDao.insert(row); } catch (DuplicateKeyException ex) { throw new BusinessException("路由编码或URL已存在"); }
     }
     @Override public void update(RouterDTO input) {
         RouterVO row = selectById(input.getRouterId());
+        if (input.getRouterCode() != null && !input.getRouterCode().equals(row.getRouterCode())) {
+            throw new BusinessException("路由编码创建后不可修改");
+        }
         String originalFunction = row.getFuncCode();
-        BeanUtils.copyProperties(input, row, "isAuth", "isCache");
+        BeanUtils.copyProperties(input, row, "isAuth", "isCache", "routerCode");
         if (input.getFuncCode() == null) row.setFuncCode(originalFunction);
         // Hidden flags keep their stored values unless an existing API client explicitly supplies them.
         if (input.getIsAuth() != null) row.setIsAuth(input.getIsAuth());

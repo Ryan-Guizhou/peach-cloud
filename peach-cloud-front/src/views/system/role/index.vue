@@ -159,7 +159,7 @@ async function saveRoleForm() {
   try { await roleFormRef.value?.validate() } catch { return }
   saving.value = true
   try {
-    await saveRole({ roleId: roleForm.roleId, roleCode: roleForm.roleCode, roleName: roleForm.roleName, roleDesc: roleForm.roleDesc, roleType: roleForm.roleType, roleScope: roleForm.roleScope })
+    await saveRole({ roleId: roleForm.roleId, roleName: roleForm.roleName, roleDesc: roleForm.roleDesc, roleType: roleForm.roleType, roleScope: roleForm.roleScope })
     if (!disposed) { message.success('角色保存成功'); editingOpen.value = false; if (workspace.value && workspace.value.role.roleId === roleForm.roleId) Object.assign(workspace.value.role, roleForm); await loadRoles() }
   } catch (error: unknown) { if (!disposed) message.error(errorText(error)) }
   finally { saving.value = false }
@@ -250,7 +250,7 @@ onBeforeUnmount(() => { disposed = true; listRequest?.abort(); workspaceRequest?
     </div>
     <a-modal v-model:open="editingOpen" :title="roleForm.roleId ? '编辑角色' : '新增角色'" :confirm-loading="saving" :mask-closable="false" :closable="!saving" :cancel-button-props="{ disabled: saving }" @ok="saveRoleForm">
       <a-form ref="roleFormRef" :model="roleForm" layout="vertical">
-        <a-form-item label="角色编码" name="roleCode" :rules="[{ required: true, whitespace: true, message: '请输入角色编码' }]"><a-input v-model:value="roleForm.roleCode" :maxlength="20" :disabled="!!roleForm.roleId" /></a-form-item>
+        <a-form-item label="角色编码"><a-input :value="roleForm.roleCode" disabled placeholder="保存后自动生成" /></a-form-item>
         <a-form-item label="角色名称" name="roleName" :rules="[{ required: true, whitespace: true, message: '请输入角色名称' }]"><a-input v-model:value="roleForm.roleName" :maxlength="64" /></a-form-item>
         <a-form-item label="角色范围" name="roleScope"><a-input v-model:value="roleForm.roleScope" :maxlength="20" /></a-form-item>
         <a-form-item label="角色类型" name="roleType"><a-input v-model:value="roleForm.roleType" :maxlength="20" /></a-form-item>

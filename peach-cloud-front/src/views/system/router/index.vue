@@ -28,7 +28,7 @@ const columns = [
   { title: '路由级次', dataIndex: 'routerLevel', width: 90 },
   { title: '操作', dataIndex: 'actions', width: 90, fixed: 'right' as const },
 ]
-const fields = [{ name: 'moduleCode', label: '模块代码', max: 10 }, { name: 'routerCode', label: '路由代码', max: 100 }, { name: 'routerName', label: '路由名称', max: 100 }, { name: 'routerUrl', label: '路由 URL', max: 100 }]
+const fields = [{ name: 'moduleCode', label: '模块代码', max: 10 },  { name: 'routerName', label: '路由名称', max: 100 }, { name: 'routerUrl', label: '路由 URL', max: 100 }]
 const rules = Object.fromEntries([...fields, { name: 'filePath', label: '文件路径' }, { name: 'funcCode', label: '关联功能' }].map(field => [field.name, [{ required: true, whitespace: true, message: `请填写${field.label}` }]]))
 let request: AbortController | undefined
 let optionsRequest: AbortController | undefined
@@ -59,7 +59,7 @@ async function save() {
   try { await formRef.value?.validate() } catch { return }
   saving.value = true
   try {
-    await saveRouter({ routerId: form.routerId, moduleCode: form.moduleCode, routerCode: form.routerCode, routerName: form.routerName, routerUrl: form.routerUrl, filePath: form.filePath, routerLevel: form.routerLevel, funcCode: form.funcCode })
+    await saveRouter({ routerId: form.routerId, moduleCode: form.moduleCode, routerName: form.routerName, routerUrl: form.routerUrl, filePath: form.filePath, routerLevel: form.routerLevel, funcCode: form.funcCode })
     if (!disposed) { message.success('路由保存成功'); open.value = false; await load() }
   } catch (error: unknown) { if (!disposed) message.error(errorText(error)) }
   finally { saving.value = false }
@@ -86,6 +86,7 @@ onBeforeUnmount(() => { disposed = true; request?.abort(); optionsRequest?.abort
     </a-card>
     <a-modal v-model:open="open" :title="form.routerId ? '修改路由' : '新增路由'" :confirm-loading="saving" :mask-closable="false" :closable="!saving" :cancel-button-props="{ disabled: saving }" @ok="save">
       <a-form name="router-editor" ref="formRef" :model="form" :rules="rules" layout="vertical">
+        <a-form-item label="路由代码"><a-input :value="form.routerCode" disabled :placeholder="form.routerId ? '历史编码' : '保存后自动生成'" /></a-form-item>
         <a-form-item v-for="field in fields" :key="field.name" :label="field.label" :name="field.name"><a-input v-model:value="form[field.name] as string | undefined" :maxlength="field.max" /></a-form-item>
         <a-form-item label="文件路径" name="filePath"><a-select v-model:value="form.filePath" :options="componentOptions" show-search option-filter-prop="label" placeholder="选择已有页面组件" /></a-form-item>
         <a-form-item label="关联功能" name="funcCode"><a-select v-model:value="form.funcCode" :options="functions" show-search option-filter-prop="label" placeholder="选择路由所属功能" /></a-form-item>

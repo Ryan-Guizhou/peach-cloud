@@ -18,6 +18,7 @@
     </parent>
 
     <dependencies>
+        <dependency><groupId>com.peach</groupId><artifactId>peach-code-starter</artifactId></dependency>
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-auth-entity</artifactId>
@@ -40,7 +41,7 @@
         </dependency>
 
 
-        <!-- Sa-Token 权限认证 -->
+        <!-- Sa-Token 鏉冮檺璁よ瘉 -->
         <dependency>
             <groupId>com.peach</groupId>
             <artifactId>peach-satoken-starter</artifactId>

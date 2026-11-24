@@ -26,6 +26,7 @@ MISSING_SCHEMA="$TMP_DIR/missing-schema.sql"
 METADATA="$TMP_DIR/metadata.json"
 VERIFY_SCHEMA="$TMP_DIR/verify-schema.sql"
 VERIFY_METADATA="$TMP_DIR/verify-metadata.json"
+RECOVERY_SEED="$TMP_DIR/recovery-seed.sql"
 BASELINE_VERSION=baseline-v1
 
 mysql_command() {
@@ -58,7 +59,9 @@ node "$RENDERER" \
   --schema "$SCHEMA_FILE" \
   --existing "$EXISTING_TABLES" \
   --output "$MISSING_SCHEMA" \
-  --metadata "$METADATA"
+  --metadata "$METADATA" \
+  --seed "$DATA_FILE" \
+  --seed-output "$RECOVERY_SEED"
 
 missing_count=$(metadata_value missingTables)
 checksum=$(metadata_value checksum)
@@ -93,7 +96,7 @@ seed_ready=$(mysql_query "SELECT IF(
 
 if [ "$marker_count" -eq 0 ] || [ "$missing_count" -gt 0 ] || [ "$seed_ready" != "1" ]; then
   echo "[mysql-init] applying idempotent baseline seed data."
-  mysql_command < "$DATA_FILE"
+  mysql_command < "$RECOVERY_SEED"
 else
   echo "[mysql-init] baseline completion marker and critical seed data are present."
 fi

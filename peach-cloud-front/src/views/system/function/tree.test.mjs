@@ -13,3 +13,15 @@ test('shows orphan and cycle nodes without recursion or data loss', () => {
   assert.equal(tree.length, 3)
   assert.ok(tree.every(node => node.anomaly))
 })
+
+test('migrated function codes preserve actual parent links and remain searchable', () => {
+  const tree = buildFunctionTree([
+    row('root-id', 'F0001'), row('leaf-id', 'F0002', 'F0001'),
+    row('other-id', 'F0003', '', 'other-app'),
+  ], 'F0002')
+  assert.equal(tree.length, 1)
+  assert.equal(tree[0].record.funcCode, 'F0001')
+  assert.equal(tree[0].children[0].record.funcCode, 'F0002')
+  assert.equal(tree[0].children[0].record.parentFuncCode, 'F0001')
+  assert.equal(tree[0].children[0].key, 'leaf-id')
+})

@@ -83,6 +83,9 @@ function workspaceLocation(): { name: string } | { path: string } | null {
 router.beforeEach((to) => {
   const authStore = useAuthStore(pinia)
   const hasValidSession = authStore.ensureValidSession()
+  if (!hasValidSession && to.name === 'not-found') {
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
   if (hasValidSession && authStore.loginInfo && dynamicRouteNames.size === 0) {
     syncDynamicRoutes()
     if (to.name === 'not-found') {

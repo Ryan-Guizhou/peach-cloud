@@ -204,7 +204,7 @@ onMounted(() => {
 .captcha-panel__refresh {
   border: 0;
   background: transparent;
-  color: var(--cyan-300);
+  color: var(--color-accent);
   cursor: pointer;
 }
 
@@ -215,7 +215,7 @@ onMounted(() => {
   height: 155px;
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: rgba(7, 17, 31, 0.65);
+  background: var(--color-bg-soft);
 }
 
 .captcha-panel__background,
@@ -240,13 +240,13 @@ onMounted(() => {
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(7, 17, 31, 0.55);
+  background: rgba(255, 255, 255, 0.9);
   color: var(--color-text-muted);
   font-size: 13px;
 }
 
 .captcha-panel__mask.is-success {
-  color: var(--cyan-300);
+  color: var(--color-success);
 }
 
 .captcha-slider {
@@ -261,7 +261,7 @@ onMounted(() => {
   position: absolute;
   inset: 12px 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-border);
 }
 
 .captcha-slider__thumb {
@@ -274,14 +274,14 @@ onMounted(() => {
   place-items: center;
   border: 1px solid var(--color-border-strong);
   border-radius: 999px;
-  background: rgba(33, 200, 239, 0.15);
-  color: var(--cyan-300);
+  background: var(--color-bg-soft);
+  color: var(--color-accent);
   cursor: grab;
 }
 
 .captcha-panel__error {
   margin: 0;
-  color: #ff8f8f;
+  color: var(--color-danger);
   font-size: 12px;
 }
 </style>

@@ -22,6 +22,34 @@ function requiredFile(args, name) {
   return resolved;
 }
 
+// The first-release seed is a strict SQL dump. Only deployment recovery needs
+// duplicate-key tolerance; keep all other SQL errors and existing values intact.
+function renderRecoverySeed(seed) {
+  let column = null;
+  let statements = 0;
+  const lines = seed.replace(/\r\n/g, '\n').split('\n').map((line, index) => {
+    if (column === null) {
+      const insert = /^INSERT INTO `[A-Z0-9_]+` \(`([A-Z0-9_]+)`(?:,`[A-Z0-9_]+`)*\) VALUES$/.exec(line);
+      if (insert) {
+        column = insert[1];
+        return line;
+      }
+      if (/^(?:\s*|--.*|SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;)$/.test(line)) return line;
+      throw new Error('Unsupported baseline seed statement at line ' + (index + 1));
+    }
+    if (!/^\(.*\)[,;]$/.test(line)) {
+      throw new Error('Unsupported baseline seed row at line ' + (index + 1));
+    }
+    if (!line.endsWith(');')) return line;
+    const identifier = '`' + column + '`';
+    column = null;
+    statements += 1;
+    return line.slice(0, -1) + '\nON DUPLICATE KEY UPDATE ' + identifier + ' = ' + identifier + ';';
+  });
+  if (column !== null || statements === 0) throw new Error('Incomplete baseline seed SQL');
+  return lines.join('\n');
+}
+
 const args = parseArgs(process.argv.slice(2));
 const schemaPath = requiredFile(args, 'schema');
 const existingPath = requiredFile(args, 'existing');
@@ -73,3 +101,13 @@ fs.writeFileSync(outputPath, output, { encoding: 'utf8', mode: 0o600 });
 fs.writeFileSync(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`, { encoding: 'utf8', mode: 0o600 });
 fs.chmodSync(outputPath, 0o600);
 fs.chmodSync(metadataPath, 0o600);
+
+if (args.seed || args['seed-output']) {
+  const seedPath = requiredFile(args, 'seed');
+  if (!args['seed-output']) throw new Error('Missing --seed-output.');
+  const seedOutput = path.resolve(args['seed-output']);
+  const recoverySeed = renderRecoverySeed(fs.readFileSync(seedPath, 'utf8'));
+  fs.mkdirSync(path.dirname(seedOutput), { recursive: true, mode: 0o700 });
+  fs.writeFileSync(seedOutput, recoverySeed, { encoding: 'utf8', mode: 0o600 });
+  fs.chmodSync(seedOutput, 0o600);
+}

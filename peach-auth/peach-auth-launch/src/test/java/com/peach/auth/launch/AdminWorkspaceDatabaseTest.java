@@ -77,7 +77,7 @@ class AdminWorkspaceDatabaseTest {
                 var functionDao = session.getMapper(FunctionDao.class); var resourceDao = session.getMapper(ResourceDao.class); var roleDao = session.getMapper(RoleDao.class);
                 FunctionDO function = new FunctionDO(); function.setFuncId(uuid()); function.setTenantId(tenant); function.setAppId(AdminScope.APP_ID); function.setFuncCode("FIXTURE"); function.setFuncName("Fixture"); function.setIsDelete(0); function.setIsDisable(0); functionDao.insert(function);
                 ResourceDO resource = new ResourceDO(); resource.setResourceId(uuid()); resource.setTenantId(tenant); resource.setAppId(AdminScope.APP_ID); resource.setFuncCode("FIXTURE"); resource.setResourceCode("fixture:read"); resource.setResourceName("Fixture read"); resource.setResourceType("BUTTON"); resource.setIsDelete(0); resourceDao.insert(resource);
-                var routes = new RouterServiceImpl(session.getMapper(RouterDao.class),functionDao);
+                var routes = new RouterServiceImpl(session.getMapper(RouterDao.class),functionDao, (tenantId, type) -> "FIXTURE_ROUTE");
                 RouterDTO route = new RouterDTO(); route.setRouterCode("FIXTURE_ROUTE"); route.setRouterName("Before"); route.setRouterUrl("/fixture/route"); route.setFilePath("system/role"); route.setModuleCode("fixture"); route.setFuncCode("FIXTURE"); routes.add(route);
                 RouterQO query = new RouterQO(); query.setRouterUrl("fixture/route"); query.setModuleCode("fixture"); query.setRouterCode("FIXTURE");
                 var found = routes.pageList(query); assertEquals(1,found.getTotal()); route.setRouterId(found.getList().getFirst().getRouterId());
@@ -87,7 +87,7 @@ class AdminWorkspaceDatabaseTest {
                 var real = session.getMapper(RoleWorkspaceDao.class);
                 RoleWorkspaceDao workspaceDao = mock(RoleWorkspaceDao.class,delegatesTo(real));
                 doReturn(1).when(workspaceDao).hasPermission(any(),anyString());
-                var roles = new RoleServiceImpl(roleDao,workspaceDao);
+                var roles = new RoleServiceImpl(roleDao,(tenantId, type) -> "RL0001",workspaceDao);
                 RoleDTO create = new RoleDTO(); create.setRoleCode("FIXTURE_ROLE"); create.setRoleName("角色筛选样例"); create.setRoleType("CUSTOM"); roles.add(create);
                 RoleQO roleQuery = new RoleQO(); roleQuery.setKeyword("筛选"); var rolePage = roles.pageList(roleQuery); assertEquals(1,rolePage.getTotal());
                 RoleVO role = rolePage.getList().getFirst();

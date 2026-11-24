@@ -22,6 +22,9 @@ import java.util.List;
 @Schema(description = "菜单查询参数")
 public class MenuQO extends PeachEntity implements Serializable {
 
+    @Schema(description = "租户ID，由服务端当前会话覆盖")
+    private String tenantId;
+
     @Serial
     private static final long serialVersionUID = -905488645766394915L;
 

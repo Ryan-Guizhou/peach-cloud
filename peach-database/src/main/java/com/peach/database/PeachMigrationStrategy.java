@@ -57,18 +57,15 @@ public final class PeachMigrationStrategy implements FlywayMigrationStrategy {
             statement.setString(1,schema);
             try (var result = statement.executeQuery()) { while (result.next()) tables.add(result.getString(1)); }
         }
-        if (tables.contains("PEACH_FLYWAY_HISTORY") || tables.isEmpty()) return;
-        if (!tables.containsAll(Set.of("PEACH_USER","PEACH_TENANT","PEACH_FUNCTION"))) {
-            throw new FlywayException("Refusing to baseline an unrecognized or incomplete Peach schema");
-        }
-        for (var sentinel : new String[][] {{"PEACH_USER","USER_ID"},{"PEACH_TENANT","TENANT_ID"},{"PEACH_FUNCTION","FUNC_CODE"}}) {
-            try (var statement = connection.prepareStatement("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND UPPER(TABLE_NAME)=? AND UPPER(COLUMN_NAME)=?")) {
-                statement.setString(1,schema); statement.setString(2,sentinel[0]); statement.setString(3,sentinel[1]);
-                try (var result = statement.executeQuery()) {
-                    if (!result.next() || result.getInt(1) != 1) throw new FlywayException("Peach baseline signature validation failed");
-                }
+        if (tables.isEmpty()) return;
+        if (tables.contains("PEACH_FLYWAY_HISTORY")) {
+            try(var statement=connection.createStatement();var rows=statement.executeQuery("SELECT COUNT(*) FROM PEACH_FLYWAY_HISTORY WHERE TYPE='BASELINE' OR (SUCCESS=1 AND VERSION IS NOT NULL AND VERSION<>'1')")) {
+                rows.next();
+                if(rows.getInt(1)>0) throw new FlywayException("Legacy development migration history is incompatible with the consolidated first version; use a new schema");
             }
+            return;
         }
+        throw new FlywayException("Initial database version requires an empty schema; existing development databases must use a new schema");
     }
     private static String lockName(String schema) {
         try { return "peach-migrate:" + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(schema.getBytes(StandardCharsets.UTF_8))).substring(0,48); }

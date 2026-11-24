@@ -35,7 +35,6 @@ public class FunctionDTO implements Serializable {
     private String funcId;
 
     @Schema(description = "功能编码")
-    @NotBlank(message = "功能编码不能为空", groups = {PeachGroup.InsertGroup.class})
     @Size(max = 32, message = "功能编码长度不能超过32", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String funcCode;
 

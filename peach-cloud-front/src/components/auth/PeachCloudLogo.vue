@@ -11,7 +11,7 @@ defineProps<{ compact?: boolean }>()
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      <rect width="48" height="48" rx="15" fill="#101828" />
+      <rect width="48" height="48" rx="15" fill="#1677ff" />
       <path d="M14 15.5H34" stroke="#6DD3FF" stroke-width="2.8" stroke-linecap="round" opacity="0.9" />
       <path d="M14 24H34" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" opacity="0.75" />
       <path d="M14 32.5H34" stroke="#FFB14A" stroke-width="2.8" stroke-linecap="round" opacity="0.9" />
@@ -20,8 +20,8 @@ defineProps<{ compact?: boolean }>()
       <circle cx="34" cy="32.5" r="4.2" fill="#FFD84D" />
     </svg>
     <div class="brand__text">
-      <strong>PeachCloud</strong>
-      <span>Data Management Platform</span>
+      <strong>Peach Cloud</strong>
+      <span>Control Plane</span>
     </div>
   </div>
 </template>
