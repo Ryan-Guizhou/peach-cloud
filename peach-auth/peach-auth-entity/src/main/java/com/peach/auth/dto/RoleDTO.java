@@ -37,7 +37,6 @@ public class RoleDTO implements Serializable {
     private String orgId;
 
     @Schema(description = "角色编码")
-    @NotBlank(message = "角色编码不能为空", groups = {PeachGroup.InsertGroup.class})
     @Size(max = 20, message = "角色编码长度不能超过20", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String roleCode;
 

@@ -2,6 +2,7 @@
 package com.peach.auth.service.impl;
 
 import com.github.pagehelper.page.PageMethod;
+import com.peach.code.CodeGenerator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,6 +44,7 @@ import org.springframework.transaction.annotation.Isolation;
 public class RoleServiceImpl implements IRoleService {
 
     private final RoleDao roleDao;
+    private final CodeGenerator codeGenerator;
     private final RoleWorkspaceDao workspaceDao;
 
     @Override
@@ -70,6 +72,7 @@ public class RoleServiceImpl implements IRoleService {
         BeanUtils.copyProperties(roleDTO, roleDO);
         roleDO.setRoleId(UUID.randomUUID().toString().replace("-", ""));
         roleDO.setTenantId(AdminScope.actor().getTenantId()); roleDO.setOrgId(AdminScope.actor().getOrgId()); roleDO.setFiscal(AdminScope.fiscal());
+        roleDO.setRoleCode(codeGenerator.next(roleDO.getTenantId(), "ROLE"));
         roleDO.setSkipUrl("");
         if (roleDO.getRoleScope() == null) roleDO.setRoleScope("ORG");
         if (roleDO.getRoleType() == null) roleDO.setRoleType("CUSTOM");
@@ -96,7 +99,7 @@ public class RoleServiceImpl implements IRoleService {
         if (input.getRoleCode() != null && !Objects.equals(input.getRoleCode(),current.getRoleCode())) throw new BusinessException("角色编码创建后不可修改");
         if (input.getSkipUrl() != null && !Objects.equals(input.getSkipUrl(),current.getSkipUrl())) throw new BusinessException("请通过默认菜单入口修改登录菜单");
         RoleDO change = new RoleDO(); BeanUtils.copyProperties(input,change);
-        change.setTenantId(current.getTenantId()); change.setOrgId(current.getOrgId()); change.setFiscal(current.getFiscal()); change.setIsDelete(0); change.setSkipUrl(current.getSkipUrl());
+        change.setRoleCode(current.getRoleCode()); change.setTenantId(current.getTenantId()); change.setOrgId(current.getOrgId()); change.setFiscal(current.getFiscal()); change.setIsDelete(0); change.setSkipUrl(current.getSkipUrl());
         change.fillModifyTime(AdminScope.actor().getUserId()); roleDao.updateById(change);
     }
 

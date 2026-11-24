@@ -17,7 +17,7 @@ public class RouterDTO {
     @NotBlank(groups = PeachGroup.UpdateGroup.class)
     @Size(max = 64, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String routerId;
-    @NotBlank(groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
+    @Schema(description = "服务端生成的路由编码；修改时仅允许原值或省略")
     @Size(max = 100, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String routerCode;
     @NotBlank(groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})

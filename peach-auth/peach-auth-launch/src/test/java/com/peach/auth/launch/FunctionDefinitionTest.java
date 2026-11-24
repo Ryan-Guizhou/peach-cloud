@@ -26,6 +26,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class FunctionDefinitionTest {
     @Mock private FunctionDao dao;
+    @Mock private com.peach.code.CodeGenerator codeGenerator;
     @InjectMocks private FunctionServiceImpl service;
 
     @BeforeEach void context() {
@@ -92,6 +93,7 @@ class FunctionDefinitionTest {
         verify(dao).selectByQO(query);
     }
     @Test void generatesIdAndDefaultsOnCreate() {
+        when(codeGenerator.next("tenant", "FUNCTION")).thenReturn("F0001");
         FunctionDTO input = new FunctionDTO();
         input.setFuncCode("NEW"); input.setAppId("app");
         service.add(input);
