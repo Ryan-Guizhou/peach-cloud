@@ -87,7 +87,6 @@ const handleSubmit = async () => {
     const loginInfo = await submitLogin({
       username: loginUsername.value.trim(),
       password: encryptedPassword,
-      fiscal: initInfo.value.fiscal,
       captchaVerification: captchaRequired.value ? captchaVerification.value : undefined,
     })
     authStore.establishSession(loginInfo, remember.value)

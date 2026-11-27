@@ -6,7 +6,6 @@ export interface FunctionDefinition extends DataRecord {
   funcId: string
   funcCode: string
   funcName: string
-  appId: string
   parentFuncCode?: string
   funcSeq?: string
 }
@@ -16,7 +15,6 @@ export interface FunctionResource extends DataRecord {
   resourceCode: string
   resourceName: string
   resourceType: string
-  appId: string
 }
 export async function fetchFunctions(signal?: AbortSignal): Promise<FunctionDefinition[]> {
   const { data } = await http.post<ApiResponse<FunctionDefinition[]>>('/auth/function/list', {}, { signal })

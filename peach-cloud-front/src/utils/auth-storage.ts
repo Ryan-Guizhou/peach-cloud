@@ -60,8 +60,7 @@ function parseSession(raw: string | null): AuthSession | null {
     const userName = normalizeRequiredString(value.userName)
     const tenantId = normalizeRequiredString(value.tenantId)
     const orgId = normalizeRequiredString(value.orgId)
-    const fiscal = normalizeRequiredString(value.fiscal)
-    if (!token || !userId || !userName || !tenantId || !orgId || !fiscal) {
+    if (!token || !userId || !userName || !tenantId || !orgId) {
       return null
     }
     if (value.expiresAt <= Date.now()) {
@@ -75,7 +74,6 @@ function parseSession(raw: string | null): AuthSession | null {
       tenantName: normalizeOptionalString(value.tenantName),
       orgId,
       orgName: normalizeOptionalString(value.orgName),
-      fiscal,
       expiresAt: value.expiresAt,
     }
   } catch {
@@ -116,15 +114,10 @@ export function readAuthLoginInfo(): LoginInfo | null {
       || !isRequiredString(value.orgId)) {
       return null
     }
-    const fiscal = normalizeRequiredString(value.fiscal)
-    if (!fiscal) {
-      return null
-    }
     return {
       defaultRoute: normalizeOptionalString(value.defaultRoute),
       userId: value.userId,
       userName: value.userName,
-      fiscal,
       tenantId: value.tenantId,
       tenantCode: normalizeOptionalString(value.tenantCode),
       tenantName: normalizeOptionalString(value.tenantName),
