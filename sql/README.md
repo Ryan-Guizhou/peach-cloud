@@ -20,7 +20,6 @@
 
 | 脚本 | 用途 |
 | --- | --- |
-| `PEACH_APPLICATION.sql` | 应用注册 |
 | `PEACH_TENANT.sql` | 租户主数据 |
 | `PEACH_ORGANIZATION.sql` | 组织机构 |
 | `PEACH_USER.sql` | 用户账号 |
@@ -87,7 +86,6 @@
 
 `ALL_TABLE_CREATE.sql` 当前聚合以下脚本：
 
-- `PEACH_APPLICATION.sql`
 - `PEACH_AUTH_FUNCTION.sql`
 - `PEACH_AUTH_LOG.sql`
 - `PEACH_AUTH_PARTY.sql`
@@ -135,7 +133,6 @@
 
 ```powershell
 $order = @(
-  'PEACH_APPLICATION.sql',
   'PEACH_AUTH_FUNCTION.sql',
   'PEACH_AUTH_LOG.sql',
   'PEACH_AUTH_PARTY.sql',
