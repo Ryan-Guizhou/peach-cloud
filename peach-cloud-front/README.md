@@ -128,7 +128,7 @@ Handler 保留在线和离线记录，只展示心跳状态；支持应用、关
 
 ## 功能定义
 
-`/function` 使用左侧功能树、右侧资源表格布局，支持功能层级维护以及选中功能资源的筛选、分页和增删改。功能编码及所属应用创建后只读；存在下级或引用时禁止删除。资源操作沿用 `resource:*` 权限。
+`/function` 使用左侧功能树、右侧资源表格布局，支持功能层级维护以及选中功能资源的筛选、分页和增删改。功能编码创建后只读；存在下级或引用时禁止删除。资源操作沿用 `resource:*` 权限。
 
 已有环境需执行 [功能定义迁移](../sql/migrations/20261122_function_definition.sql)，随后重新登录，刷新菜单和网关权限快照。树形数据回归测试：`node --experimental-strip-types --test src/views/system/function/tree.test.mjs`（Node.js 24）。
 

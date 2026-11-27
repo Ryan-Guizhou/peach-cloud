@@ -4,7 +4,7 @@
 
 ## Roles and routes
 
-The role screen contains the role list, independent function checkboxes and resource switches. Role keywords search code or name. Route filters combine module code, route code and URL substring matching. The server binds queries to the current tenant, plus organization/year for roles and application for routes. Route authentication/cache flags are hidden and preserved when omitted. Editing updates the existing row; route codes are unique within tenant/application, and component choices come from existing frontend views.
+The role screen contains the role list, independent function checkboxes and resource switches. Role keywords search code or name. Route filters combine module code, route code and URL substring matching. The server binds queries to the current tenant, and roles are also limited to the current organization. Route authentication/cache flags are hidden and preserved when omitted. Editing updates the existing row; route codes are unique within the tenant, and component choices come from existing frontend views.
 
 Filtering retains ancestor paths and grants outside the visible results. Authorize saves the complete function/resource draft atomically. Resources must belong to selected functions. Existing invalid grants remain visible until explicitly removed. Calibration previews invalid, disabled or out-of-selection grants; confirming changes only the draft, and Authorize persists it. Calibration never adds grants.
 

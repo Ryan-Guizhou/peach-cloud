@@ -75,7 +75,7 @@ Execution semantics:
 
 Tenant limits read only the current Sa-Token Token Session:
 
-- After successful login, the auth service writes tenantId, orgId, fiscal, and a context version into the current token's Token Session.
+- After successful login, the auth service writes tenantId, orgId, and a context version into the current token's Token Session.
 - Tenant switching updates the current token's Token Session.
 - Gateway reads the Token Session associated with the request token. The blocking Sa-Token DAO lookup runs on boundedElastic, not on the Netty EventLoop.
 - Missing Token Sessions are not created during lookup.

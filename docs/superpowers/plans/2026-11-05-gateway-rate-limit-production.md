@@ -33,7 +33,7 @@
 
 ### Stage 2: Tenant-aware and trusted client identity
 
-- [ ] Write tenant/org/fiscal context into the current Token Session on login.
+- [ ] Write tenant/org context into the current Token Session on login.
 - [ ] Refresh the current Token Session when the user switches tenant context.
 - [ ] Read tenant context from the current token only; never trust request headers.
 - [ ] Offload blocking Sa-Token DAO Token Session reads to boundedElastic.

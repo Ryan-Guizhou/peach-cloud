@@ -14,7 +14,7 @@
 
 首次初始化后的菜单、功能、路由、角色分别采用 M0001、F0001、RT0001、RL0001 格式，功能父级、菜单/路由/资源所属功能、角色绑定及授权引用使用对应的真实业务编码。前端直接展示后端值，不进行显示层补零或前缀转换。资源权限标识和业务 URL 保持其接口约定。
 
-已有菜单不代表已有接口权限。V1 同时初始化管理应用已实现页面的按钮权限、按实际 Controller 方法和路径定义的 API 资源，以及系统管理员资源授权。文件记录、存储实例和对象浏览分别需要 `fileRecord:view`、`storageInstance:view`、`objectBrowser:view`；路由列表请求需要 API 资源 `POST:/api/auth/router/pageList`。普通角色继续按实际授权访问，网关鉴权保持启用。
+已有菜单不代表已有接口权限。V1 同时初始化已实现页面的按钮权限、按实际 Controller 方法和路径定义的 API 资源，以及系统管理员资源授权。文件记录、存储实例和对象浏览分别需要 `fileRecord:view`、`storageInstance:view`、`objectBrowser:view`；路由列表请求需要 API 资源 `POST:/api/auth/router/pageList`。普通角色继续按实际授权访问，网关鉴权保持启用。
 
 已有 V14 等开发数据库不能直接套用新的 V1，也不提供 clean、repair 或自动兼容接管。请使用新的空 schema；若需要重建旧开发库，应由使用者先明确备份和重建范围，再自行处理原有数据。本次前端调整不执行旧库清理或覆盖。
 
