@@ -22,7 +22,6 @@ const roles = computed(() => authStore.loginInfo?.roleList ?? [])
       <a-descriptions :column="{ xs: 1, sm: 2, lg: 3 }" size="small">
         <a-descriptions-item label="当前租户">{{ session?.tenantName || '—' }}</a-descriptions-item>
         <a-descriptions-item label="当前机构">{{ session?.orgName || '—' }}</a-descriptions-item>
-        <a-descriptions-item label="年度">{{ session?.fiscal || '—' }}</a-descriptions-item>
         <a-descriptions-item label="当前角色" :span="3">
           <a-space wrap><a-tag v-for="role in roles" :key="role.roleCode">{{ role.roleName || role.roleCode }}</a-tag><span v-if="!roles.length">暂无角色</span></a-space>
         </a-descriptions-item>

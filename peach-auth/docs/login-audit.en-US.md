@@ -2,7 +2,7 @@
 
 ## Scope and flow
 
-The function tree has an Application Function List root and four categories: System Settings, Log Audit, Files and Storage, and Scheduling. Existing business codes, role grants and page URLs remain intact. Login snapshots add only directory ancestors of authorised leaves. The application root is not a clickable sidebar page. Workspace, Profile and Message Center remain shortcuts.
+The function tree has a Function List root and four categories: System Settings, Log Audit, Files and Storage, and Scheduling. Existing business codes, role grants and page URLs remain intact. Login snapshots add only directory ancestors of authorised leaves. The function-list root is not a clickable sidebar page. Workspace, Profile and Message Center remain shortcuts.
 
 ```mermaid
 sequenceDiagram

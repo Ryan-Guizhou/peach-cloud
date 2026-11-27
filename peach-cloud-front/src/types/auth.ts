@@ -7,8 +7,6 @@ export interface ApiResponse<T> {
 export interface LoginInitInfo {
   systemName: string
   systemDescription: string
-  appId: string
-  fiscal: number
   publicKey: string
   encryptionAlgorithm: string
   captchaType?: string
@@ -40,7 +38,6 @@ export interface CaptchaCheckResult {
 export interface LoginRequest {
   username: string
   password: string
-  fiscal: number
   tenantId?: string
   orgId?: string
   captchaVerification?: string
@@ -104,15 +101,12 @@ export interface AuthResourceInfo {
   opType?: string
   resourceCode?: string
   resourceName?: string
-  appId?: string
-  fiscal?: number
 }
 
 export interface LoginInfo {
   defaultRoute?: string
   userId: string
   userName: string
-  fiscal: string
   tenantId: string
   tenantCode?: string
   tenantName?: string
@@ -138,6 +132,5 @@ export interface AuthSession {
   tenantName?: string
   orgId: string
   orgName?: string
-  fiscal: string
   expiresAt: number
 }

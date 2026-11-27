@@ -53,7 +53,7 @@ Services declare stable `jobCode` and `jobName` in `@PeachJob` and supply comple
 
 ## Function Definition
 
-`/function` presents a function tree beside a resource table. It supports hierarchy maintenance and filtering, pagination and CRUD for resources of the selected function. Function codes and application ownership are immutable after creation; children or references prevent deletion. Resource actions retain the `resource:*` permissions.
+`/function` presents a function tree beside a resource table. It supports hierarchy maintenance and filtering, pagination and CRUD for resources of the selected function. Function codes are immutable after creation; children or references prevent deletion. Resource actions retain the `resource:*` permissions.
 
 Existing environments must run the [Function Definition migration](../sql/migrations/20261122_function_definition.sql), then sign in again to refresh menu and gateway permission snapshots. Tree regression tests: `node --experimental-strip-types --test src/views/system/function/tree.test.mjs` (Node.js 24).
 

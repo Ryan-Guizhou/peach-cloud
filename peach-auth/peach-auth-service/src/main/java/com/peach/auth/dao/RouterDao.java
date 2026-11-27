@@ -27,9 +27,7 @@ public interface RouterDao extends PeachDao<RouterDO, RouterVO> {
     int countByRouterCode(RouterDO routerDO);
 
     List<RouterVO> selectByFuncCodes(@Param("tenantId") String tenantId,
-                                     @Param("appId") String appId,
                                      @Param("funcCodes") Collection<String> funcCodes);
 
-    List<RouterVO> selectPublicRouters(@Param("tenantId") String tenantId,
-                                       @Param("appId") String appId);
+    List<RouterVO> selectPublicRouters(@Param("tenantId") String tenantId);
 }

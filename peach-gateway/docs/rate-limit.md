@@ -75,7 +75,7 @@ flowchart TD
 
 租户限流只读取当前 Sa-Token Token Session：
 
-- 登录成功后，认证服务写入当前 token 对应的 tenantId、orgId、fiscal 和上下文版本。认证服务在登录时显式设置 Sa-Token `isShare=false`、`isConcurrent=true`，覆盖全局 `sa-token.is-share: true`，确保每次登录发放独立 token，避免不同设备共享 Token Session 后相互覆盖租户上下文。
+- 登录成功后，认证服务写入当前 token 对应的 tenantId、orgId 和上下文版本。认证服务在登录时显式设置 Sa-Token `isShare=false`、`isConcurrent=true`，覆盖全局 `sa-token.is-share: true`，确保每次登录发放独立 token，避免不同设备共享 Token Session 后相互覆盖租户上下文。
 - 调用租户切换接口后，更新当前 token 的 Token Session。
 - Gateway 使用请求中的 token 查询对应 Token Session；查询在 boundedElastic 执行，避免阻塞 Netty EventLoop。
 - 读取时不创建缺失的 Token Session。

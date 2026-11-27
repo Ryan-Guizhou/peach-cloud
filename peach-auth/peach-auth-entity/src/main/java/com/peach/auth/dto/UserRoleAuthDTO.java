@@ -11,6 +11,10 @@ import lombok.Data;
 
 /**
  * 用户角色绑定参数。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/27 11:10
  */
 @Data
 @Schema(description = "用户角色绑定参数")
@@ -31,9 +35,6 @@ public class UserRoleAuthDTO implements Serializable {
     @NotBlank(message = "用户账号不能为空")
     private String userCode;
 
-    @Schema(description = "年度")
-    @NotNull(message = "年度不能为空")
-    private Integer fiscal;
 
     @Schema(description = "角色编码列表")
     private List<String> roleCodeList;

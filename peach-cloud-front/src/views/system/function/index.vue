@@ -38,7 +38,6 @@ const columns = [
 const functionFields = [
   { name: 'funcCode', label: '功能编码', required: false, max: 32 },
   { name: 'funcName', label: '功能名称', required: true, max: 32 },
-  { name: 'appId', label: '应用ID', required: true, max: 32 },
   { name: 'parentFuncCode', label: '上级功能', max: 32 },
   { name: 'funcSeq', label: '排序号', max: 100 },
   { name: 'funcType', label: '功能类型', max: 20 },
@@ -55,7 +54,7 @@ const fields = computed(() => editorKind.value === 'function' ? functionFields :
 const modalTitle = computed(() => `${editingId.value ? '修改' : '新增'}${editorKind.value === 'function' ? '功能' : '资源'}`)
 const rules = computed(() => Object.fromEntries(fields.value.filter(field => field.required).map(field => [field.name, [{ required: true, whitespace: true, message: `请填写${field.label}` }]])))
 const parentOptions = computed(() => functions.value
-  .filter(row => row.appId === form.appId && row.funcId !== editingId.value)
+  .filter(row => row.funcId !== editingId.value)
   .map(row => ({ value: row.funcCode, label: `${row.funcCode} ${row.funcName}` })))
 let treeRequest: AbortController | undefined
 let resourceRequest: AbortController | undefined
@@ -96,7 +95,7 @@ async function loadResources() {
   if (!owner || !can('resource', 'view')) { resourceLoading.value = false; return }
   resourceLoading.value = true
   try {
-    const page = await fetchResources({ ...query, funcCode: owner.funcCode, appId: owner.appId }, request.signal)
+    const page = await fetchResources({ ...query, funcCode: owner.funcCode }, request.signal)
     if (disposed || request.signal.aborted) return
     resources.value = page.list ?? page.result ?? []
     total.value = page.total ?? page.topTotal ?? 0
@@ -122,8 +121,8 @@ function openEditor(kind: 'function' | 'resource', record?: FunctionDefinition |
   editingId.value = record ? String(kind === 'function' ? record.funcId : record.resourceId) : ''
   Object.keys(form).forEach(key => delete form[key])
   Object.assign(form, record ?? (kind === 'function'
-    ? { parentFuncCode: parent?.funcCode ?? '', appId: parent?.appId ?? selected.value?.appId ?? '', funcType: 'MENU', isMenu: 0, isAuthorize: 1, isDisable: 0 }
-    : { funcCode: selected.value?.funcCode, appId: selected.value?.appId, resourceType: 'BUTTON' }))
+    ? { parentFuncCode: parent?.funcCode ?? '', funcType: 'MENU', isMenu: 0, isAuthorize: 1, isDisable: 0 }
+    : { funcCode: selected.value?.funcCode, resourceType: 'BUTTON' }))
   modalOpen.value = true
   formRef.value?.clearValidate()
 }
@@ -174,7 +173,7 @@ onBeforeUnmount(() => { disposed = true; treeRequest?.abort(); resourceRequest?.
           <a-tree v-if="tree.length" v-model:expanded-keys="expandedKeys" class="function-tree" :tree-data="tree" :selected-keys="selectedId ? [selectedId] : []" block-node @select="selectNode">
             <template #title="node">
               <div class="function-node">
-                <span class="function-label" :title="`${node.title} · ${node.record.appId}`">{{ node.title }} <a-tag v-if="node.anomaly" color="warning">{{ node.anomaly }}</a-tag></span>
+                <span class="function-label" :title="node.title">{{ node.title }} <a-tag v-if="node.anomaly" color="warning">{{ node.anomaly }}</a-tag></span>
                 <a-space size="small" class="node-actions" @click.stop>
                   <a-button v-if="can('function', 'add')" type="link" size="small" :aria-label="`为${node.record.funcName}新增下级`" @click="openEditor('function', undefined, node.record)">新增下级</a-button>
                   <a-button v-if="can('function', 'update')" type="link" size="small" @click="openEditor('function', node.record)">修改</a-button>
@@ -188,7 +187,7 @@ onBeforeUnmount(() => { disposed = true; treeRequest?.abort(); resourceRequest?.
       </a-card>
       <a-card class="resource-panel">
         <template #title><span>{{ selected ? `${selected.funcName} · 资源信息` : '资源信息' }}</span></template>
-        <template #extra><a-tag v-if="selected">{{ selected.funcCode }} · {{ selected.appId }}</a-tag></template>
+        <template #extra><a-tag v-if="selected">{{ selected.funcCode }}</a-tag></template>
         <a-empty v-if="!selected" description="请先在左侧选择功能" />
         <a-result v-else-if="!can('resource', 'view')" status="403" title="暂无资源查看权限" />
         <template v-else>
@@ -217,7 +216,7 @@ onBeforeUnmount(() => { disposed = true; treeRequest?.abort(); resourceRequest?.
         <a-form-item v-for="field in fields" :key="field.name" :name="field.name" :label="field.label" :required="field.required">
           <a-select v-if="field.name === 'resourceType'" v-model:value="form[field.name] as string | undefined" :options="resourceTypes" />
           <a-select v-else-if="field.name === 'parentFuncCode'" v-model:value="form[field.name] as string | undefined" :options="parentOptions" show-search allow-clear option-filter-prop="label" placeholder="不选择则为根功能" @clear="form.parentFuncCode = ''" />
-          <a-input v-else v-model:value="form[field.name] as string | undefined" :maxlength="field.max" :placeholder="editorKind === 'function' && field.name === 'funcCode' ? '保存后自动生成' : undefined" :disabled="field.name === 'funcCode' || (!!editingId && field.name === 'appId')" />
+          <a-input v-else v-model:value="form[field.name] as string | undefined" :maxlength="field.max" :placeholder="editorKind === 'function' && field.name === 'funcCode' ? '保存后自动生成' : undefined" :disabled="field.name === 'funcCode'" />
         </a-form-item>
         <template v-if="editorKind === 'function'">
           <a-form-item label="是否菜单"><a-switch :checked="form.isMenu === 1" @change="(value: boolean | string | number) => form.isMenu = value ? 1 : 0" /></a-form-item>

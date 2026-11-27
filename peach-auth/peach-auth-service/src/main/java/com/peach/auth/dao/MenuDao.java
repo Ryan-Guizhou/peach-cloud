@@ -25,8 +25,7 @@ public interface MenuDao extends PeachDao<MenuDO, MenuVO> {
     List<MenuVO> selectByQO(MenuQO menuQO);
 
     List<MenuVO> selectByFuncCodes(@Param("tenantId") String tenantId,
-                                   @Param("appId") String appId,
                                    @Param("funcCodes") Collection<String> funcCodes);
-    /** 查询同租户应用内可见目录，仅供补齐已授权菜单的父链。 */
-    List<MenuVO> selectCatalogs(@Param("tenantId") String tenantId, @Param("appId") String appId);
+    /** 查询同租户内可见目录，仅供补齐已授权菜单的父链。 */
+    List<MenuVO> selectCatalogs(@Param("tenantId") String tenantId);
 }

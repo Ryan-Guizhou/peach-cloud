@@ -26,8 +26,6 @@ public class FunctionQO extends PeachEntity implements Serializable {
 
     @Schema(description = "租户ID，由服务端登录上下文覆盖")
     private String tenantId;
-    @Schema(description = "应用ID")
-    private String appId;
     @Schema(description = "功能编码")
     private String funcCode;
     @Schema(description = "功能名称关键字")

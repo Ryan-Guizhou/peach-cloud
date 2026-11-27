@@ -4,21 +4,21 @@
     <sql id="allColumn">
         RESOURCE_ID,                                      TENANT_ID,                                        ORG_ID,                                           PARTY_CODE,
         FUNC_CODE,                                        OP_TYPE,                                          RESOURCE_CODE,                                    RESOURCE_NAME,
-        APP_ID,                                           IS_DELETE,                                        FISCAL,                                           CREATED_TIME,
+        IS_DELETE,                                        CREATED_TIME,
         CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
         RESOURCE_ID as resourceId,                        TENANT_ID as tenantId,                            ORG_ID as orgId,                                  PARTY_CODE as partyCode,
         FUNC_CODE as funcCode,                            OP_TYPE as opType,                                RESOURCE_CODE as resourceCode,                    RESOURCE_NAME as resourceName,
-        APP_ID as appId,                                  IS_DELETE as isDelete,                            FISCAL as fiscal,                                 CREATED_TIME as createdTime,
+        IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
         CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
         #{resourceId,jdbcType=VARCHAR},                   #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                        #{partyCode,jdbcType=VARCHAR},
         #{funcCode,jdbcType=VARCHAR},                     #{opType,jdbcType=VARCHAR},                       #{resourceCode,jdbcType=VARCHAR},                 #{resourceName,jdbcType=VARCHAR},
-        #{appId,jdbcType=VARCHAR},                        #{isDelete,jdbcType=INTEGER},                     #{fiscal,jdbcType=INTEGER},                       #{createdTime,jdbcType=VARCHAR},
+        #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},
         #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
@@ -26,7 +26,7 @@
     <sql id="itemAllColumnValue">
         #{item.resourceId,jdbcType=VARCHAR},              #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                   #{item.partyCode,jdbcType=VARCHAR},
         #{item.funcCode,jdbcType=VARCHAR},                #{item.opType,jdbcType=VARCHAR},                  #{item.resourceCode,jdbcType=VARCHAR},            #{item.resourceName,jdbcType=VARCHAR},
-        #{item.appId,jdbcType=VARCHAR},                   #{item.isDelete,jdbcType=INTEGER},                #{item.fiscal,jdbcType=INTEGER},                  #{item.createdTime,jdbcType=VARCHAR},
+        #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},
         #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
@@ -54,14 +54,8 @@
             <if test="resourceName != null and resourceName != ''">
                 RESOURCE_NAME = #{resourceName,jdbcType=VARCHAR},
             </if>
-            <if test="appId != null and appId != ''">
-                APP_ID = #{appId,jdbcType=VARCHAR},
-            </if>
             <if test="isDelete != null">
                 IS_DELETE = #{isDelete,jdbcType=INTEGER},
-            </if>
-            <if test="fiscal != null">
-                FISCAL = #{fiscal,jdbcType=INTEGER},
             </if>
             <if test="createdTime != null and createdTime != ''">
                 CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
@@ -102,14 +96,8 @@
             <if test="resourceName != null and resourceName != ''">
                 RESOURCE_NAME,
             </if>
-            <if test="appId != null and appId != ''">
-                APP_ID,
-            </if>
             <if test="isDelete != null">
                 IS_DELETE,
-            </if>
-            <if test="fiscal != null">
-                FISCAL,
             </if>
             <if test="createdTime != null and createdTime != ''">
                 CREATED_TIME,
@@ -149,14 +137,8 @@
             <if test="resourceName != null and resourceName != ''">
                 #{resourceName,jdbcType=VARCHAR},
             </if>
-            <if test="appId != null and appId != ''">
-                #{appId,jdbcType=VARCHAR},
-            </if>
             <if test="isDelete != null">
                 #{isDelete,jdbcType=INTEGER},
-            </if>
-            <if test="fiscal != null">
-                #{fiscal,jdbcType=INTEGER},
             </if>
             <if test="createdTime != null and createdTime != ''">
                 #{createdTime,jdbcType=VARCHAR},
@@ -198,14 +180,8 @@
         <if test="resourceName != null and resourceName != ''">
             AND RESOURCE_NAME = #{resourceName,jdbcType=VARCHAR}
         </if>
-        <if test="appId != null and appId != ''">
-            AND APP_ID = #{appId,jdbcType=VARCHAR}
-        </if>
         <if test="isDelete != null">
             AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
-        </if>
-        <if test="fiscal != null">
-            AND FISCAL = #{fiscal,jdbcType=INTEGER}
         </if>
         <if test="createdTime != null and createdTime != ''">
             AND CREATED_TIME = #{createdTime,jdbcType=VARCHAR}
@@ -312,7 +288,6 @@
         FROM PEACH_AUTH_RESOURCE
         WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
           AND ORG_ID = #{orgId,jdbcType=VARCHAR}
-          AND FISCAL = #{fiscal,jdbcType=INTEGER}
           AND IS_DELETE = 0
           AND PARTY_CODE IN
         <foreach collection="partyCodes" item="item" open="(" separator="," close=")">

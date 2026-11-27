@@ -2,24 +2,21 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.peach.auth.dao.RouterDao">
     <sql id="allColumn">
-        TENANT_ID, APP_ID,
-        ROUTER_ID,                                        ROUTER_CODE,                                      ROUTER_NAME,                                      ROUTER_URL,
+        TENANT_ID, ROUTER_ID,                                        ROUTER_CODE,                                      ROUTER_NAME,                                      ROUTER_URL,
         FILE_PATH,                                        FUNC_CODE,                                        IS_AUTH,                                          IS_CACHE,
         MODULE_CODE,                                      ROUTER_LEVEL,                                     CREATED_TIME,                                     CREATOR_ID,
         MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
-        TENANT_ID as tenantId, APP_ID as appId,
-        ROUTER_ID as routerId,                            ROUTER_CODE as routerCode,                        ROUTER_NAME as routerName,                        ROUTER_URL as routerUrl,
+        TENANT_ID as tenantId, ROUTER_ID as routerId,                            ROUTER_CODE as routerCode,                        ROUTER_NAME as routerName,                        ROUTER_URL as routerUrl,
         FILE_PATH as filePath,                            FUNC_CODE as funcCode,                            IS_AUTH as isAuth,                                IS_CACHE as isCache,
         MODULE_CODE as moduleCode,                        ROUTER_LEVEL as routerLevel,                      CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,
         MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
-        #{tenantId}, #{appId},
-        #{routerId,jdbcType=VARCHAR},                     #{routerCode,jdbcType=VARCHAR},                   #{routerName,jdbcType=VARCHAR},                   #{routerUrl,jdbcType=VARCHAR},
+        #{tenantId}, #{routerId,jdbcType=VARCHAR},                     #{routerCode,jdbcType=VARCHAR},                   #{routerName,jdbcType=VARCHAR},                   #{routerUrl,jdbcType=VARCHAR},
         #{filePath,jdbcType=VARCHAR},                     #{funcCode,jdbcType=VARCHAR},                     #{isAuth,jdbcType=INTEGER},                       #{isCache,jdbcType=INTEGER},
         #{moduleCode,jdbcType=VARCHAR},                   #{routerLevel,jdbcType=INTEGER},                  #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},
         #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
@@ -27,7 +24,7 @@
 
 
     <sql id="itemAllColumnValue">
-        #{item.tenantId}, #{item.appId},
+        #{item.tenantId},
         #{item.routerId,jdbcType=VARCHAR},                #{item.routerCode,jdbcType=VARCHAR},              #{item.routerName,jdbcType=VARCHAR},              #{item.routerUrl,jdbcType=VARCHAR},
         #{item.filePath,jdbcType=VARCHAR},                #{item.funcCode,jdbcType=VARCHAR},                #{item.isAuth,jdbcType=INTEGER},                  #{item.isCache,jdbcType=INTEGER},
         #{item.moduleCode,jdbcType=VARCHAR},              #{item.routerLevel,jdbcType=INTEGER},             #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},
@@ -172,9 +169,6 @@
         <if test="tenantId != null and tenantId != ''">
             AND TENANT_ID = #{tenantId,jdbcType=VARCHAR}
         </if>
-        <if test="appId != null and appId != ''">
-            AND APP_ID = #{appId,jdbcType=VARCHAR}
-        </if>
         <if test="routerId != null and routerId != ''">
             AND ROUTER_ID = #{routerId,jdbcType=VARCHAR}
         </if>
@@ -306,7 +300,7 @@
 
     <select id="selectByQO" resultType="com.peach.auth.vo.RouterVO">
         SELECT <include refid="allColumnAlias"/> FROM PEACH_ROUTER
-        WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId}
+        WHERE TENANT_ID = #{tenantId}
         <if test="routerCode != null and routerCode != ''">AND LOCATE(#{routerCode}, ROUTER_CODE) &gt; 0</if>
         <if test="routerName != null and routerName != ''">AND LOCATE(#{routerName}, ROUTER_NAME) &gt; 0</if>
         <if test="moduleCode != null and moduleCode != ''">AND LOCATE(#{moduleCode}, MODULE_CODE) &gt; 0</if>
@@ -316,7 +310,7 @@
 
     <select id="countByRouterCode" resultType="java.lang.Integer">
         SELECT COUNT(1) FROM PEACH_ROUTER
-        WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND ROUTER_CODE = #{routerCode}
+        WHERE TENANT_ID = #{tenantId} AND ROUTER_CODE = #{routerCode}
         <if test="routerId != null">AND ROUTER_ID != #{routerId}</if>
     </select>
 
@@ -325,7 +319,6 @@
             <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
         WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
-          AND APP_ID = #{appId,jdbcType=VARCHAR}
           AND FUNC_CODE IN
         <foreach collection="funcCodes" item="item" open="(" separator="," close=")">
             #{item,jdbcType=VARCHAR}
@@ -337,7 +330,6 @@
             <include refid="allColumnAlias" />
         FROM PEACH_ROUTER
         WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
-          AND APP_ID = #{appId,jdbcType=VARCHAR}
           AND IS_AUTH = 0
     </select>
 </mapper>

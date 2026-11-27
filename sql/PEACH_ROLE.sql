@@ -3,7 +3,6 @@ CREATE TABLE `PEACH_ROLE` (
   `TENANT_ID` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '租户ID',
   `ORG_ID` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '机构ID',
   `ROLE_CODE` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色编码',
-  `FISCAL` smallint(4) NOT NULL COMMENT '年度',
   `ROLE_NAME` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '角色名称',
   `ROLE_DESC` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '角色描述',
   `ROLE_SCOPE` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '角色范围',
@@ -15,6 +14,6 @@ CREATE TABLE `PEACH_ROLE` (
   `IS_DELETE` tinyint(1) DEFAULT '0' COMMENT '是否删除',
   `SKIP_URL` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '角色登录默认页面',
   PRIMARY KEY (`ROLE_ID`),
-  UNIQUE KEY `UK_ROLE_CODE` (`TENANT_ID`,`ORG_ID`,`ROLE_CODE`,`FISCAL`),
+  UNIQUE KEY `UK_ROLE_CODE` (`TENANT_ID`,`ORG_ID`,`ROLE_CODE`),
   KEY `IDX_ROLE_TENANT_ORG` (`TENANT_ID`,`ORG_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';

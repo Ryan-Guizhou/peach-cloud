@@ -63,7 +63,7 @@ public interface IRoleService {
     void update(RoleDTO roleDTO);
 
     /**
-     * 根据用户与年度查询角色。
+     * 根据用户查询角色。
      *
      * @param roleQO 查询条件
      * @return 角色列表

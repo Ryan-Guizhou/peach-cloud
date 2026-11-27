@@ -53,7 +53,6 @@ export const useAuthStore = defineStore('auth', {
         tenantName: loginInfo.tenantName,
         orgId: loginInfo.orgId,
         orgName: loginInfo.orgName,
-        fiscal: loginInfo.fiscal,
         expiresAt: Date.now() + (remember ? REMEMBER_DURATION : TAB_DURATION),
       }
       this.session = session
@@ -71,7 +70,6 @@ export const useAuthStore = defineStore('auth', {
         tenantName: loginInfo.tenantName,
         orgId: loginInfo.orgId,
         orgName: loginInfo.orgName,
-        fiscal: loginInfo.fiscal,
         expiresAt,
       }
       this.session = session

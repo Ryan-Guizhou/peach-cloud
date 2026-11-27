@@ -15,7 +15,6 @@ import CrudPage from '../../../components/admin/CrudPage.vue'
       { title: '资源类型', dataIndex: 'resourceType' },
       { title: '资源编码', dataIndex: 'resourceCode' },
       { title: '资源名称', dataIndex: 'resourceName' },
-      { title: '应用ID', dataIndex: 'appId' },
       { title: '租户ID', dataIndex: 'tenantId' },
     ]"
     :fields="[
@@ -24,7 +23,6 @@ import CrudPage from '../../../components/admin/CrudPage.vue'
       { label: '资源类型', name: 'resourceType', required: true },
       { label: '资源编码', name: 'resourceCode', required: true },
       { label: '资源名称', name: 'resourceName', required: true },
-      { label: '应用ID', name: 'appId' },
     ]"
   />
 </template>

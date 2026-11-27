@@ -90,13 +90,7 @@ public class MenuDO extends PeachDO implements Serializable {
     @Schema(description = "功能编码")
     private String funcCode;
 
-    @Column(name = "MENU_APP_ID")
-    @Schema(description = "菜单应用ID")
-    private String menuAppId;
 
-    @Column(name = "APP_ID")
-    @Schema(description = "应用ID")
-    private String appId;
 
     @Column(name = "IS_DELETE")
     @Schema(description = "是否删除")

@@ -14,11 +14,9 @@ export function buildFunctionTree(rows: FunctionDefinition[], keyword = ''): Fun
     key: row.funcId, title: `${row.funcCode}  ${row.funcName}`, record: row,
     children: [],
   } as FunctionNode]))
-  const identity = (row: FunctionDefinition, code: string) => JSON.stringify([row.appId, code])
   const byCode = new Map<string, FunctionNode[]>()
   for (const node of nodes.values()) {
-    const key = identity(node.record, node.record.funcCode)
-    byCode.set(key, [...(byCode.get(key) ?? []), node])
+    byCode.set(node.record.funcCode, [...(byCode.get(node.record.funcCode) ?? []), node])
   }
   const roots: FunctionNode[] = []
   for (const node of nodes.values()) {
@@ -26,7 +24,7 @@ export function buildFunctionTree(rows: FunctionDefinition[], keyword = ''): Fun
     const seen = new Set([node.key])
     let invalid = false
     while (ancestor) {
-      const matches = byCode.get(identity(node.record, ancestor)) ?? []
+      const matches = byCode.get(ancestor) ?? []
       const parent = matches[0]
       if (matches.length !== 1 || !parent || seen.has(parent.key)) {
         node.anomaly = matches.length === 0 ? '上级缺失' : '层级异常'
@@ -36,7 +34,7 @@ export function buildFunctionTree(rows: FunctionDefinition[], keyword = ''): Fun
       seen.add(parent.key)
       ancestor = parent.record.parentFuncCode
     }
-    const parent = byCode.get(identity(node.record, node.record.parentFuncCode ?? ''))?.[0]
+    const parent = byCode.get(node.record.parentFuncCode ?? '')?.[0]
     if (invalid || !parent) roots.push(node)
     else parent.children.push(node)
   }

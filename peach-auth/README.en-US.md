@@ -76,15 +76,15 @@ Back up existing databases before applying the [tenant migration](../sql/migrati
 
 ## Function Definition maintenance
 
-`POST /auth/function/list` returns the authenticated tenant's complete function list, ordered by application, sequence and code, for tree construction. `/auth/resource/pageList` supports function code, application, resource type and a code/name `keyword` filter. IDs may be omitted when creating functions or resources; the server generates them.
+`POST /auth/function/list` returns the authenticated tenant's complete function list, ordered by sequence and code, for tree construction. `/auth/resource/pageList` supports function code, resource type and a code/name `keyword` filter. IDs may be omitted when creating functions or resources; the server generates them.
 
-Function codes and application ownership are immutable. Parents must belong to the same tenant and application, without cycles. Function deletion checks children, resources, menus, routes and authorization references. Authorized resources cannot be deleted or have their code/type changed. Function and resource maintenance uses transactions and function row locks; other modules writing related tables must still respect reference constraints.
+Function codes are immutable after creation. Parents must belong to the same tenant, without cycles. Function deletion checks children, resources, menus, routes and authorization references. Authorized resources cannot be deleted or have their code/type changed. Function and resource maintenance uses transactions and function row locks; other modules writing related tables must still respect reference constraints.
 
 Existing environments must run the [migration SQL](../sql/migrations/20261122_function_definition.sql) and sign in again. `FunctionDefinitionTest` covers service rules. With `PEACH_FUNCTION_DB_SMOKE=true`, `FunctionDefinitionDatabaseTest` reads datasource configuration from Nacos in memory, verifies the workflow against MySQL, and rolls back all test writes.
 
 ## Login audit and function categories
 
-Provides independent-transaction login auditing, tenant-isolated read-only queries and cleanup with a default90-day retention period. The function tree contains an application root, System Settings, Log Audit, Files and Storage, and Scheduling. See [Login audit](docs/login-audit.en-US.md) for upgrades, permissions and capture boundaries.
+Provides independent-transaction login auditing, tenant-isolated read-only queries and cleanup with a default90-day retention period. The function tree contains a function-list root, System Settings, Log Audit, Files and Storage, and Scheduling. See [Login audit](docs/login-audit.en-US.md) for upgrades, permissions and capture boundaries.
 
 ## Roles, routes and operation logs
 

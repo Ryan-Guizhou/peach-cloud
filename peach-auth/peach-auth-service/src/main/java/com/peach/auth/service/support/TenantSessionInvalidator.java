@@ -36,9 +36,8 @@ public class TenantSessionInvalidator {
                 var session = StpUtil.getTokenSessionByToken(token);
                 if (session == null || !event.tenantId().equals(session.getString(SaTokenConstant.TOKEN_SESSION_TENANT_ID))) continue;
                 String orgId = session.getString(SaTokenConstant.TOKEN_SESSION_ORG_ID);
-                String fiscal = session.getString(SaTokenConstant.TOKEN_SESSION_FISCAL);
                 StpUtil.logoutByTokenValue(token);
-                redisTemplate.delete(SaTokenConstant.userApiResourceCacheKey(userId, event.tenantId(), orgId, fiscal));
+                redisTemplate.delete(SaTokenConstant.userApiResourceCacheKey(userId, event.tenantId(), orgId));
             }
         }
     }

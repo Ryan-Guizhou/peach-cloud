@@ -53,7 +53,6 @@ async function handleSwitchContext(value: unknown) {
     const loginInfo = await switchContext({
       tenantId: option.tenantId,
       orgId: option.orgId,
-      fiscal: Number(authStore.session.fiscal),
     })
     authStore.replaceLoginInfo(loginInfo)
     syncDynamicRoutes()

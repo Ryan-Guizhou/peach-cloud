@@ -14,16 +14,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SaTokenConstantTest {
 
     @Test
-    void shouldIsolateApiPermissionCacheByTenantOrganizationAndFiscal() {
-        String first = SaTokenConstant.userApiResourceCacheKey("user-1", "tenant-a", "org-a", "2026");
-        String second = SaTokenConstant.userApiResourceCacheKey("user-1", "tenant-b", "org-a", "2026");
-        String third = SaTokenConstant.userApiResourceCacheKey("user-1", "tenant-a", "org-b", "2026");
-        String fourth = SaTokenConstant.userApiResourceCacheKey("user-1", "tenant-a", "org-a", "2025");
+    void shouldIsolateApiPermissionCacheByTenantAndOrganization() {
+        String first = SaTokenConstant.userApiResourceCacheKey("user-1", "tenant-a", "org-a");
+        String second = SaTokenConstant.userApiResourceCacheKey("user-1", "tenant-b", "org-a");
+        String third = SaTokenConstant.userApiResourceCacheKey("user-1", "tenant-a", "org-b");
 
         assertThat(first).isNotEqualTo(second);
         assertThat(first).isNotEqualTo(third);
-        assertThat(first).isNotEqualTo(fourth);
-        assertThat(SaTokenConstant.userApiResourceCacheKey("user-1", "tenant-a", "org-a", "2026"))
+        assertThat(SaTokenConstant.userApiResourceCacheKey("user-1", "tenant-a", "org-a"))
                 .isEqualTo(first);
     }
 }

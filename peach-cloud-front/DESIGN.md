@@ -18,7 +18,7 @@ Preserve the existing AdminLayout, Ant Design Vue controls and Chinese product t
 
 ## Behavior
 
-- Function creation supports roots and children. Codes and application ownership are immutable after creation.
+- Function creation supports roots and children. Codes are immutable after creation.
 - Tree identity is the function ID; parent lookup uses application plus function code. Preserve ancestor paths while filtering. Surface historical orphan/cycle nodes at the root with a warning.
 - Selecting a function resets resource pagination. Cancel previous reads and ignore responses after disposal. Keep failure, loading, no results and no selection distinct.
 - Function and resource operations use their existing separate permission prefixes. Hide unauthorized mutations; show a resource permission message when viewing is unavailable.

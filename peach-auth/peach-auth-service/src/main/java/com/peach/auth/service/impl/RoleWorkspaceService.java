@@ -53,13 +53,13 @@ public class RoleWorkspaceService {
         permission("authorization:update"); RoleVO role = locked(input.getRoleId());
         Set<String> functions = required(input.getFuncCodes()); Set<String> resources = required(input.getResourceKeys());
         for (String code : functions.stream().sorted().toList()) {
-            FunctionDO definition = new FunctionDO(); definition.setTenantId(role.getTenantId()); definition.setAppId(AdminScope.APP_ID); definition.setFuncCode(code);
+            FunctionDO definition = new FunctionDO(); definition.setTenantId(role.getTenantId()); definition.setFuncCode(code);
             functionDao.lockByCode(definition);
         }
         RoleWorkspaceVO current = snapshot(role); revision(input.getRevision(), current.getRevision());
         Map<String, FunctionVO> available = current.getFunctions().stream().filter(f -> !Integer.valueOf(1).equals(f.getIsDisable())).collect(Collectors.toMap(FunctionVO::getFuncCode, Function.identity(), (a,b) -> a));
         Set<String> original = new HashSet<>(current.getFuncCodes());
-        for (String code : functions) if (!available.containsKey(code) && !original.contains(code)) throw new BusinessException("功能不存在、已禁用或不属于当前应用");
+        for (String code : functions) if (!available.containsKey(code) && !original.contains(code)) throw new BusinessException("功能不存在或已禁用");
         Map<String, ResourceVO> definitions = current.getResources().stream().collect(Collectors.toMap(r -> key(r.getFuncCode(),r.getResourceType(),r.getResourceCode()), Function.identity(), (a,b) -> a));
         Map<String, AuthResourceVO> existing = current.getResourceGrants().stream().collect(Collectors.toMap(r -> key(r.getFuncCode(),r.getOpType(),r.getResourceCode()), Function.identity(), (a,b) -> a));
         List<AuthResourceDO> granted = new ArrayList<>();
@@ -67,22 +67,22 @@ public class RoleWorkspaceService {
             ResourceVO resource = definitions.get(resourceKey); AuthResourceVO previous = existing.get(resourceKey);
             String funcCode = resource == null ? previous == null ? null : previous.getFuncCode() : resource.getFuncCode();
             if (funcCode == null || !functions.contains(funcCode)) throw new BusinessException("资源必须属于当前选中的功能");
-            if (resource == null && previous == null) throw new BusinessException("资源不存在或不属于当前应用");
+            if (resource == null && previous == null) throw new BusinessException("资源不存在");
             if (resource != null && !available.containsKey(funcCode) && previous == null) throw new BusinessException("不可为禁用功能新增资源授权");
             AuthResourceDO row = new AuthResourceDO();
-            row.setResourceId(id()); row.setTenantId(role.getTenantId()); row.setOrgId(role.getOrgId()); row.setPartyCode(role.getRoleCode()); row.setFiscal(role.getFiscal()); row.setAppId(AdminScope.APP_ID);
+            row.setResourceId(id()); row.setTenantId(role.getTenantId()); row.setOrgId(role.getOrgId()); row.setPartyCode(role.getRoleCode());
             row.setFuncCode(funcCode); row.setOpType(resource == null ? previous.getOpType() : resource.getResourceType());
             row.setResourceCode(resource == null ? previous.getResourceCode() : resource.getResourceCode()); row.setResourceName(resource == null ? previous.getResourceName() : resource.getResourceName());
             row.fillCreateTime(AdminScope.actor().getUserId()); granted.add(row);
         }
         dao.deleteResources(role); dao.deleteFunctions(role);
         for (String code : functions) {
-            AuthFunctionDO row = new AuthFunctionDO(); row.setId(id()); row.setTenantId(role.getTenantId()); row.setOrgId(role.getOrgId()); row.setPartyCode(role.getRoleCode()); row.setFiscal(role.getFiscal()); row.setAppId(AdminScope.APP_ID); row.setFuncCode(code); row.fillCreateTime(AdminScope.actor().getUserId()); dao.insertFunction(row);
+            AuthFunctionDO row = new AuthFunctionDO(); row.setId(id()); row.setTenantId(role.getTenantId()); row.setOrgId(role.getOrgId()); row.setPartyCode(role.getRoleCode()); row.setFuncCode(code); row.fillCreateTime(AdminScope.actor().getUserId()); dao.insertFunction(row);
         }
         for (AuthResourceDO row : granted) dao.insertResource(row);
         if (role.getSkipUrl() != null && !role.getSkipUrl().isBlank() && dao.menus(role).stream().noneMatch(menu -> role.getSkipUrl().equals(menu.getMenuUrl()))) dao.updateDefault(role, "");
         audit.recordRoleGrant(role.getTenantId(),role.getOrgId(),role.getRoleCode(),"角色工作区授权，功能数量："+functions.size()+"，资源数量："+resources.size());
-        afterCommit(() -> refresher.refreshUsersByRole(role.getTenantId(),role.getOrgId(),role.getRoleCode(),role.getFiscal()));
+        afterCommit(() -> refresher.refreshUsersByRole(role.getTenantId(),role.getOrgId(),role.getRoleCode()));
     }
     /** 只生成差异，不新增授权，不自动写库。 */
     public RoleCalibrationVO calibrate(RoleWorkspaceDTO input) {
@@ -106,11 +106,11 @@ public class RoleWorkspaceService {
         if (!allowed.containsAll(desired)) throw new BusinessException("成员必须属于当前租户机构");
         dao.deleteMembers(role);
         for (String code : desired) {
-            AuthPartyDO row = new AuthPartyDO(); row.setId(id()); row.setTenantId(role.getTenantId()); row.setOrgId(role.getOrgId()); row.setRoleCode(role.getRoleCode()); row.setRoleType(role.getRoleType() == null ? "CUSTOM" : role.getRoleType()); row.setFiscal(role.getFiscal()); row.setPartyCode(code); row.fillCreateTime(AdminScope.actor().getUserId()); dao.insertMember(row);
+            AuthPartyDO row = new AuthPartyDO(); row.setId(id()); row.setTenantId(role.getTenantId()); row.setOrgId(role.getOrgId()); row.setRoleCode(role.getRoleCode()); row.setRoleType(role.getRoleType() == null ? "CUSTOM" : role.getRoleType()); row.setPartyCode(code); row.fillCreateTime(AdminScope.actor().getUserId()); dao.insertMember(row);
         }
         Set<String> affected = new HashSet<>(old); affected.addAll(desired);
         audit.recordRoleGrant(role.getTenantId(),role.getOrgId(),role.getRoleCode(),"角色成员维护，用户数量："+desired.size());
-        afterCommit(() -> { for (String code : affected) refresher.refreshUserByCode(role.getTenantId(),role.getOrgId(),code,role.getFiscal()); });
+        afterCommit(() -> { for (String code : affected) refresher.refreshUserByCode(role.getTenantId(),role.getOrgId(),code); });
     }
     /** 默认菜单必须是该角色已保存授权中的可用菜单；空值恢复工作台。 */
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
@@ -122,8 +122,8 @@ public class RoleWorkspaceService {
     }
     private RoleWorkspaceVO snapshot(RoleVO role) {
         var result = new RoleWorkspaceVO(); result.setRole(role);
-        FunctionQO functions = new FunctionQO(); functions.setTenantId(role.getTenantId()); functions.setAppId(AdminScope.APP_ID);
-        ResourceQO resources = new ResourceQO(); resources.setTenantId(role.getTenantId()); resources.setAppId(AdminScope.APP_ID);
+        FunctionQO functions = new FunctionQO(); functions.setTenantId(role.getTenantId());
+        ResourceQO resources = new ResourceQO(); resources.setTenantId(role.getTenantId());
         result.setFunctions(functionDao.selectByQO(functions)); result.setResources(resourceDao.selectByQO(resources));
         result.setFuncCodes(dao.functions(role)); result.setResourceGrants(dao.resources(role)); result.setMenus(dao.menus(role));
         result.setRevision(digest(part(result.getFuncCodes().stream().sorted().map(RoleWorkspaceService::part).collect(Collectors.joining()))+part(result.getResourceGrants().stream().map(r -> key(r.getFuncCode(),r.getOpType(),r.getResourceCode())).sorted().map(RoleWorkspaceService::part).collect(Collectors.joining()))+part(role.getSkipUrl())));
@@ -131,7 +131,7 @@ public class RoleWorkspaceService {
     }
     private RoleVO role(String id) {
         RoleVO row = roleDao.selectById(id); var actor = AdminScope.actor();
-        if (row == null || Integer.valueOf(1).equals(row.getIsDelete()) || !Objects.equals(row.getTenantId(),actor.getTenantId()) || !Objects.equals(row.getOrgId(),actor.getOrgId()) || !Objects.equals(row.getFiscal(),AdminScope.fiscal())) throw new BusinessException("角色不存在或不可访问");
+        if (row == null || Integer.valueOf(1).equals(row.getIsDelete()) || !Objects.equals(row.getTenantId(),actor.getTenantId()) || !Objects.equals(row.getOrgId(),actor.getOrgId())) throw new BusinessException("角色不存在或不可访问");
         return row;
     }
     private RoleVO locked(String id) {

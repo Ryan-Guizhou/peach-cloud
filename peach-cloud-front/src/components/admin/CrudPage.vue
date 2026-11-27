@@ -78,9 +78,6 @@ function applySessionScope() {
   if (authStore.session?.orgId) {
     query.orgId = authStore.session.orgId
   }
-  if (authStore.session?.fiscal) {
-    query.fiscal = Number(authStore.session.fiscal)
-  }
 }
 
 async function loadData() {

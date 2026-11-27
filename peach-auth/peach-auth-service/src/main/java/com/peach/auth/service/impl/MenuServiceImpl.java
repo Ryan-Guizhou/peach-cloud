@@ -47,7 +47,7 @@ public class MenuServiceImpl implements IMenuService {
     @Override
     public PageInfo<MenuVO> pageList(MenuQO menuQO) {
         menuQO.setTenantId(AdminScope.actor().getTenantId());
-        menuQO.setAppId(AdminScope.APP_ID); menuQO.setIsDelete(0);
+        menuQO.setIsDelete(0);
         return PageMethod.startPage(menuQO.getPageNum(), menuQO.getPageSize())
                 .doSelectPageInfo(() -> menuDao.selectByQO(menuQO));
     }
@@ -56,8 +56,7 @@ public class MenuServiceImpl implements IMenuService {
     public MenuVO selectById(String id) {
         var row = menuDao.selectById(id);
         if (row == null || Integer.valueOf(1).equals(row.getIsDelete())
-                || !Objects.equals(row.getTenantId(), AdminScope.actor().getTenantId())
-                || !AdminScope.APP_ID.equals(row.getAppId())) throw new BusinessException("菜单不存在或不可访问");
+                || !Objects.equals(row.getTenantId(), AdminScope.actor().getTenantId())) throw new BusinessException("菜单不存在或不可访问");
         return row;
     }
 
@@ -66,7 +65,7 @@ public class MenuServiceImpl implements IMenuService {
         MenuDO menuDO = new MenuDO();
         BeanUtils.copyProperties(menuDTO, menuDO);
         menuDO.setMenuId(UUID.randomUUID().toString().replace("-", ""));
-        menuDO.setTenantId(AdminScope.actor().getTenantId()); menuDO.setAppId(AdminScope.APP_ID); menuDO.setMenuAppId(AdminScope.APP_ID);
+        menuDO.setTenantId(AdminScope.actor().getTenantId());
         menuDO.setIsDelete(0);
         if (menuDO.getIsLeaf() == null) menuDO.setIsLeaf(1);
         if (menuDO.getIsDisable() == null) menuDO.setIsDisable(0);
@@ -88,7 +87,7 @@ public class MenuServiceImpl implements IMenuService {
         if (menuDTO.getMenuCode() != null && !Objects.equals(menuDTO.getMenuCode(), existing.getMenuCode())) throw new BusinessException("菜单编码创建后不可修改");
         var row = new MenuDO(); BeanUtils.copyProperties(menuDTO, row);
         row.setMenuCode(existing.getMenuCode()); row.setTenantId(existing.getTenantId());
-        row.setAppId(existing.getAppId()); row.setMenuAppId(existing.getMenuAppId()); row.setIsDelete(existing.getIsDelete());
+        row.setIsDelete(existing.getIsDelete());
         if (row.getFuncCode() == null) row.setFuncCode(existing.getFuncCode());
         if (row.getParentMenuId() == null) row.setParentMenuId(existing.getParentMenuId());
         validateRelations(row);
@@ -104,8 +103,8 @@ public class MenuServiceImpl implements IMenuService {
             parent = selectById(parent).getParentMenuId();
         }
         if (StringUtil.isNotBlank(row.getFuncCode())) {
-            var query = new FunctionDO(); query.setTenantId(row.getTenantId()); query.setAppId(row.getAppId()); query.setFuncCode(row.getFuncCode()); query.setIsDelete(0);
-            if (functionDao.count(query) == 0) throw new BusinessException("关联功能不存在或不属于当前应用");
+            var query = new FunctionDO(); query.setTenantId(row.getTenantId()); query.setFuncCode(row.getFuncCode()); query.setIsDelete(0);
+            if (functionDao.count(query) == 0) throw new BusinessException("关联功能不存在");
         }
     }
 }

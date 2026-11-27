@@ -39,14 +39,13 @@ class GatewayTokenContextResolverTest {
     }
 
     @Test
-    void shouldResolveTenantOrganizationAndFiscalFromTokenSession() {
+    void shouldResolveTenantAndOrganizationFromTokenSession() {
         SaSession session = new SaSession("token-session-complete");
         session.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, "tenant-a");
         session.set(SaTokenConstant.TOKEN_SESSION_ORG_ID, "org-a");
-        session.set(SaTokenConstant.TOKEN_SESSION_FISCAL, "2026");
 
         assertThat(resolver.toContext(session).block())
-                .isEqualTo(new GatewayTokenContext("tenant-a", "org-a", "2026"));
+                .isEqualTo(new GatewayTokenContext("tenant-a", "org-a"));
     }
 
     @Test
@@ -57,16 +56,16 @@ void shouldResolveTenantFromIndependentDeviceTokensAndReflectTenantSwitches() {
 
         try {
             assertThat(resolveCurrentToken(tokenA))
-                    .isEqualTo(new GatewayTokenContext("tenant-a", "org-a", null));
+                    .isEqualTo(new GatewayTokenContext("tenant-a", "org-a"));
             assertThat(resolveCurrentToken(tokenB))
-                    .isEqualTo(new GatewayTokenContext("tenant-b", "org-b", null));
+                    .isEqualTo(new GatewayTokenContext("tenant-b", "org-b"));
 
             updateCurrentTokenContext(tokenB, "tenant-c", "org-c");
 
             assertThat(resolveCurrentToken(tokenB))
-                    .isEqualTo(new GatewayTokenContext("tenant-c", "org-c", null));
+                    .isEqualTo(new GatewayTokenContext("tenant-c", "org-c"));
             assertThat(resolveCurrentToken(tokenA))
-                    .isEqualTo(new GatewayTokenContext("tenant-a", "org-a", null));
+                    .isEqualTo(new GatewayTokenContext("tenant-a", "org-a"));
         } finally {
             logoutLoginId(loginId);
         }

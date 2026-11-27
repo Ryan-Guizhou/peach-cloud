@@ -45,7 +45,7 @@ class LoginAuditTest {
         var dao = mock(LoginLogDao.class);
         var service = new LoginLogService(dao, new LoginAuditProperties());
         UserContext actor = new UserContext();
-        actor.setTenantId("tenant"); actor.setUserId("user"); actor.setOrgId("org"); actor.setFiscal("2026");
+        actor.setTenantId("tenant"); actor.setUserId("user"); actor.setOrgId("org");
         SecurityContextHolder.set(actor);
         when(dao.hasPermission(eq(actor), eq("loginLog:view"))).thenReturn(1);
         LoginLogQO query = new LoginLogQO(); query.setScope("UNASSIGNED");

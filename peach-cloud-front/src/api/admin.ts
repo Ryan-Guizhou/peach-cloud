@@ -28,8 +28,6 @@ export interface RoleFunctionAuthRequest {
   tenantId: string
   orgId: string
   partyCode: string
-  fiscal: number
-  appId?: string
   funcCodeList: string[]
 }
 
@@ -44,8 +42,6 @@ export interface RoleResourceAuthRequest {
   tenantId: string
   orgId: string
   partyCode: string
-  fiscal: number
-  appId?: string
   resourceList: RoleResourceItem[]
 }
 
@@ -53,7 +49,6 @@ export interface UserRoleAuthRequest {
   tenantId: string
   orgId: string
   userCode: string
-  fiscal: number
   roleCodeList: string[]
 }
 
@@ -93,7 +88,7 @@ export async function deleteById(
   unwrapApiResponse(data)
 }
 
-export async function switchContext(request: { tenantId: string; orgId: string; fiscal: number }): Promise<LoginInfo> {
+export async function switchContext(request: { tenantId: string; orgId: string }): Promise<LoginInfo> {
   const { data } = await http.post<ApiResponse<LoginInfo>>('/auth/switchContext', request)
   return unwrapApiResponse(data, '切换机构失败', { requireData: true })
 }

@@ -56,7 +56,6 @@ const selectedUserRoleCodes = ref<string[]>([])
 
 const formState = reactive({
   partyCode: '',
-  fiscal: Number(authStore.session?.fiscal ?? new Date().getFullYear()),
   userCode: '',
 })
 
@@ -113,7 +112,6 @@ function buildScopeQuery(extra: DataRecord = {}): DataRecord {
   return {
     tenantId: tenantId.value,
     orgId: orgId.value,
-    fiscal: formState.fiscal,
     pageNum: 1,
     pageSize: 500,
     ...extra,
@@ -144,7 +142,6 @@ async function loadRoleAuth() {
       tenantId: tenantId.value,
       orgId: orgId.value,
       partyCode: formState.partyCode,
-      fiscal: formState.fiscal,
     }
     const [functions, resourceList] = await Promise.all([
       fetchAuthFunctions(query),
@@ -175,7 +172,6 @@ async function loadUserRoles() {
       orgId: orgId.value,
       partyCode: formState.userCode,
       partyType: 'USER',
-      fiscal: formState.fiscal,
     })
     selectedUserRoleCodes.value = records
       .map(item => String(item.roleCode ?? ''))
@@ -203,14 +199,12 @@ async function saveRoleAuth() {
       tenantId: tenantId.value,
       orgId: orgId.value,
       partyCode: formState.partyCode,
-      fiscal: formState.fiscal,
       funcCodeList: selectedFuncCodes.value,
     })
     await saveRoleResources({
       tenantId: tenantId.value,
       orgId: orgId.value,
       partyCode: formState.partyCode,
-      fiscal: formState.fiscal,
       resourceList: selectedResources.map((item): RoleResourceItem => ({
         funcCode: item.funcCode,
         opType: item.opType,
@@ -241,7 +235,6 @@ async function saveUserRoleBinding() {
       tenantId: tenantId.value,
       orgId: orgId.value,
       userCode: formState.userCode,
-      fiscal: formState.fiscal,
       roleCodeList: selectedUserRoleCodes.value,
     })
     message.success('用户角色绑定保存成功')
@@ -297,11 +290,6 @@ onMounted(async () => {
                     placeholder="选择角色"
                     :options="roleOptions.map(item => ({ label: `${item.roleName} (${item.roleCode})`, value: item.roleCode }))"
                   />
-                </a-form-item>
-              </a-col>
-              <a-col :xs="24" :md="8">
-                <a-form-item label="年度" required>
-                  <a-input-number v-model:value="formState.fiscal" class="full-control" />
                 </a-form-item>
               </a-col>
               <a-col :xs="24" :md="8">
@@ -363,11 +351,6 @@ onMounted(async () => {
                     placeholder="选择用户"
                     :options="userOptions.map(item => ({ label: `${item.userName} (${item.userCode})`, value: item.userCode }))"
                   />
-                </a-form-item>
-              </a-col>
-              <a-col :xs="24" :md="8">
-                <a-form-item label="年度" required>
-                  <a-input-number v-model:value="formState.fiscal" class="full-control" />
                 </a-form-item>
               </a-col>
               <a-col :xs="24" :md="8">

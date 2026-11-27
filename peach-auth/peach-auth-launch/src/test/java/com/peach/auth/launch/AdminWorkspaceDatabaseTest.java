@@ -70,13 +70,13 @@ class AdminWorkspaceDatabaseTest {
         }
         SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(config);
         String tenant = uuid(), org = uuid();
-        UserContext actor = new UserContext(); actor.setUserId("fixture"); actor.setUserCode("fixture"); actor.setTenantId(tenant); actor.setOrgId(org); actor.setFiscal("2026");
+        UserContext actor = new UserContext(); actor.setUserId("fixture"); actor.setUserCode("fixture"); actor.setTenantId(tenant); actor.setOrgId(org);
         SecurityContextHolder.set(actor);
         try (SqlSession session = factory.openSession(false)) {
             try {
                 var functionDao = session.getMapper(FunctionDao.class); var resourceDao = session.getMapper(ResourceDao.class); var roleDao = session.getMapper(RoleDao.class);
-                FunctionDO function = new FunctionDO(); function.setFuncId(uuid()); function.setTenantId(tenant); function.setAppId(AdminScope.APP_ID); function.setFuncCode("FIXTURE"); function.setFuncName("Fixture"); function.setIsDelete(0); function.setIsDisable(0); functionDao.insert(function);
-                ResourceDO resource = new ResourceDO(); resource.setResourceId(uuid()); resource.setTenantId(tenant); resource.setAppId(AdminScope.APP_ID); resource.setFuncCode("FIXTURE"); resource.setResourceCode("fixture:read"); resource.setResourceName("Fixture read"); resource.setResourceType("BUTTON"); resource.setIsDelete(0); resourceDao.insert(resource);
+                FunctionDO function = new FunctionDO(); function.setFuncId(uuid()); function.setTenantId(tenant); function.setFuncCode("FIXTURE"); function.setFuncName("Fixture"); function.setIsDelete(0); function.setIsDisable(0); functionDao.insert(function);
+                ResourceDO resource = new ResourceDO(); resource.setResourceId(uuid()); resource.setTenantId(tenant); resource.setFuncCode("FIXTURE"); resource.setResourceCode("fixture:read"); resource.setResourceName("Fixture read"); resource.setResourceType("BUTTON"); resource.setIsDelete(0); resourceDao.insert(resource);
                 var routes = new RouterServiceImpl(session.getMapper(RouterDao.class),functionDao, (tenantId, type) -> "FIXTURE_ROUTE");
                 RouterDTO route = new RouterDTO(); route.setRouterCode("FIXTURE_ROUTE"); route.setRouterName("Before"); route.setRouterUrl("/fixture/route"); route.setFilePath("system/role"); route.setModuleCode("fixture"); route.setFuncCode("FIXTURE"); routes.add(route);
                 RouterQO query = new RouterQO(); query.setRouterUrl("fixture/route"); query.setModuleCode("fixture"); query.setRouterCode("FIXTURE");
@@ -97,7 +97,7 @@ class AdminWorkspaceDatabaseTest {
                 service.saveGrants(grant);
                 assertThrows(BusinessException.class,() -> service.saveGrants(grant),"Stale drafts must not overwrite new grants");
                 var current = service.get(role.getRoleId()); assertEquals(List.of("FIXTURE"),current.getFuncCodes()); assertEquals(1,current.getResourceGrants().size());
-                var orphan = new AuthResourceDO(); orphan.setResourceId(uuid()); orphan.setTenantId(tenant); orphan.setOrgId(org); orphan.setAppId(AdminScope.APP_ID); orphan.setFiscal(2026); orphan.setPartyCode(role.getRoleCode()); orphan.setFuncCode("FIXTURE"); orphan.setOpType("BUTTON"); orphan.setResourceCode("deleted"); real.insertResource(orphan);
+                var orphan = new AuthResourceDO(); orphan.setResourceId(uuid()); orphan.setTenantId(tenant); orphan.setOrgId(org); orphan.setPartyCode(role.getRoleCode()); orphan.setFuncCode("FIXTURE"); orphan.setOpType("BUTTON"); orphan.setResourceCode("deleted"); real.insertResource(orphan);
                 current=service.get(role.getRoleId()); grant.setRevision(current.getRevision()); grant.setResourceKeys(current.getResourceGrants().stream().map(r -> RoleWorkspaceService.key(r.getFuncCode(),r.getOpType(),r.getResourceCode())).toList());
                 var preview=service.calibrate(grant); assertEquals(1,preview.getRemovedResourceKeys().size()); assertEquals(2,real.resources(role).size(),"Preview must not write");
                 grant.setResourceKeys(grant.getResourceKeys().stream().filter(k -> !preview.getRemovedResourceKeys().contains(k)).toList()); service.saveGrants(grant);
@@ -105,10 +105,10 @@ class AdminWorkspaceDatabaseTest {
                 assertThrows(BusinessException.class,() -> roles.delById(role.getRoleId()));
                 // Only the target role's membership is replaced; another role is retained.
                 for (String code : List.of(role.getRoleCode(),"OTHER_FIXTURE")) {
-                    AuthPartyDO membership=new AuthPartyDO(); membership.setId(uuid()); membership.setTenantId(tenant); membership.setOrgId(org); membership.setFiscal(2026); membership.setRoleCode(code); membership.setRoleType("CUSTOM"); membership.setPartyCode("fixture-member"); real.insertMember(membership);
+                    AuthPartyDO membership=new AuthPartyDO(); membership.setId(uuid()); membership.setTenantId(tenant); membership.setOrgId(org); membership.setRoleCode(code); membership.setRoleType("CUSTOM"); membership.setPartyCode("fixture-member"); real.insertMember(membership);
                 }
                 var memberState=service.members(role.getRoleId()); RoleWorkspaceDTO memberCommand=new RoleWorkspaceDTO(); memberCommand.setRoleId(role.getRoleId()); memberCommand.setRevision(memberState.getRevision()); memberCommand.setUserCodes(List.of()); service.saveMembers(memberCommand);
-                RoleDO other=new RoleDO(); other.setTenantId(tenant); other.setOrgId(org); other.setFiscal(2026); other.setRoleCode("OTHER_FIXTURE"); assertEquals(List.of("fixture-member"),real.memberCodes(other));
+                RoleDO other=new RoleDO(); other.setTenantId(tenant); other.setOrgId(org); other.setRoleCode("OTHER_FIXTURE"); assertEquals(List.of("fixture-member"),real.memberCodes(other));
                 assertTrue(real.memberCodes(role).isEmpty());
                 // Full interceptor -> queue -> consumer -> separate committed MySQL transaction.
                 UserOperLogQueue.getInstance().getAllUserOperLog();

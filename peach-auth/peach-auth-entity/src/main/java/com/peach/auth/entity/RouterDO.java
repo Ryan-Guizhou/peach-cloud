@@ -74,9 +74,6 @@ public class RouterDO extends PeachDO implements Serializable {
     @Schema(description = "租户ID")
     private String tenantId;
 
-    @Column(name = "APP_ID")
-    @Schema(description = "应用ID")
-    private String appId;
 
 
 }

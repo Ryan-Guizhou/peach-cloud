@@ -70,7 +70,6 @@ public class UserContextSupport {
         context.setOrgId(value(values, SatokenConstant.USER_PROFILE_FIELD_ORG_ID));
         context.setOrgCode(value(values, SatokenConstant.USER_PROFILE_FIELD_ORG_CODE));
         context.setOrgName(value(values, SatokenConstant.USER_PROFILE_FIELD_ORG_NAME));
-        context.setFiscal(value(values, SatokenConstant.USER_PROFILE_FIELD_FISCAL));
         context.setLang(value(values, SatokenConstant.USER_PROFILE_FIELD_LANG));
         context.setContextVersion(longValue(values, SatokenConstant.USER_PROFILE_FIELD_CONTEXT_VERSION));
 

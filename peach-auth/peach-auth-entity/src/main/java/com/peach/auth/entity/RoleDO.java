@@ -46,9 +46,6 @@ public class RoleDO extends PeachDO implements Serializable {
     @Schema(description = "角色编码")
     private String roleCode;
 
-    @Column(name = "FISCAL")
-    @Schema(description = "年度")
-    private Integer fiscal;
 
     @Column(name = "ROLE_NAME")
     @Schema(description = "角色名称")

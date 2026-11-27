@@ -95,9 +95,8 @@ public class ResouceServceImpl implements IResouceService {
         lockFunction(existing);
         ResourceDO change = new ResourceDO();
         BeanUtils.copyProperties(resourceDTO, change);
-        if ((change.getFuncCode() != null && !Objects.equals(change.getFuncCode(), existing.getFuncCode()))
-                || (change.getAppId() != null && !Objects.equals(change.getAppId(), existing.getAppId()))) {
-            throw new BusinessException("资源所属功能和应用不可修改");
+        if (change.getFuncCode() != null && !Objects.equals(change.getFuncCode(), existing.getFuncCode())) {
+            throw new BusinessException("资源所属功能不可修改");
         }
         if (resourceDao.countReferences(existing) > 0
                 && ((change.getResourceCode() != null && !Objects.equals(change.getResourceCode(), existing.getResourceCode()))
@@ -112,12 +111,11 @@ public class ResouceServceImpl implements IResouceService {
     }
 
     private void lockFunction(ResourceDO row) {
-        if (StringUtil.isBlank(row.getFuncCode()) || StringUtil.isBlank(row.getAppId())) {
-            throw new BusinessException("功能编码和应用ID不能为空");
+        if (StringUtil.isBlank(row.getFuncCode())) {
+            throw new BusinessException("功能编码不能为空");
         }
         FunctionDO query = new FunctionDO();
         query.setTenantId(row.getTenantId());
-        query.setAppId(row.getAppId());
         query.setFuncCode(row.getFuncCode());
         if (functionDao.lockByCode(query) == null) throw new BusinessException("所属功能不存在或不可访问");
     }

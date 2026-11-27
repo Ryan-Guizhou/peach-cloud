@@ -26,14 +26,14 @@ import static org.mockito.ArgumentMatchers.*;
 class RouterCodeTest {
     @AfterEach void clear() { SecurityContextHolder.clear(); }
     @Test void allocationIgnoresClientCodeAndUpdateRetainsHistory() {
-        var actor = new UserContext(); actor.setTenantId("tenant");actor.setOrgId("org");actor.setUserId("user");actor.setFiscal("2026");SecurityContextHolder.set(actor);
+        var actor = new UserContext(); actor.setTenantId("tenant");actor.setOrgId("org");actor.setUserId("user");SecurityContextHolder.set(actor);
         var dao=mock(RouterDao.class);var functions=mock(FunctionDao.class);var generator=mock(CodeGenerator.class);
         when(generator.next("tenant","ROUTER")).thenReturn("RT0001");
         var service=new RouterServiceImpl(dao,functions,generator);
         var input=new RouterDTO();input.setRouterCode("client-code");input.setIsAuth(0);
         service.add(input);
         verify(dao).insert(argThat((RouterDO row)->"RT0001".equals(row.getRouterCode())));
-        var row=new RouterVO();row.setTenantId("tenant");row.setAppId(AdminScope.APP_ID);row.setRouterCode("SYS_EXISTING");row.setIsAuth(0);
+        var row=new RouterVO();row.setTenantId("tenant");row.setRouterCode("SYS_EXISTING");row.setIsAuth(0);
         when(dao.selectById("id")).thenReturn(row);
         input.setRouterId("id");input.setRouterCode(null);service.update(input);
         assertEquals("SYS_EXISTING",row.getRouterCode());

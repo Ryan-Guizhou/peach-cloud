@@ -3,21 +3,21 @@
 <mapper namespace="com.peach.auth.dao.RoleDao">
     <sql id="allColumn">
         ROLE_ID,                                          TENANT_ID,                                        ORG_ID,                                           ROLE_CODE,
-        FISCAL,                                           ROLE_NAME,                                        ROLE_DESC,                                        ROLE_SCOPE,
+        ROLE_NAME,                                        ROLE_DESC,                                        ROLE_SCOPE,
         ROLE_TYPE,                                        IS_DELETE,                                        SKIP_URL,                                         CREATED_TIME,
         CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
         ROLE_ID as roleId,                                TENANT_ID as tenantId,                            ORG_ID as orgId,                                  ROLE_CODE as roleCode,
-        FISCAL as fiscal,                                 ROLE_NAME as roleName,                            ROLE_DESC as roleDesc,                            ROLE_SCOPE as roleScope,
+        ROLE_NAME as roleName,                            ROLE_DESC as roleDesc,                            ROLE_SCOPE as roleScope,
         ROLE_TYPE as roleType,                            IS_DELETE as isDelete,                            SKIP_URL as skipUrl,                              CREATED_TIME as createdTime,
         CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
         #{roleId,jdbcType=VARCHAR},                       #{tenantId,jdbcType=VARCHAR},                     #{orgId,jdbcType=VARCHAR},                        #{roleCode,jdbcType=VARCHAR},
-        #{fiscal,jdbcType=INTEGER},                       #{roleName,jdbcType=VARCHAR},                     #{roleDesc,jdbcType=VARCHAR},                     #{roleScope,jdbcType=VARCHAR},
+        #{roleName,jdbcType=VARCHAR},                     #{roleDesc,jdbcType=VARCHAR},                     #{roleScope,jdbcType=VARCHAR},
         #{roleType,jdbcType=VARCHAR},                     #{isDelete,jdbcType=INTEGER},                     #{skipUrl,jdbcType=VARCHAR},                      #{createdTime,jdbcType=VARCHAR},
         #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
@@ -25,7 +25,7 @@
 
     <sql id="itemAllColumnValue">
         #{item.roleId,jdbcType=VARCHAR},                  #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                   #{item.roleCode,jdbcType=VARCHAR},
-        #{item.fiscal,jdbcType=INTEGER},                  #{item.roleName,jdbcType=VARCHAR},                #{item.roleDesc,jdbcType=VARCHAR},                #{item.roleScope,jdbcType=VARCHAR},
+        #{item.roleName,jdbcType=VARCHAR},                #{item.roleDesc,jdbcType=VARCHAR},                #{item.roleScope,jdbcType=VARCHAR},
         #{item.roleType,jdbcType=VARCHAR},                #{item.isDelete,jdbcType=INTEGER},                #{item.skipUrl,jdbcType=VARCHAR},                 #{item.createdTime,jdbcType=VARCHAR},
         #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
@@ -41,9 +41,6 @@
             </if>
             <if test="roleCode != null and roleCode != ''">
                 ROLE_CODE = #{roleCode,jdbcType=VARCHAR},
-            </if>
-            <if test="fiscal != null">
-                FISCAL = #{fiscal,jdbcType=INTEGER},
             </if>
             <if test="roleName != null and roleName != ''">
                 ROLE_NAME = #{roleName,jdbcType=VARCHAR},
@@ -90,9 +87,6 @@
             <if test="roleCode != null and roleCode != ''">
                 ROLE_CODE,
             </if>
-            <if test="fiscal != null">
-                FISCAL,
-            </if>
             <if test="roleName != null and roleName != ''">
                 ROLE_NAME,
             </if>
@@ -136,9 +130,6 @@
             </if>
             <if test="roleCode != null and roleCode != ''">
                 #{roleCode,jdbcType=VARCHAR},
-            </if>
-            <if test="fiscal != null">
-                #{fiscal,jdbcType=INTEGER},
             </if>
             <if test="roleName != null and roleName != ''">
                 #{roleName,jdbcType=VARCHAR},
@@ -185,9 +176,6 @@
         </if>
         <if test="roleCode != null and roleCode != ''">
             AND ROLE_CODE = #{roleCode,jdbcType=VARCHAR}
-        </if>
-        <if test="fiscal != null">
-            AND FISCAL = #{fiscal,jdbcType=INTEGER}
         </if>
         <if test="roleName != null and roleName != ''">
             AND ROLE_NAME = #{roleName,jdbcType=VARCHAR}
@@ -314,12 +302,11 @@
             p.party_code as userCode,
             r.tenant_id as tenantId,
             r.org_id as orgId,
-            r.fiscal as fiscal, r.SKIP_URL as skipUrl
+            r.SKIP_URL as skipUrl
         FROM PEACH_ROLE r INNER JOIN PEACH_AUTH_PARTY p
             ON r.tenant_id = p.tenant_id
            AND r.org_id = p.org_id
            AND r.role_code = p.role_code
-           AND r.fiscal = p.fiscal
         <where>
             (r.is_delete is null OR r.is_delete != 1)
             AND (p.is_delete is null OR p.is_delete != 1)
@@ -328,9 +315,6 @@
             </if>
             <if test="orgId != null and orgId != ''">
                 AND r.org_id = #{orgId,jdbcType=VARCHAR}
-            </if>
-            <if test="fiscal != null">
-                AND r.fiscal = #{fiscal,jdbcType=INTEGER}
             </if>
             <if test="userCode != null and userCode != ''">
                 and p.party_code = #{userCode}
@@ -341,7 +325,7 @@
 
     <select id="selectByQO" resultType="com.peach.auth.vo.RoleVO">
         SELECT <include refid="allColumnAlias"/> FROM PEACH_ROLE
-        WHERE TENANT_ID = #{tenantId} AND ORG_ID = #{orgId} AND FISCAL = #{fiscal} AND COALESCE(IS_DELETE,0) = 0
+        WHERE TENANT_ID = #{tenantId} AND ORG_ID = #{orgId} AND COALESCE(IS_DELETE,0) = 0
         <if test="roleId != null and roleId != ''">AND ROLE_ID = #{roleId}</if>
         <if test="roleCode != null and roleCode != ''">AND LOCATE(#{roleCode}, ROLE_CODE) &gt; 0</if>
         <if test="roleName != null and roleName != ''">AND LOCATE(#{roleName}, ROLE_NAME) &gt; 0</if>

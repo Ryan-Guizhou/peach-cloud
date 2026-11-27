@@ -29,6 +29,12 @@ English | [中文](README.md)
 - This module manages configuration data; it does not define all real-time push protocols for business configuration.
 - Cache refresh strategies for dictionaries and value sets must be designed by each consumer scenario.
 
+## Troubleshooting
+
+| Symptom | Checks | Resolution |
+| --- | --- | --- |
+| Dictionary query returns no data | Verify initialization scripts, tenant scope, and query conditions | Check database data and request parameters |
+
 ## Verification
 
 ```bash

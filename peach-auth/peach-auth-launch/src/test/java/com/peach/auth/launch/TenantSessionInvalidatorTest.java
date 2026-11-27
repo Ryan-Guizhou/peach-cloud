@@ -35,7 +35,6 @@ class TenantSessionInvalidatorTest {
         var other = mock(SaSession.class);
         when(matching.getString(SaTokenConstant.TOKEN_SESSION_TENANT_ID)).thenReturn("tenant-a");
         when(matching.getString(SaTokenConstant.TOKEN_SESSION_ORG_ID)).thenReturn("org");
-        when(matching.getString(SaTokenConstant.TOKEN_SESSION_FISCAL)).thenReturn("2026");
         when(other.getString(SaTokenConstant.TOKEN_SESSION_TENANT_ID)).thenReturn("tenant-b");
         try (var stp = mockStatic(StpUtil.class)) {
             stp.when(() -> StpUtil.getTokenValueListByLoginId("user")).thenReturn(List.of("test-a", "test-b"));
@@ -44,7 +43,7 @@ class TenantSessionInvalidatorTest {
             new TenantSessionInvalidator(dao, redis).onTenantUnavailable(new TenantUnavailableEvent("tenant-a"));
             stp.verify(() -> StpUtil.logoutByTokenValue("test-a"));
             stp.verify(() -> StpUtil.logoutByTokenValue("test-b"), never());
-            verify(redis).delete(SaTokenConstant.userApiResourceCacheKey("user", "tenant-a", "org", "2026"));
+            verify(redis).delete(SaTokenConstant.userApiResourceCacheKey("user", "tenant-a", "org"));
         }
     }
 }

@@ -173,6 +173,27 @@ test('MySQL initialization tracks completion and verifies the expected schema in
   assert.doesNotMatch(script, /existing schema detected[\s\S]*skipping baseline initialization/i);
 });
 
+test('MySQL critical seed checks match the tenant and organization baseline', () => {
+  const script = read('scripts/init/init-mysql.sh');
+  const schema = read('init/mysql/schema/ALL_TABLE_CREATE.sql');
+  const tables = new Set([...schema.matchAll(/^\s*CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?([A-Z0-9_]+)/gmi)]
+    .map(([, table]) => table.toUpperCase()));
+  const checks = [...script.matchAll(/seed_ready=\$\(mysql_query "([\s\S]*?)"\)/g)]
+    .map(([, query]) => query);
+
+  assert.equal(checks.length, 2);
+  assert.equal(checks[0], checks[1], 'Readiness and post-recovery verification must agree');
+  for (const query of checks) {
+    assert.match(query, /FROM PEACH_TENANT WHERE TENANT_CODE = 'DEFAULT'/);
+    assert.match(query, /FROM PEACH_ORGANIZATION O\s+JOIN PEACH_TENANT T ON T\.TENANT_ID = O\.TENANT_ID\s+WHERE T\.TENANT_CODE = 'DEFAULT' AND O\.ORG_CODE = 'DEFAULT'/);
+    assert.match(query, /FROM PEACH_USER WHERE USER_CODE = 'admin'/);
+    assert.doesNotMatch(query, /\bPEACH_APPLICATION\b/i);
+    for (const [, table] of query.matchAll(/\b(?:FROM|JOIN)\s+([A-Z0-9_]+)/gi)) {
+      assert.ok(tables.has(table.toUpperCase()), 'Seed check references missing baseline table: ' + table);
+    }
+  }
+});
+
 test('secret-bearing generated files are private and removed on every exit path', () => {
   const nacos = read('scripts/init/init-nacos.sh');
   assert.match(nacos, /umask\s+077/);

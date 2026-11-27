@@ -57,14 +57,14 @@ const resourceColumns = [{ title: '编码', dataIndex: 'resourceCode', ellipsis:
 const resourceRows = computed(() => {
   const definitions = (workspace.value?.resources ?? []).map(row => ({ ...row, key: resourceKey(row.funcCode, row.resourceType, row.resourceCode), invalid: false }))
   const known = new Set(definitions.map(row => row.key))
-  const orphaned = (workspace.value?.resourceGrants ?? []).filter(row => !known.has(grantKey(row))).map(row => ({ resourceId: grantKey(row), funcCode: row.funcCode, resourceType: row.opType, resourceCode: row.resourceCode, resourceName: `${row.resourceName || row.resourceCode}（已失效）`, appId: '', key: grantKey(row), invalid: true }))
+  const orphaned = (workspace.value?.resourceGrants ?? []).filter(row => !known.has(grantKey(row))).map(row => ({ resourceId: grantKey(row), funcCode: row.funcCode, resourceType: row.opType, resourceCode: row.resourceCode, resourceName: `${row.resourceName || row.resourceCode}（已失效）`, key: grantKey(row), invalid: true }))
   return [...definitions, ...orphaned]
 })
 const filteredResources = computed(() => resourceRows.value.filter(row => row.funcCode === selectedFunction.value && (!resourceType.value || row.resourceType === resourceType.value) && `${row.resourceCode} ${row.resourceName}`.toLowerCase().includes(resourceSearch.value.trim().toLowerCase())))
 const rawTree = computed(() => {
   const all = [...(workspace.value?.functions ?? [])]
   const present = new Set(all.map(row => row.funcCode))
-  for (const code of funcCodes.value) if (!present.has(code)) all.push({ funcId: `missing:${code}`, funcCode: code, funcName: '已失效功能', appId: '' })
+  for (const code of funcCodes.value) if (!present.has(code)) all.push({ funcId: `missing:${code}`, funcCode: code, funcName: '已失效功能' })
   return buildFunctionTree(all, functionSearch.value)
 })
 function treeNodes(nodes: FunctionNode[]): { key: string; title: string; children: ReturnType<typeof treeNodes>; selectable: boolean }[] {

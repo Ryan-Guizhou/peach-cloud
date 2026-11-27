@@ -50,9 +50,6 @@ public class ResourceDO extends PeachDO implements Serializable {
     @Schema(description = "资源名称")
     private String resourceName;
 
-    @Column(name = "APP_ID")
-    @Schema(description = "应用ID")
-    private String appId;
 
     @Column(name = "IS_DELETE")
     @Schema(description = "是否删除")

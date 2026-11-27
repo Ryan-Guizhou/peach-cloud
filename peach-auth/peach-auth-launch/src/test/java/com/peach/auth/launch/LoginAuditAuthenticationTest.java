@@ -39,7 +39,7 @@ class LoginAuditAuthenticationTest {
     @InjectMocks UserServiceImpl service;
     LoginDTO request;
     @BeforeEach void begin() {
-        request = new LoginDTO(); request.setUsername("audit-account"); request.setPassword("encrypted-fixture"); request.setFiscal(2026);
+        request = new LoginDTO(); request.setUsername("audit-account"); request.setPassword("encrypted-fixture");
         LoginAuditContext.begin("LOGIN", "127.0.0.1", "Other", "trace");
     }
     @AfterEach void clear() { LoginAuditContext.clear(); }

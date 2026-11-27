@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 
@@ -35,9 +34,6 @@ public class LoginDTO implements Serializable {
     @Size(max = 1024, message = "密码密文长度不能超过1024个字符", groups = {LoginGroup.Login.class})
     private String password;
 
-    @Schema(description = "年度")
-    @NotNull(message = "年度不能为空", groups = {LoginGroup.Login.class})
-    private Integer fiscal;
 
     @Schema(description = "租户ID")
     private String tenantId;

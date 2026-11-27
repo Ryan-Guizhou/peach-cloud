@@ -27,7 +27,7 @@ export function groupMenuItems(items: AdminRouteConfig[], menus: MenuInfo[]): Ad
       seen.add(parent)
       const catalog = byId.get(parent)
       if (!catalog) break
-      if (catalog.menuName && catalog.menuName !== '应用功能列表') title = catalog.menuName
+      if (catalog.menuName && catalog.menuName !== '功能列表') title = catalog.menuName
       parent = catalog.parentMenuId
     }
     title ||= pathGroups[item.path] ?? fallbacks[item.meta.menuCode] ?? '系统设置'

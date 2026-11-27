@@ -59,11 +59,6 @@ public final class SatokenConstant {
     public static final String USER_PROFILE_FIELD_ORG_NAME = "orgName";
 
     /**
-     * 用户上下文 Hash 字段：会计期间。
-     */
-    public static final String USER_PROFILE_FIELD_FISCAL = "fiscal";
-
-    /**
      * 用户上下文 Hash 字段：语言。
      */
     public static final String USER_PROFILE_FIELD_LANG = "lang";

@@ -73,7 +73,6 @@ public class FunctionServiceImpl implements IFunctionService {
         BeanUtils.copyProperties(functionDTO, functionDO);
         functionDO.setFuncId(UUID.randomUUID().toString().replace("-", ""));
         functionDO.setTenantId(DefinitionScope.tenantId());
-        if (StringUtil.isBlank(functionDO.getAppId())) throw new BusinessException("应用ID不能为空");
         functionDO.setFuncCode(null);
         validateParent(functionDO);
         functionDO.setFuncCode(codeGenerator.next(functionDO.getTenantId(), "FUNCTION"));
@@ -104,15 +103,11 @@ public class FunctionServiceImpl implements IFunctionService {
         if (functionDTO.getFuncCode() != null && !Objects.equals(existing.getFuncCode(), functionDTO.getFuncCode())) {
             throw new BusinessException("功能编码创建后不可修改");
         }
-        if (functionDTO.getAppId() != null && !Objects.equals(existing.getAppId(), functionDTO.getAppId())) {
-            throw new BusinessException("所属应用创建后不可修改");
-        }
         if (functionDao.lockByCode(existing) == null) throw new BusinessException("功能已删除，请刷新");
         FunctionDO change = new FunctionDO();
         BeanUtils.copyProperties(functionDTO, change);
         change.setIsDelete(existing.getIsDelete());
         change.setTenantId(existing.getTenantId());
-        change.setAppId(existing.getAppId());
         change.setFuncCode(existing.getFuncCode());
         if (change.getParentFuncCode() == null) change.setParentFuncCode(existing.getParentFuncCode());
         validateParent(change);
@@ -128,10 +123,9 @@ public class FunctionServiceImpl implements IFunctionService {
             if (!visited.add(parent)) throw new BusinessException("上级功能不能指向自身或下级，历史循环关系需先修复");
             FunctionDO query = new FunctionDO();
             query.setTenantId(row.getTenantId());
-            query.setAppId(row.getAppId());
             query.setFuncCode(parent);
             FunctionVO ancestor = functionDao.lockByCode(query);
-            if (ancestor == null) throw new BusinessException("上级功能不存在或不属于当前应用");
+            if (ancestor == null) throw new BusinessException("上级功能不存在");
             parent = ancestor.getParentFuncCode();
         }
     }

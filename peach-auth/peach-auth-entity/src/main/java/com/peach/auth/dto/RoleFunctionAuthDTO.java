@@ -36,12 +36,7 @@ public class RoleFunctionAuthDTO implements Serializable {
     @NotBlank(message = "角色编码不能为空")
     private String partyCode;
 
-    @Schema(description = "年度")
-    @NotNull(message = "年度不能为空")
-    private Integer fiscal;
 
-    @Schema(description = "应用ID")
-    private String appId;
 
     @Schema(description = "功能编码列表")
     private List<String> funcCodeList;

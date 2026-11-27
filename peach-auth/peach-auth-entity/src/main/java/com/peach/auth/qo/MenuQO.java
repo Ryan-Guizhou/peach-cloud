@@ -34,8 +34,6 @@ public class MenuQO extends PeachEntity implements Serializable {
     @Schema(description = "菜单编码")
     private String menuCode;
 
-    @Schema(description = "应用ID")
-    private String appId;
 
     @Schema(description = "是否删除 1是 0否")
     private Integer isDelete;
