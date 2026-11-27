@@ -140,7 +140,7 @@ public class GatewayAuthorizationGlobalFilter implements GlobalFilter, Ordered {
     private Mono<Boolean> checkApiPermissionForContext(String loginId, GatewayTokenContext context,
                                                         String resourceCode, String method, String path) {
         String key = SaTokenConstant.userApiResourceCacheKey(
-                loginId, context.tenantId(), context.orgId(), context.fiscal());
+                loginId, context.tenantId(), context.orgId());
         return redisTemplate.opsForSet()
                 .isMember(key, resourceCode)
                 .defaultIfEmpty(false)

@@ -29,8 +29,6 @@ public class LoginInfo {
     @Schema(description = "用户名称")
     private String userName;
 
-    @Schema(description = "年度")
-    private String fiscal;
 
     @Schema(description = "当前租户ID")
     private String tenantId;

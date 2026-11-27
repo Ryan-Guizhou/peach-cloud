@@ -5,7 +5,7 @@
         TENANT_ID,
         FUNC_ID,                                          FUNC_CODE,                                        PARENT_FUNC_CODE,                                 FUNC_NAME,
         FUNC_DESC,                                        FUNC_URL,                                         FUNC_SEQ,                                         FUNC_TYPE,
-        IS_MENU,                                          IS_AUTHORIZE,                                     APP_ID,                                           IS_DISABLE,
+        IS_MENU,                                          IS_AUTHORIZE,                                     IS_DISABLE,
         IS_DELETE,                                        CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,
         MODIFIER_ID
     </sql>
@@ -14,7 +14,7 @@
         TENANT_ID as tenantId,
         FUNC_ID as funcId,                                FUNC_CODE as funcCode,                            PARENT_FUNC_CODE as parentFuncCode,               FUNC_NAME as funcName,
         FUNC_DESC as funcDesc,                            FUNC_URL as funcUrl,                              FUNC_SEQ as funcSeq,                              FUNC_TYPE as funcType,
-        IS_MENU as isMenu,                                IS_AUTHORIZE as isAuthorize,                      APP_ID as appId,                                  IS_DISABLE as isDisable,
+        IS_MENU as isMenu,                                IS_AUTHORIZE as isAuthorize,                      IS_DISABLE as isDisable,
         IS_DELETE as isDelete,                            CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,
         MODIFIER_ID as modifierId
     </sql>
@@ -23,7 +23,7 @@
         #{tenantId,jdbcType=VARCHAR},
         #{funcId,jdbcType=VARCHAR},                       #{funcCode,jdbcType=VARCHAR},                     #{parentFuncCode,jdbcType=VARCHAR},               #{funcName,jdbcType=VARCHAR},
         #{funcDesc,jdbcType=VARCHAR},                     #{funcUrl,jdbcType=VARCHAR},                      #{funcSeq,jdbcType=VARCHAR},                      #{funcType,jdbcType=VARCHAR},
-        #{isMenu,jdbcType=INTEGER},                       #{isAuthorize,jdbcType=INTEGER},                  #{appId,jdbcType=VARCHAR},                        #{isDisable,jdbcType=INTEGER},
+        #{isMenu,jdbcType=INTEGER},                       #{isAuthorize,jdbcType=INTEGER},                  #{isDisable,jdbcType=INTEGER},
         #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},
         #{modifierId,jdbcType=VARCHAR}
     </sql>
@@ -33,7 +33,7 @@
         #{item.tenantId,jdbcType=VARCHAR},
         #{item.funcId,jdbcType=VARCHAR},                  #{item.funcCode,jdbcType=VARCHAR},                #{item.parentFuncCode,jdbcType=VARCHAR},          #{item.funcName,jdbcType=VARCHAR},
         #{item.funcDesc,jdbcType=VARCHAR},                #{item.funcUrl,jdbcType=VARCHAR},                 #{item.funcSeq,jdbcType=VARCHAR},                 #{item.funcType,jdbcType=VARCHAR},
-        #{item.isMenu,jdbcType=INTEGER},                  #{item.isAuthorize,jdbcType=INTEGER},             #{item.appId,jdbcType=VARCHAR},                   #{item.isDisable,jdbcType=INTEGER},
+        #{item.isMenu,jdbcType=INTEGER},                  #{item.isAuthorize,jdbcType=INTEGER},             #{item.isDisable,jdbcType=INTEGER},
         #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},
         #{item.modifierId,jdbcType=VARCHAR}
     </sql>
@@ -67,9 +67,6 @@
             </if>
             <if test="isAuthorize != null">
                 IS_AUTHORIZE = #{isAuthorize,jdbcType=INTEGER},
-            </if>
-            <if test="appId != null and appId != ''">
-                APP_ID = #{appId,jdbcType=VARCHAR},
             </if>
             <if test="isDisable != null">
                 IS_DISABLE = #{isDisable,jdbcType=INTEGER},
@@ -122,9 +119,6 @@
             <if test="isAuthorize != null">
                 IS_AUTHORIZE,
             </if>
-            <if test="appId != null and appId != ''">
-                APP_ID,
-            </if>
             <if test="isDisable != null">
                 IS_DISABLE,
             </if>
@@ -174,9 +168,6 @@
             </if>
             <if test="isAuthorize != null">
                 #{isAuthorize,jdbcType=INTEGER},
-            </if>
-            <if test="appId != null and appId != ''">
-                #{appId,jdbcType=VARCHAR},
             </if>
             <if test="isDisable != null">
                 #{isDisable,jdbcType=INTEGER},
@@ -230,9 +221,6 @@
         </if>
         <if test="isAuthorize != null">
             AND IS_AUTHORIZE = #{isAuthorize,jdbcType=INTEGER}
-        </if>
-        <if test="appId != null and appId != ''">
-            AND APP_ID = #{appId,jdbcType=VARCHAR}
         </if>
         <if test="isDisable != null">
             AND IS_DISABLE = #{isDisable,jdbcType=INTEGER}
@@ -342,23 +330,22 @@
     <select id="selectByQO" resultType="com.peach.auth.vo.FunctionVO">
         SELECT <include refid="allColumnAlias"/> FROM PEACH_FUNCTION
         WHERE TENANT_ID = #{tenantId} AND IS_DELETE = 0
-        <if test="appId != null and appId != ''">AND APP_ID = #{appId}</if>
         <if test="funcCode != null and funcCode != ''">AND FUNC_CODE = #{funcCode}</if>
         <if test="funcName != null and funcName != ''">AND LOCATE(#{funcName}, FUNC_NAME) &gt; 0</if>
-        ORDER BY APP_ID, FUNC_SEQ, FUNC_CODE, FUNC_ID
+        ORDER BY FUNC_SEQ, FUNC_CODE, FUNC_ID
     </select>
     <select id="lockByCode" resultType="com.peach.auth.vo.FunctionVO">
         SELECT <include refid="allColumnAlias"/> FROM PEACH_FUNCTION
-        WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode} AND IS_DELETE = 0
+        WHERE TENANT_ID = #{tenantId} AND FUNC_CODE = #{funcCode} AND IS_DELETE = 0
         FOR UPDATE
     </select>
     <select id="countReferences" resultType="int">
         SELECT
-        (SELECT COUNT(*) FROM PEACH_FUNCTION WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND PARENT_FUNC_CODE = #{funcCode}) +
-        (SELECT COUNT(*) FROM PEACH_RESOURCE WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode}) +
-        (SELECT COUNT(*) FROM PEACH_MENU WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode}) +
-        (SELECT COUNT(*) FROM PEACH_ROUTER WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode}) +
-        (SELECT COUNT(*) FROM PEACH_AUTH_FUNCTION WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode}) +
-        (SELECT COUNT(*) FROM PEACH_AUTH_RESOURCE WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode})
+        (SELECT COUNT(*) FROM PEACH_FUNCTION WHERE TENANT_ID = #{tenantId} AND PARENT_FUNC_CODE = #{funcCode}) +
+        (SELECT COUNT(*) FROM PEACH_RESOURCE WHERE TENANT_ID = #{tenantId} AND FUNC_CODE = #{funcCode}) +
+        (SELECT COUNT(*) FROM PEACH_MENU WHERE TENANT_ID = #{tenantId} AND FUNC_CODE = #{funcCode}) +
+        (SELECT COUNT(*) FROM PEACH_ROUTER WHERE TENANT_ID = #{tenantId} AND FUNC_CODE = #{funcCode}) +
+        (SELECT COUNT(*) FROM PEACH_AUTH_FUNCTION WHERE TENANT_ID = #{tenantId} AND FUNC_CODE = #{funcCode}) +
+        (SELECT COUNT(*) FROM PEACH_AUTH_RESOURCE WHERE TENANT_ID = #{tenantId} AND FUNC_CODE = #{funcCode})
     </select>
 </mapper>

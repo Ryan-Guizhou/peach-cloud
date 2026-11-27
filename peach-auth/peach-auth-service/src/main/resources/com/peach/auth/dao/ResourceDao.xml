@@ -4,21 +4,21 @@
     <sql id="allColumn">
         TENANT_ID,
         RESOURCE_ID,                                      FUNC_CODE,                                        RESOURCE_TYPE,                                    RESOURCE_CODE,
-        RESOURCE_NAME,                                    APP_ID,                                           IS_DELETE,                                        CREATED_TIME,
+        RESOURCE_NAME,                                    IS_DELETE,                                        CREATED_TIME,
         CREATOR_ID,                                       MODIFY_TIME,                                      MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
         TENANT_ID as tenantId,
         RESOURCE_ID as resourceId,                        FUNC_CODE as funcCode,                            RESOURCE_TYPE as resourceType,                    RESOURCE_CODE as resourceCode,
-        RESOURCE_NAME as resourceName,                    APP_ID as appId,                                  IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
+        RESOURCE_NAME as resourceName,                    IS_DELETE as isDelete,                            CREATED_TIME as createdTime,
         CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
         #{tenantId,jdbcType=VARCHAR},
         #{resourceId,jdbcType=VARCHAR},                   #{funcCode,jdbcType=VARCHAR},                     #{resourceType,jdbcType=VARCHAR},                 #{resourceCode,jdbcType=VARCHAR},
-        #{resourceName,jdbcType=VARCHAR},                 #{appId,jdbcType=VARCHAR},                        #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},
+        #{resourceName,jdbcType=VARCHAR},                 #{isDelete,jdbcType=INTEGER},                     #{createdTime,jdbcType=VARCHAR},
         #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
 
@@ -26,7 +26,7 @@
     <sql id="itemAllColumnValue">
         #{item.tenantId,jdbcType=VARCHAR},
         #{item.resourceId,jdbcType=VARCHAR},              #{item.funcCode,jdbcType=VARCHAR},                #{item.resourceType,jdbcType=VARCHAR},            #{item.resourceCode,jdbcType=VARCHAR},
-        #{item.resourceName,jdbcType=VARCHAR},            #{item.appId,jdbcType=VARCHAR},                   #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},
+        #{item.resourceName,jdbcType=VARCHAR},            #{item.isDelete,jdbcType=INTEGER},                #{item.createdTime,jdbcType=VARCHAR},
         #{item.creatorId,jdbcType=VARCHAR},               #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
 
@@ -44,9 +44,6 @@
             </if>
             <if test="resourceName != null and resourceName != ''">
                 RESOURCE_NAME = #{resourceName,jdbcType=VARCHAR},
-            </if>
-            <if test="appId != null and appId != ''">
-                APP_ID = #{appId,jdbcType=VARCHAR},
             </if>
             <if test="isDelete != null">
                 IS_DELETE = #{isDelete,jdbcType=INTEGER},
@@ -80,9 +77,6 @@
             <if test="resourceName != null and resourceName != ''">
                 RESOURCE_NAME,
             </if>
-            <if test="appId != null and appId != ''">
-                APP_ID,
-            </if>
             <if test="isDelete != null">
                 IS_DELETE,
             </if>
@@ -114,9 +108,6 @@
             </if>
             <if test="resourceName != null and resourceName != ''">
                 #{resourceName,jdbcType=VARCHAR},
-            </if>
-            <if test="appId != null and appId != ''">
-                #{appId,jdbcType=VARCHAR},
             </if>
             <if test="isDelete != null">
                 #{isDelete,jdbcType=INTEGER},
@@ -152,9 +143,6 @@
         </if>
         <if test="resourceName != null and resourceName != ''">
             AND RESOURCE_NAME = #{resourceName,jdbcType=VARCHAR}
-        </if>
-        <if test="appId != null and appId != ''">
-            AND APP_ID = #{appId,jdbcType=VARCHAR}
         </if>
         <if test="isDelete != null">
             AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
@@ -264,7 +252,6 @@
         FROM PEACH_RESOURCE
         <where>
             AND TENANT_ID = #{tenantId} AND IS_DELETE = 0
-            <if test="appId != null and appId != ''">AND APP_ID = #{appId}</if>
             <if test="keyword != null and keyword != ''">
                 AND (LOCATE(#{keyword}, RESOURCE_CODE) &gt; 0 OR LOCATE(#{keyword}, RESOURCE_NAME) &gt; 0)
             </if>
@@ -285,7 +272,7 @@
     </select>
     <select id="countReferences" resultType="int">
         SELECT COUNT(*) FROM PEACH_AUTH_RESOURCE
-        WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId} AND FUNC_CODE = #{funcCode}
+        WHERE TENANT_ID = #{tenantId} AND FUNC_CODE = #{funcCode}
           AND RESOURCE_CODE = #{resourceCode}
     </select>
 </mapper>

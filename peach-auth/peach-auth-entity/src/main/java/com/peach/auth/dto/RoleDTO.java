@@ -64,6 +64,4 @@ public class RoleDTO implements Serializable {
     @Size(max = 100, message = "角色登录跳转长度不能超过100", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String skipUrl;
 
-    @Schema(description = "年度，维护时由登录上下文覆盖")
-    private Integer fiscal;
 }

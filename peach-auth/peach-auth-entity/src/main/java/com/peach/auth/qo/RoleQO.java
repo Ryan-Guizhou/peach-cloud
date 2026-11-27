@@ -24,8 +24,6 @@ public class RoleQO extends PeachEntity implements Serializable {
     @Serial
     private static final long serialVersionUID = -6714438507781425188L;
 
-    @Schema(description = "年度")
-    private Integer fiscal;
 
     @Schema(description = "租户ID")
     private String tenantId;

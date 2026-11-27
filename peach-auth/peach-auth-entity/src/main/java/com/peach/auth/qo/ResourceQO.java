@@ -37,8 +37,6 @@ public class ResourceQO extends PeachEntity implements Serializable {
     private String resourceCode;
     @Schema(description = "租户ID，由服务端登录上下文覆盖")
     private String tenantId;
-    @Schema(description = "应用ID")
-    private String appId;
     @Schema(description = "资源编码或名称关键字")
     private String keyword;
 }

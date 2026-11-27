@@ -26,8 +26,8 @@ class RoleWorkspaceSecurityTest {
     @BeforeEach void setup() {
         roles=mock(RoleDao.class);dao=mock(RoleWorkspaceDao.class);functions=mock(FunctionDao.class);resources=mock(ResourceDao.class);refresh=mock(LoginPermissionCacheRefresher.class);
         service=new RoleWorkspaceService(roles,dao,functions,resources,refresh,mock(AuthLogSupport.class));
-        UserContext actor=new UserContext();actor.setTenantId("tenant");actor.setOrgId("org");actor.setUserId("user");actor.setFiscal("2026");SecurityContextHolder.set(actor);
-        role=new RoleVO();role.setRoleId("id");role.setRoleCode("ROLE");role.setTenantId("tenant");role.setOrgId("org");role.setFiscal(2026);
+        UserContext actor=new UserContext();actor.setTenantId("tenant");actor.setOrgId("org");actor.setUserId("user");SecurityContextHolder.set(actor);
+        role=new RoleVO();role.setRoleId("id");role.setRoleCode("ROLE");role.setTenantId("tenant");role.setOrgId("org");
     }
     @AfterEach void clear() { SecurityContextHolder.clear(); if(TransactionSynchronizationManager.isSynchronizationActive()) TransactionSynchronizationManager.clearSynchronization(); }
     void allow() {
@@ -37,9 +37,9 @@ class RoleWorkspaceSecurityTest {
     @Test void missingPermissionStopsBeforeReadingRoleData() {
         assertThrows(BusinessException.class,()->service.get("id"));verifyNoInteractions(roles,functions,resources);
     }
-    @Test void authorisedViewerCannotReadAnotherTenantOrYear() {
+    @Test void authorisedViewerCannotReadAnotherTenantOrOrganization() {
         allow();role.setTenantId("other");assertThrows(BusinessException.class,()->service.get("id"));
-        role.setTenantId("tenant");role.setFiscal(2025);assertThrows(BusinessException.class,()->service.get("id"));
+        role.setTenantId("tenant");role.setOrgId("other");assertThrows(BusinessException.class,()->service.get("id"));
         verifyNoInteractions(functions,resources);
     }
     @Test void unknownNewFunctionCannotBeGrantedAndNoRowsAreDeleted() {
@@ -58,7 +58,7 @@ class RoleWorkspaceSecurityTest {
         allow();var current=service.get("id");RoleWorkspaceDTO command=new RoleWorkspaceDTO();command.setRoleId("id");command.setRevision(current.getRevision());command.setFuncCodes(List.of("VALID"));command.setResourceKeys(List.of());
         TransactionSynchronizationManager.initSynchronization();service.saveGrants(command);verifyNoInteractions(refresh);
         TransactionSynchronizationManager.getSynchronizations().forEach(callback->callback.afterCommit());
-        verify(refresh).refreshUsersByRole("tenant","org","ROLE",2026);
+        verify(refresh).refreshUsersByRole("tenant","org","ROLE");
     }
     @Test void loginDefaultIsOnlyUsedForASingleRoleAndAnAuthorisedLocalPage() {
         var snapshot=new LoginPermissionSnapshotVO();var one=new RoleVO();one.setSkipUrl("/allowed");var menu=new MenuVO();menu.setMenuUrl("/allowed");var route=new RouterVO();route.setRouterUrl("/allowed");

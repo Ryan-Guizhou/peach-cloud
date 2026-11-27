@@ -38,15 +38,15 @@ public class RouterServiceImpl implements IRouterService {
         return PageMethod.startPage(query.getPageNum(), query.getPageSize()).doSelectPageInfo(() -> routerDao.selectByQO(query));
     }
     @Override public List<RouterVO> list(RouterQO query) { scope(query); return routerDao.selectByQO(query); }
-    private void scope(RouterQO query) { query.setTenantId(AdminScope.actor().getTenantId()); query.setAppId(AdminScope.APP_ID); }
+    private void scope(RouterQO query) { query.setTenantId(AdminScope.actor().getTenantId()); }
     @Override public RouterVO selectById(String id) {
         var row = routerDao.selectById(id);
-        if (row == null || !Objects.equals(row.getTenantId(), AdminScope.actor().getTenantId()) || !AdminScope.APP_ID.equals(row.getAppId())) throw new BusinessException("路由不存在或不可访问");
+        if (row == null || !Objects.equals(row.getTenantId(), AdminScope.actor().getTenantId())) throw new BusinessException("路由不存在或不可访问");
         return row;
     }
     @Override public void add(RouterDTO input) {
         RouterDO row = new RouterDO(); BeanUtils.copyProperties(input, row);
-        row.setRouterId(UUID.randomUUID().toString().replace("-", "")); row.setTenantId(AdminScope.actor().getTenantId()); row.setAppId(AdminScope.APP_ID);
+        row.setRouterId(UUID.randomUUID().toString().replace("-", "")); row.setTenantId(AdminScope.actor().getTenantId());
         if (row.getIsAuth() == null) row.setIsAuth(1);
         if (row.getIsCache() == null) row.setIsCache(0);
         if (row.getRouterLevel() == null) row.setRouterLevel(2);
@@ -64,7 +64,7 @@ public class RouterServiceImpl implements IRouterService {
         // Hidden flags keep their stored values unless an existing API client explicitly supplies them.
         if (input.getIsAuth() != null) row.setIsAuth(input.getIsAuth());
         if (input.getIsCache() != null) row.setIsCache(input.getIsCache());
-        row.setTenantId(AdminScope.actor().getTenantId()); row.setAppId(AdminScope.APP_ID);
+        row.setTenantId(AdminScope.actor().getTenantId());
         validateFunction(row); row.fillModifyTime(AdminScope.actor().getUserId());
         // Omitted hidden flags must not be written back from an earlier read.
         row.setIsAuth(input.getIsAuth()); row.setIsCache(input.getIsCache());
@@ -73,7 +73,7 @@ public class RouterServiceImpl implements IRouterService {
     @Override public void delById(String id) { selectById(id); routerDao.delById(id); }
     @Override public boolean uniqueRouterCode(RouterDTO input) {
         RouterDO query = new RouterDO(); query.setRouterId(input.getRouterId()); query.setRouterCode(input.getRouterCode());
-        query.setTenantId(AdminScope.actor().getTenantId()); query.setAppId(AdminScope.APP_ID);
+        query.setTenantId(AdminScope.actor().getTenantId());
         return routerDao.countByRouterCode(query) > 0;
     }
     private void validateFunction(RouterDO row) {
@@ -81,7 +81,7 @@ public class RouterServiceImpl implements IRouterService {
             if (Integer.valueOf(1).equals(row.getIsAuth())) throw new BusinessException("需要授权的路由必须关联功能");
             return;
         }
-        FunctionDO query = new FunctionDO(); query.setTenantId(row.getTenantId()); query.setAppId(row.getAppId()); query.setFuncCode(row.getFuncCode()); query.setIsDelete(0);
-        if (functionDao.count(query) == 0) throw new BusinessException("关联功能不存在或不属于当前应用");
+        FunctionDO query = new FunctionDO(); query.setTenantId(row.getTenantId()); query.setFuncCode(row.getFuncCode()); query.setIsDelete(0);
+        if (functionDao.count(query) == 0) throw new BusinessException("关联功能不存在");
     }
 }

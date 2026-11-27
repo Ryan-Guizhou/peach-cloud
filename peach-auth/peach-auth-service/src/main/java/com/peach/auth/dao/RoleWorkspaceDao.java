@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * 角色工作区的限定作用域查询与原子写入；role携带服务端验证后的租户机构年度。
+ * 角色工作区的限定作用域查询与原子写入；role携带服务端验证后的租户和机构。
  * @Author Mr Shu
  * @Version 1.0.0
  * @CreateTime 2026/11/22 21:00

@@ -26,12 +26,10 @@
     </select>
     <select id="hasPermission" resultType="int">
         SELECT COUNT(*) FROM PEACH_AUTH_RESOURCE a
-        JOIN PEACH_AUTH_PARTY p ON p.TENANT_ID = a.TENANT_ID AND p.ORG_ID = a.ORG_ID
-          AND p.FISCAL = a.FISCAL AND p.ROLE_CODE = a.PARTY_CODE AND p.PARTY_TYPE = 'USER'
+        JOIN PEACH_AUTH_PARTY p ON p.TENANT_ID = a.TENANT_ID AND p.ORG_ID = a.ORG_ID AND p.ROLE_CODE = a.PARTY_CODE AND p.PARTY_TYPE = 'USER'
         JOIN PEACH_USER u ON u.USER_CODE = p.PARTY_CODE AND u.USER_ID = #{actor.userId}
-        JOIN PEACH_ROLE r ON r.TENANT_ID = p.TENANT_ID AND r.ORG_ID = p.ORG_ID AND r.FISCAL = p.FISCAL AND r.ROLE_CODE = p.ROLE_CODE
-        WHERE a.TENANT_ID = #{actor.tenantId} AND a.ORG_ID = #{actor.orgId} AND a.FISCAL = #{actor.fiscal}
-          AND a.APP_ID = 'f73b300578a5436d82ec7fca2c07c284'
+        JOIN PEACH_ROLE r ON r.TENANT_ID = p.TENANT_ID AND r.ORG_ID = p.ORG_ID AND r.ROLE_CODE = p.ROLE_CODE
+        WHERE a.TENANT_ID = #{actor.tenantId} AND a.ORG_ID = #{actor.orgId}
           AND a.OP_TYPE = 'BUTTON' AND a.RESOURCE_CODE = #{permission}
           AND a.IS_DELETE = 0 AND p.IS_DELETE = 0 AND COALESCE(r.IS_DELETE, 0) = 0
     </select>

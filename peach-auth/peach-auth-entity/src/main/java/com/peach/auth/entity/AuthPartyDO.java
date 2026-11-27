@@ -51,9 +51,6 @@ public class AuthPartyDO extends PeachDO implements Serializable {
     @Schema(description = "角色类型")
     private String roleType;
 
-    @Column(name = "FISCAL")
-    @Schema(description = "年度")
-    private Integer fiscal;
 
     @Column(name = "PARTY_CODE")
     @Schema(description = "参与者代码")

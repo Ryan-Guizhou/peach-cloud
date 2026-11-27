@@ -15,8 +15,6 @@ import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +27,6 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class LoginInitConfigSupport {
-
-    private static final String DEFAULT_APP_ID = "f73b300578a5436d82ec7fca2c07c284";
 
     private static final String DEFAULT_SYSTEM_NAME = "Peach Cloud DataOS";
 
@@ -47,8 +43,6 @@ public class LoginInitConfigSupport {
         LoginInitVO initVO = new LoginInitVO();
         initVO.setSystemName(config.getOrDefault(AuthLoginValueSetConst.SYSTEM_NAME, DEFAULT_SYSTEM_NAME));
         initVO.setSystemDescription(config.getOrDefault(AuthLoginValueSetConst.SYSTEM_DESCRIPTION, DEFAULT_SYSTEM_DESCRIPTION));
-        initVO.setAppId(config.getOrDefault(AuthLoginValueSetConst.APP_ID, DEFAULT_APP_ID));
-        initVO.setFiscal(LocalDate.now(ZoneId.systemDefault()).getYear());
         initVO.setPublicKey(publicKey);
         initVO.setEncryptionAlgorithm(config.getOrDefault(AuthLoginValueSetConst.ENCRYPTION_ALGORITHM, DEFAULT_ENCRYPTION_ALGORITHM));
         initVO.setCaptchaType(config.getOrDefault(AuthLoginValueSetConst.CAPTCHA_TYPE,
@@ -104,7 +98,6 @@ public class LoginInitConfigSupport {
         Map<String, String> defaults = new LinkedHashMap<>();
         defaults.put(AuthLoginValueSetConst.SYSTEM_NAME, DEFAULT_SYSTEM_NAME);
         defaults.put(AuthLoginValueSetConst.SYSTEM_DESCRIPTION, DEFAULT_SYSTEM_DESCRIPTION);
-        defaults.put(AuthLoginValueSetConst.APP_ID, DEFAULT_APP_ID);
         defaults.put(AuthLoginValueSetConst.ENCRYPTION_ALGORITHM, DEFAULT_ENCRYPTION_ALGORITHM);
         defaults.put(AuthLoginValueSetConst.CAPTCHA_ENABLED, "true");
         defaults.put(AuthLoginValueSetConst.CAPTCHA_TYPE, CaptchaEnum.CaptchaServiceType.BLOCKPUZZLE.getCode());

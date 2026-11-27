@@ -80,7 +80,7 @@ class PeachDatabaseMigrationTest {
             String[] p=spec.split(":");assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM "+p[0]+" WHERE "+p[1]+" NOT REGEXP '^"+p[2]+"[0-9]{4}$'",Integer.class));
         }
         assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_AUTH_RESOURCE WHERE RESOURCE_CODE='POST:/api/auth/router/pageList'",Integer.class));
-        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_MENU m LEFT JOIN PEACH_FUNCTION f ON f.TENANT_ID=m.TENANT_ID AND f.APP_ID=m.APP_ID AND f.FUNC_CODE=m.FUNC_CODE WHERE m.FUNC_CODE IS NOT NULL AND f.FUNC_ID IS NULL",Integer.class));
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM PEACH_MENU m LEFT JOIN PEACH_FUNCTION f ON f.TENANT_ID=m.TENANT_ID AND f.FUNC_CODE=m.FUNC_CODE WHERE m.FUNC_CODE IS NOT NULL AND f.FUNC_ID IS NULL",Integer.class));
         String tenant=jdbc.queryForObject("SELECT TENANT_ID FROM PEACH_TENANT LIMIT 1",String.class);
         var generator=new com.peach.code.autoconfigure.PeachCodeGenerator(jdbc,new com.peach.code.autoconfigure.CodeProperties(),new org.springframework.jdbc.datasource.DataSourceTransactionManager(source));
         for(String type:List.of("MENU","FUNCTION","ROUTER","ROLE")) assertTrue(generator.next(tenant,type).matches(Map.of("MENU","M","FUNCTION","F","ROUTER","RT","ROLE","RL").get(type)+"[0-9]{4}"));

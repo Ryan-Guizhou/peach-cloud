@@ -37,15 +37,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LoginPermissionAssembler {
 
-    private static final String INIT_APP_ID = "f73b300578a5436d82ec7fca2c07c284";
-
     private final AuthFunctionDao authFunctionDao;
     private final AuthResourceDao authResourceDao;
     private final MenuDao menuDao;
     private final RouterDao routerDao;
 
     public LoginPermissionSnapshotVO assemble(UserOrgVO currentUserOrg,
-                                              Integer fiscal,
                                               List<RoleVO> roleList) {
         LoginPermissionSnapshotVO snapshot = new LoginPermissionSnapshotVO();
         snapshot.setRoleList(roleList == null ? List.of() : roleList);
@@ -64,8 +61,8 @@ public class LoginPermissionAssembler {
 
         String tenantId = currentUserOrg.getTenantId();
         String orgId = currentUserOrg.getOrgId();
-        Set<String> funcCodes = loadAuthorizedFunctionCodes(tenantId, orgId, fiscal, roleCodes);
-        List<AuthResourceVO> resources = loadAuthorizedResources(tenantId, orgId, fiscal, roleCodes);
+        Set<String> funcCodes = loadAuthorizedFunctionCodes(tenantId, orgId, roleCodes);
+        List<AuthResourceVO> resources = loadAuthorizedResources(tenantId, orgId, roleCodes);
         List<MenuVO> menus = loadMenus(tenantId, funcCodes);
         List<RouterVO> routers = loadRouters(tenantId, funcCodes);
 
@@ -90,13 +87,12 @@ public class LoginPermissionAssembler {
 
     private Set<String> loadAuthorizedFunctionCodes(String tenantId,
                                                     String orgId,
-                                                    Integer fiscal,
                                                     Set<String> roleCodes) {
         if (roleCodes.isEmpty()) {
             return Set.of();
         }
         List<AuthFunctionVO> authFunctions = authFunctionDao.selectByPartyCodes(
-                tenantId, orgId, INIT_APP_ID, fiscal, roleCodes);
+                tenantId, orgId, roleCodes);
         if (CollectionUtils.isEmpty(authFunctions)) {
             return Set.of();
         }
@@ -108,13 +104,12 @@ public class LoginPermissionAssembler {
 
     private List<AuthResourceVO> loadAuthorizedResources(String tenantId,
                                                          String orgId,
-                                                         Integer fiscal,
                                                          Set<String> roleCodes) {
         if (roleCodes.isEmpty()) {
             return List.of();
         }
         List<AuthResourceVO> resources = authResourceDao.selectByPartyCodes(
-                tenantId, orgId, fiscal, roleCodes);
+                tenantId, orgId, roleCodes);
         if (CollectionUtils.isEmpty(resources)) {
             return List.of();
         }
@@ -133,14 +128,14 @@ public class LoginPermissionAssembler {
         if (funcCodes.isEmpty()) {
             return List.of();
         }
-        List<MenuVO> menus = menuDao.selectByFuncCodes(tenantId, INIT_APP_ID, funcCodes);
+        List<MenuVO> menus = menuDao.selectByFuncCodes(tenantId, funcCodes);
         if (CollectionUtils.isEmpty(menus)) {
             return List.of();
         }
         Map<String, MenuVO> result = new LinkedHashMap<>();
         for (MenuVO menu : menus) { if (menu != null && StringUtil.isNotBlank(menu.getMenuId())) result.put(menu.getMenuId(), menu); }
         Map<String, MenuVO> catalogs = new LinkedHashMap<>();
-        List<MenuVO> available = menuDao.selectCatalogs(tenantId, INIT_APP_ID);
+        List<MenuVO> available = menuDao.selectCatalogs(tenantId);
         if (available != null) for (MenuVO catalog : available) catalogs.put(catalog.getMenuId(), catalog);
         for (MenuVO menu : menus) {
             if (menu == null) continue;
@@ -158,7 +153,7 @@ public class LoginPermissionAssembler {
 
     private List<RouterVO> loadRouters(String tenantId, Set<String> funcCodes) {
         Map<String, RouterVO> routerMap = new LinkedHashMap<>();
-        List<RouterVO> publicRouters = routerDao.selectPublicRouters(tenantId, INIT_APP_ID);
+        List<RouterVO> publicRouters = routerDao.selectPublicRouters(tenantId);
         if (!CollectionUtils.isEmpty(publicRouters)) {
             for (RouterVO router : publicRouters) {
                 if (router != null && StringUtil.isNotBlank(router.getRouterId())) {
@@ -167,7 +162,7 @@ public class LoginPermissionAssembler {
             }
         }
         if (!funcCodes.isEmpty()) {
-            List<RouterVO> authorizedRouters = routerDao.selectByFuncCodes(tenantId, INIT_APP_ID, funcCodes);
+            List<RouterVO> authorizedRouters = routerDao.selectByFuncCodes(tenantId, funcCodes);
             if (!CollectionUtils.isEmpty(authorizedRouters)) {
                 for (RouterVO router : authorizedRouters) {
                     if (router != null && StringUtil.isNotBlank(router.getRouterId())) {

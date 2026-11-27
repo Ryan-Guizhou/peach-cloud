@@ -70,12 +70,6 @@ public class UserContext implements Serializable {
     private String orgName;
 
     /**
-     * 会计期间（账套/财务年度）
-     * <p>标识当前用户操作的财务年度或会计期间，用于财务模块数据隔离。</p>
-     */
-    private String fiscal;
-
-    /**
      * 当前请求路径（URL）
      * <p>用于日志记录、权限校验或审计追踪，记录用户访问的具体接口地址。</p>
      */
@@ -158,14 +152,6 @@ public class UserContext implements Serializable {
         this.orgName = orgName;
     }
 
-    public String getFiscal() {
-        return fiscal;
-    }
-
-    public void setFiscal(String fiscal) {
-        this.fiscal = fiscal;
-    }
-
     public String getRequestPath() {
         return requestPath;
     }
@@ -202,7 +188,6 @@ public class UserContext implements Serializable {
                 ", orgId='" + orgId + '\'' +
                 ", orgCode='" + orgCode + '\'' +
                 ", orgName='" + orgName + '\'' +
-                ", fiscal='" + fiscal + '\'' +
                 ", requestPath='" + requestPath + '\'' +
                 ", lang='" + lang + '\'' +
                 ", contextVersion=" + contextVersion +

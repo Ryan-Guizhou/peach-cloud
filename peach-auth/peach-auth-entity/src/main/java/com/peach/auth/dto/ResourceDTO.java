@@ -53,9 +53,6 @@ public class ResourceDTO implements Serializable {
     @Size(max = 32, message = "资源名称长度不能超过32", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String resourceName;
 
-    @Schema(description = "应用ID")
-    @Size(max = 32, message = "应用ID长度不能超过32", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
-    private String appId;
 
     @Schema(description = "是否删除")
     @Min(value = 0, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})

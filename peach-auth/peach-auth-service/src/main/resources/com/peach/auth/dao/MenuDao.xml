@@ -5,8 +5,8 @@
         MENU_ID,                                          MENU_NAME,                                        MENU_CODE,                                        IS_LEAF,
         MENU_URL,                                         MENU_PARAM,                                       PARENT_MENU_ID,                                   MENU_LEVEL,
         SORT_NO,                                          COLLAPSE_ICON,                                    EXPAND_ICON,                                      MENU_SEQ,
-        OPEN_MODE,                                        SUBCOUNT,                                         FUNC_CODE,                                        MENU_APP_ID,
-        APP_ID,                                           IS_DELETE,                                        IS_DISABLE,                                       IS_SHOW,
+        OPEN_MODE,                                        SUBCOUNT,                                         FUNC_CODE,                                        TENANT_ID,
+        IS_DELETE,                                        IS_DISABLE,                                       IS_SHOW,
         SF_BLANK,                                         MENU_ICON,                                        CREATED_TIME,                                     CREATOR_ID,
         MODIFY_TIME,                                      MODIFIER_ID
     </sql>
@@ -15,8 +15,8 @@
         MENU_ID as menuId,                                MENU_NAME as menuName,                            MENU_CODE as menuCode,                            IS_LEAF as isLeaf,
         MENU_URL as menuUrl,                              MENU_PARAM as menuParam,                          PARENT_MENU_ID as parentMenuId,                   MENU_LEVEL as menuLevel,
         SORT_NO as sortNo,                                COLLAPSE_ICON as collapseIcon,                    EXPAND_ICON as expandIcon,                        MENU_SEQ as menuSeq,
-        OPEN_MODE as openMode,                            SUBCOUNT as subcount,                             FUNC_CODE as funcCode,                            MENU_APP_ID as menuAppId,
-        APP_ID as appId,                                  IS_DELETE as isDelete,                            IS_DISABLE as isDisable,                          IS_SHOW as isShow,
+        OPEN_MODE as openMode,                            SUBCOUNT as subcount,                             FUNC_CODE as funcCode,                            TENANT_ID as tenantId,
+        IS_DELETE as isDelete,                            IS_DISABLE as isDisable,                          IS_SHOW as isShow,
         SF_BLANK as sfBlank,                              MENU_ICON as menuIcon,                            CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,
         MODIFY_TIME as modifyTime,                        MODIFIER_ID as modifierId
     </sql>
@@ -25,8 +25,8 @@
         #{menuId,jdbcType=VARCHAR},                       #{menuName,jdbcType=VARCHAR},                     #{menuCode,jdbcType=VARCHAR},                     #{isLeaf,jdbcType=INTEGER},
         #{menuUrl,jdbcType=VARCHAR},                      #{menuParam,jdbcType=VARCHAR},                    #{parentMenuId,jdbcType=VARCHAR},                 #{menuLevel,jdbcType=VARCHAR},
         #{sortNo,jdbcType=INTEGER},                       #{collapseIcon,jdbcType=VARCHAR},                 #{expandIcon,jdbcType=VARCHAR},                   #{menuSeq,jdbcType=VARCHAR},
-        #{openMode,jdbcType=VARCHAR},                     #{subcount,jdbcType=VARCHAR},                     #{funcCode,jdbcType=VARCHAR},                     #{menuAppId,jdbcType=VARCHAR},
-        #{appId,jdbcType=VARCHAR},                        #{isDelete,jdbcType=INTEGER},                     #{isDisable,jdbcType=INTEGER},                    #{isShow,jdbcType=INTEGER},
+        #{openMode,jdbcType=VARCHAR},                     #{subcount,jdbcType=VARCHAR},                     #{funcCode,jdbcType=VARCHAR},                     #{tenantId,jdbcType=VARCHAR},
+        #{isDelete,jdbcType=INTEGER},                     #{isDisable,jdbcType=INTEGER},                    #{isShow,jdbcType=INTEGER},
         #{sfBlank,jdbcType=INTEGER},                      #{menuIcon,jdbcType=VARCHAR},                     #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},
         #{modifyTime,jdbcType=VARCHAR},                   #{modifierId,jdbcType=VARCHAR}
     </sql>
@@ -36,8 +36,8 @@
         #{item.menuId,jdbcType=VARCHAR},                  #{item.menuName,jdbcType=VARCHAR},                #{item.menuCode,jdbcType=VARCHAR},                #{item.isLeaf,jdbcType=INTEGER},
         #{item.menuUrl,jdbcType=VARCHAR},                 #{item.menuParam,jdbcType=VARCHAR},               #{item.parentMenuId,jdbcType=VARCHAR},            #{item.menuLevel,jdbcType=VARCHAR},
         #{item.sortNo,jdbcType=INTEGER},                  #{item.collapseIcon,jdbcType=VARCHAR},            #{item.expandIcon,jdbcType=VARCHAR},              #{item.menuSeq,jdbcType=VARCHAR},
-        #{item.openMode,jdbcType=VARCHAR},                #{item.subcount,jdbcType=VARCHAR},                #{item.funcCode,jdbcType=VARCHAR},                #{item.menuAppId,jdbcType=VARCHAR},
-        #{item.appId,jdbcType=VARCHAR},                   #{item.isDelete,jdbcType=INTEGER},                #{item.isDisable,jdbcType=INTEGER},               #{item.isShow,jdbcType=INTEGER},
+        #{item.openMode,jdbcType=VARCHAR},                #{item.subcount,jdbcType=VARCHAR},                #{item.funcCode,jdbcType=VARCHAR},                #{item.tenantId,jdbcType=VARCHAR},
+        #{item.isDelete,jdbcType=INTEGER},                #{item.isDisable,jdbcType=INTEGER},               #{item.isShow,jdbcType=INTEGER},
         #{item.sfBlank,jdbcType=INTEGER},                 #{item.menuIcon,jdbcType=VARCHAR},                #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},
         #{item.modifyTime,jdbcType=VARCHAR},              #{item.modifierId,jdbcType=VARCHAR}
     </sql>
@@ -86,12 +86,6 @@
             </if>
             <if test="funcCode != null and funcCode != ''">
                 FUNC_CODE = #{funcCode,jdbcType=VARCHAR},
-            </if>
-            <if test="menuAppId != null and menuAppId != ''">
-                MENU_APP_ID = #{menuAppId,jdbcType=VARCHAR},
-            </if>
-            <if test="appId != null and appId != ''">
-                APP_ID = #{appId,jdbcType=VARCHAR},
             </if>
             <if test="isDelete != null">
                 IS_DELETE = #{isDelete,jdbcType=INTEGER},
@@ -168,12 +162,6 @@
             <if test="funcCode != null and funcCode != ''">
                 FUNC_CODE,
             </if>
-            <if test="menuAppId != null and menuAppId != ''">
-                MENU_APP_ID,
-            </if>
-            <if test="appId != null and appId != ''">
-                APP_ID,
-            </if>
             <if test="isDelete != null">
                 IS_DELETE,
             </if>
@@ -247,12 +235,6 @@
             </if>
             <if test="funcCode != null and funcCode != ''">
                 #{funcCode,jdbcType=VARCHAR},
-            </if>
-            <if test="menuAppId != null and menuAppId != ''">
-                #{menuAppId,jdbcType=VARCHAR},
-            </if>
-            <if test="appId != null and appId != ''">
-                #{appId,jdbcType=VARCHAR},
             </if>
             <if test="isDelete != null">
                 #{isDelete,jdbcType=INTEGER},
@@ -332,12 +314,6 @@
         </if>
         <if test="funcCode != null and funcCode != ''">
             AND FUNC_CODE = #{funcCode,jdbcType=VARCHAR}
-        </if>
-        <if test="menuAppId != null and menuAppId != ''">
-            AND MENU_APP_ID = #{menuAppId,jdbcType=VARCHAR}
-        </if>
-        <if test="appId != null and appId != ''">
-            AND APP_ID = #{appId,jdbcType=VARCHAR}
         </if>
         <if test="isDelete != null">
             AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
@@ -462,9 +438,6 @@
             <if test="isDelete != null">
                 AND IS_DELETE = #{isDelete,jdbcType=INTEGER}
             </if>
-            <if test="appId != null and appId != ''">
-                AND APP_ID = #{appId,jdbcType=VARCHAR}
-            </if>
             <if test="menuId != null and menuId != ''">
                 AND MENU_ID = #{menuId,jdbcType=VARCHAR}
             </if>
@@ -485,7 +458,6 @@
             <include refid="allColumnAlias" />
         FROM PEACH_MENU
         WHERE TENANT_ID = #{tenantId,jdbcType=VARCHAR}
-          AND APP_ID = #{appId,jdbcType=VARCHAR}
           AND IS_DELETE = 0
           AND IS_DISABLE = 0
           AND IS_SHOW = 1
@@ -497,7 +469,7 @@
     </select>
     <select id="selectCatalogs" resultType="com.peach.auth.vo.MenuVO">
         SELECT <include refid="allColumnAlias"/> FROM PEACH_MENU
-        WHERE TENANT_ID = #{tenantId} AND APP_ID = #{appId}
+        WHERE TENANT_ID = #{tenantId}
           AND IS_LEAF = 0 AND IS_DELETE = 0 AND IS_DISABLE = 0 AND IS_SHOW = 1
         ORDER BY SORT_NO, MENU_SEQ
     </select>

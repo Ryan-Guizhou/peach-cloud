@@ -85,13 +85,7 @@ public class MenuDTO implements Serializable {
     @Size(max = 50, message = "功能编码长度不能超过50", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private String funcCode;
 
-    @Schema(description = "菜单应用ID")
-    @Size(max = 50, message = "菜单应用ID长度不能超过50", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
-    private String menuAppId;
 
-    @Schema(description = "应用ID")
-    @Size(max = 50, message = "应用ID长度不能超过50", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
-    private String appId;
 
     @Schema(description = "是否删除")
     private Integer isDelete;

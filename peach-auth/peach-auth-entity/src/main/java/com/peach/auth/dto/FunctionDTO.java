@@ -73,9 +73,6 @@ public class FunctionDTO implements Serializable {
     @Max(value = 1, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
     private Integer isAuthorize;
 
-    @Schema(description = "应用ID")
-    @Size(max = 32, message = "应用ID长度不能超过32", groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})
-    private String appId;
 
     @Schema(description = "是否禁用")
     @Min(value = 0, groups = {PeachGroup.InsertGroup.class, PeachGroup.UpdateGroup.class})

@@ -66,11 +66,10 @@ public class GatewayTokenContextResolver {
                 .flatMap(value -> {
                     String tenantId = normalize(value.getString(SaTokenConstant.TOKEN_SESSION_TENANT_ID));
                     String orgId = normalize(value.getString(SaTokenConstant.TOKEN_SESSION_ORG_ID));
-                    String fiscal = normalize(value.getString(SaTokenConstant.TOKEN_SESSION_FISCAL));
                     if (tenantId == null || orgId == null) {
                         return Mono.empty();
                     }
-                    return Mono.just(new GatewayTokenContext(tenantId, orgId, fiscal));
+                    return Mono.just(new GatewayTokenContext(tenantId, orgId));
                 });
     }
 

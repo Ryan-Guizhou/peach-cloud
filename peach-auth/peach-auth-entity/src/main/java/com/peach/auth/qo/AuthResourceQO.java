@@ -42,9 +42,5 @@ public class AuthResourceQO extends PeachEntity implements Serializable {
     @Schema(description = "资源编码")
     private String resourceCode;
 
-    @Schema(description = "应用ID")
-    private String appId;
 
-    @Schema(description = "年度")
-    private Integer fiscal;
 }

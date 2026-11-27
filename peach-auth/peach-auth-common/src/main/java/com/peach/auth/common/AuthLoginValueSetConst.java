@@ -11,8 +11,6 @@ public final class AuthLoginValueSetConst {
 
     public static final String SYSTEM_DESCRIPTION = "SYSTEM_DESCRIPTION";
 
-    public static final String APP_ID = "APP_ID";
-
     public static final String ENCRYPTION_ALGORITHM = "ENCRYPTION_ALGORITHM";
 
     public static final String CAPTCHA_ENABLED = "CAPTCHA_ENABLED";

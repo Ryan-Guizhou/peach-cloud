@@ -42,7 +42,6 @@ class FunctionDefinitionTest {
         existing.setFuncId("id");
         existing.setFuncCode("ORIGINAL");
         existing.setTenantId("tenant");
-        existing.setAppId("app");
         when(dao.selectById("id")).thenReturn(existing);
         FunctionDTO change = new FunctionDTO();
         change.setFuncId("id");
@@ -53,7 +52,7 @@ class FunctionDefinitionTest {
 
     private FunctionVO existing() {
         FunctionVO row = new FunctionVO();
-        row.setFuncId("id"); row.setFuncCode("CODE"); row.setTenantId("tenant"); row.setAppId("app");
+        row.setFuncId("id"); row.setFuncCode("CODE"); row.setTenantId("tenant");
         when(dao.selectById("id")).thenReturn(row);
         return row;
     }
@@ -95,7 +94,7 @@ class FunctionDefinitionTest {
     @Test void generatesIdAndDefaultsOnCreate() {
         when(codeGenerator.next("tenant", "FUNCTION")).thenReturn("F0001");
         FunctionDTO input = new FunctionDTO();
-        input.setFuncCode("NEW"); input.setAppId("app");
+        input.setFuncCode("NEW");
         service.add(input);
         var saved = org.mockito.ArgumentCaptor.forClass(com.peach.auth.entity.FunctionDO.class);
         verify(dao).insert(saved.capture());

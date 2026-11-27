@@ -3,21 +3,21 @@
 <mapper namespace="com.peach.auth.dao.AuthPartyDao">
     <sql id="allColumn">
         ID,                                               TENANT_ID,                                        ORG_ID,                                           ROLE_CODE,
-        ROLE_TYPE,                                        FISCAL,                                           PARTY_CODE,                                       PARTY_TYPE,
+        ROLE_TYPE,                                        PARTY_CODE,                                       PARTY_TYPE,
         IS_DELETE,                                        CREATED_TIME,                                     CREATOR_ID,                                       MODIFY_TIME,
         MODIFIER_ID
     </sql>
 
     <sql id="allColumnAlias">
         ID as id,                                         TENANT_ID as tenantId,                            ORG_ID as orgId,                                  ROLE_CODE as roleCode,
-        ROLE_TYPE as roleType,                            FISCAL as fiscal,                                 PARTY_CODE as partyCode,                          PARTY_TYPE as partyType,
+        ROLE_TYPE as roleType,                            PARTY_CODE as partyCode,                          PARTY_TYPE as partyType,
         IS_DELETE as isDelete,                            CREATED_TIME as createdTime,                      CREATOR_ID as creatorId,                          MODIFY_TIME as modifyTime,
         MODIFIER_ID as modifierId
     </sql>
 
     <sql id="allColumnValue">
         #{id,jdbcType=VARCHAR},                          #{tenantId,jdbcType=VARCHAR},                      #{orgId,jdbcType=VARCHAR},                       #{roleCode,jdbcType=VARCHAR},
-        #{roleType,jdbcType=VARCHAR},                    #{fiscal,jdbcType=INTEGER},                       #{partyCode,jdbcType=VARCHAR},                    #{partyType,jdbcType=VARCHAR},
+        #{roleType,jdbcType=VARCHAR},                    #{partyCode,jdbcType=VARCHAR},                    #{partyType,jdbcType=VARCHAR},
         #{isDelete,jdbcType=INTEGER},                    #{createdTime,jdbcType=VARCHAR},                  #{creatorId,jdbcType=VARCHAR},                    #{modifyTime,jdbcType=VARCHAR},
         #{modifierId,jdbcType=VARCHAR}
     </sql>
@@ -25,7 +25,7 @@
 
     <sql id="itemAllColumnValue">
         #{item.id,jdbcType=VARCHAR},                     #{item.tenantId,jdbcType=VARCHAR},                #{item.orgId,jdbcType=VARCHAR},                  #{item.roleCode,jdbcType=VARCHAR},
-        #{item.roleType,jdbcType=VARCHAR},               #{item.fiscal,jdbcType=INTEGER},                  #{item.partyCode,jdbcType=VARCHAR},              #{item.partyType,jdbcType=VARCHAR},
+        #{item.roleType,jdbcType=VARCHAR},               #{item.partyCode,jdbcType=VARCHAR},              #{item.partyType,jdbcType=VARCHAR},
         #{item.isDelete,jdbcType=INTEGER},               #{item.createdTime,jdbcType=VARCHAR},             #{item.creatorId,jdbcType=VARCHAR},              #{item.modifyTime,jdbcType=VARCHAR},
         #{item.modifierId,jdbcType=VARCHAR}
     </sql>
@@ -44,9 +44,6 @@
             </if>
             <if test="roleType != null and roleType != ''">
                 ROLE_TYPE = #{roleType,jdbcType=VARCHAR},
-            </if>
-            <if test="fiscal != null">
-                FISCAL = #{fiscal,jdbcType=INTEGER},
             </if>
             <if test="partyCode != null and partyCode != ''">
                 PARTY_CODE = #{partyCode,jdbcType=VARCHAR},
@@ -87,9 +84,6 @@
             <if test="roleType != null and roleType != ''">
                 ROLE_TYPE,
             </if>
-            <if test="fiscal != null">
-                FISCAL,
-            </if>
             <if test="partyCode != null and partyCode != ''">
                 PARTY_CODE,
             </if>
@@ -127,9 +121,6 @@
             </if>
             <if test="roleType != null and roleType != ''">
                 #{roleType,jdbcType=VARCHAR},
-            </if>
-            <if test="fiscal != null">
-                #{fiscal,jdbcType=INTEGER},
             </if>
             <if test="partyCode != null and partyCode != ''">
                 #{partyCode,jdbcType=VARCHAR},
@@ -170,9 +161,6 @@
         </if>
         <if test="roleType != null and roleType != ''">
             AND ROLE_TYPE = #{roleType,jdbcType=VARCHAR}
-        </if>
-        <if test="fiscal != null">
-            AND FISCAL = #{fiscal,jdbcType=INTEGER}
         </if>
         <if test="partyCode != null and partyCode != ''">
             AND PARTY_CODE = #{partyCode,jdbcType=VARCHAR}
@@ -296,9 +284,6 @@
             </if>
             <if test="roleCode != null and roleCode != ''">
                 AND ROLE_CODE = #{roleCode,jdbcType=VARCHAR}
-            </if>
-            <if test="fiscal != null">
-                AND FISCAL = #{fiscal,jdbcType=INTEGER}
             </if>
         </where>
     </select>

@@ -167,7 +167,7 @@ public class UserServiceImpl implements IUserService {
         }
 
         StpUtil.login(userId, new SaLoginParameter().setIsConcurrent(true).setIsShare(false));
-        refreshTokenSessionContext(currentUserOrg, loginDTO.getFiscal());
+        refreshTokenSessionContext(currentUserOrg);
         if (!tenantLoginAvailability.isAvailable(userId, currentUserOrg.getTenantId(), currentUserOrg.getOrgId())) {
             StpUtil.logout();
             LoginAuditContext.reason("TENANT_UNAVAILABLE");
@@ -178,16 +178,15 @@ public class UserServiceImpl implements IUserService {
                 currentUserOrg.getTenantId(), currentUserOrg.getOrgId());
 
         RoleQO roleQO = new RoleQO();
-        roleQO.setFiscal(loginDTO.getFiscal());
         roleQO.setUserCode(userVO.getUserCode());
         roleQO.setTenantId(currentUserOrg.getTenantId());
         roleQO.setOrgId(currentUserOrg.getOrgId());
         List<RoleVO> roleList = iRoleService.selectByUserCode(roleQO);
         LoginPermissionSnapshotVO snapshot = loginPermissionAssembler.assemble(
-                currentUserOrg, loginDTO.getFiscal(), roleList);
-        refreshLoginPermissionCache(userVO, currentUserOrg, loginDTO.getFiscal(), snapshot);
+                currentUserOrg, roleList);
+        refreshLoginPermissionCache(userVO, currentUserOrg, snapshot);
 
-        LoginInfo loginInfo = buildLoginInfo(userVO, currentUserOrg, loginDTO.getFiscal(), token, userOrgList, snapshot);
+        LoginInfo loginInfo = buildLoginInfo(userVO, currentUserOrg, token, userOrgList, snapshot);
         return Response.success(loginInfo);
     }
 
@@ -215,24 +214,23 @@ public class UserServiceImpl implements IUserService {
         }
 
         RoleQO roleQO = new RoleQO();
-        roleQO.setFiscal(switchContextDTO.getFiscal());
         roleQO.setUserCode(userVO.getUserCode());
         roleQO.setTenantId(currentUserOrg.getTenantId());
         roleQO.setOrgId(currentUserOrg.getOrgId());
         List<RoleVO> roleList = iRoleService.selectByUserCode(roleQO);
         LoginPermissionSnapshotVO snapshot = loginPermissionAssembler.assemble(
-                currentUserOrg, switchContextDTO.getFiscal(), roleList);
-        refreshLoginPermissionCache(userVO, currentUserOrg, switchContextDTO.getFiscal(), snapshot);
-        refreshTokenSessionContext(currentUserOrg, switchContextDTO.getFiscal());
+                currentUserOrg, roleList);
+        refreshLoginPermissionCache(userVO, currentUserOrg, snapshot);
+        refreshTokenSessionContext(currentUserOrg);
         if (!tenantLoginAvailability.isAvailable(userId, currentUserOrg.getTenantId(), currentUserOrg.getOrgId())) {
             StpUtil.logout();
             return Response.fail("当前租户已停用或绑定已变更，请重新登录");
         }
 
-        log.info("User context switched, userId={}, tenantId={}, orgId={}, fiscal={}",
-                userId, currentUserOrg.getTenantId(), currentUserOrg.getOrgId(), switchContextDTO.getFiscal());
+        log.info("User context switched, userId={}, tenantId={}, orgId={}",
+                userId, currentUserOrg.getTenantId(), currentUserOrg.getOrgId());
 
-        LoginInfo loginInfo = buildLoginInfo(userVO, currentUserOrg, switchContextDTO.getFiscal(),
+        LoginInfo loginInfo = buildLoginInfo(userVO, currentUserOrg,
                 StpUtil.getTokenValue(), userOrgDao.selectByUserId(userId), snapshot);
         return Response.success(loginInfo);
     }
@@ -275,36 +273,32 @@ public class UserServiceImpl implements IUserService {
      * <p>数据库授权关系仍是事实源；缓存仅用于请求期快速判断。</p>
      */
     private void refreshLoginPermissionCache(UserVO userVO, UserOrgVO currentUserOrg,
-                                             Integer fiscal, LoginPermissionSnapshotVO snapshot) {
-        loginPermissionCacheRefresher.writeCache(userVO, currentUserOrg, fiscal, snapshot);
+                                             LoginPermissionSnapshotVO snapshot) {
+        loginPermissionCacheRefresher.writeCache(userVO, currentUserOrg, snapshot);
     }
 
     /**
-     * 将当前租户、机构和会计期间写入当前 Token 专属 Session。
+     * 将当前租户和机构写入当前 Token 专属 Session。
      *
      * <p>Token Session 按登录凭证隔离，避免同一用户在不同设备切换租户时相互覆盖。</p>
      *
      * @param currentUserOrg 当前租户机构
-     * @param fiscal 当前会计期间
      */
-    private void refreshTokenSessionContext(UserOrgVO currentUserOrg, Integer fiscal) {
+    private void refreshTokenSessionContext(UserOrgVO currentUserOrg) {
         var tokenSession = StpUtil.getTokenSession();
         tokenSession.set(SaTokenConstant.TOKEN_SESSION_TENANT_ID, currentUserOrg.getTenantId());
         tokenSession.set(SaTokenConstant.TOKEN_SESSION_ORG_ID, currentUserOrg.getOrgId());
-        tokenSession.set(SaTokenConstant.TOKEN_SESSION_FISCAL, fiscal == null ? "" : String.valueOf(fiscal));
         tokenSession.set(SaTokenConstant.TOKEN_SESSION_CONTEXT_VERSION, System.currentTimeMillis());
     }
 
     private LoginInfo buildLoginInfo(UserVO userVO,
                                      UserOrgVO currentUserOrg,
-                                     Integer fiscal,
                                      String token,
                                      List<UserOrgVO> userOrgList,
                                      LoginPermissionSnapshotVO snapshot) {
         LoginInfo loginInfo = new LoginInfo();
         loginInfo.setUserId(userVO.getUserId());
         loginInfo.setUserName(userVO.getUserName());
-        loginInfo.setFiscal(String.valueOf(fiscal));
         loginInfo.setTenantId(currentUserOrg.getTenantId());
         loginInfo.setTenantCode(currentUserOrg.getTenantCode());
         loginInfo.setTenantName(currentUserOrg.getTenantName());

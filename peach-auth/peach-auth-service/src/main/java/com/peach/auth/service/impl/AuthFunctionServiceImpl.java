@@ -64,7 +64,6 @@ public class AuthFunctionServiceImpl implements IAuthFunctionService {
         deleteQuery.setTenantId(roleFunctionAuthDTO.getTenantId());
         deleteQuery.setOrgId(roleFunctionAuthDTO.getOrgId());
         deleteQuery.setPartyCode(roleFunctionAuthDTO.getPartyCode());
-        deleteQuery.setFiscal(roleFunctionAuthDTO.getFiscal());
         authFunctionDao.del(deleteQuery);
 
         List<AuthFunctionDO> functionList = new ArrayList<>();
@@ -80,9 +79,7 @@ public class AuthFunctionServiceImpl implements IAuthFunctionService {
                 authFunctionDO.setPartyCode(roleFunctionAuthDTO.getPartyCode());
                 authFunctionDO.setPartyType("ROLE");
                 authFunctionDO.setFuncCode(funcCode);
-                authFunctionDO.setFiscal(roleFunctionAuthDTO.getFiscal());
                 authFunctionDO.setState("ENABLE");
-                authFunctionDO.setAppId(roleFunctionAuthDTO.getAppId());
                 authFunctionDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
                 authFunctionDO.fillCreateTime(currentOperator());
                 functionList.add(authFunctionDO);
@@ -102,8 +99,7 @@ public class AuthFunctionServiceImpl implements IAuthFunctionService {
         loginPermissionCacheRefresher.refreshUsersByRole(
                 roleFunctionAuthDTO.getTenantId(),
                 roleFunctionAuthDTO.getOrgId(),
-                roleFunctionAuthDTO.getPartyCode(),
-                roleFunctionAuthDTO.getFiscal());
+                roleFunctionAuthDTO.getPartyCode());
     }
 
     private AuthFunctionDO buildQuery(AuthFunctionQO authFunctionQO) {
@@ -116,9 +112,7 @@ public class AuthFunctionServiceImpl implements IAuthFunctionService {
         authFunctionDO.setPartyCode(authFunctionQO.getPartyCode());
         authFunctionDO.setPartyType(authFunctionQO.getPartyType());
         authFunctionDO.setFuncCode(authFunctionQO.getFuncCode());
-        authFunctionDO.setFiscal(authFunctionQO.getFiscal());
         authFunctionDO.setState(authFunctionQO.getState());
-        authFunctionDO.setAppId(authFunctionQO.getAppId());
         authFunctionDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
         return authFunctionDO;
     }

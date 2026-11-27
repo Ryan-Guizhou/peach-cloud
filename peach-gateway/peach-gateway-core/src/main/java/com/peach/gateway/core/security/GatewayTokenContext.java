@@ -7,5 +7,5 @@ package com.peach.gateway.core.security;
  * @Version 1.0.0
  * @CreateTime 2026/11/06
  */
-public record GatewayTokenContext(String tenantId, String orgId, String fiscal) {
+public record GatewayTokenContext(String tenantId, String orgId) {
 }

@@ -31,9 +31,6 @@ public class UserRoleAuthDTO implements Serializable {
     @NotBlank(message = "用户账号不能为空")
     private String userCode;
 
-    @Schema(description = "年度")
-    @NotNull(message = "年度不能为空")
-    private Integer fiscal;
 
     @Schema(description = "角色编码列表")
     private List<String> roleCodeList;

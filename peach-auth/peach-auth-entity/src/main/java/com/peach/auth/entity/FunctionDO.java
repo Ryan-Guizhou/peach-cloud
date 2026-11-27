@@ -70,9 +70,6 @@ public class FunctionDO extends PeachDO implements Serializable {
     @Schema(description = "是否访问授权")
     private Integer isAuthorize;
 
-    @Column(name = "APP_ID")
-    @Schema(description = "应用ID")
-    private String appId;
 
     @Column(name = "IS_DISABLE")
     @Schema(description = "是否禁用")

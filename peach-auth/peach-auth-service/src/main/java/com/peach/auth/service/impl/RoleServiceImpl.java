@@ -49,7 +49,7 @@ public class RoleServiceImpl implements IRoleService {
 
     @Override
     public PageInfo<RoleVO> pageList(RoleQO roleQO) {
-        roleQO.setTenantId(AdminScope.actor().getTenantId()); roleQO.setOrgId(AdminScope.actor().getOrgId()); roleQO.setFiscal(AdminScope.fiscal());
+        roleQO.setTenantId(AdminScope.actor().getTenantId()); roleQO.setOrgId(AdminScope.actor().getOrgId());
         return PageMethod.startPage(roleQO.getPageNum(), roleQO.getPageSize())
                 .doSelectPageInfo(() -> roleDao.selectByQO(roleQO));
     }
@@ -62,7 +62,7 @@ public class RoleServiceImpl implements IRoleService {
     @Override
     public RoleVO selectById(String id) {
         var role = roleDao.selectById(id);
-        if (role == null || Integer.valueOf(1).equals(role.getIsDelete()) || !Objects.equals(role.getTenantId(),AdminScope.actor().getTenantId()) || !Objects.equals(role.getOrgId(),AdminScope.actor().getOrgId()) || !Objects.equals(role.getFiscal(),AdminScope.fiscal())) throw new BusinessException("角色不存在或不可访问");
+        if (role == null || Integer.valueOf(1).equals(role.getIsDelete()) || !Objects.equals(role.getTenantId(),AdminScope.actor().getTenantId()) || !Objects.equals(role.getOrgId(),AdminScope.actor().getOrgId())) throw new BusinessException("角色不存在或不可访问");
         return role;
     }
 
@@ -71,7 +71,8 @@ public class RoleServiceImpl implements IRoleService {
         RoleDO roleDO = new RoleDO();
         BeanUtils.copyProperties(roleDTO, roleDO);
         roleDO.setRoleId(UUID.randomUUID().toString().replace("-", ""));
-        roleDO.setTenantId(AdminScope.actor().getTenantId()); roleDO.setOrgId(AdminScope.actor().getOrgId()); roleDO.setFiscal(AdminScope.fiscal());
+        roleDO.setTenantId(AdminScope.actor().getTenantId());
+        roleDO.setOrgId(AdminScope.actor().getOrgId());
         roleDO.setRoleCode(codeGenerator.next(roleDO.getTenantId(), "ROLE"));
         roleDO.setSkipUrl("");
         if (roleDO.getRoleScope() == null) roleDO.setRoleScope("ORG");
@@ -80,7 +81,7 @@ public class RoleServiceImpl implements IRoleService {
         if (roleDO.getIsDelete() == null) {
             roleDO.setIsDelete(PubCommonConst.LOGIC_FLASE);
         }
-        try { roleDao.insert(roleDO); } catch (DuplicateKeyException ex) { throw new BusinessException("当前机构年度下角色编码已存在"); }
+        try { roleDao.insert(roleDO); } catch (DuplicateKeyException ex) { throw new BusinessException("当前机构下角色编码已存在"); }
     }
 
     @Override
@@ -99,7 +100,7 @@ public class RoleServiceImpl implements IRoleService {
         if (input.getRoleCode() != null && !Objects.equals(input.getRoleCode(),current.getRoleCode())) throw new BusinessException("角色编码创建后不可修改");
         if (input.getSkipUrl() != null && !Objects.equals(input.getSkipUrl(),current.getSkipUrl())) throw new BusinessException("请通过默认菜单入口修改登录菜单");
         RoleDO change = new RoleDO(); BeanUtils.copyProperties(input,change);
-        change.setRoleCode(current.getRoleCode()); change.setTenantId(current.getTenantId()); change.setOrgId(current.getOrgId()); change.setFiscal(current.getFiscal()); change.setIsDelete(0); change.setSkipUrl(current.getSkipUrl());
+        change.setRoleCode(current.getRoleCode()); change.setTenantId(current.getTenantId()); change.setOrgId(current.getOrgId()); change.setIsDelete(0); change.setSkipUrl(current.getSkipUrl());
         change.fillModifyTime(AdminScope.actor().getUserId()); roleDao.updateById(change);
     }
 

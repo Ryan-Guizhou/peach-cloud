@@ -23,13 +23,13 @@ class LoginMenuHierarchyTest {
         var role = new RoleVO(); role.setRoleCode("auditor");
         var context = new UserOrgVO(); context.setTenantId("tenant"); context.setOrgId("org");
         var grant = new AuthFunctionVO(); grant.setFuncCode("SYS_LOGIN_LOG");
-        when(functions.selectByPartyCodes(any(), any(), any(), any(), any())).thenReturn(List.of(grant));
+        when(functions.selectByPartyCodes(any(), any(), any())).thenReturn(List.of(grant));
         var leaf = new MenuVO(); leaf.setMenuId("leaf"); leaf.setParentMenuId("audit"); leaf.setIsLeaf(1);
         var parent = new MenuVO(); parent.setMenuId("audit"); parent.setIsLeaf(0);
         var unrelated = new MenuVO(); unrelated.setMenuId("storage"); unrelated.setIsLeaf(0);
-        when(menus.selectByFuncCodes(any(), any(), any())).thenReturn(List.of(leaf));
-        when(menus.selectCatalogs(any(), any())).thenReturn(List.of(parent, unrelated));
-        var snapshot = assembler.assemble(context, 2026, List.of(role));
+        when(menus.selectByFuncCodes(any(), any())).thenReturn(List.of(leaf));
+        when(menus.selectCatalogs(any())).thenReturn(List.of(parent, unrelated));
+        var snapshot = assembler.assemble(context, List.of(role));
         assertEquals(List.of("leaf", "audit"), snapshot.getMenuList().stream().map(MenuVO::getMenuId).toList());
     }
 }

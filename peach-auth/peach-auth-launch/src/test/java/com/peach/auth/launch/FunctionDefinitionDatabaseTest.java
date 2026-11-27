@@ -66,12 +66,11 @@ class FunctionDefinitionDatabaseTest {
                     var sequence = new java.util.concurrent.atomic.AtomicInteger();
                     var functions = new FunctionServiceImpl(session.getMapper(FunctionDao.class), (tenant, type) -> "F" + String.format("%04d", sequence.incrementAndGet()));
                     var resources = new ResouceServceImpl(session.getMapper(ResourceDao.class), session.getMapper(FunctionDao.class));
-                    String app = UUID.randomUUID().toString().replace("-", "");
                     FunctionDTO parent = new FunctionDTO();
-                    parent.setAppId(app); parent.setFuncCode("F0001"); parent.setFuncName("Root");
+                    parent.setFuncCode("F0001"); parent.setFuncName("Root");
                     functions.add(parent);
                     FunctionDTO child = new FunctionDTO();
-                    child.setAppId(app); child.setFuncCode("F0002"); child.setFuncName("Child"); child.setParentFuncCode("F0001");
+                    child.setFuncCode("F0002"); child.setFuncName("Child"); child.setParentFuncCode("F0001");
                     functions.add(child);
                     var list = functions.list(new FunctionQO());
                     assertThat(list).hasSize(2);
@@ -79,19 +78,19 @@ class FunctionDefinitionDatabaseTest {
                     var childRow = list.stream().filter(row -> row.getFuncCode().equals("F0002")).findFirst().orElseThrow();
                     assertThrows(BusinessException.class, () -> functions.delById(rootRow.getFuncId()));
                     ResourceDTO button = new ResourceDTO();
-                    button.setAppId(app); button.setFuncCode("F0002"); button.setResourceCode("child:add");
+                    button.setFuncCode("F0002"); button.setResourceCode("child:add");
                     button.setResourceName("Create child"); button.setResourceType("BUTTON");
                     resources.add(button);
                     ResourceQO query = new ResourceQO();
-                    query.setAppId(app); query.setFuncCode("F0002"); query.setKeyword("Create"); query.setResourceType("BUTTON");
+                    query.setFuncCode("F0002"); query.setKeyword("Create"); query.setResourceType("BUTTON");
                     var found = resources.pageList(query);
                     assertThat(found.getTotal()).isEqualTo(1);
                     var saved = found.getList().getFirst();
                     assertThat(resources.selectById(saved.getResourceId()).getTenantId()).isEqualTo(user.getTenantId());
                     assertThrows(BusinessException.class, () -> functions.delById(childRow.getFuncId()));
                     String authorizationId = UUID.randomUUID().toString().replace("-", "");
-                    try (var insert = connection.prepareStatement("INSERT INTO PEACH_AUTH_RESOURCE (RESOURCE_ID,TENANT_ID,APP_ID,FUNC_CODE,RESOURCE_CODE,PARTY_CODE,ORG_ID,OP_TYPE,IS_DELETE,FISCAL) VALUES (?,?,?,'F0002','child:add','smoke-role','smoke-org','BUTTON',0,2026)")) {
-                        insert.setString(1, authorizationId); insert.setString(2, user.getTenantId()); insert.setString(3, app); insert.executeUpdate();
+                    try (var insert = connection.prepareStatement("INSERT INTO PEACH_AUTH_RESOURCE (RESOURCE_ID,TENANT_ID,FUNC_CODE,RESOURCE_CODE,PARTY_CODE,ORG_ID,OP_TYPE,IS_DELETE) VALUES (?,?,'F0002','child:add','smoke-role','smoke-org','BUTTON',0)")) {
+                        insert.setString(1, authorizationId); insert.setString(2, user.getTenantId()); insert.executeUpdate();
                     }
                     session.clearCache();
                     assertThrows(BusinessException.class, () -> resources.delById(saved.getResourceId()));
