@@ -2,6 +2,10 @@ package com.peach.auth.common;
 
 /**
  * 登录初始化相关值集编码与项编码。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/27 11:10
  */
 public final class AuthLoginValueSetConst {
 

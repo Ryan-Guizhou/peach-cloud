@@ -11,6 +11,10 @@ import lombok.Data;
 
 /**
  * 用户角色绑定参数。
+ *
+ * @Author Mr Shu
+ * @Version 1.0.0
+ * @CreateTime 2026/11/27 11:10
  */
 @Data
 @Schema(description = "用户角色绑定参数")
